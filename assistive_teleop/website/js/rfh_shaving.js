@@ -87,7 +87,7 @@ function servo_feedback_cb(msg){
             text = "Servoing Completed Successfully.";
             $('#servo_approach, #servo_stop').fadeTo(0,0.5);
             $('#servo_detect_tag').fadeTo(0,1);
-            set_camera('kinect_head/rgb/image_color');
+            set_camera(window.KINECT+'/rgb/image_color');
             break
         case 6:
             text = "Detected Collision with Arms while Servoing.  "+ 

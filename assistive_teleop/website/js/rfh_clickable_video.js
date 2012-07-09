@@ -2,10 +2,11 @@ var count_surf_wipe_right=count_surf_wipe_left=force_wipe_count=0;
 var MJPEG_QUALITY= '50';
 var MJPEG_WIDTH = '640';
 var MJPEG_HEIGHT = '480';
+var KINECT = 'camera';
 
 camera_select_html = 
      '<select id="camera_select" onchange="set_camera($(this).val());">\
-	      <option value="kinect_head/rgb/image_color">Kinect Camera</option>\
+	      <option value='+window.KINECT+'/rgb/image_color>Kinect Camera</option>\
 	      <option value="kinect_throttled">Throttled Kinect Camera</option>\
 	      <option value="arrow_overlaid">Kinect (w/Arrows)</option>\
 	      <option value="ar_servo/confirmation_rotated">AR Tag Confirm</option>\
