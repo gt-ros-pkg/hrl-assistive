@@ -7,22 +7,22 @@ import roslib
 roslib.load_manifest('hrl_ellipsoidal_control')
 
 import rospy
-import tf.transformations as tf_trans
 from geometry_msgs.msg import PoseStamped
 
 from ellipsoid_space import EllipsoidSpace
 from msg import EllipsoidMoveAction, EllipsoidMoveResult
 from msg import EllipsoidParams
 from hrl_ellipsoidal_control.controller_base import CartesianStepController, min_jerk_traj
-from pykdl_utils.pr2_kin import kin_from_param
-from hrl_generic_arms.pose_converter import PoseConverter
+from pykdl_utils.joint_kinematics import create_joint_kin
+import hrl_geom.transformations as trans
+from hrl_geom.pose_converter import PoseConv
 
 class EllipsoidParamServer(object):
 
     def __init__(self):
         self.ell_param_sub = rospy.Subscriber("/ellipsoid_params", EllipsoidParams, 
                                               self.load_params)
-        self.kin_head = kin_from_param("base_link", "openni_rgb_optical_frame")
+        self.kin_head = create_joint_kin("base_link", "openni_rgb_optical_frame")
         self.ell_space = None
         self.head_center = None
         self.head_center_pub = rospy.Publisher("/head_center", PoseStamped)
@@ -32,11 +32,11 @@ class EllipsoidParamServer(object):
         rospy.Timer(rospy.Duration(0.2), pub_head_center)
 
     def load_params(self, params):
-        kinect_B_head = PoseConverter.to_homo_mat(params.e_frame)
-        base_B_kinect = self.kin_head.forward_filled(base_segment="base_link",
-                                                     target_segment="openni_rgb_optical_frame")
+        kinect_B_head = PoseConv.to_homo_mat(params.e_frame)
+        base_B_kinect = self.kin_head.forward(base_segment="base_link",
+                                              target_segment="openni_rgb_optical_frame")
         base_B_head = base_B_kinect * kinect_B_head
-        self.head_center = PoseConverter.to_pose_stamped_msg("/base_link",base_B_head)
+        self.head_center = PoseConv.to_pose_stamped_msg("/base_link",base_B_head)
         self.ell_space = EllipsoidSpace()
         self.ell_space.load_ell_params(params.E, params.is_oblate, params.height)
         rospy.loginfo("Loaded ellispoidal parameters.")
@@ -45,8 +45,8 @@ class EllipsoidParamServer(object):
         return self.ell_space is not None
     
     def get_ell_pose(self, pose):
-        torso_B_kinect = self.kin_head.forward_filled(base_segment="/torso_lift_link")
-        torso_B_ee = PoseConverter.to_homo_mat(pose)
+        torso_B_kinect = self.kin_head.forward(base_segment="/torso_lift_link")
+        torso_B_ee = PoseConv.to_homo_mat(pose)
         kinect_B_ee = torso_B_kinect**-1 * torso_B_ee
         ell_B_pose = self.get_ell_frame("/openni_rgb_optical_frame")**-1 * kinect_B_ee
         return self.ell_space.pose_to_ellipsoidal(ell_B_pose)
@@ -57,14 +57,14 @@ class EllipsoidParamServer(object):
         if kinect_frame_mat is None:
             kinect_frame_mat = self.get_ell_frame()
         pos, quat = self.ell_space.ellipsoidal_to_pose(lat, lon, height)
-        quat_rotated = tf_trans.quaternion_multiply(quat, orient_quat)
-        ell_pose_mat = PoseConverter.to_homo_mat(pos, quat_rotated)
-        return PoseConverter.to_pos_rot(kinect_frame_mat * ell_pose_mat)
+        quat_rotated = trans.quaternion_multiply(quat, orient_quat)
+        ell_pose_mat = PoseConv.to_homo_mat(pos, quat_rotated)
+        return PoseConv.to_pos_rot(kinect_frame_mat * ell_pose_mat)
 
     def get_ell_frame(self, frame="/torso_lift_link"):
         # find the current ellipsoid frame location in this frame
-        base_B_head = PoseConverter.to_homo_mat(self.head_center)
-        target_B_base = self.kin_head.forward_filled(target_segment=frame)
+        base_B_head = PoseConv.to_homo_mat(self.head_center)
+        target_B_base = self.kin_head.forward(target_segment=frame)
         return target_B_base**-1 * base_B_head
 
 class EllipsoidController(CartesianStepController):
@@ -159,15 +159,15 @@ class EllipsoidController(CartesianStepController):
             rot_mat_f = ell_final_rot * rot_change_mat
         else:
             quat = change_rot_ep
-            _, cur_rot = self.arm.get_ep()
-            rot_mat = np.mat(tf_trans.quaternion_matrix(quat))[:3,:3]
+            _, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
+            rot_mat = np.mat(trans.quaternion_matrix(quat))[:3,:3]
             rot_mat_f = cur_rot * rot_mat
         return ell_f, rot_mat_f
 
     def _create_ell_trajectory(self, ell_f, rot_mat_f, orient_quat=[0., 0., 0., 1.], velocity=0.001):
-        _, cur_rot = self.arm.get_ep()
+        _, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
 
-        rpy = tf_trans.euler_from_matrix(cur_rot.T * rot_mat_f) # get roll, pitch, yaw of angle diff
+        rpy = trans.euler_from_matrix(cur_rot.T * rot_mat_f) # get roll, pitch, yaw of angle diff
 
         ell_f[1] = np.mod(ell_f[1], 2 * np.pi) # wrap longitude value
 

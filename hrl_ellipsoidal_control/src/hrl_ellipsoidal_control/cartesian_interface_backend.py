@@ -6,11 +6,11 @@ import cPickle as pkl
 import roslib
 roslib.load_manifest("hrl_ellipsoidal_control")
 import rospy
-import tf.transformations as tf_trans
 from std_srvs.srv import Empty, EmptyResponse
 
-from hrl_pr2_arms.pr2_arm import PR2ArmCartesianPostureBase, PR2ArmJointTrajectory
-from hrl_pr2_arms.pr2_arm import create_pr2_arm, PR2ArmJTransposeTask
+import hrl_geom.transformations as trans
+from hrl_pr2_arms.pr2_arm_jt import create_ep_arm, PR2ArmJTransposeTask
+from hrl_pr2_arms.pr2_arm_joint_traj import PR2ArmJointTraj
 from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
 from hrl_ellipsoidal_control.cartesian_controller import CartesianController
 from hrl_ellipsoidal_control.interface_backend import ControllerInterfaceBackend
@@ -55,7 +55,7 @@ class CartesianInterfaceBackend(ControllerInterfaceBackend):
     def run_controller(self, button_press):
         start_pos, _ = self.cart_arm.get_ep()
         start_time = rospy.get_time()
-        quat_gripper_rot = tf_trans.quaternion_from_euler(np.pi, 0, 0)
+        quat_gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
         if button_press in cart_trans_params:
             ell_change_trans_ep = ell_trans_params[button_press]
             change_trans_ep = cart_trans_params[button_press]
@@ -126,7 +126,7 @@ class CartesianInterfaceBackend(ControllerInterfaceBackend):
 def main():
     rospy.init_node("cartesian_controller_backend")
 
-    cart_arm = create_pr2_arm('l', PR2ArmJTransposeTask, 
+    cart_arm = create_ep_arm('l', PR2ArmJTransposeTask, 
                               controller_name='%s_cart_jt_task', 
                               end_link="%s_gripper_shaver45_frame")
 
@@ -137,7 +137,7 @@ def main():
         ctrl_switcher = ControllerSwitcher()
         ctrl_switcher.carefree_switch('l', '%s_arm_controller', None)
         rospy.sleep(1)
-        joint_arm = create_pr2_arm('l', PR2ArmJointTrajectory)
+        joint_arm = create_ep_arm('l', PR2ArmJointTrajectory)
 
         setup_angles = [0, 0, np.pi/2, -np.pi/2, -np.pi, -np.pi/2, -np.pi/2]
         joint_arm.set_ep(setup_angles, 5)

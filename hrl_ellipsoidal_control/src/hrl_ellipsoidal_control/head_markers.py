@@ -5,15 +5,16 @@ import copy
 
 import roslib
 roslib.load_manifest('hrl_ellipsoidal_control')
-import rospy
-import tf.transformations as tf_trans
 
-from hrl_ellipsoidal_control.msg import EllipsoidParams
-from geometry_msgs.msg import PoseStamped, PoseArray, Vector3
-from hrl_generic_arms.pose_converter import PoseConverter
-from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
+import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
+from geometry_msgs.msg import PoseStamped, PoseArray, Vector3
+
+import hrl_geom.transformations as trans
+from hrl_ellipsoidal_control.msg import EllipsoidParams
+from hrl_geom.pose_converter import PoseConv
+from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 
 eye_scale = Vector3(0.02, 0.01, 0.010)
 l_eye_loc = [(3.5 * np.pi/8, -0.9 * np.pi/8,     1.20), (    np.pi/2,    np.pi/2,     0)]
@@ -49,7 +50,7 @@ class HeadMarkers(object):
         m.action = Marker.ADD
         m.scale = eye_scale
         m.color = color
-        m.pose = PoseConverter.to_pose_msg(pose)
+        m.pose = PoseConv.to_pose_msg(pose)
         return m
 
     def create_mouth_marker(self, pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
@@ -63,7 +64,7 @@ class HeadMarkers(object):
         m.action = Marker.ADD
         m.scale = mouth_scale
         m.color = color
-        m.pose = PoseConverter.to_pose_msg(pose)
+        m.pose = PoseConv.to_pose_msg(pose)
         return m
 
     def create_ear_marker(self, pose, m_id, color=ColorRGBA(0., 1., 1., 1.)):
@@ -77,7 +78,7 @@ class HeadMarkers(object):
         m.action = Marker.ADD
         m.scale = ear_scale
         m.color = color
-        m.pose = PoseConverter.to_pose_msg(pose)
+        m.pose = PoseConv.to_pose_msg(pose)
         return m
 
     def get_head(self):
@@ -99,8 +100,8 @@ class HeadMarkers(object):
     def get_head_pose(self, ell_coords_rot, gripper_rot=0.):
         lat, lon, height = ell_coords_rot[0]
         roll, pitch, yaw = ell_coords_rot[1]
-        pos, rot = PoseConverter.to_pos_rot(self.ell_space.ellipsoidal_to_pose(lat, lon, height))
-        rot = rot * tf_trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'szyx')[:3, :3] 
+        pos, rot = PoseConv.to_pos_rot(self.ell_space.ellipsoidal_to_pose(lat, lon, height))
+        rot = rot * trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'szyx')[:3, :3] 
         return pos, rot
 
 def main():

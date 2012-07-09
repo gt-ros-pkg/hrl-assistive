@@ -10,7 +10,7 @@ import tf.transformations as tf_trans
 
 from hrl_ellipsoidal_control.msg import EllipsoidParams
 from geometry_msgs.msg import PoseStamped, PoseArray, Vector3
-from hrl_generic_arms.pose_converter import PoseConverter
+from hrl_geom.pose_converter import PoseConv
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
@@ -38,7 +38,7 @@ def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
     m.action = Marker.ADD
     m.scale = Vector3(0.19, 0.09, 0.02)
     m.color = color
-    m.pose = PoseConverter.to_pose_msg(pose)
+    m.pose = PoseConv.to_pose_msg(pose)
     return m
 
 class HeadToolPoseServer(object):
@@ -87,7 +87,7 @@ class HeadToolPoseServer(object):
     def get_head_pose(self, name, gripper_rot=0.):
         lat, lon, height = head_poses[name][0]
         roll, pitch, yaw = head_poses[name][1]
-        pos, rot = PoseConverter.to_pos_rot(self.ell_space.ellipsoidal_to_pose(lat, lon, height))
+        pos, rot = PoseConv.to_pos_rot(self.ell_space.ellipsoidal_to_pose(lat, lon, height))
         rot = rot * tf_trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'rzyx')[:3, :3] 
         return pos, rot
 
@@ -97,7 +97,7 @@ class HeadToolPoseServer(object):
         else:
             pose = self.get_head_pose(req.name, req.gripper_rot)
         frame = "/ellipse_frame"
-        pose_stamped = PoseConverter.to_pose_stamped_msg(frame, pose)
+        pose_stamped = PoseConv.to_pose_stamped_msg(frame, pose)
 #self.tmp_pub.publish(pose_stamped)
         return pose_stamped
 
