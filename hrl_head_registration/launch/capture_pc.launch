@@ -1,0 +1,12 @@
+<launch>
+    <arg name="subject" />
+    <arg name="side" />
+    <node pkg="hrl_head_registration" type="capture_pc" name="capture_pc"
+          args="$(find hrl_head_registration)/data/$(arg subject)_$(arg side)_orig.bag $(find hrl_head_registration)/data/$(arg subject)_$(arg side)_face.bag" 
+          output="screen" >
+        <param name="trim_radius" value="0.13" />
+        <param name="model_radius" value="0.03" />
+        <param name="color_std_thresh" value="4.0" />
+        <param name="hue_weight" value="5.0" />
+    </node>
+</launch>
