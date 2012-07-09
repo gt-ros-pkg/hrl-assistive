@@ -29,8 +29,8 @@
 
     <!-- NetFt Sensor-->
         <!-- Launch sensor -->
-        <node pkg="hrl_netft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
-              args="-l -r -z -p -f $(find hrl_rfh_fall_2011)/params/ft_zero_params_razor_inline.yaml" 
+        <node pkg="hrl_ft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
+              args="-l -r -z -b -f $(find hrl_face_adls)/params/ft_zero_params_razor_inline.yaml" 
               output="screen" />
         <!-- Throttle feedback to interface -->
         <node
