@@ -8,7 +8,7 @@ import roslib
 roslib.load_manifest("hrl_face_adls")
 import rospy
 
-from hrl_pr2_arms.pr2_arm import create_pr2_arm
+from hrl_pr2_arms.ep_arm_base import create_ep_arm
 from hrl_ellipsoidal_control.ellipsoid_controller import EllipsoidParamServer
 from hrl_face_adls.srv import RequestRegistration
 

@@ -12,11 +12,11 @@ import rospy
 from std_msgs.msg import Int8, String, Bool
 from std_srvs.srv import Empty
 from geometry_msgs.msg import WrenchStamped
-import tf.transformations as tf_trans
 import rosparam
 import roslib.substitution_args
 
-from hrl_pr2_arms.pr2_arm import create_pr2_arm, PR2ArmCartesianBase, PR2ArmJTransposeTask
+import hrl_geom.transformations as trans
+from hrl_pr2_arms.pr2_arm_jt_task import create_ep_arm, PR2ArmJTransposeTask
 from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
 from hrl_ellipsoidal_control.ellipsoid_controller import EllipsoidController
 from hrl_ellipsoidal_control.ellipsoidal_parameters import *
@@ -165,7 +165,7 @@ class FaceADLsManager(object):
 
         self.ctrl_switcher.carefree_switch('l', ctrl_name, ctrl_params, reset=False)
         rospy.sleep(0.2)
-        cart_arm = create_pr2_arm('l', PR2ArmJTransposeTask, 
+        cart_arm = create_ep_arm('l', PR2ArmJTransposeTask, 
                                   controller_name=ctrl_name, 
                                   end_link=end_link, timeout=5)
         self.ell_ctrl.set_arm(cart_arm)
@@ -211,9 +211,9 @@ class FaceADLsManager(object):
         self.is_forced_retreat = False
 
         if self.flip_gripper:
-            self.gripper_rot = tf_trans.quaternion_from_euler(np.pi, 0, 0)
+            self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
         else:
-            self.gripper_rot = tf_trans.quaternion_from_euler(0, 0, 0)
+            self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
 
         self.controller_enabled_pub.publish(Bool(True))
         return True
@@ -308,7 +308,7 @@ class FaceADLsManager(object):
         elif button_press in ell_rot_params:
             self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
             change_rot_ep = ell_rot_params[button_press]
-            rot_quat = tf_trans.quaternion_from_euler(*change_rot_ep)
+            rot_quat = trans.quaternion_from_euler(*change_rot_ep)
             success = self.ell_ctrl.execute_ell_move(((0, 0, 0), rot_quat), ((0, 0, 0), 0), 
                                                     self.gripper_rot, ELL_ROT_VEL, blocking=True)
         elif button_press == "reset_rotation":

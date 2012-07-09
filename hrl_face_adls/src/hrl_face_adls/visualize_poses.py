@@ -12,7 +12,7 @@ from geometry_msgs.msg import Vector3, PoseStamped
 import rosbag
 
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
-from hrl_generic_arms.pose_converter import PoseConverter
+from hrl_geom.pose_converter import PoseConv
 from std_msgs.msg import ColorRGBA
 
 def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
@@ -25,7 +25,7 @@ def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
     m.action = Marker.ADD
     m.scale = Vector3(0.19, 0.09, 0.02)
     m.color = color
-    m.pose = PoseConverter.to_pose_msg(pose)
+    m.pose = PoseConv.to_pose_msg(pose)
     return m
 
 def main():
@@ -44,8 +44,8 @@ def main():
         color = ColorRGBA(0., 0., 1., 1.)
         for i, param in enumerate(params):
             ell_pos, ell_rot = params[param]
-            _, ell_rot_mat = PoseConverter.to_pos_rot([0]*3, ell_rot)
-            cart_pose = PoseConverter.to_homo_mat(ell_space.ellipsoidal_to_pose(*ell_pos))
+            _, ell_rot_mat = PoseConv.to_pos_rot([0]*3, ell_rot)
+            cart_pose = PoseConv.to_homo_mat(ell_space.ellipsoidal_to_pose(*ell_pos))
             cart_pose[:3,:3] = cart_pose[:3,:3] * ell_rot_mat
             arrow = create_arrow_marker(cart_pose, i, color)
             arrow.header.stamp = rospy.Time.now()
@@ -53,7 +53,7 @@ def main():
         return arrows
     r = rospy.Rate(10)
     while not rospy.is_shutdown():
-        pub_head_pose.publish(PoseConverter.to_pose_stamped_msg("/base_link", [0]*3, [0]*3))
+        pub_head_pose.publish(PoseConv.to_pose_stamped_msg("/base_link", [0]*3, [0]*3))
         arrows = create_tool_arrow()
         pub_arrows.publish(arrows)
         r.sleep()
