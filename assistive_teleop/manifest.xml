@@ -1,0 +1,46 @@
+<package>
+  <description brief="assistive_teleop">
+
+    Assistive_teleop provides an accessible interface for control of a PR2 by persons with severe motor disabilities. It is designed for use with an assistive HCI device providing control of mouse movement and a single (left) click. The interface is presented in a web browser, requiring no installation by users, and allows low-level control of all degrees of freedom in the PR2, provides visual feedback, and provides semi-autonomous functions for general manipulation and performance of Activities of Daily Living (ADLs), with the intention of allowing users greater control over their environment as well as their own bodies, and providing increased independence. 
+
+    This package is a direct product of the Robots for Humanity effort, a collaboration between Willow Garage and the <a href="http://www.healthcare-robotics.com"> Healthcare Robotics Lab</a> at Georgia Tech.
+
+  </description>
+  <author>Phillip M. Grice, Advisor: Prof. Charlie Kemp, Lab: The Healthcare Robotoics Lab at Georgia Tech.</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/assistive_teleop</url>
+  <depend package="rospy"/>
+  <depend package="tf"/>
+  <depend package="std_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="actionlib"/>
+  <depend package="visualization_msgs"/>
+  <depend package="arm_navigation_msgs"/>
+  <depend package="kinematics_msgs"/>
+  <depend package="image_rotate"/>
+  <depend package="pr2_msgs"/>
+  <depend package="pr2_controllers_msgs"/>
+  <!--<depend package="pr2_tabletop_manipulation_launch"/>-->
+  <depend package="control_msgs"/>
+  <depend package="pr2_common_action_msgs"/>
+  <depend package="topic_tools"/>
+  <depend package="sound_play"/>
+  
+  <!--gt-ros-pkg-->
+  <depend package="pixel_2_3d"/>
+  <depend package="hrl_clickable_display"/>
+  <!--<depend package="hrl_pr2_lib"/>-->
+  
+  <!--External: brown-ros-pkg, bosch-ros-pkg -->
+  <depend package="rosbridge"/>
+  <depend package="mjpeg_server"/>
+
+  <!--Used for shaving code/demos -->
+    <!--<depend package="hrl_rfh_fall_2011"/>-->
+    <!--<depend package="hrl_pr2_arms"/>-->
+
+</package>
+
+

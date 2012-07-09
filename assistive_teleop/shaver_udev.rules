@@ -1,0 +1,3 @@
+BUS=="usb", KERNEL=="ttyUSB*",SYSFS{idVendor}=="0403", SYSFS{idProduct}=="6001", SYMLINK+="arduino"
+ 
+

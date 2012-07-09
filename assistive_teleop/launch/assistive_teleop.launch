@@ -1,0 +1,270 @@
+<launch>
+
+    <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+    <arg name="shaving_board" default="/dev/arduino" />
+
+    <!-- Arduino Control Board for powering Shaver -->
+    <node
+        name="tool_power_toggle"
+        pkg="rosserial_python"
+        type="serial_node.py"
+        args="$(arg shaving_board)"
+        output="screen"/>
+
+    <node
+        name="razor_run_stop_monitor"
+        pkg="assistive_teleop"
+        type="razor_runstop.py"
+        output="screen"/>
+
+    <node 
+        name="mirror_pointer"
+        pkg="assistive_teleop"
+        type="mirror_pointer.py"
+        output="screen">
+        <remap 
+            from="/goal_pose" 
+            to="/face_adls/r_cart_absolute"/>
+    </node>
+
+    <!-- NetFt Sensor-->
+        <!-- Launch sensor -->
+        <node pkg="hrl_netft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
+              args="-l -r -z -p -f $(find hrl_rfh_fall_2011)/params/ft_zero_params_razor_inline.yaml" 
+              output="screen" />
+        <!-- Throttle feedback to interface -->
+        <node
+            name="throttle_wt_force_out"
+            pkg="topic_tools"
+            type="throttle"
+            args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
+ 
+    <!-- JTTask Controller load
+    <include file="$(find assistive_teleop)/launch/c_jtask_mod.launch" />
+    -->
+
+    <!-- Cart Move Servers
+    <node
+        ns="r_cart"
+        name="ft_move_action_server"
+        pkg="assistive_teleop"
+        type="ft_move_action_server.py"
+        output="screen"
+        machine="c2"/>
+    <node
+        ns="l_cart"
+        name="ft_move_action_server"
+        pkg="assistive_teleop"
+        type="ft_move_action_server.py"
+        output="screen"
+        machine="c2"/>
+    <node
+        name="ft_hold_server"
+        pkg="assistive_teleop"
+        type="ft_hold_as.py"
+        output="screen"
+        machine="c2"/>
+    -->
+
+    <!--Tabletop Manipulation Content, i.e. Arm Navigation etc
+    <group>
+        <remap from="camera" to="kinect_head"/>
+        <remap from="camera/rgb/camera_info" to="kinect_head/rgb/camera_info"/>
+        <include file="$(find pr2_tabletop_manipulation_launch)/launch/pr2_tabletop_manipulation.launch">
+            <arg name="stereo" value="true"/>
+            <arg name="use_slip_controllers" value="false"/>
+            <arg name="use_right_arm" value="true"/>
+            <arg name="use_left_arm" value="true"/>
+            <arg name="use_task_cartesian" default="false"/>
+        </include>
+    </group>-->
+
+    <!-- Bring up intermediary for handling arm movements, one for each arm
+    <include file="$(find pr2_arm_kinematics)/launch/pr2_ik_larm_node.launch" />
+    <include file="$(find pr2_arm_kinematics)/launch/pr2_ik_rarm_node.launch" />
+    <node
+        name="wt_left_arm"
+        pkg="assistive_teleop"
+        type="arm_intermediary.py"
+        args="left"
+        output="screen"
+        machine="c1"/>
+    <node
+        name="wt_right_arm"
+        pkg="assistive_teleop"
+        type="arm_intermediary.py"
+        args="right"
+        output="screen"
+        machine="c1"/>-->
+
+    <!-- Launch Image Rotation Nodes for forearm cameras-->
+    <node
+        name="image_rotater_ar_confirm"
+        pkg="image_rotate"
+        type="image_rotate"
+        args="_use_camera_info:=false"
+        machine = "c1"> 
+        <remap 
+            from="image"
+            to="/ar_servo/confirmation"/>
+        <remap 
+            from="rotated/image"
+            to="/ar_servo/confirmation_rotated"/>
+    </node>
+    <node
+        name="image_rotater_right"
+        pkg="image_rotate"
+        type="image_rotate"
+        machine = "c1"> 
+        <remap 
+            from="image"
+            to="/r_forearm_cam/image_color"/>
+        <remap 
+            from="rotated/image"
+            to="/r_forearm_cam/image_color_rotated"/>
+    </node>
+    <node
+        name="image_rotater_left"
+        pkg="image_rotate"
+        type="image_rotate"
+        machine="c1"> 
+        <remap
+            from="image"
+            to="/l_forearm_cam/image_color"/>
+        <remap
+            from="rotated/image"
+            to="/l_forearm_cam/image_color_rotated"/>
+    </node>
+
+    <!-- Speech node -->
+    <node 
+        pkg ="assistive_teleop"
+        type="speech_intermediary.py"
+        name="wt_speech_intermediary">
+        <param 
+            name="voice" 
+            value="voice_nitech_us_rms_arctic_hts"/>
+    </node>
+
+    <!-- Launch Kinect with GT launch files (gt-ros-pkg)-->
+    <include file="$(find hrl_pr2_lib)/launch/openni_kinect_polled.launch" />
+    
+    <!--3d point from Pixel Node>-->
+    <node 
+        pkg="pixel_2_3d"
+        type="pixel_2_3d"
+        name="pixel_2_3d"
+        machine="c1" >
+            <remap
+                from="image"
+                to="/kinect_head/rgb/image_color" />
+            <remap
+                from="point_cloud"
+                to="/kinect_head/rgb/points" />
+            <param 
+                name="normal_radius" 
+                type="double" 
+                value="0.035" />
+            <param 
+                name="use_closest_pixel" 
+                value="True"/>
+    </node>
+
+    <!-- Arrow overlay 
+    <node 
+        pkg="hrl_clickable_display" 
+        type="arrow_overlay"
+        name="arrow_overlay" 
+        respawn="true" 
+        machine="c2" 
+        output="screen">
+            <remap
+                from="/image_in"
+                to="/kinect_head/rgb/image_color" />
+        <remap 
+            from="/image_out"
+            to="/arrow_overlaid" />
+        <param
+            name="shaft_size"
+            type="double"
+            value="0.1" />
+        <param
+            name="head_width"
+            type="double"
+            value="0.03" />
+        <param 
+            name="head_length"
+            type="double"
+            value="0.03" />
+        <param
+            name="debug_mode"
+            type="bool"
+            value="false" />
+        <param
+            name="auto_clear"
+            type="bool"
+            value="true" />
+    </node> -->
+
+    <!-- Throttling nodes for the topics used by the interface -->	
+    <node 
+        name="throttle_head_traj_controller_state"
+        pkg="topic_tools" 
+        type="throttle"
+        args="messages /head_traj_controller/state 8 /head_traj_controller_state_throttle" />
+    <node 
+        name="throttle_torso_position_controller_state"
+        pkg="topic_tools"
+        type="throttle"
+        args="messages /torso_controller/state 2 /torso_state_throttle" />
+    <node 
+        name="throttle_r_gripper_controller_state" 
+        pkg="topic_tools" 
+        type="throttle"
+        args="messages /r_gripper_controller/state 1 /r_gripper_controller_state_throttle" />
+    <node
+        name="throttle_l_gripper_controller_state" 
+        pkg="topic_tools" 
+        type="throttle" 
+        args="messages /l_gripper_controller/state 1 /l_gripper_controller_state_throttle" />
+    <!--<node 
+        name="throttle_r_arm_joints_state" 
+        pkg="topic_tools" 
+        type="throttle" 
+        args="messages /r_arm_controller/state 8 /r_arm_controller_state_throttle" />
+    <node 
+        name="throttle_l_arm_joints_state" 
+        pkg="topic_tools" 
+        type="throttle" 
+        args="messages /l_arm_controller/state 8 /l_arm_controller_state_throttle" />-->
+
+    <node 
+        name="throttle_kinect_camera" 
+        pkg="topic_tools" 
+        type="throttle" 
+        args="messages /kinect_head/rgb/image_color 8 /kinect_throttled" />
+    <!-- Launch mjpeg server, used for sending image streams -->
+    <node 
+        name="mjpeg_server" 
+        pkg="mjpeg_server" 
+        type="mjpeg_server"  
+        machine="c1" 
+        output="screen">
+            <param
+                name="port"
+                type="int"
+                value="8080" />
+    </node>
+
+    <!-- Set port to 9091, start rosbridge -->
+        <param 
+            name="/brown/rosbridge/port"
+            type="int"
+            value="9091" />
+    <node 
+        name="rosbridge" 
+        pkg="rosbridge" 
+        type="rosbridge.py" 
+        machine="c1" 
+        output="screen"/>
+</launch>
