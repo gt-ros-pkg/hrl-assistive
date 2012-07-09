@@ -1,0 +1,17 @@
+<stack>
+  <description brief="KDL wrappers and kinematics utilities.">
+
+      hrl_assistive contains interfaces and control schemes for assistive
+        mobile manipulators.
+
+  </description>
+  <author>Kelsey Hawkins / kphawkins@gatech.edu, Phillip Grice / phillip.grice@gatech.edu; 
+          Advisor: Prof. Charlie Kemp (Healthcare Robotics Lab at Georgia Tech)</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_assistive</url>
+  <version>0.1.0</version>
+  <depend stack="ros" />
+  <depend stack="rospy" />
+
+</stack>
