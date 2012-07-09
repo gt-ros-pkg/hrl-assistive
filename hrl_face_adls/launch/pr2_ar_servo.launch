@@ -34,12 +34,14 @@
         <remap from="/ar_pose_marker" to="/l_pr2_ar_pose_marker" />
 	</node>
 	
+    <!--
     <node pkg="costmap_services" name="costmap_services" type="costmap_services" 
           respawn="true" output="screen">
       <rosparam file="$(find kelsey_sandbox)/launch/laser_baseonly.yaml" command="load" />
     </node>
+    -->
 
-    <node pkg="kelsey_sandbox" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
+    <node pkg="hrl_pr2_ar_servoing" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
           output="screen" >
         <rosparam>
             ar_servo_poses:
@@ -51,7 +53,7 @@
     <rosparam command="load" file="$(find hrl_face_adls)/params/l_forearm_cam_settings.yaml"
               param="/l_forearm_cam" />
 
-    <node pkg="hrl_face_adls" name="ar_confirm" type="ar_confirm" >
+    <node pkg="hrl_pr2_ar_servoing" name="ar_confirm" type="ar_confirm" >
         <param name="marker_width" value="0.135" />
         <param name="timeout_time" value="0.3" />
         <remap from="/camera" to="/l_forearm_cam/image_rect_color"/>
@@ -60,7 +62,7 @@
         <remap from="/confirmation" to="/ar_servo/confirmation" />
     </node>
 
-    <node pkg="hrl_face_adls" name="ar_servo_image_proc" type="ar_servo_image_proc"
+    <node pkg="hrl_pr2_ar_servoing" name="ar_servo_image_proc" type="ar_servo_image_proc"
           output="screen" respawn="True" >
         <remap from="/camera" to="/l_forearm_cam/image_rect" />
         <remap from="/output" to="/l_forearm_adjusted" />

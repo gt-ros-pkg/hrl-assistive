@@ -1,11 +1,11 @@
 <launch>
     
     <arg name="subject" />
-    <node pkg="pr2_traj_playback" name="l_arm_pose_move_controller" type="arm_pose_move_controller.py"
+    <node pkg="hrl_pr2_traj_playback" name="l_arm_pose_move_controller" type="traj_playback.py"
           output="screen" args="-v -l" >
         <remap from="/trajectory_playback_l/feedback" to="/wt_log_out" />
     </node>
-    <node pkg="pr2_traj_playback" name="r_arm_pose_move_controller" type="arm_pose_move_controller.py"
+    <node pkg="hrl_pr2_traj_playback" name="r_arm_pose_move_controller" type="traj_playback.py"
           output="screen" args="-v -r" >
         <remap from="/trajectory_playback_r/feedback" to="/wt_log_out" />
     </node>
