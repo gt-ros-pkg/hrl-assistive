@@ -1,0 +1,30 @@
+<RCC>
+  <qresource prefix="resources">
+    <file>tool_direction.png</file>
+    <file>empty.png</file>
+    <file>rotate_y_neg_off.png</file>
+    <file>rotate_x_neg_off.png</file>
+    <file>rotate_x_neg_on.png</file>
+    <file>rotate_x_pos_off.png</file>
+    <file>rotate_x_pos_on.png</file>
+    <file>rotate_y_neg_on.png</file>
+    <file>rotate_y_pos_off.png</file>
+    <file>rotate_y_pos_on.png</file>
+    <file>rotate_z_neg_off.png</file>
+    <file>rotate_z_neg_on.png</file>
+    <file>rotate_z_pos_off.png</file>
+    <file>rotate_z_pos_on.png</file>
+    <file>translate_down_off.png</file>
+    <file>translate_down_on.png</file>
+    <file>translate_left_off.png</file>
+    <file>translate_left_on.png</file>
+    <file>translate_right_off.png</file>
+    <file>translate_out_off.png</file>
+    <file>translate_out_on.png</file>
+    <file>translate_in_on.png</file>
+    <file>translate_in_off.png</file>
+    <file>translate_right_on.png</file>
+    <file>translate_up_off.png</file>
+    <file>translate_up_on.png</file>
+  </qresource>
+</RCC>

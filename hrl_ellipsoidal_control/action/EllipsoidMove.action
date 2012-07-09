@@ -1,0 +1,21 @@
+float32 change_latitude
+float32 change_longitude
+float32 change_height
+bool absolute_latitude
+bool absolute_longitude
+bool absolute_height
+
+float32 change_roll
+float32 change_pitch
+float32 change_yaw
+geometry_msgs/Quaternion exact_rot
+bool absolute_rot
+
+float32 gripper_rot
+float32 velocity
+bool reset_ellipsoid
+---
+float32 cur_latitude
+float32 cur_longitude
+float32 cur_height
+---
