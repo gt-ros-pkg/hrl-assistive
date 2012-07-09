@@ -37,10 +37,6 @@
   <depend package="rosbridge"/>
   <depend package="mjpeg_server"/>
 
-  <!--Used for shaving code/demos -->
-    <!--<depend package="hrl_rfh_fall_2011"/>-->
-    <!--<depend package="hrl_pr2_arms"/>-->
-
 </package>
 
 
