@@ -29,7 +29,7 @@
 
     <!-- NetFt Sensor-->
         <!-- Launch sensor -->
-        <node pkg="hrl_ft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
+        <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
               args="-l -r -z -b -f $(find hrl_face_adls)/params/ft_zero_params_razor_inline.yaml" 
               output="screen" />
         <!-- Throttle feedback to interface -->

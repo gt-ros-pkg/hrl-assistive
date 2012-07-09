@@ -4,15 +4,16 @@
      hrl_face_adls
 
   </description>
-  <author>Kelsey Hawkins204919-280-5739</author>
+  <author>Kelsey Hawkins, Advisor: Prof. Charlie Kemp,
+          Lab: Healthcare Robotics Lab </author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hrl_face_adls</url>
   <depend package="rospy"/>
   <depend package="std_srvs"/>
   <depend package="hrl_ellipsoidal_control"/>
-  <depend package="hrl_head_tracking"/>
-  <depend package="pr2_traj_playback"/>
+  <depend package="hrl_head_registration"/>
+  <depend package="hrl_pr2_traj_playback"/>
   <depend package="ar_pose"/>
 
 </package>

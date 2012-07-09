@@ -13,7 +13,7 @@ from std_msgs.msg import Int8, String, Bool
 from std_srvs.srv import Empty
 from geometry_msgs.msg import WrenchStamped
 import rosparam
-import roslib.substitution_args
+import roslaunch.substitution_args
 
 import hrl_geom.transformations as trans
 from hrl_pr2_arms.pr2_arm_jt_task import create_ep_arm, PR2ArmJTransposeTask
@@ -149,7 +149,7 @@ class FaceADLsManager(object):
                                              params['ctrl_name'])
 
             global_poses_file = params["%s_ell_poses_file" % self.shaving_side]
-            global_poses_resolved = roslib.substitution_args.resolve_args(global_poses_file)
+            global_poses_resolved = roslaunch.substitution_args.resolve_args(global_poses_file)
             self.global_poses = rosparam.load_file(global_poses_resolved)[0][0]
             self.global_move_poses_pub.publish(sorted(self.global_poses.keys()))
         else:

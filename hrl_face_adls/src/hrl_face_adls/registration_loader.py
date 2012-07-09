@@ -13,8 +13,8 @@ from geometry_msgs.msg import Transform, Pose
 from hrl_ellipsoidal_control.msg import EllipsoidParams
 from hrl_face_adls.srv import InitializeRegistration, InitializeRegistrationResponse
 from hrl_face_adls.srv import RequestRegistration, RequestRegistrationResponse
-from hrl_head_tracking.srv import HeadRegistration
-from hrl_generic_arms.pose_converter import PoseConverter
+from hrl_head_registration.srv import HeadRegistration
+from hrl_geom.pose_converter import PoseConv
 
 class RegistrationLoader(object):
     def __init__(self):
@@ -76,10 +76,10 @@ class RegistrationLoader(object):
                          registration_files[req.mode][req.side])
             return RequestRegistrationResponse(False, reg_e_params)
 
-        head_reg_mat = PoseConverter.to_homo_mat(self.head_reg_tf)
-        ell_reg = PoseConverter.to_homo_mat(Transform(e_params.e_frame.transform.translation,
+        head_reg_mat = PoseConv.to_homo_mat(self.head_reg_tf)
+        ell_reg = PoseConv.to_homo_mat(Transform(e_params.e_frame.transform.translation,
                                                       e_params.e_frame.transform.rotation))
-        reg_e_params.e_frame = PoseConverter.to_tf_stamped_msg(head_reg_mat**-1 * ell_reg)
+        reg_e_params.e_frame = PoseConv.to_tf_stamped_msg(head_reg_mat**-1 * ell_reg)
         reg_e_params.e_frame.header.frame_id = self.head_reg_tf.header.frame_id
         reg_e_params.height = e_params.height
         reg_e_params.E = e_params.E
