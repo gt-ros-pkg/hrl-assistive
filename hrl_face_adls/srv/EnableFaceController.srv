@@ -1,0 +1,4 @@
+bool enable
+string mode
+---
+bool success

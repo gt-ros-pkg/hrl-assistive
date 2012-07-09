@@ -1,0 +1,20 @@
+<package>
+  <description brief="hrl_face_adls">
+
+     hrl_face_adls
+
+  </description>
+  <author>Kelsey Hawkins204919-280-5739</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_face_adls</url>
+  <depend package="rospy"/>
+  <depend package="std_srvs"/>
+  <depend package="hrl_ellipsoidal_control"/>
+  <depend package="hrl_head_tracking"/>
+  <depend package="pr2_traj_playback"/>
+  <depend package="ar_pose"/>
+
+</package>
+
+

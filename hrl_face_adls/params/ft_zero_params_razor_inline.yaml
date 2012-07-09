@@ -1,0 +1,5 @@
+{com_pos_x: -0.00072275418237336395, com_pos_y: 0.0015125130974052007, com_pos_z: -0.10176036629417459,
+  force_zero_x: 6.0127669639838555, force_zero_y: -14.429777320611349, force_zero_z: 3.9553186971572813,
+  gravity_frame: torso_lift_link, mass: 1.1813001830185534, netft_frame: l_netft_frame,
+  netft_topic: /ft/l_gripper_motor, torque_zero_x: -0.44160875246823195, torque_zero_y: -0.52475647226053457,
+  torque_zero_z: -0.22535192074091562, wrench_base_frame: torso_lift_link, wrench_location_frame: l_gripper_tool_frame}

@@ -1,0 +1,8 @@
+bool enable
+string end_link
+string ctrl_params
+string ctrl_name
+geometry_msgs/Vector3 frame_rot
+float32 velocity
+---
+bool success

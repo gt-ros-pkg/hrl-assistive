@@ -1,0 +1,72 @@
+<launch>
+
+	<node name="r_ar_pose" pkg="ar_pose" type="ar_single" respawn="false" output="screen">
+		<param name="marker_pattern" type="string" value="$(find ar_pose)/data/4x4/4x4_20.patt"/>
+		<param name="marker_width" type="double" value="126.6"/>
+		<param name="marker_center_x" type="double" value="0.0"/>
+		<param name="marker_center_y" type="double" value="0.0"/>
+		<param name="viz_marker_id" type="int" value="1"/>
+		<param name="marker_color_r" type="double" value="0.0"/>
+		<param name="marker_color_g" type="double" value="1.0"/>
+		<param name="marker_color_b" type="double" value="0.0"/>
+		<param name="marker_color_a" type="double" value="1.0"/>
+		<param name="threshold" type="int" value="100"/>
+		<param name="use_history" type="bool" value="true"/>
+        <remap from="/usb_cam/image_raw" to="/l_forearm_adjusted"/>
+        <remap from="/usb_cam/camera_info" to="/l_forearm_cam/camera_info"/>
+        <remap from="/ar_pose_marker" to="/r_pr2_ar_pose_marker" />
+	</node>
+
+	<node name="l_ar_pose" pkg="ar_pose" type="ar_single" respawn="false" output="screen">
+		<param name="marker_pattern" type="string" value="$(find ar_pose)/data/4x4/4x4_33.patt"/>
+		<param name="marker_width" type="double" value="126.6"/>
+		<param name="marker_center_x" type="double" value="0.0"/>
+		<param name="marker_center_y" type="double" value="0.0"/>
+		<param name="viz_marker_id" type="int" value="2"/>
+		<param name="marker_color_r" type="double" value="0.0"/>
+		<param name="marker_color_g" type="double" value="0.0"/>
+		<param name="marker_color_b" type="double" value="1.0"/>
+		<param name="marker_color_a" type="double" value="1.0"/>
+		<param name="threshold" type="int" value="100"/>
+		<param name="use_history" type="bool" value="true"/>
+        <remap from="/usb_cam/image_raw" to="/l_forearm_adjusted"/>
+        <remap from="/usb_cam/camera_info" to="/l_forearm_cam/camera_info"/>
+        <remap from="/ar_pose_marker" to="/l_pr2_ar_pose_marker" />
+	</node>
+	
+    <node pkg="costmap_services" name="costmap_services" type="costmap_services" 
+          respawn="true" output="screen">
+      <rosparam file="$(find kelsey_sandbox)/launch/laser_baseonly.yaml" command="load" />
+    </node>
+
+    <node pkg="kelsey_sandbox" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
+          output="screen" >
+        <rosparam>
+            ar_servo_poses:
+                r_pr2_ar_pose_marker : [0.49032495,  0.51973125, -1.13842208]
+                l_pr2_ar_pose_marker : [0.62583374,  0.29632216, -1.24825643]
+        </rosparam>
+    </node>
+
+    <rosparam command="load" file="$(find hrl_face_adls)/params/l_forearm_cam_settings.yaml"
+              param="/l_forearm_cam" />
+
+    <node pkg="hrl_face_adls" name="ar_confirm" type="ar_confirm" >
+        <param name="marker_width" value="0.135" />
+        <param name="timeout_time" value="0.3" />
+        <remap from="/camera" to="/l_forearm_cam/image_rect_color"/>
+        <remap from="/ar_tag_r" to="/r_pr2_ar_pose_marker"/>
+        <remap from="/ar_tag_l" to="/l_pr2_ar_pose_marker"/>
+        <remap from="/confirmation" to="/ar_servo/confirmation" />
+    </node>
+
+    <node pkg="hrl_face_adls" name="ar_servo_image_proc" type="ar_servo_image_proc"
+          output="screen" respawn="True" >
+        <remap from="/camera" to="/l_forearm_cam/image_rect" />
+        <remap from="/output" to="/l_forearm_adjusted" />
+        <param name="black_cap" value="120" />
+        <param name="white_cap" value="140" />
+    </node>
+
+
+</launch>

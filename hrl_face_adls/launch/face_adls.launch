@@ -1,0 +1,86 @@
+<launch>
+    <arg name="subject" />
+    <include file="$(find hrl_face_adls)/launch/traj_playback_servers.launch">
+        <arg name="subject" value="$(arg subject)" />
+    </include>
+    <include file="$(find hrl_face_adls)/launch/pr2_ar_servo.launch" />
+    <include file="$(find hrl_face_adls)/launch/head_registration.launch">
+        <arg name="subject" value="$(arg subject)" />
+    </include>
+    <node pkg="hrl_face_adls" name="face_adls_manager" type="face_adls_manager.py"
+          output="screen" >
+        <remap from="/face_adls/feedback" to="/wt_log_out" />
+        <param name="dangerous_force_thresh" value="10.0" />
+        <param name="contact_force_thresh" value="3.0" />
+        <param name="activity_force_thresh" value="3.0" />
+        <param name="timeout_time" value="30.0" />
+        <param name="init_pos_tolerance" value="100.0" />
+        <param name="init_rot_tolerance" value="100.0" />
+    </node>
+
+    <node pkg="hrl_face_adls" name="r_cartesian_manager" type="cartesian_manager.py"
+          output="screen" args="r" >
+        <remap from="/face_adls/r_cart_move" to="/r_cart/web_commands" />
+        <param name="init_pos_tolerance" value="100.0" />
+        <param name="init_rot_tolerance" value="100.0" />
+    </node>
+
+    <node pkg="hrl_face_adls" name="l_cartesian_manager" type="cartesian_manager.py"
+          output="screen" args="l" >
+        <remap from="/face_adls/l_cart_move" to="/l_cart/web_commands" />
+        <param name="init_pos_tolerance" value="100.0" />
+        <param name="init_rot_tolerance" value="100.0" />
+    </node>
+
+    <rosparam>
+        face_adls_modes:
+            shaving:
+                end_link: "l_gripper_shaver45_frame"
+                ctrl_params: "$(find hrl_face_adls)/params/l_jt_task_shaver45.yaml"
+                ctrl_name: "l_cart_jt_task_shaver"
+                r_bounds:
+                    lat: [0.39, 2.75]
+                    lon: [-1.96, 0.39]
+                    height: [0.2, 3.5]
+                l_bounds:
+                    lat: [0.39, 2.75]
+                    lon: [-0.39, 1.96]
+                    height: [0.2, 3.5]
+                r_ell_poses_file: "$(find hrl_face_adls)/params/r_shaver_ell_poses.yaml"
+                l_ell_poses_file: "$(find hrl_face_adls)/params/l_shaver_ell_poses.yaml"
+            scratching:
+                end_link: "l_gripper_brush45_frame"
+                ctrl_params: "$(find hrl_face_adls)/params/l_jt_task_brush45.yaml"
+                ctrl_name: "l_cart_jt_task_brush"
+                r_bounds:
+                    lat: [0, 3.14]
+                    lon: [-3.1, 3.1]
+                    height: [0.2, 3.5]
+                l_bounds:
+                    lat: [0, 3.14]
+                    lon: [-3.1, 3.1]
+                    height: [0.2, 3.5]
+                r_ell_poses_file: "$(find hrl_face_adls)/params/r_scratcher_ell_poses.yaml"
+                l_ell_poses_file: "$(find hrl_face_adls)/params/l_scratcher_ell_poses.yaml"
+            feeding:
+                end_link: "l_gripper_spoon45_frame"
+                ctrl_params: "$(find hrl_face_adls)/params/l_jt_task_spoon45.yaml"
+                ctrl_name: "l_cart_jt_task_spoon"
+                r_bounds:
+                    lat: [0.39, 2.75]
+                    lon: [-1.96, 0.39]
+                    height: [0.2, 3.5]
+                l_bounds:
+                    lat: [0.39, 2.75]
+                    lon: [-0.39, 1.96]
+                    height: [0.2, 3.5]
+                r_ell_poses_file: "$(find hrl_face_adls)/params/r_spoon_ell_poses.yaml"
+                l_ell_poses_file: "$(find hrl_face_adls)/params/l_rpoon_ell_poses.yaml"
+    </rosparam>
+    <!--
+    <node pkg="hrl_ft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
+          args="-l -r -b -z -f $(find hrl_face_adls)/params/ft_zero_params_razor_inline.yaml" 
+          output="screen" />
+    -->
+
+</launch>

@@ -1,0 +1,42 @@
+0. Launch robot
+screen
+roscore
+roslaunch robot.launch
+
+1.1 Servo robot up to wheelchair
+1.2 Teleop robot up to wheelchair
+tuck
+teleop
+
+2. Kill arms and test kinematics
+pr2cm stop l_arm_controller r_arm_controller
+
+3. If kinematics good, traj playback to servo setup
+roscd hrl_face_adls/data
+rosrun pr2_traj_playback arm_pose_move_controller.py -l -y -z -f l_arm_servo_setup_r.pkl
+rosrun pr2_traj_playback arm_pose_move_controller.py -r -y -f r_arm_mirror_setup_r.pkl
+
+4. Capture servo pose
+rosrun kelsey_sandbox pr2_viz_servo.py r
+# r for right cheek, l for left cheek
+# copy the output to hrl_face_adls/launch/pr2_ar_servo.launch, ?_pr2_ar_pose_marker
+
+5. Capture head pose (Henry moves head to level pose).
+roslaunch hrl_head_tracking capture_pc.launch subject:=henry_1 side:=r
+
+6. Record Traj untuck for both arms.
+rosrun pr2_traj_playback arm_pose_move_controller.py -r -s -t -f l_arm_shaving_setup_r.pkl
+rosrun pr2_traj_playback arm_pose_move_controller.py -r -s -t -f r_arm_mirror_setup_r.pkl
+
+7. Test traj playback
+rosrun pr2_traj_playback arm_pose_move_controller.py -r -y -z -t -f l_arm_shaving_setup_r.pkl
+rosrun pr2_traj_playback arm_pose_move_controller.py -r -y -z -t -f r_arm_mirror_setup_r.pkl
+
+8. Registration of model
+roslaunch hrl_ellipsoidal_control head_registration.launch subject:=henry_1 side:=r
+
+9. Run through system: servo, untuck, head registration (Henry holds still)
+roslaunch hrl_face_adls face_adls.launch subject:=henry_1 
+
+10. Kill L arm and move tool to different locations, save using pose capture.
+rosrun hrl_face_adls record_ell_poses.py

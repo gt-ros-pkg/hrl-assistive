@@ -1,0 +1,47 @@
+<launch>
+    
+    <arg name="subject" />
+    <node pkg="pr2_traj_playback" name="l_arm_pose_move_controller" type="arm_pose_move_controller.py"
+          output="screen" args="-v -l" >
+        <remap from="/trajectory_playback_l/feedback" to="/wt_log_out" />
+    </node>
+    <node pkg="pr2_traj_playback" name="r_arm_pose_move_controller" type="arm_pose_move_controller.py"
+          output="screen" args="-v -r" >
+        <remap from="/trajectory_playback_r/feedback" to="/wt_log_out" />
+    </node>
+
+    <rosparam>
+        face_adls_traj_modes:
+            ["Shaving Right Cheek", "Shaving Left Cheek", "Setup for AR Servoing"]
+        face_adls_traj_files:
+            "Shaving Right Cheek" :
+                "Right" :
+                    "Untuck mirror to view" : 
+                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_r.pkl"]
+                    "Retuck mirror for base movement" : 
+                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_r.pkl"]
+                "Left" :
+                    "Untuck arm to face" : 
+                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl"]
+                    "Retuck arm for base movement" : 
+                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl"]
+            "Shaving Left Cheek" :
+                "Right" :
+                    "Untuck mirror to view" : 
+                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_l.pkl"]
+                    "Retuck mirror for base movement" : 
+                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_l.pkl"]
+                "Left" :
+                    "Untuck arm to face" : 
+                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_l.pkl"]
+                    "Retuck arm for base movement" : 
+                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_l.pkl"]
+            "Setup for AR Servoing" :
+                "Right" :
+                    "Move to side for servo approach" : 
+                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_servo_setup.pkl"]
+                "Left" :
+                    "Move to side for servo approach" : 
+                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_servo_setup.pkl"]
+    </rosparam>
+</launch>

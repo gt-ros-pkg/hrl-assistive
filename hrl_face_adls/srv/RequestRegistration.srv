@@ -1,0 +1,5 @@
+string mode
+string side
+---
+bool success
+hrl_ellipsoidal_control/EllipsoidParams e_params

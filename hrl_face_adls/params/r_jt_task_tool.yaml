@@ -1,0 +1,34 @@
+r_cart_jt_task_tool:
+  type: pr2_manipulation_controllers/JTTaskController
+  root_name: torso_lift_link
+  tip_name: r_gripper_tool_frame
+  k_posture: 3.0
+  jacobian_inverse_damping: 0.01
+  pose_command_filter: 0.01
+  cart_gains:
+    trans:
+      p: 600.0
+      d: 8.0
+    rot:
+      p: 80.0
+      d: 1.2
+  joint_feedforward:
+    r_shoulder_pan_joint: 3.33
+    r_shoulder_lift_joint: 1.16
+    r_upper_arm_roll_joint: 0.1
+    r_elbow_flex_joint: 0.25
+    r_forearm_roll_joint: 0.133
+    r_wrist_flex_joint: 0.0727
+    r_wrist_roll_joint: 0.0727
+  joint_max_effort:
+    r_shoulder_pan_joint: 11.88
+    r_shoulder_lift_joint: 11.64
+    r_upper_arm_roll_joint: 6.143
+    r_elbow_flex_joint: 6.804
+    r_forearm_roll_joint: 8.376
+    r_wrist_flex_joint: 5.568
+    r_wrist_roll_joint: 5.568
+  vel_saturation_trans: 2.0
+  vel_saturation_rot: 4.0
+
+  use_tip_frame: true
