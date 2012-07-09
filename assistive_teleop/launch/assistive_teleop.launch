@@ -68,8 +68,8 @@
 
     <!--Tabletop Manipulation Content, i.e. Arm Navigation etc
     <group>
-        <remap from="camera" to="kinect_head"/>
-        <remap from="camera/rgb/camera_info" to="kinect_head/rgb/camera_info"/>
+        <remap from="camera" to="camera"/>
+        <remap from="camera/rgb/camera_info" to="camera/rgb/camera_info"/>
         <include file="$(find pr2_tabletop_manipulation_launch)/launch/pr2_tabletop_manipulation.launch">
             <arg name="stereo" value="true"/>
             <arg name="use_slip_controllers" value="false"/>
@@ -147,7 +147,9 @@
     </node>
 
     <!-- Launch Kinect with GT launch files (gt-ros-pkg)-->
-    <include file="$(find hrl_pr2_lib)/launch/openni_kinect_polled.launch" />
+    <!--<include file="$(find hrl_pr2_lib)/launch/openni_kinect_polled.launch" />-->
+    <include file="$(find openni_launch)/launch/openni.launch" />
+    
     
     <!--3d point from Pixel Node>-->
     <node 
@@ -157,10 +159,10 @@
         machine="c1" >
             <remap
                 from="image"
-                to="/kinect_head/rgb/image_color" />
+                to="/camera/rgb/image_color" />
             <remap
                 from="point_cloud"
-                to="/kinect_head/rgb/points" />
+                to="/camera/rgb/points" />
             <param 
                 name="normal_radius" 
                 type="double" 
@@ -180,7 +182,7 @@
         output="screen">
             <remap
                 from="/image_in"
-                to="/kinect_head/rgb/image_color" />
+                to="/camera/rgb/image_color" />
         <remap 
             from="/image_out"
             to="/arrow_overlaid" />
@@ -242,7 +244,7 @@
         name="throttle_kinect_camera" 
         pkg="topic_tools" 
         type="throttle" 
-        args="messages /kinect_head/rgb/image_color 8 /kinect_throttled" />
+        args="messages /camera/rgb/image_color 8 /kinect_throttled" />
     <!-- Launch mjpeg server, used for sending image streams -->
     <node 
         name="mjpeg_server" 
