@@ -3,6 +3,15 @@
     <include file="$(find pr2_machine)/$(env ROBOT).machine" />
     <arg name="shaving_board" default="/dev/arduino" />
 
+    <arg name="use_imanip" default="true" />
+
+    <arg if="$(arg use_imanip)" name="kinect_points" 
+         default="/head_mount_kinect/rgb/object_modeling_points_filtered" />
+    <arg if="$(arg use_imanip)" name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
+    <arg unless="$(arg use_imanip)" name="kinect_points" default="/camera/rgb/points" />
+    <arg unless="$(arg use_imanip)" name="kinect_camera" default="/camera/rgb/image_color" />
+    <include unless="$(arg use_imanip)" file="$(find openni_launch)/launch/openni.launch" />
+
     <!-- Arduino Control Board for powering Shaver -->
     <node
         name="tool_power_toggle"
@@ -148,7 +157,6 @@
 
     <!-- Launch Kinect with GT launch files (gt-ros-pkg)-->
     <!--<include file="$(find hrl_pr2_lib)/launch/openni_kinect_polled.launch" />-->
-    <include file="$(find openni_launch)/launch/openni.launch" />
     
     
     <!--3d point from Pixel Node>-->
@@ -159,10 +167,10 @@
         machine="c1" >
             <remap
                 from="image"
-                to="/camera/rgb/image_color" />
+                to="$(arg kinect_camera)" />
             <remap
                 from="point_cloud"
-                to="/camera/rgb/points" />
+                to="$(arg kinect_points)" />
             <param 
                 name="normal_radius" 
                 type="double" 
@@ -244,7 +252,7 @@
         name="throttle_kinect_camera" 
         pkg="topic_tools" 
         type="throttle" 
-        args="messages /camera/rgb/image_color 8 /kinect_throttled" />
+        args="messages $(arg kinect_camera) 8 /kinect_throttled" />
     <!-- Launch mjpeg server, used for sending image streams -->
     <node 
         name="mjpeg_server" 

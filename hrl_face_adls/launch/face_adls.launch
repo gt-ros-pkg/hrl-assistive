@@ -16,6 +16,7 @@
         <param name="timeout_time" value="30.0" />
         <param name="init_pos_tolerance" value="100.0" />
         <param name="init_rot_tolerance" value="100.0" />
+        <param name="kinect_frame" value="head_mount_kinect_rgb_optical_frame" />
     </node>
 
     <node pkg="hrl_face_adls" name="r_cartesian_manager" type="cartesian_manager.py"

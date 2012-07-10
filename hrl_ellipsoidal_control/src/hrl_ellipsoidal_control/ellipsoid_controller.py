@@ -22,7 +22,8 @@ class EllipsoidParamServer(object):
     def __init__(self):
         self.ell_param_sub = rospy.Subscriber("/ellipsoid_params", EllipsoidParams, 
                                               self.load_params)
-        self.kin_head = create_joint_kin("base_link", "openni_rgb_optical_frame")
+        self.kinect_frame = rospy.get_param("~kinect_frame", "head_mount_kinect_rgb_optical_frame")
+        self.kin_head = create_joint_kin("base_link", self.kinect_frame)
         self.ell_space = None
         self.head_center = None
         self.head_center_pub = rospy.Publisher("/head_center", PoseStamped)
@@ -34,7 +35,7 @@ class EllipsoidParamServer(object):
     def load_params(self, params):
         kinect_B_head = PoseConv.to_homo_mat(params.e_frame)
         base_B_kinect = self.kin_head.forward(base_segment="base_link",
-                                              target_segment="openni_rgb_optical_frame")
+                                              target_segment=self.kinect_frame)
         base_B_head = base_B_kinect * kinect_B_head
         self.head_center = PoseConv.to_pose_stamped_msg("/base_link",base_B_head)
         self.ell_space = EllipsoidSpace()
@@ -48,7 +49,7 @@ class EllipsoidParamServer(object):
         torso_B_kinect = self.kin_head.forward(base_segment="/torso_lift_link")
         torso_B_ee = PoseConv.to_homo_mat(pose)
         kinect_B_ee = torso_B_kinect**-1 * torso_B_ee
-        ell_B_pose = self.get_ell_frame("/openni_rgb_optical_frame")**-1 * kinect_B_ee
+        ell_B_pose = self.get_ell_frame(self.kinect_frame)**-1 * kinect_B_ee
         return self.ell_space.pose_to_ellipsoidal(ell_B_pose)
 
     ##
