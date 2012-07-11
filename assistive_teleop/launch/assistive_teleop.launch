@@ -1,5 +1,4 @@
 <launch>
-
     <include file="$(find pr2_machine)/$(env ROBOT).machine" />
     <arg name="shaving_board" default="/dev/arduino" />
 
@@ -74,19 +73,6 @@
         output="screen"
         machine="c2"/>
     -->
-
-    <!--Tabletop Manipulation Content, i.e. Arm Navigation etc
-    <group>
-        <remap from="camera" to="camera"/>
-        <remap from="camera/rgb/camera_info" to="camera/rgb/camera_info"/>
-        <include file="$(find pr2_tabletop_manipulation_launch)/launch/pr2_tabletop_manipulation.launch">
-            <arg name="stereo" value="true"/>
-            <arg name="use_slip_controllers" value="false"/>
-            <arg name="use_right_arm" value="true"/>
-            <arg name="use_left_arm" value="true"/>
-            <arg name="use_task_cartesian" default="false"/>
-        </include>
-    </group>-->
 
     <!-- Bring up intermediary for handling arm movements, one for each arm
     <include file="$(find pr2_arm_kinematics)/launch/pr2_ik_larm_node.launch" />
