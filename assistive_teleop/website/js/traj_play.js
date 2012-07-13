@@ -2,7 +2,7 @@ var traj_actions = ['Shaving Left Cheek', 'Shaving Right Cheek', 'Servoing'];
 
 function traj_play_init(){
     console.log("Begin Traj Play Init");
-    var traj_play_act_spec = new ros.actionlib.ActionSpec('pr2_traj_playback/TrajectoryPlayAction');
+    var traj_play_act_spec = new ros.actionlib.ActionSpec('hrl_pr2_traj_playback/TrajectoryPlayAction');
     window.traj_play_r_client = new ros.actionlib.SimpleActionClient(node,'/trajectory_playback_r', traj_play_act_spec);
 
     traj_play_r_client.wait_for_server(10, function(e){
@@ -26,7 +26,7 @@ function init_TrajPlayGoal(){
         window.get_msgs_free = false;
         console.log('Locking for TrajPlayGoal');
 		node.rosjs.callService('/rosbridge/msgClassFromTypeString',
-                          json(["pr2_traj_playback/TrajectoryPlayGoal"]),
+                          json(["hrl_pr2_traj_playback/TrajectoryPlayGoal"]),
                           function(msg){window.TrajPlayGoal=msg;
                                         window.get_msgs_free = true;
                                         console.log('Unlocking: Got TrajPlayGoal');
