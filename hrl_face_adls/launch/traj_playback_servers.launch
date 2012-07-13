@@ -1,13 +1,16 @@
 <launch>
-    
     <arg name="subject" />
+    <arg name="arm_traj_dir" />
+    
     <node pkg="hrl_pr2_traj_playback" name="l_arm_pose_move_controller" type="traj_playback.py"
           output="screen" args="-v -l" >
         <remap from="/trajectory_playback_l/feedback" to="/wt_log_out" />
+        <param name="traj_directory" value="$(arg arm_traj_dir)" />
     </node>
     <node pkg="hrl_pr2_traj_playback" name="r_arm_pose_move_controller" type="traj_playback.py"
           output="screen" args="-v -r" >
         <remap from="/trajectory_playback_r/feedback" to="/wt_log_out" />
+        <param name="traj_directory" value="$(arg arm_traj_dir)" />
     </node>
 
     <rosparam>
@@ -17,31 +20,31 @@
             "Shaving Right Cheek" :
                 "Right" :
                     "Untuck mirror to view" : 
-                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_r.pkl"]
+                        [False, 0.1, 0.8, "r_arm_mirror_setup_r.pkl"]
                     "Retuck mirror for base movement" : 
-                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_r.pkl"]
+                        [True, 0.1, 0.8, "r_arm_mirror_setup_r.pkl"]
                 "Left" :
                     "Untuck arm to face" : 
-                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl"]
+                        [False, 0.1, 0.8, "l_arm_shaving_setup_r.pkl"]
                     "Retuck arm for base movement" : 
-                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl"]
+                        [True, 0.1, 0.8, "l_arm_shaving_setup_r.pkl"]
             "Shaving Left Cheek" :
                 "Right" :
                     "Untuck mirror to view" : 
-                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_l.pkl"]
+                        [False, 0.1, 0.8, "r_arm_mirror_setup_l.pkl"]
                     "Retuck mirror for base movement" : 
-                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_mirror_setup_l.pkl"]
+                        [True, 0.1, 0.8, "r_arm_mirror_setup_l.pkl"]
                 "Left" :
                     "Untuck arm to face" : 
-                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_l.pkl"]
+                        [False, 0.1, 0.8, "l_arm_shaving_setup_l.pkl"]
                     "Retuck arm for base movement" : 
-                        [True, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_shaving_setup_l.pkl"]
+                        [True, 0.1, 0.8, "l_arm_shaving_setup_l.pkl"]
             "Setup for AR Servoing" :
                 "Right" :
                     "Move to side for servo approach" : 
-                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/r_arm_servo_setup.pkl"]
+                        [False, 0.1, 0.8, "r_arm_servo_setup.pkl"]
                 "Left" :
                     "Move to side for servo approach" : 
-                        [False, 0.1, 0.8, "$(find hrl_face_adls)/data/l_arm_servo_setup.pkl"]
+                        [False, 0.1, 0.8, "l_arm_servo_setup.pkl"]
     </rosparam>
 </launch>

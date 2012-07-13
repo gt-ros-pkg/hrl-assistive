@@ -1,11 +1,37 @@
 <launch>
     <arg name="subject" />
+
+    <!--        directories          -->
+    <arg name="data_pkg" value="$(find rfh_data)" />
+    <arg name="ar_dir" value="$(arg data_pkg)/ar_poses" />
+    <arg name="arm_traj_dir" value="$(arg data_pkg)/gt_arm_trajectories" />
+    <!-- <arg name="arm_traj_dir" value="henry_arm_trajectories" /> -->
+    <arg name="ell_poses_dir" value="$(arg data_pkg)/henry_ell_poses" />
+    <arg name="head_pcs_dir" value="$(arg data_pkg)/head_point_clouds" />
+    <arg name="ell_regs_dir" value="$(arg data_pkg)/ellipsoid_registrations" />
+    <arg name="cam_params_dir" value="$(arg data_pkg)/camera_parameters" />
+    <arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" />
+
+    <!--         kinect params          -->
+    <arg name="use_imanip" default="true" />
+    <arg if="$(arg use_imanip)" name="kinect_points" 
+         default="/head_mount_kinect/depth_registered/points" />
+    <arg unless="$(arg use_imanip)" name="kinect_points" default="/camera/rgb/points" />
+
+    <!--             nodes              -->
     <include file="$(find hrl_face_adls)/launch/traj_playback_servers.launch">
         <arg name="subject" value="$(arg subject)" />
+        <arg name="arm_traj_dir" value="$(arg arm_traj_dir)" />
     </include>
-    <include file="$(find hrl_face_adls)/launch/pr2_ar_servo.launch" />
+    <include file="$(find hrl_face_adls)/launch/pr2_ar_servo.launch" >
+        <arg name="ar_dir" value="$(arg ar_dir)" />
+        <arg name="cam_params_dir" value="$(arg cam_params_dir)" />
+    </include>
     <include file="$(find hrl_face_adls)/launch/head_registration.launch">
         <arg name="subject" value="$(arg subject)" />
+        <arg name="head_pcs_dir" value="$(arg head_pcs_dir)" />
+        <arg name="ell_regs_dir" value="$(arg ell_regs_dir)" />
+        <arg name="kinect_points" value="$(arg kinect_points)" />
     </include>
     <node pkg="hrl_face_adls" name="face_adls_manager" type="face_adls_manager.py"
           output="screen" >
@@ -17,6 +43,7 @@
         <param name="init_pos_tolerance" value="100.0" />
         <param name="init_rot_tolerance" value="100.0" />
         <param name="kinect_frame" value="head_mount_kinect_rgb_optical_frame" />
+        <param name="global_poses_dir" value="$(arg ell_poses_dir)" />
     </node>
 
     <node pkg="hrl_face_adls" name="r_cartesian_manager" type="cartesian_manager.py"
@@ -33,6 +60,10 @@
         <param name="init_rot_tolerance" value="100.0" />
     </node>
 
+    <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
+          args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_razor_inline.yaml" 
+          output="screen" />
+
     <rosparam>
         face_adls_modes:
             shaving:
@@ -47,8 +78,8 @@
                     lat: [0.39, 2.75]
                     lon: [-0.39, 1.96]
                     height: [0.2, 3.5]
-                r_ell_poses_file: "$(find hrl_face_adls)/params/r_shaver_ell_poses.yaml"
-                l_ell_poses_file: "$(find hrl_face_adls)/params/l_shaver_ell_poses.yaml"
+                r_ell_poses_file: "r_shaver_ell_poses.yaml"
+                l_ell_poses_file: "l_shaver_ell_poses.yaml"
             scratching:
                 end_link: "l_gripper_brush45_frame"
                 ctrl_params: "$(find hrl_face_adls)/params/l_jt_task_brush45.yaml"
@@ -61,8 +92,8 @@
                     lat: [0, 3.14]
                     lon: [-3.1, 3.1]
                     height: [0.2, 3.5]
-                r_ell_poses_file: "$(find hrl_face_adls)/params/r_scratcher_ell_poses.yaml"
-                l_ell_poses_file: "$(find hrl_face_adls)/params/l_scratcher_ell_poses.yaml"
+                r_ell_poses_file: "r_scratcher_ell_poses.yaml"
+                l_ell_poses_file: "l_scratcher_ell_poses.yaml"
             feeding:
                 end_link: "l_gripper_spoon45_frame"
                 ctrl_params: "$(find hrl_face_adls)/params/l_jt_task_spoon45.yaml"
@@ -75,8 +106,8 @@
                     lat: [0.39, 2.75]
                     lon: [-0.39, 1.96]
                     height: [0.2, 3.5]
-                r_ell_poses_file: "$(find hrl_face_adls)/params/r_spoon_ell_poses.yaml"
-                l_ell_poses_file: "$(find hrl_face_adls)/params/l_rpoon_ell_poses.yaml"
+                r_ell_poses_file: "r_spoon_ell_poses.yaml"
+                l_ell_poses_file: "l_rpoon_ell_poses.yaml"
     </rosparam>
     <!--
     <node pkg="hrl_ft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
