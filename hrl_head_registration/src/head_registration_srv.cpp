@@ -60,7 +60,7 @@ bool regCallback(HeadRegSrv::Request& req, HeadRegSrv::Response& resp)
         extractHSL(aligned_pc->points[i].rgb, h, s, l);
         writeHSL(new_hue, 50, l, aligned_pc->points[i].rgb);
     }
-    aligned_pc->header.frame_id = "/openni_rgb_optical_frame";
+    aligned_pc->header.frame_id = cur_pc->header.frame_id;
     aligned_pub.publish(aligned_pc);
 
 #if 0
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     readPCBag(argv[1], template_pc);
 
     aligned_pub = nh.advertise<PCRGB>("/head_registration/aligned_pc", 1, true);
-    pc_sub = nh.subscribe("/kinect_head/rgb/points", 1, &subPCCallback);
+    pc_sub = nh.subscribe("/points", 1, &subPCCallback);
     reg_srv = nh.advertiseService("/head_registration", &regCallback);
     ros::spin();
 

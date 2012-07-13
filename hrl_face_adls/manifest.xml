@@ -14,6 +14,7 @@
   <depend package="hrl_ellipsoidal_control"/>
   <depend package="hrl_head_registration"/>
   <depend package="hrl_pr2_traj_playback"/>
+  <depend package="hrl_pr2_ar_servo"/>
   <depend package="ar_pose"/>
 
 </package>

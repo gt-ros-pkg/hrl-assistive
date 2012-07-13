@@ -1,4 +1,6 @@
 <launch>
+    <arg name="ar_dir" />
+    <arg name="cam_params_dir" />
 
 	<node name="r_ar_pose" pkg="ar_pose" type="ar_single" respawn="false" output="screen">
 		<param name="marker_pattern" type="string" value="$(find ar_pose)/data/4x4/4x4_20.patt"/>
@@ -43,14 +45,10 @@
 
     <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
           output="screen" >
-        <rosparam>
-            ar_servo_poses:
-                r_pr2_ar_pose_marker : [0.49032495,  0.51973125, -1.13842208]
-                l_pr2_ar_pose_marker : [0.62583374,  0.29632216, -1.24825643]
-        </rosparam>
+        <rosparam command="load" file="$(arg ar_dir)/wheelchair_poses.yaml" />
     </node>
 
-    <rosparam command="load" file="$(find hrl_face_adls)/params/l_forearm_cam_settings.yaml"
+    <rosparam command="load" file="$(arg cam_params_dir)/l_forearm_cam_settings.yaml"
               param="/l_forearm_cam" />
 
     <node pkg="hrl_pr2_ar_servo" name="ar_confirm" type="ar_confirm" >

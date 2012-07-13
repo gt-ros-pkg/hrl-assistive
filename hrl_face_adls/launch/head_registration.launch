@@ -1,7 +1,11 @@
 <launch>
     <arg name="subject" />
+    <arg name="head_pcs_dir" />
+    <arg name="ell_regs_dir" />
+    <arg name="kinect_points" />
+
     <node pkg="hrl_head_registration" name="r_head_registration_srv" type="head_registration_srv"
-          output="screen" args="$(find hrl_head_registration)/data/$(arg subject)_r_face.bag">
+          output="screen" args="$(arg head_pcs_dir)/$(arg subject)_r_face.bag">
         <param name="max_iters" value="300" />
         <param name="color_weight" value="0.0" />
         <param name="icp_max_corresp" value="0.3" />
@@ -11,9 +15,10 @@
         <param name="color_std_thresh" value="4.0" />
         <param name="hue_weight" value="5.0" />
         <remap from="/head_registration" to="/head_registration_r" />
+        <remap from="/points" to="$(arg kinect_points)" />
     </node>
     <node pkg="hrl_head_registration" name="l_head_registration_srv" type="head_registration_srv"
-          output="screen" args="$(find hrl_head_registration)/data/$(arg subject)_l_face.bag">
+          output="screen" args="$(arg head_pcs_dir)/$(arg subject)_l_face.bag">
         <param name="max_iters" value="300" />
         <param name="color_weight" value="0.0" />
         <param name="icp_max_corresp" value="0.3" />
@@ -23,11 +28,12 @@
         <param name="color_std_thresh" value="4.0" />
         <param name="hue_weight" value="5.0" />
         <remap from="/head_registration" to="/head_registration_l" />
+        <remap from="/points" to="$(arg kinect_points)" />
     </node>
     <node pkg="hrl_face_adls" name="registration_loader" type="registration_loader.py"
-          output="screen" args="$(find hrl_ellipsoidal_control)/data/$(arg subject)_r_ellipsoid_registration.bag $(find hrl_ellipsoidal_control)/data/$(arg subject)_l_ellipsoid_registration.bag" >
+          output="screen" >
         <remap from="/feedback" to="/wt_log_out" />
-        <param name="registration_prefix" value="$(find hrl_ellipsoidal_control)/data/$(arg subject)" />
+        <param name="registration_prefix" value="$(arg ell_regs_dir)/$(arg subject)" />
         <rosparam>
             registration_files:
                 shaving:
