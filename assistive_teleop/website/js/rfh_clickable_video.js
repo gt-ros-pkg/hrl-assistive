@@ -2,7 +2,8 @@ var count_surf_wipe_right=count_surf_wipe_left=force_wipe_count=0;
 var MJPEG_QUALITY= '50';
 var MJPEG_WIDTH = '640';
 var MJPEG_HEIGHT = '480';
-var KINECT = 'camera';
+//var KINECT = 'camera';
+var KINECT = 'head_mount_kinect';
 
 camera_select_html = 
      '<select id="camera_select" onchange="set_camera($(this).val());">\

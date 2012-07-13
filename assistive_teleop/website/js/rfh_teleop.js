@@ -2,7 +2,8 @@ var head_pub;
 var base_pub;
 var scales={head:50,base:50,rarm:50,larm:50,rrot:0.25*Math.PI,lrot:0.25*Math.PI};
 //var arm_joints={right:[],left:[]}
-var pointing_frame='openni_rgb_optical_frame'
+//var pointing_frame='openni_rgb_optical_frame'
+var pointing_frame='head_mount_kinect_rgb_optical_frame'
 var head_state;
 var torso_state;
 var plane = 'xy';
