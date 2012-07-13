@@ -64,7 +64,8 @@
           output="screen" respawn="True" >
         <remap from="/camera" to="/l_forearm_cam/image_rect" />
         <remap from="/output" to="/l_forearm_adjusted" />
-        <param name="black_cap" value="120" />
+        <!-- Henry's: <param name="black_cap" value="120" /> -->
+        <param name="black_cap" value="85" />
         <param name="white_cap" value="140" />
     </node>
 

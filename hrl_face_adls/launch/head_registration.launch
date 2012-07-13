@@ -3,6 +3,7 @@
     <arg name="head_pcs_dir" />
     <arg name="ell_regs_dir" />
     <arg name="kinect_points" />
+    <arg name="kinect_camera" />
 
     <node pkg="hrl_head_registration" name="r_head_registration_srv" type="head_registration_srv"
           output="screen" args="$(arg head_pcs_dir)/$(arg subject)_r_face.bag">
@@ -48,5 +49,8 @@
         </rosparam>
     </node>
     <node pkg="hrl_head_registration" name="head_alignment_confirm" type="head_alignment_confirm"
-          output="screen" respawn="True" />
+          output="screen" respawn="True" >
+        <remap from="/kinect_camera" to="$(arg kinect_camera)" />
+    </node>
+
 </launch>

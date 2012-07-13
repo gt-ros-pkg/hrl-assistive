@@ -13,6 +13,7 @@
         <param name="traj_directory" value="$(arg arm_traj_dir)" />
     </node>
 
+    <!-- Params: [is_reverse, setup_velocity, traj_rate_mult, filename] -->
     <rosparam>
         face_adls_traj_modes:
             ["Shaving Right Cheek", "Shaving Left Cheek", "Setup for AR Servoing"]
@@ -20,31 +21,31 @@
             "Shaving Right Cheek" :
                 "Right" :
                     "Untuck mirror to view" : 
-                        [False, 0.1, 0.8, "r_arm_mirror_setup_r.pkl"]
+                        [False, 0.2, 0.8, "r_arm_mirror_setup_r.pkl"]
                     "Retuck mirror for base movement" : 
-                        [True, 0.1, 0.8, "r_arm_mirror_setup_r.pkl"]
+                        [True, 0.2, 0.8, "r_arm_mirror_setup_r.pkl"]
                 "Left" :
                     "Untuck arm to face" : 
-                        [False, 0.1, 0.8, "l_arm_shaving_setup_r.pkl"]
+                        [False, 0.2, 0.8, "l_arm_shaving_setup_r.pkl"]
                     "Retuck arm for base movement" : 
-                        [True, 0.1, 0.8, "l_arm_shaving_setup_r.pkl"]
+                        [True, 0.2, 0.8, "l_arm_shaving_setup_r.pkl"]
             "Shaving Left Cheek" :
                 "Right" :
                     "Untuck mirror to view" : 
-                        [False, 0.1, 0.8, "r_arm_mirror_setup_l.pkl"]
+                        [False, 0.2, 0.8, "r_arm_mirror_setup_l.pkl"]
                     "Retuck mirror for base movement" : 
-                        [True, 0.1, 0.8, "r_arm_mirror_setup_l.pkl"]
+                        [True, 0.2, 0.8, "r_arm_mirror_setup_l.pkl"]
                 "Left" :
                     "Untuck arm to face" : 
-                        [False, 0.1, 0.8, "l_arm_shaving_setup_l.pkl"]
+                        [False, 0.2, 0.8, "l_arm_shaving_setup_l.pkl"]
                     "Retuck arm for base movement" : 
-                        [True, 0.1, 0.8, "l_arm_shaving_setup_l.pkl"]
+                        [True, 0.2, 0.8, "l_arm_shaving_setup_l.pkl"]
             "Setup for AR Servoing" :
                 "Right" :
                     "Move to side for servo approach" : 
-                        [False, 0.1, 0.8, "r_arm_servo_setup.pkl"]
+                        [False, 0.3, 0.8, "r_arm_servo_setup.pkl"]
                 "Left" :
                     "Move to side for servo approach" : 
-                        [False, 0.1, 0.8, "l_arm_servo_setup.pkl"]
+                        [False, 0.3, 0.8, "l_arm_servo_setup.pkl"]
     </rosparam>
 </launch>

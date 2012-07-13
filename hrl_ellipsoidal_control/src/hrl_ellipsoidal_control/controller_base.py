@@ -58,7 +58,7 @@ class CartTrajController(object):
         for ep in traj:
             if rospy.is_shutdown() or self._stop_moving:
                 return False
-            cart_arm.set_ep(ep, time_step)
+            cart_arm.set_ep(ep)
             rate.sleep()
         return True
 

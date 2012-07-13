@@ -34,8 +34,8 @@ class EllipsoidParamServer(object):
 
     def load_params(self, params):
         kinect_B_head = PoseConv.to_homo_mat(params.e_frame)
-        base_B_kinect = self.kin_head.forward(base_segment="base_link",
-                                              target_segment=self.kinect_frame)
+        base_B_kinect = self.kin_head.forward(base_link="base_link",
+                                              end_link=self.kinect_frame)
         base_B_head = base_B_kinect * kinect_B_head
         self.head_center = PoseConv.to_pose_stamped_msg("/base_link",base_B_head)
         self.ell_space = EllipsoidSpace()
@@ -46,7 +46,7 @@ class EllipsoidParamServer(object):
         return self.ell_space is not None
     
     def get_ell_pose(self, pose):
-        torso_B_kinect = self.kin_head.forward(base_segment="/torso_lift_link")
+        torso_B_kinect = self.kin_head.forward(base_link="/torso_lift_link")
         torso_B_ee = PoseConv.to_homo_mat(pose)
         kinect_B_ee = torso_B_kinect**-1 * torso_B_ee
         ell_B_pose = self.get_ell_frame(self.kinect_frame)**-1 * kinect_B_ee
@@ -65,7 +65,7 @@ class EllipsoidParamServer(object):
     def get_ell_frame(self, frame="/torso_lift_link"):
         # find the current ellipsoid frame location in this frame
         base_B_head = PoseConv.to_homo_mat(self.head_center)
-        target_B_base = self.kin_head.forward(target_segment=frame)
+        target_B_base = self.kin_head.forward(end_link=frame)
         return target_B_base**-1 * base_B_head
 
 class EllipsoidController(CartesianStepController):

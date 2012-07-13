@@ -65,6 +65,7 @@ class RegistrationLoader(object):
             return RequestRegistrationResponse(False, reg_e_params)
 
         try:
+            print reg_prefix + registration_files[req.mode][req.side]
             bag = rosbag.Bag(reg_prefix + registration_files[req.mode][req.side], 'r')
             e_params = None
             for topic, msg, ts in bag.read_messages():

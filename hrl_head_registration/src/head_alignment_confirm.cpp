@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     tf_list = boost::shared_ptr<tf::TransformListener>(new tf::TransformListener());
 
     align_sub = nh.subscribe("/head_registration/aligned_pc", 1, &subAlignCallback);
-    camera_sub = img_trans.subscribeCamera("/kinect_head/rgb/image_color", 1, 
+    camera_sub = img_trans.subscribeCamera("/kinect_camera", 1, 
                                            &doOverlay);
     overlay_pub = img_trans.advertise("/head_registration/confirmation", 1);
 
