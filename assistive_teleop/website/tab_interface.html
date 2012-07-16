@@ -23,10 +23,10 @@ function json(obj){return JSON.stringify(obj);};
 function log(message){$('#console').html("<big><strong>"+message.toString()+"</strong></big>"); console.log(message.toString())};
 //arm = function(){return $('input[name=arm_sel]:radio:checked').val()};
 
-//var ROBOT = 'prj.willowgarage.com';
-var ROBOT = 'monty1.hsi.gatech.edu';
+var ROBOT = 'prj.willowgarage.com';
+//var ROBOT = 'monty1.hsi.gatech.edu';
 //var ROBOT = 'pr2c1.cc.gatech.edu';
-//var ROBOT = 'localhost';
+//var ROBOT = '10.68.0.1';
 var get_param_free = true;
 var get_msgs_free = true;
 
@@ -383,7 +383,8 @@ function start(){
               <tr>
                 <td>
                   <select class="centered" id="ell_mode_sel"> 
-                    <option id="mode_opt_shaving" value="shaving" selected="selected"> Shaving </option>
+                    <option id="mode_opt_wiping" value="wiping" selected="selected"> Wiping </option>
+                    <option id="mode_opt_shaving" value="shaving"> Shaving </option>
                     <option id="mode_opt_scratching" value="scratching"> Scratching </option>
                     <option id="mode_opt_feeding" value="feeding"> Feeding </option>
                   </select>
