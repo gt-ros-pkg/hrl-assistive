@@ -111,11 +111,20 @@
                     height: [0.2, 3.5]
                 r_ell_poses_file: "r_spoon_ell_poses.yaml"
                 l_ell_poses_file: "l_rpoon_ell_poses.yaml"
+            wiping:
+                end_link: "l_gripper_towel_frame"
+                ctrl_params: "$(find hrl_face_adls)/params/l_jt_task_towel.yaml"
+                ctrl_name: "l_cart_jt_task_towel"
+                r_bounds:
+                    lat: [0.39, 2.75]
+                    lon: [-1.96, 0.39]
+                    height: [0.2, 3.5]
+                l_bounds:
+                    lat: [0.39, 2.75]
+                    lon: [-0.39, 1.96]
+                    height: [0.2, 3.5]
+                r_ell_poses_file: "r_towel_ell_poses.yaml"
+                l_ell_poses_file: "l_towel_ell_poses.yaml"
     </rosparam>
-    <!--
-    <node pkg="hrl_ft" name="netft_gravity_zeroing" type="netft_zeroing.py" 
-          args="-l -r -b -z -f $(find hrl_face_adls)/params/ft_zero_params_razor_inline.yaml" 
-          output="screen" />
-    -->
 
 </launch>

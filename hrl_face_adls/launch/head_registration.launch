@@ -46,6 +46,9 @@
                 feeding:
                     r: "_spoon_r_ellipsoid_registration.bag"
                     l: "_spoon_l_ellipsoid_registration.bag"
+                wiping:
+                    r: "_wiping_r_ellipsoid_registration.bag"
+                    l: "_wiping_l_ellipsoid_registration.bag"
         </rosparam>
     </node>
     <node pkg="hrl_head_registration" name="head_alignment_confirm" type="head_alignment_confirm"

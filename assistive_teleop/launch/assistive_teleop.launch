@@ -3,6 +3,8 @@
     <arg name="shaving_board" default="/dev/arduino" />
 
     <arg name="run_ft" default="false" />
+    <arg name="run_rb" default="false" />
+    <arg name="run_pt" default="false" />
 
     <arg name="use_imanip" default="true" />
     <arg if="$(arg use_imanip)" name="kinect_points" 
@@ -14,6 +16,7 @@
 
     <!-- Arduino Control Board for powering Shaver -->
     <node
+        if="$(arg run_pt)"
         name="tool_power_toggle"
         pkg="rosserial_python"
         type="serial_node.py"
@@ -21,11 +24,13 @@
         output="screen"/>
 
     <node
+        if="$(arg run_pt)"
         name="razor_run_stop_monitor"
         pkg="assistive_teleop"
         type="razor_runstop.py"
         output="screen"/>
 
+    <!--
     <node 
         name="mirror_pointer"
         pkg="assistive_teleop"
@@ -35,6 +40,7 @@
             from="/goal_pose" 
             to="/face_adls/r_cart_absolute"/>
     </node>
+    -->
 
     <!-- NetFt Sensor-->
         <!-- Launch sensor -->
@@ -260,6 +266,7 @@
             type="int"
             value="9091" />
     <node 
+        if="$(arg run_rb)"
         name="rosbridge" 
         pkg="rosbridge" 
         type="rosbridge.py" 
