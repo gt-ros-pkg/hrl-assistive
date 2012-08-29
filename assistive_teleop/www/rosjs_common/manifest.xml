@@ -1,0 +1,14 @@
+<package>
+  <description brief="rosjs_common">
+    rosjs common.
+  </description>
+  <author>Benjamin Pitzer</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosjs_common</url>
+  <export>
+  	<rosdoc config="rosdoc.yaml" />
+	</export>
+</package>
+
+
