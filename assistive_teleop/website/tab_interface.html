@@ -23,10 +23,10 @@ function json(obj){return JSON.stringify(obj);};
 function log(message){$('#console').html("<big><strong>"+message.toString()+"</strong></big>"); console.log(message.toString())};
 //arm = function(){return $('input[name=arm_sel]:radio:checked').val()};
 
-var ROBOT = 'localhost';
+//var ROBOT = 'localhost';
 //var ROBOT = 'monty1.hsi.gatech.edu';
 //var ROBOT = 'pr2c1.cc.gatech.edu';
-//var ROBOT = '10.68.0.1';
+var ROBOT = '10.68.0.1';
 var get_param_free = true;
 var get_msgs_free = true;
 
@@ -134,7 +134,7 @@ function speak(text){
 };
 
 function start(){
-    window.node = new ros.NodeHandle('ws://'+ ROBOT + ':9090');
+    window.node = new ros.NodeHandle('ws://'+ ROBOT + ':9091');
 	node.setOnClose(function(e) {
           log("Disconnected or Can't Connect to " + node.url + ".");
     	});
