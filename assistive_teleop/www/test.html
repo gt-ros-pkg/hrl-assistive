@@ -1,0 +1,30 @@
+<html>
+<head>
+<script type="text/javascript" src="jqueryui/js/jquery-1.4.4.min.js"></script> 
+<script type="text/javascript" src="js/json2.js"></script>
+<script type="text/javascript" src="js/ros.js"></script>
+
+<script type="text/javascript">
+function nop(){};
+function json(obj){return JSON.stringify(obj);};
+function log(message){ document.getElementById('console').innerHTML = message.toString();};
+
+function start(){
+    bridge = new ros.Bridge('ws://localhost:9090');
+    bridge.onClose(function(e) {
+            log("Disconnected or Can't Connect");
+            });
+    bridge.onError(function(e) {
+            log("Unknown error connecting!");
+            });
+    bridge.onOpen(function(e) {   
+            log("Connected!");
+            });
+};
+
+</script>
+</head>
+<body onload="start()">
+<div id="console"></div>
+</body>
+</html>
