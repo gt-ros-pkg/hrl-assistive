@@ -42,6 +42,7 @@ function teleop_init(){
     // };
     advertise('head_nav_goal','geometry_msgs/PoseStamped');
     advertise('head_traj_controller/point_head_action/goal','pr2_controllers_msgs/PointHeadActionGoal');
+    advertise('head_traj_controller/joint_trajectory_action/goal', 'pr2_controllers_msgs/JointTrajectoryActionGoal');
     advertise('base_controller/command','geometry_msgs/Twist');
     advertise('l_gripper_controller/command', 'pr2_controllers_msgs/Pr2GripperCommand');
     advertise('r_gripper_controller/command', 'pr2_controllers_msgs/Pr2GripperCommand');
@@ -103,6 +104,7 @@ function pub_head_traj(head_traj_goal, dist){ //Send pan/tilt trajectory command
     head_traj_goal.goal.trajectory.joint_names = window.head_joints;
     head_traj_goal.goal.trajectory.points[0].velocities = [0, 0];
     head_traj_goal.goal.trajectory.points[0].time_from_start.secs = Math.max(2*dist, 1);
+    head_traj_goal.goal.trajectory.points[0].time_from_start.nsecs = 0.0;
     node.publish('head_traj_controller/joint_trajectory_action/goal', 
             'pr2_controllers_msgs/JointTrajectoryActionGoal',
             json(head_traj_goal));

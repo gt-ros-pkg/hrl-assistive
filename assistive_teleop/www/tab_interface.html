@@ -68,11 +68,6 @@ function basic_init(){
 	advertise('torso_controller/position_joint_action/goal',
                 'pr2_controllers_msgs/SingleJointPositionActionGoal');
     advertise('wt_click_log', 'std_msgs/String');
-    //SKIN SPECIFIC CHANGES
-    advertise('skin_ort_toggle', 'std_msgs/Bool');
-	advertise('skin/r_gripper_command','pr2_controllers_msgs/Pr2GripperCommand')
-	advertise('skin/l_gripper_command','pr2_controllers_msgs/Pr2GripperCommand')
-	advertise('epc/stop','std_msgs/Bool')
 };
 
 function advertise(topic, type){
