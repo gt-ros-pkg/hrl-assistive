@@ -76,7 +76,7 @@ function advertise(topic, type){
     };
 
 function mjpeg_canvas_init(){
-	var mjpeg = new MjpegCanvas({
+	    window.mjpeg = new MjpegCanvas({
 		host:ROBOT,
         port:8080,
 		topic : ['head_mount_kinect/rgb/image_color',
@@ -133,11 +133,11 @@ function empty_srv(service){
 
 function tab_select_cb(eve, ui){
     if (ui.panel.id =='tab_ellipse'){
-        set_camera('head_registration/confirmation');
+        window.mjpeg.setCamera('head_registration/confirmation');
     } else {
        toggle_ell_controller(false)}; 
     if (ui.panel.id =='tab_ar_servoing'){
-        set_camera('ar_servo/confirmation_rotated')};
+        window.mjpeg.setCamera('ar_servo/confirmation_rotated')};
 };
 
 function speak(text){

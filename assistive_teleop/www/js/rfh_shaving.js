@@ -13,7 +13,7 @@ function shaving_init(){
     pubs['ros_switch'] = 'std_msgs/Bool';
     pubs['pr2_ar_servo/find_tag'] = 'std_msgs/Bool';
     pubs['face_adls/local_move'] = 'std_msgs/String';
-    pubs['face_adls/stop_move'] = 'std_msgs/Bool';
+//    pubs['face_adls/stop_move'] = 'std_msgs/Bool';
     pubs['pr2_ar_servo/tag_confirm'] = 'std_msgs/Bool';
     pubs['pr2_ar_servo/preempt'] = 'std_msgs/Bool';
     pubs['netft_gravity_zeroing/rezero_wrench'] = 'std_msgs/Bool';
@@ -74,11 +74,11 @@ function servo_feedback_cb(msg){
             text = "AR Tag Found. CONFIRM LOCATION AND BEGIN APPROACH.";
             $('#servo_approach, #servo_stop').show().fadeTo(0,1);
             $('#servo_detect_tag').fadeTo(0,0.5);
-            set_camera('ar_servo/confirmation_rotated');
+            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
             break
         case 3:
             text = "Unable to Locate AR Tag. ADJUST VIEW AND RETRY.";
-            set_camera('ar_servo/confirmation_rotated');
+            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
             break
         case 4:
             text = "Servoing";
@@ -87,7 +87,7 @@ function servo_feedback_cb(msg){
             text = "Servoing Completed Successfully.";
             $('#servo_approach, #servo_stop').fadeTo(0,0.5);
             $('#servo_detect_tag').fadeTo(0,1);
-            set_camera(window.KINECT+'/rgb/image_color');
+            window.mjpeg.setCamera('head_mount_kinect/rgb/image_color');
             break
         case 6:
             text = "Detected Collision with Arms while Servoing.  "+ 
@@ -105,13 +105,13 @@ function servo_feedback_cb(msg){
             text = "View of AR Tag Was Lost.  ADJUST (IF NECESSARY) AND RE-DETECT.";
             $('#servo_approach, #servo_stop').fadeTo(0,0.5);
             $('#servo_detect_tag').fadeTo(0,1);
-            set_camera('ar_servo/confirmation_rotated');
+            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
             break
         case 9:
             text = "Servoing Stopped by User. RE-DETECT TAG";
             $('#servo_approach, #servo_stop').fadeTo(0,0.5);
             $('#servo_detect_tag').fadeTo(0,1);
-            set_camera('ar_servo/confirmation_rotated');
+            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
             break
     };
     log(text);
@@ -134,7 +134,7 @@ function servo_preempt(){
 
 function head_reg_cb(){
         $('#img_act_select').val('seed_reg');
-        set_camera('head_registration/confirmation');
+        window.mjpeg.setCamera('head_registration/confirmation');
         alert('Click on your cheek in the video to register the ellipse.');
     };
 

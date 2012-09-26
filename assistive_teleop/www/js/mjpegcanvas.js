@@ -50,6 +50,14 @@ var MjpegCanvas = function(options) {
 	mjpegCanvas.canvasID = options.canvasID;
 	mjpegCanvas.width = options.width;
 	mjpegCanvas.height = options.height;
+    mjpegCanvas.setCamera = function(stream){
+                                if (stream !== _stream) {
+                                    _stream = stream;
+                                    _img = null;
+                                    _createImage();
+                                }
+                            };
+
 
 	// current streaming topic
 	var _stream = null;
@@ -261,5 +269,5 @@ var MjpegCanvas = function(options) {
 	// redraw the image every 100 ms
 	setInterval(function() {
 		draw(_img);
-	}, 33);
+	}, 133);
 };
