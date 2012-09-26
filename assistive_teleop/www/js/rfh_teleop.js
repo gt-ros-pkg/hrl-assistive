@@ -87,7 +87,7 @@ function pub_torso(tz){
     log(dir+" Torso");
     node.publish('torso_controller/position_joint_action/goal',
             'pr2_controllers_msgs/SingleJointPositionActionGoal',
-            json({'goal':{'position':tz}})
+            json({'goal':{'position':tz, 'min_duration':{'secs':0.5, 'nsecs':0.0}}})
             )
 };
 
@@ -109,12 +109,17 @@ function pub_head_traj(head_traj_goal, dist){ //Send pan/tilt trajectory command
 };
 
 function pub_head_goal(x,y,z,frame) { //Send 3d point to look at using kinect
-    node.publish('head_traj_controller/point_head_action/goal', 'pr2_controllers_msgs/PointHeadActionGoal', json(
-                {  'goal':{'target':{'header':{'frame_id':frame },
-                'point':{'x':x, 'y':y, 'z':z}},
-                'pointing_axis':{'x':0, 'y':0, 'z':1},
-                'pointing_frame':window.pointing_frame,
-                'max_velocity':0.5}}))
+    node.publish('head_traj_controller/point_head_action/goal',
+                 'pr2_controllers_msgs/PointHeadActionGoal',
+                 json(
+                     {'goal':{'target':{'header':{'frame_id':frame },
+                     'point':{'x':x, 'y':y, 'z':z}},
+                     'pointing_axis':{'x':0, 'y':0, 'z':1},
+                     'pointing_frame':window.pointing_frame,
+                     'min_duration':{'secs':0.0,'nsecs':0.0},
+                     'max_velocity':0.5}}
+                 )
+    )
 };
 
 function teleop_head() {

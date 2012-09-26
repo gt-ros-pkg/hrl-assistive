@@ -92,12 +92,12 @@ var MjpegCanvas = function(options) {
 		var _buttonMargin = 10;
 		var _buttonPadding = 5;
 		var _buttonHeight = 25;
-		var _buttonWidth = 55;
-		var _buttonColor = 'black';
-		var _buttonStrokeSize = 5;
-		var _buttonStrokeColor = 'blue';
+		var _buttonWidth = 165;
+		var _buttonColor = 'white';
+		var _buttonStrokeSize = 2;
+		var _buttonStrokeColor = 'gold';
 		var _editFont = '16pt Verdana';
-		var _editColor = 'white';
+		var _editColor = 'blue';
 
 		// menu div
 		var _menu = document.createElement('div');
@@ -113,8 +113,13 @@ var MjpegCanvas = function(options) {
 		_canvas.addEventListener('mouseleave', function(e) {
 			_mouseEnter = false;
 		}, false);
-		_canvas
-				.addEventListener(
+		_canvas.addEventListener('mouseover', function(e) {
+			_mouseEnter = true;
+		}, false);
+		_canvas.addEventListener('mouseout', function(e) {
+			_mouseEnter = false;
+		}, false);
+		_canvas.addEventListener(
 						'click',
 						function(e) {
 							// create a unique ID
@@ -221,7 +226,7 @@ var MjpegCanvas = function(options) {
 
 		if (_mouseEnter && !_menuOpen) {
 			// create the "swap" button
-			_context.globalAlpha = 0.66;
+			_context.globalAlpha = 1.0;
 			_context.beginPath();
 			_context.rect(_buttonMargin, height
 					- (_buttonHeight + _buttonMargin), _buttonWidth,
@@ -235,19 +240,19 @@ var MjpegCanvas = function(options) {
 			// draw the text on the button
 			_context.font = _editFont;
 			_context.fillStyle = _editColor;
-			_context.fillText('Edit', _buttonMargin + _buttonPadding, height
+			_context.fillText('Select Camera', _buttonMargin + _buttonPadding, height
 					- (_buttonMargin + _buttonPadding));
 		}
 
 		if (_menuOpen) {
 			// create the white box
-			_context.globalAlpha = 0.66;
+			_context.globalAlpha = 0.3;
 			_context.beginPath();
 			_context.rect(0, 0, width, height);
 			_context.fillStyle = 'white';
 			_context.fill();
 		}
-		_context.globalAlpha = 1;
+		_context.globalAlpha = 1.0;
 	}
 
 	// grab the initial stream
@@ -256,5 +261,5 @@ var MjpegCanvas = function(options) {
 	// redraw the image every 100 ms
 	setInterval(function() {
 		draw(_img);
-	}, 35);
+	}, 33);
 };

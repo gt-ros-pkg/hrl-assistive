@@ -1,26 +1,10 @@
 var count_surf_wipe_right=count_surf_wipe_left=force_wipe_count=0;
-var MJPEG_QUALITY= '50';
-var MJPEG_WIDTH = '640';
-var MJPEG_HEIGHT = '480';
-//var KINECT = 'camera';
-var KINECT = 'head_mount_kinect';
-
-camera_select_html = 
-'<select id="camera_select" onchange="set_camera($(this).val());">\
-        <option value='+window.KINECT+'/rgb/image_color>Kinect Camera</option>\
-        <option value="kinect_throttled">Throttled Kinect Camera</option>\
-        <option value="arrow_overlaid">Kinect (w/Arrows)</option>\
-        <option value="ar_servo/confirmation_rotated">AR Tag Confirm</option>\
-        <option value="head_registration/confirmation"> Head Registration Confirm</option>\
-        <option value="wide_stereo/right/image_color">Wide Stereo Camera</option>\
-        <option value="l_forearm_cam/image_color_rotated">Left Forearm Camera</option>\
-        <option value="r_forearm_cam/image_color_rotated">Right Forearm Camera</option>\
-        </select>'
 
 image_click_select_html = 
 '<select id="img_act_select">\
     <option id="looking" selected="selected" value="looking">Look</option>\
     <option id="seed_reg" value="seed_reg">Register Head</option>\
+    <option id="skin_goal" value="skin_goal">Move with Skin</option>\
     <!--<option id="na" value="norm_approach">Normal Approach</option>-->\
     <!--<option id="touch" value="touch">Touch</option>-->\
     <!--<option id="wipe" value="wipe">Wipe</option>-->\
@@ -36,63 +20,29 @@ image_click_select_html =
     </select>'
 
 $(function(){
-        $('#camera_select').html(camera_select_html);
         $('#image_click_select').html(image_click_select_html);
         });
 
-//function camera_init(){
-//Publishers for no-longer-supported capabilites,may be recovered in the future, do no delete.
-//Image-Click Publishers
-// var pubs = new Array()
-//var sides = ["right","left"];
-//for (var i=0; i < sides.length; i++){
-//pubs['norm_approach_'+sides[i]] = 'geometry_msgs/PoseStamped';
-// pubs['wt_contact_approach_'+sides[i]] = 'geometry_msgs/PoseStamped';
-// pubs['wt_poke_'+sides[i]+'_point'] = 'geometry_msgs/PoseStamped';
-//pubs['wt_swipe_'+sides[i]+'_goals'] = 'geometry_msgs/PoseStamped';
-//pubs['wt_wipe_'+sides[i]+'_goals'] = 'geometry_msgs/PoseStamped';
-//pubs['wt_rg_'+sides[i]+'_goal'] = 'geometry_msgs/PoseStamped';
-//pubs['wt_grasp_'+sides[i]+'_goal'] = 'geometry_msgs/PoseStamped';
-//pubs['wt_surf_wipe_'+sides[i].slice(0,1)+'_points'] = 'geometry_msgs/Point';
-// };
-// for (var i in pubs){
-//     advertise(i, pubs[i]);
-// };
-// console.log('Finished camera init');
-//};
+window.addEventListener('click', function(e){
+        if (e.target.id == 'mjpeg_canvas'){
+            var canvasOffset = $('#'+e.target.id).offset()
+            var clickX 
+            var clickY
+            if (e.pageX|| e.pageY){
+                clickX = e.pageX - canvasOffset.left
+                clickY = e.pageY - canvasOffset.top
+            } else if (e.clientX || e.clientY) {
+                clickX = 1+e.clientX + document.body.scrollLeft
+                            + document.documentElement.scrollLeft;
+                clickY = 1+e.clientY + document.body.scrollTop
+                            + document.documentElement.scrollTop;
+            };
+        image_click(clickX, clickY);
+        };
+});
 
-function set_camera(cam) {
-    mjpeg_url = 'http://'+ROBOT+':8080/stream?topic=/'+cam+'?width='+MJPEG_WIDTH+'?height='+MJPEG_HEIGHT+'?quality='+MJPEG_QUALITY
-        $('#video').attr('src', mjpeg_url);
-    $('#camera_select option[value="'+cam+'"]').attr('selected','selected');
-};
-
-function click_position(e) {
-    var posx = 0;
-    var posy = 0;
-    if (!e) var e = window.event;
-    if (e.pageX || e.pageY) 	{
-        posx = e.pageX;
-        posy = e.pageY;
-    }
-    else if (e.clientX || e.clientY) 	{
-        posx = e.clientX + document.body.scrollLeft
-            + document.documentElement.scrollLeft;
-        posy = e.clientY + document.body.scrollTop
-            + document.documentElement.scrollTop;
-    }	return [posx,posy]
-};
-
-function get_point(event){
-    var point = click_position(event);
-    click_x = point[0] - document.getElementById('video_container').offsetLeft 
-        click_y = point[1] - document.getElementById('video_container').offsetTop 
-        console.log("Clicked on image point (x,y) = ("+ click_x.toString() +","+ click_y.toString()+")");
-    return [click_x, click_y]
-};
-
-function image_click(event){
-    var im_pixel = get_point(event);
+function image_click(pixX, pixY){
+    var im_pixel = [pixX, pixY]
     if ($('#img_act_select option:selected').val() == 'surf_wipe') {
         surf_points_out = window.gm_point
             surf_points_out.x = im_pixel[0]
@@ -176,6 +126,10 @@ function p23d_response(point_3d){
         case 'contact_approach':
             log('Sending command to approaching point by moving until contact with '+window.arm().toUpperCase()+' arm')
             node.publish('wt_contact_approach_'+window.arm(), 'geometry_msgs/PoseStamped', json(point_3d));
+        case 'skin_goal':
+            log('Sending pose as goal to approach with skin')
+            node.publish('wt_skin_goal', 'geometry_msgs/PoseStamped', json(point_3d));
+            break
     };
     if (window.force_wipe_count == 0){
         $('#img_act_select').val('looking');
