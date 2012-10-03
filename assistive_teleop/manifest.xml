@@ -30,7 +30,7 @@
   
   <!--gt-ros-pkg-->
   <depend package="pixel_2_3d"/>
-  <depend package="hrl_clickable_display"/>
+  <!--<depend package="hrl_clickable_display"/>-->
   <!--<depend package="hrl_pr2_lib"/>-->
   
   <!--External: brown-ros-pkg, bosch-ros-pkg -->

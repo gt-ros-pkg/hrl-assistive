@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MJPEG Canvas Example</title>
+
+<script type="text/javascript" src="js/mjpegcanvas.js"></script>
+<script type="text/javascript">
+
+var ROBOT="monty1.hsi.gatech.edu"
+
+function start() {
+	// initialize the stream on the canvas 
+	window.mjpeg = new MjpegCanvas({
+		host:ROBOT,
+        port:8080,
+		topic : ['head_mount_kinect/rgb/image_color',
+                 '/wide_stereo/right/image_rect_color',
+                 '/r_forearm_cam/image_color',
+                 '/l_forearm_cam/image_color'],
+		label : ['Kinect Camera', 'Wide Stereo', 'Right Arm', 'Left Arm'],
+		canvasID : 'mjpeg_canvas',
+        defaultStream: 0,
+		width: 640,
+		height: 480,
+        quality: 70
+	});
+}
+console.log("Finished Setting up");
+</script>
+</head>
+
+<body onload="start()">
+    <canvas id="mjpeg_canvas" width="640" height="480">Your Browser Does not suppoer HTML5 Canvas</canvas>
+</body>
+
+</html>
