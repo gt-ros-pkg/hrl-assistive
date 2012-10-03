@@ -21,7 +21,7 @@ class ServoingServer(object):
         rospy.Subscriber('robot_pose_ekf/odom_combined', 
                          PoseWithCovarianceStamped, 
                          self.update_position)
-        rospy.Subscriber('/base_scan', LaserScan, self.base_laser_cb)
+        #rospy.Subscriber('/base_scan', LaserScan, self.base_laser_cb)
         self.servoing_as = actionlib.SimpleActionServer('servoing_action', 
                                                         ServoAction,
                                                         self.goal_cb, False)
@@ -86,21 +86,25 @@ class ServoingServer(object):
     
     def update_goal(self, msg):
         msg.header.stamp = rospy.Time.now()
-        self.tfl.waitForTransform(msg.header.frame_id, '/base_footprint',
-                                  msg.header.stamp, rospy.Duration(0.5))
-        self.bfp_goal = self.tfl.transformPose('/base_footprint', msg)
-        self.tfl.waitForTransform(msg.header.frame_id, 'odom_combined',
-                                  msg.header.stamp, rospy.Duration(0.5))
+        if not self.tfl.waitForTransform(msg.header.frame_id, '/base_footprint',
+                                  msg.header.stamp, rospy.Duration(30)):
+            rospy.logwarn('Cannot find /base_footprint transform')
+	self.bfp_goal = self.tfl.transformPose('/base_footprint', msg)
+        if not self.tfl.waitForTransform(msg.header.frame_id, 'odom_combined',
+                                  msg.header.stamp, rospy.Duration(30)):
+	    rospy.logwarn('Cannot find /odom_combined transform')
         self.odom_goal = self.tfl.transformPose('/odom_combined', msg)
         self.goal_out.publish(self.odom_goal)
         ang_to_goal = math.atan2(self.bfp_goal.pose.position.y,
                                  self.bfp_goal.pose.position.x)
         #(current angle in odom, plus the robot-relative change to face goal)
         self.ang_goal = self.curr_ang[2] + ang_to_goal
-        print "New Goal: \r\n %s" %self.bfp_goal
+        rospy.logwarn(self.odom_goal)
+	rospy.logwarn(self.ang_goal)
+	print "New Goal: \r\n %s" %self.bfp_goal
 
     def update_position(self, msg):
-        if not self.servoing_as.is_active():
+	if not self.servoing_as.is_active():
             return
         self.curr_ang=tft.euler_from_quaternion([msg.pose.pose.orientation.x,
                                                  msg.pose.pose.orientation.y,
@@ -115,7 +119,12 @@ class ServoingServer(object):
                               (self.odom_goal.pose.position.y-
                               msg.pose.pose.position.y)**2)**(1./2)
 
-        if ((self.dist_to_goal < self.dist_thresh) and 
+        rospy.logwarn('Distance to goal (msg): ')
+	rospy.logwarn(msg)
+ 	rospy.logwarn('Distance to goal (odom_goal): ')
+	rospy.logwarn(self.odom_goal)
+		
+	if ((self.dist_to_goal < self.dist_thresh) and 
             (abs(self.ang_diff) < self.ang_thresh)):
             self.at_goal = True
         else:
