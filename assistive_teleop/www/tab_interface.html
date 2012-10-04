@@ -5,28 +5,26 @@
     <script type="text/javascript" src="jqueryui/js/jquery-1.4.4.min.js"></script> 
     <script type="text/javascript" src="jqueryui/js/jquery-ui-1.8.10.custom.min.js"></script> 
     <script type="text/javascript" src="js/json2.js"></script>
-    <script type="text/javascript" src="js/rosbridge.min.js"></script>
-    <script type="text/javascript" src="rosjs_common/js/common.js"> </script>
-    <script type="text/javascript" src="js/rfh_teleop.js"> </script>
+    <script type="text/javascript" src="js/eventemitter2.js"></script>
+    <script type="text/javascript" src="js/ros.js"></script>
+    <script type="text/javascript" src="js/teleop/rfh_teleop.js"> </script>
     <script type="text/javascript" src="js/rfh_shaving.js"> </script>
-    <script type="text/javascript" src="js/rfh_clickable_video.js"> </script>
-    <script type="text/javascript" src="js/mjpegcanvas.js"></script>
+    <script type="text/javascript" src="js/video/rfh_clickable_video.js"> </script>
+    <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
     <script type="text/javascript" src="js/cart_control.js"> </script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
-    <link href="keyboard/css/keyboard.css" rel="stylesheet">
-	<script src="keyboard/js/jquery.keyboard.js"></script>
+    <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
+	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
 <script type="text/javascript">
 function nop(){};
 function json(obj){return JSON.stringify(obj);};
 function log(message){$('#console').html("<big><strong>"+message.toString()+"</strong></big>"); console.log(message.toString())};
-//arm = function(){return $('input[name=arm_sel]:radio:checked').val()};
 
-//var ROBOT = 'localhost';
-var ROBOT = 'monty1.hsi.gatech.edu';
-//var ROBOT = 'pr2c1.cc.gatech.edu';
+var ROBOT = 'monty1.hsi.gatech.edu';//Use localhost when serving website directly from robot via roswww
+var PORT = '9091';//Must match port on which rosbridge is being served
 var get_param_free = true;
 var get_msgs_free = true;
 
@@ -45,14 +43,83 @@ $(function(){
 
 function init(){
     console.log("Starting Init");
-    mjpeg_canvas_init();
-    traj_play_init();
-    teleop_init();
-    shaving_init();
-    basic_init();
-    cart_init();
-    $('#cont_head').click();
-	console.log('Finished Initialization');
+    initMsgTypes();
+    //basic_init();
+    //mjpeg_canvas_init();
+    //traj_play_init();
+    //teleop_init();
+    //shaving_init();
+    //cart_init();
+    //$('#cont_head').click();
+	//console.log('Finished Initialization');
+};
+
+function getMsgDetails(msgType){
+    var req = new window.ros.ServiceRequest({type: msgType});
+    window.ros.getMsgDetailsClient.callService(req, function(res){
+        window.ros.msgs = window.ros.msgs || {}
+        for (item in res.typedefs){
+            if (window.ros.msgs[res.typedefs[item].type] === undefined){
+                console.log("Imported Msg info for "+res.typedefs[item].type.toString())
+                window.ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+            }
+        }
+    });
+};
+
+function initMsgTypes(){
+    window.ros.msgs = {}
+    window.ros.getMsgDetailsClient = new window.ros.Service({
+            name: '/rosapi/message_details',
+            serviceType: 'rosapi/MessageDetails'
+            });
+};
+
+function composeMsg(type){
+    if (window.ros.msgs[type] === undefined){
+        console.error("Cannot compose "+ type + "message: Message details not imported");
+        return
+    }
+    var msg = {}
+    for (field in window.ros.msgs[type].fieldnames){
+        var example = window.ros.msgs[type].examples[field]
+        if (example === "{}"){
+            msg[window.ros.msgs[type].fieldnames[field]] =
+                        composeMsg(window.ros.msgs[type].fieldtypes[field])
+        } else if (example === "[]"){
+            msg[window.ros.msgs[type].fieldnames[field]] = []
+        } else if (example === ""){
+            msg[window.ros.msgs[type].fieldnames[field]] = ""
+        } else if (example === "False"){
+            msg[window.ros.msgs[type].fieldnames[field]] = false
+        } else if (parseInt(example) === 0){
+            msg[window.ros.msgs[type].fieldnames[field]] = 0
+        } else if (example === undefined) {
+            msg[window.ros.msgs[type].fieldnames[field]] = undefined
+        }
+    }
+    return msg
+};
+
+//function composeMsg(type){
+//        var msg = {} 
+//        if (window.ros.msgs[type] != undefined){
+//            for (field in window.ros.msgs[type].fieldnames){
+//                msg[window.ros.msgs[type].fieldnames[field]] = composeMsg(window.ros.msgs[type].fieldtypes[field]);
+//            }
+//        } else {
+//            if (type === 'string'){return ''}
+//            else if (type === 'bool'){return false}
+//            else {return 0}
+//        }
+//        return msg
+//    };
+
+function init_torso_control(){
+    window.torsoCmdTopic = new window.ros.Topic({
+            name: '/torso_controller/command',
+            messageType: 'trajectory_msgs/JointTrajectory'
+        });
 };
 
 function basic_init(){
@@ -146,15 +213,15 @@ function speak(text){
 };
 
 function start(){
-    window.node = new ros.NodeHandle('ws://'+ ROBOT + ':9091');
-	node.setOnClose(function(e) {
-          log("Disconnected or Can't Connect to " + node.url + ".");
+    window.ros = new ROS('ws://'+ ROBOT + ':'+ PORT);
+	    ros.on('close', function(e) {
+          log("Disconnected or Can't Connect to " + ROBOT + ":"+ PORT + ".");
+        });
+        ros.on('error', function(e) {
+          log("Rosbridge Connection Error!");
     	});
-    	node.setOnError(function(e) {
-          log("Unknown error connecting!");
-    	});
-      	node.setOnOpen(function(e) {   
-	      log("Connected to " + node.url + ".");
+      	ros.on('connection', function(e) {   
+	      log("Connected to " + ROBOT + ".");
 	      init();
 	    });
 };
