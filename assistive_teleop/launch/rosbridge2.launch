@@ -1,0 +1,6 @@
+<launch>
+  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
+    <param name="port" type="int" value="9091" />
+  </node>
+  <node name="rosapi" pkg="rosapi" type="rosapi.py" output="screen"/>
+</launch>
