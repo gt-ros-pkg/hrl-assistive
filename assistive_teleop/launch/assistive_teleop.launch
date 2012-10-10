@@ -3,16 +3,12 @@
     <arg name="shaving_board" default="/dev/arduino" />
 
     <arg name="run_ft" default="false" />
-    <arg name="run_rb" default="false" />
+    <arg name="run_rb" default="true" />
     <arg name="run_pt" default="false" />
 
-    <arg name="use_imanip" default="true" />
-    <arg if="$(arg use_imanip)" name="kinect_points" 
-         default="/head_mount_kinect/depth_registered/points" />
-    <arg if="$(arg use_imanip)" name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
-    <arg unless="$(arg use_imanip)" name="kinect_points" default="/camera/rgb/points" />
-    <arg unless="$(arg use_imanip)" name="kinect_camera" default="/camera/rgb/image_color" />
-    <include unless="$(arg use_imanip)" file="$(find openni_launch)/launch/openni.launch" />
+    <arg name="kinect_points" default="/head_mount_kinect/rgb/points" />
+    <arg name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
+    <include file="$(find openni_launch)/launch/openni.launch" />
 
     <!-- Arduino Control Board for powering Shaver -->
     <node
