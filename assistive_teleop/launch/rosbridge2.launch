@@ -1,6 +1,16 @@
 <launch>
+  <!-- Rosbridge, Rosapi, Webserver (roswww), and mjpeg_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
-    <param name="port" type="int" value="9091" />
+      <param name="port" type="int" value="9091" />
   </node>
+  
   <node name="rosapi" pkg="rosapi" type="rosapi.py" output="screen"/>
+
+  <rosparam> 'http/default': 8000 </rosparam>
+  <node name="roswww" pkg="roswww" type="webserver.py" output="screen"/>
+
+  <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
+      <param name="port" type="int" value="8080" />
+  </node>
+
 </launch>

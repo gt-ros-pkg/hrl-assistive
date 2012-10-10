@@ -6,7 +6,6 @@
     <arg name="run_rosbridge" default="true" />
     <arg name="run_tool_power" default="false" />
 
-    <arg name="use_imanip" default="false" />
     <arg name="kinect_points" default="/head_mount_kinect/depth_registered/points" />
     <arg name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
 

@@ -9,7 +9,7 @@
     <script type="text/javascript" src="js/ros.js"></script>
     <script type="text/javascript" src="js/teleop/rfh_teleop.js"> </script>
     <script type="text/javascript" src="js/rfh_shaving.js"> </script>
-    <script type="text/javascript" src="js/video/rfh_clickable_video.js"> </script>
+    <script type="text/javascript" src="js/video/clickable_element.js"> </script>
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
     <script type="text/javascript" src="js/cart_control.js"> </script>
@@ -36,7 +36,6 @@ $(function(){
     $('label:last', '#cont_sel_container').removeClass('ui-corner-right').addClass('ui-corner-bottom centered');
     //$('cont_sel_label').addClass('centered');
     $(".bpd, #cart_controller, .ar_servo_button, .traj_play_cont, #adj_mirror, #traj_play_reverse, #ell_controller, #reg_head, #rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power").button();
-    $('*').click(log_click);
 	$('#submit_text').click(function(e){speak($('#txt2say').val())});
     $("#reset").hide();
 });
@@ -44,14 +43,22 @@ $(function(){
 function init(){
     console.log("Starting Init");
     initMsgTypes();
+    mjpeg_canvas_init();
     //basic_init();
-    //mjpeg_canvas_init();
     //traj_play_init();
     //teleop_init();
     //shaving_init();
     //cart_init();
     //$('#cont_head').click();
 	//console.log('Finished Initialization');
+};
+
+function initMsgTypes(){
+    window.ros.msgs = {}
+    window.ros.getMsgDetailsClient = new window.ros.Service({
+            name: '/rosapi/message_details',
+            serviceType: 'rosapi/MessageDetails'
+            });
 };
 
 function getMsgDetails(msgType){
@@ -65,14 +72,6 @@ function getMsgDetails(msgType){
             }
         }
     });
-};
-
-function initMsgTypes(){
-    window.ros.msgs = {}
-    window.ros.getMsgDetailsClient = new window.ros.Service({
-            name: '/rosapi/message_details',
-            serviceType: 'rosapi/MessageDetails'
-            });
 };
 
 function composeMsg(type){
@@ -157,6 +156,7 @@ function mjpeg_canvas_init(){
 		height: 480,
         quality: 70
 	});
+        window.clickableCanvas = new ClickableElement('mjpeg_canvas','img_act_select');
 };
 
 
