@@ -13,4 +13,15 @@
       <param name="port" type="int" value="8080" />
   </node>
 
+
+  <!-- Throttling nodes for robot state -->
+  <node name="torso_state_throttle"
+        pkg="topic_tools"
+        type="throttle"
+        args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
+
+  <node name="head_state_throttle"
+        pkg="topic_tools" 
+        type="throttle"
+        args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
 </launch>
