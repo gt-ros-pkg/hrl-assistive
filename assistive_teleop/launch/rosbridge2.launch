@@ -1,4 +1,8 @@
 <launch>
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+  <arg name="kinect_points" default="/head_mount_kinect/rgb/points" />
+  <arg name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
+
   <!-- Rosbridge, Rosapi, Webserver (roswww), and mjpeg_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
       <param name="port" type="int" value="9091" />
@@ -13,15 +17,27 @@
       <param name="port" type="int" value="8080" />
   </node>
 
-
   <!-- Throttling nodes for robot state -->
-  <node name="torso_state_throttle"
-        pkg="topic_tools"
-        type="throttle"
+  <node name="torso_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
 
-  <node name="head_state_throttle"
-        pkg="topic_tools" 
-        type="throttle"
+  <node name="head_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
+
+  <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /r_gripper_controller/state 4 /r_gripper_controller/state_throttled" />
+
+  <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
+        args="messages /l_gripper_controller/state 4 /l_gripper_controller/state_throttled" />
+
+  <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
+  <node 
+    name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d"
+    machine="c1" output="screen" >
+      <remap from="image" to="$(arg kinect_camera)" />
+      <remap from="point_cloud" to="$(arg kinect_points)" />
+      <param name="normal_radius" type="double" value="0.035" />
+      <param name="use_closest_pixel"  value="True"/>
+  </node>
+
 </launch>

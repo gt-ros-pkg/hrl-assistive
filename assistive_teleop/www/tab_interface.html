@@ -46,6 +46,8 @@ function init(){
     initMsgTypes();
     mjpeg_canvas_init();
     torso_slider_init(); 
+    head_init();
+    gripper_init();
     basic_init();
     //traj_play_init();
     //teleop_init();
@@ -103,23 +105,64 @@ function composeMsg(type){
 };
 
 function torso_slider_init(){
-    window.torso = new pr2Torso();
+    window.torso = new Pr2Torso();
     $('#torso_slider').slider({min:0.0,max:0.3,step:0.01,orientation:'vertical'});
     var torsoStateDisplay = setInterval("$('#torso_slider').show().slider('option', 'value', window.torso.state)", 500);
     $('#torso_slider').unbind("slidestop").bind("slidestop",function(event,ui){
         window.torso.setPosition($('#torso_slider').slider("value"))
         });	
     document.getElementById('torso_max').addEventListener('click', function(e){
-                                                            window.torso.setPosition(0.3)}
-                                                          );
+                                                            window.torso.setPosition(0.3)});
     document.getElementById('torso_min').addEventListener('click', function(e){
-                                                            window.torso.setPosition(0.0)}
-                                                          );
+                                                            window.torso.setPosition(0.0)});
+};
+
+function head_init(){
+    window.head = new Pr2Head(); 
+    };
+
+function gripper_init(){
+    window.gripper = [new Pr2Gripper('left'), new Pr2Gripper('right')];
+    $('#r_gripper_slider').slider({min:-0.005,max:0.09,step:0.001,orientation:'vertical'}); 
+    var rGripperStateDisplay = setInterval("$('#r_gripper_slider').show().slider('option', 'value', window.gripper[1].state)", 100);
+    $('#r_gripper_slider').unbind("slidestop").bind("slidestop", function(event,ui){
+                        window.gripper[1].setPosition($('#r_gripper_slider').slider("value"));
+                        if ($('#r_gripper_slider').slider("value") > window.gripper[1].state){
+                            log('Opening Right Gripper');
+                        } else {
+                            log('Closing Right Gripper');
+                        }
+                    });	
+    document.getElementById('r_gripper_open').addEventListener('click', function(e){
+                                                               window.gripper[1].open();
+                                                               log('Opening Right Gripper')});
+    document.getElementById('r_gripper_close').addEventListener('click', function(e){
+                                                                window.gripper[1].close();
+                                                                log('Closing Right Gripper')});
+
+    $('#l_gripper_slider').slider({min:-0.005,max:0.09,step:0.001,orientation:'vertical'}); 
+    var lGripperStateDisplay = setInterval("$('#l_gripper_slider').show().slider('option', 'value', window.gripper[0].state)", 100);
+    $('#l_gripper_slider').unbind("slidestop").bind("slidestop", function(event,ui){
+                        window.gripper[0].setPosition($('#l_gripper_slider').slider("value"));
+                        if ($('#l_gripper_slider').slider("value") > window.gripper[1].state){
+                            log('Opening Left Gripper');
+                        } else {
+                            log('Closing Left Gripper');
+                        };
+                    });	
+    document.getElementById('l_gripper_open').addEventListener('click', function(e){
+                                                                window.gripper[0].open();
+                                                                log('Opening Left Gripper')});
+    document.getElementById('l_gripper_close').addEventListener('click', function(e){
+                                                                window.gripper[0].close();
+                                                                log('Closing Left Gripper')});
 };
 
 function basic_init(){
-    var head = pr2Head();
-//    window.setTimeout('window.torso.setPosition(0.15);', 3500);
+    window.setTimeout('testFunction()', 1500);
+};
+
+function testFunction(){
 };
 
 function advertise(topic, type){
@@ -607,25 +650,25 @@ function start(){
     </tr>
     <tr>
       <td>
-        <button id='lg_release'>Open</button>
+        <button id='l_gripper_open'>Open</button>
       </td><td>
-        <button id='rg_release'>Open</button>
+        <button id='r_gripper_open'>Open</button>
       </td><td>
         <button id='torso_max'>Max</button>
       </td>
     </tr>
     <tr>
-      <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="lg_slider"></div></td>
-      <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="rg_slider"></div></td>
+      <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div></td>
+      <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div></td>
       <td rowspan="1" align='center'>
         <div style="margin: 5 auto; height:150px" class="slider" id="torso_slider"></div>
       </td>
     </tr>
     <tr>
       <td>
-        <button id='lg_grab'>Close</button>
+        <button id='l_gripper_close'>Close</button>
       </td><td>
-        <button id='rg_grab'>Close</button>
+        <button id='r_gripper_close'>Close</button>
       </td><td>
         <button id='torso_min'>Min</button>
       </td>
