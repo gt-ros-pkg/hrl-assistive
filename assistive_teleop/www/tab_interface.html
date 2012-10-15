@@ -6,12 +6,13 @@
     <script type="text/javascript" src="jqueryui/js/jquery-ui-1.8.10.custom.min.js"></script> 
     <script type="text/javascript" src="js/json2.js"></script>
     <script type="text/javascript" src="js/eventemitter2.js"></script>
-    <script type="text/javascript" src="js/ros.js"></script>
-    <script type="text/javascript" src="js/pr2.js"></script>
-    <script type="text/javascript" src="js/teleop/rfh_teleop.js"> </script>
-    <script type="text/javascript" src="js/rfh_shaving.js"> </script>
     <script type="text/javascript" src="js/video/clickable_element.js"> </script>
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
+    <script type="text/javascript" src="js/ros.js"></script>
+    <script type="text/javascript" src="js/pr2.js"></script>
+    <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
+
+    <script type="text/javascript" src="js/rfh_shaving.js"> </script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
     <script type="text/javascript" src="js/cart_control.js"> </script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
@@ -20,15 +21,16 @@
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
 <script type="text/javascript">
-function nop(){};
-function json(obj){return JSON.stringify(obj);};
-function log(message){$('#console').html("<big><strong>"+message.toString()+"</strong></big>"); console.log(message.toString())};
+function log(message){
+    $('#console').html("<big><strong>" + message.toString() + "</strong></big>"); 
+    console.log("Log to user: " + message.toString())
+};
 
 var ROBOT = 'monty1.hsi.gatech.edu';//Use localhost when serving website directly from robot via roswww
 var PORT = '9091';//Must match port on which rosbridge is being served
-var get_param_free = true;
-var get_msgs_free = true;
+var scales={rarm:50,larm:50,rrot:0.25*Math.PI,lrot:0.25*Math.PI};
 
+function json(obj){return JSON.stringify(obj);};
 $(function(){
     $("#txt2say").keyboard({layout:'qwerty', stayOpen:true});
     $("#tabs").tabs().tabs({select: tab_select_cb});
@@ -44,10 +46,10 @@ $(function(){
 function init(){
     console.log("Starting Init");
     initMsgTypes();
-    mjpeg_canvas_init();
-    torso_slider_init(); 
-    head_init();
-    gripper_init();
+    initMjpegCanvas();
+    initPr2(); 
+    initGripper();
+    initTorsoSlider();
     basic_init();
     //traj_play_init();
     //teleop_init();
@@ -55,6 +57,7 @@ function init(){
     //cart_init();
     //$('#cont_head').click();
 	//console.log('Finished Initialization');
+    $('#scale_slider').slider({value:0.5,min:0,max:1.0,step:0.01,orientation:'vertical'}); 
 };
 
 function initMsgTypes(){
@@ -104,58 +107,13 @@ function composeMsg(type){
     return msg
 };
 
-function torso_slider_init(){
-    window.torso = new Pr2Torso();
-    $('#torso_slider').slider({min:0.0,max:0.3,step:0.01,orientation:'vertical'});
-    var torsoStateDisplay = setInterval("$('#torso_slider').show().slider('option', 'value', window.torso.state)", 500);
-    $('#torso_slider').unbind("slidestop").bind("slidestop",function(event,ui){
-        window.torso.setPosition($('#torso_slider').slider("value"))
-        });	
-    document.getElementById('torso_max').addEventListener('click', function(e){
-                                                            window.torso.setPosition(0.3)});
-    document.getElementById('torso_min').addEventListener('click', function(e){
-                                                            window.torso.setPosition(0.0)});
-};
-
-function head_init(){
+function initPr2(){
     window.head = new Pr2Head(); 
-    };
-
-function gripper_init(){
+    window.head.sliderScale = 0.5;
+    window.base = new Pr2Base();    
+    window.base.scaleSlider = 0.5;
     window.gripper = [new Pr2Gripper('left'), new Pr2Gripper('right')];
-    $('#r_gripper_slider').slider({min:-0.005,max:0.09,step:0.001,orientation:'vertical'}); 
-    var rGripperStateDisplay = setInterval("$('#r_gripper_slider').show().slider('option', 'value', window.gripper[1].state)", 100);
-    $('#r_gripper_slider').unbind("slidestop").bind("slidestop", function(event,ui){
-                        window.gripper[1].setPosition($('#r_gripper_slider').slider("value"));
-                        if ($('#r_gripper_slider').slider("value") > window.gripper[1].state){
-                            log('Opening Right Gripper');
-                        } else {
-                            log('Closing Right Gripper');
-                        }
-                    });	
-    document.getElementById('r_gripper_open').addEventListener('click', function(e){
-                                                               window.gripper[1].open();
-                                                               log('Opening Right Gripper')});
-    document.getElementById('r_gripper_close').addEventListener('click', function(e){
-                                                                window.gripper[1].close();
-                                                                log('Closing Right Gripper')});
-
-    $('#l_gripper_slider').slider({min:-0.005,max:0.09,step:0.001,orientation:'vertical'}); 
-    var lGripperStateDisplay = setInterval("$('#l_gripper_slider').show().slider('option', 'value', window.gripper[0].state)", 100);
-    $('#l_gripper_slider').unbind("slidestop").bind("slidestop", function(event,ui){
-                        window.gripper[0].setPosition($('#l_gripper_slider').slider("value"));
-                        if ($('#l_gripper_slider').slider("value") > window.gripper[1].state){
-                            log('Opening Left Gripper');
-                        } else {
-                            log('Closing Left Gripper');
-                        };
-                    });	
-    document.getElementById('l_gripper_open').addEventListener('click', function(e){
-                                                                window.gripper[0].open();
-                                                                log('Opening Left Gripper')});
-    document.getElementById('l_gripper_close').addEventListener('click', function(e){
-                                                                window.gripper[0].close();
-                                                                log('Closing Left Gripper')});
+    window.torso = new Pr2Torso();
 };
 
 function basic_init(){
@@ -165,12 +123,7 @@ function basic_init(){
 function testFunction(){
 };
 
-function advertise(topic, type){
-    node.publish(topic, type, json({}));
-    console.log("Advertising "+topic+" of type: "+ type);
-    };
-
-function mjpeg_canvas_init(){
+function initMjpegCanvas(){
 	    window.mjpeg = new MjpegCanvas({
 		host:ROBOT,
         port:8080,
@@ -188,21 +141,9 @@ function mjpeg_canvas_init(){
         window.clickableCanvas = new ClickableElement('mjpeg_canvas','img_act_select');
 };
 
-
-function init_JTAGoal(){
-	if (window.get_msgs_free){
-        window.get_msgs_free = false;
-        console.log('Locking for JTAGoal');
-		node.rosjs.callService('/rosbridge/msgClassFromTypeString',
-                          json(["pr2_controllers_msgs/JointTrajectoryActionGoal"]),
-                          function(msg){window.JTAGoal=msg;
-                                        window.get_msgs_free = true;
-                                        console.log('Unlocking: Got JTAGoal');
-                          });
-	} else {
-        console.log("JTAGoal Waiting for msg lock");
-        setTimeout(function(){init_JTAGoal();},500);
-    }
+function advertise(topic, type){
+    node.publish(topic, type, json({}));
+    console.log("Advertising "+topic+" of type: "+ type);
 };
 
 function log_click(event){
@@ -224,7 +165,7 @@ function list_key_opts(select, msg){
 
 function empty_srv(service){
     console.log("Making Empty Call to "+service)
-	node.rosjs.callService(service, json(''), nop);
+	node.rosjs.callService(service, json(''), function(){});
     };
 
 function tab_select_cb(eve, ui){
@@ -294,6 +235,7 @@ function start(){
         <li><a href="#tab_traj_play">Traj. Playback</a></li>
         <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
         <li><a href="#tab_tts">TTS</a></li>
+        <!--<li><a href="#tab_tts_iframe">TTS_iframe</a></li>-->
     </ul>
 
     <div id="tab_cart_control">
@@ -305,7 +247,7 @@ function start(){
                 <td colspan=2>
                   <div id='cont_sel_container' style="width:300px">
                     <div>
-                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleop_head()"/>
+                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleopHead()"/>
                       <label class="cont_sel_label" for="cont_head">Control Head</label>
                     </div><div>
                       <input type="radio" class="cont_sel" id="cont_l_arm" name="cont_sel" style="width:50%; height:100%"/>
@@ -313,7 +255,7 @@ function start(){
                       <input type="radio" class="cont_sel" id="cont_r_arm" name="cont_sel" style="width:50%; height:100%"/>
                       <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
                     </div><div>
-                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleop_base()">
+                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleopBase()">
                       <label class="cont_sel_label" for="cont_base">Control Base</label>
                     </div>
                   </div> 
@@ -635,6 +577,10 @@ function start(){
         </table>
       </div>  <!--End Speak Button + Text -->
     </div> <!--END Tab TTS -->
+
+<!--    <div id="tab_tts_iframe">
+      <iframe id="tts_iframe" frameborder="0" src="tts.html" />
+    </div> END tab tts iframe -->
   </div> <!-- END Tabs -->
 </td>
     

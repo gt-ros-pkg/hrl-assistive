@@ -4,16 +4,27 @@ var Pr2Base = function () {
     getMsgDetails('geometry_msgs/Twist');
     base.commandPub = new window.ros.Topic({
         name: 'base_controller/command',
-        messageType: 'geomertry_msgs/Twist'
+        messageType: 'geometry_msgs/Twist'
     });
     base.commandPub.advertise();
-    base.drive = function (x, y, rot) {
+    base.pubCmd = function (x, y, rot) {
         var cmd = composeMsg('geometry_msgs/Twist');
         cmd.linear.x = x;
-        cmd.linead.y = y;
-        cmd.andular.z = z;
+        cmd.linear.y = y;
+        cmd.angular.z = rot;
         var cmdMsg = new window.ros.Message(cmd);
         base.commandPub.publish(cmdMsg);
+    };
+
+    base.drive = function (selector, x, y, rot) {
+        if ($(selector).hasClass('ui-state-active')){
+            base.pubCmd(x,y,rot);
+            setTimeout(function () {
+                window.base.drive(selector, x, y, rot)
+                }, 100);
+        } else {
+            console.log('End driving for '+selector);
+        };
     };
 };
 
@@ -27,9 +38,18 @@ var Pr2Gripper = function (side) {
         name: gripper.side.substring(0, 1) + '_gripper_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointControllerState'
     });
-    gripper.stateSub.subscribe(function (msg) {
+
+    gripper.setState = function (msg) {
         gripper.state = msg.process_value;
-    });
+    };
+    gripper.stateCBList = [gripper.setState];
+    gripper.stateCB = function (msg) {
+        for (var i=0; i<gripper.stateCBList.length; i++) {
+            gripper.stateCBList[i](msg);
+        };
+    };
+    gripper.stateSub.subscribe(gripper.stateCB);
+    
     gripper.goalPub = new window.ros.Topic({
         name: gripper.side.substring(0, 1) + '_gripper_controller/gripper_action/goal',
         messageType: 'pr2_controllers_msgs/Pr2GripperCommandActionGoal'
@@ -55,6 +75,7 @@ var Pr2Head = function () {
     var head = this;
     head.state = [0.0, 0.0];
     head.joints = ['head_pan_joint', 'head_tilt_joint'];
+    head.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
     getMsgDetails('pr2_controllers_msgs/JointTrajectoryActionGoal');
     head.jointPub = new window.ros.Topic({
         name: 'head_traj_controller/joint_trajectory_action/goal',
@@ -73,9 +94,16 @@ var Pr2Head = function () {
         name: '/head_traj_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    head.stateSub.subscribe(function (msg) {
-        head.state = msg.actual.positions;
-    });
+    head.setState = function (msg) {
+        head.state = msg.actual.positions;    
+    };
+    head.stateCBList = [head.setState];
+    head.stateCB = function (msg){
+        for (var i=0; i<head.stateCBList.length; i++){
+            head.stateCBList[i](msg);
+        };
+    };
+    head.stateSub.subscribe(head.stateCB);
 
     head.setPosition = function (pan, tilt) {
         var dPan = Math.abs(pan - head.state[0]);
@@ -110,8 +138,8 @@ var Pr2Head = function () {
             y: y,
             z: z
         };
-        headPointMsg.goal.pointing_frame = window.pointing_frame;
-        headPointMsg.goal.max_velocity = 0.7;
+        headPointMsg.goal.pointing_frame = head.pointingFrame;
+        headPointMsg.goal.max_velocity = 0.35;
         var msg = new window.ros.Message(headPointMsg);
         head.pointPub.publish(msg);
     };
@@ -133,9 +161,16 @@ var Pr2Torso = function () {
         name: 'torso_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    torso.stateSub.subscribe(function (msg) {
+    torso.setState = function (msg) {
         torso.state = msg.actual.positions[0];
-    });
+    };
+    torso.stateCBList = [torso.setState];
+    torso.stateCB = function (msg) {
+        for (var i=0; i<torso.stateCBList.length; i++){
+            torso.stateCBList[i](msg);
+        };
+    };
+    torso.stateSub.subscribe(torso.stateCB);
 
     torso.setPosition = function (z) {
         var dir = (z < torso.state) ? 'Lowering' : 'Raising';

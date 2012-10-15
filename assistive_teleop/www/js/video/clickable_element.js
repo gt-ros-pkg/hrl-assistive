@@ -107,7 +107,7 @@ var ClickableElement = function(elementID, selectorID){
         switch (_selector[_selector.selectedIndex].value){
             case 'looking':
                 log("Sending look to point command");
-                window.head_pub = window.clearInterval(head_pub);
+                clearInterval(window.head.pubInterval);
                 window.head.pointHead(result_pose.pose.position.x, result_pose.pose.position.y,
                                       result_pose.pose.position.z, result_pose.header.frame_id);
                 break
