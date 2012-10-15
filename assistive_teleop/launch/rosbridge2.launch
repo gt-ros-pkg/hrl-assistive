@@ -40,4 +40,8 @@
       <param name="use_closest_pixel"  value="True"/>
   </node>
 
+  <node pkg ="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">
+    <param name="voice" value="voice_nitech_us_rms_arctic_hts"/>
+  </node>
+
 </launch>

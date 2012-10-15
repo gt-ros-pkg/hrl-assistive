@@ -11,14 +11,16 @@
     <script type="text/javascript" src="js/ros.js"></script>
     <script type="text/javascript" src="js/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
+    <script type="text/javascript" src="js/tts.js"> </script>
+    <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
+	<script src="js/keyboard/js/jquery.keyboard.js"></script>
 
     <script type="text/javascript" src="js/rfh_shaving.js"> </script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
     <script type="text/javascript" src="js/cart_control.js"> </script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
-    <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
-	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
+
 
 <script type="text/javascript">
 function log(message){
@@ -32,7 +34,6 @@ var scales={rarm:50,larm:50,rrot:0.25*Math.PI,lrot:0.25*Math.PI};
 
 function json(obj){return JSON.stringify(obj);};
 $(function(){
-    $("#txt2say").keyboard({layout:'qwerty', stayOpen:true});
     $("#tabs").tabs().tabs({select: tab_select_cb});
     $('#cont_sel_container').buttonset();
     $('label:first', '#cont_sel_container').removeClass('ui-corner-left').addClass('ui-corner-top centered');
@@ -50,6 +51,7 @@ function init(){
     initPr2(); 
     initGripper();
     initTorsoSlider();
+    initTTS();
     basic_init();
     //traj_play_init();
     //teleop_init();
@@ -177,11 +179,6 @@ function tab_select_cb(eve, ui){
         window.mjpeg.setCamera('ar_servo/confirmation_rotated')};
 };
 
-function speak(text){
-		node.publish('wt_speech', 'std_msgs/String', json({'data':text}));
-		log('\"' + text +'\"'); 
-};
-
 function start(){
     window.ros = new ROS('ws://'+ ROBOT + ':'+ PORT);
 	    ros.on('close', function(e) {
@@ -235,7 +232,6 @@ function start(){
         <li><a href="#tab_traj_play">Traj. Playback</a></li>
         <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
         <li><a href="#tab_tts">TTS</a></li>
-        <!--<li><a href="#tab_tts_iframe">TTS_iframe</a></li>-->
     </ul>
 
     <div id="tab_cart_control">
@@ -537,46 +533,7 @@ function start(){
       </table>
     </div><!--END Tab ellipse -->
 
-    <div id="tab_tts">
-      <div id=speech_select>  <!--Speak Button and Text Input -->
-        <table>
-          <tr>
-            <form action=''>
-              <td>
-                <button id="submit_text" type="button">Speak:</button>
-              </td>
-              <td> 
-                <input id="txt2say" type="text" style="height:auto;width:105%"/>
-              </td>
-            </form>
-          </tr>
-          <tr>
-            <td>Phrases:</td>
-            <td>
-              <select onchange="speak($(this).val()); $('#txt2say').val($(this).val())">
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-                <option value="Maybe">Maybe</option>
-                <option value="OK">Ok</option>
-                <option value="k">k</option>
-                <option value="Board Please">Board Please</option>
-                <option value="I don't know">I Don't Know</option>
-                <option value="I don't care">I Don't Care</option>
-                <option value="One Moment">One Moment</option>
-                <option value="Please">Please</option>
-                <option value="Thank You">Thank You</option>
-                <option value="I agree">I agree</option>
-                <option value="I disagree">I disagree</option>
-                <option value="A lot">A lot</option>
-                <option value="A little">A little</option>
-                <option value="Hello">Hello</option>
-                <option value="Goodbye">Goodbye</option>
-              </select>
-            </td>
-          </tr>
-        </table>
-      </div>  <!--End Speak Button + Text -->
-    </div> <!--END Tab TTS -->
+    <div id="tab_tts" />
 
 <!--    <div id="tab_tts_iframe">
       <iframe id="tts_iframe" frameborder="0" src="tts.html" />
