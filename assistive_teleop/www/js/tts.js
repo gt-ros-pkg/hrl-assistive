@@ -13,7 +13,7 @@ var TextToSpeech = function (div) {
     };
 }
 
-function initTTS(){
+function initTTS(ttsTabId){
     window.tts = new TextToSpeech();
     var phrases = ['Yes',
                     'No',
@@ -32,8 +32,8 @@ function initTTS(){
                     'A little',
                     'Hello',
                     'Goodbye'];
-    $('#tab_tts').append('<table><tr><td id="tts_r1c1"></td><td id=tts_r1c2></td></tr>');
-    $('#tab_tts').append('<tr><td id="tts_r2c1"></td><td id="tts_r2c2"></td></tr></table>');
+    $('#'+ttsTabId).append('<table><tr><td id="tts_r1c1"></td><td id=tts_r1c2></td></tr>');
+    $('#'+ttsTabId).append('<tr><td id="tts_r2c1"></td><td id="tts_r2c2"></td></tr></table>');
     $('#tts_r1c1').append('<button id="submit_text" type="button">Speak:</button>');
     $('#tts_r1c2').append('<input id="txt2say" type="text" style="height:auto;width:105%"/>');
     $('#tts_r2c1').append('Phrases:');

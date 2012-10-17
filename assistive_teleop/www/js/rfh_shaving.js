@@ -64,6 +64,13 @@ function adj_mirror_cb(){
        1000);
 };
 
+//CSS style class for ar_servoing buttons
+.ar_servo_button{
+    height:75px;
+    width:150px;
+    font-size:150%;
+}
+
 function servo_feedback_cb(msg){
     text = "Unknown result from servoing feedback";
     switch(msg.data){

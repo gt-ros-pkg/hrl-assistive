@@ -12,10 +12,11 @@
     <script type="text/javascript" src="js/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
     <script type="text/javascript" src="js/tts.js"> </script>
+    <script type="text/javascript" src="js/ar_servo.js"> </script>
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
 
-    <script type="text/javascript" src="js/rfh_shaving.js"> </script>
+    <!--<script type="text/javascript" src="js/rfh_shaving.js"> </script>-->
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
     <script type="text/javascript" src="js/cart_control.js"> </script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
@@ -38,9 +39,7 @@ $(function(){
     $('#cont_sel_container').buttonset();
     $('label:first', '#cont_sel_container').removeClass('ui-corner-left').addClass('ui-corner-top centered');
     $('label:last', '#cont_sel_container').removeClass('ui-corner-right').addClass('ui-corner-bottom centered');
-    //$('cont_sel_label').addClass('centered');
     $(".bpd, #cart_controller, .ar_servo_button, .traj_play_cont, #adj_mirror, #traj_play_reverse, #ell_controller, #reg_head, #rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power").button();
-	$('#submit_text').click(function(e){speak($('#txt2say').val())});
     $("#reset").hide();
 });
 
@@ -51,14 +50,12 @@ function init(){
     initPr2(); 
     initGripper();
     initTorsoSlider();
-    initTTS();
+    initTTS('tabTTS');
+    initARServoTab('tabARServoing');
     basic_init();
     //traj_play_init();
-    //teleop_init();
     //shaving_init();
     //cart_init();
-    //$('#cont_head').click();
-	//console.log('Finished Initialization');
     $('#scale_slider').slider({value:0.5,min:0,max:1.0,step:0.01,orientation:'vertical'}); 
 };
 
@@ -143,39 +140,13 @@ function initMjpegCanvas(){
         window.clickableCanvas = new ClickableElement('mjpeg_canvas','img_act_select');
 };
 
-function advertise(topic, type){
-    node.publish(topic, type, json({}));
-    console.log("Advertising "+topic+" of type: "+ type);
-};
-
-function log_click(event){
-    node.publish('wt_click_log', 'std_msgs/String', json({'data':event.target.id.toString()}));
-};
-
-function list_opts(sel, dict){
-    for (var key in dict){
-        $(sel).append('<option value="'+dict[key]+'">'+key+'</option>');
-        console.log("adding option "+ dict[key]+" to selector "+ sel)
-        };
-};
-
-function list_key_opts(select, msg){
-        $(select).empty();
-        for (i=0; i<msg.data.length; i++){
-            $(select).append('<option value="'+msg.data[i]+'">'+msg.data[i]+'</option>')};
-    };
-
-function empty_srv(service){
-    console.log("Making Empty Call to "+service)
-	node.rosjs.callService(service, json(''), function(){});
-    };
-
 function tab_select_cb(eve, ui){
+    return
     if (ui.panel.id =='tab_ellipse'){
         window.mjpeg.setCamera('head_registration/confirmation');
     } else {
        toggle_ell_controller(false)}; 
-    if (ui.panel.id =='tab_ar_servoing'){
+    if (ui.panel.id =='tabARServoing'){
         window.mjpeg.setCamera('ar_servo/confirmation_rotated')};
 };
 
@@ -196,30 +167,23 @@ function start(){
 </script>
 </head>
   <body onload="start()">
-<table>
-  <tr>
-    <td colspan='7'> <!-- Start Cell for video -->
-        <canvas id="mjpeg_canvas" width="640" height="480">Your browser does not support HTML5 canvas</canvas>
-    </td><!-- End Cell for video -->
-    <td>
-      <div id="ft_view_widget"> </div>
-    </td>
-  <tr>
-    <td> Camera: </td><td id="camera_select"></td>
-     <td>On Image Click:</td><td id="image_click_select"></td>
-     <td>Hand:</td>
-     <!--<td>
-        <div id='arm_sel'>
-          <input type='radio' id='l_arm' name='arm_sel' value='left' checked='checked'/>
-          <label for='l_arm'>Left</label>
-          <input type='radio' id='r_arm' name='arm_sel' value='right'/>
-          <label for='r_arm'>Right</label>
-        </div>
-      </td>-->
-  </tr>
-</table>
+    <table>
+      <tr>
+        <td colspan='7'> <!-- Start Cell for video -->
+          <canvas id="mjpeg_canvas" width="640" height="480">Your browser does not support HTML5 canvas</canvas>
+        </td><!-- End Cell for video -->
+        <td>
+          <div id="ft_view_widget"></div>
+        </td>
+      </tr>
+      <tr>
+         <td>On Image Click:</td>
+         <td id="image_click_select"></td>
+      </tr>
+    </table>
+
 <hr>
-<div id="console"></div>
+  <div id="console"></div>
 <hr>
 
 <table id="gross_formatting">
@@ -228,10 +192,10 @@ function start(){
 <div id="tabs">
     <ul>
         <li><a href="#tab_cart_control">Default Controls</a></li>
-        <li><a href="#tab_ar_servoing">AR Servoing</a></li>
+        <li><a href="#tabARServoing">AR Servoing</a></li>
         <li><a href="#tab_traj_play">Traj. Playback</a></li>
         <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
-        <li><a href="#tab_tts">TTS</a></li>
+        <li><a href="#tabTTS">TTS</a></li>
     </ul>
 
     <div id="tab_cart_control">
@@ -316,45 +280,25 @@ function start(){
               </table>
             </div> <!--END Cart Rotate buttonpad -->
           </td>
-
-       <!--<td>
-         <img id="tp" src=touchpad.jpg title="Click here for 2D Control of the selected robot part" style="border-style:solid; border-width:3px height:235px; width:235px;">
-       </td>-->
        </tr>
      </table>
     </div><!-- END TAB CART CONTROL -->
 
-    <div id="tab_ar_servoing">
-      <table>
+    <div id="tabARServoing"></div>
+<!--      <table>
         <tr>
           <td>
-            <div>
-              <!--<select id="ar_servo_select">
-              </select>-->
-            </div>
+            <button class='ar_servo_button' id='servo_detect_tag' style="font-size:140%" onclick="servo_detect_tag_cb();"> Detect Tag </button>
           </td>
-        </tr>
-        <tr>
           <td>
-            <div>
-              <table>
-                <tr>
-                  <td>
-                    <button class='ar_servo_button' id='servo_detect_tag' style="font-size:140%" onclick="servo_detect_tag_cb();"> Detect Tag </button>
-                  </td>
-                  <td>
-                    <button class='ar_servo_button' id='servo_approach' style="font-size:140%" onclick="servo_approach_cb();"> Approach </button>
-                  </td>
-                  <td>
-                    <button class='ar_servo_button' id='servo_stop' style="font-size:140%" onclick="servo_preempt();"> Stop </button>
-                  </td>
-                </tr>
-              </table>
-            </div>
+            <button class='ar_servo_button' id='servo_approach' style="font-size:140%" onclick="servo_approach_cb();"> Approach </button>
+          </td>
+          <td>
+            <button class='ar_servo_button' id='servo_stop' style="font-size:140%" onclick="servo_preempt();"> Stop </button>
           </td>
         </tr>
       </table>
-    </div><!-- END Tab Ar Servo -->
+    </div> END Tab Ar Servo -->
     
     <div id="tab_traj_play">
       <table id="traj_play_layout">
@@ -532,12 +476,9 @@ function start(){
         </tr>
       </table>
     </div><!--END Tab ellipse -->
+    
+    <div id="tabTTS" />
 
-    <div id="tab_tts" />
-
-<!--    <div id="tab_tts_iframe">
-      <iframe id="tts_iframe" frameborder="0" src="tts.html" />
-    </div> END tab tts iframe -->
   </div> <!-- END Tabs -->
 </td>
     
