@@ -13,12 +13,13 @@
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
+    <script type="text/javascript" src="js/run_stop.js"> </script>
+<!--    <script type="text/javascript" src="js/force_level_widget.js"> </script>-->
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
 
     <!--<script type="text/javascript" src="js/rfh_shaving.js"> </script>-->
-    <script type="text/javascript" src="js/force_level_widget.js"> </script>
-    <script type="text/javascript" src="js/cart_control.js"> </script>
+    <!--<script type="text/javascript" src="js/cart_control.js"> </script>-->
     <script type="text/javascript" src="js/traj_play.js"> </script>
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
@@ -31,7 +32,6 @@ function log(message){
 
 var ROBOT = 'monty1.hsi.gatech.edu';//Use localhost when serving website directly from robot via roswww
 var PORT = '9091';//Must match port on which rosbridge is being served
-var scales={rarm:50,larm:50,rrot:0.25*Math.PI,lrot:0.25*Math.PI};
 
 function json(obj){return JSON.stringify(obj);};
 $(function(){
@@ -44,7 +44,6 @@ $(function(){
 });
 
 function init(){
-    console.log("Starting Init");
     initMsgTypes();
     initMjpegCanvas();
     initPr2(); 
@@ -52,6 +51,8 @@ function init(){
     initTorsoSlider();
     initTTS('tabTTS');
     initARServoTab('tabARServoing');
+    initRunStop('runStopDiv');
+//    initFTDisplay('FTDisplay', {});
     basic_init();
     //traj_play_init();
     //shaving_init();
@@ -73,7 +74,7 @@ function getMsgDetails(msgType){
         window.ros.msgs = window.ros.msgs || {}
         for (item in res.typedefs){
             if (window.ros.msgs[res.typedefs[item].type] === undefined){
-                console.log("Imported Msg info for "+res.typedefs[item].type.toString())
+                console.log('Imported '+res.typedefs[item].type.toString()+'Msg')
                 window.ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
             }
         }
@@ -173,7 +174,7 @@ function start(){
           <canvas id="mjpeg_canvas" width="640" height="480">Your browser does not support HTML5 canvas</canvas>
         </td><!-- End Cell for video -->
         <td>
-          <div id="ft_view_widget"></div>
+          <div id="FTDisplay"></div>
         </td>
       </tr>
       <tr>
@@ -285,21 +286,7 @@ function start(){
     </div><!-- END TAB CART CONTROL -->
 
     <div id="tabARServoing"></div>
-<!--      <table>
-        <tr>
-          <td>
-            <button class='ar_servo_button' id='servo_detect_tag' style="font-size:140%" onclick="servo_detect_tag_cb();"> Detect Tag </button>
-          </td>
-          <td>
-            <button class='ar_servo_button' id='servo_approach' style="font-size:140%" onclick="servo_approach_cb();"> Approach </button>
-          </td>
-          <td>
-            <button class='ar_servo_button' id='servo_stop' style="font-size:140%" onclick="servo_preempt();"> Stop </button>
-          </td>
-        </tr>
-      </table>
-    </div> END Tab Ar Servo -->
-    
+
     <div id="tab_traj_play">
       <table id="traj_play_layout">
         <tr>
@@ -521,21 +508,9 @@ function start(){
 </div>
 </td>
 </tr>
-  <tr>
-    <td colspan=4 align=right>
-    </td>
-  </tr>
 <tr><td colspan='4'> <!-- Gross Formating-->
-<!--<div id="console"></div>-->
+<div id="runStopDiv">
 </td>
-<td> <!-- Gross Formating-->
-<tr><td>
-  <button id="stop" type="button" style="color:red;background-color:gray;font:bold;height:auto;border-style:none;height:30px;width:100%;" onclick="empty_srv('/pr2_etherCAT/halt_motors'); $(':button:visible:not(#reset)').fadeTo(0,0.4); $('#reset').show(); log('YOU\'VE STOPPED THE ROBOT! Please click \'REACTIVATE\' to reset.')">STOP ROBOT! </button> 
-  </td>
-</tr><tr>
-  <td>
-    <button id="reset" type="button" style="color:white;background-color:green;font:bold;height:30px;width:100%" onclick="empty_srv('/pr2_etherCAT/reset_motors'); $(':button:visible').fadeTo(0,1); $(this).hide(); log('Operation Resumed.');">REACTIVATE</button>
- </td>
 </tr>
 </table> <!--END Gross Formating-->
 </body>
