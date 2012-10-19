@@ -4,23 +4,27 @@
     <link type="text/css" href="jqueryui/css/sunny/jquery-ui-1.8.10.custom.css" rel="stylesheet" />   
     <script type="text/javascript" src="jqueryui/js/jquery-1.4.4.min.js"></script> 
     <script type="text/javascript" src="jqueryui/js/jquery-ui-1.8.10.custom.min.js"></script> 
-    <script type="text/javascript" src="js/json2.js"></script>
-    <script type="text/javascript" src="js/eventemitter2.js"></script>
+    
+    <script type="text/javascript" src="js/ros/eventemitter2.js"></script>
+    <script type="text/javascript" src="js/ros/ros.js"></script>
+    <script type="text/javascript" src="js/ros/actionclient.js"></script>
+
     <script type="text/javascript" src="js/video/clickable_element.js"> </script>
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
-    <script type="text/javascript" src="js/ros.js"></script>
+
     <script type="text/javascript" src="js/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
-<!--    <script type="text/javascript" src="js/force_level_widget.js"> </script>-->
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
+    <script type="text/javascript" src="js/traj_play.js"> </script>
 
+<!--    <script type="text/javascript" src="js/force_level_widget.js"> </script>-->
     <!--<script type="text/javascript" src="js/rfh_shaving.js"> </script>-->
     <!--<script type="text/javascript" src="js/cart_control.js"> </script>-->
-    <script type="text/javascript" src="js/traj_play.js"> </script>
+
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
 
@@ -33,7 +37,6 @@ function log(message){
 var ROBOT = 'monty1.hsi.gatech.edu';//Use localhost when serving website directly from robot via roswww
 var PORT = '9091';//Must match port on which rosbridge is being served
 
-function json(obj){return JSON.stringify(obj);};
 $(function(){
     $("#tabs").tabs().tabs({select: tab_select_cb});
     $('#cont_sel_container').buttonset();

@@ -1,3 +1,20 @@
+$(function(){
+        $("#traj_radio").buttonset().addClass('centered');
+        $(".traj_play_radio_label").addClass('centered');
+        $('#traj_play_act_sel, #traj_play_arm_sel').bind('change',function(){update_trajectories()});
+        $('label:first', '#traj_radio').removeClass('ui-corner-left').addClass('ui-corner-top');
+        $('label:last', '#traj_radio').removeClass('ui-corner-right').addClass('ui-corner-bottom');
+});
+
+var TrajectoryPlayback = function () {
+    'use strict';
+    var trajPlay = this;
+    getMsgDetails('
+    trajPlay.
+
+
+};
+
 var traj_actions = ['Shaving Left Cheek', 'Shaving Right Cheek', 'Servoing'];
 
 function traj_play_init(){
@@ -36,14 +53,6 @@ function init_TrajPlayGoal(){
         setTimeout(function(){init_TrajPlayGoal();},500);
     }
 };
-
-$(function(){
-        $("#traj_radio").buttonset().addClass('centered');// :radio, #traj_play_radio label").button()
-        $(".traj_play_radio_label").addClass('centered');
-        $('#traj_play_act_sel, #traj_play_arm_sel').bind('change',function(){update_trajectories()});
-        $('label:first', '#traj_radio').removeClass('ui-corner-left').addClass('ui-corner-top');
-        $('label:last', '#traj_radio').removeClass('ui-corner-right').addClass('ui-corner-bottom');
-});
 
 function load_traj_activities(){
     if (window.get_param_free){
