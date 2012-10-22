@@ -1,20 +1,21 @@
-var TextToSpeech = function (div) {
+var TextToSpeech = function (div, ros) {
     'use strict';
     var tts = this;
-    tts.textPub = new window.ros.Topic({
+    tts.ros = ros;
+    tts.textPub = new tts.ros.Topic({
         name: 'wt_speech',
         messageType: 'std_msgs/String'
     });
     tts.textPub.advertise();
     tts.say = function (text) {
-        var msg = new window.ros.Message({data:text});
+        var msg = new tts.ros.Message({data:text});
         tts.textPub.publish(msg);
         log('Saying: \"' + text + ' \"');
     };
 }
 
 function initTTS(ttsTabId){
-    window.tts = new TextToSpeech();
+    window.tts = new TextToSpeech(window.ros);
     var phrases = ['Yes',
                     'No',
                     'Maybe',

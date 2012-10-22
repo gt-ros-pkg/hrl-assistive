@@ -1,12 +1,13 @@
-var RunStop = function () {
+var RunStop = function (ros) {
     var runStop = this;
-    runStop.stopService = new window.ros.Service({
+    runStop.ros = ros;
+    runStop.stopService = new runStop.ros.Service({
         name:'/pr2_etherCAT/halt_motors',
         serviceType: 'std_srvs/Empty'});
     runStop.stop = function () {
             runStop.stopService.callService({}, function () {});
         };
-    runStop.runService = new window.ros.Service({
+    runStop.runService = new runStop.ros.Service({
         name:'/pr2_etherCAT/reset_motors',
         serviceType: 'std_srvs/Empty'});
     runStop.start = function () {
@@ -15,7 +16,7 @@ var RunStop = function () {
 };
 
 var initRunStop = function (divId) {
-    var runStop = new RunStop();
+    var runStop = new RunStop(window.ros);
     $('#'+divId).append('<button id="'+divId+'StopButton">'+
                         '<button id="'+divId+'RunButton">');
     $('#'+divId+'StopButton').html('STOP ROBOT');

@@ -1,8 +1,9 @@
-var Pr2Base = function () {
+var Pr2Base = function (ros) {
     'use strict';
     var base = this;
+    base.ros = ros;
     getMsgDetails('geometry_msgs/Twist');
-    base.commandPub = new window.ros.Topic({
+    base.commandPub = new base.ros.Topic({
         name: 'base_controller/command',
         messageType: 'geometry_msgs/Twist'
     });
@@ -12,7 +13,7 @@ var Pr2Base = function () {
         cmd.linear.x = x;
         cmd.linear.y = y;
         cmd.angular.z = rot;
-        var cmdMsg = new window.ros.Message(cmd);
+        var cmdMsg = new base.ros.Message(cmd);
         base.commandPub.publish(cmdMsg);
     };
 
@@ -20,7 +21,7 @@ var Pr2Base = function () {
         if ($(selector).hasClass('ui-state-active')){
             base.pubCmd(x,y,rot);
             setTimeout(function () {
-                window.base.drive(selector, x, y, rot)
+                base.base.drive(selector, x, y, rot)
                 }, 100);
         } else {
             console.log('End driving for '+selector);
@@ -28,13 +29,14 @@ var Pr2Base = function () {
     };
 };
 
-var Pr2Gripper = function (side) {
+var Pr2Gripper = function (side, ros) {
     'use strict';
     var gripper = this;
     gripper.side = side;
+    gripper.ros = ros;
     gripper.state = 0.0;
     getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
-    gripper.stateSub = new window.ros.Topic({
+    gripper.stateSub = new gripper.ros.Topic({
         name: gripper.side.substring(0, 1) + '_gripper_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointControllerState'
     });
@@ -50,7 +52,7 @@ var Pr2Gripper = function (side) {
     };
     gripper.stateSub.subscribe(gripper.stateCB);
     
-    gripper.goalPub = new window.ros.Topic({
+    gripper.goalPub = new gripper.ros.Topic({
         name: gripper.side.substring(0, 1) + '_gripper_controller/gripper_action/goal',
         messageType: 'pr2_controllers_msgs/Pr2GripperCommandActionGoal'
     });
@@ -58,7 +60,7 @@ var Pr2Gripper = function (side) {
         var goalMsg = composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
         goalMsg.goal.command.position = pos;
         goalMsg.goal.command.max_effort = -1;
-        var msg = new window.ros.Message(goalMsg);
+        var msg = new gripper.ros.Message(goalMsg);
         gripper.goalPub.publish(msg);
     };
     gripper.open = function () {
@@ -70,27 +72,28 @@ var Pr2Gripper = function (side) {
 
 };
 
-var Pr2Head = function () {
+var Pr2Head = function (ros) {
     'use strict';
     var head = this;
+    head.ros = ros;
     head.state = [0.0, 0.0];
     head.joints = ['head_pan_joint', 'head_tilt_joint'];
     head.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
     getMsgDetails('pr2_controllers_msgs/JointTrajectoryActionGoal');
-    head.jointPub = new window.ros.Topic({
+    head.jointPub = new head.ros.Topic({
         name: 'head_traj_controller/joint_trajectory_action/goal',
         messageType: 'pr2_controllers_msgs/JointTrajectoryActionGoal'
     });
     head.jointPub.advertise();
 
     getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
-    head.pointPub = new window.ros.Topic({
+    head.pointPub = new head.ros.Topic({
         name: 'head_traj_controller/point_head_action/goal',
         messageType: 'pr2_controllers_msgs/PointHeadActionGoal'
     });
     head.pointPub.advertise();
 
-    head.stateSub = new window.ros.Topic({
+    head.stateSub = new head.ros.Topic({
         name: '/head_traj_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
@@ -116,7 +119,7 @@ var Pr2Head = function () {
         var goalMsg = composeMsg('pr2_controllers_msgs/JointTrajectoryActionGoal');
         goalMsg.goal.trajectory.joint_names = head.joints;
         goalMsg.goal.trajectory.points.push(trajPointMsg);
-        var msg = new window.ros.Message(goalMsg);
+        var msg = new head.ros.Message(goalMsg);
         head.jointPub.publish(msg);
     };
     head.delPosition = function (delPan, delTilt) {
@@ -140,24 +143,25 @@ var Pr2Head = function () {
         };
         headPointMsg.goal.pointing_frame = head.pointingFrame;
         headPointMsg.goal.max_velocity = 0.35;
-        var msg = new window.ros.Message(headPointMsg);
+        var msg = new head.ros.Message(headPointMsg);
         head.pointPub.publish(msg);
     };
 };
 
-var Pr2Torso = function () {
+var Pr2Torso = function (ros) {
     'use strict';
     var torso = this;
+    torso.ros = ros;
     torso.state = 0.0;
     getMsgDetails('pr2_controllers_msgs/SingleJointPositionActionGoal');
 
-    torso.goalPub = new window.ros.Topic({
+    torso.goalPub = new torso.ros.Topic({
         name: 'torso_controller/position_joint_action/goal',
         messageType: 'pr2_controllers_msgs/SingleJointPositionActionGoal'
     });
     torso.goalPub.advertise();
 
-    torso.stateSub = new window.ros.Topic({
+    torso.stateSub = new torso.ros.Topic({
         name: 'torso_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
@@ -179,24 +183,7 @@ var Pr2Torso = function () {
         var goal_msg = composeMsg('pr2_controllers_msgs/SingleJointPositionActionGoal');
         goal_msg.goal.position = z;
         goal_msg.goal.max_velocity = 1.0;
-        var msg = new window.ros.Message(goal_msg);
+        var msg = new torso.ros.Message(goal_msg);
         torso.goalPub.publish(msg);
-    };
-};
-
-var PR2 = function () {
-    'use strict';
-    var pr2 = this;
-    options = options || {};
-    pr2.head = new Pr2Head();
-    pr2.tosro = new Pr2Torso();
-    pr2.base = new Pr2Base();
-    pr2.grippers = {
-        'right': new Pr2Gripper('right'),
-        'left': new Pr2Gripper('left')
-    };
-    pr2.arms = {
-        'right': new Pr2Arm('right'),
-        'left': new Pr2Arm('left')
     };
 };

@@ -111,16 +111,16 @@ function composeMsg(type){
 };
 
 function initPr2(){
-    window.head = new Pr2Head(); 
+    window.head = new Pr2Head(window.ros); 
     window.head.sliderScale = 0.5;
-    window.base = new Pr2Base();    
+    window.base = new Pr2Base(window.ros);    
     window.base.scaleSlider = 0.5;
-    window.gripper = [new Pr2Gripper('left'), new Pr2Gripper('right')];
-    window.torso = new Pr2Torso();
+    window.gripper = [new Pr2Gripper('left', window.ros),
+                      new Pr2Gripper('right', window.ros)];
+    window.torso = new Pr2Torso(window.ros);
 };
 
 function basic_init(){
-    window.trajPlay = new TrajectoryPlayback('right');
     window.setTimeout('testFunction()', 1500);
 };
 

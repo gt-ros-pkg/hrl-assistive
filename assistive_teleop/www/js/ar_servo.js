@@ -1,40 +1,41 @@
-var ArServo = function () {
+var ArServo = function (window.ros) {
   'use strict';
   var arServo = this;
+  arServo.ros = ros;
   arServo.state = 0;
-  arServo.findTagPub = new window.ros.Topic({
+  arServo.findTagPub = new arServo.ros.Topic({
     name: 'pr2_ar_servo/find_tag',
     messageType: 'std_msgs/Bool'
   });
   arServo.findTagPub.advertise();
   arServo.detectTag = function () {
-    var msg = new window.ros.Message({
+    var msg = new arServo.ros.Message({
       data: true
     });
     arServo.findTagPub.publish(msg);
     console.log('Publishing ar_servo detect tag msg');
   };
 
-  arServo.approachPub = new window.ros.Topic({
+  arServo.approachPub = new arServo.ros.Topic({
     name: 'pr2_ar_servo/tag_confirm',
     messageType: 'std_msgs/Bool'
   });
   arServo.approachPub.advertise();
   arServo.approach = function () {
-    var msg = new window.ros.Message({
+    var msg = new arServo.ros.Message({
       data: true
     });
     arServo.approachPub.publish(msg);
     console.log('Publishing ar_servo begin approach msg');
   };
 
-  arServo.preemptApproachPub = new window.ros.Topic({
+  arServo.preemptApproachPub = new arServo.ros.Topic({
     name: 'pr2_ar_servo/preempt',
     messageType: 'std_msgs/Bool'
   });
   arServo.preemptApproachPub.advertise();
   arServo.preemptApproach = function () {
-    var msg = new window.ros.Message({
+    var msg = new arServo.ros.Message({
       data: true
     });
     arServo.preemptApproachPub.publish(msg);
@@ -46,7 +47,7 @@ var ArServo = function () {
   };
   arServo.stateCBList = [arServo.stateCB];
 
-  arServo.stateSub = new window.ros.Topic({
+  arServo.stateSub = new arServo.ros.Topic({
     name: 'pr2_ar_servo/state_feedback',
     messageType: 'std_msgs/Int8'
   });
@@ -60,7 +61,7 @@ var ArServo = function () {
 
 function initARServoTab(tabDivId) {
   'use strict';
-  window.arServo = new ArServo();
+  window.arServo = new ArServo(window.ros);
   $('#' + tabDivId).append('<table><tr>' +
                            '<td id="' + tabDivId + 'R0C0"></td>' +
                            '<td id="' + tabDivId + 'R0C1"></td>' +
