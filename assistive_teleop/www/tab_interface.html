@@ -27,7 +27,6 @@
 
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
-
 <script type="text/javascript">
 function log(message){
     $('#console').html("<big><strong>" + message.toString() + "</strong></big>"); 
@@ -55,9 +54,9 @@ function init(){
     initTTS('tabTTS');
     initARServoTab('tabARServoing');
     initRunStop('runStopDiv');
+    initTrajPlay();
 //    initFTDisplay('FTDisplay', {});
     basic_init();
-    //traj_play_init();
     //shaving_init();
     //cart_init();
     $('#scale_slider').slider({value:0.5,min:0,max:1.0,step:0.01,orientation:'vertical'}); 
@@ -120,6 +119,7 @@ function initPr2(){
 };
 
 function basic_init(){
+    window.trajPlay = new TrajectoryPlayback('right');
     window.setTimeout('testFunction()', 1500);
 };
 
@@ -310,13 +310,13 @@ function start(){
           <td>
             <table id="traj_play_buttons">
               <tr><td>
-                  <button class="centered traj_play_cont" id='traj_play_play' style="font-size:150%" onclick="traj_play_send_goal();"> Play </button>
+                  <button class="centered traj_play_cont" id='traj_play_play' style="font-size:150%"> Play </button>
               </td></tr>
               <tr><td>
-                  <button class="centered traj_play_cont" id='traj_play_stop' style="font-size:150%" onclick="empty_srv('/trajectory_playback_r_pause');empty_srv('/trajectory_playback_l_pause');"> Pause </button>
+                  <button class="centered traj_play_cont" id='traj_play_pause' style="font-size:150%"> Pause </button>
               </td></tr>
               <tr><td>
-                  <button class="centered traj_play_cont" id='traj_play_reset' style="font-size:150%" onclick="empty_srv('/trajectory_playback_r_stop');empty_srv('/trajectory_playback_l_stop')"> Stop </button>
+                  <button class="centered traj_play_cont" id='traj_play_stop' style="font-size:150%"> Stop </button>
               </td></tr>
             </table>
           </td>
