@@ -1,3 +1,8 @@
+function rezero_wrench(){
+    node.publish('netft_gravity_zeroing/rezero_wrench','std_msgs/Bool',json({'data':true}));
+    log("Sending command to Re-zero Force/Torque Sensor");
+};
+
 var ForceDisplay = function () {
     'use strict';
     var forceDisplay = this;

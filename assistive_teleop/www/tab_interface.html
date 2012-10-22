@@ -17,12 +17,12 @@
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
+    <script type="text/javascript" src="js/rfh_shaving.js"> </script>
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
 
 <!--    <script type="text/javascript" src="js/force_level_widget.js"> </script>-->
-    <!--<script type="text/javascript" src="js/rfh_shaving.js"> </script>-->
     <!--<script type="text/javascript" src="js/cart_control.js"> </script>-->
 
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
@@ -55,6 +55,7 @@ function init(){
     initARServoTab('tabARServoing');
     initRunStop('runStopDiv');
     initTrajPlay();
+    initEllControl();
 //    initFTDisplay('FTDisplay', {});
     basic_init();
     //shaving_init();
@@ -145,13 +146,14 @@ function initMjpegCanvas(){
 };
 
 function tab_select_cb(eve, ui){
-    return
-    if (ui.panel.id =='tab_ellipse'){
+    if (ui.panel.id === 'tab_ellipse') {
         window.mjpeg.setCamera('head_registration/confirmation');
     } else {
-       toggle_ell_controller(false)}; 
-    if (ui.panel.id =='tabARServoing'){
-        window.mjpeg.setCamera('ar_servo/confirmation_rotated')};
+       window.ellControl.toggle(false);
+    }; 
+    if (ui.panel.id === 'tabARServoing') {
+        window.mjpeg.setCamera('ar_servo/confirmation_rotated');
+    };
 };
 
 function start(){
@@ -165,7 +167,7 @@ function start(){
       	ros.on('connection', function(e) {   
 	      log("Connected to " + ROBOT + ".");
 	      init();
-	    });
+        });
 };
 
 </script>
@@ -354,7 +356,7 @@ function start(){
             <table>
               <tr>
                 <td>
-                  <button class="centered" id="reg_head" onclick="head_reg_cb()"> Register Head </button>
+                  <button class="centered" id="reg_head"> Register Head </button>
                 </td>
               <tr>
               <tr>
@@ -368,24 +370,19 @@ function start(){
                 </td>
               <tr>
                 <td>
-                  <input type="checkbox" class="centered ell_control" id="ell_controller" onclick="toggle_ell_controller()" />
+                  <input type="checkbox" class="centered ell_control" id="ell_controller"/>
                   <label id="ell_cont_state_check" for="ell_controller">Ellipsoid Controller</label>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <button class="centered ell_control" id="adj_mirror" onclick="adj_mirror_cb()"> Adjust Mirror </button>
+                  <button class="centered ell_control" id="adj_mirror"> Adjust Mirror </button>
                 </td>
               </tr>
               <tr>
               <tr>
                 <td>
-                   <button class="centered ell_control" id="tool_power" onclick="toggle_tool_power()">Start/Stop Razor</button>
-                </td>
-              <tr>
-              </tr>
-                <td>
-                  <button class='centered ell_control' id="rezero_wrench" onclick="rezero_wrench()";>Zero FT Sensor</button>
+                   <button class="centered ell_control" id="tool_power">Start/Stop Razor</button>
                 </td>
               </tr>
               <tr>
@@ -397,14 +394,14 @@ function start(){
                         <select class="centered ell_control" id='shave_list'></select>
                       </td>
                       </tr><tr>
-                      <td><button class="centered ell_control" id="send_shave_select" onclick="console.log('Sending Command to move to '+$('#shave_list option:selected').text()); send_shave_location($('#shave_list option:selected').text())">Move to Selection</button></td>
+                      <td><button class="centered ell_control" id="send_shave_select">Move to Selection</button></td>
                     </tr>
                   </table>
                 </div>  <!--End Shaving Drop-Down -->
               </td>
             </tr>
             <tr>
-                      <td><button class="centered ell_control" id="shave_stop" onclick="shave_stop();">Stop</button></td>
+                      <td><button class="centered ell_control" id="shave_stop">Stop</button></td>
                </td>
              </tr>
             </table>
@@ -419,19 +416,19 @@ function start(){
                   <div class="slider" id="ell_trans_slider" style="height:235px" ></div>
                 </td></tr>
                 <tr>
-                  <td><button class="bpd arrow_trans_in" id="b7" value=1 onclick="shave_step('translate_in')"/></td>
-                  <td><button class="bpd arrow_trans_up" id="b8" value=1 onclick="shave_step('translate_up')"/></td>
-                  <td><button class="bpd arrow_trans_out" id="b9" value=1 onclick="shave_step('translate_out')"/></td>
+                  <td><button class="bpd arrow_trans_in" id="b7" value=1 /></td>
+                  <td><button class="bpd arrow_trans_up" id="b8" value=1 /></td>
+                  <td><button class="bpd arrow_trans_out" id="b9" value=1 /></td>
                 </tr>
                 <tr>
-                  <td><button class="bpd arrow_trans_left" id="b4" value="1" onclick="shave_step('translate_left')"/></td>
-                  <td><img id="gripper_icon" src="css/arrows/gripper_icon.png" /></td>
-                  <td><button class="bpd arrow_trans_right" id="b6" value="-1" onclick="shave_step('translate_right')"/></td>
+                  <td><button class="bpd arrow_trans_left" id="b4" value="1"/></td>
+                  <td><img id="gripper_icon" src="css/arrows/gripper_icon.png"/></td>
+                  <td><button class="bpd arrow_trans_right" id="b6" value="-1"/></td>
                 </tr>
                 <tr>
-                  <td><!--<button class="bpd" id="b1" onclick="shave_step()"/>--></td>
-                  <td><button class="bpd arrow_trans_down" id="b2" onclick="shave_step('translate_down')"/></td>
-                  <td><!--<button class="bpd" id="b3" onclick="shave(1)"/>--></td>
+                  <td></td>
+                  <td><button class="bpd arrow_trans_down" id="b2"/></td>
+                  <td></td>
                 </tr>
               </table>
             </div> <!--END Translate Ellipse Buttonpad -->
@@ -446,19 +443,19 @@ function start(){
                   <div class="slider" id="ell_rot_slider" style="height:235px" ></div>
                 </td></tr>
                 <tr>
-                  <td><button class="bpd arrow_rot_x_pos" id="b7" value=1 onclick="shave_step('rotate_x_pos')"/></td>
-                  <td><button class="bpd arrow_rot_y_pos" id="b8" value=1 onclick="shave_step('rotate_y_pos')"/></td>
-                  <td><button class="bpd arrow_rot_x_neg" id="b9" value=1 onclick="shave_step('rotate_x_neg')"/></td>
+                  <td><button class="bpd arrow_rot_x_pos" id="b7" value=1 /></td>
+                  <td><button class="bpd arrow_rot_y_pos" id="b8" value=1 /></td>
+                  <td><button class="bpd arrow_rot_x_neg" id="b9" value=1 /></td>
                 </tr>
                 <tr>
-                  <td><button class="bpd arrow_rot_z_pos" id="b4" value="1" onclick="shave_step('rotate_z_pos')"/></td>
+                  <td><button class="bpd arrow_rot_z_pos" id="b4" value=1 /></td>
                   <td><img id="gripper_icon" src="css/arrows/gripper_icon.png" /></td>
-                  <td><button class="bpd arrow_rot_z_neg" id="b6" value="-1" onclick="shave_step('rotate_z_neg')"/></td>
+                  <td><button class="bpd arrow_rot_z_neg" id="b6" value=-1 /></td>
                 </tr>
                 <tr>
-                  <td><button class="bpd" id="b1" value=1 onclick="shave_step('reset_rotation')">Reset </button></td>
-                  <td><button class="bpd arrow_rot_y_neg" id="b2" onclick="shave_step('rotate_y_neg')"/>
-                  <td><!--<button class="bpd" id="b3" onclick="shave(1)"/>--></td>
+                  <td><button class="bpd" id="b1" value=1>Reset </button></td>
+                  <td><button class="bpd arrow_rot_y_neg" id="b2"/>
+                  <td></td>
                 </tr>
               </table>
             </div> <!--END Ellipse Rotate buttonpad -->
@@ -472,49 +469,50 @@ function start(){
   </div> <!-- END Tabs -->
 </td>
     
-<td rowspan='4'> <!-- Gross Formatting-->
-<div id='gripper_controls'>
-  <table border='1'>
-    <th colspan='2' align='center'> Grippers </th>
-    <th align='center'>Torso</th>
-    <tr>
-      <td align='center'>Left</td>
-      <td align='center'>Right</td>
-      <td align='center'>U/D</td>
-    </tr>
-    <tr>
-      <td>
-        <button id='l_gripper_open'>Open</button>
-      </td><td>
-        <button id='r_gripper_open'>Open</button>
-      </td><td>
-        <button id='torso_max'>Max</button>
-      </td>
-    </tr>
-    <tr>
-      <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div></td>
-      <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div></td>
-      <td rowspan="1" align='center'>
-        <div style="margin: 5 auto; height:150px" class="slider" id="torso_slider"></div>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <button id='l_gripper_close'>Close</button>
-      </td><td>
-        <button id='r_gripper_close'>Close</button>
-      </td><td>
-        <button id='torso_min'>Min</button>
-      </td>
-    </tr>
-  </table>
-</div>
-</td>
-</tr>
-<tr><td colspan='4'> <!-- Gross Formating-->
-<div id="runStopDiv">
-</td>
-</tr>
+    <td rowspan='3'> <!-- Gross Formatting-->
+      <div id='gripper_controls'>
+        <table border='1'>
+          <th colspan='2' align='center'> Grippers </th>
+          <th align='center'>Torso</th>
+          <tr>
+            <td align='center'>Left</td>
+            <td align='center'>Right</td>
+            <td align='center'>U/D</td>
+          </tr>
+          <tr>
+            <td>
+              <button id='l_gripper_open'>Open</button>
+            </td><td>
+              <button id='r_gripper_open'>Open</button>
+            </td><td>
+              <button id='torso_max'>Max</button>
+            </td>
+          </tr>
+          <tr>
+            <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div></td>
+            <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div></td>
+            <td rowspan="1" align='center'>
+              <div style="margin: 5 auto; height:150px" class="slider" id="torso_slider"></div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <button id='l_gripper_close'>Close</button>
+            </td><td>
+              <button id='r_gripper_close'>Close</button>
+            </td><td>
+              <button id='torso_min'>Min</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td> <!-- Gross Formating-->
+      <div id="runStopDiv">
+    </td>
+  </tr>
 </table> <!--END Gross Formating-->
 </body>
 </html>

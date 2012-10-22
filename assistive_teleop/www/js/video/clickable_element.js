@@ -50,9 +50,15 @@ var ClickableElement = function(elementID, selectorID){
                                         serviceType: 'Pixel23d'
                                         });
     _element.addEventListener('click', function(e){
-               var point = clickableElement.clickPosition(e)
-               clickableElement.get3dPose(point[0], point[1])
-        });
+        var point = clickableElement.clickPosition(e)
+        var _selector = document.getElementById(clickableElement.selectorID);
+        if (_selector[_selector.selectedIndex].value === 'seed_reg') {
+            window.ellControl.registerHead(point[0],point[1]);
+            $('#img_act_select').val('looking');
+        } else {
+            clickableElement.get3dPose(point[0], point[1]);
+       };
+    });
 
     clickableElement.clickPosition = function (e) {
         //TODO/FIXME: This should be made cross-browser. 
@@ -152,7 +158,7 @@ var ClickableElement = function(elementID, selectorID){
                 node.publish('wt_contact_approach_'+window.arm(), 'geometry_msgs/PoseStamped', json(result_pose));
         };
         if (window.force_wipe_count == 0){
-            $('#img_act_select').val('looking');
+        $('#img_act_select').val('looking');
         };
     };
 }

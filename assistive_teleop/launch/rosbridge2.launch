@@ -31,13 +31,28 @@
         args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
-  <node 
-    name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d"
-    machine="c1" output="screen" >
+  <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
       <remap from="image" to="$(arg kinect_camera)" />
       <remap from="point_cloud" to="$(arg kinect_points)" />
       <param name="normal_radius" type="double" value="0.035" />
       <param name="use_closest_pixel"  value="True"/>
+  </node>
+
+  <!-- Image Rotation Nodes for right + left arm cameras and ar_confirm image -->
+  <node name="image_rotater_right" pkg="image_rotate" type="image_rotate" machine = "c1"> 
+    <remap from="image" to="/r_forearm_cam/image_color"/>
+    <remap from="rotated/image" to="/r_forearm_cam/image_color_rotated"/>
+  </node>
+
+  <node name="image_rotater_left" pkg="image_rotate" type="image_rotate" machine="c1"> 
+    <remap from="image" to="/l_forearm_cam/image_color"/>
+    <remap from="rotated/image" to="/l_forearm_cam/image_color_rotated"/>
+  </node>
+
+  <node name="image_rotater_ar_confirm" pkg="image_rotate" type="image_rotate" 
+        args="_use_camera_info:=false"  machine = "c1"> 
+    <remap from="image" to="/ar_servo/confirmation"/>
+    <remap from="rotated/image" to="/ar_servo/confirmation_rotated"/>
   </node>
 
   <node pkg ="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">

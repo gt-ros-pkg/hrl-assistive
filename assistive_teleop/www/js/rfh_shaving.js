@@ -1,170 +1,165 @@
-function shaving_init(){
-    console.log("Begin Shaving Init");
-    node.subscribe('/face_adls/global_move_poses', function(msg){
-                    list_key_opts('#shave_list', msg)});
-	node.subscribe('/ros_switch_state', function(msg){
-                    window.tool_state=msg.data;});
-	node.subscribe('/sm_selected_pose', function(msg){
-                    window.sm_selected_pose = msg.data;});
-    node.subscribe('/face_adls/controller_enabled', function(msg){
-                    ell_controller_state_cb(msg)});
-    var pubs = new Array();
-    pubs['face_adls/global_move'] = 'std_msgs/String';
-    pubs['ros_switch'] = 'std_msgs/Bool';
-    pubs['pr2_ar_servo/find_tag'] = 'std_msgs/Bool';
-    pubs['face_adls/local_move'] = 'std_msgs/String';
-//    pubs['face_adls/stop_move'] = 'std_msgs/Bool';
-    pubs['pr2_ar_servo/tag_confirm'] = 'std_msgs/Bool';
-    pubs['pr2_ar_servo/preempt'] = 'std_msgs/Bool';
-    pubs['netft_gravity_zeroing/rezero_wrench'] = 'std_msgs/Bool';
-    for (var i in pubs){
-        advertise(i, pubs[i]);
+var PoweredTool = function (ros) {
+    'use strict';
+    var tool = this; 
+    tool.ros = ros;
+    tool.state = false;
+    tool.togglePub = new tool.ros.Topic({
+        name: 'ros_switch',
+        messageType: 'std_msgs/Bool'});
+    tool.togglePub.advertise();
+    tool.toggle = function () {
+        var cmd = !(tool.state);
+        var msg = new tool.ros.Message({data:cmd});
+        tool.togglePub.publish(msg);
     };
-    node.subscribe('/pr2_ar_servo/state_feedback', function(msg){
-                        servo_feedback_cb(msg);
-                    });
-
-    $('#servo_approach, #servo_stop').fadeTo(0,0.5);
-    $("#ft_view_widget").ft_viewer();
-    $(".ell_control").hide();
-    console.log("End Shaving Init");
+    tool.stateSub = new tool.ros.Topic({
+        name: 'ros_switch_state',
+        messageType: 'std_msgs/Bool'});
+    tool.stateSub.subscribe(function (msg) {
+        tool.state = msg.data;
+    });
 };
 
-function ell_controller_state_cb(msg){
-    console.log("Ell Controller State Updated to "+msg.data);
-    if (msg.data){
-        console.log("Ellipsoid Controller Active")
-        $("#ell_controller").attr("checked","checked").button('eefresh');
-        $(".ell_control").show();
-       } else {
-        $("#ell_controller").attr("checked", "").button('refresh');
-        console.log("Ellipsoid Controller Inactive")
-        $(".ell_control").hide();
-       };
-};
+var EllipsoidControl = function (ros) {
+    'use strict';
+    var ellCon = this;
+    ellCon.ros = ros;
+    
+    ellCon.headRegServiceClient = new ellCon.ros.Service({
+        name:'/initialize_registration',
+        serviceType:'hrl_head_registration/HeadRegistration'});
+    ellCon.registerHead = function (u,v) {
+        ellCon.headRegServiceClient.callService({u:u,v:v}, function (resp) {
+            console.log('Head Registration Service Returned.');
+        });
+    };
 
-function toggle_ell_controller(state){
+    ellCon.globalPoses = [];
+    ellCon.globalPosesSub = new ellCon.ros.Topic({
+        name: 'face_adls/global_move_poses',
+        messageType: 'hrl_face_adls/StringArray'});
+    ellCon.globalPosesSub.subscribe(function (msg) {
+        for (var i=0; i<msg.data.length; i += 1) {
+            ellCon.globalPoses.push(msg.data[i]);
+        }
+    });
+   
+    ellCon.selectedPoseSub = new ellCon.ros.Topic({
+        name:'sm_selected_pose',
+        messageType:'std_msgs/String'});
+    ellCon.selectedPoseSub.subscribe(function (msg) {
+        ellCon.selectedPose = msg.data;
+    }); 
+
+    ellCon.enabledSub = new ellCon.ros.Topic({
+        name: 'face_adls/controller_enabled',
+        messageType: 'std_msgs/Bool'});
+    //TODO: Separate the interface from the subscriber
+    ellCon.enabledSub.subscribe(function (msg) {
+        console.log("Ell Controller State Updated to "+msg.data);
+        if (msg.data) {
+            console.log("Ellipsoid Controller Active")
+            $("#ell_controller").attr("checked","checked").button('refresh');
+            $(".ell_control").show();
+           } else {
+            $("#ell_controller").attr("checked", "").button('refresh');
+            console.log("Ellipsoid Controller Inactive")
+            $(".ell_control").hide();
+           };
+    });
+
+    ellCon.globalMovePub = new ellCon.ros.Topic({
+        name:'face_adls/global_move',
+        messageType: 'std_msgs/String'});
+    ellCon.globalMovePub.advertise();
+    ellCon.sendGlobalMove = function (key) {
+        ellCon.globalMovePub.publish({data:key});
+    };
+
+    ellCon.localMovePub = new ellCon.ros.Topic({
+        name:'face_adls/local_move',
+        messageType: 'std_msgs/String'});
+    ellCon.localMovePub.advertise();
+    ellCon.sendLocalMove = function (cmd) {
+        ellCon.localMovePub.publish({data:cmd});
+    };
+
+    ellCon.stopPub = new ellCon.ros.Topic({
+        name:'face_adls/stop_move',
+        messageType:'std_msgs/Bool'});
+    ellCon.stopPub.advertise();
+    ellCon.stopMove = function () {
+        ellCon.stopPub.publish({data:true});
+    };
+
+    ellCon.controllerServiceClient = new ellCon.ros.Service({
+        name: '/face_adls/enable_controller',
+        serviceType: 'hrl_face_adls/EnableFaceController'});
+    ellCon.toggle = function (state) {
     if (typeof state == 'undefined'){  
         state = $("#ell_controller").attr('checked');
     };
     var mode = $('#ell_mode_sel option:selected').val();
     console.log("Sending controller :"+state.toString());
-    req = {enable:state, mode:mode};
-    node.rosjs.callService('/face_adls/enable_controller',[json(req)],
-                    function(ret){
-                        console.log("Switching Ell. Controller Service Returned "+ret.success);
-                        }
-                );
+    var req = new ellCon.ros.ServiceRequest({enable:state, mode:mode});
+    ellCon.controllerServiceClient.callService(req, function(ret){
+            console.log("Switching Ell. Controller Service Returned "+ret.success);
+        });
     };
-function adj_mirror_cb(){
-   log("calling mirror_adjust_service");
-   enable_cart_control('right');
-   setTimeout(function(){
-       node.rosjs.callService('/point_mirror',json('[]'),function(rsp){});},
-       1000);
 };
 
-//CSS style class for ar_servoing buttons
-.ar_servo_button{
-    height:75px;
-    width:150px;
-    font-size:150%;
+var MirrorPointer = function (ros) {
+    'use strict';
+    var mirror = this;
+    mirror.ros = ros;
+    mirror.pointServiceClient = new mirror.ros.Service({
+        name: 'point_mirror',
+        serviceType: 'std_srvs/Empty'});
+    mirror.point = function () {
+        console.log("Pointing Mirror");
+        //enable_cart_control('right');
+        setTimeout(function () {
+           mirror.pointServiceClient.callService({},function () {});
+           }, 1000);
+    };
 }
 
-function servo_feedback_cb(msg){
-    text = "Unknown result from servoing feedback";
-    switch(msg.data){
-        case 1:
-            text = "Searching for AR Tag.";
-            break
-        case 2: 
-            text = "AR Tag Found. CONFIRM LOCATION AND BEGIN APPROACH.";
-            $('#servo_approach, #servo_stop').show().fadeTo(0,1);
-            $('#servo_detect_tag').fadeTo(0,0.5);
-            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
-            break
-        case 3:
-            text = "Unable to Locate AR Tag. ADJUST VIEW AND RETRY.";
-            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
-            break
-        case 4:
-            text = "Servoing";
-            break
-        case 5:
-            text = "Servoing Completed Successfully.";
-            $('#servo_approach, #servo_stop').fadeTo(0,0.5);
-            $('#servo_detect_tag').fadeTo(0,1);
-            window.mjpeg.setCamera('head_mount_kinect/rgb/image_color');
-            break
-        case 6:
-            text = "Detected Collision with Arms while Servoing.  "+ 
-                    "ADJUST AND RE-DETECT TAG.";
-            $('#servo_approach, #servo_stop').fadeTo(0,0.5);
-            $('#servo_detect_tag').fadeTo(0,1);
-            break
-        case 7:
-            text = "Detected Collision in Base Laser while Servoing.  "+ 
-                    "ADJUST AND RE-DETECT TAG.";
-            $('#servo_approach, #servo_stop').fadeTo(0,0.5);
-            $('#servo_detect_tag').fadeTo(0,1);
-            break
-        case 8:
-            text = "View of AR Tag Was Lost.  ADJUST (IF NECESSARY) AND RE-DETECT.";
-            $('#servo_approach, #servo_stop').fadeTo(0,0.5);
-            $('#servo_detect_tag').fadeTo(0,1);
-            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
-            break
-        case 9:
-            text = "Servoing Stopped by User. RE-DETECT TAG";
-            $('#servo_approach, #servo_stop').fadeTo(0,0.5);
-            $('#servo_detect_tag').fadeTo(0,1);
-            window.mjpeg.setCamera('ar_servo/confirmation_rotated');
-            break
-    };
-    log(text);
-};
+var initEllControl = function () {
+    window.shaver = new PoweredTool(window.ros);
+    window.ellControl = new EllipsoidControl(window.ros);
+    window.mirrorPointer = new MirrorPointer(window.ros);
 
-
-function servo_detect_tag_cb(){
-    node.publish('pr2_ar_servo/find_tag', 'std_msgs/Bool', json({'data':true}));
-    console.log('Sending command to search for ARTag'); 
-};
-
-function servo_approach_cb(){
-    node.publish('pr2_ar_servo/tag_confirm', 'std_msgs/Bool', json({'data':true}));
-    console.log('Approaching Tag'); 
-};
-
-function servo_preempt(){
-    node.publish('pr2_ar_servo/preempt', 'std_msgs/Bool', json({'data':true}));
-};
-
-function head_reg_cb(){
+    var head_reg_cb = function () {
         $('#img_act_select').val('seed_reg');
         window.mjpeg.setCamera('head_registration/confirmation');
         alert('Click on your cheek in the video to register the ellipse.');
     };
 
-function shave_stop(){
-    node.publish('/face_adls/stop_move','std_msgs/Bool',json({'data':true}));
-    };
+    $('#reg_head').click(head_reg_cb);
+    $('#ell_controller').click(function () {window.ellControl.toggle()});
+    $('#adj_mirror').click(window.mirrorPointer.point);
+    $('#tool_power').click(window.shaver.toggle);
+    $('#send_shave_select').click(function () {
+        console.log('Sending Command to move to '+$('#shave_list option:selected').text())
+        window.ellControl.sendGlobalMove($('#shave_list option:selected').text());
+    });
+    $('#shave_stop').click(window.ellControl.stopMove);
+   
+    $('#bpd_ell_trans b2').click(window.ellControl.sendLocalMove('translate_down'));
+    $('#bpd_ell_trans b4').click(window.ellControl.sendLocalMove('translate_left'));
+    $('#bpd_ell_trans b6').click(window.ellControl.sendLocalMove('translate_right'));
+    $('#bpd_ell_trans b7').click(window.ellControl.sendLocalMove('translate_in'));
+    $('#bpd_ell_trans b8').click(window.ellControl.sendLocalMove('translate_up'));
+    $('#bpd_ell_trans b9').click(window.ellControl.sendLocalMove('translate_out'));
+   
+    $('#bpd_ell_rot b1').click(window.ellControl.sendLocalMove('reset_rotation'));
+    $('#bpd_ell_rot b2').click(window.ellControl.sendLocalMove('rotate_y_neg'));
+    $('#bpd_ell_rot b4').click(window.ellControl.sendLocalMove('rotate_z_pos'));
+    $('#bpd_ell_rot b6').click(window.ellControl.sendLocalMove('rotate_z_neg'));
+    $('#bpd_ell_rot b7').click(window.ellControl.sendLocalMove('rotate_x_pos'));
+    $('#bpd_ell_rot b8').click(window.ellControl.sendLocalMove('rotate_y_pos'));
+    $('#bpd_ell_rot b9').click(window.ellControl.sendLocalMove('rotate_x_neg'));
 
-function shave_step(cmd_str) {
-    node.publish('/face_adls/local_move', 'std_msgs/String',
-                json({'data':cmd_str}));
-};
 
-function send_shave_location(key) {
-    node.publish('/face_adls/global_move', 'std_msgs/String', json({'data':key}));
-};
-
-function toggle_tool_power() {
-    state = !window.tool_state;
-    node.publish('ros_switch', 'std_msgs/Bool', json({'data':state}));
-    console.log("Sending Tool Power Toggle");
-};
-
-function rezero_wrench(){
-    node.publish('netft_gravity_zeroing/rezero_wrench','std_msgs/Bool',json({'data':true}));
-    log("Sending command to Re-zero Force/Torque Sensor");
+    $(".ell_control").hide();
 };

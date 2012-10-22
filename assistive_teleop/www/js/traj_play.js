@@ -7,14 +7,14 @@ var TrajectoryPlayback = function (arm) {
             serverName: 'trajectory_playback_'+arm[0],
             actionName: 'hrl_pr2_traj_playback/TrajectoryPlayAction'});
     trajPlay.pauseServiceClient = new window.ros.Service({
-        name:'trajectory_playback_'+arm[0]+'_pause',
-        serviceType: 'std_msgs/Empty'})
+        name:'/trajectory_playback_'+arm[0]+'_pause',
+        serviceType: 'std_srvs/Empty'})
     trajPlay.pause = function () {
             trajPlay.pauseServiceClient.callService({}, function () {});
         };
-    trajPlay.stopService = new window.ros.Service({
-        name:'trajectory_playback_'+arm[0]+'_stop',
-        serviceType: 'std_msgs/Empty'})
+    trajPlay.stopServiceClient = new window.ros.Service({
+        name:'/trajectory_playback_'+arm[0]+'_stop',
+        serviceType: 'std_srvs/Empty'})
     trajPlay.stop = function () {
             trajPlay.stopServiceClient.callService({}, function () {});
         };
