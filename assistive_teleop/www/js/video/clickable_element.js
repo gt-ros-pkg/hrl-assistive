@@ -54,7 +54,9 @@ var ClickableElement = function(elementID, selectorID){
                clickableElement.get3dPose(point[0], point[1])
         });
 
-    clickableElement.clickPosition = function(e) {
+    clickableElement.clickPosition = function (e) {
+        //TODO/FIXME: This should be made cross-browser. 
+        //Clickable Element doesn't seem to work in firefox.
         var posx = 0;
         var posy = 0;
         if (!e) var e = window.event;
@@ -73,8 +75,8 @@ var ClickableElement = function(elementID, selectorID){
         var element = _element;
         while (element && !isNaN(element.offsetLeft)
                 && !isNaN(element.offsetTop)) {
-            offsetLeft += element.offsetLeft - element.scrollLeft;
-            offsetTop += element.offsetTop - element.scrollTop;
+            offsetLeft += element.offsetLeft;
+            offsetTop += element.offsetTop;
             element = element.offsetParent;
         }
         posx -= offsetLeft;
