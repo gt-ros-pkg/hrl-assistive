@@ -21,16 +21,14 @@
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
-
-<!--    <script type="text/javascript" src="js/force_level_widget.js"> </script>-->
+    <!--<script type="text/javascript" src="js/force_level_widget.js"> </script>-->
     <!--<script type="text/javascript" src="js/cart_control.js"> </script>-->
-
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
 <script type="text/javascript">
 function log(message){
     $('#console').html("<big><strong>" + message.toString() + "</strong></big>"); 
-    console.log("Log to user: " + message.toString())
+    console.log("Log to user: " + message.toString());
 };
 
 var ROBOT = 'monty1.hsi.gatech.edu';//Use localhost when serving website directly from robot via roswww
@@ -39,76 +37,70 @@ var PORT = '9091';//Must match port on which rosbridge is being served
 $(function(){
     $("#tabs").tabs().tabs({select: tab_select_cb});
     $('#cont_sel_container').buttonset();
-    $('label:first', '#cont_sel_container').removeClass('ui-corner-left').addClass('ui-corner-top centered');
-    $('label:last', '#cont_sel_container').removeClass('ui-corner-right').addClass('ui-corner-bottom centered');
-    $(".bpd, #cart_controller, .ar_servo_button, .traj_play_cont, #adj_mirror, #traj_play_reverse, #ell_controller, #reg_head, #rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power").button();
+    $('label:first','#cont_sel_container').removeClass('ui-corner-left')
+                                          .addClass('ui-corner-top centered');
+    $('label:last','#cont_sel_container').removeClass('ui-corner-right')
+                                         .addClass('ui-corner-bottom centered');
+    $('#scale_slider').slider({
+        value:0.5,
+        min:0,
+        max:1.0,
+        step:0.01,
+        orientation:'vertical'}); 
+    $('.bpd, #cart_controller, .ar_servo_button, .traj_play_cont,'+
+      '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
+      '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power')
+      .button();
     $("#reset").hide();
 });
 
-function init(){
-    initMsgTypes();
-    initMjpegCanvas();
-    initPr2(); 
-    initGripper();
-    initTorsoSlider();
-    initTTS('tabTTS');
-    initARServoTab('tabARServoing');
-    initRunStop('runStopDiv');
-    initTrajPlay();
-    initEllControl();
-//    initFTDisplay('FTDisplay', {});
-    basic_init();
-    //shaving_init();
-    //cart_init();
-    $('#scale_slider').slider({value:0.5,min:0,max:1.0,step:0.01,orientation:'vertical'}); 
-};
-
-function initMsgTypes(){
-    window.ros.msgs = {}
+function extendROSJS () {
+    window.ros.msgs = {};
     window.ros.getMsgDetailsClient = new window.ros.Service({
-            name: '/rosapi/message_details',
-            serviceType: 'rosapi/MessageDetails'
-            });
-};
+        name: '/rosapi/message_details',
+        serviceType: 'rosapi/MessageDetails'});
 
-function getMsgDetails(msgType){
-    var req = new window.ros.ServiceRequest({type: msgType});
-    window.ros.getMsgDetailsClient.callService(req, function(res){
-        window.ros.msgs = window.ros.msgs || {}
-        for (item in res.typedefs){
-            if (window.ros.msgs[res.typedefs[item].type] === undefined){
-                console.log('Imported '+res.typedefs[item].type.toString()+'Msg')
-                window.ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+    window.ros.getMsgDetails = function (msgType) {
+        var req = new window.ros.ServiceRequest({type: msgType});
+        window.ros.getMsgDetailsClient.callService(req, function(res) {
+            window.ros.msgs = window.ros.msgs || {};
+            for (item in res.typedefs){
+                if (window.ros.msgs[res.typedefs[item].type] === undefined) {
+                    console.log('Imported '+
+                        res.typedefs[item].type.toString()+'Msg')
+                    window.ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+                }
+            }
+        });
+    };
+
+    window.ros.composeMsg = function (type) {
+        if (window.ros.msgs[type] === undefined) {
+            console.error('Cannot compose '+ type + 'message:'+
+                          'Message details not imported');
+            return
+        }
+        var msg = {}
+        for (field in window.ros.msgs[type].fieldnames){
+            var example = window.ros.msgs[type].examples[field];
+            if (example === "{}"){
+                msg[window.ros.msgs[type].fieldnames[field]] =
+                        composeMsg(window.ros.msgs[type].fieldtypes[field]);
+            } else if (example === "[]"){
+                msg[window.ros.msgs[type].fieldnames[field]] = [];
+            } else if (example === ""){
+                msg[window.ros.msgs[type].fieldnames[field]] = "";
+            } else if (example === "False"){
+                msg[window.ros.msgs[type].fieldnames[field]] = false;
+            } else if (parseInt(example) === 0){
+                msg[window.ros.msgs[type].fieldnames[field]] = 0;
+            } else if (example === undefined) {
+                msg[window.ros.msgs[type].fieldnames[field]] = undefined;
             }
         }
-    });
-};
-
-function composeMsg(type){
-    if (window.ros.msgs[type] === undefined){
-        console.error("Cannot compose "+ type + "message: Message details not imported");
-        return
-    }
-    var msg = {}
-    for (field in window.ros.msgs[type].fieldnames){
-        var example = window.ros.msgs[type].examples[field]
-        if (example === "{}"){
-            msg[window.ros.msgs[type].fieldnames[field]] =
-                        composeMsg(window.ros.msgs[type].fieldtypes[field])
-        } else if (example === "[]"){
-            msg[window.ros.msgs[type].fieldnames[field]] = []
-        } else if (example === ""){
-            msg[window.ros.msgs[type].fieldnames[field]] = ""
-        } else if (example === "False"){
-            msg[window.ros.msgs[type].fieldnames[field]] = false
-        } else if (parseInt(example) === 0){
-            msg[window.ros.msgs[type].fieldnames[field]] = 0
-        } else if (example === undefined) {
-            msg[window.ros.msgs[type].fieldnames[field]] = undefined
-        }
-    }
-    return msg
-};
+        return msg
+    };
+}
 
 function initPr2(){
     window.head = new Pr2Head(window.ros); 
@@ -118,14 +110,14 @@ function initPr2(){
     window.gripper = [new Pr2Gripper('left', window.ros),
                       new Pr2Gripper('right', window.ros)];
     window.torso = new Pr2Torso(window.ros);
-};
+}
 
 function basic_init(){
     window.setTimeout('testFunction()', 1500);
-};
+}
 
 function testFunction(){
-};
+}
 
 function initMjpegCanvas(){
 	    window.mjpeg = new MjpegCanvas({
@@ -142,8 +134,9 @@ function initMjpegCanvas(){
 		height: 480,
         quality: 70
 	});
-        window.clickableCanvas = new ClickableElement('mjpeg_canvas','img_act_select');
-};
+        window.clickableCanvas = new ClickableElement('mjpeg_canvas',
+                                                      'img_act_select');
+}
 
 function tab_select_cb(eve, ui){
     if (ui.panel.id === 'tab_ellipse') {
@@ -164,19 +157,32 @@ function start(){
         ros.on('error', function(e) {
           log("Rosbridge Connection Error!");
     	});
-      	ros.on('connection', function(e) {   
+      	ros.on('connection', function(e) {
 	      log("Connected to " + ROBOT + ".");
-	      init();
+          extendROSJS();
+          initMjpegCanvas();
+          initPr2(); 
+          initGripper();
+          initTorsoSlider();
+          initTTS('tabTTS');
+          initARServoTab('tabARServoing');
+          initRunStop('runStopDiv');
+          initTrajPlay();
+          initEllControl();
+          //initFTDisplay('FTDisplay', {});
+          basic_init();
         });
 };
-
 </script>
+
 </head>
   <body onload="start()">
     <table>
       <tr>
         <td colspan='7'> <!-- Start Cell for video -->
-          <canvas id="mjpeg_canvas" width="640" height="480">Your browser does not support HTML5 canvas</canvas>
+          <canvas id="mjpeg_canvas" width="640" height="480">
+            Your browser does not support HTML5 canvas
+          </canvas>
         </td><!-- End Cell for video -->
         <td>
           <div id="FTDisplay"></div>
@@ -215,12 +221,14 @@ function start(){
                     <div>
                       <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleopHead()"/>
                       <label class="cont_sel_label" for="cont_head">Control Head</label>
-                    </div><div>
+                    </div>
+                    <div>
                       <input type="radio" class="cont_sel" id="cont_l_arm" name="cont_sel" style="width:50%; height:100%"/>
                       <label class="cont_sel_label" for="cont_l_arm" style="width:50%; height:100%">Control Left Hand</label>
                       <input type="radio" class="cont_sel" id="cont_r_arm" name="cont_sel" style="width:50%; height:100%"/>
                       <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
-                    </div><div>
+                    </div>
+                    <div>
                       <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleopBase()">
                       <label class="cont_sel_label" for="cont_base">Control Base</label>
                     </div>
@@ -311,15 +319,21 @@ function start(){
           </td>
           <td>
             <table id="traj_play_buttons">
-              <tr><td>
+              <tr>
+                <td>
                   <button class="centered traj_play_cont" id='traj_play_play' style="font-size:150%"> Play </button>
-              </td></tr>
-              <tr><td>
+                </td>
+              </tr>
+              <tr>
+                <td>
                   <button class="centered traj_play_cont" id='traj_play_pause' style="font-size:150%"> Pause </button>
-              </td></tr>
-              <tr><td>
+                </td>
+              </tr>
+              <tr>
+                <td>
                   <button class="centered traj_play_cont" id='traj_play_stop' style="font-size:150%"> Stop </button>
-              </td></tr>
+                </td>
+              </tr>
             </table>
           </td>
           <td>
@@ -329,16 +343,16 @@ function start(){
                   <td>
                     <div id="traj_radio">
                     <div>
-                    <input type="radio" id="traj_play_setup" value='1' name="traj_radio"/>
-                    <label class="traj_play_radio_label" for="traj_play_setup"> Move to Setup </label>
+                      <input type="radio" id="traj_play_setup" value='1' name="traj_radio"/>
+                      <label class="traj_play_radio_label" for="traj_play_setup"> Move to Setup </label>
                     </div>
                     <div>
-                    <input type="radio" id="traj_play_exec" value="2" name="traj_radio">
-                    <label class="traj_play_radio_label" for="traj_play_exec"> Execute Traj. </label>
+                      <input type="radio" id="traj_play_exec" value="2" name="traj_radio">
+                      <label class="traj_play_radio_label" for="traj_play_exec"> Execute Traj. </label>
                     </div>
                     <div>
-                    <input type="radio" id="traj_play_set_and_exec" value="3" name="traj_radio" checked="checked"/>
-                    <label class="traj_play_radio_label" for="traj_play_set_and_exec"> Setup AND Execute </label>
+                      <input type="radio" id="traj_play_set_and_exec" value="3" name="traj_radio" checked="checked"/>
+                      <label class="traj_play_radio_label" for="traj_play_set_and_exec"> Setup AND Execute </label>
                     </div>
                   </div>
                 </td></tr>
@@ -376,7 +390,7 @@ function start(){
               </tr>
               <tr>
                 <td>
-                  <button class="centered ell_control" id="adj_mirror"> Adjust Mirror </button>
+                  <button class="centered ell_control" id="adj_mirror">Adjust Mirror</button>
                 </td>
               </tr>
               <tr>
@@ -393,21 +407,25 @@ function start(){
                       <td>
                         <select class="centered ell_control" id='shave_list'></select>
                       </td>
-                      </tr><tr>
-                      <td><button class="centered ell_control" id="send_shave_select">Move to Selection</button></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <button class="centered ell_control" id="send_shave_select">Move to Selection</button>
+                      </td>
                     </tr>
                   </table>
-                </div>  <!--End Shaving Drop-Down -->
+                </div><!--End Shaving Drop-Down -->
               </td>
             </tr>
             <tr>
-                      <td><button class="centered ell_control" id="shave_stop">Stop</button></td>
-               </td>
-             </tr>
-            </table>
-          </td>
-          <td>
-            <div class="ell_control" id='bpd_ell_trans'> <!-- Translate Ellipse Buttonpad-->
+              <td>
+                <button class="centered ell_control" id="shave_stop">Stop</button>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td>
+          <div class="ell_control" id='bpd_ell_trans'> <!-- Translate Ellipse Buttonpad-->
               <table>
                 <tr>
                   <th colspan="4"> Translate </th>
@@ -489,18 +507,24 @@ function start(){
             </td>
           </tr>
           <tr>
-            <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div></td>
-            <td rowspan="1" align='center'><div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div></td>
             <td rowspan="1" align='center'>
-              <div style="margin: 5 auto; height:150px" class="slider" id="torso_slider"></div>
+              <div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div>
+            </td>
+            <td rowspan="1" align='center'>
+              <div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div>
+            </td>
+            <td rowspan="1" align='center'>
+              <div style="margin:5px;height:150px" class="slider" id="torso_slider"></div>
             </td>
           </tr>
           <tr>
             <td>
               <button id='l_gripper_close'>Close</button>
-            </td><td>
+            </td>
+            <td>
               <button id='r_gripper_close'>Close</button>
-            </td><td>
+            </td>
+            <td>
               <button id='torso_min'>Min</button>
             </td>
           </tr>
