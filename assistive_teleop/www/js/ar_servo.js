@@ -1,4 +1,4 @@
-var ArServo = function (window.ros) {
+var ArServo = function (ros) {
   'use strict';
   var arServo = this;
   arServo.ros = ros;

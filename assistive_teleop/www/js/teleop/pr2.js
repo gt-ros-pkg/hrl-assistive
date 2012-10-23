@@ -2,14 +2,14 @@ var Pr2Base = function (ros) {
     'use strict';
     var base = this;
     base.ros = ros;
-    getMsgDetails('geometry_msgs/Twist');
+    base.ros.getMsgDetails('geometry_msgs/Twist');
     base.commandPub = new base.ros.Topic({
         name: 'base_controller/command',
         messageType: 'geometry_msgs/Twist'
     });
     base.commandPub.advertise();
     base.pubCmd = function (x, y, rot) {
-        var cmd = composeMsg('geometry_msgs/Twist');
+        var cmd = base.ros.composeMsg('geometry_msgs/Twist');
         cmd.linear.x = x;
         cmd.linear.y = y;
         cmd.angular.z = rot;
@@ -21,7 +21,7 @@ var Pr2Base = function (ros) {
         if ($(selector).hasClass('ui-state-active')){
             base.pubCmd(x,y,rot);
             setTimeout(function () {
-                base.base.drive(selector, x, y, rot)
+                window.base.drive(selector, x, y, rot)
                 }, 100);
         } else {
             console.log('End driving for '+selector);
@@ -35,7 +35,7 @@ var Pr2Gripper = function (side, ros) {
     gripper.side = side;
     gripper.ros = ros;
     gripper.state = 0.0;
-    getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
+    gripper.ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
     gripper.stateSub = new gripper.ros.Topic({
         name: gripper.side.substring(0, 1) + '_gripper_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointControllerState'
@@ -57,7 +57,7 @@ var Pr2Gripper = function (side, ros) {
         messageType: 'pr2_controllers_msgs/Pr2GripperCommandActionGoal'
     });
     gripper.setPosition = function (pos) {
-        var goalMsg = composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
+        var goalMsg = gripper.ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
         goalMsg.goal.command.position = pos;
         goalMsg.goal.command.max_effort = -1;
         var msg = new gripper.ros.Message(goalMsg);
@@ -79,14 +79,14 @@ var Pr2Head = function (ros) {
     head.state = [0.0, 0.0];
     head.joints = ['head_pan_joint', 'head_tilt_joint'];
     head.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
-    getMsgDetails('pr2_controllers_msgs/JointTrajectoryActionGoal');
+    head.ros.getMsgDetails('pr2_controllers_msgs/JointTrajectoryActionGoal');
     head.jointPub = new head.ros.Topic({
         name: 'head_traj_controller/joint_trajectory_action/goal',
         messageType: 'pr2_controllers_msgs/JointTrajectoryActionGoal'
     });
     head.jointPub.advertise();
 
-    getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
+    head.ros.getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
     head.pointPub = new head.ros.Topic({
         name: 'head_traj_controller/point_head_action/goal',
         messageType: 'pr2_controllers_msgs/PointHeadActionGoal'
@@ -112,11 +112,11 @@ var Pr2Head = function (ros) {
         var dPan = Math.abs(pan - head.state[0]);
         var dTilt = Math.abs(tilt - head.state[1]);
         var dist = Math.sqrt(dPan * dPan + dTilt * dTilt);
-        var trajPointMsg = composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        var trajPointMsg = head.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointMsg.positions = [pan, tilt];
         trajPointMsg.velocities = [0.0, 0.0];
         trajPointMsg.time_from_start.secs = Math.max(dist, 1);
-        var goalMsg = composeMsg('pr2_controllers_msgs/JointTrajectoryActionGoal');
+        var goalMsg = head.ros.composeMsg('pr2_controllers_msgs/JointTrajectoryActionGoal');
         goalMsg.goal.trajectory.joint_names = head.joints;
         goalMsg.goal.trajectory.points.push(trajPointMsg);
         var msg = new head.ros.Message(goalMsg);
@@ -128,8 +128,8 @@ var Pr2Head = function (ros) {
         head.setPosition(pan, tilt);
     };
     head.pointHead = function (x, y, z, frame) {
-        var headPointMsg = composeMsg('pr2_controllers_msgs/PointHeadActionGoal');
-        headPointMsg.goal.target = composeMsg('geometry_msgs/PointStamped');
+        var headPointMsg = head.ros.composeMsg('pr2_controllers_msgs/PointHeadActionGoal');
+        headPointMsg.goal.target = head.ros.composeMsg('geometry_msgs/PointStamped');
         headPointMsg.goal.pointing_axis = {
             x: 0,
             y: 0,
@@ -153,7 +153,7 @@ var Pr2Torso = function (ros) {
     var torso = this;
     torso.ros = ros;
     torso.state = 0.0;
-    getMsgDetails('pr2_controllers_msgs/SingleJointPositionActionGoal');
+    torso.ros.getMsgDetails('pr2_controllers_msgs/SingleJointPositionActionGoal');
 
     torso.goalPub = new torso.ros.Topic({
         name: 'torso_controller/position_joint_action/goal',
@@ -180,7 +180,7 @@ var Pr2Torso = function (ros) {
         var dir = (z < torso.state) ? 'Lowering' : 'Raising';
         log(dir + " Torso");
         console.log('Commanding torso' + ' from z=' + torso.state.toString() + ' to z=' + z.toString());
-        var goal_msg = composeMsg('pr2_controllers_msgs/SingleJointPositionActionGoal');
+        var goal_msg = torso.ros.composeMsg('pr2_controllers_msgs/SingleJointPositionActionGoal');
         goal_msg.goal.position = z;
         goal_msg.goal.max_velocity = 1.0;
         var msg = new torso.ros.Message(goal_msg);

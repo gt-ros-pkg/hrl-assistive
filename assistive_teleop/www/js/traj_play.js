@@ -1,30 +1,31 @@
-var TrajectoryPlayback = function (arm) {
+var TrajectoryPlayback = function (arm, ros) {
     'use strict';
     var trajPlay = this;
-    getMsgDetails('hrl_pr2_traj_playback/TrajectoryPlayGoal');
+    trajPlay.ros = ros;
+    trajPlay.ros.getMsgDetails('hrl_pr2_traj_playback/TrajectoryPlayGoal');
     trajPlay.actClient = new ActionClient({
-            ros: window.ros,
+            ros: trajPlay.ros,
             serverName: 'trajectory_playback_'+arm[0],
             actionName: 'hrl_pr2_traj_playback/TrajectoryPlayAction'});
-    trajPlay.pauseServiceClient = new window.ros.Service({
+    trajPlay.pauseServiceClient = new trajPlay.ros.Service({
         name:'/trajectory_playback_'+arm[0]+'_pause',
         serviceType: 'std_srvs/Empty'})
     trajPlay.pause = function () {
             trajPlay.pauseServiceClient.callService({}, function () {});
         };
-    trajPlay.stopServiceClient = new window.ros.Service({
+    trajPlay.stopServiceClient = new trajPlay.ros.Service({
         name:'/trajectory_playback_'+arm[0]+'_stop',
         serviceType: 'std_srvs/Empty'})
     trajPlay.stop = function () {
             trajPlay.stopServiceClient.callService({}, function () {});
         };
 
-    trajPlay.modesParam = new window.ros.Param({
+    trajPlay.modesParam = new trajPlay.ros.Param({
         name: 'face_adls_traj_modes'});
-    trajPlay.trajFilesParam = new window.ros.Param({
+    trajPlay.trajFilesParam = new trajPlay.ros.Param({
         name: 'face_adls_traj_files' });
     trajPlay.sendGoal = function () {
-        var goal = composeMsg('hrl_pr2_traj_playback/TrajectoryPlayGoal');
+        var goal = trajPlay.ros.composeMsg('hrl_pr2_traj_playback/TrajectoryPlayGoal');
         var act = $('#traj_play_act_sel option:selected').val(); 
         var hand = $('#traj_play_arm_sel option:selected').val();
         var traj = $('#traj_play_select').val();
@@ -44,7 +45,8 @@ var initTrajPlay = function () {
     //FIXME/TODO: Fix nested parameter calls.  Separate arms and parameters 
     //on backend so separate nodes can work independently.  Current version 
     //is functional but ugly.
-    window.trajPlayList = [new TrajectoryPlayback('left'), new TrajectoryPlayback('right')]
+    window.trajPlayList = [new TrajectoryPlayback('left', window.ros),
+                           new TrajectoryPlayback('right', window.ros)]
     window.trajPlayList[0].modesParam.get(function (valList) {
         window.trajPlayList[0].modesParam.value = valList;
         window.trajPlayList[1].modesParam.value = valList;

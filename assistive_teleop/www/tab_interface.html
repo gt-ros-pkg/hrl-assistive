@@ -12,12 +12,12 @@
     <script type="text/javascript" src="js/video/clickable_element.js"> </script>
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
 
-    <script type="text/javascript" src="js/pr2.js"></script>
+    <script type="text/javascript" src="js/teleop/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
-    <script type="text/javascript" src="js/rfh_shaving.js"> </script>
+    <script type="text/javascript" src="js/ell_control.js"> </script>
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
@@ -85,7 +85,7 @@ function extendROSJS () {
             var example = window.ros.msgs[type].examples[field];
             if (example === "{}"){
                 msg[window.ros.msgs[type].fieldnames[field]] =
-                        composeMsg(window.ros.msgs[type].fieldtypes[field]);
+                        window.ros.composeMsg(window.ros.msgs[type].fieldtypes[field]);
             } else if (example === "[]"){
                 msg[window.ros.msgs[type].fieldnames[field]] = [];
             } else if (example === ""){
@@ -162,8 +162,8 @@ function start(){
           extendROSJS();
           initMjpegCanvas();
           initPr2(); 
-          initGripper();
-          initTorsoSlider();
+          initGripper('vertical');
+          initTorsoSlider('vertical');
           initTTS('tabTTS');
           initARServoTab('tabARServoing');
           initRunStop('runStopDiv');

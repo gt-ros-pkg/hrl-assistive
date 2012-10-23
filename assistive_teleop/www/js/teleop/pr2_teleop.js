@@ -1,9 +1,9 @@
-function initGripper() {
+function initGripper(orientation) {
     $('#r_gripper_slider').slider({
-        min: -0.005,
+        min: 0.0,
         max: 0.09,
         step: 0.001,
-        orientation: 'vertical'
+        orientation:orientation 
     });
     var rGripperStateDisplay = function (msg) {
         if ($('#r_gripper_slider > .ui-slider-handle').hasClass('ui-state-active') !== true) {
@@ -29,10 +29,10 @@ function initGripper() {
     });
 
     $('#l_gripper_slider').slider({
-        min: -0.005,
+        min: 0.0,
         max: 0.09,
         step: 0.001,
-        orientation: 'vertical'
+        orientation: orientation 
     });
     var lGripperStateDisplay = function (msg) {
         if ($('#l_gripper_slider > .ui-slider-handle').hasClass('ui-state-active') !== true) {
@@ -131,12 +131,12 @@ function teleopBase() {
     });
 }
 
-function initTorsoSlider() {
+function initTorsoSlider(orientation) {
     $('#torso_slider').slider({
         min: 0.0,
         max: 0.3,
         step: 0.01,
-        orientation: 'vertical'
+        orientation: orientation
     });
     var torsoStateDisplay = function (msg) {
         if ($('#torso_slider > .ui-slider-handle').hasClass('ui-state-active') !== true) {

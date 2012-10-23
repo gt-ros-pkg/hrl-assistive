@@ -15,7 +15,7 @@ var TextToSpeech = function (div, ros) {
 }
 
 function initTTS(ttsTabId){
-    window.tts = new TextToSpeech(window.ros);
+    window.tts = new TextToSpeech(ttsTabId, window.ros);
     var phrases = ['Yes',
                     'No',
                     'Maybe',

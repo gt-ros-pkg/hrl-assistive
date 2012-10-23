@@ -39,6 +39,7 @@ var EllipsoidControl = function (ros) {
         name: 'face_adls/global_move_poses',
         messageType: 'hrl_face_adls/StringArray'});
     ellCon.globalPosesSub.subscribe(function (msg) {
+        ellCon.globalPoses = [];
         for (var i=0; i<msg.data.length; i += 1) {
             ellCon.globalPoses.push(msg.data[i]);
         }
@@ -60,6 +61,11 @@ var EllipsoidControl = function (ros) {
         if (msg.data) {
             console.log("Ellipsoid Controller Active")
             $("#ell_controller").attr("checked","checked").button('refresh');
+            $('#shave_list').empty();
+            for (var i=0; i <window.ellControl.globalPoses.length; i += 1) {
+                $('#shave_list').append('<option val="'+window.ellControl.globalPoses[i]+
+                                        '">'+ window.ellControl.globalPoses[i]+'</option>');
+            };
             $(".ell_control").show();
            } else {
             $("#ell_controller").attr("checked", "").button('refresh');
@@ -95,6 +101,7 @@ var EllipsoidControl = function (ros) {
     ellCon.controllerServiceClient = new ellCon.ros.Service({
         name: '/face_adls/enable_controller',
         serviceType: 'hrl_face_adls/EnableFaceController'});
+
     ellCon.toggle = function (state) {
     if (typeof state == 'undefined'){  
         state = $("#ell_controller").attr('checked');
@@ -145,21 +152,20 @@ var initEllControl = function () {
     });
     $('#shave_stop').click(window.ellControl.stopMove);
    
-    $('#bpd_ell_trans b2').click(window.ellControl.sendLocalMove('translate_down'));
-    $('#bpd_ell_trans b4').click(window.ellControl.sendLocalMove('translate_left'));
-    $('#bpd_ell_trans b6').click(window.ellControl.sendLocalMove('translate_right'));
-    $('#bpd_ell_trans b7').click(window.ellControl.sendLocalMove('translate_in'));
-    $('#bpd_ell_trans b8').click(window.ellControl.sendLocalMove('translate_up'));
-    $('#bpd_ell_trans b9').click(window.ellControl.sendLocalMove('translate_out'));
+    $('#bpd_ell_trans #b2').click(function () {window.ellControl.sendLocalMove('translate_down')});
+    $('#bpd_ell_trans #b4').click(function () {window.ellControl.sendLocalMove('translate_left')});
+    $('#bpd_ell_trans #b6').click(function () {window.ellControl.sendLocalMove('translate_right')});
+    $('#bpd_ell_trans #b7').click(function () {window.ellControl.sendLocalMove('translate_in')});
+    $('#bpd_ell_trans #b8').click(function () {window.ellControl.sendLocalMove('translate_up')});
+    $('#bpd_ell_trans #b9').click(function () {window.ellControl.sendLocalMove('translate_out')});
    
-    $('#bpd_ell_rot b1').click(window.ellControl.sendLocalMove('reset_rotation'));
-    $('#bpd_ell_rot b2').click(window.ellControl.sendLocalMove('rotate_y_neg'));
-    $('#bpd_ell_rot b4').click(window.ellControl.sendLocalMove('rotate_z_pos'));
-    $('#bpd_ell_rot b6').click(window.ellControl.sendLocalMove('rotate_z_neg'));
-    $('#bpd_ell_rot b7').click(window.ellControl.sendLocalMove('rotate_x_pos'));
-    $('#bpd_ell_rot b8').click(window.ellControl.sendLocalMove('rotate_y_pos'));
-    $('#bpd_ell_rot b9').click(window.ellControl.sendLocalMove('rotate_x_neg'));
-
+    $('#bpd_ell_rot #b1').click(function () {window.ellControl.sendLocalMove('reset_rotation')});
+    $('#bpd_ell_rot #b2').click(function () {window.ellControl.sendLocalMove('rotate_y_neg')});
+    $('#bpd_ell_rot #b4').click(function () {window.ellControl.sendLocalMove('rotate_z_pos')});
+    $('#bpd_ell_rot #b6').click(function () {window.ellControl.sendLocalMove('rotate_z_neg')});
+    $('#bpd_ell_rot #b7').click(function () {window.ellControl.sendLocalMove('rotate_x_pos')});
+    $('#bpd_ell_rot #b8').click(function () {window.ellControl.sendLocalMove('rotate_y_pos')});
+    $('#bpd_ell_rot #b9').click(function () {window.ellControl.sendLocalMove('rotate_x_neg')});
 
     $(".ell_control").hide();
 };

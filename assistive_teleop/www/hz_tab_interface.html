@@ -12,12 +12,12 @@
     <script type="text/javascript" src="js/video/clickable_element.js"> </script>
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
 
-    <script type="text/javascript" src="js/pr2.js"></script>
+    <script type="text/javascript" src="js/teleop/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
-    <script type="text/javascript" src="js/rfh_shaving.js"> </script>
+    <script type="text/javascript" src="js/ell_control.js"> </script>
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
@@ -52,24 +52,6 @@ $(function(){
       '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power')
       .button();
     $("#reset").hide();
-    $('#r_gripper_slider').slider({
-        value:0.5,
-        min:0,
-        max:1.0,
-        step:0.01,
-        orientation:'horizontal'}); 
-    $('#l_gripper_slider').slider({
-        value:0.5,
-        min:0,
-        max:1.0,
-        step:0.01,
-        orientation:'horizontal'}); 
-    $('#torso_slider').slider({
-        value:0.5,
-        min:0,
-        max:1.0,
-        step:0.01,
-        orientation:'horizontal'}); 
 });
 
 function extendROSJS () {
@@ -103,7 +85,7 @@ function extendROSJS () {
             var example = window.ros.msgs[type].examples[field];
             if (example === "{}"){
                 msg[window.ros.msgs[type].fieldnames[field]] =
-                        composeMsg(window.ros.msgs[type].fieldtypes[field]);
+                        window.ros.composeMsg(window.ros.msgs[type].fieldtypes[field]);
             } else if (example === "[]"){
                 msg[window.ros.msgs[type].fieldnames[field]] = [];
             } else if (example === ""){
@@ -128,6 +110,11 @@ function initPr2(){
     window.gripper = [new Pr2Gripper('left', window.ros),
                       new Pr2Gripper('right', window.ros)];
     window.torso = new Pr2Torso(window.ros);
+    window.wtLog = new window.ros.Topic({
+        name: 'wt_log_out',
+        messageType:'std_msgs/String'});
+    window.wtLog.subscribe(function (msg) {
+        window.log(msg.data);});
 }
 
 function basic_init(){
@@ -180,8 +167,8 @@ function start(){
           extendROSJS();
           initMjpegCanvas();
           initPr2(); 
-          initGripper();
-          initTorsoSlider();
+          initGripper('horizontal');
+          initTorsoSlider('horizontal');
           initTTS('tabTTS');
           initARServoTab('tabARServoing');
           initRunStop('runStopDiv');
@@ -210,6 +197,18 @@ function start(){
         <tr>
           <td>On Image Click:</td>
           <td id="image_click_select"></td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <hr>
+              <div id="console"></div>
+            <hr>
+          </td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <div id="runStopDiv">
+          </td>
         </tr>
       </table>
     </td>
@@ -509,51 +508,38 @@ function start(){
   </tr>
   <tr>
     <td>
-      <hr>
-        <div id="console"></div>
-      <hr>
-    </td>
-  </tr>
-  <tr>
-    <td>
       <div id='gripper_controls'>
         <table border='1'>
           <tr>
-            <th colspan='6' align='center'>Left Gripper</th>
-          </tr>
-          <tr>
+            <td colspan='1' align='center'><strong>Left Gripper</strong></td>
             <td colspan='1'>
               <button id='l_gripper_close'>Left Close</button>
             </td>
-            <td colspan='4'>
-              <div style="width:600px" class="slider" id="l_gripper_slider"></div>
+            <td colspan='3'>
+              <div style="width:300px" class="slider" id="l_gripper_slider"></div>
             </td>
             <td colspan='1'>
               <button id='l_gripper_open'>Left Open</button>
             </td>
           </tr>
           <tr>
-            <th colspan='6' align='center'>Right Gripper</th>
-          </tr>
-          <tr>
+            <td colspan='1' align='center'><strong>Right Gripper</strong></td>
             <td colspan='1'>
               <button id='r_gripper_close'>Right Close</button>
             </td>
-            <td colspan='4'>
-              <div style="width:600px" class="slider" id="r_gripper_slider"></div>
+            <td colspan='3'>
+              <div style="width:300px" class="slider" id="r_gripper_slider"></div>
             </td>
             <td colspan='1'>
               <button id='r_gripper_open'>Right Open</button>
             </td>
           </tr>
           <tr>
-            <th colspan='6' align='center'>Torso</th>
-          </tr>
-          <tr>
+            <td colspan='1' align='center'><strong>Torso</strong></td>
             <td colspan='1'>
               <button id='torso_min'>Down</button>
             </td>
-            <td colspan='4'>
+            <td colspan='3'>
               <div class="slider" id="torso_slider"></div>
             </td>
             <td colspan='1'>
@@ -562,11 +548,6 @@ function start(){
           </tr>
         </table>
       </div>
-    </td>
-  </tr>
-  <tr>
-    <td> <!-- Gross Formating-->
-      <div id="runStopDiv">
     </td>
   </tr>
 </table> <!--END Gross Formating-->
