@@ -80,8 +80,8 @@ class MirrorPointer(object):
         goal.header.stamp = rospy.Time.now()
         resp = PointMirrorResponse()
         resp.wrist_pose = goal
-        print "Head Pose: "
-        print self.head_pose
+        #print "Head Pose: "
+        #print self.head_pose
         self.goal_pub.publish(goal)
         return resp
 

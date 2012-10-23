@@ -111,6 +111,11 @@ var EllipsoidControl = function (ros) {
     var req = new ellCon.ros.ServiceRequest({enable:state, mode:mode});
     ellCon.controllerServiceClient.callService(req, function(ret){
             console.log("Switching Ell. Controller Service Returned "+ret.success);
+            if (ret.success === false) {
+                $("#ell_controller").attr("checked", "").button('refresh');
+                console.log("Ellipsoid Controller Inactive")
+                $(".ell_control").hide();
+            }
         });
     };
 };
@@ -120,7 +125,7 @@ var MirrorPointer = function (ros) {
     var mirror = this;
     mirror.ros = ros;
     mirror.pointServiceClient = new mirror.ros.Service({
-        name: 'point_mirror',
+        name: '/point_mirror',
         serviceType: 'std_srvs/Empty'});
     mirror.point = function () {
         console.log("Pointing Mirror");
