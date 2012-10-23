@@ -45,7 +45,7 @@ var initFTDisplay = function (divId, options) {
     window.ftDisplay = new ForceDisplay(window.ros);
     var yellowPercent = options.yellowPercent || 50;
     var maxForce = options.maxForce || 15;
-    var height = options.height || '480px';
+    var height = options.height || '450px';
     var width = options.width || '20px';
     
     // Produce basic layout and default options
@@ -85,8 +85,10 @@ var initFTDisplay = function (divId, options) {
     $('#'+divId+'FTNullRef').css({'width':width,
                                   'height':'100%',
                                   'background-color':'gray'});
-    $('#'+divId+'FTDangerLabel').css('align','bottom');
-    $('#'+divId+'FTActivityLabel').css('align','bottom');
+    $('#'+divId+'FTDangerLabel').css({'vertical-align':'bottom',
+                                      'text-align':'center'});
+    $('#'+divId+'FTActivityLabel').css({'vertical-align':'bottom',
+                                       'text-align':'center'});
     $('#'+divId+'FTTextDisplay').html('## N');
     $('#'+divId+'FTRezeroButton').css('width','70px');
    
@@ -114,7 +116,7 @@ var initFTDisplay = function (divId, options) {
        var mag = window.ftDisplay.magnitude();
        var pct = (mag/maxForce)*100;
        if (pct > 100.0) {pct = 100.0};
-       $('#'+divId+'FTTextDisplay').html('<p>'+mag.toFixed(1)+' N </p>')
+       $('#'+divId+'FTTextDisplay').html('<p><strong>'+mag.toFixed(1)+' N </strong></p>')
        var g = "FF";
        var r = "FF";
        if (pct > yellowPercent) {
