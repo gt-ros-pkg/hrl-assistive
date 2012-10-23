@@ -30,6 +30,9 @@
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
         args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
 
+  <node name="throttle_wt_force_out" pkg="topic_tools" type="throttle"
+        args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
+
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
       <remap from="image" to="$(arg kinect_camera)" />

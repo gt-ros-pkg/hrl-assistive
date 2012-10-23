@@ -18,10 +18,11 @@
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
     <script type="text/javascript" src="js/ell_control.js"> </script>
+    <script type="text/javascript" src="js/force_level_widget.js"> </script>
+
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
-    <!--<script type="text/javascript" src="js/force_level_widget.js"> </script>-->
     <!--<script type="text/javascript" src="js/cart_control.js"> </script>-->
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
@@ -174,7 +175,7 @@ function start(){
           initRunStop('runStopDiv');
           initTrajPlay();
           initEllControl();
-          //initFTDisplay('FTDisplay', {});
+          initFTDisplay('FTDisplay', {});
           basic_init();
         });
 };
