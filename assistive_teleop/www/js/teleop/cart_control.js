@@ -91,7 +91,7 @@ var initCartControl = function () {
     window.cartControl[0].enabledSubCBList.push(lCartStateCB)
 
     var rCartStateCB = function (msg) {
-        console.log("Received R Cart State: "+msg.data.toString());
+        console.log("Received R Cart Controller State: "+msg.data.toString());
         if (msg.data){
             showArmControls(window.cartControl[1]);
             $('#cont_r_arm').attr('checked','checked').button('refresh');

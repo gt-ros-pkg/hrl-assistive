@@ -1,3 +1,6 @@
+(function(){
+})();
+
 function initGripper(orientation) {
     $('#r_gripper_slider').slider({
         min: 0.0,

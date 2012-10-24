@@ -14,15 +14,16 @@
 
     <script type="text/javascript" src="js/teleop/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
+    <script type="text/javascript" src="js/teleop/cart_control.js"> </script>
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
     <script type="text/javascript" src="js/ell_control.js"> </script>
+    <script type="text/javascript" src="js/force_level_widget.js"> </script>
+    
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
-    <!--<script type="text/javascript" src="js/force_level_widget.js"> </script>-->
-    <!--<script type="text/javascript" src="js/cart_control.js"> </script>-->
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
 <script type="text/javascript">
@@ -51,7 +52,6 @@ $(function(){
       '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
       '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power')
       .button();
-    $("#reset").hide();
 });
 
 function extendROSJS () {
@@ -112,13 +112,6 @@ function initPr2(){
     window.torso = new Pr2Torso(window.ros);
 }
 
-function basic_init(){
-    window.setTimeout('testFunction()', 1500);
-}
-
-function testFunction(){
-}
-
 function initMjpegCanvas(){
 	    window.mjpeg = new MjpegCanvas({
 		host:ROBOT,
@@ -169,8 +162,9 @@ function start(){
           initRunStop('runStopDiv');
           initTrajPlay();
           initEllControl();
-          //initFTDisplay('FTDisplay', {});
-          basic_init();
+          initCartControl();
+          initFTDisplay('FTDisplay', {});
+          teleopHead();
         });
 };
 </script>
@@ -219,7 +213,7 @@ function start(){
                 <td colspan=2>
                   <div id='cont_sel_container' style="width:300px">
                     <div>
-                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleopHead()"/>
+                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel"/>
                       <label class="cont_sel_label" for="cont_head">Control Head</label>
                     </div>
                     <div>
@@ -229,7 +223,7 @@ function start(){
                       <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
                     </div>
                     <div>
-                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleopBase()">
+                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel">
                       <label class="cont_sel_label" for="cont_base">Control Base</label>
                     </div>
                   </div> 
