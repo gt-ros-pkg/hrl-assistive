@@ -99,11 +99,11 @@ class CartesianControllerManager(object):
         self.cart_ctrl.stop_moving(wait=True)
         if msg.header.frame_id == "":
             msg.header.frame_id = "torso_lift_link"
-        if self.kin is None or msg.header.frame_id not in self.kin.get_segment_names():
+        if self.kin is None or msg.header.frame_id not in self.kin.get_link_names():
             self.kin = create_joint_kin("torso_lift_link", msg.header.frame_id)
-        torso_pos_ep, torso_rot_ep = self.arm.get_ep()
-        torso_B_ref = self.kin.forward(base_segment="torso_lift_link", 
-                                       target_segment=msg.header.frame_id)
+        torso_pos_ep, torso_rot_ep = PoseConv.to_pos_rot(self.arm.get_ep())
+        torso_B_ref = self.kin.forward(base_link="torso_lift_link", 
+                                       end_link=msg.header.frame_id)
         _, torso_rot_ref = PoseConv.to_pos_rot(torso_B_ref)
         torso_rot_ref *= self.frame_rot
         ref_pos_off, ref_rot_off = PoseConv.to_pos_rot(msg)
@@ -127,8 +127,8 @@ class CartesianControllerManager(object):
         if self.kin is None or msg.header.frame_id not in self.kin.get_link_names():
             self.kin = create_joint_kin("torso_lift_link", msg.header.frame_id)
         torso_pos_ep, torso_rot_ep = self.arm.get_ep()
-        torso_B_ref = self.kin.forward(base_segment="torso_lift_link", 
-                                       target_segment=msg.header.frame_id)
+        torso_B_ref = self.kin.forward(base_link="torso_lift_link", 
+                                       end_link=msg.header.frame_id)
         ref_B_goal = PoseConv.to_homo_mat(msg)
         torso_B_goal = torso_B_ref * ref_B_goal
 

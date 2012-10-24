@@ -2,17 +2,16 @@
     <include file="$(find pr2_machine)/$(env ROBOT).machine" />
     <arg name="shaving_board" default="/dev/arduino" />
 
-    <arg name="run_ft" default="false" />
-    <arg name="run_rb" default="true" />
-    <arg name="run_pt" default="false" />
+    <arg name="run_ft_sensor" default="false" />
+    <arg name="run_rosbridge" default="true" />
+    <arg name="run_tool_power" default="false" />
 
-    <arg name="kinect_points" default="/head_mount_kinect/rgb/points" />
+    <arg name="kinect_points" default="/head_mount_kinect/depth_registered/points" />
     <arg name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
-    <include file="$(find openni_launch)/launch/openni.launch" />
 
     <!-- Arduino Control Board for powering Shaver -->
     <node
-        if="$(arg run_pt)"
+        if="$(arg run_tool_power)"
         name="tool_power_toggle"
         pkg="rosserial_python"
         type="serial_node.py"
@@ -20,13 +19,12 @@
         output="screen"/>
 
     <node
-        if="$(arg run_pt)"
+        if="$(arg run_tool_power)"
         name="razor_run_stop_monitor"
         pkg="assistive_teleop"
         type="razor_runstop.py"
         output="screen"/>
 
-    <!--
     <node 
         name="mirror_pointer"
         pkg="assistive_teleop"
@@ -36,11 +34,10 @@
             from="/goal_pose" 
             to="/face_adls/r_cart_absolute"/>
     </node>
-    -->
 
     <!-- NetFt Sensor-->
         <!-- Launch sensor -->
-        <node if="$(arg run_ft)" pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
+        <node if="$(arg run_ft_sensor)" pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
               args="-l -r -z -b -f $(find hrl_face_adls)/params/ft_zero_params_razor_inline.yaml" 
               output="screen" />
         <!-- Throttle feedback to interface -->
@@ -49,51 +46,6 @@
             pkg="topic_tools"
             type="throttle"
             args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
- 
-    <!-- JTTask Controller load
-    <include file="$(find assistive_teleop)/launch/c_jtask_mod.launch" />
-    -->
-
-    <!-- Cart Move Servers
-    <node
-        ns="r_cart"
-        name="ft_move_action_server"
-        pkg="assistive_teleop"
-        type="ft_move_action_server.py"
-        output="screen"
-        machine="c2"/>
-    <node
-        ns="l_cart"
-        name="ft_move_action_server"
-        pkg="assistive_teleop"
-        type="ft_move_action_server.py"
-        output="screen"
-        machine="c2"/>
-    <node
-        name="ft_hold_server"
-        pkg="assistive_teleop"
-        type="ft_hold_as.py"
-        output="screen"
-        machine="c2"/>
-    -->
-
-    <!-- Bring up intermediary for handling arm movements, one for each arm
-    <include file="$(find pr2_arm_kinematics)/launch/pr2_ik_larm_node.launch" />
-    <include file="$(find pr2_arm_kinematics)/launch/pr2_ik_rarm_node.launch" />
-    <node
-        name="wt_left_arm"
-        pkg="assistive_teleop"
-        type="arm_intermediary.py"
-        args="left"
-        output="screen"
-        machine="c1"/>
-    <node
-        name="wt_right_arm"
-        pkg="assistive_teleop"
-        type="arm_intermediary.py"
-        args="right"
-        output="screen"
-        machine="c1"/>-->
 
     <!-- Launch Image Rotation Nodes for forearm cameras-->
     <node
@@ -262,7 +214,7 @@
             type="int"
             value="9091" />
     <node 
-        if="$(arg run_rb)"
+        if="$(arg run_rosbridge)"
         name="rosbridge" 
         pkg="rosbridge" 
         type="rosbridge.py" 

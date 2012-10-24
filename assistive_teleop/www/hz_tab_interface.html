@@ -20,7 +20,7 @@
     <script type="text/javascript" src="js/run_stop.js"> </script>
     <script type="text/javascript" src="js/ell_control.js"> </script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
-    
+
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
     <script type="text/javascript" src="js/traj_play.js"> </script>
@@ -110,6 +110,11 @@ function initPr2(){
     window.gripper = [new Pr2Gripper('left', window.ros),
                       new Pr2Gripper('right', window.ros)];
     window.torso = new Pr2Torso(window.ros);
+    window.wtLog = new window.ros.Topic({
+        name: 'wt_log_out',
+        messageType:'std_msgs/String'});
+    window.wtLog.subscribe(function (msg) {
+        window.log(msg.data);});
 }
 
 function initMjpegCanvas(){
@@ -155,8 +160,8 @@ function start(){
           extendROSJS();
           initMjpegCanvas();
           initPr2(); 
-          initGripper('vertical');
-          initTorsoSlider('vertical');
+          initGripper('horizontal');
+          initTorsoSlider('horizontal');
           initTTS('tabTTS');
           initARServoTab('tabARServoing');
           initRunStop('runStopDiv');
@@ -168,128 +173,143 @@ function start(){
         });
 };
 </script>
-
 </head>
-  <body onload="start()">
-    <table>
-      <tr>
-        <td colspan='7'> <!-- Start Cell for video -->
-          <canvas id="mjpeg_canvas" width="640" height="480">
-            Your browser does not support HTML5 canvas
-          </canvas>
-        </td><!-- End Cell for video -->
-        <td>
-          <div id="FTDisplay"></div>
-        </td>
-      </tr>
-      <tr>
-         <td>On Image Click:</td>
-         <td id="image_click_select"></td>
-      </tr>
-    </table>
 
-<hr>
-  <div id="console"></div>
-<hr>
+<body onload="start()">
 
-<table id="gross_formatting">
-<tr>
-<td>
-<div id="tabs">
-    <ul>
-        <li><a href="#tab_cart_control">Default Controls</a></li>
-        <li><a href="#tabARServoing">AR Servoing</a></li>
-        <li><a href="#tab_traj_play">Traj. Playback</a></li>
-        <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
-        <li><a href="#tabTTS">TTS</a></li>
-    </ul>
-
-    <div id="tab_cart_control">
+<table>
+  <tr>
+    <td>
       <table>
         <tr>
           <td>
-            <table>
-              <tr>
-                <td colspan=2>
-                  <div id='cont_sel_container' style="width:300px">
-                    <div>
-                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel"/>
-                      <label class="cont_sel_label" for="cont_head">Control Head</label>
-                    </div>
-                    <div>
-                      <input type="radio" class="cont_sel" id="cont_l_arm" name="cont_sel" style="width:50%; height:100%"/>
-                      <label class="cont_sel_label" for="cont_l_arm" style="width:50%; height:100%">Control Left Hand</label>
-                      <input type="radio" class="cont_sel" id="cont_r_arm" name="cont_sel" style="width:50%; height:100%"/>
-                      <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
-                    </div>
-                    <div>
-                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel">
-                      <label class="cont_sel_label" for="cont_base">Control Base</label>
-                    </div>
-                  </div> 
-                </td>
-              </tr>
-              <tr>
-                 <td id='cart_frame_select_label'><b>Movement Frame:</b></td>
-                 <td>
-                   <select class="centered cart_control" id='cart_frame_select'>
-                     <option id="frame_opt_torso" value="/torso_lift_link"> Torso </option> 
-                     <option id="frame_opt_hand"> Hand </option> 
-                   </select>
-                 </td>
-               </tr>
-            </table>
+            <div id="FTDisplay"></div>
           </td>
-          <td>
-            <div class="default_control" id='bpd_default'> <!-- Translate Cartesian Buttonpad-->
-              <table>
-                <tr>
-                  <td rowspan="3">
-                    <div class="slider" id="scale_slider" style="height:235px" ></div>
-                  </td>
-                  <td><button class="bpd arrow_trans_in" id="b7"/></td>
-                  <td><button class="bpd arrow_trans_up" id="b8"/></td>
-                  <td><button class="bpd arrow_trans_out" id="b9"/></td>
-                </tr>
-                <tr>
-                  <td><button class="bpd arrow_trans_left" id="b4"/></td>
-                  <td><button class="bpd" id="b5"/></td>
-                  <td><button class="bpd arrow_trans_right" id="b6"/></td>
-                </tr>
-                <tr>
-                  <td><button class="bpd" id="b1"/></td>
-                  <td><button class="bpd arrow_trans_down" id="b2"/></td>
-                  <td><button class="bpd" id="b3"/></td>
-                </tr>
-              </table>
-            </div> <!--END Translate Cart Buttonpad -->
+          <td colspan='2'> <!-- Start Cell for video -->
+            <canvas id="mjpeg_canvas" width="640" height="480">
+            Your browser does not support HTML5 canvas
+            </canvas>
+          </td><!-- End Cell for video -->
+        </tr>
+        <tr>
+          <td></td>
+          <td style="text-align:right">On Image Click:</td>
+          <td id="image_click_select"></td>
+        </tr>
+        <tr>
+          <td colspan=3>
+            <hr>
+              <div id="console"></div>
+            <hr>
           </td>
-          <td> 
-            <div class="default_control" id='bpd_default_rot'> <!--Rotate Cart Buttonpad-->
-              <table>
-                <tr>
-                  <td rowspan="3">
-                    <div class="slider" id="default_rot_slider" style="height:235px" ></div>
-                  </td>
-                  <td><button class="bpd arrow_rot_x_neg" id="b7"/></td>
-                  <td><button class="bpd arrow_rot_y_pos" id="b8"/></td>
-                  <td><button class="bpd arrow_rot_x_pos" id="b9"/></td>
-                </tr>
-                <tr>
-                  <td><button class="bpd arrow_rot_z_neg" id="b4"/></td>
-                  <td><button class="bpd" id="b5"/></td>
-                  <td><button class="bpd arrow_rot_z_pos" id="b6"/></td>
-                </tr>
-                <tr>
-                  <td><button class="bpd" id="b1"/></td>
-                  <td><button class="bpd arrow_rot_y_neg" id="b2"/>
-                  <td><button class="bpd" id="b3"></td>
-                </tr>
-              </table>
-            </div> <!--END Cart Rotate buttonpad -->
+        </tr>
+        <tr>
+          <td colspan=3>
+            <div id="runStopDiv">
           </td>
-       </tr>
-     </table>
+        </tr>
+      </table>
+    </td>
+    <td>
+
+<table id="gross_formatting">
+  <tr>
+    <td>
+      <div id="tabs">
+        <ul>
+          <li><a href="#tab_cart_control">Default Controls</a></li>
+          <li><a href="#tabARServoing">AR Servoing</a></li>
+          <li><a href="#tab_traj_play">Traj. Playback</a></li>
+          <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
+          <li><a href="#tabTTS">TTS</a></li>
+        </ul>
+
+        <div id="tab_cart_control">
+          <table>
+            <tr>
+              <td>
+                <table>
+                  <tr>
+                    <td colspan=2>
+                      <div id='cont_sel_container' style="width:300px">
+                        <div>
+                          <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleopHead()"/>
+                          <label class="cont_sel_label" for="cont_head">Control Head</label>
+                        </div>
+                        <div>
+                          <input type="radio" class="cont_sel" id="cont_l_arm" name="cont_sel" style="width:50%; height:100%"/>
+                          <label class="cont_sel_label" for="cont_l_arm" style="width:50%; height:100%">Control Left Hand</label>
+                          <input type="radio" class="cont_sel" id="cont_r_arm" name="cont_sel" style="width:50%; height:100%"/>
+                          <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
+                        </div>
+                        <div>
+                          <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleopBase()">
+                          <label class="cont_sel_label" for="cont_base">Control Base</label>
+                        </div>
+                      </div> 
+                    </td>
+                  </tr>
+                  <tr>
+                     <td id='cart_frame_select_label'><b>Movement Frame:</b></td>
+                     <td>
+                       <select class="centered cart_control" id='cart_frame_select'>
+                         <option id="frame_opt_torso" value="/torso_lift_link"> Torso </option> 
+                         <option id="frame_opt_hand"> Hand </option> 
+                       </select>
+                     </td>
+                   </tr>
+                </table>
+              </td>
+              <td>
+                <div class="default_control" id='bpd_default'> <!-- Translate Cartesian Buttonpad-->
+                  <table>
+                    <tr>
+                      <td rowspan="3">
+                        <div class="slider" id="scale_slider" style="height:235px" ></div>
+                      </td>
+                      <td><button class="bpd arrow_trans_in" id="b7"/></td>
+                      <td><button class="bpd arrow_trans_up" id="b8"/></td>
+                      <td><button class="bpd arrow_trans_out" id="b9"/></td>
+                    </tr>
+                    <tr>
+                      <td><button class="bpd arrow_trans_left" id="b4"/></td>
+                      <td><button class="bpd" id="b5"/></td>
+                      <td><button class="bpd arrow_trans_right" id="b6"/></td>
+                    </tr>
+                    <tr>
+                      <td><button class="bpd" id="b1"/></td>
+                      <td><button class="bpd arrow_trans_down" id="b2"/></td>
+                      <td><button class="bpd" id="b3"/></td>
+                    </tr>
+                  </table>
+                </div> <!--END Translate Cart Buttonpad -->
+              </td>
+              <td> 
+                <div class="default_control" id='bpd_default_rot'> <!--Rotate Cart Buttonpad-->
+                  <table>
+                    <tr>
+                      <td rowspan="3">
+                        <div class="slider" id="default_rot_slider" style="height:235px" ></div>
+                      </td>
+                      <td><button class="bpd arrow_rot_x_neg" id="b7"/></td>
+                      <td><button class="bpd arrow_rot_y_pos" id="b8"/></td>
+                      <td><button class="bpd arrow_rot_x_pos" id="b9"/></td>
+                    </tr>
+                    <tr>
+                      <td><button class="bpd arrow_rot_z_neg" id="b4"/></td>
+                      <td><button class="bpd" id="b5"/></td>
+                      <td><button class="bpd arrow_rot_z_pos" id="b6"/></td>
+                    </tr>
+                    <tr>
+                      <td><button class="bpd" id="b1"/></td>
+                      <td><button class="bpd arrow_rot_y_neg" id="b2"/>
+                      <td><button class="bpd" id="b3"></td>
+                    </tr>
+                  </table>
+                </div> <!--END Cart Rotate buttonpad -->
+              </td>
+           </tr>
+         </table>
     </div><!-- END TAB CART CONTROL -->
 
     <div id="tabARServoing"></div>
@@ -396,7 +416,7 @@ function start(){
               <tr>
                 <td>
                   <div id='shave_select'>  <!--Shaving Selection Drop-Down and Entry -->
-                    <table class='centered' frame=box rules=none border=3>
+                    <table class='centered ell_control' frame=box rules=none border=3>
                     <tr>
                       <td>
                         <select class="centered ell_control" id='shave_list'></select>
@@ -476,59 +496,53 @@ function start(){
       </table>
     </div><!--END Tab ellipse -->
     
-    <div id="tabTTS" />
+    <div id="tabTTS"/>
 
   </div> <!-- END Tabs -->
-</td>
-    
-    <td rowspan='3'> <!-- Gross Formatting-->
+    </td>
+  </tr>
+  <tr>
+    <td>
       <div id='gripper_controls'>
         <table border='1'>
-          <th colspan='2' align='center'> Grippers </th>
-          <th align='center'>Torso</th>
           <tr>
-            <td align='center'>Left</td>
-            <td align='center'>Right</td>
-            <td align='center'>U/D</td>
-          </tr>
-          <tr>
-            <td>
-              <button id='l_gripper_open'>Open</button>
-            </td><td>
-              <button id='r_gripper_open'>Open</button>
-            </td><td>
-              <button id='torso_max'>Max</button>
+            <td colspan='1' align='center'><strong>Left Gripper</strong></td>
+            <td colspan='1'>
+              <button id='l_gripper_close'>Left Close</button>
+            </td>
+            <td colspan='3'>
+              <div style="width:300px" class="slider" id="l_gripper_slider"></div>
+            </td>
+            <td colspan='1'>
+              <button id='l_gripper_open'>Left Open</button>
             </td>
           </tr>
           <tr>
-            <td rowspan="1" align='center'>
-              <div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div>
+            <td colspan='1' align='center'><strong>Right Gripper</strong></td>
+            <td colspan='1'>
+              <button id='r_gripper_close'>Right Close</button>
             </td>
-            <td rowspan="1" align='center'>
-              <div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div>
+            <td colspan='3'>
+              <div style="width:300px" class="slider" id="r_gripper_slider"></div>
             </td>
-            <td rowspan="1" align='center'>
-              <div style="margin:5px;height:150px" class="slider" id="torso_slider"></div>
+            <td colspan='1'>
+              <button id='r_gripper_open'>Right Open</button>
             </td>
           </tr>
           <tr>
-            <td>
-              <button id='l_gripper_close'>Close</button>
+            <td colspan='1' align='center'><strong>Torso</strong></td>
+            <td colspan='1'>
+              <button id='torso_min'>Down</button>
             </td>
-            <td>
-              <button id='r_gripper_close'>Close</button>
+            <td colspan='3'>
+              <div class="slider" id="torso_slider"></div>
             </td>
-            <td>
-              <button id='torso_min'>Min</button>
+            <td colspan='1'>
+              <button id='torso_max'>Up</button>
             </td>
           </tr>
         </table>
       </div>
-    </td>
-  </tr>
-  <tr>
-    <td> <!-- Gross Formating-->
-      <div id="runStopDiv">
     </td>
   </tr>
 </table> <!--END Gross Formating-->
