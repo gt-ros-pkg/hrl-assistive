@@ -139,10 +139,17 @@ class EllipsoidController(CartesianStepController):
                     (ell_ep_1 >= min_lon or ell_ep_1 <= self._lon_bounds[1]))
 
     def _parse_ell_move(self, change_ep, abs_sel, orient_quat):
+        #change_ell_ep = [lat, lon, height], change_rot_ep = Rotation in matrix or quat form (3x3 rotation mat, 1x4 quat)
+        #Provides new position and orientation goals (in relative or abs manner, determined next).
         change_ell_ep, change_rot_ep = change_ep
+        #abs_ell_ep_sel = 1x3 list of 0/1, is_abs_rot = 0/1 (Bool)
+        #abs_ell_ep_sel: selects lat, long, height absolute vs relative position command
+        #change_rot_ep: selects abs vs relative use of orientation.
         abs_ell_ep_sel, is_abs_rot = abs_sel
-        ell_f = np.where(abs_ell_ep_sel, change_ell_ep, 
-                                     np.array(self.get_ell_ep()) + np.array(change_ell_ep))
+        ell_f = np.where(abs_ell_ep_sel,
+                         change_ell_ep,
+                         np.array(self.get_ell_ep()) + np.array(change_ell_ep))
+
         print "old", ell_f
         if ell_f[0] > np.pi:
             ell_f[0] = 2 * np.pi - ell_f[0]
@@ -154,65 +161,69 @@ class EllipsoidController(CartesianStepController):
         ell_f = self._clip_ell_ep(ell_f)
         print "new", ell_f
         if is_abs_rot:
+            #Apply rotation from change_rot_ep as final orientation of pose
+            #Expects rotation matrix in change_rot_ep
             rot_change_mat = change_rot_ep
             _, ell_final_rot = self.ell_server.robot_ellipsoidal_pose(ell_f[0], ell_f[1], ell_f[2],
                                                                       orient_quat)
             rot_mat_f = ell_final_rot * rot_change_mat
         else:
+            #Apply rotation from change_rot_ep as change to current rotation
+            #Expects quaternion in change_rot_ep
             quat = change_rot_ep
             _, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
             rot_mat = np.mat(trans.quaternion_matrix(quat))[:3,:3]
             rot_mat_f = cur_rot * rot_mat
         return ell_f, rot_mat_f
 
-    def _create_ell_trajectory(self, ell_f, rot_mat_f, orient_quat=[0., 0., 0., 1.], velocity=0.001):
-        _, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
-
-        rpy = trans.euler_from_matrix(cur_rot.T * rot_mat_f) # get roll, pitch, yaw of angle diff
-
-        ell_f[1] = np.mod(ell_f[1], 2 * np.pi) # wrap longitude value
-
-        # get the current ellipsoidal location of the end effector
-        ell_init = np.mat(self.get_ell_ep()).T 
-        ell_final = np.mat(ell_f).T
-
-        # find the closest longitude angle to interpolate to
-        if np.fabs(2 * np.pi + ell_final[1,0] - ell_init[1,0]) < np.pi:
-            ell_final[1,0] += 2 * np.pi
-        elif np.fabs(-2 * np.pi + ell_final[1,0] - ell_init[1,0]) < np.pi:
-            ell_final[1,0] -= 2 * np.pi
-        
-        if np.any(np.isnan(ell_init)) or np.any(np.isnan(ell_final)):
-            rospy.logerr("[ellipsoid_controller] Nan values in ellipsoid EPs. " +
-                         "ell_init: %f, %f, %f; " % (ell_init[0,0], ell_init[1,0], ell_init[2,0]) +
-                         "ell_final: %f, %f, %f; " % (ell_final[0,0], ell_final[1,0], ell_final[2,0]))
-            return None
-        
-        num_samps = np.max([2, int(np.linalg.norm(ell_final - ell_init) / velocity), 
-                               int(np.linalg.norm(rpy) / velocity)])
-        t_vals = min_jerk_traj(num_samps) # makes movement smooth
-            
-        # smoothly interpolate from init to final
-        ell_traj = np.array(ell_init) + np.array(np.tile(ell_final - ell_init, 
-                                                         (1, num_samps))) * np.array(t_vals)
-
-        ell_frame_mat = self.ell_server.get_ell_frame()
-
-        ell_pose_traj = [self.ell_server.robot_ellipsoidal_pose(
-                            ell_traj[0,i], ell_traj[1,i], ell_traj[2,i], orient_quat, ell_frame_mat) 
-                         for i in range(ell_traj.shape[1])]
-
-        # modify rotation of trajectory
-        _, ell_init_rot = self.ell_server.robot_ellipsoidal_pose(
-                ell_init[0,0], ell_init[1,0], ell_init[2,0], orient_quat, ell_frame_mat)
-        rot_adjust_traj = self.arm.interpolate_ep([np.mat([0]*3).T, cur_rot], 
-                                                  [np.mat([0]*3).T, rot_mat_f], 
-                                                  min_jerk_traj(num_samps))
-        ell_pose_traj = [(ell_pose_traj[i][0], 
-                          ell_pose_traj[i][1] * ell_init_rot.T * rot_adjust_traj[i][1]) 
-                         for i in range(num_samps)]
-
-        return ell_pose_traj
+#    def _create_ell_trajectory(self, ell_f, rot_mat_f, orient_quat=[0., 0., 0., 1.], velocity=0.001):
+#        _, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
+#
+#        rpy = trans.euler_from_matrix(cur_rot.T * rot_mat_f) # get roll, pitch, yaw of angle diff
+#
+#        ell_f[1] = np.mod(ell_f[1], 2 * np.pi) # wrap longitude value
+#
+#        # get the current ellipsoidal location of the end effector
+#        ell_init = np.mat(self.get_ell_ep()).T 
+#        ell_final = np.mat(ell_f).T
+#
+#        # find the closest longitude angle to interpolate to
+#        if np.fabs(2 * np.pi + ell_final[1,0] - ell_init[1,0]) < np.pi:
+#            ell_final[1,0] += 2 * np.pi
+#        elif np.fabs(-2 * np.pi + ell_final[1,0] - ell_init[1,0]) < np.pi:
+#            ell_final[1,0] -= 2 * np.pi
+#        
+#        if np.any(np.isnan(ell_init)) or np.any(np.isnan(ell_final)):
+#            rospy.logerr("[ellipsoid_controller] Nan values in ellipsoid EPs. " +
+#                         "ell_init: %f, %f, %f; " % (ell_init[0,0], ell_init[1,0], ell_init[2,0]) +
+#                         "ell_final: %f, %f, %f; " % (ell_final[0,0], ell_final[1,0], ell_final[2,0]))
+#            return None
+#        
+#        num_samps = np.max([2, int(np.linalg.norm(ell_final - ell_init) / velocity), 
+#                               int(np.linalg.norm(rpy) / velocity)])
+#        t_vals = min_jerk_traj(num_samps) # makes movement smooth
+#            
+#        # smoothly interpolate from init to final
+#        ell_traj = np.array(ell_init) + np.array(np.tile(ell_final - ell_init, 
+#                                                         (1, num_samps))) * np.array(t_vals)
+#
+#        ell_frame_mat = self.ell_server.get_ell_frame()
+#
+#        ell_pose_traj = [self.ell_server.robot_ellipsoidal_pose(
+#                            ell_traj[0,i], ell_traj[1,i], ell_traj[2,i], orient_quat, ell_frame_mat) 
+#                         for i in range(ell_traj.shape[1])]
+#
+#        # modify rotation of trajectory
+#        _, ell_init_rot = self.ell_server.robot_ellipsoidal_pose(
+#                ell_init[0,0], ell_init[1,0], ell_init[2,0], orient_quat, ell_frame_mat)
+#        rot_adjust_traj = self.arm.interpolate_ep([np.mat([0]*3).T, cur_rot], 
+#                                                  [np.mat([0]*3).T, rot_mat_f], 
+#                                                  min_jerk_traj(num_samps))
+#        ell_pose_traj = [(ell_pose_traj[i][0], 
+#                          ell_pose_traj[i][1] * ell_init_rot.T * rot_adjust_traj[i][1]) 
+#                         for i in range(num_samps)]
+#
+#        return ell_pose_traj
 
 def main():
     rospy.init_node("ellipsoid_controller", sys.argv)
