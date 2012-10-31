@@ -52,7 +52,6 @@ class EllipsoidParamServer(object):
         ell_B_pose = self.get_ell_frame(self.kinect_frame)**-1 * kinect_B_ee
         return self.ell_space.pose_to_ellipsoidal(ell_B_pose)
 
-    ##
     # Get pose in robot's frame of ellipsoidal coordinates
     def robot_ellipsoidal_pose(self, lat, lon, height, orient_quat, kinect_frame_mat=None):
         if kinect_frame_mat is None:

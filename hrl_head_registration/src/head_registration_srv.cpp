@@ -35,12 +35,12 @@ void readTFBag(const string& filename, geometry_msgs::TransformStamped::Ptr& tf_
 bool regCallback(HeadRegSrv::Request& req, HeadRegSrv::Response& resp)
 {
     if(!cur_pc) {
-        ROS_ERROR("No point cloud received.");
+        ROS_ERROR("[head_registraion] No point cloud received.");
         return false;
     }
     Eigen::Affine3d tf_mat;
     if(!findFaceRegistration(template_pc, cur_pc, req.u, req.v, tf_mat)) {
-        ROS_ERROR("Bad initialization pixel.");
+        ROS_ERROR("[head_registraion] Bad initialization pixel.");
         return false;
     }
     resp.tf_reg.header.frame_id = cur_pc->header.frame_id;
