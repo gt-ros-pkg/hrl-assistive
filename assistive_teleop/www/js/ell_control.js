@@ -24,15 +24,13 @@ var EllipsoidControl = function (ros) {
     'use strict';
     var ellCon = this;
     ellCon.ros = ros;
-    ellCon.ellipsoidCenter = {};
     
     ellCon.headRegServiceClient = new ellCon.ros.Service({
         name:'/initialize_registration',
-        serviceType:'hrl_head_registration/HeadRegistration'});
+        serviceType:'hrl_head_registration/InitializeRegistration'});
     ellCon.registerHead = function (u,v) {
         ellCon.headRegServiceClient.callService({u:u,v:v}, function (resp) {
-            console.log('Head Registration Service Returned.');
-            ellCon.ellipsoidCenter = resp.tf_reg;
+            console.log('Initialize Head Registration Service Returned.');
         });
     };
 

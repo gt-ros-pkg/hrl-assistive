@@ -25,7 +25,7 @@ class RegistrationLoader(object):
                                           self.req_reg_cb)
         self.head_registration_r = rospy.ServiceProxy("/head_registration_r", HeadRegistration) # TODO
         self.head_registration_l = rospy.ServiceProxy("/head_registration_l", HeadRegistration) # TODO
-#self.ell_params_pub = rospy.Publisher("/ellipsoid_params", EllipsoidParams, latched=True)
+        self.ell_params_pub = rospy.Publisher("/ellipsoid_params", EllipsoidParams, latched=True)
         self.feedback_pub = rospy.Publisher("/feedback", String)
 
     def publish_feedback(self, msg):
