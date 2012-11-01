@@ -9,6 +9,7 @@ import rospy
 import rosbag
 from std_msgs.msg import String
 from geometry_msgs.msg import Transform, Pose
+from tf import TransformBroadcaster
 
 from hrl_ellipsoidal_control.msg import EllipsoidParams
 from hrl_face_adls.srv import InitializeRegistration, InitializeRegistrationResponse
@@ -19,13 +20,15 @@ from hrl_geom.pose_converter import PoseConv
 class RegistrationLoader(object):
     def __init__(self):
         self.head_reg_tf = None
+        self.ell_frame = None
+        self.ell_frame_bcast = TransformBroadcaster()
         self.init_reg_srv = rospy.Service("/initialize_registration", InitializeRegistration, 
                                           self.init_reg_cb)
         self.req_reg_srv = rospy.Service("/request_registration", RequestRegistration, 
                                           self.req_reg_cb)
         self.head_registration_r = rospy.ServiceProxy("/head_registration_r", HeadRegistration) # TODO
         self.head_registration_l = rospy.ServiceProxy("/head_registration_l", HeadRegistration) # TODO
-        self.ell_params_pub = rospy.Publisher("/ellipsoid_params", EllipsoidParams, latched=True)
+        self.ell_params_pub = rospy.Publisher("/ellipsoid_params", EllipsoidParams, latch=True)
         self.feedback_pub = rospy.Publisher("/feedback", String)
 
     def publish_feedback(self, msg):
@@ -51,6 +54,7 @@ class RegistrationLoader(object):
             self.publish_feedback("Registered head using right cheek model, please visually confirm.")
         else:
             self.publish_feedback("Registered head using left cheek model, please visually confirm.")
+        rospy.loginfo('[registration loader] Head PC frame registered at:\r\n %s' %self.head_reg_tf)
         return InitializeRegistrationResponse()
 
     def req_reg_cb(self, req):
@@ -82,11 +86,17 @@ class RegistrationLoader(object):
                                                       e_params.e_frame.transform.rotation))
         reg_e_params.e_frame = PoseConv.to_tf_stamped_msg(head_reg_mat**-1 * ell_reg)
         reg_e_params.e_frame.header.frame_id = self.head_reg_tf.header.frame_id
+        reg_e_params.e_frame.child_frame_id = 'ellipse_frame'
         reg_e_params.height = e_params.height
         reg_e_params.E = e_params.E
-#self.ell_params_pub.publish(reg_e_params)
-        return RequestRegistrationResponse(True, reg_e_params)
+        self.ell_params_pub.publish(reg_e_params)
 
+        self.ell_frame = reg_e_params.e_frame
+        def pub_ell_frame(timer_event):
+            self.ell_frame_bcast.sendTransform(self.ell_frame.transform.translation, self.ell_frame.transform.rotation,
+                                               rospy.Time.now(), self.ell_frame.child_frame_id, self.ell_frame.header.frame_id)
+            
+        return RequestRegistrationResponse(True, reg_e_params)
 
 def main():
     rospy.init_node("registration_loader")
