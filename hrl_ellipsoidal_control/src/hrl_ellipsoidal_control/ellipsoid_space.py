@@ -4,6 +4,7 @@ import numpy as np
 
 import roslib
 roslib.load_manifest('hrl_ellipsoidal_control')
+import rospy
 from tf import TransformBroadcaster
 
 import hrl_geom.transformations as trans
@@ -22,26 +23,44 @@ class EllipsoidSpace(object):
         self.frame = None
         self.frame_broadcaster = TransformBroadcaster()
 
-    def set_center(self, pose_stamped):
-        self.center = pose_stamped
-        def broadcast_ell_center(event):
-            trans = (pose_stamped.pose.position.x,
-                     pose_stamped.pose.position.y,
-                     pose_stamped.pose.position.z) 
-            rot = (pose_stamped.pose.orientation.x,
-                   pose_stamped.pose.orientation.y,
-                   pose_stamped.pose.orientation.z,
-                   pose_stamped.pose.orientation.w)
-            self.frame_broadcaster.sendTransform(trans, rot, rospy.Time.now(),
-                                                 pose_stamped.header.frame_id,
-                                                 'ellipsoid_center')
-        rospy.Timer(rospy.Duration(0.01), broadcast_ell_center)
-
-    def load_ell_params(self, E, is_oblate=False, height=1):
+    def load_ell_params(self, ell_frame, E, is_oblate=False, height=1):
+        self.set_center(ell_frame)
         self.E = E
         self.a = self.A * self.E
         self.is_oblate = is_oblate
         self.height = height
+
+    def set_center(self, transform_stamped):
+        self.center = PoseConv.to_pose_stamped_msg(transform_stamped)
+        def broadcast_ell_center(event):
+            tr, quat = PoseConv.to_pos_quat(transform_stamped)
+            self.frame_broadcaster.sendTransform(tr, quat, rospy.Time.now(),
+                                                 self.center.header.frame_id,
+                                                 'ellipse_center')
+        rospy.Timer(rospy.Duration(0.01), broadcast_ell_center)
+
+    def set_bounds(self, lat_bounds=None, lon_bounds=None, height_bounds=None):
+        assert lon_bounds[1] >= 0
+        self._lat_bounds = lat_bounds
+        self._lon_bounds = lon_bounds
+        self._height_bounds = height_bounds
+
+    def enforce_bounds(self, ell_pos):
+        lat = np.clip(ell_pos[0], self._lat_bounds[0], self._lat_bounds[1])
+        if self._lon_bounds[0] >= 0:
+            lon = np.clip(ell_pos[1], self._lon_bounds[0], self._lon_bounds[1])
+        else:
+            ell_lon_1 = np.mod(ell_pos[1], 2 * np.pi)
+            min_lon = np.mod(self._lon_bounds[0], 2 * np.pi)
+            if (ell_lon_1 >= min_lon) or (ell_lon_1 <= self._lon_bounds[1]):
+                lon = ell_pos[1]
+            else:
+                if min_lon - ell_lon_1 < ell_lon_1 - self._lon_bounds[1]:
+                    lon = min_lon
+                else:
+                    lon = self._lon_bounds[1]
+        height = np.clip(ell_pos[2], self._height_bounds[0], self._height_bounds[1])
+        return np.array([lat, lon, height])
 
     def ellipsoidal_to_cart(self, lat, lon, height):
         #assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi

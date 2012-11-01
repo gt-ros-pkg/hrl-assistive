@@ -14,13 +14,13 @@ from std_srvs.srv import Empty
 from geometry_msgs.msg import WrenchStamped, PoseStamped
 import rosparam
 import roslaunch.substitution_args
-from tf import TransformListener
+from tf import TransformListener, ExtrapolationException, LookupException, ConnectivityException
 
 from hrl_geom.pose_converter import PoseConv
 import hrl_geom.transformations as trans
-from hrl_pr2_arms.pr2_arm_jt_task import create_ep_arm, PR2ArmJTransposeTask
+#from hrl_pr2_arms.pr2_arm_jt_task import create_ep_arm, PR2ArmJTransposeTask
 from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
-from hrl_ellipsoidal_control.ellipsoid_controller import EllipsoidController
+from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 from hrl_ellipsoidal_control.ellipsoidal_parameters import *
 from hrl_face_adls.face_adls_parameters import *
 from hrl_face_adls.msg import StringArray
@@ -104,9 +104,9 @@ class ForceCollisionMonitor(object):
 class FaceADLsManager(object):
     def __init__(self):
 
-        self.ell_ctrl = EllipsoidController()
+        self.ellipsoid = EllipsoidSpace()
         self.ctrl_switcher = ControllerSwitcher()
-        self.ee_frame = 'l_gripper_shaver45_frame'
+        self.ee_frame = '/l_gripper_shaver45_frame'
         self.tfl = TransformListener()
 
         self.global_input_sub = rospy.Subscriber("/face_adls/global_move", String, 
@@ -125,12 +125,13 @@ class FaceADLsManager(object):
         def stop_move_cb(msg):
             self.stop_move()
         self.stop_move_sub = rospy.Subscriber("/face_adls/stop_move", Bool, stop_move_cb, queue_size=1)
-        self.disable_controller()
 
-    def current_ee_pose(self, link=self.ee_frame, frame='/torso_lift_link'):
+    def current_ee_pose(self, link, frame='/torso_lift_link'):
         try:
-            pos, rot = self.tfl.lookupTransform(link, frame, rospy.Time(0))
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            now = rospy.Time.now()
+            self.tfl.waitForTransform(frame, link, now, rospy.Duration(8.0))
+            pos, rot = self.tfl.lookupTransform(link, frame, now)
+        except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
             rospy.logwarn("[face_adls_manager] TF Failure getting current end-effector pose: %s" %e)
             return None
         cur_pose = PoseStamped()
@@ -143,6 +144,7 @@ class FaceADLsManager(object):
         cur_pose.pose.orientation.y = rot[1]
         cur_pose.pose.orientation.z = rot[2]
         cur_pose.pose.orientation.w = rot[3]
+        rospy.loginfo("[face_adls_manager] Got current pose: \r\n%s" %cur_pose)
         return cur_pose
 
     def publish_feedback(self, message=None, transition_id=None):
@@ -160,50 +162,59 @@ class FaceADLsManager(object):
             self.trim_retreat = req.mode == "shaving"
             self.flip_gripper = self.shaving_side == 'r' and req.mode == "shaving"
             bounds = params['%s_bounds' % self.shaving_side]
-            self.ell_ctrl.set_bounds(bounds['lat'], bounds['lon'], bounds['height'])
+            #self.ellipsoid.set_bounds(bounds['lat'], bounds['lon'], bounds['height'])
+            self.ellipsoid.set_bounds((-np.pi,np.pi), (-np.pi,np.pi), (0,100))
+
             reg_resp = self.request_registration(req.mode, self.shaving_side)
             if not reg_resp.success:
                 self.publish_feedback(Messages.NO_PARAMS_LOADED)
                 return EnableFaceControllerResponse(False)
-            self.ell_ctrl.ell_server.load_params(reg_resp.e_params)
 
-            success = self.enable_controller(params['end_link'], params['ctrl_params'],
-                                             params['ctrl_name'])
-
+            self.ellipsoid.load_ell_params(reg_resp.e_params.e_frame,
+                                           reg_resp.e_params.E,
+                                           reg_resp.e_params.is_oblate,
+                                           reg_resp.e_params.height)
             global_poses_dir = rospy.get_param("~global_poses_dir", "")
             global_poses_file = params["%s_ell_poses_file" % self.shaving_side]
             global_poses_resolved = roslaunch.substitution_args.resolve_args(
                                             global_poses_dir + "/" + global_poses_file)
             self.global_poses = rosparam.load_file(global_poses_resolved)[0][0]
             self.global_move_poses_pub.publish(sorted(self.global_poses.keys()))
+
+            # check if arm is near head
+            ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose(self.ee_frame))
+            equals = ell_pos == self.ellipsoid.enforce_bounds(ell_pos)
+            print ell_pos, equals
+            if self.ellipsoid._lon_bounds[0] >= 0 and ell_pos[1] >= 0:
+                arm_in_bounds =  np.all(equals)
+            else:
+                ell_lon_1 = np.mod(ell_pos[1], 2 * np.pi)
+                min_lon = np.mod(self.ellipsoid._lon_bounds[0], 2 * np.pi)
+                arm_in_bounds = (equals[0] and
+                        equals[2] and 
+                        (ell_lon_1 >= min_lon or ell_lon_1 <= self.ellipsoid._lon_bounds[1]))
+
+            if not arm_in_bounds:
+                self.publish_feedback(Messages.ARM_AWAY_FROM_HEAD)
+                return False
+
+            self.publish_feedback(Messages.ENABLE_CONTROLLER)
+            self.setup_force_monitor()
+
+            if self.flip_gripper:
+                self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
+            else:
+                self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
+            self.controller_enabled_pub.publish(Bool(True))
+            success = True
         else:
-            success = self.disable_controller()
+            #self.ell_ctrl.stop_moving(wait=True)#TODO: FIXME: Stop Arm
+            self.controller_enabled_pub.publish(Bool(False))
+            rospy.loginfo(Messages.DISABLE_CONTROLLER)
+            success =  True
         return EnableFaceControllerResponse(success)
 
-    def enable_controller(self, end_link="%s_gripper_shaver45_frame",
-                          ctrl_params="$(find hrl_face_adls)/params/l_jt_task_shaver45.yaml",
-                          ctrl_name='%s_cart_jt_task'):
-        if not self.ell_ctrl.ell_server.params_loaded():
-            self.publish_feedback(Messages.NO_PARAMS_LOADED)
-            return False
-
-        self.ctrl_switcher.carefree_switch('l', ctrl_name, ctrl_params, reset=False)
-        rospy.sleep(0.2)
-        cart_arm = create_ep_arm('l', PR2ArmJTransposeTask, 
-                                  controller_name=ctrl_name, 
-                                  end_link=end_link, timeout=5)
-        self.ell_ctrl.set_arm(cart_arm)
-        rospy.sleep(0.1)
-        cart_arm.set_posture(cart_arm.get_joint_angles())
-        cart_arm.set_gains([300, 600, 600, 80, 80, 80], [4, 8, 8, 1.2, 1.2, 1.2])
-
-        # check if arm is near head
-        if not self.ell_ctrl.arm_in_bounds():
-            self.publish_feedback(Messages.ARM_AWAY_FROM_HEAD)
-            return False
-
-        self.publish_feedback(Messages.ENABLE_CONTROLLER)
-
+    def setup_force_monitor(self):
         self.force_monitor = ForceCollisionMonitor()
         # registering force monitor callbacks
         def dangerous_cb(force):
@@ -233,24 +244,6 @@ class FaceADLsManager(object):
         self.force_monitor.register_contact_cb(contact_cb)
         self.force_monitor.update_activity()
         self.is_forced_retreat = False
-
-        if self.flip_gripper:
-            self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
-        else:
-            self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
-
-        self.controller_enabled_pub.publish(Bool(True))
-        return True
-
-    def disable_controller(self):
-        self.ell_ctrl.stop_moving(wait=True)
-        self.ell_ctrl.set_arm(None)
-        self.controller_enabled_pub.publish(Bool(False))
-        rospy.loginfo(Messages.DISABLE_CONTROLLER)
-        return True
-
-    def controller_enabled(self):
-        return self.ell_ctrl.arm is not None
 
     def retreat_move(self, height, velocity, forced=False):
         if not self.check_controller_ready():
@@ -291,26 +284,25 @@ class FaceADLsManager(object):
         self.force_monitor.start_activity()
         goal_pose = self.global_poses[msg.data]
         self.publish_feedback(Messages.GLOBAL_START %msg.data)
-        try:
-            curr_cart_pose = self.current_ee_pose(self.ee_frame, '/torso_lift_link')
-            curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal(curr_cart_pose)
-            retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
-            retreat_ell_rot = np.mat(np.eye(3))
-            approach_ell_pos = [goal_pose[0][0], goal_pose[0][0], RETREAT_HEIGHT]
-            approach_ell_quat = goal_pose[1]
-            final_ell_pos = [goal_pose[0][0], goal_pose[0][1], goal_pose[0][2] - HEIGHT_CLOSER_ADJUST]
-            final_ell_quat = goal_pose[1]
-            
-            retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(retreat_ell_pos, retreat_ell_rot,
-                                                                  curr_ell_pos, curr_ell_rot)
-            transition_ell_traj = self.ellipsoid.create_ellipsoidal_path(approach_ell_pos, trans.quaternion_matrix(approach_ell_quat),
-                                                                     retreat_ell_pos, retreat_ell_rot)
-            approach_ell_traj = self.ellipsoid.create_ellipsoidal_path(final_ell_pos, trans.quaternion_matrix(final_ell_quat),
-                                                                   approach_ell_pos, trans.quaternion_matrix(approach_ell_quat))
-            
-            full_ell_traj = retreat_traj + transition_traj + approach_traj
-            full_cart_traj = [PoseConv.to_pose_stamped_msg(pose) for pose in full_ell_traj]
-            self.skin_goals_pub.publish(full_cart_traj)
+        curr_cart_pose = self.current_ee_pose(self.ee_frame, '/torso_lift_link')
+        curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal(curr_cart_pose)
+        retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
+        retreat_ell_rot = np.mat(np.eye(3))
+        approach_ell_pos = [goal_pose[0][0], goal_pose[0][0], RETREAT_HEIGHT]
+        approach_ell_quat = goal_pose[1]
+        final_ell_pos = [goal_pose[0][0], goal_pose[0][1], goal_pose[0][2] - HEIGHT_CLOSER_ADJUST]
+        final_ell_quat = goal_pose[1]
+        
+        retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(retreat_ell_pos, retreat_ell_rot,
+                                                              curr_ell_pos, curr_ell_rot)
+        transition_ell_traj = self.ellipsoid.create_ellipsoidal_path(approach_ell_pos, trans.quaternion_matrix(approach_ell_quat),
+                                                                 retreat_ell_pos, retreat_ell_rot)
+        approach_ell_traj = self.ellipsoid.create_ellipsoidal_path(final_ell_pos, trans.quaternion_matrix(final_ell_quat),
+                                                               approach_ell_pos, trans.quaternion_matrix(approach_ell_quat))
+        
+        full_ell_traj = retreat_traj + transition_traj + approach_traj
+        full_cart_traj = [PoseConv.to_pose_stamped_msg(pose) for pose in full_ell_traj]
+        self.skin_goals_pub.publish(full_cart_traj)
 
 #            if not self.ell_ctrl.execute_ell_move(((0, 0, RETREAT_HEIGHT), np.mat(np.eye(3))), 
 #                                                  ((0, 0, 1), 1), 
@@ -338,7 +330,6 @@ class FaceADLsManager(object):
 #        self.publish_feedback(Messages.GLOBAL_SUCCESS %msg.data)
 #        self.force_monitor.stop_activity()
             
-
     def global_input_cb_old(self, msg):
         if not self.check_controller_ready() or self.is_forced_retreat:
             return
