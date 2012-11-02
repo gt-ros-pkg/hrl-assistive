@@ -9,7 +9,7 @@ import roslib
 roslib.load_manifest('hrl_face_adls')
 
 import rospy
-from std_msgs.msg import Int8, String, Bool
+from std_msgs.msg import Int8, String, Bool, Header
 from std_srvs.srv import Empty
 from geometry_msgs.msg import WrenchStamped, PoseStamped, PoseArray
 import rosparam
@@ -123,6 +123,10 @@ class FaceADLsManager(object):
                                                    EnableFaceController, self.enable_controller_cb)
         self.request_registration = rospy.ServiceProxy("/request_registration", RequestRegistration)
 
+        self.test_pose = rospy.Publisher('face_adls/test_pose', PoseStamped, latch=True)
+        self.test_pose1 = rospy.Publisher('face_adls/test_pose1', PoseStamped, latch=True)
+        self.test_pose2 = rospy.Publisher('face_adls/test_pose2', PoseStamped, latch=True)
+
         def stop_move_cb(msg):
             self.stop_moving()
         self.stop_move_sub = rospy.Subscriber("/face_adls/stop_move", Bool, stop_move_cb, queue_size=1)
@@ -133,26 +137,15 @@ class FaceADLsManager(object):
 
     def current_ee_pose(self, link, frame='/torso_lift_link'):
         """Get current end effector pose from tf"""
+        print "Getting pose of %s in frame: %s" %(link, frame)
         try:
             now = rospy.Time.now()
             self.tfl.waitForTransform(frame, link, now, rospy.Duration(8.0))
-            pos, rot = self.tfl.lookupTransform(link, frame, now)
+            pos, quat = self.tfl.lookupTransform(frame, link, now)
         except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
             rospy.logwarn("[face_adls_manager] TF Failure getting current end-effector pose: %s" %e)
             return None
-        return pos, rot
-        #cur_pose = PoseStamped()
-        #cur_pose.header.stamp = rospy.Time.now()
-        #cur_pose.header.frame_id = frame
-        #cur_pose.pose.position.x = pos[0]
-        #cur_pose.pose.position.y = pos[1]
-        #cur_pose.pose.position.z = pos[2]
-        #cur_pose.pose.orientation.x = rot[0]
-        #cur_pose.pose.orientation.y = rot[1]
-        #cur_pose.pose.orientation.z = rot[2]
-        #cur_pose.pose.orientation.w = rot[3]
-        #rospy.loginfo("[face_adls_manager] Got current pose: \r\n%s" %cur_pose)
-        #return cur_pose
+        return pos, quat 
 
     def publish_feedback(self, message=None, transition_id=None):
         if message is not None:
@@ -190,7 +183,7 @@ class FaceADLsManager(object):
 
             # check if arm is near head
             cart_pos, cart_quat = self.current_ee_pose(self.ee_frame)
-            ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal(cart_pos, cart_quat)
+            ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal((cart_pos, cart_quat))
             equals = ell_pos == self.ellipsoid.enforce_bounds(ell_pos)
             print ell_pos, equals
             if self.ellipsoid._lon_bounds[0] >= 0 and ell_pos[1] >= 0:
@@ -276,65 +269,115 @@ class FaceADLsManager(object):
             return
         rospy.loginfo("[face_adls_manager] Performing global move.")
         self.force_monitor.start_activity()
-        goal_pose = self.global_poses[msg.data]
+
+        goal_ell_pose = self.global_poses[msg.data]
+        ###Debugging###
+        rospy.loginfo("Global Goal pose from lookup:\r\n%s" %goal_ell_pose)
+        cart_goal_pos, cart_goal_quat = self.ellipsoid.ellipsoidal_to_pose(goal_ell_pose)
+        goal_quat = trans.quaternion_multiply(cart_goal_quat, goal_ell_pose[1])
+        cart_goal_pose = PoseConv.to_pose_stamped_msg('ellipse_frame',(cart_goal_pos, goal_quat))
+        self.test_pose.publish(cart_goal_pose)
+        ###END Debugging ###
+
         self.publish_feedback(Messages.GLOBAL_START %msg.data)
-        curr_cart_pose = self.current_ee_pose(self.ee_frame, '/torso_lift_link')
-        curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal(curr_cart_pose)
-        retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
-        retreat_ell_rot = np.mat(np.eye(3))
-        approach_ell_pos = [goal_pose[0][0], goal_pose[0][0], RETREAT_HEIGHT]
-        approach_ell_quat = goal_pose[1]
-        final_ell_pos = [goal_pose[0][0], goal_pose[0][1], goal_pose[0][2] - HEIGHT_CLOSER_ADJUST]
-        final_ell_quat = goal_pose[1]
+        curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
+        print "First Current Cart: \r\n%s,%s" %(curr_cart_pos,curr_cart_quat)
+        self.test_pose1.publish(PoseConv.to_pose_stamped_msg('/ellipse_frame',(curr_cart_pos, curr_cart_quat)))
+        c_cart_pos, c_cart_quat = self.ellipsoid.ellipsoidal_to_pose(self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat)))
+        print "Second Current Cart: \r\n%s,%s" %(c_cart_pos,c_cart_quat)
+        self.test_pose2.publish(PoseConv.to_pose_stamped_msg('/ellipse_frame',(c_cart_pos, c_cart_quat)))
+        ###Debugging###
+
+        current_ee_pose = PoseConv.to_pose_stamped_msg('/ellipse_frame',(curr_cart_pos, curr_cart_quat))
+        print "[face_adls_manager] Current EE Pose: %s" %current_ee_pose
+        ###END Debugging ###
         
-        retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(retreat_ell_pos, retreat_ell_rot,
-                                                              curr_ell_pos, curr_ell_rot)
-        transition_ell_traj = self.ellipsoid.create_ellipsoidal_path(approach_ell_pos, trans.quaternion_matrix(approach_ell_quat),
-                                                                 retreat_ell_pos, retreat_ell_rot)
-        approach_ell_traj = self.ellipsoid.create_ellipsoidal_path(final_ell_pos, trans.quaternion_matrix(final_ell_quat),
-                                                               approach_ell_pos, trans.quaternion_matrix(approach_ell_quat))
-        
-        full_ell_traj = retreat_traj + transition_traj + approach_traj
-        full_cart_traj = [PoseConv.to_pose_stamped_msg(pose) for pose in full_ell_traj]
-        self.skin_goals_pub.publish(full_cart_traj)
+        curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
+        print "Current ELLipsoidal pose:\r\n%s,\r\n%s" %(curr_ell_pos, curr_ell_quat)
+        #c_cart_pos, c_cart_rot = self.ellipsoid.ellipsoidal_to_pose(*curr_ell_pos)
+        #c_cart_quat = trans.quaternion_multiply(c_cart_rot, curr_ell_quat)
+        #c_cart_pose = PoseConv.to_pose_stamped_msg('/ellipse_frame', (c_cart_pos, c_cart_quat))
+
+#        retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
+        retreat_ell_pos = [np.pi/2, 0.001, 10]
+        retreat_cart_pos, retreat_cart_quat = self.ellipsoid.ellipsoidal_to_pose(*retreat_ell_pos)
+#        print "Retreat ELLipsoidal pose:\r\n%s,\r\n%s" %(retreat_ell_pos, retreat_ell_quat)
+#        retreat_cart_pose = PoseConv.to_pose_stamped_msg('/ellipse_frame', (retreat_cart_pos, retreat_cart_quat))
+        retreat_cart_pose = PoseStamped()
+        retreat_cart_pose.header.frame_id = '/ellipse_frame'
+        retreat_cart_pose.header.stamp = rospy.Time.now()
+        retreat_cart_pose.pose.position.x = retreat_cart_pos[0]
+        retreat_cart_pose.pose.position.y = retreat_cart_pos[1]
+        retreat_cart_pose.pose.position.z = retreat_cart_pos[2]
+        retreat_cart_pose.pose.orientation.x = retreat_cart_quat[0]
+        retreat_cart_pose.pose.orientation.y = retreat_cart_quat[1]
+        retreat_cart_pose.pose.orientation.z = retreat_cart_quat[2]
+        retreat_cart_pose.pose.orientation.w = retreat_cart_quat[3]
+        print retreat_cart_pose
+
+        approach_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], RETREAT_HEIGHT]
+        approach_ell_rot = trans.quaternion_matrix(goal_ell_pose[1])[:3,:3]
+        approach_cart_pose = PoseConv.to_pose_stamped_msg('/ellipse_frame', (approach_ell_pos, approach_ell_rot))
+        print "Approach ELLipsoidal pose:\r\n%s,\r\n%s" %(approach_ell_pos, approach_ell_rot)
+#
+#        final_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], goal_ell_pose[0][2] - HEIGHT_CLOSER_ADJUST]
+#        final_ell_rot = approach_ell_rot
+#        
+#        retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(retreat_ell_pos, retreat_ell_rot,
+#                                                                  curr_ell_pos, trans.quaternion_matrix(curr_ell_quat)[:3,:3],
+#                                                                  velocity=0.01)
+#        transition_ell_traj = self.ellipsoid.create_ellipsoidal_path(approach_ell_pos, approach_ell_rot,
+#                                                                     retreat_ell_pos, retreat_ell_rot,
+#                                                                     velocity=0.01)
+#        approach_ell_traj = self.ellipsoid.create_ellipsoidal_path(final_ell_pos, final_ell_rot,
+#                                                                   approach_ell_pos, approach_ell_rot,
+#                                                                   velocity=0.01)
+#        
+#        full_ell_traj = retreat_ell_traj + transition_ell_traj + approach_ell_traj
+#        full_cart_traj = [PoseConv.to_pose_msg(pose) for pose in full_ell_traj]
+#        head = Header()
+#        head.frame_id = '/torso_lift_link'
+#        head.stamp = rospy.Time.now()
+#        pose_array = PoseArray(head, full_cart_traj)
+#        self.pose_traj_pub.publish(pose_array)
 
             
-    def global_input_cb_old(self, msg):
-        if self.is_forced_retreat:
-            return
-        if self.stop_move():
-            rospy.loginfo("[face_adls_manager] Preempting other movement for global move.")
-            #self.publish_feedback(Messages.GLOBAL_PREEMPT_OTHER)
-        self.force_monitor.start_activity()
-        goal_pose = self.global_poses[msg.data]
-        goal_pose_name = msg.data
-        self.publish_feedback(Messages.GLOBAL_START % goal_pose_name)
-        try:
-            if not self.ell_ctrl.execute_ell_move(((0, 0, RETREAT_HEIGHT), np.mat(np.eye(3))), 
-                                                  ((0, 0, 1), 1), 
-                                                  self.gripper_rot,
-                                                  APPROACH_VELOCITY,
-                                                  blocking=True):
-                raise Exception
-            if not self.ell_ctrl.execute_ell_move(((goal_pose[0][0], goal_pose[0][1], RETREAT_HEIGHT), (0, 0, 0, 1)), 
-                                                  ((1, 1, 1), 0), 
-                                                  self.gripper_rot,
-                                                  GLOBAL_VELOCITY,
-                                                  blocking=True):
-                raise Exception
-            final_goal = [goal_pose[0][0], goal_pose[0][1], goal_pose[0][2] - HEIGHT_CLOSER_ADJUST]
-            if not self.ell_ctrl.execute_ell_move((final_goal, (0, 0, 0, 1)),
-                                                  ((1, 1, 1), 0), 
-                                                  self.gripper_rot,
-                                                  GLOBAL_VELOCITY,
-                                                  blocking=True):
-                raise Exception
-        except:
-            self.publish_feedback(Messages.GLOBAL_PREEMPT % goal_pose_name)
-            self.force_monitor.stop_activity()
-            return
-        self.publish_feedback(Messages.GLOBAL_SUCCESS % goal_pose_name)
-        self.force_monitor.stop_activity()
+    #def global_input_cb_old(self, msg):
+    #    if self.is_forced_retreat:
+    #        return
+    #    if self.stop_move():
+    #        rospy.loginfo("[face_adls_manager] Preempting other movement for global move.")
+    #        #self.publish_feedback(Messages.GLOBAL_PREEMPT_OTHER)
+    #    self.force_monitor.start_activity()
+    #    goal_pose = self.global_poses[msg.data]
+    #    goal_pose_name = msg.data
+    #    self.publish_feedback(Messages.GLOBAL_START % goal_pose_name)
+    #    try:
+    #        if not self.ell_ctrl.execute_ell_move(((0, 0, RETREAT_HEIGHT), np.mat(np.eye(3))), 
+    #                                              ((0, 0, 1), 1), 
+    #                                              self.gripper_rot,
+    #                                              APPROACH_VELOCITY,
+    #                                              blocking=True):
+    #            raise Exception
+    #        if not self.ell_ctrl.execute_ell_move(((goal_pose[0][0], goal_pose[0][1], RETREAT_HEIGHT), (0, 0, 0, 1)), 
+    #                                              ((1, 1, 1), 0), 
+    #                                              self.gripper_rot,
+    #                                              GLOBAL_VELOCITY,
+    #                                              blocking=True):
+    #            raise Exception
+    #        final_goal = [goal_pose[0][0], goal_pose[0][1], goal_pose[0][2] - HEIGHT_CLOSER_ADJUST]
+    #        if not self.ell_ctrl.execute_ell_move((final_goal, (0, 0, 0, 1)),
+    #                                              ((1, 1, 1), 0), 
+    #                                              self.gripper_rot,
+    #                                              GLOBAL_VELOCITY,
+    #                                              blocking=True):
+    #            raise Exception
+    #    except:
+    #        self.publish_feedback(Messages.GLOBAL_PREEMPT % goal_pose_name)
+    #        self.force_monitor.stop_activity()
+    #        return
+    #    self.publish_feedback(Messages.GLOBAL_SUCCESS % goal_pose_name)
+    #    self.force_monitor.stop_activity()
 
     def local_input_cb(self, msg): #TODO: Change this
         if self.is_forced_retreat:
