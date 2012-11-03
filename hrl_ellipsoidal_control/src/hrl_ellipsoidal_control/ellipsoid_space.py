@@ -298,13 +298,13 @@ class EllipsoidSpace(object):
         return lat, lon, height
 
 
-    def create_ellipsoidal_path(self, end_ell_pos, end_ell_rot,
-                                       start_ell_pos, start_ell_rot,
-                                       velocity=0.001):
+    def create_ellipsoidal_path(self, start_ell_pos, start_ell_quat,
+                                      end_ell_pos, end_ell_quat,
+                                      velocity=0.001, min_jerk=True):
 
-        print "Start rot (%s):\r\n%s" %(type(start_ell_rot),start_ell_rot)
-        print "End rot (%s):\r\n%s" %(type(end_ell_rot),end_ell_rot)
-        rpy = trans.euler_from_matrix(start_ell_rot.T * end_ell_rot) # get roll, pitch, yaw of angle diff
+        print "Start rot (%s):\r\n%s" %(type(start_ell_quat),start_ell_quat)
+        print "End rot (%s):\r\n%s" %(type(end_ell_quat),end_ell_quat)
+        rpy = trans.euler_from_quaternion(start_ell_quat.T * end_ell_quat) # get roll, pitch, yaw of angle diff
         end_ell_pos[1] = np.mod(end_ell_pos[1], 2 * np.pi) # wrap longitude value
         ell_init = np.mat(start_ell_pos).T 
         ell_final = np.mat(end_ell_pos).T
@@ -322,18 +322,19 @@ class EllipsoidSpace(object):
         
         num_samps = np.max([2, int(np.linalg.norm(ell_final - ell_init) / velocity), 
                                int(np.linalg.norm(rpy) / velocity)])
-        t_vals = min_jerk_traj(num_samps)
+        if min_jerk:
+            t_vals = min_jerk_traj(num_samps)
+        else:
+            t_vals = np.linspace(0,1,num_samps)
+
         # smoothly interpolate from init to final
         ell_lat_traj = np.interp(t_vals, (0,1),(start_ell_pos[0], end_ell_pos[0]))
         ell_lon_traj = np.interp(t_vals, (0,1),(start_ell_pos[1], end_ell_pos[1]))
         ell_height_traj = np.interp(t_vals, (0,1),(start_ell_pos[2], end_ell_pos[2]))
         ell_pos_traj = np.vstack((ell_lat_traj, ell_lon_traj, ell_height_traj))
 
-        _, start_quat = PoseConv.to_pos_quat(([0,0,0],start_ell_rot))
-        _, end_quat = PoseConv.to_pos_quat(([0,0,0],end_ell_rot))
-        ell_quat_traj = [trans.quaternion_slerp(start_quat, end_quat, t) for t in t_vals]
-        ell_rot_traj = [trans.quaternion_matrix(quat)[:3,:3] for quat in ell_quat_traj]
-        return [[ell_pos_traj[:,i],ell_rot_traj[i]] for i in xrange(num_samps)]
+        ell_quat_traj = [trans.quaternion_slerp(start_ell_quat, end_ell_quat, t) for t in t_vals]
+        return [(ell_pos_traj[:,i], ell_quat_traj[i]) for i in xrange(num_samps)]
         
 def main():
     e_space = EllipsoidSpace(1)
