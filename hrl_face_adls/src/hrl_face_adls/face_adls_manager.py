@@ -221,14 +221,14 @@ class FaceADLsManager(object):
         # registering force monitor callbacks
         def dangerous_cb(force):
             self.stop_moving()
-            ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose())
+            ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose(self.ee_frame, '/ellipse_frame'))
             if ell_pos[2] < SAFETY_RETREAT_HEIGHT * 0.9:
                 self.publish_feedback(Messages.DANGEROUS_FORCE %force)
                 self.retreat_move(SAFETY_RETREAT_HEIGHT, SAFETY_RETREAT_VELOCITY, forced=True)
         self.force_monitor.register_dangerous_cb(dangerous_cb)
         def timeout_cb(time):
             start_time = rospy.get_time()
-            ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose())
+            ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose(self.ee_frame, '/ellipse_frame'))
             rospy.loginfo("ELL POS TIME: %.3f " % (rospy.get_time() - start_time) + str(ell_pos) 
                           + " times: %.3f %.3f" % (self.force_monitor.last_activity_time, rospy.get_time()))
             if ell_pos[2] < RETREAT_HEIGHT * 0.9 and self.force_monitor.is_inactive():
@@ -260,7 +260,7 @@ class FaceADLsManager(object):
         retreat_pos = (latitude, ell_pos[1], height)
         retreat_quat = (0,0,0,1)
         if forced:
-            cart_path = self.ellipsoidal.ellipsoidal_to_pose((retreat_pos, retreat_quat))
+            cart_path = self.ellipsoid.ellipsoidal_to_pose((retreat_pos, retreat_quat))
             cart_msg = PoseConv.to_pose_msg(retreat_cart_pose)
         else:
             ell_path = self.ellipsoid.create_ellipsoidal_path(ell_pos, ell_quat,
@@ -270,7 +270,7 @@ class FaceADLsManager(object):
             cart_msg = [PoseConv.to_pose_msg(pose) for pose in cart_path]
             
         head = Header()
-        head.frame_id = '/torso_lift_link'
+        head.frame_id = '/ellipse_frame'
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_msg)
         self.pose_traj_pub.publish(pose_array)
@@ -286,41 +286,41 @@ class FaceADLsManager(object):
         self.publish_feedback(Messages.GLOBAL_START %msg.data)
 
         goal_ell_pose = self.global_poses[msg.data]
-        ###Debugging###
+        ##Debugging###
         #rospy.loginfo("Global Goal pose from lookup:\r\n%s" %goal_ell_pose)
         #cart_goal_pos, cart_goal_quat = self.ellipsoid.ellipsoidal_to_pose(goal_ell_pose)
         #goal_quat = trans.quaternion_multiply(cart_goal_quat, goal_ell_pose[1])
         #cart_goal_pose = PoseConv.to_pose_stamped_msg('ellipse_frame',(cart_goal_pos, goal_quat))
         #self.test_pose.publish(cart_goal_pose)
-        ###END Debugging ###
+        ##END Debugging ###
 
         curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
         curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
 
         retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
-        retreat_ell_quat = (0.,0.,0.,1.)
+        retreat_ell_quat = [0.,0.,0.,1.]
 
         approach_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], RETREAT_HEIGHT]
         approach_ell_quat = goal_ell_pose[1]
 
         final_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], goal_ell_pose[0][2] - HEIGHT_CLOSER_ADJUST]
-        final_ell_quat = goal_ell_quat
+        final_ell_quat = goal_ell_pose[1]
         
         retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
                                                                   retreat_ell_pos, retreat_ell_quat,
-                                                                  velocity=0.01, min_jerk=True)
+                                                                  velocity=0.1, min_jerk=True)
         transition_ell_traj = self.ellipsoid.create_ellipsoidal_path(retreat_ell_pos, retreat_ell_quat,
                                                                      approach_ell_pos, approach_ell_quat,
-                                                                     velocity=0.01, min_jerk=True)
+                                                                     velocity=0.1, min_jerk=True)
         approach_ell_traj = self.ellipsoid.create_ellipsoidal_path(approach_ell_pos, approach_ell_quat,
                                                                    final_ell_pos, final_ell_quat,
-                                                                   velocity=0.01, min_jerk=True)
+                                                                   velocity=0.1, min_jerk=True)
         
         full_ell_traj = retreat_ell_traj + transition_ell_traj + approach_ell_traj
-        full_cart_traj = [self.ellipsoidal_to_pose(pose) for pose in full_ell_traj]
+        full_cart_traj = [self.ellipsoid.ellipsoidal_to_pose(pose) for pose in full_ell_traj]
         cart_traj_msg = [PoseConv.to_pose_msg(pose) for pose in full_cart_traj]
         head = Header()
-        head.frame_id = '/torso_lift_link'
+        head.frame_id = '/ellipse_frame'
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
@@ -375,9 +375,9 @@ class FaceADLsManager(object):
         if button_press in ell_trans_params:
             self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
             change_trans_ep = ell_trans_params[button_press]
-            goal_ell_pos = (curr_ell_pos[0]+change_trans_ep[0],
+            goal_ell_pos = [curr_ell_pos[0]+change_trans_ep[0],
                             curr_ell_pos[1]+change_trans_ep[1],
-                            curr_ell_pos[2]+change_trans_ep[2])
+                            curr_ell_pos[2]+change_trans_ep[2]]
             ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
                                                               goal_ell_pos, curr_ell_quat,
                                                               velocity=ELL_LOCAL_VEL, min_jerk=True)
@@ -412,10 +412,10 @@ class FaceADLsManager(object):
         else:
             rospy.logerr("[face_adls_manager] Unknown local ellipsoidal command")
 
-        cart_traj = [self.ellipsoidal_to_pose(pose) for pose in ell_path]
+        cart_traj = [self.ellipsoid.ellipsoidal_to_pose(pose) for pose in ell_path]
         cart_traj_msg = [PoseConv.to_pose_msg(pose) for pose in cart_traj]
         head = Header()
-        head.frame_id = '/torso_lift_link'
+        head.frame_id = '/ellipse_frame'
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)

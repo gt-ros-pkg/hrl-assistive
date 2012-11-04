@@ -86,7 +86,6 @@ class EllipsoidSpace(object):
             x = self.a * np.sinh(height) * np.sin(lat-np.pi/2) * np.cos(lon)
             y = self.a * np.sinh(height) * np.sin(lat-np.pi/2) * np.sin(lon)
             z = self.a * np.cosh(height) * np.cos(lat-np.pi/2)
-        print "[ell_space] partial_height: %s" %np.mat([x,y,z]).T
         return np.mat([x, y, z]).T
 
     #def partial_v(self, lat, lon, height):
@@ -304,7 +303,10 @@ class EllipsoidSpace(object):
 
         print "Start rot (%s):\r\n%s" %(type(start_ell_quat),start_ell_quat)
         print "End rot (%s):\r\n%s" %(type(end_ell_quat),end_ell_quat)
-        rpy = trans.euler_from_quaternion(start_ell_quat.T * end_ell_quat) # get roll, pitch, yaw of angle diff
+        
+        _, start_ell_rot = PoseConv.to_pos_rot((start_ell_pos,start_ell_quat))
+        _, end_ell_rot = PoseConv.to_pos_rot((end_ell_pos,end_ell_quat))
+        rpy = trans.euler_from_matrix(start_ell_rot.T * end_ell_rot) # get roll, pitch, yaw of angle diff
         end_ell_pos[1] = np.mod(end_ell_pos[1], 2 * np.pi) # wrap longitude value
         ell_init = np.mat(start_ell_pos).T 
         ell_final = np.mat(end_ell_pos).T
