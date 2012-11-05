@@ -1,8 +1,8 @@
 <launch>
 <!-- aleeper: This launch file is for the experimental task controller -->
 
-  <arg name="use_right_arm" default="true" />
-  <arg name="use_left_arm"  default="false"  />
+  <arg name="use_right_arm" default="false" />
+  <arg name="use_left_arm"  default="true"  />
 
   <rosparam ns="r_cart">
     type: pr2_manipulation_controllers/JTTaskController
@@ -42,7 +42,7 @@
   <rosparam ns="l_cart">
     type: pr2_manipulation_controllers/JTTaskController
     root_name: torso_lift_link
-    tip_name: l_wrist_roll_link
+    tip_name: l_gripper_shaver45_frame
     k_posture: 15.0
     jacobian_inverse_damping: 0.01
     pose_command_filter: 0.01

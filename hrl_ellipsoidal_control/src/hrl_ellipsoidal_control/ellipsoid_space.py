@@ -21,6 +21,7 @@ class EllipsoidSpace(object):
         self.is_oblate = is_oblate
         self.center = None
         self.frame_broadcaster = TransformBroadcaster()
+        self.center_tf_timer = None
 
     def load_ell_params(self, ell_frame, E, is_oblate=False, height=1):
         rospy.loginfo("Loading Ellipsoid Parameters")
@@ -38,7 +39,7 @@ class EllipsoidSpace(object):
             self.frame_broadcaster.sendTransform(tr, quat, rospy.Time.now(),
                                                  '/ellipse_frame',
                                                  self.center.header.frame_id)
-        rospy.Timer(rospy.Duration(0.01), broadcast_ell_center)
+        self.center_tf_timer = rospy.Timer(rospy.Duration(0.01), broadcast_ell_center)
 
     def set_bounds(self, lat_bounds=None, lon_bounds=None, height_bounds=None):
         assert lon_bounds[1] >= 0

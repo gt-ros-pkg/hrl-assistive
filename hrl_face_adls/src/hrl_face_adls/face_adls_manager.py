@@ -107,6 +107,7 @@ class FaceADLsManager(object):
         self.ellipsoid = EllipsoidSpace()
         self.ee_frame = '/l_gripper_shaver45_frame'
         self.tfl = TransformListener()
+        self.is_forced_retreat = False
         self.pose_traj_pub = rospy.Publisher('/face_adls/goal_poses', PoseArray)
 
         self.global_input_sub = rospy.Subscriber("/face_adls/global_move", String, 
@@ -200,7 +201,7 @@ class FaceADLsManager(object):
                 self.controller_enabled_pub.publish(Bool(False))
                 success = False
             else:
-                self.setup_force_monitor()
+                #self.setup_force_monitor()#TODO: REPLACE AND INTEGRATE
                 self.publish_feedback(Messages.ENABLE_CONTROLLER)
 
                 #if self.flip_gripper:
@@ -282,39 +283,28 @@ class FaceADLsManager(object):
         if self.is_forced_retreat:
             return
         rospy.loginfo("[face_adls_manager] Performing global move.")
-        self.force_monitor.start_activity()
+#        self.force_monitor.start_activity()
         self.publish_feedback(Messages.GLOBAL_START %msg.data)
 
         goal_ell_pose = self.global_poses[msg.data]
-        ##Debugging###
-        #rospy.loginfo("Global Goal pose from lookup:\r\n%s" %goal_ell_pose)
-        #cart_goal_pos, cart_goal_quat = self.ellipsoid.ellipsoidal_to_pose(goal_ell_pose)
-        #goal_quat = trans.quaternion_multiply(cart_goal_quat, goal_ell_pose[1])
-        #cart_goal_pose = PoseConv.to_pose_stamped_msg('ellipse_frame',(cart_goal_pos, goal_quat))
-        #self.test_pose.publish(cart_goal_pose)
-        ##END Debugging ###
-
         curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
         curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
-
         retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
         retreat_ell_quat = [0.,0.,0.,1.]
-
         approach_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], RETREAT_HEIGHT]
         approach_ell_quat = goal_ell_pose[1]
-
         final_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], goal_ell_pose[0][2] - HEIGHT_CLOSER_ADJUST]
         final_ell_quat = goal_ell_pose[1]
         
         retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
                                                                   retreat_ell_pos, retreat_ell_quat,
-                                                                  velocity=0.1, min_jerk=True)
+                                                                  velocity=0.01, min_jerk=True)
         transition_ell_traj = self.ellipsoid.create_ellipsoidal_path(retreat_ell_pos, retreat_ell_quat,
                                                                      approach_ell_pos, approach_ell_quat,
-                                                                     velocity=0.1, min_jerk=True)
+                                                                     velocity=0.01, min_jerk=True)
         approach_ell_traj = self.ellipsoid.create_ellipsoidal_path(approach_ell_pos, approach_ell_quat,
                                                                    final_ell_pos, final_ell_quat,
-                                                                   velocity=0.1, min_jerk=True)
+                                                                   velocity=0.01, min_jerk=True)
         
         full_ell_traj = retreat_ell_traj + transition_ell_traj + approach_ell_traj
         full_cart_traj = [self.ellipsoid.ellipsoidal_to_pose(pose) for pose in full_ell_traj]
@@ -325,6 +315,75 @@ class FaceADLsManager(object):
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
             
+    def local_input_cb(self, msg):
+        if self.is_forced_retreat:
+            return
+        self.stop_moving()
+#        self.force_monitor.start_activity()
+        button_press = msg.data 
+
+        curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
+        curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
+
+        if button_press in ell_trans_params:
+            self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
+            change_trans_ep = ell_trans_params[button_press]
+            goal_ell_pos = [curr_ell_pos[0]+change_trans_ep[0],
+                            curr_ell_pos[1]+change_trans_ep[1],
+                            curr_ell_pos[2]+change_trans_ep[2]]
+            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
+                                                              goal_ell_pos, curr_ell_quat,
+                                                              velocity=ELL_LOCAL_VEL, min_jerk=True)
+        elif button_press in ell_rot_params:
+            self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
+            change_rot_ep = ell_rot_params[button_press]
+            rot_quat = trans.quaternion_from_euler(*change_rot_ep)
+            goal_ell_quat = trans.quaternion_multiply(curr_ell_quat, rot_quat)
+            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
+                                                              curr_ell_pos, goal_ell_quat,
+                                                              velocity=ELL_ROT_VEL, min_jerk=True)
+        elif button_press == "reset_rotation":
+            self.publish_feedback(Messages.ROT_RESET_START)
+            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
+                                                              curr_ell_pos,(0.,0.,0.,1.),
+                                                              velocity=ELL_ROT_VEL, min_jerk=True)
+        else:
+            rospy.logerr("[face_adls_manager] Unknown local ellipsoidal command")
+
+        cart_traj = [self.ellipsoid.ellipsoidal_to_pose(pose) for pose in ell_path]
+        cart_traj_msg = [PoseConv.to_pose_msg(pose) for pose in cart_traj]
+        head = Header()
+        head.frame_id = '/ellipse_frame'
+        head.stamp = rospy.Time.now()
+        pose_array = PoseArray(head, cart_traj_msg)
+        self.pose_traj_pub.publish(pose_array)
+
+def main():
+    rospy.init_node("face_adls_manager")
+
+    #from pr2_traj_playback.arm_pose_move_controller import ArmPoseMoveBehavior, TrajectoryLoader
+    #from pr2_traj_playback.arm_pose_move_controller import CTRL_NAME_LOW, PARAMS_FILE_LOW
+    #r_apm = ArmPoseMoveBehavior('r', ctrl_name=CTRL_NAME_LOW,
+    #                            param_file=PARAMS_FILE_LOW)
+    #l_apm = ArmPoseMoveBehavior('l', ctrl_name=CTRL_NAME_LOW,
+    #                            param_file=PARAMS_FILE_LOW)
+    #traj_loader = TrajectoryLoader(r_apm, l_apm)
+    #if False:
+    #    traj_loader.move_to_setup_from_file("$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl",
+    #                                        velocity=0.1, reverse=False, blocking=True)
+    #    traj_loader.exec_traj_from_file("$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl",
+    #                                    rate_mult=0.8, reverse=False, blocking=True)
+    #if False:
+    #    traj_loader.move_to_setup_from_file("$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl",
+    #                                        velocity=0.3, reverse=True, blocking=True)
+
+    fam = FaceADLsManager()
+    #fam.enable_controller()
+    rospy.spin()
+
+if __name__ == "__main__":
+    main()
+
     #def global_input_cb_old(self, msg):
     #    if self.is_forced_retreat:
     #        return
@@ -362,91 +421,65 @@ class FaceADLsManager(object):
     #    self.publish_feedback(Messages.GLOBAL_SUCCESS % goal_pose_name)
     #    self.force_monitor.stop_activity()
 
-    def local_input_cb(self, msg):
-        if self.is_forced_retreat:
-            return
-        self.stop_moving()
-        self.force_monitor.start_activity()
-        button_press = msg.data 
-
-        curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
-        curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
-
-        if button_press in ell_trans_params:
-            self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
-            change_trans_ep = ell_trans_params[button_press]
-            goal_ell_pos = [curr_ell_pos[0]+change_trans_ep[0],
-                            curr_ell_pos[1]+change_trans_ep[1],
-                            curr_ell_pos[2]+change_trans_ep[2]]
-            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
-                                                              goal_ell_pos, curr_ell_quat,
-                                                              velocity=ELL_LOCAL_VEL, min_jerk=True)
-#            success = self.ell_ctrl.execute_ell_move((change_trans_ep, (0, 0, 0, 1)),
-#                                                     ((0, 0, 0), 0), 
-#                                                    self.gripper_rot,
-#                                                    ELL_LOCAL_VEL,
-#                                                    blocking=True)
-        elif button_press in ell_rot_params:
-            self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
-            change_rot_ep = ell_rot_params[button_press]
-            rot_quat = trans.quaternion_from_euler(*change_rot_ep)
-            goal_ell_quat = trans.quaternion_multiply(curr_ell_quat, rot_quat)
-            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
-                                                              curr_ell_pos, goal_ell_quat,
-                                                              velocity=ELL_ROT_VEL, min_jerk=True)
-            #success = self.ell_ctrl.execute_ell_move(((0, 0, 0), rot_quat),
-            #                                         ((0, 0, 0), 0), 
-            #                                         self.gripper_rot,
-            #                                         ELL_ROT_VEL,
-            #                                         blocking=True)
-        elif button_press == "reset_rotation":
-            self.publish_feedback(Messages.ROT_RESET_START)
-            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
-                                                              curr_ell_pos,(0.,0.,0.,1.),
-                                                              velocity=ELL_ROT_VEL, min_jerk=True)
-            #success = self.ell_ctrl.execute_ell_move(((0, 0, 0), np.mat(np.eye(3))),
-            #                                         ((0, 0, 0), 1), 
-            #                                         self.gripper_rot,
-            #                                         ELL_ROT_VEL,
-            #                                         blocking=True)
-        else:
-            rospy.logerr("[face_adls_manager] Unknown local ellipsoidal command")
-
-        cart_traj = [self.ellipsoid.ellipsoidal_to_pose(pose) for pose in ell_path]
-        cart_traj_msg = [PoseConv.to_pose_msg(pose) for pose in cart_traj]
-        head = Header()
-        head.frame_id = '/ellipse_frame'
-        head.stamp = rospy.Time.now()
-        pose_array = PoseArray(head, cart_traj_msg)
-        self.pose_traj_pub.publish(pose_array)
-        #if success:
-        #    self.publish_feedback(Messages.LOCAL_SUCCESS % button_names_dict[button_press])
-        #else:
-        #    self.publish_feedback(Messages.LOCAL_PREEMPT % button_names_dict[button_press])
-        #self.force_monitor.stop_activity()
-
-def main():
-    rospy.init_node("face_adls_manager")
-
-    #from pr2_traj_playback.arm_pose_move_controller import ArmPoseMoveBehavior, TrajectoryLoader
-    #from pr2_traj_playback.arm_pose_move_controller import CTRL_NAME_LOW, PARAMS_FILE_LOW
-    #r_apm = ArmPoseMoveBehavior('r', ctrl_name=CTRL_NAME_LOW,
-    #                            param_file=PARAMS_FILE_LOW)
-    #l_apm = ArmPoseMoveBehavior('l', ctrl_name=CTRL_NAME_LOW,
-    #                            param_file=PARAMS_FILE_LOW)
-    #traj_loader = TrajectoryLoader(r_apm, l_apm)
-    #if False:
-    #    traj_loader.move_to_setup_from_file("$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl",
-    #                                        velocity=0.1, reverse=False, blocking=True)
-    #    traj_loader.exec_traj_from_file("$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl",
-    #                                    rate_mult=0.8, reverse=False, blocking=True)
-    #if False:
-    #    traj_loader.move_to_setup_from_file("$(find hrl_face_adls)/data/l_arm_shaving_setup_r.pkl",
-    #                                        velocity=0.3, reverse=True, blocking=True)
-
-    fam = FaceADLsManager()
-    #fam.enable_controller()
-    rospy.spin()
-
-if __name__ == "__main__":
-    main()
+#    def local_input_cb(self, msg):
+#        if self.is_forced_retreat:
+#            return
+#        self.stop_moving()
+#        self.force_monitor.start_activity()
+#        button_press = msg.data 
+#
+#        curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
+#        curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
+#
+#        if button_press in ell_trans_params:
+#            self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
+#            change_trans_ep = ell_trans_params[button_press]
+#            goal_ell_pos = [curr_ell_pos[0]+change_trans_ep[0],
+#                            curr_ell_pos[1]+change_trans_ep[1],
+#                            curr_ell_pos[2]+change_trans_ep[2]]
+#            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
+#                                                              goal_ell_pos, curr_ell_quat,
+#                                                              velocity=ELL_LOCAL_VEL, min_jerk=True)
+##            success = self.ell_ctrl.execute_ell_move((change_trans_ep, (0, 0, 0, 1)),
+##                                                     ((0, 0, 0), 0), 
+##                                                    self.gripper_rot,
+##                                                    ELL_LOCAL_VEL,
+##                                                    blocking=True)
+#        elif button_press in ell_rot_params:
+#            self.publish_feedback(Messages.LOCAL_START % button_names_dict[button_press])
+#            change_rot_ep = ell_rot_params[button_press]
+#            rot_quat = trans.quaternion_from_euler(*change_rot_ep)
+#            goal_ell_quat = trans.quaternion_multiply(curr_ell_quat, rot_quat)
+#            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
+#                                                              curr_ell_pos, goal_ell_quat,
+#                                                              velocity=ELL_ROT_VEL, min_jerk=True)
+#            #success = self.ell_ctrl.execute_ell_move(((0, 0, 0), rot_quat),
+#            #                                         ((0, 0, 0), 0), 
+#            #                                         self.gripper_rot,
+#            #                                         ELL_ROT_VEL,
+#            #                                         blocking=True)
+#        elif button_press == "reset_rotation":
+#            self.publish_feedback(Messages.ROT_RESET_START)
+#            ell_path = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
+#                                                              curr_ell_pos,(0.,0.,0.,1.),
+#                                                              velocity=ELL_ROT_VEL, min_jerk=True)
+#            #success = self.ell_ctrl.execute_ell_move(((0, 0, 0), np.mat(np.eye(3))),
+#            #                                         ((0, 0, 0), 1), 
+#            #                                         self.gripper_rot,
+#            #                                         ELL_ROT_VEL,
+#            #                                         blocking=True)
+#        else:
+#            rospy.logerr("[face_adls_manager] Unknown local ellipsoidal command")
+#
+#        cart_traj = [self.ellipsoid.ellipsoidal_to_pose(pose) for pose in ell_path]
+#        cart_traj_msg = [PoseConv.to_pose_msg(pose) for pose in cart_traj]
+#        head = Header()
+#        head.frame_id = '/ellipse_frame'
+#        head.stamp = rospy.Time.now()
+#        pose_array = PoseArray(head, cart_traj_msg)
+#        self.pose_traj_pub.publish(pose_array)
+#        #if success:
+#        #    self.publish_feedback(Messages.LOCAL_SUCCESS % button_names_dict[button_press])
+#        #else:
+#        #    self.publish_feedback(Messages.LOCAL_PREEMPT % button_names_dict[button_press])
+#        #self.force_monitor.stop_activity()
