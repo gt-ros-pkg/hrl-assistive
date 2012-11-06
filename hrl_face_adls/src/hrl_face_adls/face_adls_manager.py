@@ -204,10 +204,12 @@ class FaceADLsManager(object):
                 #self.setup_force_monitor()#TODO: REPLACE AND INTEGRATE
                 self.publish_feedback(Messages.ENABLE_CONTROLLER)
 
-                #if self.flip_gripper:
-                #    self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
-                #else:
-                #    self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
+                if not self.flip_gripper:
+                    self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
+                    print "Rotating gripper by PI around x-axis"
+                else:
+                    self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
+                    print "NOT Rotating gripper around x-axis"
                 self.controller_enabled_pub.publish(Bool(True))
                 success = True
         else:
@@ -290,12 +292,26 @@ class FaceADLsManager(object):
         curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
         curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
         retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
-        retreat_ell_quat = [0.,0.,0.,1.]
+        retreat_ell_quat = trans.quaternion_multiply(self.gripper_rot, [1.,0.,0.,0.])
         approach_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], RETREAT_HEIGHT]
+        #approach_ell_quat = trans.quaternion_multiply(self.gripper_rot, goal_ell_pose[1])
         approach_ell_quat = goal_ell_pose[1]
         final_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], goal_ell_pose[0][2] - HEIGHT_CLOSER_ADJUST]
+        #final_ell_quat = trans.quaternion_multiply(self.gripper_rot, goal_ell_pose[1])
         final_ell_quat = goal_ell_pose[1]
         
+        cart_ret_pose = self.ellipsoid.ellipsoidal_to_pose((retreat_ell_pos, retreat_ell_quat))
+        cart_ret_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_ret_pose)
+        self.test_pose.publish(cart_ret_msg)
+
+        cart_app_pose = self.ellipsoid.ellipsoidal_to_pose((approach_ell_pos, approach_ell_quat))
+        cart_app_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_app_pose)
+        self.test_pose1.publish(cart_app_msg)
+
+        cart_goal_pose = self.ellipsoid.ellipsoidal_to_pose((final_ell_pos, final_ell_quat))
+        cart_goal_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_goal_pose)
+        self.test_pose2.publish(cart_goal_msg)
+
         retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
                                                                   retreat_ell_pos, retreat_ell_quat,
                                                                   velocity=0.01, min_jerk=True)
