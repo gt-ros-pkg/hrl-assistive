@@ -70,8 +70,12 @@ var initCartControl = function () {
                                            ctrlParams: "$(find hrl_face_adls)/params/r_jt_task_tool.yaml",
                                            ctrlName: "r_cart_jt_task_tool"})];
                           
-    $('#cont_l_arm').bind('click.rfh', function () {window.cartControl[0].enable(true)});
-    $('#cont_r_arm').bind('click.rfh', function () {window.cartControl[1].enable(true)});
+    $('#cont_l_arm').bind('click.rfh', function () {
+            enableCartControl(window.cartControl[0]);
+        });
+    $('#cont_r_arm').bind('click.rfh', function () {
+            enableCartControl(window.cartControl[1]);
+        });
     $('#default_rot_slider').slider({value : Math.PI/4,
                                      min : 0,
                                      max : Math.PI/2,
@@ -101,10 +105,14 @@ var initCartControl = function () {
     };
     window.cartControl[1].enabledSubCBList.push(rCartStateCB)
 
+    var hideControls = function () {
+        $('#bpd_default :button, #bpd_default_rot :button, #scale_slider, #default_rot_slider').hide();
+    };
 
     var enableCartControl = function (arm) {
-        $('#bpd_default :button, #bpd_default_rot :button, #scale_slider, #default_rot_slider').hide();
-        log("Requesting "+arm+" arm Cartesian controller.  Controls will appear when controller is active.");
+        hideControls();
+        log("Requesting "+arm.side+" arm Cartesian controller.  Controls will appear when controller is active.");
+        arm.enable(true);
     };
 
 var showArmControls = function (contObj) {

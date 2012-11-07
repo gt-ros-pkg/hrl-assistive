@@ -112,7 +112,7 @@ function initARServoTab(tabDivId) {
       text = "Servoing Completed Successfully.";
       $('#servo_approach, #servo_stop').fadeTo(0, 0.5);
       $('#servo_detect_tag').fadeTo(0, 1);
-      window.mjpeg.setCamera('head_mount_kinect/rgb/image_color');
+      window.mjpeg.setCamera('/head_mount_kinect/rgb/image_color');
       break;
     case 6:
       text = "Detected Collision with Arms while Servoing.  " + "ADJUST AND RE-DETECT TAG.";
