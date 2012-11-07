@@ -213,7 +213,7 @@ function start(){
                 <td colspan=2>
                   <div id='cont_sel_container' style="width:300px">
                     <div>
-                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel"/>
+                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleopHead()"/>
                       <label class="cont_sel_label" for="cont_head">Control Head</label>
                     </div>
                     <div>
@@ -223,7 +223,7 @@ function start(){
                       <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
                     </div>
                     <div>
-                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel">
+                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleopBase()">
                       <label class="cont_sel_label" for="cont_base">Control Base</label>
                     </div>
                   </div> 
