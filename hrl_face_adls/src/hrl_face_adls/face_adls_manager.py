@@ -19,7 +19,7 @@ from tf import TransformListener, ExtrapolationException, LookupException, Conne
 from hrl_geom.pose_converter import PoseConv
 import hrl_geom.transformations as trans
 #from hrl_pr2_arms.pr2_arm_jt_task import create_ep_arm, PR2ArmJTransposeTask
-#from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
+from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 from hrl_ellipsoidal_control.ellipsoidal_parameters import *
 from hrl_face_adls.face_adls_parameters import *
@@ -80,7 +80,8 @@ class ForceCollisionMonitor(object):
             self.lock.release()
 
     def is_inactive(self):
-        return not self.in_action and rospy.get_time() - self.last_activity_time > self.timeout_time
+        #return not self.in_action and rospy.get_time() - self.last_activity_time > self.timeout_time
+        return rospy.get_time() - self.last_activity_time > self.timeout_time
 
     def register_contact_cb(self, cb=lambda x:None):
         self.contact_cb = async_call(cb)
@@ -105,6 +106,7 @@ class FaceADLsManager(object):
     def __init__(self):
 
         self.ellipsoid = EllipsoidSpace()
+        self.controller_switcher = ControllerSwitcher()
         self.ee_frame = '/l_gripper_shaver45_frame'
         self.tfl = TransformListener()
         self.is_forced_retreat = False
@@ -148,12 +150,10 @@ class FaceADLsManager(object):
             return None
         return pos, quat 
 
-    def publish_feedback(self, message=None, transition_id=None):
+    def publish_feedback(self, message=None):
         if message is not None:
             rospy.loginfo("[face_adls_manager] %s" % message)
             self.feedback_pub.publish(message)
-#        if transition_id is not None:
-#            self.state_pub.publish(Int8(transition_id))
 
     def enable_controller_cb(self, req):
         if req.enable:
@@ -182,6 +182,14 @@ class FaceADLsManager(object):
             self.global_poses = rosparam.load_file(global_poses_resolved)[0][0]
             self.global_move_poses_pub.publish(sorted(self.global_poses.keys()))
 
+            #Check rotating gripper based on side of body 
+            if not self.flip_gripper:
+                self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
+                print "Rotating gripper by PI around x-axis"
+            else:
+                self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
+                print "NOT Rotating gripper around x-axis"
+
             # check if arm is near head
             cart_pos, cart_quat = self.current_ee_pose(self.ee_frame)
             ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal((cart_pos, cart_quat))
@@ -196,22 +204,21 @@ class FaceADLsManager(object):
                         equals[2] and 
                         (ell_lon_1 >= min_lon or ell_lon_1 <= self.ellipsoid._lon_bounds[1]))
 
+            self.setup_force_monitor()
+
+            success = True
             if not arm_in_bounds:
                 self.publish_feedback(Messages.ARM_AWAY_FROM_HEAD)
-                self.controller_enabled_pub.publish(Bool(False))
                 success = False
-            else:
-                #self.setup_force_monitor()#TODO: REPLACE AND INTEGRATE
-                self.publish_feedback(Messages.ENABLE_CONTROLLER)
 
-                if not self.flip_gripper:
-                    self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
-                    print "Rotating gripper by PI around x-axis"
-                else:
-                    self.gripper_rot = trans.quaternion_from_euler(0, 0, 0)
-                    print "NOT Rotating gripper around x-axis"
-                self.controller_enabled_pub.publish(Bool(True))
-                success = True
+            #Switch back to l_arm_controller if necessary
+            if self.controller_switcher.carefree_switch('l', 'l_arm_controller'):
+                print "Controller switch to l_arm_controller succeeded"
+                self.publish_feedback(Messages.ENABLE_CONTROLLER)
+            else:
+                print "Controller switch to l_arm_controller failed"
+                success = False
+            self.controller_enabled_pub.publish(Bool(success))
         else:
             self.stop_moving()
             self.controller_enabled_pub.publish(Bool(False))
@@ -221,14 +228,19 @@ class FaceADLsManager(object):
 
     def setup_force_monitor(self):
         self.force_monitor = ForceCollisionMonitor()
+
         # registering force monitor callbacks
         def dangerous_cb(force):
             self.stop_moving()
-            ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose(self.ee_frame, '/ellipse_frame'))
+            curr_pose = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
+            ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(curr_pose)
             if ell_pos[2] < SAFETY_RETREAT_HEIGHT * 0.9:
                 self.publish_feedback(Messages.DANGEROUS_FORCE %force)
-                self.retreat_move(SAFETY_RETREAT_HEIGHT, SAFETY_RETREAT_VELOCITY, forced=True)
+                self.retreat_move(SAFETY_RETREAT_HEIGHT, 
+                                  SAFETY_RETREAT_VELOCITY,
+                                  forced=True)
         self.force_monitor.register_dangerous_cb(dangerous_cb)
+
         def timeout_cb(time):
             start_time = rospy.get_time()
             ell_pos, _ = self.ellipsoid.pose_to_ellipsoidal(self.current_ee_pose(self.ee_frame, '/ellipse_frame'))
@@ -238,37 +250,42 @@ class FaceADLsManager(object):
                 self.publish_feedback(Messages.TIMEOUT_RETREAT % time)
                 self.retreat_move(RETREAT_HEIGHT, LOCAL_VELOCITY)
         self.force_monitor.register_timeout_cb(timeout_cb)
+
         def contact_cb(force):
             self.force_monitor.update_activity()
             if not self.is_forced_retreat:
                 self.stop_moving()
                 self.publish_feedback(Messages.CONTACT_FORCE % force)
-                rospy.loginfo("Arm stopped due to making contact.")
+                #rospy.loginfo("[face_adls_manager] Arm stopped due to making contact.")
+
         self.force_monitor.register_contact_cb(contact_cb)
+        self.force_monitor.start_activity()
         self.force_monitor.update_activity()
         self.is_forced_retreat = False
 
     def retreat_move(self, height, velocity, forced=False):
-        self.force_monitor.start_activity()
         if forced:
             self.is_forced_retreat = True
-        cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
-        ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
-        print "Retreat EP:", ell_pos
+        cart_pos, cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
+        ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal((cart_pos, cart_quat))
+        #print "Retreat EP:", ell_pos
         latitude = ell_pos[0]
         if self.trim_retreat:
             latitude = min(latitude, TRIM_RETREAT_LATITUDE)
-        rospy.loginfo("[face_adls_manager] Retreating from current location.")
+        #rospy.loginfo("[face_adls_manager] Retreating from current location.")
 
-        retreat_pos = (latitude, ell_pos[1], height)
-        retreat_quat = (0,0,0,1)
+        retreat_pos = [latitude, ell_pos[1], height]
+        retreat_quat = [0,0,0,1]
         if forced:
             cart_path = self.ellipsoid.ellipsoidal_to_pose((retreat_pos, retreat_quat))
-            cart_msg = PoseConv.to_pose_msg(retreat_cart_pose)
+            cart_msg = [PoseConv.to_pose_msg(cart_path)]
         else:
-            ell_path = self.ellipsoid.create_ellipsoidal_path(ell_pos, ell_quat,
-                                                              retreat_pos, retreat_quat,
-                                                              velocity=velocity, min_jerk=True)
+            ell_path = self.ellipsoid.create_ellipsoidal_path(ell_pos,
+                                                              ell_quat,
+                                                              retreat_pos,
+                                                              retreat_quat,
+                                                              velocity=0.01,
+                                                              min_jerk=True)
             cart_path = [self.ellipsoid.ellipsoidal_to_pose(ell_pose) for ell_pose in ell_path]
             cart_msg = [PoseConv.to_pose_msg(pose) for pose in cart_path]
             
@@ -278,14 +295,13 @@ class FaceADLsManager(object):
         pose_array = PoseArray(head, cart_msg)
         self.pose_traj_pub.publish(pose_array)
 
-        rospy.loginfo("[face_adls_manager] Finished retreat?")
-        self.is_forced_retreat = False #TODO: Find way to confirm duration of retreat
+        self.is_forced_retreat = False
 
     def global_input_cb(self, msg):
+        self.force_monitor.update_activity()
         if self.is_forced_retreat:
             return
         rospy.loginfo("[face_adls_manager] Performing global move.")
-#        self.force_monitor.start_activity()
         self.publish_feedback(Messages.GLOBAL_START %msg.data)
 
         goal_ell_pose = self.global_poses[msg.data]
@@ -330,12 +346,13 @@ class FaceADLsManager(object):
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
+        self.force_monitor.update_activity()
             
     def local_input_cb(self, msg):
+        self.force_monitor.update_activity()
         if self.is_forced_retreat:
             return
         self.stop_moving()
-#        self.force_monitor.start_activity()
         button_press = msg.data 
 
         curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
@@ -373,6 +390,7 @@ class FaceADLsManager(object):
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
+        self.force_monitor.update_activity()
 
 def main():
     rospy.init_node("face_adls_manager")

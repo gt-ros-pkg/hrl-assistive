@@ -33,6 +33,8 @@ class EllipsoidSpace(object):
 
     def set_center(self, transform_stamped):
         rospy.loginfo("[ellipsoid_space] Setting center to:\r\n %s" %transform_stamped)
+        if self.center_tf_timer is not None:
+            self.center_tf_timer.shutdown()
         self.center = PoseConv.to_pose_stamped_msg(transform_stamped)
         def broadcast_ell_center(event):
             tr, quat = PoseConv.to_pos_quat(transform_stamped)
