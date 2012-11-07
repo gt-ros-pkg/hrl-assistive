@@ -1,3 +1,1 @@
-BUS=="usb", KERNEL=="ttyUSB*",SYSFS{idVendor}=="0403", SYSFS{idProduct}=="6001", SYMLINK+="arduino"
- 
-
+SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="666", SYMLINK+="shaver_arduino"
