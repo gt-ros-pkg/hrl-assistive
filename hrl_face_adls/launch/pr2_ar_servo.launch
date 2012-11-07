@@ -1,6 +1,7 @@
 <launch>
     <arg name="ar_dir" />
     <arg name="cam_params_dir" />
+    <arg name="arm" value="r" />
 
 	<node name="r_ar_pose" pkg="ar_pose" type="ar_single" respawn="false" output="screen">
 		<param name="marker_pattern" type="string" value="$(find ar_pose)/data/4x4/4x4_20.patt"/>
@@ -14,8 +15,8 @@
 		<param name="marker_color_a" type="double" value="1.0"/>
 		<param name="threshold" type="int" value="100"/>
 		<param name="use_history" type="bool" value="true"/>
-        <remap from="/usb_cam/image_raw" to="/l_forearm_adjusted"/>
-        <remap from="/usb_cam/camera_info" to="/l_forearm_cam/camera_info"/>
+        <remap from="/usb_cam/image_raw" to="/$(arg arm)_forearm_adjusted"/>
+        <remap from="/usb_cam/camera_info" to="/$(arg arm)_forearm_cam/camera_info"/>
         <remap from="/ar_pose_marker" to="/r_pr2_ar_pose_marker" />
 	</node>
 
@@ -31,8 +32,8 @@
 		<param name="marker_color_a" type="double" value="1.0"/>
 		<param name="threshold" type="int" value="100"/>
 		<param name="use_history" type="bool" value="true"/>
-        <remap from="/usb_cam/image_raw" to="/l_forearm_adjusted"/>
-        <remap from="/usb_cam/camera_info" to="/l_forearm_cam/camera_info"/>
+        <remap from="/usb_cam/image_raw" to="/$(arg arm)_forearm_adjusted"/>
+        <remap from="/usb_cam/camera_info" to="/$(arg arm)_forearm_cam/camera_info"/>
         <remap from="/ar_pose_marker" to="/l_pr2_ar_pose_marker" />
 	</node>
 	
@@ -48,13 +49,13 @@
         <rosparam command="load" file="$(arg ar_dir)/wheelchair_poses.yaml" />
     </node>
 
-    <rosparam command="load" file="$(arg cam_params_dir)/l_forearm_cam_settings.yaml"
-              param="/l_forearm_cam" />
+    <rosparam command="load" file="$(arg cam_params_dir)/$(arg arm)_forearm_cam_settings.yaml"
+              param="/$(arg arm)_forearm_cam" />
 
     <node pkg="hrl_pr2_ar_servo" name="ar_confirm" type="ar_confirm" >
         <param name="marker_width" value="0.135" />
         <param name="timeout_time" value="0.3" />
-        <remap from="/camera" to="/l_forearm_cam/image_rect_color"/>
+        <remap from="/camera" to="/$(arg arm)_forearm_cam/image_rect_color"/>
         <remap from="/ar_tag_r" to="/r_pr2_ar_pose_marker"/>
         <remap from="/ar_tag_l" to="/l_pr2_ar_pose_marker"/>
         <remap from="/confirmation" to="/ar_servo/confirmation" />
@@ -62,8 +63,8 @@
 
     <node pkg="hrl_pr2_ar_servo" name="ar_servo_image_proc" type="ar_servo_image_proc"
           output="screen" respawn="True" >
-        <remap from="/camera" to="/l_forearm_cam/image_rect" />
-        <remap from="/output" to="/l_forearm_adjusted" />
+        <remap from="/camera" to="/$(arg arm)_forearm_cam/image_rect" />
+        <remap from="/output" to="/$(arg arm)_forearm_adjusted" />
         <!-- Henry's: <param name="black_cap" value="120" /> -->
         <!-- GT: <param name="black_cap" value="85" /> -->
         <!-- <param name="black_cap" value="100" /> -->
@@ -71,6 +72,4 @@
         <param name="black_cap" value="65" />
         <param name="white_cap" value="100" />
     </node>
-
-
 </launch>

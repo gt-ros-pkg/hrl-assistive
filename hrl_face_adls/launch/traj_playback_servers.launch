@@ -43,7 +43,7 @@
             "Setup for AR Servoing" :
                 "Right" :
                     "Move to side for servo approach" : 
-                        [False, 0.3, 0.8, "r_arm_servo_setup.pkl"]
+                        [False, 0.3, 0.8, "r_arm_servo_setup2.pkl"]
                 "Left" :
                     "Move to side for servo approach" : 
                         [False, 0.3, 0.8, "l_arm_servo_setup.pkl"]
