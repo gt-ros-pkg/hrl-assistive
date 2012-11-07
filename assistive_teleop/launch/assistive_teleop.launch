@@ -5,7 +5,7 @@
 
   <arg name="run_ft_sensor" default="false" />
   <arg name="run_tool_power" default="true" />
-    <arg name="shaving_board" default="/dev/arduino" />
+    <arg name="shaving_board" default="/dev/shaver_arduino" />
 
   <!-- Rosbridge, Rosapi, Webserver (roswww), and mjpeg_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
