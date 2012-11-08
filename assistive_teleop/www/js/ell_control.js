@@ -82,6 +82,15 @@ var EllipsoidControl = function (ros) {
         ellCon.globalMovePub.publish({data:key});
     };
 
+    ellCon.clickedMovePub = new ellCon.ros.Topic({
+        name:'face_adls/clicked_move',
+        messageType: 'geometry_msgs/PoseStamped'});
+    ellCon.clickedMovePub.advertise();
+    ellCon.sendClickedMove = function (ps) {
+        var msg = new ellCon.ros.Message(ps);
+        ellCon.clickedMovePub.publish(msg);
+    };
+
     ellCon.localMovePub = new ellCon.ros.Topic({
         name:'face_adls/local_move',
         messageType: 'std_msgs/String'});

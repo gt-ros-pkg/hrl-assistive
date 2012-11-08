@@ -21,6 +21,7 @@ image_click_select_html =
 '<select id="img_act_select">\
     <option id="looking" selected="selected" value="looking">Look</option>\
     <option id="seed_reg" value="seed_reg">Register Head</option>\
+    <option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>\
     <!--<option id="na" value="norm_approach">Normal Approach</option>-->\
     <!--<option id="touch" value="touch">Touch</option>-->\
     <!--<option id="wipe" value="wipe">Wipe</option>-->\
@@ -156,6 +157,11 @@ var ClickableElement = function(elementID, selectorID){
             case 'contact_approach':
                 log('Sending command to approaching point by moving until contact with '+window.arm().toUpperCase()+' arm')
                 node.publish('wt_contact_approach_'+window.arm(), 'geometry_msgs/PoseStamped', json(result_pose));
+                break
+            case 'ell_global_move':
+                log('Sending command to approach head point by moving around ellipse');
+                window.ellControl.sendClickedMove(result_pose);
+                break
         };
         if (window.force_wipe_count == 0){
         $('#img_act_select').val('looking');
