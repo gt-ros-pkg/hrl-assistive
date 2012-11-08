@@ -116,7 +116,8 @@ class FaceADLsManager(object):
                                                  async_call(self.global_input_cb))
         self.local_input_sub = rospy.Subscriber("/face_adls/local_move", String, 
                                                 async_call(self.local_input_cb))
-        #self.state_pub = rospy.Publisher('/face_adls/controller_state', Int8, latch=True)
+        self.clicked_input_sub = rospy.Subscriber("/face_adls/clicked_move", PoseStamped, 
+                                                 async_call(self.global_input_cb))
         self.feedback_pub = rospy.Publisher('/face_adls/feedback', String)
         self.global_move_poses_pub = rospy.Publisher('/face_adls/global_move_poses',
                                                      StringArray, latch=True)
@@ -212,7 +213,7 @@ class FaceADLsManager(object):
                 success = False
 
             #Switch back to l_arm_controller if necessary
-            if self.controller_switcher.carefree_switch('l', 'l_arm_controller'):
+            if self.controller_switcher.carefree_switch('l', '%s_arm_controller', reset=False):
                 print "Controller switch to l_arm_controller succeeded"
                 self.publish_feedback(Messages.ENABLE_CONTROLLER)
             else:
@@ -302,9 +303,23 @@ class FaceADLsManager(object):
         if self.is_forced_retreat:
             return
         rospy.loginfo("[face_adls_manager] Performing global move.")
-        self.publish_feedback(Messages.GLOBAL_START %msg.data)
+        if type(msg) == String:
+            self.publish_feedback(Messages.GLOBAL_START %msg.data)
+            goal_ell_pose = self.global_poses[msg.data]
+        elif type(msg) == PoseStamped:
+            try:
+                self.tfl.waitForTransform(msg.header.frame_id, '/ellipse_frame', msg.header.stamp, rospy.Duration(8.0))
+                goal_cart_pose = self.tfl.transformPose('/ellipse_frame', msg)
+                goal_cart_pos, goal_cart_quat = PoseConv.to_pos_quat(goal_cart_pose)
+                flip_quat = trans.quaternion_from_euler(-np.pi/2, np.pi, 0)
+                goal_cart_quat_flipped = trans.quaternion_multiply(goal_cart_quat, flip_quat)
+                goal_cart_pose = PoseConv.to_pose_stamped_msg('/ellipse_frame', (goal_cart_pos, goal_cart_quat_flipped))
+                self.publish_feedback('Moving around ellipse to clicked position).')
+                goal_ell_pose = self.ellipsoid.pose_to_ellipsoidal(goal_cart_pose)
+            except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
+                rospy.logwarn("[face_adls_manager] TF Failure getting clicked position in ellipse_frame:\r\n %s" %e)
+                return
 
-        goal_ell_pose = self.global_poses[msg.data]
         curr_cart_pos, curr_cart_quat = self.current_ee_pose(self.ee_frame, '/ellipse_frame')
         curr_ell_pos, curr_ell_quat = self.ellipsoid.pose_to_ellipsoidal((curr_cart_pos, curr_cart_quat))
         retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
