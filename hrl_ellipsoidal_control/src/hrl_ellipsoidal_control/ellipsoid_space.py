@@ -23,21 +23,27 @@ class EllipsoidSpace(object):
         self.frame_broadcaster = TransformBroadcaster()
         self.center_tf_timer = None
 
-    def load_ell_params(self, ell_frame, E, is_oblate=False, height=1):
+    def load_ell_params(self, ell_pose, E, is_oblate=False, height=1):
         rospy.loginfo("Loading Ellipsoid Parameters")
-        self.set_center(ell_frame)
+        self.set_center(ell_pose)
         self.E = E
         self.a = self.A * self.E
         self.is_oblate = is_oblate
         self.height = height
 
-    def set_center(self, transform_stamped):
-        rospy.loginfo("[ellipsoid_space] Setting center to:\r\n %s" %transform_stamped)
+    def set_center(self, pose_stamped):
+        rospy.loginfo("[ellipsoid_space] Setting center to:\r\n %s" %pose_stamped)
         if self.center_tf_timer is not None:
             self.center_tf_timer.shutdown()
-        self.center = PoseConv.to_pose_stamped_msg(transform_stamped)
+        self.center = pose_stamped
         def broadcast_ell_center(event):
-            tr, quat = PoseConv.to_pos_quat(transform_stamped)
+            tr = (pose_stamped.pose.position.x,
+                  pose_stamped.pose.position.y,
+                  pose_stamped.pose.position.z)
+            quat = (pose_stamped.pose.orientation.x,
+                    pose_stamped.pose.orientation.y,
+                    pose_stamped.pose.orientation.z,
+                    pose_stamped.pose.orientation.w)
             self.frame_broadcaster.sendTransform(tr, quat, rospy.Time.now(),
                                                  '/ellipse_frame',
                                                  self.center.header.frame_id)

@@ -71,6 +71,7 @@ var ClickableElement = function(elementID, selectorID){
         var _selector = document.getElementById(clickableElement.selectorID);
         if (_selector[_selector.selectedIndex].value === 'seed_reg') {
             window.ellControl.registerHead(point[0],point[1]);
+            window.ellControl.toggle(false);
             $('#img_act_select').val('looking');
         } else {
             clickableElement.get3dPose(point[0], point[1]);

@@ -110,7 +110,7 @@ class FaceADLsManager(object):
         self.ee_frame = '/l_gripper_shaver45_frame'
         self.tfl = TransformListener()
         self.is_forced_retreat = False
-        self.pose_traj_pub = rospy.Publisher('/face_adls/goal_poses', PoseArray)
+        self.pose_traj_pub = rospy.Publisher('/haptic_mpc/goal_pose_array', PoseArray)
 
         self.global_input_sub = rospy.Subscriber("/face_adls/global_move", String, 
                                                  async_call(self.global_input_cb))
@@ -130,6 +130,7 @@ class FaceADLsManager(object):
         self.test_pose = rospy.Publisher('face_adls/test_pose', PoseStamped, latch=True)
         self.test_pose1 = rospy.Publisher('face_adls/test_pose1', PoseStamped, latch=True)
         self.test_pose2 = rospy.Publisher('face_adls/test_pose2', PoseStamped, latch=True)
+        self.test_pose3 = rospy.Publisher('face_adls/test_pose3', PoseStamped, latch=True)
 
         def stop_move_cb(msg):
             self.stop_moving()
@@ -172,7 +173,17 @@ class FaceADLsManager(object):
                 self.publish_feedback(Messages.NO_PARAMS_LOADED)
                 return EnableFaceControllerResponse(False)
 
-            self.ellipsoid.load_ell_params(reg_resp.e_params.e_frame,
+            reg_pose = PoseConv.to_pose_stamped_msg(reg_resp.e_params.e_frame)
+            try:
+                now = rospy.Time.now()
+                reg_pose.header.stamp = now
+                self.tfl.waitForTransform(reg_pose.header.frame_id, '/base_link', 
+                                          now, rospy.Duration(8.0))
+                ellipse_frame_base = self.tfl.transformPose('/base_link', reg_pose)
+            except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
+                rospy.logwarn("[face_adls_manager] TF Failure converting ellipse to base frame: %s" %e)
+
+            self.ellipsoid.load_ell_params(ellipse_frame_base,
                                            reg_resp.e_params.E,
                                            reg_resp.e_params.is_oblate,
                                            reg_resp.e_params.height)
@@ -205,7 +216,7 @@ class FaceADLsManager(object):
                         equals[2] and 
                         (ell_lon_1 >= min_lon or ell_lon_1 <= self.ellipsoid._lon_bounds[1]))
 
-            self.setup_force_monitor()
+#            self.setup_force_monitor()
 
             success = True
             if not arm_in_bounds:
@@ -299,7 +310,7 @@ class FaceADLsManager(object):
         self.is_forced_retreat = False
 
     def global_input_cb(self, msg):
-        self.force_monitor.update_activity()
+        #self.force_monitor.update_activity()
         if self.is_forced_retreat:
             return
         rospy.loginfo("[face_adls_manager] Performing global move.")
@@ -361,10 +372,16 @@ class FaceADLsManager(object):
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
-        self.force_monitor.update_activity()
+
+        ps = PoseStamped()
+        ps.header = head
+        ps.pose = cart_traj_msg[0]
+        self.test_pose3.publish(ps)
+        
+#        self.force_monitor.update_activity()
             
     def local_input_cb(self, msg):
-        self.force_monitor.update_activity()
+        #self.force_monitor.update_activity()
         if self.is_forced_retreat:
             return
         self.stop_moving()
@@ -405,7 +422,7 @@ class FaceADLsManager(object):
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
-        self.force_monitor.update_activity()
+        #self.force_monitor.update_activity()
 
 def main():
     rospy.init_node("face_adls_manager")

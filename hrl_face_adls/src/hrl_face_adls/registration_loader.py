@@ -86,16 +86,12 @@ class RegistrationLoader(object):
                                                       e_params.e_frame.transform.rotation))
         reg_e_params.e_frame = PoseConv.to_tf_stamped_msg(head_reg_mat**-1 * ell_reg)
         reg_e_params.e_frame.header.frame_id = self.head_reg_tf.header.frame_id
-        reg_e_params.e_frame.child_frame_id = 'ellipse_frame'
+        reg_e_params.e_frame.child_frame_id = '/ellipse_frame'
         reg_e_params.height = e_params.height
         reg_e_params.E = e_params.E
         self.ell_params_pub.publish(reg_e_params)
 
         self.ell_frame = reg_e_params.e_frame
-        def pub_ell_frame(timer_event):
-            self.ell_frame_bcast.sendTransform(self.ell_frame.transform.translation, self.ell_frame.transform.rotation,
-                                               rospy.Time.now(), self.ell_frame.child_frame_id, self.ell_frame.header.frame_id)
-            
         return RequestRegistrationResponse(True, reg_e_params)
 
 def main():
