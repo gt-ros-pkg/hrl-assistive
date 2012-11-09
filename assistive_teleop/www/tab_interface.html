@@ -110,6 +110,11 @@ function initPr2(){
     window.gripper = [new Pr2Gripper('left', window.ros),
                       new Pr2Gripper('right', window.ros)];
     window.torso = new Pr2Torso(window.ros);
+    window.wtLog = new window.ros.Topic({
+        name: 'wt_log_out',
+        messageType:'std_msgs/String'});
+    window.wtLog.subscribe(function (msg) {
+        window.log(msg.data);});
 }
 
 function initMjpegCanvas(){
