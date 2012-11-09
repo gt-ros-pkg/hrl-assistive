@@ -5,23 +5,24 @@ var MJPEG_HEIGHT = '480';
 //var KINECT = 'camera';
 var KINECT = 'head_mount_kinect';
 
-camera_select_html = 
-'<select id="camera_select" onchange="set_camera($(this).val());">\
-        <option value='+window.KINECT+'/rgb/image_color>Kinect Camera</option>\
-        <option value="kinect_throttled">Throttled Kinect Camera</option>\
-        <option value="arrow_overlaid">Kinect (w/Arrows)</option>\
-        <option value="ar_servo/confirmation_rotated">AR Tag Confirm</option>\
-        <option value="head_registration/confirmation"> Head Registration Confirm</option>\
-        <option value="wide_stereo/right/image_color">Wide Stereo Camera</option>\
-        <option value="l_forearm_cam/image_color_rotated">Left Forearm Camera</option>\
-        <option value="r_forearm_cam/image_color_rotated">Right Forearm Camera</option>\
-        </select>'
+//camera_select_html = 
+//'<select id="camera_select" onchange="set_camera($(this).val());">\
+//        <option value='+window.KINECT+'/rgb/image_color>Kinect Camera</option>\
+//        <option value="kinect_throttled">Throttled Kinect Camera</option>\
+//        <option value="arrow_overlaid">Kinect (w/Arrows)</option>\
+//        <option value="ar_servo/confirmation_rotated">AR Tag Confirm</option>\
+//        <option value="head_registration/confirmation"> Head Registration Confirm</option>\
+//        <option value="wide_stereo/right/image_color">Wide Stereo Camera</option>\
+//        <option value="l_forearm_cam/image_color_rotated">Left Forearm Camera</option>\
+//        <option value="r_forearm_cam/image_color_rotated">Right Forearm Camera</option>\
+//        </select>'
 
 image_click_select_html = 
 '<select id="img_act_select">\
     <option id="looking" selected="selected" value="looking">Look</option>\
     <option id="seed_reg" value="seed_reg">Register Head</option>\
     <option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>\
+    <option id="skin_linear_move" value="skin_linear_move">Move to point with skin</option>\
     <!--<option id="na" value="norm_approach">Normal Approach</option>-->\
     <!--<option id="touch" value="touch">Touch</option>-->\
     <!--<option id="wipe" value="wipe">Wipe</option>-->\
@@ -37,11 +38,26 @@ image_click_select_html =
     </select>'
 
 $(function(){
-        $('#camera_select').html(camera_select_html);
+//        $('#camera_select').html(camera_select_html);
         $('#image_click_select').html(image_click_select_html);
         });
 
+var PoseSender = function(ros) {
+    'use strict';
+    var poseSender = this;
+    poseSender.ros = ros;
+    poseSender.posePub = new poseSender.ros.Topic({
+        name: '/wt_clicked_pose',
+        messageType: 'geometry_msgs/PoseStamped'})
+    poseSender.posePub.advertise();
+    poseSender.sendPose = function (poseStamped) {
+        var msg = new poseSender.ros.Message(poseStamped);
+        poseSender.posePub.publish(msg);
+    }
+}
+
 var ClickableElement = function(elementID, selectorID){
+    'use strict';
     var clickableElement = this;
     clickableElement.elementID = elementID;
     clickableElement.selectorID = selectorID;
@@ -162,6 +178,10 @@ var ClickableElement = function(elementID, selectorID){
                 log('Sending command to approach head point by moving around ellipse');
                 window.ellControl.sendClickedMove(result_pose);
                 break
+            case 'skin_linear_move':
+                log('Sending command to approach point using skin');
+                window.poseSender.sendPose(result_pose);
+                break
         };
         if (window.force_wipe_count == 0){
         $('#img_act_select').val('looking');
@@ -193,31 +213,31 @@ var ClickableElement = function(elementID, selectorID){
 
 
 
-function image_click(event){
-    if ($('#img_act_select option:selected').val() == 'surf_wipe') {
-        surf_points_out = window.gm_point
-            surf_points_out.x = im_pixel[0]
-            surf_points_out.y = im_pixel[1]
-            log('Surface Wipe');
-        log('Surface Wipe '+window.arm().toUpperCase()+' '+window.count_surf_wipe_right.toString())
-            node.publish('wt_surf_wipe_'+window.arm()+'_points', 'geometry_msgs/Point', json(surf_points_out));
-        if (window.count_surf_wipe == 0){
-            log("Sending start position for surface-aware wiping");
-            window.count_surf_wipe = 1;
-        } else if (window.count_surf_wipe == 1){
-            log("Sending end position for surface-aware wiping");
-            window.count_surf_wipe = 0;
-            $('#img_act_select').val('looking');
-        }
-    } else if ($('#img_act_select option:selected').val() == 'seed_reg'){
-        console.log("Calling Registration Service with "+im_pixel[0].toString() +", "+im_pixel[1].toString())
-            node.rosjs.callService('/initialize_registration',
-                    '['+json(im_pixel[0])+','+json(im_pixel[1])+']',
-                    function(msg){console.log("Registration Service Returned")})
-            $('#img_act_select').val('looking');
-    } else {
-        get_im_3d(im_pixel[0],im_pixel[1])
-    };
-};
+//function image_click(event){
+//    if ($('#img_act_select option:selected').val() == 'surf_wipe') {
+//        surf_points_out = window.gm_point
+//            surf_points_out.x = im_pixel[0]
+//            surf_points_out.y = im_pixel[1]
+//            log('Surface Wipe');
+//        log('Surface Wipe '+window.arm().toUpperCase()+' '+window.count_surf_wipe_right.toString())
+//            node.publish('wt_surf_wipe_'+window.arm()+'_points', 'geometry_msgs/Point', json(surf_points_out));
+//        if (window.count_surf_wipe == 0){
+//            log("Sending start position for surface-aware wiping");
+//            window.count_surf_wipe = 1;
+//        } else if (window.count_surf_wipe == 1){
+//            log("Sending end position for surface-aware wiping");
+//            window.count_surf_wipe = 0;
+//            $('#img_act_select').val('looking');
+//        }
+//    } else if ($('#img_act_select option:selected').val() == 'seed_reg'){
+//        console.log("Calling Registration Service with "+im_pixel[0].toString() +", "+im_pixel[1].toString())
+//            node.rosjs.callService('/initialize_registration',
+//                    '['+json(im_pixel[0])+','+json(im_pixel[1])+']',
+//                    function(msg){console.log("Registration Service Returned")})
+//            $('#img_act_select').val('looking');
+//    } else {
+//        get_im_3d(im_pixel[0],im_pixel[1])
+//    };
+//};
 
 

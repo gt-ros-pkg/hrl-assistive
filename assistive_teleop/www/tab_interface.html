@@ -134,6 +134,7 @@ function initMjpegCanvas(){
 	});
         window.clickableCanvas = new ClickableElement('mjpeg_canvas',
                                                       'img_act_select');
+        window.poseSender = new PoseSender(window.ros);
 }
 
 function tab_select_cb(eve, ui){

@@ -58,7 +58,7 @@
         <param name="init_pos_tolerance" value="100.0" />
         <param name="init_rot_tolerance" value="100.0" />
     </node>-->
-    <node pkg="hrl_face_adls" name="l_twist_to_pose" type="cart_skin_manager" output="screen">
+    <node pkg="hrl_face_adls" name="l_twist_to_pose" type="cart_skin_manager.py" output="screen">
       <remap from="twist_in" to="l_cart/web_commands" />
       <remap from="pose_out" to="haptic_mpc/goal_pose" />
     </node>

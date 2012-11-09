@@ -45,6 +45,12 @@
       <param name="use_closest_pixel"  value="True"/>
   </node>
 
+  <node name="clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
+        args="-r -1.570796 3.14159 0." output="screen" >
+      <remap from="pose_in" to="/wt_clicked_pose" />
+      <remap from="pose_out" to="/haptic_mpc/goal_pose" />
+  </node>
+
   <!-- Nodes for shaver power and run-stop monitor to stop shaver -->
   <node if="$(arg run_tool_power)" name="tool_power_toggle" pkg="rosserial_python"
         type="serial_node.py" args="$(arg shaving_board)" output="screen"/>
