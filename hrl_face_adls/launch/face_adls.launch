@@ -52,11 +52,15 @@
         <param name="init_rot_tolerance" value="100.0" />
     </node>
 
-    <node pkg="hrl_face_adls" name="l_cartesian_manager" type="cartesian_manager.py"
+    <!--<node pkg="hrl_face_adls" name="l_cartesian_manager" type="cartesian_manager.py"
           output="screen" args="l" >
         <remap from="/face_adls/l_cart_move" to="/l_cart/web_commands" />
         <param name="init_pos_tolerance" value="100.0" />
         <param name="init_rot_tolerance" value="100.0" />
+    </node>-->
+    <node pkg="hrl_face_adls" name="l_twist_to_pose" type="cart_skin_manager" output="screen">
+      <remap from="twist_in" to="l_cart/web_commands" />
+      <remap from="pose_out" to="haptic_mpc/goal_pose" />
     </node>
 
     <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
