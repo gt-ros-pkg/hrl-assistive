@@ -71,7 +71,8 @@ var initCartControl = function () {
                                            ctrlName: "r_cart_jt_task_tool"})];
                           
     $('#cont_l_arm').bind('click.rfh', function () {
-            enableCartControl(window.cartControl[0]);
+            //enableCartControl(window.cartControl[0]);
+            showArmControls(window.cartControl[0]);
         });
     $('#cont_r_arm').bind('click.rfh', function () {
             enableCartControl(window.cartControl[1]);

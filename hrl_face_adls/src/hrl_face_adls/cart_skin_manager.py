@@ -26,10 +26,10 @@ class TwistToPoseConverter(object):
 
     def twist_cb(self, ts):
         """Get current end effector pose and augment with twist command."""
-        cur_pos, cur_quat = self.get_ee_pose(self.ee_frame)
+        cur_pos, cur_quat = self.get_ee_pose(self.ee_frame, ts.header.frame_id)
         ps = PoseStamped()
-        ps.header.frame_id = '/torso_lift_link'
-        ps.header.stamp = rospy.Time.now()
+        ps.header.frame_id = ts.header.frame_id
+        ps.header.stamp = ts.header.stamp
         ps.pose.position.x = cur_pos[0] + ts.twist.linear.x
         ps.pose.position.y = cur_pos[1] + ts.twist.linear.y
         ps.pose.position.z = cur_pos[2] + ts.twist.linear.z
@@ -40,7 +40,15 @@ class TwistToPoseConverter(object):
 
         final_quat = trans.quaternion_multiply(cur_quat, twist_quat)
         ps.pose.orientation = Quaternion(*final_quat)
-        self.pose_pub.publish(ps)
+
+        try:
+            self.tf_listener.waitForTransform('/torso_lift_link', ps.header.frame_id, ps.header.stamp, rospy.Duration(8.0))
+            pose_out = self.tf_listener.transformPose('/torso_lift_link', ps)
+        except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
+            rospy.logwarn("[twist_to_pose_converter] TF Failure transforming goal pose back to torso_lift_link:\r\n %s" %e)
+            return
+
+        self.pose_pub.publish(pose_out)
 
 if __name__=='__main__':
     rospy.init_node('twist_to_pose_node')
