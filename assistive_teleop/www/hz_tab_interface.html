@@ -32,7 +32,7 @@ function log(message){
     console.log("Log to user: " + message.toString());
 };
 
-var ROBOT = 'monty1.hsi.gatech.edu';//Use localhost when serving website directly from robot via roswww
+var ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot via roswww
 var PORT = '9091';//Must match port on which rosbridge is being served
 
 $(function(){
