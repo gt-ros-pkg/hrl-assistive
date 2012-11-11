@@ -14,11 +14,7 @@
   <depend package="tf"/>
   <depend package="std_msgs"/>
   <depend package="geometry_msgs"/>
-  <depend package="sensor_msgs"/>
   <depend package="actionlib"/>
-  <depend package="visualization_msgs"/>
-  <depend package="arm_navigation_msgs"/>
-  <depend package="kinematics_msgs"/>
   <depend package="image_rotate"/>
   <depend package="pr2_msgs"/>
   <depend package="pr2_controllers_msgs"/>
@@ -33,8 +29,8 @@
   <!--<depend package="hrl_clickable_display"/>-->
   <!--<depend package="hrl_pr2_lib"/>-->
   
-  <!--External: brown-ros-pkg, bosch-ros-pkg -->
-  <depend package="rosbridge"/>
+  <!--External -->
+  <depend package="rosbridge_server"/>
   <depend package="mjpeg_server"/>
 
 </package>
