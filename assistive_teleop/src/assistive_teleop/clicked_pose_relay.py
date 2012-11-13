@@ -27,11 +27,7 @@ class ClickedPoseRelay(object):
         ps_out = PoseStamped()
         ps_out.header.frame_id = ps_in.header.frame_id
         ps_out.header.stamp = ps_in.header.stamp
-
         ps_out.pose.position = trans_pose.pose.position
-        #ps_out.pose.position.x = ps_in.pose.position.x + self.offset_x
-        #ps_out.pose.position.y = ps_in.pose.position.y + self.offset_y
-        #ps_out.pose.position.z = ps_in.pose.position.z + self.offset_z
 
         quat_in = (ps_in.pose.orientation.x, ps_in.pose.orientation.y,
                    ps_in.pose.orientation.z, ps_in.pose.orientation.w)
@@ -49,7 +45,6 @@ if __name__=='__main__':
     parser.add_argument('-r','-rot','-rpy','--rotation', nargs=3, type=float,
                         help='The roll-pitch-yaw rotation (with respect to itself) to be applied to the pose')
     args = parser.parse_known_args()
-    print args
 
     if args[0].rotation:
         rpy = args[0].rotation

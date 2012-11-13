@@ -20,6 +20,7 @@
     <script type="text/javascript" src="js/run_stop.js"> </script>
     <script type="text/javascript" src="js/ell_control.js"> </script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
+    <script type="text/javascript" src="js/skin_util.js"> </script>
     
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
@@ -171,6 +172,7 @@ function start(){
           initEllControl();
           initCartControl();
           initFTDisplay('FTDisplay', {});
+          initSkinUtils();
           teleopHead();
         });
 };
@@ -192,6 +194,12 @@ function start(){
       <tr>
          <td>On Image Click:</td>
          <td id="image_click_select"></td>
+          <td>
+              <input type="checkbox" id="skinUseOrientation">Use Orientation</input>
+          </td>
+          <td>
+              <button id="rezeroSkinButton">Rezero Skin</input>
+          </td>
       </tr>
     </table>
 

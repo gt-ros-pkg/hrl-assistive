@@ -20,6 +20,7 @@
     <script type="text/javascript" src="js/run_stop.js"> </script>
     <script type="text/javascript" src="js/ell_control.js"> </script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
+    <script type="text/javascript" src="js/skin_util.js"> </script>
 
     <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
 	<script src="js/keyboard/js/jquery.keyboard.js"></script>
@@ -134,6 +135,7 @@ function initMjpegCanvas(){
 	});
         window.clickableCanvas = new ClickableElement('mjpeg_canvas',
                                                       'img_act_select');
+        window.poseSender = new PoseSender(window.ros);
 }
 
 function tab_select_cb(eve, ui){
@@ -169,6 +171,7 @@ function start(){
           initEllControl();
           initCartControl();
           initFTDisplay('FTDisplay', {});
+          initSkinUtils();
           teleopHead();
         });
 };
@@ -185,7 +188,7 @@ function start(){
           <td>
             <div id="FTDisplay"></div>
           </td>
-          <td colspan='2'> <!-- Start Cell for video -->
+          <td colspan='4'> <!-- Start Cell for video -->
             <canvas id="mjpeg_canvas" width="640" height="480">
             Your browser does not support HTML5 canvas
             </canvas>
@@ -195,16 +198,22 @@ function start(){
           <td></td>
           <td style="text-align:right">On Image Click:</td>
           <td id="image_click_select"></td>
+          <td>
+              <input type="checkbox" id="skinUseOrientation">Use Orientation</input>
+          </td>
+          <td>
+              <button id="rezeroSkinButton">Rezero Skin</input>
+          </td>
         </tr>
         <tr>
-          <td colspan=3>
+          <td colspan=5>
             <hr>
               <div id="console"></div>
             <hr>
           </td>
         </tr>
         <tr>
-          <td colspan=3>
+          <td colspan=5>
             <div id="runStopDiv">
           </td>
         </tr>

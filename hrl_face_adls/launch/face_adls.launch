@@ -10,7 +10,8 @@
     <arg name="head_pcs_dir" value="$(arg data_pkg)/head_point_clouds" />
     <arg name="ell_regs_dir" value="$(arg data_pkg)/ellipsoid_registrations" />
     <arg name="cam_params_dir" value="$(arg data_pkg)/camera_parameters" />
-    <arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" />
+    <!--<arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" />-->
+    <arg name="ft_dir" value="$(find hrl_ft)/params" />
 
     <!--         kinect params          -->
     <arg name="kinect_points" default="/head_mount_kinect/rgb/points" />
@@ -64,7 +65,7 @@
     </node>
 
     <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
-          args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_razor_inline.yaml" 
+          args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_gripper.yaml" 
           output="screen" />
 
     <rosparam>
