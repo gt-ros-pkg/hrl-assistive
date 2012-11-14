@@ -158,34 +158,34 @@ var showArmControls = function (contObj) {
             });
         $('#bpd_default #b1').hide();
 
-        $('#bpd_default_rot :button').unbind('.rfh');
-        $('#bpd_default_rot #b9').show().bind('click.rfh', function(e){
-            contObj.sendGoal({frame:$('#cart_frame_select').val(),
-                              angular_x:contObj.rot_scale});
-            });
-        $('#bpd_default_rot #b8').show().bind('click.rfh', function(e){
-            contObj.sendGoal({frame:$('#cart_frame_select').val(),
-                              angular_y:-contObj.rot_scale});
-            });
-        $('#bpd_default_rot #b7').show().bind('click.rfh', function(e){
-            contObj.sendGoal({frame:$('#cart_frame_select').val(),
-                              angular_x:-contObj.rot_scale});
-            });
-        $('#bpd_default_rot #b6').show().bind('click.rfh', function(e){
-            contObj.sendGoal({frame:$('#cart_frame_select').val(),
-                              angular_z:-contObj.rot_scale});
-            });
-        $('#bpd_default_rot #b5').hide()
-        $('#bpd_default_rot #b4').show().bind('click.rfh', function(e){
-            contObj.sendGoal({frame:$('#cart_frame_select').val(),
-                              angular_z:contObj.rot_scale});
-            });
-        $('#bpd_default_rot #b3').hide();
-        $('#bpd_default_rot #b2').show().bind('click.rfh', function(e){
-            contObj.sendGoal({frame:$('#cart_frame_select').val(),
-                              angular_y:contObj.rot_scale});
-            });
-        $('#bpd_default_rot #b1').hide();
+        //$('#bpd_default_rot :button').unbind('.rfh');
+        //$('#bpd_default_rot #b9').show().bind('click.rfh', function(e){
+        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
+        //                      angular_x:contObj.rot_scale});
+        //    });
+        //$('#bpd_default_rot #b8').show().bind('click.rfh', function(e){
+        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
+        //                      angular_y:-contObj.rot_scale});
+        //    });
+        //$('#bpd_default_rot #b7').show().bind('click.rfh', function(e){
+        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
+        //                      angular_x:-contObj.rot_scale});
+        //    });
+        //$('#bpd_default_rot #b6').show().bind('click.rfh', function(e){
+        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
+        //                      angular_z:-contObj.rot_scale});
+        //    });
+        //$('#bpd_default_rot #b5').hide()
+        //$('#bpd_default_rot #b4').show().bind('click.rfh', function(e){
+        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
+        //                      angular_z:contObj.rot_scale});
+        //    });
+        //$('#bpd_default_rot #b3').hide();
+        //$('#bpd_default_rot #b2').show().bind('click.rfh', function(e){
+        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
+        //                      angular_y:contObj.rot_scale});
+        //    });
+        //$('#bpd_default_rot #b1').hide();
 
     };
 };

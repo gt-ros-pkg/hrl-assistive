@@ -18,10 +18,10 @@ var KINECT = 'head_mount_kinect';
 //        </select>'
 
 image_click_select_html = 
-'<select id="img_act_select">\
+    '<select id="img_act_select">\
     <option id="looking" selected="selected" value="looking">Look</option>\
     <option id="seed_reg" value="seed_reg">Register Head</option>\
-    <option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>\
+    <!--<option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>-->\
     <option id="skin_linear_move" value="skin_linear_move">Move to point with skin</option>\
     <!--<option id="na" value="norm_approach">Normal Approach</option>-->\
     <!--<option id="touch" value="touch">Touch</option>-->\
