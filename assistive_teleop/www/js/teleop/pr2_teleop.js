@@ -42,7 +42,7 @@ function initGripper(orientation) {
     window.gripper[0].stateCBList.push(lGripperStateDisplay);
     $('#l_gripper_slider').unbind("slidestop").bind("slidestop", function (event, ui) {
         window.gripper[0].setPosition($('#l_gripper_slider').slider("value"));
-        if ($('#l_gripper_slider').slider("value") > window.gripper[1].state) {
+        if ($('#l_gripper_slider').slider("value") > window.gripper[0].state) {
             log('Opening Left Gripper');
             window.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
             window.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');

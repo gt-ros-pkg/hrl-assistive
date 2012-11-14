@@ -68,9 +68,8 @@ var Pr2Gripper = function (side, ros) {
         gripper.setPosition(0.09);
     };
     gripper.close = function () {
-        gripper.setPosition(0.0215, 20);
+        gripper.setPosition(-0.001);
     };
-
 };
 
 var Pr2Head = function (ros) {

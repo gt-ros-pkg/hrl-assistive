@@ -48,7 +48,7 @@ var SkinUtilities = function(ros) {
 
     skutil.mpcWeightsPub = new skutil.ros.Topic({
         name:'/haptic_mpc/weights',
-        messageType:'haptic_msgs/HapticMpcWeights'});
+        messageType:'hrl_haptic_manipulation_in_clutter_msgs/HapticMpcWeights'});
     skutil.mpcWeightsPub.advertise();
 
     skutil.setMpcWeights = function (pos_weight, orient_weight) {
@@ -109,8 +109,12 @@ var initSkinUtils = function () {
     })
 
     var updateOrientationCheckbox = function (msg) {
-        if (msg.orient_weight === 0.0) {
-            $('#skinUseOrientation').val('checked','checked');
+        if (msg.orient_weight !== 0.) {
+            $('#skinUseOrientation').attr('checked',true);
+            console.log('Received: USING orientation')
+        } else {
+            $('#skinUseOrientation').attr('checked',false);
+            console.log('Received: NOT using orientation')
         };
     }
     window.skinUtil.mpcWeightsSubCBList.push(updateOrientationCheckbox);
@@ -132,20 +136,21 @@ var initSkinUtils = function () {
     });
     var updateUsePPSCheckbox = function (msg) {
         var using_pps = false;
-        for (var i=0; i<msg.strings.length; i += 0) {
-            if (msg.strings[i] === '/pr2_pps_left_sensor/taxels/forces') {
+        for (var i=0; i<msg.strings.length; i += 1) {
+            console.log(msg.strings[i]);
+            if (msg.strings[i] == '/pr2_pps_left_sensor/taxels/forces') {
                 using_pps = true;
-                break;
-            }
-            if (msg.strings[i] === '/pr2_pps_right_sensor/taxels/forces') {
+            } else if (msg.strings[i] == '/pr2_pps_right_sensor/taxels/forces') {
                 using_pps = true;
-                break;
             }
-        };
+        }
         if (using_pps) {
-            $('#skinUsePPS').val('checked', 'checked');
+            console.log('Received: Using PPS Sensors');
+            $('#skinUsePPS').attr('checked', true);
         } else {
-            $('#skinUsePPS').val('checked', '');
+            console.log('Received: NOT using PPS Sensors');
+            $('#skinUsePPS').attr('checked', false);
         };
     };
+    window.skinUtil.taxelArrayListSubCBList.push(updateUsePPSCheckbox);
 }
