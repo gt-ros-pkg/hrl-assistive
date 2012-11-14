@@ -1,6 +1,3 @@
-(function(){
-})();
-
 function initGripper(orientation) {
     $('#r_gripper_slider').slider({
         min: 0.0,
@@ -47,16 +44,24 @@ function initGripper(orientation) {
         window.gripper[0].setPosition($('#l_gripper_slider').slider("value"));
         if ($('#l_gripper_slider').slider("value") > window.gripper[1].state) {
             log('Opening Left Gripper');
+            window.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+            window.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');
         } else {
             log('Closing Left Gripper');
+            window.skinUtil.removeTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+            window.skinUtil.removeTaxelArray('/pr2_pps_right_sensor/taxels/forces');
         }
     });
     document.getElementById('l_gripper_open').addEventListener('click', function (e) {
         window.gripper[0].open();
+        window.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+        window.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');
         log('Opening Left Gripper');
     });
     document.getElementById('l_gripper_close').addEventListener('click', function (e) {
         window.gripper[0].close();
+        window.skinUtil.removeTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+        window.skinUtil.removeTaxelArray('/pr2_pps_right_sensor/taxels/forces');
         log('Closing Left Gripper');
     });
 }

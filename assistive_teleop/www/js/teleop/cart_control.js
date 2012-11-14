@@ -30,7 +30,7 @@ var CartControl = function (options) {
     cCon.cmdPub.advertise();
     cCon.sendGoal = function (values) {
         var ts = new cCon.ros.composeMsg('geometry_msgs/TwistStamped');
-        ts.header.frame_id = values.frame || 'torso_lift_link';
+        ts.header.frame_id = values.frame || '/torso_lift_link';
         ts.twist.linear.x = values.linear_x || 0;
         ts.twist.linear.y = values.linear_y || 0;
         ts.twist.linear.z = values.linear_z || 0;
@@ -61,7 +61,7 @@ var CartControl = function (options) {
 var initCartControl = function () {
     window.cartControl = [new CartControl({side: 'left',
                                            ros: window.ros,
-                                           endLink: "l_gripper_shaver45_frame",
+                                           endLink: "l_gripper_tool_frame",
                                            ctrlParams: "$(find hrl_face_adls)/params/l_jt_task_shaver45.yaml",
                                            ctrlName: "l_cart_jt_task_shaver"}),
                           new CartControl({side:'right', 
@@ -118,7 +118,7 @@ var initCartControl = function () {
 
 var showArmControls = function (contObj) {
         $('#bpd_default_rot, #cart_frame_select, #cart_frame_select_label, #cart_controller, #cart_cont_state_check').show();
-        $('#frame_opt_hand').val('/'+contObj.side[0]+'_wrist_roll_link');
+        $('#frame_opt_hand').val('/'+contObj.side[0]+'_gripper_tool_frame');
 
         $('#scale_slider').unbind("slidestop").bind("slidestop", function (event,ui) {
             contObj.trans_scale = $('#scale_slider').slider("value");

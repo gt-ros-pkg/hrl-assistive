@@ -165,8 +165,8 @@ class FaceADLsManager(object):
             self.trim_retreat = req.mode == "shaving"
             self.flip_gripper = self.shaving_side == 'r' and req.mode == "shaving"
             bounds = params['%s_bounds' % self.shaving_side]
-            #self.ellipsoid.set_bounds(bounds['lat'], bounds['lon'], bounds['height'])#TODO: Change Back
-            self.ellipsoid.set_bounds((-np.pi,np.pi), (-np.pi,np.pi), (0,100))
+            self.ellipsoid.set_bounds(bounds['lat'], bounds['lon'], bounds['height'])#TODO: Change Back
+            #self.ellipsoid.set_bounds((-np.pi,np.pi), (-np.pi,np.pi), (0,100))
 
             reg_resp = self.request_registration(req.mode, self.shaving_side)
             if not reg_resp.success:
@@ -216,7 +216,7 @@ class FaceADLsManager(object):
                         equals[2] and 
                         (ell_lon_1 >= min_lon or ell_lon_1 <= self.ellipsoid._lon_bounds[1]))
 
-#            self.setup_force_monitor()
+            self.setup_force_monitor()
 
             success = True
             if not arm_in_bounds:
@@ -261,16 +261,16 @@ class FaceADLsManager(object):
             if ell_pos[2] < RETREAT_HEIGHT * 0.9 and self.force_monitor.is_inactive():
                 self.publish_feedback(Messages.TIMEOUT_RETREAT % time)
                 self.retreat_move(RETREAT_HEIGHT, LOCAL_VELOCITY)
-        self.force_monitor.register_timeout_cb(timeout_cb)
+        self.force_monitor.register_timeout_cb()
 
         def contact_cb(force):
             self.force_monitor.update_activity()
             if not self.is_forced_retreat:
                 self.stop_moving()
                 self.publish_feedback(Messages.CONTACT_FORCE % force)
-                #rospy.loginfo("[face_adls_manager] Arm stopped due to making contact.")
+                #rospy.loginfo("[face_adls_manZger] Arm stopped due to making contact.")
 
-        self.force_monitor.register_contact_cb(contact_cb)
+        self.force_monitor.register_contact_cb()
         self.force_monitor.start_activity()
         self.force_monitor.update_activity()
         self.is_forced_retreat = False
@@ -287,6 +287,7 @@ class FaceADLsManager(object):
         #rospy.loginfo("[face_adls_manager] Retreating from current location.")
 
         retreat_pos = [latitude, ell_pos[1], height]
+        retreat_pos = self.ellipsoid.enforce_bounds(retreat_pos)
         retreat_quat = [0,0,0,1]
         if forced:
             cart_path = self.ellipsoid.ellipsoidal_to_pose((retreat_pos, retreat_quat))
@@ -310,7 +311,7 @@ class FaceADLsManager(object):
         self.is_forced_retreat = False
 
     def global_input_cb(self, msg):
-        #self.force_monitor.update_activity()
+        self.force_monitor.update_activity()
         if self.is_forced_retreat:
             return
         rospy.loginfo("[face_adls_manager] Performing global move.")
@@ -378,10 +379,10 @@ class FaceADLsManager(object):
         ps.pose = cart_traj_msg[0]
         self.test_pose3.publish(ps)
         
-#        self.force_monitor.update_activity()
+        self.force_monitor.update_activity()
             
     def local_input_cb(self, msg):
-        #self.force_monitor.update_activity()
+        self.force_monitor.update_activity()
         if self.is_forced_retreat:
             return
         self.stop_moving()
@@ -422,7 +423,7 @@ class FaceADLsManager(object):
         head.stamp = rospy.Time.now()
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
-        #self.force_monitor.update_activity()
+        self.force_monitor.update_activity()
 
 def main():
     rospy.init_node("face_adls_manager")

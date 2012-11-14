@@ -188,7 +188,7 @@ function start(){
           <td>
             <div id="FTDisplay"></div>
           </td>
-          <td colspan='4'> <!-- Start Cell for video -->
+          <td colspan='5'> <!-- Start Cell for video -->
             <canvas id="mjpeg_canvas" width="640" height="480">
             Your browser does not support HTML5 canvas
             </canvas>
@@ -199,22 +199,25 @@ function start(){
           <td style="text-align:right">On Image Click:</td>
           <td id="image_click_select"></td>
           <td>
-              <input type="checkbox" id="skinUseOrientation">Use Orientation</input>
+              <input type="checkbox" id="skinUseOrientation">Using Orientation</input>
+          </td>
+          <td>
+              <input type="checkbox" id="skinUsePPS">Using PPS Sensors</input>
           </td>
           <td>
               <button id="rezeroSkinButton">Rezero Skin</input>
           </td>
         </tr>
         <tr>
-          <td colspan=5>
+          <td colspan=6>
             <hr>
               <div id="console"></div>
             <hr>
           </td>
         </tr>
         <tr>
-          <td colspan=5>
-            <div id="runStopDiv">
+          <td colspan=6>
+              <div id="runStopDiv">
           </td>
         </tr>
       </table>
