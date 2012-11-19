@@ -33,8 +33,8 @@ function log(message){
     console.log("Log to user: " + message.toString());
 };
 
-var ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot via roswww
-var PORT = '9091';//Must match port on which rosbridge is being served
+var ROBOT = window.location.hostname;//Use localhost when serving website directly from robot via roswww
+var PORT = 9091;//Must match port on which rosbridge is being served
 
 $(function(){
     $("#tabs").tabs().tabs({select: tab_select_cb});
@@ -54,6 +54,22 @@ $(function(){
       '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power')
       .button();
 });
+
+var item_grid = function (target, type, idPrefix, rows, cols) {
+    var html = '';
+    html = html + '<table>';
+    for (var i=0; i<rows; i += 1) {
+        html = html + '<tr>';
+        for (var j=0; j<cols; j += 1) {
+            html = html + '<td>';
+            html = html + '<'+type+' id='+idPrefix+'_r'+i+'c'+j+' ></'+type+'>';
+            html = html + '</td>';
+        };
+        html = html + '</tr>';
+    };
+    html = html + '</table>';
+    $('#'+target).html(html);
+};
 
 function extendROSJS () {
     window.ros.msgs = {};
@@ -171,7 +187,9 @@ function start(){
           initEllControl();
           initCartControl();
           initFTDisplay('FTDisplay', {});
-          initSkinUtils();
+          if (window.location.hash.search('skin') !== -1) {
+              initSkinUtils();
+          }
           teleopHead();
         });
 };
@@ -188,24 +206,28 @@ function start(){
           <td>
             <div id="FTDisplay"></div>
           </td>
-          <td colspan='5'> <!-- Start Cell for video -->
-            <canvas id="mjpeg_canvas" width="640" height="480">
-            Your browser does not support HTML5 canvas
-            </canvas>
-          </td><!-- End Cell for video -->
-        </tr>
-        <tr>
-          <td></td>
-          <td style="text-align:right">On Image Click:</td>
-          <td id="image_click_select"></td>
           <td>
-              <input type="checkbox" id="skinUseOrientation">Using Orientation</input>
-          </td>
-          <td>
-              <input type="checkbox" id="skinUsePPS">Using PPS Sensors</input>
-          </td>
-          <td>
-              <button id="rezeroSkinButton">Rezero Skin</input>
+            <table id="videoAndControls"> <!-- Start Cell for video -->
+              <tr>
+                <td>
+                  <canvas id="mjpeg_canvas" width="640" height="480">
+                  Your browser does not support HTML5 canvas
+                  </canvas>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div>
+                    <table>
+                      <tr id="underVideoBar">
+                        <td style="text-align:right">On Image Click:</td>
+                        <td id="image_click_select"></td>
+                      </tr>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
         <tr>

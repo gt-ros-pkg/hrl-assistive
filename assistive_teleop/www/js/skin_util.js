@@ -97,6 +97,11 @@ var SkinUtilities = function(ros) {
 };
 
 var initSkinUtils = function () {
+    $('#underVideoBar').append(
+      '<td><input type="checkbox" id="skinUseOrientation">Using Orientation</input></td>'+
+      '<td><input type="checkbox" id="skinUsePPS">Using PPS Sensors</input></td>'+
+      '<td><button id="rezeroSkinButton">Rezero Skin</input></td>');
+
     window.skinUtil = new SkinUtilities(window.ros);
     $('#skinUseOrientation').change(function () {
         if (this.checked) {
