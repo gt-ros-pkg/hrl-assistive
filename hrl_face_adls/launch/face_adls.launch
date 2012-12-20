@@ -1,23 +1,25 @@
 <launch>
     <arg name="subject" />
+    <arg name="run_tool_power" default="true" />
+    <arg name="shaving_board" default="/dev/shaver_arduino" />
 
-    <!--        directories          -->
+    <!--        directories          
     <arg name="data_pkg" value="$(find rfh_data)" />
     <arg name="ar_dir" value="$(arg data_pkg)/ar_poses" />
     <arg name="arm_traj_dir" value="$(arg data_pkg)/gt_arm_trajectories" />
-    <!-- <arg name="arm_traj_dir" value="henry_arm_trajectories" /> -->
+        <arg name="arm_traj_dir" value="henry_arm_trajectories" /> 
     <arg name="ell_poses_dir" value="$(arg data_pkg)/henry_ell_poses" />
     <arg name="head_pcs_dir" value="$(arg data_pkg)/head_point_clouds" />
     <arg name="ell_regs_dir" value="$(arg data_pkg)/ellipsoid_registrations" />
     <arg name="cam_params_dir" value="$(arg data_pkg)/camera_parameters" />
-    <!--<arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" />-->
-    <arg name="ft_dir" value="$(find hrl_ft)/params" />
+    <<arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" />
+    <arg name="ft_dir" value="$(find hrl_ft)/params" />-->
 
     <!--         kinect params          -->
     <arg name="kinect_points" default="/head_mount_kinect/rgb/points" />
     <arg name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
 
-    <!--             nodes              -->
+    <!--             nodes              
     <include file="$(find hrl_face_adls)/launch/traj_playback_servers.launch">
         <arg name="subject" value="$(arg subject)" />
         <arg name="arm_traj_dir" value="$(arg arm_traj_dir)" />
@@ -45,6 +47,19 @@
         <param name="kinect_frame" value="head_mount_kinect_rgb_optical_frame" />
         <param name="global_poses_dir" value="$(arg ell_poses_dir)" />
     </node>
+-->
+
+  <!-- Nodes for shaver power and run-stop monitor to stop shaver -->
+  <node if="$(arg run_tool_power)" name="tool_power_toggle" pkg="rosserial_python"
+        type="serial_node.py" args="$(arg shaving_board)" output="screen"/>
+
+  <node if="$(arg run_tool_power)" name="razor_run_stop_monitor" pkg="assistive_teleop"
+        type="razor_runstop.py" output="screen"/>
+
+ <!-- Mirror pointer node points mirror at registered head location -->
+  <node name="mirror_pointer" pkg="assistive_teleop" type="mirror_pointer.py" output="screen">
+      <remap from="/goal_pose" to="/face_adls/r_cart_absolute"/>
+  </node>
 
     <node pkg="hrl_face_adls" name="r_cartesian_manager" type="cartesian_manager.py"
           output="screen" args="r" >
@@ -53,13 +68,13 @@
         <param name="init_rot_tolerance" value="100.0" />
     </node>
 
-    <!--<node pkg="hrl_face_adls" name="l_cartesian_manager" type="cartesian_manager.py"
+    <node pkg="hrl_face_adls" name="l_cartesian_manager" type="cartesian_manager.py"
           output="screen" args="l" >
         <remap from="/face_adls/l_cart_move" to="/l_cart/web_commands" />
         <param name="init_pos_tolerance" value="100.0" />
         <param name="init_rot_tolerance" value="100.0" />
-    </node>-->
-    <node pkg="hrl_face_adls" name="l_twist_to_pose" type="cart_skin_manager.py" output="screen">
+    </node>
+<!--    <node pkg="hrl_face_adls" name="l_twist_to_pose" type="cart_skin_manager.py" output="screen">
       <remap from="twist_in" to="l_cart/web_commands" />
       <remap from="pose_out" to="haptic_mpc/goal_pose" />
     </node>
@@ -67,6 +82,7 @@
     <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
           args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_gripper.yaml" 
           output="screen" />
+          -->
 
     <rosparam>
         face_adls_modes:
