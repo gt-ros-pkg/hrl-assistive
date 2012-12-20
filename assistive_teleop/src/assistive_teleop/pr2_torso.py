@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import rospy
-from trajectory_msgs.msg import *
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 class PR2Torso():
     def __init__(self):

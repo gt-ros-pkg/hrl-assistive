@@ -58,5 +58,3 @@ if __name__=='__main__':
     rospy.init_node('clicked_pose_relay')
     relay = ClickedPoseRelay(args[0].translation, quaternion)
     rospy.spin()
-
-
