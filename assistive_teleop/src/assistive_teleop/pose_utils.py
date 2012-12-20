@@ -12,7 +12,8 @@ def pose_relative_trans(pose, x=0., y=0., z=0.):
     """Return a pose translated relative to a given pose."""
     ps = deepcopy(pose)
     M_trans = tft.translation_matrix([x,y,z])
-    q_ps = [ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w]
+    q_ps = [ps.pose.orientation.x, ps.pose.orientation.y,
+            ps.pose.orientation.z, ps.pose.orientation.w]
     M_rot = tft.quaternion_matrix(q_ps)
     trans = np.dot(M_rot,M_trans)
     ps.pose.position.x += trans[0][-1]
@@ -49,7 +50,8 @@ def aim_frame_to(target_pt, point_dir=(1,0,0)):
 
 def aim_pose_to(ps, pts, point_dir=(1,0,0)):
     if not (ps.header.frame_id.lstrip('/') == pts.header.frame_id.lstrip('/')):
-        rospy.logerr("[Pose_Utils.aim_pose_to]: Pose and point must be in same frame: %s, %s"
+        rospy.logerr("[Pose_Utils.aim_pose_to]:"+
+                     "Pose and point must be in same frame: %s, %s"
                     %(ps.header.frame_id, pt2.header.frame_id))
     target_pt = np.array((pts.point.x, pts.point.y, pts.point.z))
     base_pt = np.array((ps.pose.position.x,
