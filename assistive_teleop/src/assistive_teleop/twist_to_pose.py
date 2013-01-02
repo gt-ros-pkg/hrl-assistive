@@ -25,7 +25,7 @@ class TwistToPoseConverter(object):
             pos, quat = self.tf_listener.lookupTransform(frame, link, now)
         except (LookupException, ConnectivityException,
                 ExtrapolationException, Exception) as e:
-            rospy.logwarn("[Node: "+rospy.get_name()[1:]"]"+
+            rospy.logwarn("[Node: "+rospy.get_name()[1:]+"]"+
                           "TF Failure getting current "+
                           "end-effector pose:\r\n %s" %e)
             return None, None
@@ -67,4 +67,3 @@ if __name__=='__main__':
     rospy.init_node('twist_to_pose_node')
     converter = TwistToPoseConverter()
     rospy.spin()
-

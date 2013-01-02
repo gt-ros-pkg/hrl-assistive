@@ -34,6 +34,22 @@
   <node if="$(arg run_ft_sensor)" name="throttle_wt_force_out" pkg="topic_tools" type="throttle"
         args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
 
+  <!-- Image Rotation Nodes for right + left arm cameras and ar_confirm image -->
+  <node name="image_rotater_right" pkg="image_rotate" type="image_rotate" machine = "c1"> 
+    <remap from="image" to="/r_forearm_cam/image_color"/>
+    <remap from="rotated/image" to="/r_forearm_cam/image_color_rotated"/>
+  </node>
+
+  <node name="image_rotater_left" pkg="image_rotate" type="image_rotate" machine="c1"> 
+    <remap from="image" to="/l_forearm_cam/image_color"/>
+    <remap from="rotated/image" to="/l_forearm_cam/image_color_rotated"/>
+  </node>
+
+  <!-- Text-to-speech backend -->
+  <node pkg ="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">
+    <param name="voice" value="voice_nitech_us_rms_arctic_hts"/>
+  </node>
+
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
       <remap from="image" to="$(arg kinect_camera)" />
@@ -48,25 +64,22 @@
       <remap from="pose_out" to="/haptic_mpc/goal_pose" />
   </node>
 
-  <!-- Image Rotation Nodes for right + left arm cameras and ar_confirm image -->
-  <node name="image_rotater_right" pkg="image_rotate" type="image_rotate" machine = "c1"> 
-    <remap from="image" to="/r_forearm_cam/image_color"/>
-    <remap from="rotated/image" to="/r_forearm_cam/image_color_rotated"/>
+  <!--Setup Cartesian Controller for arm movements -->
+  <arg name="l_cart_step_pose_goal" default="l_cart/command" />
+  <arg name="r_cart_step_pose_goal" default="r_cart/command" />
+  <include file="$(find assistive_teleop)/launch/jttask_cart_controller.launch" >
+    <arg name="use_left_arm" default="true" />
+    <arg name="use_right_arm" default="true" />
+  </include>
+
+  <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose.py" output="screen">
+    <remap from="twist_in" to="l_cart/web_commands" />
+    <remap from="pose_out" to="$(arg l_cart_step_pose_goal)" />
   </node>
 
-  <node name="image_rotater_left" pkg="image_rotate" type="image_rotate" machine="c1"> 
-    <remap from="image" to="/l_forearm_cam/image_color"/>
-    <remap from="rotated/image" to="/l_forearm_cam/image_color_rotated"/>
-  </node>
-
-  <node name="image_rotater_ar_confirm" pkg="image_rotate" type="image_rotate" 
-        args="_use_camera_info:=false"  machine = "c1"> 
-    <remap from="image" to="/ar_servo/confirmation"/>
-    <remap from="rotated/image" to="/ar_servo/confirmation_rotated"/>
-  </node>
-
-  <node pkg ="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">
-    <param name="voice" value="voice_nitech_us_rms_arctic_hts"/>
+  <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose.py" output="screen">
+    <remap from="twist_in" to="r_cart/web_commands" />
+    <remap from="pose_out" to="$(arg r_cart_step_pose_goal)"/>
   </node>
 
 </launch>

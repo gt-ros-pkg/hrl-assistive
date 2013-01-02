@@ -1,8 +1,7 @@
 <launch>
-<!-- aleeper: This launch file is for the experimental task controller -->
 
-  <arg name="use_right_arm" default="false" />
-  <arg name="use_left_arm"  default="true"  />
+  <arg name="use_right_arm" default="true" />
+  <arg name="use_left_arm"  default="true" />
 
   <rosparam ns="r_cart">
     type: pr2_manipulation_controllers/JTTaskController
@@ -78,10 +77,18 @@
   <arg if="$(arg use_left_arm)"       name="l_controller" value="l_cart" />
   <arg unless="$(arg use_left_arm)"   name="l_controller" value="" />
 
+  <arg if="$(arg use_right_arm)"      name="old_r_controller" value="r_arm_controller" />
+  <arg unless="$(arg use_right_arm)"  name="old_r_controller" value="" />
+  <arg if="$(arg use_left_arm)"       name="old_l_controller" value="l_arm_controller" />
+  <arg unless="$(arg use_left_arm)"   name="old_l_controller" value="" />
+
+  <node name="unspawn_arm_controllers"
+        pkg="pr2_controller_manager" type="unspawner"
+        args="$(arg old_r_controller) $(arg old_l_controller)" />
+
   <node name="spawn_jt_task_cartesian"
         pkg="pr2_controller_manager" type="spawner"
-        args="--stopped $(arg r_controller) $(arg l_controller)" />
-
+        args="$(arg r_controller) $(arg l_controller)" />
 <!--
   <node name="r_posture"
         pkg="teleop_controllers" type="posture.py"

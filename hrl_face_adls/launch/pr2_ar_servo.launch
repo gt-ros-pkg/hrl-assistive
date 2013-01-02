@@ -43,6 +43,12 @@
       <rosparam file="$(find kelsey_sandbox)/launch/laser_baseonly.yaml" command="load" />
     </node>
     -->
+    
+    <node name="image_rotater_ar_confirm" pkg="image_rotate" type="image_rotate" 
+          args="_use_camera_info:=false"  machine = "c1"> 
+        <remap from="image" to="/ar_servo/confirmation"/>
+        <remap from="rotated/image" to="/ar_servo/confirmation_rotated"/>
+    </node>
 
     <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
           output="screen" >

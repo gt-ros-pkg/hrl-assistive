@@ -22,8 +22,8 @@ class ClickedPoseRelay(object):
         self.quat_offset = quaternion
         rospy.loginfo('['+rospy.get_name()[1:]+']'+
                       'Pose relay node started with:'+
-                      '\r\nTranslation: %s'+
-                      '\r\nRotation: %s' %(translation, quaternion))
+                      '\r\nTranslation: '+ str(translation) +
+                      '\r\nRotation: '+ str(quaternion))
 
     def pose_in_cb(self, ps_in):
         """Apply transform to received pose and republish"""
@@ -54,7 +54,7 @@ if __name__=='__main__':
                                          'be applied to the pose')
     parser.add_argument('-r','-rot','-rpy','--rotation', nargs=3,
                         type=float, help='The roll-pitch-yaw rotation '+
-                                         '(with respect to itself) +'
+                                         '(with respect to itself) '+
                                          'to be applied to the pose')
     args = parser.parse_known_args()
 
