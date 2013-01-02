@@ -65,8 +65,8 @@
   </node>
 
   <!--Setup Cartesian Controller for arm movements -->
-  <arg name="l_cart_step_pose_goal" default="l_cart/command" />
-  <arg name="r_cart_step_pose_goal" default="r_cart/command" />
+  <arg name="l_cart_step_pose_goal" default="l_cart/command_pose" />
+  <arg name="r_cart_step_pose_goal" default="r_cart/command_pose" />
   <include file="$(find assistive_teleop)/launch/jttask_cart_controller.launch" >
     <arg name="use_left_arm" default="true" />
     <arg name="use_right_arm" default="true" />
@@ -75,11 +75,13 @@
   <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose.py" output="screen">
     <remap from="twist_in" to="l_cart/web_commands" />
     <remap from="pose_out" to="$(arg l_cart_step_pose_goal)" />
+    <param name="ee_frame" value="/l_gripper_tool_frame" />
   </node>
 
   <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose.py" output="screen">
     <remap from="twist_in" to="r_cart/web_commands" />
     <remap from="pose_out" to="$(arg r_cart_step_pose_goal)"/>
+    <param name="ee_frame" value="/r_gripper_tool_frame" />
   </node>
 
 </launch>

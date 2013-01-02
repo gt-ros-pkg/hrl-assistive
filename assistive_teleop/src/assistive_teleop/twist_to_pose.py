@@ -8,13 +8,13 @@ from tf import (TransformListener, ExtrapolationException,
 from tf import transformations as trans
 
 class TwistToPoseConverter(object):
-    def __init__(self, ee_frame='/l_gripper_tool_frame'):
+    def __init__(self):
         self.twist_sub = rospy.Subscriber('/twist_in',
                                           TwistStamped,
                                           self.twist_cb)
         self.pose_pub = rospy.Publisher('/pose_out', PoseStamped)
         self.tf_listener = TransformListener()
-        self.ee_frame = ee_frame
+        self.ee_frame = rospy.get_param("~ee_frame", '/l_gripper_tool_frame')
 
     def get_ee_pose(self, link, frame='/torso_lift_link'):
         """Get current end effector pose from tf."""
@@ -29,7 +29,7 @@ class TwistToPoseConverter(object):
                           "TF Failure getting current "+
                           "end-effector pose:\r\n %s" %e)
             return None, None
-        return pos, quat 
+        return pos, quat
 
     def twist_cb(self, ts):
         """Get current end effector pose and augment with twist command."""
@@ -45,7 +45,8 @@ class TwistToPoseConverter(object):
                                                  ts.twist.angular.y,
                                                  ts.twist.angular.z)
 
-        final_quat = trans.quaternion_multiply(cur_quat, twist_quat)
+#        final_quat = trans.quaternion_multiply(cur_quat, twist_quat)
+        final_quat = trans.quaternion_multiply(twist_quat, cur_quat)
         ps.pose.orientation = Quaternion(*final_quat)
 
         try:
@@ -54,7 +55,7 @@ class TwistToPoseConverter(object):
                                               ps.header.stamp,
                                               rospy.Duration(8.0))
             pose_out = self.tf_listener.transformPose('/torso_lift_link', ps)
-        except (LookupException, ConnectivityException, 
+        except (LookupException, ConnectivityException,
                 ExtrapolationException, Exception) as e:
             rospy.logwarn("[Node: "+rospy.get_name()[1:]+"]"+
                           "TF Failure transforming goal pose"+

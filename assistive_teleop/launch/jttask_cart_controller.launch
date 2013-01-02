@@ -6,7 +6,7 @@
   <rosparam ns="r_cart">
     type: pr2_manipulation_controllers/JTTaskController
     root_name: torso_lift_link
-    tip_name: r_wrist_roll_link
+    tip_name: r_gripper_tool_frame
     k_posture: 15.0
     jacobian_inverse_damping: 0.01
     pose_command_filter: 0.01
@@ -41,7 +41,7 @@
   <rosparam ns="l_cart">
     type: pr2_manipulation_controllers/JTTaskController
     root_name: torso_lift_link
-    tip_name: l_gripper_shaver45_frame
+    tip_name: l_gripper_tool_frame
     k_posture: 15.0
     jacobian_inverse_damping: 0.01
     pose_command_filter: 0.01

@@ -75,7 +75,8 @@ var initCartControl = function () {
             showArmControls(window.cartControl[0]);
         });
     $('#cont_r_arm').bind('click.rfh', function () {
-            enableCartControl(window.cartControl[1]);
+            //enableCartControl(window.cartControl[1]);
+            showArmControls(window.cartControl[1]);
         });
     $('#default_rot_slider').slider({value : Math.PI/4,
                                      min : 0,
@@ -158,34 +159,34 @@ var showArmControls = function (contObj) {
             });
         $('#bpd_default #b1').hide();
 
-        //$('#bpd_default_rot :button').unbind('.rfh');
-        //$('#bpd_default_rot #b9').show().bind('click.rfh', function(e){
-        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
-        //                      angular_x:contObj.rot_scale});
-        //    });
-        //$('#bpd_default_rot #b8').show().bind('click.rfh', function(e){
-        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
-        //                      angular_y:-contObj.rot_scale});
-        //    });
-        //$('#bpd_default_rot #b7').show().bind('click.rfh', function(e){
-        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
-        //                      angular_x:-contObj.rot_scale});
-        //    });
-        //$('#bpd_default_rot #b6').show().bind('click.rfh', function(e){
-        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
-        //                      angular_z:-contObj.rot_scale});
-        //    });
-        //$('#bpd_default_rot #b5').hide()
-        //$('#bpd_default_rot #b4').show().bind('click.rfh', function(e){
-        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
-        //                      angular_z:contObj.rot_scale});
-        //    });
-        //$('#bpd_default_rot #b3').hide();
-        //$('#bpd_default_rot #b2').show().bind('click.rfh', function(e){
-        //    contObj.sendGoal({frame:$('#cart_frame_select').val(),
-        //                      angular_y:contObj.rot_scale});
-        //    });
-        //$('#bpd_default_rot #b1').hide();
+        $('#bpd_default_rot :button').unbind('.rfh');
+        $('#bpd_default_rot #b9').show().bind('click.rfh', function(e){
+            contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                              angular_x:contObj.rot_scale});
+            });
+        $('#bpd_default_rot #b8').show().bind('click.rfh', function(e){
+            contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                              angular_y:-contObj.rot_scale});
+            });
+        $('#bpd_default_rot #b7').show().bind('click.rfh', function(e){
+            contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                              angular_x:-contObj.rot_scale});
+            });
+        $('#bpd_default_rot #b6').show().bind('click.rfh', function(e){
+            contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                              angular_z:-contObj.rot_scale});
+            });
+        $('#bpd_default_rot #b5').hide()
+        $('#bpd_default_rot #b4').show().bind('click.rfh', function(e){
+            contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                              angular_z:contObj.rot_scale});
+            });
+        $('#bpd_default_rot #b3').hide();
+        $('#bpd_default_rot #b2').show().bind('click.rfh', function(e){
+            contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                              angular_y:contObj.rot_scale});
+            });
+        $('#bpd_default_rot #b1').hide();
 
     };
 };
