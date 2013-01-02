@@ -21,6 +21,8 @@
   <!--<depend package="pr2_tabletop_manipulation_launch"/>-->
   <depend package="control_msgs"/>
   <depend package="pr2_common_action_msgs"/>
+  <depend package="arm_navigation_msgs"/>
+  <depend package="kinematics_msgs"/>
   <depend package="topic_tools"/>
   <depend package="sound_play"/>
   
