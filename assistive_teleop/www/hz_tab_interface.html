@@ -7,10 +7,12 @@
     
     <script type="text/javascript" src="js/ros/eventemitter2.js"></script>
     <script type="text/javascript" src="js/ros/ros.js"></script>
+    <script type="text/javascript" src="js/ros/extend_ros.js"></script>
     <script type="text/javascript" src="js/ros/actionclient.js"></script>
 
-    <script type="text/javascript" src="js/video/clickable_element.js"> </script>
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
+    <script type="text/javascript" src="js/video/mjpeg_client.js"> </script>
+    <script type="text/javascript" src="js/video/clickable_element.js"> </script>
 
     <script type="text/javascript" src="js/teleop/pr2.js"></script>
     <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
@@ -28,13 +30,13 @@
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 
 <script type="text/javascript">
-function log(message){
+var log = function (message) {
     $('#console').html("<big><strong>" + message.toString() + "</strong></big>"); 
     console.log("Log to user: " + message.toString());
 };
 
-var ROBOT = window.location.hostname;//Use localhost when serving website directly from robot via roswww
-var PORT = 9091;//Must match port on which rosbridge is being served
+var ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot via roswww
+var PORT = '9091';//Must match port on which rosbridge is being served
 
 $(function(){
     $("#tabs").tabs().tabs({select: tab_select_cb});
@@ -70,89 +72,6 @@ var item_grid = function (target, type, idPrefix, rows, cols) {
     html = html + '</table>';
     $('#'+target).html(html);
 };
-
-function extendROSJS () {
-    window.ros.msgs = {};
-    window.ros.getMsgDetailsClient = new window.ros.Service({
-        name: '/rosapi/message_details',
-        serviceType: 'rosapi/MessageDetails'});
-
-    window.ros.getMsgDetails = function (msgType) {
-        var req = new window.ros.ServiceRequest({type: msgType});
-        window.ros.getMsgDetailsClient.callService(req, function(res) {
-            window.ros.msgs = window.ros.msgs || {};
-            for (item in res.typedefs){
-                if (window.ros.msgs[res.typedefs[item].type] === undefined) {
-                    console.log('Imported '+
-                        res.typedefs[item].type.toString()+'Msg')
-                    window.ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
-                }
-            }
-        });
-    };
-
-    window.ros.composeMsg = function (type) {
-        if (window.ros.msgs[type] === undefined) {
-            console.error('Cannot compose '+ type + 'message:'+
-                          'Message details not imported');
-            return
-        }
-        var msg = {}
-        for (field in window.ros.msgs[type].fieldnames){
-            var example = window.ros.msgs[type].examples[field];
-            if (example === "{}"){
-                msg[window.ros.msgs[type].fieldnames[field]] =
-                        window.ros.composeMsg(window.ros.msgs[type].fieldtypes[field]);
-            } else if (example === "[]"){
-                msg[window.ros.msgs[type].fieldnames[field]] = [];
-            } else if (example === ""){
-                msg[window.ros.msgs[type].fieldnames[field]] = "";
-            } else if (example === "False"){
-                msg[window.ros.msgs[type].fieldnames[field]] = false;
-            } else if (parseInt(example) === 0){
-                msg[window.ros.msgs[type].fieldnames[field]] = 0;
-            } else if (example === undefined) {
-                msg[window.ros.msgs[type].fieldnames[field]] = undefined;
-            }
-        }
-        return msg
-    };
-}
-
-function initPr2(){
-    window.head = new Pr2Head(window.ros); 
-    window.head.sliderScale = 0.5;
-    window.base = new Pr2Base(window.ros);    
-    window.base.scaleSlider = 0.5;
-    window.gripper = [new Pr2Gripper('left', window.ros),
-                      new Pr2Gripper('right', window.ros)];
-    window.torso = new Pr2Torso(window.ros);
-    window.wtLog = new window.ros.Topic({
-        name: 'wt_log_out',
-        messageType:'std_msgs/String'});
-    window.wtLog.subscribe(function (msg) {
-        window.log(msg.data);});
-}
-
-function initMjpegCanvas(){
-	    window.mjpeg = new MjpegCanvas({
-		host:ROBOT,
-        port:8080,
-		topic : ['/head_mount_kinect/rgb/image_color',
-                 '/wide_stereo/right/image_rect_color',
-                 '/r_forearm_cam/image_color',
-                 '/l_forearm_cam/image_color'],
-		label : ['Kinect Camera', 'Wide Stereo', 'Right Arm', 'Left Arm'],
-		canvasID : 'mjpeg_canvas',
-        defaultStream: 0,
-		width: 640,
-		height: 480,
-        quality: 70
-	});
-        window.clickableCanvas = new ClickableElement('mjpeg_canvas',
-                                                      'img_act_select');
-        window.poseSender = new PoseSender(window.ros);
-}
 
 function tab_select_cb(eve, ui){
     if (ui.panel.id === 'tab_ellipse') {
