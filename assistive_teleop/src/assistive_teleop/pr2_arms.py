@@ -1,4 +1,4 @@
-#/usr/bin/python
+#/usr/bin/env python
 
 import numpy as np
 
@@ -7,7 +7,7 @@ import rospy
 import actionlib
 from std_msgs.msg import String
 from geometry_msgs.msg  import PoseStamped, Quaternion, Point
-from arm_navigation_msgs.msg import (MoveArmAction, MoveArmGoal, 
+from arm_navigation_msgs.msg import (MoveArmAction, MoveArmGoal,
             PositionConstraint, OrientationConstraint)
 from kinematics_msgs.srv import (GetKinematicSolverInfo, GetPositionFK,
             GetPositionFKRequest, GetPositionIK, GetPositionIKRequest)
@@ -25,17 +25,17 @@ from tf import TransformListener, transformations
 import pose_utils as pu
 
 class PR2Arm():
-  
-    wipe_started = False 
+
+    wipe_started = False
     standoff = 0.368 #0.2 + 0.168 (dist from wrist to fingertips)
-    torso_min = 0.001 #115 
-    torso_max = 0.299 #0.295 
-    dist = 0. 
+    torso_min = 0.001 #115
+    torso_max = 0.299 #0.295
+    dist = 0.
 
     move_arm_error_dict = {
-         -1 : "PLANNING_FAILED: Could not plan a clear path to goal.", 
-          0 : "Succeeded [0]", 
-          1 : "Succeeded [1]", 
+         -1 : "PLANNING_FAILED: Could not plan a clear path to goal.",
+          0 : "Succeeded [0]",
+          1 : "Succeeded [1]",
          -2 : "TIMED_OUT",
          -3 : "START_STATE_IN_COLLISION: Try freeing the arms manually.",
          -4 : "START_STATE_VIOLATES_PATH_CONSTRAINTS",
@@ -84,19 +84,18 @@ class PR2Arm():
             self.tf = TransformListener()
         else:
             self.tf = tfListener
-        
 
         self.arm_traj_client = actionlib.SimpleActionClient(
                                self.arm[0]+
                                '_arm_controller/joint_trajectory_action',
                                 JointTrajectoryAction)
-        rospy.loginfo("Waiting for " + self.arm[0] + 
+        rospy.loginfo("Waiting for " + self.arm[0] +
                         "_arm_controller/joint_trajectory_action server")
         if self.arm_traj_client.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("Found "+self.arm[0]+
                             "_arm_controller/joint_trajectory_action server")
         else:
-            rospy.logwarn("Cannot find " + self.arm[0] + 
+            rospy.logwarn("Cannot find " + self.arm[0] +
                             " _arm_controller/joint_trajectory_action server")
 
         self.arm_follow_traj_client = actionlib.SimpleActionClient(self.arm[0]+
@@ -133,14 +132,14 @@ class PR2Arm():
         else:
             rospy.logwarn("Cannot find "+self.arm[0]+
                             "_gripper_controller/gripper_action server")
-        
-        rospy.Subscriber(self.arm[0]+'_arm_controller/state', 
+
+        rospy.Subscriber(self.arm[0]+'_arm_controller/state',
                         JointTrajectoryControllerState, self.update_joint_state)
-        rospy.Subscriber('torso_controller/state', 
+        rospy.Subscriber('torso_controller/state',
                         JointTrajectoryControllerState, self.update_torso_state)
-        
+
         self.log_out = rospy.Publisher(rospy.get_name()+'/log_out', String)
-        
+
         rospy.loginfo("Waiting for "+self.arm.capitalize()+" FK/IK Solver services")
         try:
             rospy.wait_for_service("/pr2_"+self.arm+"_arm_kinematics/get_fk")
@@ -152,11 +151,11 @@ class PR2Arm():
             self.fk_info_proxy = rospy.ServiceProxy(
                                 "/pr2_"+self.arm+
                                 "_arm_kinematics/get_fk_solver_info",
-                                GetKinematicSolverInfo) 
+                                GetKinematicSolverInfo)
             self.fk_info = self.fk_info_proxy()
             self.fk_pose_proxy = rospy.ServiceProxy(
                                  "/pr2_"+self.arm+"_arm_kinematics/get_fk",
-                                 GetPositionFK, True)    
+                                 GetPositionFK, True)
             self.ik_info_proxy = rospy.ServiceProxy(
                                 "/pr2_"+self.arm+
                                 "_arm_kinematics/get_ik_solver_info",
@@ -164,11 +163,11 @@ class PR2Arm():
             self.ik_info = self.ik_info_proxy()
             self.ik_pose_proxy = rospy.ServiceProxy(
                                 "/pr2_"+self.arm+"_arm_kinematics/get_ik",
-                                GetPositionIK, True)    
+                                GetPositionIK, True)
             rospy.loginfo("Found FK/IK Solver services")
         except:
             rospy.logerr("Could not find FK/IK Solver services")
-        
+
         self.set_planning_scene_diff_name= \
                     '/environment_server/set_planning_scene_diff'
         rospy.wait_for_service('/environment_server/set_planning_scene_diff')
@@ -186,7 +185,7 @@ class PR2Arm():
 
     def update_torso_state(self, jtcs):
         self.torso_state = jtcs
-        
+
     def curr_pose(self):
         (trans,rot) = self.tf.lookupTransform("/torso_lift_link",
                                             "/"+self.arm[0]+"_wrist_roll_link",
@@ -197,7 +196,7 @@ class PR2Arm():
         cp.pose.position = Point(*trans)
         cp.pose.orientation = Quaternion(*rot)
         return cp
-   
+
     def wait_for_stop(self, wait_time=1, timeout=60):
         rospy.sleep(wait_time)
         end_time = rospy.Time.now()+rospy.Duration(timeout)
@@ -215,12 +214,12 @@ class PR2Arm():
             return True
         else:
             return False
-    
+
     def adjust_elbow(self, f32):
         request = self.form_ik_request(self.curr_pose())
         angs =  list(request.ik_request.ik_seed_state.joint_state.position)
         angs[2] += f32.data
-        request.ik_request.ik_seed_state.joint_state.position = angs 
+        request.ik_request.ik_seed_state.joint_state.position = angs
         ik_goal = self.ik_pose_proxy(request)
         if ik_goal.error_code.val == 1:
             self.send_joint_angles(ik_goal.solution.joint_state.position)
@@ -261,30 +260,30 @@ class PR2Arm():
                         duration=None, tot_points=None):
         if start == None: # if given one pose, use current position as start, else, assume (start, finish)
             start = self.curr_pose()
-       
+
         #TODO: USE TF TO BASE DISTANCE ON TOOL_FRAME MOVEMENT DISTANCE, NOT WRIST_ROLL_LINK
 
         # Based upon distance to travel, determine the number of intermediate steps required
         # find linear increments of position.
 
         dist = pu.calc_dist(start, finish)     #Total distance to travel
-        ik_steps = int(round(dist/ik_space)+1.)   
+        ik_steps = int(round(dist/ik_space)+1.)
         print "IK Steps: %s" %ik_steps
         if tot_points is None:
            tot_points = 1500*dist
         if duration is None:
             duration = dist*120
         ik_fracs = np.linspace(0, 1, ik_steps)   #A list of fractional positions along course to evaluate ik
-        ang_fracs = np.linspace(0,1, tot_points)  
+        ang_fracs = np.linspace(0,1, tot_points)
 
         x_gap = finish.pose.position.x - start.pose.position.x
         y_gap = finish.pose.position.y - start.pose.position.y
         z_gap = finish.pose.position.z - start.pose.position.z
 
         qs = [start.pose.orientation.x, start.pose.orientation.y,
-              start.pose.orientation.z, start.pose.orientation.w] 
+              start.pose.orientation.z, start.pose.orientation.w]
         qf = [finish.pose.orientation.x, finish.pose.orientation.y,
-              finish.pose.orientation.z, finish.pose.orientation.w] 
+              finish.pose.orientation.z, finish.pose.orientation.w]
 
         #For each step between start and finish, find a complete pose (linear position changes, and quaternion slerp)
         steps = [PoseStamped() for i in range(len(ik_fracs))]
@@ -301,7 +300,7 @@ class PR2Arm():
             steps[i].pose.orientation.w = new_q[3]
         rospy.loginfo("Planning straight-line path, please wait")
         self.log_out.publish(data="Planning straight-line path, please wait")
-       
+
         #For each pose in trajectory, find ik angles
         #Find initial ik for seeding
         req = self.form_ik_request(steps[0])
@@ -316,7 +315,7 @@ class PR2Arm():
             ik_points[i] = ik_goal.solution.joint_state.position
             seed = ik_goal.solution.joint_state.position # seed the next ik w/previous points results
         ik_points = np.array(ik_points)
-        # Linearly interpolate angles 10 times between ik-defined points (non-linear in cartesian space, but this is reduced from dense ik sampling along linear path.  Used to maintain large number of trajectory points without running IK on every one.    
+        # Linearly interpolate angles 10 times between ik-defined points (non-linear in cartesian space, but this is reduced from dense ik sampling along linear path.  Used to maintain large number of trajectory points without running IK on every one.
         angle_points = np.zeros((7, tot_points))
         for i in xrange(7):
             angle_points[i,:] = np.interp(ang_fracs, ik_fracs, ik_points[:,i])
@@ -377,13 +376,12 @@ class PR2Arm():
         goal_z = request.ik_request.pose_stamped.pose.position.z
         torso_pos = self.torso_state.actual.positions[0]
         spine_range = [self.torso_min - torso_pos, self.torso_max - torso_pos]
-       
         if abs(goal_z)<0.005:
             #Already at best position, dont try more (avoid moving to noise)
             rospy.loginfo("Torso Already at best possible position")
             return[False, 0]
-        #Find best possible case: shoulder @ goal height, max up, or max down. 
-        if goal_z >= spine_range[0] and goal_z <= spine_range[1]: 
+        #Find best possible case: shoulder @ goal height, max up, or max down.
+        if goal_z >= spine_range[0] and goal_z <= spine_range[1]:
             rospy.loginfo("Goal within spine movement range")
             request.ik_request.pose_stamped.pose.position.z = 0;
             opt_tor_move = goal_z
@@ -404,7 +402,7 @@ class PR2Arm():
             self.log_out.publish(data="Original goal cannot be reached")
             return [False, opt_tor_move]
         opt_ik_goal = ik_goal
-        
+
         #Achievable: Find a reasonable solution, move torso, return true
         rospy.loginfo("Goal can be reached by moving spine")
         self.log_out.publish(data="Goal can be reached by moving spine")
@@ -422,7 +420,6 @@ class PR2Arm():
             rospy.loginfo("Tried: %s, Failed" %trial)
         #Broke through somehow, catch error
         return [True, opt_tor_move]
-   
 
     def full_ik_check(self, ps):
         #Check goal as given, if reachable, return true
@@ -431,7 +428,7 @@ class PR2Arm():
         if ik_goal.error_code.val == 1:
             self.dist = pu.calc_dist(self.curr_pose(), ps)
             return (True, ik_goal, None)
-        #Check goal with vertical torso movement, if works, return true 
+        #Check goal with vertical torso movement, if works, return true
         (torso_succeeded, torso_move) = self.check_torso(req)
         self.move_torso(self.torso_state.actual.positions[0]+torso_move)
         duration = max(4,85*abs(torso_move))
@@ -442,7 +439,7 @@ class PR2Arm():
                 return (True, ik_goal, duration)
             else:
                 print "Reported Succeeded, then really failed: \r\n", ik_goal
-        
+
         #Check goal incrementally retreating hand pose, if works, return true
         pct = 0.98
         curr_pos = self.curr_pose().pose.position
@@ -461,14 +458,14 @@ class PR2Arm():
         #Nothing worked, report failure, return false
         rospy.loginfo("IK Failed: Error Code %s" %str(ik_goal.error_code))
         rospy.loginfo("Reached as far as possible")
-        self.log_out.publish(data="Cannot reach farther in this direction.")    
+        self.log_out.publish(data="Cannot reach farther in this direction.")
         return (False, ik_goal, duration)
 
     def form_ik_request(self, ps):
         #print "forming IK request for :%s" %ps
         req = GetPositionIKRequest()
         req.timeout = rospy.Duration(5)
-        req.ik_request.pose_stamped = ps 
+        req.ik_request.pose_stamped = ps
         req.ik_request.ik_link_name = \
                     self.ik_info.kinematic_solver_info.link_names[-1]
         req.ik_request.ik_seed_state.joint_state.name = \
@@ -476,14 +473,14 @@ class PR2Arm():
         req.ik_request.ik_seed_state.joint_state.position = \
                     self.joint_state_act.positions
         return req
-    
+
     def send_joint_angles(self, angles, duration = None):
         point = JointTrajectoryPoint()
         point.positions = angles
         self.send_traj_point(point, duration)
 
     def send_traj_point(self, point, time=None):
-        if time is None: 
+        if time is None:
             point.time_from_start = rospy.Duration(max(20*self.dist, 4))
         else:
             point.time_from_start = rospy.Duration(time)
@@ -500,7 +497,6 @@ class PR2Arm():
 class PR2Arm_Planning(PR2Arm):
     def __init__(self, arm, tfl=None):
         PR2Arm.__init__(self, arm, tfl)
-        
         self.move_arm_client = actionlib.SimpleActionClient(
                                      'move_' + self.arm + '_arm', MoveArmAction)
         rospy.loginfo("Waiting for move_" + self.arm + "_arm server")
@@ -510,39 +506,39 @@ class PR2Arm_Planning(PR2Arm):
             rospy.logwarn("Cannot find move_" + self.arm + "_arm server")
 
     def move_arm_to(self, goal_in):
-        (reachable, ik_goal, duration) = self.full_ik_check(goal_in)
-        rospy.sleep(duration)
-        
+        #(reachable, ik_goal, duration) = self.full_ik_check(goal_in)
+       # rospy.sleep(duration)
+
         rospy.loginfo("Composing move_"+self.arm+"_arm goal")
         goal_out = MoveArmGoal()
         goal_out.motion_plan_request.group_name = self.arm+"_arm"
-        goal_out.motion_plan_request.num_planning_attempts = 10 
+        goal_out.motion_plan_request.num_planning_attempts = 10
         goal_out.motion_plan_request.planner_id = ""
         goal_out.planner_service_name = "ompl_planning/plan_kinematic_path"
-        goal_out.motion_plan_request.allowed_planning_time = rospy.Duration(1.0)
-        
+        goal_out.motion_plan_request.allowed_planning_time = rospy.Duration(10.0)
+
         pos = PositionConstraint()
-        pos.header.frame_id = goal_in.header.frame_id 
+        pos.header.frame_id = goal_in.header.frame_id
         pos.link_name = self.arm[0]+"_wrist_roll_link"
         pos.position = goal_in.pose.position
 
-        pos.constraint_region_shape.type = 0 
-        pos.constraint_region_shape.dimensions=[0.01]
+        pos.constraint_region_shape.type = 0
+        pos.constraint_region_shape.dimensions=[0.10]
 
         pos.constraint_region_orientation = Quaternion(0,0,0,1)
         pos.weight = 1
 
         goal_out.motion_plan_request.goal_constraints.position_constraints.append(pos)
-    
-        ort = OrientationConstraint()    
+
+        ort = OrientationConstraint()
         ort.header.frame_id=goal_in.header.frame_id
         ort.link_name = self.arm[0]+"_wrist_roll_link"
         ort.orientation = goal_in.pose.orientation
-        
-        ort.absolute_roll_tolerance = 0.02
-        ort.absolute_pitch_tolerance = 0.02
-        ort.absolute_yaw_tolerance = 0.02
-        ort.weight = 0.5
+
+        ort.absolute_roll_tolerance = 3.15
+        ort.absolute_pitch_tolerance = 3.15
+        ort.absolute_yaw_tolerance = 3.15
+        ort.weight = 0.0
         goal_out.motion_plan_request.goal_constraints.orientation_constraints.append(ort)
         goal_out.accept_partial_plans = True
         goal_out.accept_invalid_goals = True
@@ -600,11 +596,10 @@ class PR2Arm_Planning(PR2Arm):
                     rospy.loginfo("Failure Result: %s" %result)
                     self.log_out.publish(data="Move "+self.arm.capitalize()+
                                                 " Arm with Motion Planning \
-                                                Failed: %s" 
+                                                Failed: %s"
                                                 %self.move_arm_error_dict[
                                                         result.error_code.val])
             return False
-
 
 if __name__ == '__main__':
     rospy.init_node('pr2_arms')

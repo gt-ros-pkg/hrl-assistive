@@ -80,19 +80,18 @@ var initClickableActions = function () {
                                         'pixel_v':pointUV[1]});
             window.p23DClient.serviceClient.callService(request,
                 function(result){
-                    console.log('p23d response: ', result);
                     if (result.error_flag !== 0) {
                         log('Error finding 3D point');
                         return
                     } else {
+                        result_pose = result.pixel3d;
                         log('pixel_2_3d response received');
-                        log("Sending look to point command");
-                        console.log(result_pose);
                         clearInterval(window.head.pubInterval);
                         window.head.pointHead(result_pose.pose.position.x,
                                               result_pose.pose.position.y,
                                               result_pose.pose.position.z,
                                               result_pose.header.frame_id);
+                        log("Sending look to point command");
                     };
                 }
             )

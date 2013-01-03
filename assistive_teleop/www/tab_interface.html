@@ -133,6 +133,14 @@ function initMjpegCanvas(){
                         image_topics.push(resp.topics[topic]);
                     }
                 }
+
+            var findKinect = function (topics_list) {
+                for (topic in topics_list) {
+                    if (topics_list[topic].indexOf('kinect') !== -1) {
+                        return topic
+                    }
+                }
+            }
             window.mjpeg = new MjpegCanvas({
             host:ROBOT,
             port:8080,
@@ -144,7 +152,7 @@ function initMjpegCanvas(){
         //               '/l_forearm_cam/image_color'],
         //	label : ['Kinect Camera', 'Wide Stereo', 'Right Arm', 'Left Arm'],
             canvasID : 'mjpeg_canvas',
-            defaultStream: 0,
+            defaultStream: findKinect(image_topics),
             width: 640,
             height: 480,
             quality: 70
