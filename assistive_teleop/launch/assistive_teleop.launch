@@ -50,7 +50,8 @@
 
   <!-- Text-to-speech backend -->
   <node pkg="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">
-    <param name="voice" value="voice_nitech_us_rms_arctic_hts"/>
+    <!--<param name="voice" value="voice_nitech_us_rms_arctic_hts"/>-->
+    <param name="voice" value="kal_diphone"/>
   </node>
 
   <!-- Launch Kinect (needed for pixel_2_3d -->
