@@ -9,14 +9,13 @@ var initMjpegCanvas = function () {
         topicsClient.callService(req, function (resp) {
                 console.log(resp)
                 for (topic in resp.topics) {
-                    if (resp.topics[topic].indexOf('/image_color') !== -1) {
+                    if (resp.topics[topic].indexOf('/image_raw') !== -1) {
                         image_topics.push(resp.topics[topic]);
                     }
                 }
-
             var findKinect = function (topics_list) {
                 for (topic in topics_list) {
-                    if (topics_list[topic].indexOf('kinect') !== -1) {
+                    if (topics_list[topic].indexOf('/rgb/') !== -1) {
                         return topic
                     }
                 }
