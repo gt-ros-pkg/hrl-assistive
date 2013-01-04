@@ -130,6 +130,4 @@
       <remap from="log_out" to="wt_log_out" />
     </node>
   </group>
-
-
 </launch>
