@@ -1,4 +1,4 @@
-function initGripper(orientation) {
+var initGripper = function (orientation) {
     $('#r_gripper_slider').slider({
         min: 0.0,
         max: 0.09,
@@ -66,7 +66,7 @@ function initGripper(orientation) {
     });
 }
 
-function teleopHead() {
+var teleopHead = function () {
     $('#bpd_default_rot, #cart_frame_select, #cart_frame_select_label, #cart_controller').hide();
     log('Controlling Head');
     $('#scale_slider').show().slider("option", "value", window.head.sliderScale);
@@ -108,7 +108,7 @@ function teleopHead() {
     });
 }
 
-function teleopBase() {
+var teleopBase = function () {
     log("Controlling Base");
     $('#bpd_default_rot, #cart_frame_select, #cart_frame_select_label, #cart_controller').hide();
     $('#scale_slider').show().slider("option", "value", window.base.scaleSlider);
@@ -139,7 +139,7 @@ function teleopBase() {
     });
 }
 
-function initTorsoSlider(orientation) {
+var initTorsoSlider = function (orientation) {
     $('#torso_slider').slider({
         min: 0.0,
         max: 0.3,
@@ -161,4 +161,19 @@ function initTorsoSlider(orientation) {
     document.getElementById('torso_min').addEventListener('click', function (e) {
         window.torso.setPosition(0.0);
     });
+}
+
+var initPr2 = function () {
+    window.head = new Pr2Head(window.ros); 
+    window.head.sliderScale = 0.5;
+    window.base = new Pr2Base(window.ros);    
+    window.base.scaleSlider = 0.5;
+    window.gripper = [new Pr2Gripper('left', window.ros),
+                      new Pr2Gripper('right', window.ros)];
+    window.torso = new Pr2Torso(window.ros);
+    window.wtLog = new window.ros.Topic({
+        name: 'wt_log_out',
+        messageType:'std_msgs/String'});
+    window.wtLog.subscribe(function (msg) {
+        window.log(msg.data);});
 }

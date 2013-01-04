@@ -3,7 +3,7 @@
   <arg name="use_kinect" default="true" />
   <arg name="kinect_ns" default="head_mount_kinect" />
   <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
-  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_color" />
+  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_raw" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="false" />
 
@@ -50,7 +50,8 @@
 
   <!-- Text-to-speech backend -->
   <node pkg="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">
-    <param name="voice" value="voice_nitech_us_rms_arctic_hts"/>
+    <!--<param name="voice" value="voice_nitech_us_rms_arctic_hts"/>-->
+    <param name="voice" value="kal_diphone"/>
   </node>
 
   <!-- Launch Kinect (needed for pixel_2_3d -->
@@ -58,7 +59,6 @@
     <arg name="camera" value="$(arg kinect_ns)" />
     <arg name="publish_tf" value="false" />
   </include>
-
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
@@ -68,11 +68,11 @@
       <param name="use_closest_pixel"  value="True"/>
   </node>
 
-  <node name="clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
+  <!--<node name="clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
         args="-r -1.570796 3.14159 0." output="screen" >
       <remap from="pose_in" to="/wt_clicked_pose" />
       <remap from="pose_out" to="/haptic_mpc/goal_pose" />
-  </node>
+  </node>-->
 
   <!--Setup Cartesian Controller for arm movements -->
   <group if="$(arg use_cart_ctrl)">
