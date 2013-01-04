@@ -10,6 +10,8 @@
     <script type="text/javascript" src="js/ros/extend_ros.js"></script>
     <script type="text/javascript" src="js/ros/actionclient.js"></script>
 
+    <script type="text/javascript" src="js/init.js"></script>
+    
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
     <script type="text/javascript" src="js/video/mjpeg_client.js"> </script>
     <script type="text/javascript" src="js/video/clickable_element.js"> </script>
@@ -57,7 +59,23 @@ $(function(){
       .button();
 });
 
-function tab_select_cb(eve, ui){
+var item_grid = function (target, type, idPrefix, rows, cols) {
+    var html = '';
+    html = html + '<table>';
+    for (var i=0; i<rows; i += 1) {
+        html = html + '<tr>';
+        for (var j=0; j<cols; j += 1) {
+            html = html + '<td>';
+            html = html + '<'+type+' id='+idPrefix+'_r'+i+'c'+j+' ></'+type+'>';
+            html = html + '</td>';
+        };
+        html = html + '</tr>';
+    };
+    html = html + '</table>';
+    $('#'+target).html(html);
+};
+
+var tab_select_cb = function (eve, ui) {
     if (ui.panel.id === 'tab_ellipse') {
         window.mjpeg.setCamera('head_registration/confirmation');
     } else {
@@ -67,38 +85,9 @@ function tab_select_cb(eve, ui){
         window.mjpeg.setCamera('ar_servo/confirmation_rotated');
     };
 };
-
-function start(){
-    log('Trying to connect to '+ROBOT);
-    window.ros = new ROS('ws://'+ ROBOT + ':'+ PORT);
-	    ros.on('close', function(e) {
-          log("Disconnected or Can't Connect to " + ROBOT + ":"+ PORT + ".");
-        });
-        ros.on('error', function(e) {
-          log("Rosbridge Connection Error!");
-    	});
-      	ros.on('connection', function(e) {
-	      log("Connected to " + ROBOT + ".");
-          extendROSJS();
-          initMjpegCanvas();
-          initPr2(); 
-          initGripper('vertical');
-          initTorsoSlider('vertical');
-          initTTS('tabTTS');
-          initARServoTab('tabARServoing');
-          initRunStop('runStopDiv');
-          initTrajPlay();
-          initEllControl();
-          initCartControl();
-          initFTDisplay('FTDisplay', {});
-          initSkinUtils();
-          teleopHead();
-        });
-};
 </script>
-
 </head>
-  <body onload="start()">
+<body onload="assistive_teleop.start()">
     <table>
       <tr>
         <td colspan='7'> <!-- Start Cell for video -->
@@ -111,17 +100,16 @@ function start(){
         </td>
       </tr>
       <tr>
-         <td>On Image Click:</td>
-         <td id="image_click_select"></td>
-          <!--<td>
-              <input type="checkbox" id="skinUseOrientation">Using Orientation</input>
-          </td>
-          <td>
-              <input type="checkbox" id="skinUsePPS">Using PPS Sensors</input>
-          </td>
-          <td>
-              <button id="rezeroSkinButton">Rezero Skin</input>
-          </td>-->
+        <td>
+          <div>
+            <table>
+              <tr id="underVideoBar">
+                <td style="text-align:right">On Image Click:</td>
+                <td id="image_click_select"></td>
+              </tr>
+            </table>
+          </div>
+        </td>
       </tr>
     </table>
 

@@ -10,6 +10,8 @@
     <script type="text/javascript" src="js/ros/extend_ros.js"></script>
     <script type="text/javascript" src="js/ros/actionclient.js"></script>
 
+    <script type="text/javascript" src="js/init.js"></script>
+
     <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
     <script type="text/javascript" src="js/video/mjpeg_client.js"> </script>
     <script type="text/javascript" src="js/video/clickable_element.js"> </script>
@@ -73,7 +75,7 @@ var item_grid = function (target, type, idPrefix, rows, cols) {
     $('#'+target).html(html);
 };
 
-function tab_select_cb(eve, ui){
+var tab_select_cb = function (eve, ui) {
     if (ui.panel.id === 'tab_ellipse') {
         window.mjpeg.setCamera('head_registration/confirmation');
     } else {
@@ -83,39 +85,10 @@ function tab_select_cb(eve, ui){
         window.mjpeg.setCamera('ar_servo/confirmation_rotated');
     };
 };
-
-function start(){
-    window.ros = new ROS('ws://'+ ROBOT + ':'+ PORT);
-	    ros.on('close', function(e) {
-          log("Disconnected or Can't Connect to " + ROBOT + ":"+ PORT + ".");
-        });
-        ros.on('error', function(e) {
-          log("Rosbridge Connection Error!");
-    	});
-      	ros.on('connection', function(e) {
-	      log("Connected to " + ROBOT + ".");
-          extendROSJS();
-          initMjpegCanvas();
-          initPr2(); 
-          initGripper('horizontal');
-          initTorsoSlider('horizontal');
-          initTTS('tabTTS');
-          initARServoTab('tabARServoing');
-          initRunStop('runStopDiv');
-          initTrajPlay();
-          initEllControl();
-          initCartControl();
-          initFTDisplay('FTDisplay', {});
-          if (window.location.hash.search('skin') !== -1) {
-              initSkinUtils();
-          }
-          teleopHead();
-        });
-};
 </script>
 </head>
 
-<body onload="start()">
+<body onload="assistive_teleop.start()">
 
 <table>
   <tr>
