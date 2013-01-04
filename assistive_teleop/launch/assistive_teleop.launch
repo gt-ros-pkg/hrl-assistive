@@ -3,7 +3,8 @@
   <arg name="use_kinect" default="true" />
   <arg name="kinect_ns" default="head_mount_kinect" />
   <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
-  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_raw" />
+  <!-- kinect_camera may need to be set to .../image_raw for simulated kinect -->
+  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_color" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="false" />
 

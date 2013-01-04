@@ -9,7 +9,7 @@ var initMjpegCanvas = function () {
         topicsClient.callService(req, function (resp) {
                 console.log(resp)
                 for (topic in resp.topics) {
-                    if (resp.topics[topic].indexOf('/image_raw') !== -1) {
+                    if (resp.topics[topic].indexOf('/image_color') !== -1) {
                         image_topics.push(resp.topics[topic]);
                     }
                 }
