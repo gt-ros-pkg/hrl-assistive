@@ -7,9 +7,8 @@ var initMjpegCanvas = function () {
             serviceType: 'rosapi/TopicsForType'})
         var req = new window.ros.ServiceRequest({type:'sensor_msgs/Image'})
         topicsClient.callService(req, function (resp) {
-                console.log(resp)
                 for (topic in resp.topics) {
-                    if (resp.topics[topic].indexOf('/image_color') !== -1) {
+                    if (resp.topics[topic].indexOf('/image_raw') !== -1) {
                         image_topics.push(resp.topics[topic]);
                     }
                 }
