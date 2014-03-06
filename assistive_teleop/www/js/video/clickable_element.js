@@ -99,9 +99,48 @@ var initClickableActions = function () {
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(lookCB);
-}
 
-//<option id="seed_reg" value="seed_reg">Register Head</option>\
+    $('#img_act_select').append('<option id="reachLeft" '+
+                                'value="reachLeft">Left Hand Goal</option>')
+    var reachLeftCB = function (e) { //Callback for looking at image
+        var sel = document.getElementById('img_act_select');
+        if (sel[sel.selectedIndex].value === 'reachLeft') {
+            pointUV = window.clickInElement(e);
+            var request = new window.ros.ServiceRequest({
+                                        'pixel_u':pointUV[0],
+                                        'pixel_v':pointUV[1]});
+            window.p23DClient.serviceClient.callService(request,
+                function(result){
+                    if (result.error_flag !== 0) {
+                        log('Error finding 3D point');
+                        return
+                    } else {
+                        result_pose = result.pixel3d;
+                        log('pixel_2_3d response received');
+                        window.poseSender.sendPose(result_pose);
+                        log("Sending Left Arm Reach point command");
+                    };
+                }
+            )
+        }
+    }
+    //Add callback to list of callbacks for clickable element
+    window.clickableCanvas.onClickCBList.push(reachLeftCB);
+
+    $('#img_act_select').append('<option id="seedReg" '+
+                                'value="seedReg">Register Head</option>')
+    var seedRegCB = function (e) { //Callback for looking at image
+        var sel = document.getElementById('img_act_select');
+        if (sel[sel.selectedIndex].value === 'seedReg') {
+            pointUV = window.clickInElement(e);
+            window.ellControl.registerHead(pointUV[0], pointUV[1]);
+            log("Sending Head Registration Command");
+        }
+    }
+    //Add callback to list of callbacks for clickable element
+    window.clickableCanvas.onClickCBList.push(seedRegCB);
+}
+//<option id="seed_reg" value="seed_reg">Register Head</option>
 //<!--<option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>-->\
 //<option id="skin_linear_move" value="skin_linear_move">Move to point with skin</option>\
 //<!--<option id="na" value="norm_approach">Normal Approach</option>-->\

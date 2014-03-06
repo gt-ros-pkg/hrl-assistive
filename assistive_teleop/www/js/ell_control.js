@@ -31,6 +31,7 @@ var EllipsoidControl = function (ros) {
     ellCon.registerHead = function (u,v) {
         ellCon.headRegServiceClient.callService({u:u,v:v}, function (resp) {
             console.log('Initialize Head Registration Service Returned.');
+            $('#img_act_select').val('looking');
         });
     };
 
@@ -151,7 +152,7 @@ var initEllControl = function () {
     window.mirrorPointer = new MirrorPointer(window.ros);
 
     var head_reg_cb = function () {
-        $('#img_act_select').val('seed_reg');
+        $('#img_act_select').val('seedReg');
         window.mjpeg.setCamera('head_registration/confirmation');
         alert('Click on your cheek in the video to register the ellipse.');
     };

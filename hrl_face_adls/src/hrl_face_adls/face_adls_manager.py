@@ -27,6 +27,8 @@ from hrl_face_adls.msg import StringArray
 from hrl_face_adls.srv import EnableFaceController, EnableFaceControllerResponse
 from hrl_face_adls.srv import RequestRegistration
 
+roslib.load_manifest('hrl_haptic_manipulation_in_clutter_srvs')
+from hrl_haptic_manipulation_in_clutter_srvs.srv import EnableHapticMPC, EnableHapticMPCRequest
 ##
 # Returns a function which will call the callback immediately in
 # a different thread.
@@ -67,13 +69,13 @@ class ForceCollisionMonitor(object):
                     rospy.get_time() - self.last_dangerous_cb_time > DANGEROUS_CB_COOLDOWN):
                 self.dangerous_cb(self.dangerous_force_thresh)
                 self.last_dangerous_cb_time = rospy.get_time()
-            elif (force_mag > self.contact_force_thresh and 
+            elif (force_mag > self.contact_force_thresh and
                     rospy.get_time() - self.last_contact_cb_time > CONTACT_CB_COOLDOWN):
                 self.contact_cb(self.contact_force_thresh)
                 self.last_contact_cb_time = rospy.get_time()
             elif force_mag > self.activity_force_thresh:
                 self.update_activity()
-            elif (self.is_inactive() and 
+            elif (self.is_inactive() and
                     rospy.get_time() - self.last_timeout_cb_time > TIMEOUT_CB_COOLDOWN):
                 self.timeout_cb(self.timeout_time)
                 self.last_timeout_cb_time = rospy.get_time()
@@ -107,7 +109,7 @@ class FaceADLsManager(object):
 
         self.ellipsoid = EllipsoidSpace()
         self.controller_switcher = ControllerSwitcher()
-        self.ee_frame = '/l_gripper_shaver45_frame'
+        self.ee_frame = '/l_gripper_shaver305_frame'
         self.tfl = TransformListener()
         self.is_forced_retreat = False
         self.pose_traj_pub = rospy.Publisher('/haptic_mpc/goal_pose_array', PoseArray)
@@ -127,6 +129,8 @@ class FaceADLsManager(object):
                                                    EnableFaceController, self.enable_controller_cb)
         self.request_registration = rospy.ServiceProxy("/request_registration", RequestRegistration)
 
+        self.enable_mpc_srv = rospy.ServiceProxy('/haptic_mpc/enable_mpc', EnableHapticMPC)
+
         self.test_pose = rospy.Publisher('face_adls/test_pose', PoseStamped, latch=True)
         self.test_pose1 = rospy.Publisher('face_adls/test_pose1', PoseStamped, latch=True)
         self.test_pose2 = rospy.Publisher('face_adls/test_pose2', PoseStamped, latch=True)
@@ -138,7 +142,15 @@ class FaceADLsManager(object):
 
     def stop_moving(self):
         """Send empty PoseArray to skin controller to stop movement"""
-        self.pose_traj_pub.publish(PoseArray()) #Send empty msg to skin controller
+        for x in range(2):
+            self.pose_traj_pub.publish(PoseArray()) #Send empty msg to skin controller
+        cart_traj_msg = [PoseConv.to_pose_msg(self.current_ee_pose(self.ee_frame))]
+        head = Header()
+        head.frame_id = '/torso_lift_link'
+        head.stamp = rospy.Time.now()
+        pose_array = PoseArray(head, cart_traj_msg)
+        self.pose_traj_pub.publish(pose_array)
+        rospy.loginfo( "Sent stop moving commands!")
 
     def current_ee_pose(self, link, frame='/torso_lift_link'):
         """Get current end effector pose from tf"""
@@ -177,7 +189,7 @@ class FaceADLsManager(object):
             try:
                 now = rospy.Time.now()
                 reg_pose.header.stamp = now
-                self.tfl.waitForTransform(reg_pose.header.frame_id, '/base_link', 
+                self.tfl.waitForTransform(reg_pose.header.frame_id, '/base_link',
                                           now, rospy.Duration(8.0))
                 ellipse_frame_base = self.tfl.transformPose('/base_link', reg_pose)
             except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
@@ -195,7 +207,7 @@ class FaceADLsManager(object):
             self.global_move_poses_pub.publish(sorted(self.global_poses.keys()))
 
             #Check rotating gripper based on side of body 
-            if not self.flip_gripper:
+            if self.flip_gripper:
                 self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
                 print "Rotating gripper by PI around x-axis"
             else:
@@ -203,18 +215,19 @@ class FaceADLsManager(object):
                 print "NOT Rotating gripper around x-axis"
 
             # check if arm is near head
-            cart_pos, cart_quat = self.current_ee_pose(self.ee_frame)
-            ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal((cart_pos, cart_quat))
-            equals = ell_pos == self.ellipsoid.enforce_bounds(ell_pos)
-            print ell_pos, equals
-            if self.ellipsoid._lon_bounds[0] >= 0 and ell_pos[1] >= 0:
-                arm_in_bounds =  np.all(equals)
-            else:
-                ell_lon_1 = np.mod(ell_pos[1], 2 * np.pi)
-                min_lon = np.mod(self.ellipsoid._lon_bounds[0], 2 * np.pi)
-                arm_in_bounds = (equals[0] and
-                        equals[2] and 
-                        (ell_lon_1 >= min_lon or ell_lon_1 <= self.ellipsoid._lon_bounds[1]))
+#            cart_pos, cart_quat = self.current_ee_pose(self.ee_frame)
+#            ell_pos, ell_quat = self.ellipsoid.pose_to_ellipsoidal((cart_pos, cart_quat))
+#            equals = ell_pos == self.ellipsoid.enforce_bounds(ell_pos)
+#            print ell_pos, equals
+#            if self.ellipsoid._lon_bounds[0] >= 0 and ell_pos[1] >= 0:
+#                arm_in_bounds =  np.all(equals)
+#            else:
+#                ell_lon_1 = np.mod(ell_pos[1], 2 * np.pi)
+#                min_lon = np.mod(self.ellipsoid._lon_bounds[0], 2 * np.pi)
+#                arm_in_bounds = (equals[0] and
+#                        equals[2] and 
+#                        (ell_lon_1 >= min_lon or ell_lon_1 <= self.ellipsoid._lon_bounds[1]))
+            arm_in_bounds = True
 
             self.setup_force_monitor()
 
@@ -231,11 +244,17 @@ class FaceADLsManager(object):
                 print "Controller switch to l_arm_controller failed"
                 success = False
             self.controller_enabled_pub.publish(Bool(success))
+            req = EnableHapticMPCRequest()
+            req.new_state = 'enabled'
+            resp = self.enable_mpc_srv.call(req)
         else:
             self.stop_moving()
             self.controller_enabled_pub.publish(Bool(False))
             rospy.loginfo(Messages.DISABLE_CONTROLLER)
-            success =  True
+            req = EnableHapticMPCRequest()
+            req.new_state = 'disabled'
+            self.enable_mpc_srv.call(req)
+            success = False
         return EnableFaceControllerResponse(success)
 
     def setup_force_monitor(self):
@@ -261,16 +280,16 @@ class FaceADLsManager(object):
             if ell_pos[2] < RETREAT_HEIGHT * 0.9 and self.force_monitor.is_inactive():
                 self.publish_feedback(Messages.TIMEOUT_RETREAT % time)
                 self.retreat_move(RETREAT_HEIGHT, LOCAL_VELOCITY)
-        self.force_monitor.register_timeout_cb()
+        self.force_monitor.register_timeout_cb(timeout_cb)
 
         def contact_cb(force):
             self.force_monitor.update_activity()
             if not self.is_forced_retreat:
                 self.stop_moving()
                 self.publish_feedback(Messages.CONTACT_FORCE % force)
-                #rospy.loginfo("[face_adls_manZger] Arm stopped due to making contact.")
+                rospy.loginfo("[face_adls_manZger] Arm stopped due to making contact.")
 
-        self.force_monitor.register_contact_cb()
+        self.force_monitor.register_contact_cb(contact_cb)
         self.force_monitor.start_activity()
         self.force_monitor.update_activity()
         self.is_forced_retreat = False
@@ -337,11 +356,9 @@ class FaceADLsManager(object):
         retreat_ell_pos = [curr_ell_pos[0], curr_ell_pos[1], RETREAT_HEIGHT]
         retreat_ell_quat = trans.quaternion_multiply(self.gripper_rot, [1.,0.,0.,0.])
         approach_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], RETREAT_HEIGHT]
-        #approach_ell_quat = trans.quaternion_multiply(self.gripper_rot, goal_ell_pose[1])
-        approach_ell_quat = goal_ell_pose[1]
+        approach_ell_quat = trans.quaternion_multiply(self.gripper_rot, goal_ell_pose[1])
         final_ell_pos = [goal_ell_pose[0][0], goal_ell_pose[0][1], goal_ell_pose[0][2] - HEIGHT_CLOSER_ADJUST]
-        #final_ell_quat = trans.quaternion_multiply(self.gripper_rot, goal_ell_pose[1])
-        final_ell_quat = goal_ell_pose[1]
+        final_ell_quat = trans.quaternion_multiply(self.gripper_rot, goal_ell_pose[1])
         
         cart_ret_pose = self.ellipsoid.ellipsoidal_to_pose((retreat_ell_pos, retreat_ell_quat))
         cart_ret_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_ret_pose)

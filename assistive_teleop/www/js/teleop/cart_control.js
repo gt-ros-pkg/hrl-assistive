@@ -76,7 +76,9 @@ var initCartControl = function () {
         });
     $('#cont_r_arm').bind('click.rfh', function () {
             //enableCartControl(window.cartControl[1]);
-            showArmControls(window.cartControl[1]);
+           // showArmControls(window.cartControl[1]);
+             hideControls();
+            
         });
     $('#default_rot_slider').slider({value : Math.PI/4,
                                      min : 0,
