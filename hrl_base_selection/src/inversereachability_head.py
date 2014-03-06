@@ -341,6 +341,7 @@ class InverseReachabilityDemo:
         v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]= 3.14/2
         v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
         v[self.robot.GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
+        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
         self.robot.SetActiveDOFValues(v)
     
         # load inverserechability database
@@ -474,21 +475,23 @@ def main(env,options):
     else:
         robot.SetActiveManipulator('leftarm')
     target = env.ReadKinBodyXMLFile(options.target)
-    env.Add(target)
+    
     env.Load('/home/ari/git/rip/project_3/openrave_data/ADA_Wheelchair.dae')
+    #env.Add(target)
     wheelchair = env.GetBodies()[1]
     # initialize target pose, for visualization and collision checking purpose only
-    O_T_Target = mat([[1,0,0,1],[0,1,0,0],[0,0,1,.9],[0,0,0,1]])
+    O_T_Target = mat([[1,0,0,1],[0,1,0,0],[0,0,1,1.25],[0,0,0,1]])
     target.SetTransform(array(O_T_Target))
-    Wheelchair_location = mat([[1,0,0,1],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+    wc_angle =  m.pi
+    Wheelchair_location = mat([[m.cos(wc_angle),-m.sin(wc_angle),0,1.5],[m.sin(wc_angle),m.cos(wc_angle),0,.385],[0,0,1,0],[0,0,0,1]])
     wheelchair.SetTransform(array(Wheelchair_location))
 
     # set up goal grasp transform
     # goal grasp transform specified in global frame, this equals manip.GetTransform() in the goal state   
-    angle = m.pi
-    goal_pose = array([[    m.cos(angle),     -m.sin(angle),                0,            0.95],
+    angle = 0#m.pi
+    goal_pose = array([[    m.cos(angle),     -m.sin(angle),                0,               1],
                        [    m.sin(angle),      m.cos(angle),                0,               0],
-                       [               0,                 0,                1,               0],
+                       [               0,                 0,                1,            1.25],
                        [               0,                 0,                0,               1]]) 
     O_T_grasp = array([[ -9.88017917e-01,  -1.54339954e-01 ,  0.00000000e+00 ,  1.06494129e+00],
                        [  1.54339954e-01,  -9.88017917e-01 ,  0.00000000e+00 ,  5.51449812e-05],
