@@ -1,0 +1,34 @@
+<package>
+  <description brief="hrl_base_selection">
+
+     hrl_base_selection
+
+  </description>
+  <author>Ari Kapusta</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_base_selection</url>
+
+    <!-- System Dependencies-->
+    <rosdep name="python"/>
+    <rosdep name="python-openopt"/>
+
+    <!-- General ROS dependencies -->
+    <depend package="rospy"/>
+    <depend package="std_msgs"/>
+    <depend package="geometry_msgs"/>
+    <depend package="trajectory_msgs"/>
+    <depend package="interactive_markers"/>
+
+    <!-- HRL specific dependencies -->
+    <depend package="hrl_lib"/>
+    <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
+    <depend package="hrl_haptic_manipulation_in_clutter_srvs"/>
+
+
+    <!-- Robot specific packages. Used for the robot interface msg definitions -->
+    <depend package="pr2_controllers_msgs"/>  <!-- used by the PR2 arm client -->
+
+</package>
+
+

@@ -1,0 +1,7 @@
+geometry_msgs/PoseStamped current_loc
+geometry_msgs/PoseStamped goal
+geometry_msgs/PoseStamped head
+
+---
+
+geometry_msgs/PoseStamped BaseGoal
