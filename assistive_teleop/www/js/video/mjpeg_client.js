@@ -8,7 +8,7 @@ var initMjpegCanvas = function () {
         var req = new window.ros.ServiceRequest({type:'sensor_msgs/Image'})
         topicsClient.callService(req, function (resp) {
                 for (topic in resp.topics) {
-                    if (resp.topics[topic].indexOf('/image_raw') !== -1) {
+                    if (resp.topics[topic].indexOf('/image_color') !== -1) {
                         image_topics.push(resp.topics[topic]);
                     }
                 }
@@ -25,7 +25,8 @@ var initMjpegCanvas = function () {
             topic : image_topics,
             label : image_topics,
             canvasID : 'mjpeg_canvas',
-            defaultStream: findKinect(image_topics),
+//            defaultStream: findKinect(image_topics),
+            defaultStream: '/openni_kinect_head/rgb/image_color',
             width: 640,
             height: 480,
             quality: 70

@@ -1,6 +1,7 @@
 <launch>
-    <arg name="ar_dir" />
-    <arg name="cam_params_dir" />
+    <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+    <arg name="ar_dir" value="$(find rfh_data)/ar_poses" />
+    <arg name="cam_params_dir" value="$(find rfh_data)/camera_parameters"/>
     <arg name="arm" value="r" />
 
 	<node name="r_ar_pose" pkg="ar_pose" type="ar_single" respawn="false" output="screen">
@@ -50,10 +51,10 @@
         <remap from="rotated/image" to="/ar_servo/confirmation_rotated"/>
     </node>
 
-    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
+    <!--node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
           output="screen" >
         <rosparam command="load" file="$(arg ar_dir)/wheelchair_poses.yaml" />
-    </node>
+    </node>-->
 
     <rosparam command="load" file="$(arg cam_params_dir)/$(arg arm)_forearm_cam_settings.yaml"
               param="/$(arg arm)_forearm_cam" />
