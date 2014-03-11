@@ -75,10 +75,13 @@ def handle_select_base(req):
                 with env:
                     sol = manip.FindIKSolution(pr2_B_goal, op.IkFilterOptions.CheckEnvCollisions)
                     if sol != None:
-	                pos_goal = [base_position[0,3],base_position[1,3],base_position[2,3]]
-	                ori_goal = tr.matrix_to_quaternion(base_position[0:3,0:3])
+                        (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
+                        odom_goal = createBMatrix(trans,rot)*base_position
+	                pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
+	                ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
 	                psm = PoseStamped()
-	                psm.header.frame_id = '/base_link'
+                        
+	                psm.header.frame_id = '/odom_combined'
 	                psm.pose.position.x=pos_goal[0]
 	                psm.pose.position.y=pos_goal[1]
 	                psm.pose.position.z=pos_goal[2]
@@ -96,6 +99,7 @@ def handle_select_base(req):
     return None
 
 def select_base_server():
+    listener = tf.TransformListener()
     rospy.init_node('select_base_server')
     s = rospy.Service('select_base_position', BaseMove, handle_select_base)
     print "Ready to select base."
