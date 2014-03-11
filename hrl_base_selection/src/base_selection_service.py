@@ -74,7 +74,7 @@ def handle_select_base(req):
 	                pos_goal = [base_position[0,3],base_position[1,3],base_position[2,3]]
 	                ori_goal = tr.matrix_to_quaternion(base_position[0:3,0:3])
 	                psm = PoseStamped()
-	                psm.header.frame_id = '/torso_base_link'
+	                psm.header.frame_id = '/base_link'
 	                psm.pose.position.x=pos_goal[0]
 	                psm.pose.position.y=pos_goal[1]
 	                psm.pose.position.z=pos_goal[2]
