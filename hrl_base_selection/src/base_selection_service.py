@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys, optparse
 
 import rospy
@@ -6,11 +7,14 @@ import numpy as np
 import math as m
 import roslib
 roslib.load_manifest('hrl_base_selection')
+roslib.load_manifest('hrl_haptic_mpc')
 import hrl_lib.transforms as tr
 from hrl_base_selection.srv import *
 import openravepy as op
 from helper_functions import createBMatrix
 from geometry_msgs.msg import PoseStamped
+
+
 
 
 
@@ -46,7 +50,7 @@ def handle_select_base(req):
     wheelchair.SetTransform(array(wheelchair_location))
     for i in [0,.1,.2,-.1,-.2]:
         for j in [0,.1,.2,-.1,-.2]:
-            for k in [0,m.pi/8,m.pi/4,-m.pi/8,-m.pi/4]
+            for k in [0,m.pi/8,m.pi/4,-m.pi/8,-m.pi/4]:
                 #goal_pose = req.goal
                 angle = m.pi
                 head_B_goal =  np.matrix([[    m.cos(angle),     -m.sin(angle),                0,              .1],
@@ -70,7 +74,7 @@ def handle_select_base(req):
                     ikmodel.autogenerate()
                 with env:
                     sol = manip.FindIKSolution(pr2_B_goal, op.IkFilterOptions.CheckEnvCollisions)
-                    if sol =! None:
+                    if sol != None:
 	                pos_goal = [base_position[0,3],base_position[1,3],base_position[2,3]]
 	                ori_goal = tr.matrix_to_quaternion(base_position[0:3,0:3])
 	                psm = PoseStamped()

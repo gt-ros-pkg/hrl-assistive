@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import numpy as np
 import roslib; roslib.load_manifest('hrl_haptic_mpc')
 import rospy
