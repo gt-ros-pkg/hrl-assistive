@@ -49,7 +49,7 @@ def handle_select_base(req):
     
     corner_B_head = np.matrix([[m.cos(0),-m.sin(0),0,.3],[m.sin(0),m.cos(0),0,.385],[0,0,1,0],[0,0,0,1]])
     wheelchair_location = pr2_B_wc * corner_B_head.I
-    wheelchair.SetTransform(array(wheelchair_location))
+    wheelchair.SetTransform(np.array(wheelchair_location))
     for i in [0,.1,.2,-.1,-.2]:
         for j in [0,.1,.2,-.1,-.2]:
             for k in [0,m.pi/8,m.pi/4,-m.pi/8,-m.pi/4]:
