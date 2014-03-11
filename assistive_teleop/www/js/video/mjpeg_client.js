@@ -25,8 +25,7 @@ var initMjpegCanvas = function () {
             topic : image_topics,
             label : image_topics,
             canvasID : 'mjpeg_canvas',
-//            defaultStream: findKinect(image_topics),
-            defaultStream: '/openni_kinect_head/rgb/image_color',
+            defaultStream: findKinect(image_topics),
             width: 640,
             height: 480,
             quality: 70
