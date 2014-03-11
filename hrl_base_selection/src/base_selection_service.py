@@ -13,6 +13,7 @@ from hrl_base_selection.srv import *
 import openravepy as op
 from helper_functions import createBMatrix
 from geometry_msgs.msg import PoseStamped
+import tf
 
 
 
@@ -99,8 +100,8 @@ def handle_select_base(req):
     return None
 
 def select_base_server():
-    listener = tf.TransformListener()
     rospy.init_node('select_base_server')
+    listener = tf.TransformListener()
     s = rospy.Service('select_base_position', BaseMove, handle_select_base)
     print "Ready to select base."
     rospy.spin()
