@@ -37,13 +37,13 @@ def handle_select_base(req):
     v[robot.GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
     v[robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
     robot.SetActiveDOFValues(v)
-    env.Load('~/git/gt-ros-pkg.hrl-assistive/hrl_base_selection/models/ADA_Wheelchair.dae')
+    env.Load('../models/ADA_Wheelchair.dae')
     wheelchair = env.GetBodies()[1]
     wc_angle =  m.pi
-    pr2_B_wc =   np.matrix([[    req.head[0,0],     req.head[0,1],               0,   req.head[0,3]],
-                            [    req.head[1,0],     req.head[1,1],               0,   req.head[1,3]],
-                            [               0,                 0,                1,               0],
-                            [               0,                 0,                0,               1]])
+    pr2_B_wc =   np.matrix([[    head[0,0],     head[0,1],               0,    head[0,3]],
+                            [    head[1,0],     head[1,1],               0,    head[1,3]],
+                            [            0,             0,                1,           0],
+                            [            0,             0,                0,           1]])
     
     corner_B_head = np.matrix([[m.cos(0),-m.sin(0),0,.3],[m.sin(0),m.cos(0),0,.385],[0,0,1,0],[0,0,0,1]])
     wheelchair_location = pr2_B_wc * corner_B_head.I
@@ -57,7 +57,7 @@ def handle_select_base(req):
                                           [    m.sin(angle),      m.cos(angle),                0,               0],
                                           [               0,                 0,                1,               0],
                                           [               0,                 0,                0,               1]])
-                pr2_B_goal = req.head * head_B_goal
+                pr2_B_goal = head * head_B_goal
                 angle_base = m.pi
                 wc_B_goalpr2  =   np.matrix([[    m.cos(angle_base),     -m.sin(angle_base),                0,             .5+i],
                                              [    m.sin(angle_base),      m.cos(angle_base),                0,             .5+j],
