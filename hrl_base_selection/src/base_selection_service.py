@@ -19,12 +19,12 @@ from geometry_msgs.msg import PoseStamped
 
 
 def handle_select_base(req):
-    pos_temp = [req.head.pose.pose.position.x,req.head.pose.pose.position.y,req.head.pose.pose.position.z]
-    ori_temp = [req.head.pose.pose.orientation.x,req.head.pose.pose.orientation.y,req.head.pose.pose.orientation.z,req.head.pose.pose.orientation.w]
+    pos_temp = [req.head.pose.position.x,req.head.pose.position.y,req.head.pose.position.z]
+    ori_temp = [req.head.pose.orientation.x,req.head.pose.orientation.y,req.head.pose.orientation.z,req.head.pose.orientation.w]
     head = createBMatrix(pos_temp,ori_temp)
     
-    pos_temp = [req.goal.pose.pose.position.x,req.goal.pose.pose.position.y,req.goal.pose.pose.position.z]
-    ori_temp = [req.goal.pose.pose.orientation.x,req.goal.pose.pose.orientation.y,req.goal.pose.pose.orientation.z,req.goal.pose.pose.orientation.w]
+    pos_temp = [req.goal.pose.position.x,req.goal.pose.position.y,req.goal.pose.position.z]
+    ori_temp = [req.goal.pose.orientation.x,req.goal.pose.orientation.y,req.goal.pose.orientation.z,req.goal.pose.orientation.w]
     goal = createBMatrix(pos_temp,ori_temp)
 
     print 'I will move to be able to reach the mouth.'
@@ -37,7 +37,7 @@ def handle_select_base(req):
     v[robot.GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
     v[robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
     robot.SetActiveDOFValues(v)
-    env.Load('/home/ari/git/rip/project_3/openrave_data/ADA_Wheelchair.dae')
+    env.Load('~/git/gt-ros-pkg.hrl-assistive/hrl_base_selection/models/ADA_Wheelchair.dae')
     wheelchair = env.GetBodies()[1]
     wc_angle =  m.pi
     pr2_B_wc =   np.matrix([[    req.head[0,0],     req.head[0,1],               0,   req.head[0,3]],
