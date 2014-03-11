@@ -7,16 +7,16 @@
     <arg name="data_pkg" value="$(find rfh_data)" />
     <arg name="ar_dir" value="$(arg data_pkg)/ar_poses" />
     <arg name="arm_traj_dir" value="$(arg data_pkg)/gt_arm_trajectories" />
-    <arg name="arm_traj_dir" value="henry_arm_trajectories" /> 
+    <!--arg name="arm_traj_dir" value="henry_arm_trajectories" /--> 
     <arg name="ell_poses_dir" value="$(arg data_pkg)/henry_ell_poses" />
     <arg name="head_pcs_dir" value="$(arg data_pkg)/head_point_clouds" />
     <arg name="ell_regs_dir" value="$(arg data_pkg)/ellipsoid_registrations" />
     <arg name="cam_params_dir" value="$(arg data_pkg)/camera_parameters" />
-    <arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" />
+    <!--arg name="ft_dir" value="$(arg data_pkg)/ft_zero_params" /-->
     <arg name="ft_dir" value="$(find hrl_ft)/params" />
 
     <!--         kinect params          -->
-    <arg name="kinect_points" default="/head_mount_kinect/rgb/points" />
+    <arg name="kinect_points" default="/head_mount_kinect/depth_registered/points" />
     <arg name="kinect_camera" default="/head_mount_kinect/rgb/image_color" />
 
     <!--             nodes              -->

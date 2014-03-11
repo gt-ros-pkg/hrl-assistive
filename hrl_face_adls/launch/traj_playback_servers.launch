@@ -1,6 +1,6 @@
 <launch>
     <arg name="subject" />
-    <arg name="arm_traj_dir" value="$(find rfh_data)/gt_arm_trajectories"/>
+    <arg name="arm_traj_dir" default="$(find rfh_data)/gt_arm_trajectories"/>
     
     <node pkg="hrl_pr2_traj_playback" name="l_arm_pose_move_controller" type="traj_playback.py"
           output="screen" args="-v -l -c 'l_arm_controller'" >
