@@ -1,7 +1,7 @@
 <launch>
     <include file="$(find pr2_machine)/$(env ROBOT).machine" />
-    <arg name="ar_dir" value="$(find rfh_data)/ar_poses" />
-    <arg name="cam_params_dir" value="$(find rfh_data)/camera_parameters"/>
+    <arg name="ar_dir" default="$(find rfh_data)/ar_poses" />
+    <arg name="cam_params_dir" default="$(find rfh_data)/camera_parameters"/>
     <arg name="arm" value="r" />
 
 	<node name="r_ar_pose" pkg="ar_pose" type="ar_single" respawn="false" output="screen">
