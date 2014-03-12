@@ -17,11 +17,7 @@ from geometry_msgs.msg import PoseStamped
 import tf
 
 
-
-
-
 def handle_select_base(req):
-    listener = tf.TransformListener()
     print 'My given inputs were: \n', req.goal, req.head
     pos_temp = [req.head.pose.position.x,req.head.pose.position.y,req.head.pose.position.z]
     ori_temp = [req.head.pose.orientation.x,req.head.pose.orientation.y,req.head.pose.orientation.z,req.head.pose.orientation.w]
@@ -34,7 +30,7 @@ def handle_select_base(req):
 
     print 'I will move to be able to reach the mouth.'
     env = op.Environment()
-    env.SetViewer('qtcoin')
+    #env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
     robot = env.GetRobots()[0]
     v = robot.GetActiveDOFValues()
@@ -56,7 +52,7 @@ def handle_select_base(req):
     corner_B_head = np.matrix([[m.cos(0.),-m.sin(0.),0.,.45],[m.sin(0.),m.cos(0.),0.,.34],[0.,0.,1,0.],[0.,0.,0.,1]])
     wheelchair_location = pr2_B_wc * corner_B_head.I
     wheelchair.SetTransform(np.array(wheelchair_location))
-    for i in [0.,.1,,.2,.3,.4,.5,-.1,-.2,-.3]:
+    for i in [0.,.1,.2,.3,.4,.5,-.1,-.2,-.3]:
         for j in [0.,.1,.2,.3,-.1,-.2,-.3,-.3]:
             for k in [0.,m.pi/4,-m.pi/4,]:
                 #goal_pose = req.goal
@@ -109,11 +105,11 @@ def handle_select_base(req):
     return None
 
 def select_base_server():
-    rospy.init_node('select_base_server')
-    
     s = rospy.Service('select_base_position', BaseMove, handle_select_base)
     print "Ready to select base."
     rospy.spin()
 
 if __name__ == "__main__":
+    rospy.init_node('select_base_server')
+    listener = tf.TransformListener()
     select_base_server()
