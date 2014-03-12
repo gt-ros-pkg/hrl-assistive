@@ -2,13 +2,14 @@
 
 from threading import Lock
 import copy
+import numpy as np
 
 import roslib
 roslib.load_manifest('hrl_face_adls')
 import rospy
 from std_msgs.msg import String, Int32
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
-from tf import TransformListener
+from tf import TransformListener, transformations as tft
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove, BaseMoveRequest
@@ -23,13 +24,18 @@ class ServoingManager(object):
     """ Manager for providing test goals to pr2 ar servoing. """
 
     def __init__(self):
+        self.tfl = TransformListener()
+        rospy.sleep(1) # Hack to have tf for latched ellipse topic cb
+
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
+        self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
+        self.feedback_pub = rospy.Publisher('wt_log_out', String)
+
+        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
+
         self.ui_input_sub = rospy.Subscriber("action_location_goal", String, self.ui_cb)
         self.head_pose_sub = rospy.Subscriber("ellipsoid_params", EllipsoidParams, self.ell_cb)
-        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
-        self.feedback_pub = rospy.Publisher('wt_log_out', String)
-        self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
-        self.tfl = TransformListener()
+
         self.lock = Lock()
         self.head_pose = None
         self.goal_pose = None
@@ -55,7 +61,7 @@ class ServoingManager(object):
         goal_ps_ell.pose.orientation = Quaternion(*quat)
 
         now = rospy.Time.now()
-        self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(10))
+        self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(3))
         goal_ps_ell.header.stamp = now
         goal_ps = self.tfl.transformPose('base_link', goal_ps_ell)
         with self.lock:
@@ -76,6 +82,16 @@ class ServoingManager(object):
         self.goal_data_pub.publish(ar_data)
 
     def call_base_selection(self):
+        ## Place holder return
+        bg = PoseStamped()
+        bg.header.stamp = rospy.Time.now()
+        bg.header.frame_id = 'base_link'
+        bg.pose.position = Point(0.5, 0.5, 0.)
+        q = tft.quaternion_from_euler(0., 0., -np.pi/3.)
+        bg.pose.orientation = Quaternion(*q)
+        return bg
+        ## End Place Holder
+
         bm = BaseMoveRequest()
         bm.head = self.head_pose
         bm.goal = self.goal_pose
@@ -92,9 +108,14 @@ class ServoingManager(object):
         head_pose.pose.orientation.z = ell_msg.e_frame.transform.rotation.z
         head_pose.pose.orientation.w = ell_msg.e_frame.transform.rotation.w
         now = rospy.Time.now()
-        self.tfl.waitForTransform('base_link', head_pose.header.frame_id, now, rospy.Duration(10))
-        head_pose.header.stamp = now
-        self.head_pose = self.tfl.transformPose("base_link", head_pose)
+        try:
+            self.tfl.waitForTransform('base_link', head_pose.header.frame_id, now, rospy.Duration(3))
+            head_pose.header.stamp = now
+            self.head_pose = self.tfl.transformPose("base_link", head_pose)
+            rospy.loginfo("[%s] Successfully grabbed ellipse pose" % rospy.get_name())
+        except Exception as e:
+            rospy.loginfo("TF Exception, wait for new ell registration")
+            self.feedback_pub.publish(String("Please re-register the head"))
 
 
 if __name__ == '__main__':
