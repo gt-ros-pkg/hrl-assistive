@@ -7,13 +7,15 @@ import numpy as np
 import roslib
 roslib.load_manifest('hrl_face_adls')
 import rospy
-from std_msgs.msg import String, Int32
+from std_msgs.msg import String, Int32, Int8, Bool
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from tf import TransformListener, transformations as tft
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove, BaseMoveRequest
 from hrl_ellipsoidal_control.msg import EllipsoidParams
+from joint_trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from pr2_controllers_msgs.msg import JointTrajectoryControllerState as JTCS
 
 POSES = {'knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
          'arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
@@ -30,16 +32,43 @@ class ServoingManager(object):
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
+        self.arm_traj_pub = rospy.Publisher("l_arm_controller/command", JointTrajectory)
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
 
         self.ui_input_sub = rospy.Subscriber("action_location_goal", String, self.ui_cb)
         self.head_pose_sub = rospy.Subscriber("ellipsoid_params", EllipsoidParams, self.ell_cb)
+        self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
+        self.joint_name_sub = rospy.Subscriber("r_arm_controller/state", JTCS, self.joint_name_cb)
 
         self.lock = Lock()
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
+        self.ik_sol = None
+        self.joint_names = None
+
+    def joint_name_cb(self, msg):
+        if len(msg.joint_names) != 7:
+            return
+        self.joint_names = msg.joint_names
+        self.joint_name_sub.unregister()
+
+    def servo_fdbk_cb(self, msg):
+        if not msg.data == 5:
+            return
+        self.enable_mpc(False)
+        rospy.loginfo("Servoing Succeeded.  Wait 30 seconds and publish goal ik")
+        rospy.sleep(30.)
+        jtp = JointTrajectoryPoint()
+        jtp.time_from_start = rospy.Duration(5)
+        jtp.velocities = [0]*7
+        jtp.accelerations = [0]*7
+        jtp.positions = self.ik_sol
+        jt = JointTrajectory()
+        jt.points.append(jtp)
+        jt.joint_names = self.joint_names
+        self.arm_traj_pub.publish(jt)
 
     def ui_cb(self, msg):
         if self.head_pose is None:
@@ -70,7 +99,8 @@ class ServoingManager(object):
             self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
         ar_data = ARServoGoalData()
-        base_goal = self.call_base_selection()
+        base_goal, ik_solution = self.call_base_selection()
+        self.ik_sol = ik_solution
         self.servo_goal_pub.publish(base_goal)
 
         with self.lock:
@@ -83,19 +113,20 @@ class ServoingManager(object):
 
     def call_base_selection(self):
         ## Place holder return
-        bg = PoseStamped()
-        bg.header.stamp = rospy.Time.now()
-        bg.header.frame_id = 'base_link'
-        bg.pose.position = Point(0.5, 0.5, 0.)
-        q = tft.quaternion_from_euler(0., 0., -np.pi/3.)
-        bg.pose.orientation = Quaternion(*q)
-        return bg
+#        bg = PoseStamped()
+#        bg.header.stamp = rospy.Time.now()
+#        bg.header.frame_id = 'ar_marker'
+#        bg.pose.position = Point(0., 0., 0.5)
+#        q = tft.quaternion_from_euler(0., np.pi/2, 0.)
+#        bg.pose.orientation = Quaternion(*q)
+#        return bg
         ## End Place Holder
 
         bm = BaseMoveRequest()
         bm.head = self.head_pose
         bm.goal = self.goal_pose
-        return self.base_selection_client.call(bm).BaseGoal
+        resp = self.base_selection_client.call(bm)
+        return resp.base_goal, resp.ik_solution
 
     def ell_cb(self, ell_msg):
         head_pose = PoseStamped()
