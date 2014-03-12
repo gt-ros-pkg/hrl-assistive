@@ -18,7 +18,7 @@ def select_base_client():
     angle = m.pi
     pr2_B_head  =  np.matrix([[    m.cos(angle),     -m.sin(angle),                0.,              3.],
                               [    m.sin(angle),      m.cos(angle),                0.,              .3],
-                              [              0.,                0.,                1.,             1.5],
+                              [              0.,                0.,                1.,             1.4],
                               [              0.,                0.,                0.,              1.]])
     pos_goal = [pr2_B_head[0,3],pr2_B_head[1,3],pr2_B_head[2,3]]
     ori_goal = tr.matrix_to_quaternion(pr2_B_head[0:3,0:3])
@@ -32,10 +32,10 @@ def select_base_client():
     psm_head.pose.orientation.z=ori_goal[2]
     psm_head.pose.orientation.w=ori_goal[3]
 
-    goal_angle = 0
-    pr2_B_goal  =  np.matrix([[    m.cos(goal_angle),     -m.sin(goal_angle),                0.,              2.5],
-                              [    m.sin(goal_angle),      m.cos(goal_angle),                0.,              .2],
-                              [                   0.,                     0.,                1.,             1.5],
+    goal_angle = 0#m.pi/2
+    pr2_B_goal  =  np.matrix([[    m.cos(goal_angle),     -m.sin(goal_angle),                0.,              2.7],
+                              [    m.sin(goal_angle),      m.cos(goal_angle),                0.,              .3],
+                              [                   0.,                     0.,                1.,             1.],
                               [                   0.,                     0.,                0.,              1.]])
     pos_goal = [pr2_B_goal[0,3],pr2_B_goal[1,3],pr2_B_goal[2,3]]
     ori_goal = tr.matrix_to_quaternion(pr2_B_goal[0:3,0:3])
@@ -72,4 +72,4 @@ if __name__ == "__main__":
     #    print usage()
     #    sys.exit(1)
     print "Requesting Base Goal Position"
-    print "Base Goal Position is:/n",select_base_client()
+    print "Base Goal Position is:\n",select_base_client()

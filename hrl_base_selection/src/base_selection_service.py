@@ -42,6 +42,13 @@ def handle_select_base(req):
     robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
     robot.SetTransform(np.array(robot_start))
     env.Load('../models/ADA_Wheelchair.dae')
+    
+    manip = robot.SetActiveManipulator('leftarm_torso')
+    ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)
+
+    if not ikmodel.load():
+        ikmodel.autogenerate()
+
     wheelchair = env.GetBodies()[1]
     wc_angle =  m.pi
     pr2_B_wc =   np.matrix([[     head[0,0],      head[0,1],              0.,      head[0,3]],
@@ -52,55 +59,75 @@ def handle_select_base(req):
     corner_B_head = np.matrix([[m.cos(0.),-m.sin(0.),0.,.45],[m.sin(0.),m.cos(0.),0.,.34],[0.,0.,1,0.],[0.,0.,0.,1]])
     wheelchair_location = pr2_B_wc * corner_B_head.I
     wheelchair.SetTransform(np.array(wheelchair_location))
-    for i in [0.,.1,.2,.3,.4,.5,-.1,-.2,-.3]:
-        for j in [0.,.1,.2,.3,-.1,-.2,-.3,-.3]:
-            for k in [0.,m.pi/4,-m.pi/4,]:
+
+    for i in [0.,.1,.2,.3,-.1,-.2,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
+        for j in [0.,.05,.1,.15,-.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
+            for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
+
                 #goal_pose = req.goal
                 angle = m.pi
-                head_B_goal =  np.matrix([[     m.cos(angle),      -m.sin(angle),               0.,               .1],
-                                          [     m.sin(angle),       m.cos(angle),               0.,               0.],
-                                          [               0.,                 0.,               1.,               0.],
-                                          [               0.,                 0.,               0.,               1.]])
+                goal_B_gripper =  np.matrix([[                 0,                  0,               1.,               .1],
+                                             [                 0,                  1,               0.,               0.],
+                                             [               -1.,                 0.,               0.,               0.],
+                                             [                0.,                 0.,               0.,               1.]])
                 #pr2_B_goal = head * head_B_goal
-                pr2_B_goal = goal
+                pr2_B_goal = goal*goal_B_gripper
                 angle_base = m.pi/2
-                wc_B_goalpr2  =   np.matrix([[    m.cos(angle_base+k),     -m.sin(angle_base+k),                0.,             .4+i],
+                wc_B_goalpr2  =   np.matrix([[    m.cos(angle_base+k),     -m.sin(angle_base+k),                0.,              .4+i],
                                              [    m.sin(angle_base+k),      m.cos(angle_base+k),                0.,             -.8+j],
-                                             [                     0.,                       0.,                1,                0.],
-                                             [                     0.,                       0.,                0.,                1]])
+                                             [                     0.,                       0.,                1,                 0.],
+                                             [                     0.,                       0.,                0.,                 1]])
 
                 base_position = pr2_B_wc * wc_B_goalpr2
-                print 'base position: /n',base_position
+                print 'base position: \n',base_position
                 robot.SetTransform(np.array(base_position))
 
-                manip = robot.SetActiveManipulator('leftarm_torso')
-                ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)
-
-                if not ikmodel.load():
-                    ikmodel.autogenerate()
+                
+                #manipprob = op.interfaces.BaseManipulation(robot) # create the interface for basic manipulation programs
+                #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
+                #robot.WaitForController(0) # wait
+                #print 'res: \n',res
+                print 'I just did weird things'
                 with env:
+                    print 'checking goal: \n' , np.array(pr2_B_goal)
                     sol = manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
                     if sol != None:
-                        (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
-                        odom_goal = createBMatrix(trans,rot)*base_position
-	                pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
-	                ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
-	                psm = PoseStamped()
+                        print 'got an iksolution!'
+                        traj = 1
+                        #try:
+                            #traj=manipprob.MoveManipulator(goal=sol,outputtrajobj=True)
+                            
+                        #except:
+                        #    traj = 1
+                        #    print 'traj failed \n'
+                        #    pass
+
+                        if (traj != None):
+     
+                            (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
+                            odom_goal = createBMatrix(trans,rot)*base_position
+    	                    pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
+	                    ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
+	                    psm = PoseStamped()
                         
-	                psm.header.frame_id = '/odom_combined'
-	                psm.pose.position.x=pos_goal[0]
-	                psm.pose.position.y=pos_goal[1]
-	                psm.pose.position.z=pos_goal[2]
-	                psm.pose.orientation.x=ori_goal[0]
-	                psm.pose.orientation.y=ori_goal[1]
-	                psm.pose.orientation.z=ori_goal[2]
-	                psm.pose.orientation.w=ori_goal[3]
-                        print 'I found a goal location! It is at B transform: \n',base_position
-                        print 'The quaternion to the goal location is: \n',psm
-                        return psm
+	                    psm.header.frame_id = '/odom_combined'
+	                    psm.pose.position.x=pos_goal[0]
+	                    psm.pose.position.y=pos_goal[1]
+	                    psm.pose.position.z=pos_goal[2]
+	                    psm.pose.orientation.x=ori_goal[0]
+	                    psm.pose.orientation.y=ori_goal[1]
+	                    psm.pose.orientation.z=ori_goal[2]
+	                    psm.pose.orientation.w=ori_goal[3]
+                            print 'I found a goal location! It is at B transform: \n',base_position
+                            print 'The quaternion to the goal location is: \n',psm
+                            return psm
                     else:
                         print 'I found a bad goal location. Trying again!'
       
+    robot.SetDOFValues(sol,manip.GetArmIndices()) # set the current solution
+    Tee = manip.GetEndEffectorTransform()
+    env.UpdatePublishedBodies() # allow viewer to update new robot
+
     print 'I found nothing! My given inputs were: \n', req.goal, req.head
     return None
 
@@ -110,6 +137,9 @@ def select_base_server():
     rospy.spin()
 
 if __name__ == "__main__":
+
     rospy.init_node('select_base_server')
     listener = tf.TransformListener()
     select_base_server()
+
+    
