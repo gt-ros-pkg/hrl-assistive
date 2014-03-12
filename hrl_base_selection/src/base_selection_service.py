@@ -30,7 +30,7 @@ def handle_select_base(req):
 
     print 'I will move to be able to reach the mouth.'
     env = op.Environment()
-    #env.SetViewer('qtcoin')
+    env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
     robot = env.GetRobots()[0]
     v = robot.GetActiveDOFValues()
@@ -43,8 +43,9 @@ def handle_select_base(req):
     robot.SetTransform(np.array(robot_start))
     env.Load('../models/ADA_Wheelchair.dae')
     
-    manip = robot.SetActiveManipulator('leftarm_torso')
+    manip = robot.SetActiveManipulator('leftarm')
     ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)
+    manipprob = op.interfaces.BaseManipulation(robot) # create the interface for basic manipulation programs
 
     if not ikmodel.load():
         ikmodel.autogenerate()
@@ -83,25 +84,32 @@ def handle_select_base(req):
                 robot.SetTransform(np.array(base_position))
 
                 
-                #manipprob = op.interfaces.BaseManipulation(robot) # create the interface for basic manipulation programs
+                
                 #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
                 #robot.WaitForController(0) # wait
                 #print 'res: \n',res
-                print 'I just did weird things'
+                
                 with env:
                     print 'checking goal: \n' , np.array(pr2_B_goal)
                     sol = manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
                     if sol != None:
-                        print 'got an iksolution!'
-                        traj = 1
-                        #try:
-                            #traj=manipprob.MoveManipulator(goal=sol,outputtrajobj=True)
-                            
-                        #except:
-                        #    traj = 1
-                        #    print 'traj failed \n'
-                        #    pass
+                        #robot.SetDOFValues(sol,manip.GetArmIndices()) # set the current solution
+                        #Tee = manip.GetEndEffectorTransform()
+                        #env.UpdatePublishedBodies() # allow viewer to update new robot
 
+                        print 'Got an iksolution! \n', sol
+                        traj = None
+                        try:
+                            #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
+                            #traj=manipprob.MoveManipulator(goal=sol,outputtrajobj=True)
+                            #print 'Got a trajectory! \n'
+                            print ''
+                        except:
+                            #print 'traj = \n',traj
+                            traj = None
+                            print 'traj failed \n'
+                            pass
+                        traj =1 #This gets rid of traj
                         if (traj != None):
      
                             (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
@@ -109,7 +117,7 @@ def handle_select_base(req):
     	                    pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
 	                    ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
 	                    psm = PoseStamped()
-                        
+                            
 	                    psm.header.frame_id = '/odom_combined'
 	                    psm.pose.position.x=pos_goal[0]
 	                    psm.pose.position.y=pos_goal[1]
@@ -120,13 +128,13 @@ def handle_select_base(req):
 	                    psm.pose.orientation.w=ori_goal[3]
                             print 'I found a goal location! It is at B transform: \n',base_position
                             print 'The quaternion to the goal location is: \n',psm
-                            return psm
+                            #srv.base_goal.
+                            return psm, sol
+                        
                     else:
                         print 'I found a bad goal location. Trying again!'
       
-    robot.SetDOFValues(sol,manip.GetArmIndices()) # set the current solution
-    Tee = manip.GetEndEffectorTransform()
-    env.UpdatePublishedBodies() # allow viewer to update new robot
+    
 
     print 'I found nothing! My given inputs were: \n', req.goal, req.head
     return None

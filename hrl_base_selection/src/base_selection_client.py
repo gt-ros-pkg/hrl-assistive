@@ -54,7 +54,7 @@ def select_base_client():
     try:
         select_base_position = rospy.ServiceProxy('select_base_position', BaseMove)
         response = select_base_position(psm_goal, psm_head)
-        return response.BaseGoal
+        return response.base_goal, response.ik_solution
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
