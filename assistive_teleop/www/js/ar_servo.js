@@ -3,18 +3,6 @@ var ArServo = function (ros) {
   var arServo = this;
   arServo.ros = ros;
   arServo.state = 0;
-  arServo.findTagPub = new arServo.ros.Topic({
-    name: 'pr2_ar_servo/find_tag',
-    messageType: 'std_msgs/Bool'
-  });
-  arServo.findTagPub.advertise();
-  arServo.detectTag = function () {
-    var msg = new arServo.ros.Message({
-      data: true
-    });
-    arServo.findTagPub.publish(msg);
-    console.log('Publishing ar_servo detect tag msg');
-  };
 
   arServo.approachPub = new arServo.ros.Topic({
     name: 'pr2_ar_servo/tag_confirm',
@@ -65,29 +53,25 @@ function initARServoTab(tabDivId) {
   $('#' + tabDivId).append('<table><tr>' +
                            '<td id="' + tabDivId + 'R0C0"></td>' +
                            '<td id="' + tabDivId + 'R0C1"></td>' +
-                           '<td id="' + tabDivId + 'R0C2"></td>' +
                            '</tr></table>');
-  $('#' + tabDivId + 'R0C0').append('<button id="' + tabDivId + 'DetectTag">' +
-                                    ' Detect Tag </button>')
-    .click(function () {
-      window.arServo.detectTag();
-    });
-
-  $('#' + tabDivId + 'R0C1').append('<button id="' + tabDivId + 'Approach">' +
-                                    ' Approach </button>')
+  $('#' + tabDivId + 'R0C0').append('<button id="' + tabDivId + '_approach">' +
+                                    'Approach </button>')
     .click(function () {
       window.arServo.approach();
     });
-  $('#' + tabDivId + 'R0C2').append('<button id="' + tabDivId + 'Preempt">' +
-                                    ' Stop </button>')
+
+  $('#' + tabDivId + 'R0C1').append('<button id="' + tabDivId + '_preempt">' +
+                                    'Stop </button>')
     .click(function () {
       window.arServo.preemptApproach();
     });
   $('#' + tabDivId + ' :button').button().css({
     'height': "75px",
-    'width': "150px",
-    'font-size': '150%'
+    'width': "200px",
+    'font-size': '150%',
+    'text-align':"center"
   });
+  $('#'+tabDivId+'_approach'+',#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
 
   var arServoFeedbackCb = function (msg) {
     var text = "Unknown result from servoing feedback";
@@ -96,9 +80,8 @@ function initARServoTab(tabDivId) {
       text = "Searching for AR Tag.";
       break;
     case 2:
-      text = "AR Tag Found. CONFIRM LOCATION AND BEGIN APPROACH.";
-      $('#servo_approach, #servo_stop').show().fadeTo(0, 1);
-      $('#servo_detect_tag').fadeTo(0, 0.5);
+      text = "AR Tag Found - Begin Approach.";
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 1);
       window.mjpeg.setCamera('ar_servo/confirmation_rotated');
       break;
     case 3:
@@ -110,30 +93,25 @@ function initARServoTab(tabDivId) {
       break;
     case 5:
       text = "Servoing Completed Successfully.";
-      $('#servo_approach, #servo_stop').fadeTo(0, 0.5);
-      $('#servo_detect_tag').fadeTo(0, 1);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       window.mjpeg.setCamera('/head_mount_kinect/rgb/image_color');
       break;
     case 6:
       text = "Detected Collision with Arms while Servoing.  " + "ADJUST AND RE-DETECT TAG.";
-      $('#servo_approach, #servo_stop').fadeTo(0, 0.5);
-      $('#servo_detect_tag').fadeTo(0, 1);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       break;
     case 7:
       text = "Detected Collision in Base Laser while Servoing.  " + "ADJUST AND RE-DETECT TAG.";
-      $('#servo_approach, #servo_stop').fadeTo(0, 0.5);
-      $('#servo_detect_tag').fadeTo(0, 1);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       break;
     case 8:
       text = "View of AR Tag Was Lost.  ADJUST (IF NECESSARY) AND RE-DETECT.";
-      $('#servo_approach, #servo_stop').fadeTo(0, 0.5);
-      $('#servo_detect_tag').fadeTo(0, 1);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       window.mjpeg.setCamera('ar_servo/confirmation_rotated');
       break;
     case 9:
       text = "Servoing Stopped by User. RE-DETECT TAG";
-      $('#servo_approach, #servo_stop').fadeTo(0, 0.5);
-      $('#servo_detect_tag').fadeTo(0, 1);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       window.mjpeg.setCamera('ar_servo/confirmation_rotated');
       break;
     }
