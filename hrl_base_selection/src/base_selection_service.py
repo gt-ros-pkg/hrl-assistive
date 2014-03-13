@@ -16,13 +16,12 @@ from helper_functions import createBMatrix
 from geometry_msgs.msg import PoseStamped
 import tf
 
-
 def handle_select_base(req):
     print 'My given inputs were: \n', req.goal, req.head
     pos_temp = [req.head.pose.position.x,req.head.pose.position.y,req.head.pose.position.z]
     ori_temp = [req.head.pose.orientation.x,req.head.pose.orientation.y,req.head.pose.orientation.z,req.head.pose.orientation.w]
     head = createBMatrix(pos_temp,ori_temp)
-    
+
     pos_temp = [req.goal.pose.position.x,req.goal.pose.position.y,req.goal.pose.position.z]
     ori_temp = [req.goal.pose.orientation.x,req.goal.pose.orientation.y,req.goal.pose.orientation.z,req.goal.pose.orientation.w]
     goal = createBMatrix(pos_temp,ori_temp)
@@ -42,7 +41,7 @@ def handle_select_base(req):
     robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
     robot.SetTransform(np.array(robot_start))
     env.Load('../models/ADA_Wheelchair.dae')
-    
+
     manip = robot.SetActiveManipulator('leftarm')
     ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)
     manipprob = op.interfaces.BaseManipulation(robot) # create the interface for basic manipulation programs
@@ -56,7 +55,7 @@ def handle_select_base(req):
                             [     head[1,0],      head[1,1],              0.,      head[1,3]],
                             [            0.,             0.,              1.,             0.],
                             [            0.,             0.,              0.,             1]])
-    
+
     corner_B_head = np.matrix([[m.cos(0.),-m.sin(0.),0.,.45],[m.sin(0.),m.cos(0.),0.,.34],[0.,0.,1,0.],[0.,0.,0.,1]])
     wheelchair_location = pr2_B_wc * corner_B_head.I
     wheelchair.SetTransform(np.array(wheelchair_location))
@@ -83,12 +82,10 @@ def handle_select_base(req):
                 print 'base position: \n',base_position
                 robot.SetTransform(np.array(base_position))
 
-                
-                
                 #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
                 #robot.WaitForController(0) # wait
                 #print 'res: \n',res
-                
+
                 with env:
                     print 'checking goal: \n' , np.array(pr2_B_goal)
                     sol = manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
@@ -111,30 +108,26 @@ def handle_select_base(req):
                             pass
                         traj =1 #This gets rid of traj
                         if (traj != None):
-     
                             (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
                             odom_goal = createBMatrix(trans,rot)*base_position
-    	                    pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
-	                    ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
-	                    psm = PoseStamped()
-                            
-	                    psm.header.frame_id = '/odom_combined'
-	                    psm.pose.position.x=pos_goal[0]
-	                    psm.pose.position.y=pos_goal[1]
-	                    psm.pose.position.z=pos_goal[2]
-	                    psm.pose.orientation.x=ori_goal[0]
-	                    psm.pose.orientation.y=ori_goal[1]
-	                    psm.pose.orientation.z=ori_goal[2]
-	                    psm.pose.orientation.w=ori_goal[3]
+                            pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
+                            ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
+                            psm = PoseStamped()
+                            psm.header.frame_id = '/odom_combined'
+                            psm.pose.position.x=pos_goal[0]
+                            psm.pose.position.y=pos_goal[1]
+                            psm.pose.position.z=pos_goal[2]
+                            psm.pose.orientation.x=ori_goal[0]
+                            psm.pose.orientation.y=ori_goal[1]
+                            psm.pose.orientation.z=ori_goal[2]
+                            psm.pose.orientation.w=ori_goal[3]
                             print 'I found a goal location! It is at B transform: \n',base_position
                             print 'The quaternion to the goal location is: \n',psm
                             #srv.base_goal.
                             return psm, sol
-                        
+
                     else:
                         print 'I found a bad goal location. Trying again!'
-      
-    
 
     print 'I found nothing! My given inputs were: \n', req.goal, req.head
     return None
@@ -149,5 +142,3 @@ if __name__ == "__main__":
     rospy.init_node('select_base_server')
     listener = tf.TransformListener()
     select_base_server()
-
-    
