@@ -129,7 +129,7 @@ def handle_select_base(req):
                             print 'I found a goal location! It is at B transform: \n',base_position
                             print 'The quaternion to the goal location is: \n',psm
                             #srv.base_goal.
-                            return psm, sol
+                            return psm
                         
                     else:
                         print 'I found a bad goal location. Trying again!'

@@ -54,7 +54,7 @@ def select_base_client():
     try:
         select_base_position = rospy.ServiceProxy('select_base_position', BaseMove)
         response = select_base_position(psm_goal, psm_head)
-        return response.base_goal, response.ik_solution
+        return response.base_goal#, response.ik_solution
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
@@ -72,4 +72,6 @@ if __name__ == "__main__":
     #    print usage()
     #    sys.exit(1)
     print "Requesting Base Goal Position"
-    print "Base Goal Position is:\n",select_base_client()
+    goal = select_base_client()
+    print "Base Goal Position is:\n", goal
+    #print "ik solution is: \n", ik

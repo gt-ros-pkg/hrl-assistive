@@ -2,4 +2,4 @@ geometry_msgs/PoseStamped goal
 geometry_msgs/PoseStamped head
 ---
 geometry_msgs/PoseStamped base_goal
-float32[] ik_solution
+
