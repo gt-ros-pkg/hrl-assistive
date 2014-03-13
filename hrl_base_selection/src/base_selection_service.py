@@ -30,7 +30,7 @@ def handle_select_base(req):
 
     print 'I will move to be able to reach the mouth.'
     env = op.Environment()
-    env.SetViewer('qtcoin')
+    #env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
     robot = env.GetRobots()[0]
     v = robot.GetActiveDOFValues()
@@ -62,7 +62,7 @@ def handle_select_base(req):
     wheelchair.SetTransform(np.array(wheelchair_location))
 
     for i in [0.,.1,.2,.3,-.1,-.2,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
-        for j in [0.,.05,.1,.15,-.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
+        for j in [0.,.05,.1,.13,-.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
             for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
 
                 #goal_pose = req.goal
