@@ -21,7 +21,7 @@ class RegistrationLoader(object):
     def __init__(self):
         self.head_reg_tf = None
         self.ell_frame = None
-        self.ell_frame_bcast = TransformBroadcaster()
+        #self.ell_frame_bcast = TransformBroadcaster()
         self.init_reg_srv = rospy.Service("/initialize_registration",
                                           InitializeRegistration,
                                           self.init_reg_cb)
