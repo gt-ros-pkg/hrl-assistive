@@ -1,20 +1,19 @@
 #!/usr/bin/env python
-import sys, optparse
 
-import rospy
-import openravepy as op
 import numpy as np
 import math as m
+import openravepy as op
+
 import roslib
 roslib.load_manifest('hrl_base_selection')
 roslib.load_manifest('hrl_haptic_mpc')
-import hrl_lib.transforms as tr
+import rospy, rospkg
 import tf
-from hrl_base_selection.srv import *
-import openravepy as op
-from helper_functions import createBMatrix
 from geometry_msgs.msg import PoseStamped
-import tf
+
+import hrl_lib.transforms as tr
+from hrl_base_selection.srv import BaseMove
+from helper_functions import createBMatrix
 
 def handle_select_base(req):
     print 'My given inputs were: \n', req.goal, req.head
@@ -29,7 +28,7 @@ def handle_select_base(req):
 
     print 'I will move to be able to reach the mouth.'
     env = op.Environment()
-    #env.SetViewer('qtcoin')
+    #:env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
     robot = env.GetRobots()[0]
     v = robot.GetActiveDOFValues()
@@ -40,7 +39,9 @@ def handle_select_base(req):
     robot.SetActiveDOFValues(v)
     robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
     robot.SetTransform(np.array(robot_start))
-    env.Load('../models/ADA_Wheelchair.dae')
+    rospack = rospkg.RosPack()
+    pkg_path = rospack.get_path('hrl_base_selection')
+    env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
 
     manip = robot.SetActiveManipulator('leftarm')
     ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)

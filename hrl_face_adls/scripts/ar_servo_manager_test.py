@@ -76,8 +76,10 @@ class ServoingManager(object):
             self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
         ar_data = ARServoGoalData()
-        base_goal, ik_solution = self.call_base_selection()
-        self.ik_sol = ik_solution
+        base_goal = self.call_base_selection()
+        if base_goal is None:
+            rospy.loginfo("No base goal found")
+            return
         self.servo_goal_pub.publish(base_goal)
 
         with self.lock:
@@ -102,8 +104,12 @@ class ServoingManager(object):
         bm = BaseMoveRequest()
         bm.head = self.head_pose
         bm.goal = self.goal_pose
-        resp = self.base_selection_client.call(bm)
-        return resp.base_goal, resp.ik_solution
+        try:
+            resp = self.base_selection_client.call(bm)
+        except rospy.ServiceException as se:
+            rospy.logerr(se)
+            return None
+        return resp.base_goal
 
     def ell_cb(self, ell_msg):
         head_pose = PoseStamped()
@@ -129,4 +135,6 @@ class ServoingManager(object):
 if __name__ == '__main__':
     rospy.init_node('ar_servo_manager')
     manager = ServoingManager()
+    import sys
+    print sys.argv
     rospy.spin()
