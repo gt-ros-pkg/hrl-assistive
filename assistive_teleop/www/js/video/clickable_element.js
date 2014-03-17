@@ -133,7 +133,7 @@ var initClickableActions = function () {
         var sel = document.getElementById('img_act_select');
         if (sel[sel.selectedIndex].value === 'seedReg') {
             pointUV = window.clickInElement(e);
-            window.ellControl.registerHead(pointUV[0], pointUV[1]);
+            window.bodyReg.registerHead(pointUV[0], pointUV[1]);
             log("Sending Head Registration Command");
         }
     }

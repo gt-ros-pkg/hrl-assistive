@@ -25,16 +25,6 @@ var EllipsoidControl = function (ros) {
     var ellCon = this;
     ellCon.ros = ros;
     
-    ellCon.headRegServiceClient = new ellCon.ros.Service({
-        name:'/initialize_registration',
-        serviceType:'hrl_head_registration/InitializeRegistration'});
-    ellCon.registerHead = function (u,v) {
-        ellCon.headRegServiceClient.callService({u:u,v:v}, function (resp) {
-            console.log('Initialize Head Registration Service Returned.');
-            $('#img_act_select').val('looking');
-        });
-    };
-
     ellCon.globalPoses = [];
     ellCon.globalPosesSub = new ellCon.ros.Topic({
         name: 'face_adls/global_move_poses',

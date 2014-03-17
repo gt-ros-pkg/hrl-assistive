@@ -22,10 +22,12 @@ class RegistrationLoader(object):
         self.head_reg_tf = None
         self.ell_frame = None
         self.ell_frame_bcast = TransformBroadcaster()
-        self.init_reg_srv = rospy.Service("/initialize_registration", InitializeRegistration, 
+        self.init_reg_srv = rospy.Service("/initialize_registration",
+                                          InitializeRegistration,
                                           self.init_reg_cb)
-        self.req_reg_srv = rospy.Service("/request_registration", RequestRegistration, 
-                                          self.req_reg_cb)
+        self.req_reg_srv = rospy.Service("/request_registration",
+                                         RequestRegistration,
+                                         self.req_reg_cb)
         self.head_registration_r = rospy.ServiceProxy("/head_registration_r", HeadRegistration) # TODO
         self.head_registration_l = rospy.ServiceProxy("/head_registration_l", HeadRegistration) # TODO
         self.ell_params_pub = rospy.Publisher("/ellipsoid_params", EllipsoidParams, latch=True)
