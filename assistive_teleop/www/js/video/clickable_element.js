@@ -140,7 +140,7 @@ var initClickableActions = function () {
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(seedRegCB);
 }
-//<option id="seed_reg" value="seed_reg">Register Head</option>
+
 //<!--<option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>-->\
 //<option id="skin_linear_move" value="skin_linear_move">Move to point with skin</option>\
 //<!--<option id="na" value="norm_approach">Normal Approach</option>-->\
