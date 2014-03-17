@@ -1,6 +1,7 @@
 <html>
 <head>
-  <title>Robots for Humanity Web Page</title>
+ <title>Robots for Humanity Web Page</title>
+ <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <link type="text/css" href="jqueryui/css/sunny/jquery-ui-1.8.10.custom.css" rel="stylesheet" />   
     <script type="text/javascript" src="jqueryui/js/jquery-1.4.4.min.js"></script> 
     <script type="text/javascript" src="jqueryui/js/jquery-ui-1.8.10.custom.min.js"></script> 
@@ -22,6 +23,7 @@
     <script type="text/javascript" src="js/tts.js"> </script>
     <script type="text/javascript" src="js/ar_servo.js"> </script>
     <script type="text/javascript" src="js/run_stop.js"> </script>
+    <script type="text/javascript" src="js/body_registration.js"> </script>
     <script type="text/javascript" src="js/ell_control.js"> </script>
     <script type="text/javascript" src="js/force_level_widget.js"> </script>
     <script type="text/javascript" src="js/skin_util.js"> </script>
@@ -147,6 +149,7 @@ var tab_select_cb = function (eve, ui) {
           <li><a href="#tabARServoing">AR Servoing</a></li>
           <li><a href="#tab_traj_play">Traj. Playback</a></li>
           <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
+          <li><a href="#tabBodyReg">Body Registration</a></li>
           <li><a href="#tabTTS">TTS</a></li>
         </ul>
 
@@ -310,7 +313,6 @@ var tab_select_cb = function (eve, ui) {
             <table>
               <tr>
                 <td>
-                  <button class="centered" id="reg_head"> Register Head </button>
                 </td>
               <tr>
               <tr>
@@ -422,7 +424,9 @@ var tab_select_cb = function (eve, ui) {
       </table>
     </div><!--END Tab ellipse -->
     
-    <div id="tabTTS"/>
+    <div id="tabBodyReg"> </div>
+
+    <div id="tabTTS"> </div>
 
   </div> <!-- END Tabs -->
     </td>

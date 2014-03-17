@@ -18,6 +18,7 @@ var assistive_teleop = {
               initARServoTab('tabARServoing');
               initRunStop('runStopDiv');
               initTrajPlay();
+              initBodyRegistration('tabBodyReg');
               initEllControl();
               initCartControl();
               if (window.location.hash.search('ft') !== -1) {

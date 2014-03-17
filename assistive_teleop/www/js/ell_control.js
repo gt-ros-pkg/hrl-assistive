@@ -151,13 +151,6 @@ var initEllControl = function () {
     window.ellControl = new EllipsoidControl(window.ros);
     window.mirrorPointer = new MirrorPointer(window.ros);
 
-    var head_reg_cb = function () {
-        $('#img_act_select').val('seedReg');
-        window.mjpeg.setCamera('head_registration/confirmation');
-        alert('Click on your cheek in the video to register the ellipse.');
-    };
-
-    $('#reg_head').click(head_reg_cb);
     $('#ell_controller').click(function () {window.ellControl.toggle()});
     $('#adj_mirror').click(window.mirrorPointer.point);
     $('#tool_power').click(window.shaver.toggle);
