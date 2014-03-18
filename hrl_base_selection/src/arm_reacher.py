@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys, optparse
 
-import rospy
+import rospy, rospkg
 import openravepy as op
 import numpy as np
 import math as m
@@ -26,6 +26,7 @@ class arm_reacher:
     sol = None
     traj = None
     joint_angles = np.zeros(39)
+    joint_names = []
     state_lock = threading.RLock()
 
     def __init__(self):
@@ -43,12 +44,18 @@ class arm_reacher:
         v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
         self.robot.SetActiveDOFValues(v)
         self.robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
+        
+        self.robot_start = np.matrix([[ -0,    1,    0.0,    2.6],
+                                     [ -1.,   -0,    0.00,    1.0],
+                                     [  0.,    0.,    1.00,    0.0],
+                                     [  0.,    0.,    0.0,    1.00]])
+
         self.robot.SetTransform(np.array(self.robot_start))
 
         
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
-        env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
+        self.env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
 
         self.manip = self.robot.SetActiveManipulator('leftarm')
         self.ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot,iktype=op.IkParameterization.Type.Transform6D)
@@ -69,20 +76,23 @@ class arm_reacher:
         self.wheelchair.SetTransform(np.array(self.wheelchair_location))
 
         rospy.Subscriber('/joint_states', JointState, self.update_robot_state)
-        rospy.Subscriber('/haptic_mpc/goal_pose', PoseStamped, self.new_goal)
+        rospy.Subscriber('~goal_pose', PoseStamped, self.new_goal)
         rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.new_head)
         self.goal_traj_pub = rospy.Publisher("/haptic_mpc/joint_trajectory", JointTrajectory, latch=True)
-        self.mpc_weights_pub = rospy.Publisher("/haptic_mpc/weights", haptic_msgs.HapticMpcWeights)
+        #self.mpc_weights_pub = rospy.Publisher("/haptic_mpc/weights", haptic_msgs.HapticMpcWeights)
 
     def new_goal(self,psm):
         print 'I just got a goal location. I will now start reaching! \n'
 
+
+
         # This is to use tf to get head location. Otherwise, there is a subscriber to get a head location. Comment out if there is no tf to use.
         (trans,rot) = self.listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
-        
         pos_temp = trans
         ori_temp = rot
         self.head = createBMatrix(pos_temp,ori_temp)
+
+
 
         self.pr2_B_wc =   np.matrix([[     self.head[0,0],      self.head[0,1],              0.,      self.head[0,3]],
                                      [     self.head[1,0],      self.head[1,1],              0.,      self.head[1,3]],
@@ -92,28 +102,31 @@ class arm_reacher:
         self.wheelchair.SetTransform(np.array(self.wheelchair_location))
 
         v = self.robot.GetActiveDOFValues()
-        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()]             = self.joint_angles[12]
-        v[self.robot.GetJoint('torso_lift_motor_screw_joint').GetDOFIndex()] = self.joint_angles[13]
-        v[self.robot.GetJoint('head_pan_joint').GetDOFIndex()]               = self.joint_angles[14]
-        v[self.robot.GetJoint('head_tilt_joint').GetDOFIndex()]              = self.joint_angles[15]
-        v[self.robot.GetJoint('laser_tilt_mount_joint').GetDOFIndex()]       = self.joint_angles[16]
-        v[self.robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()]       = self.joint_angles[17]
-        v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()]         = self.joint_angles[18]
-        v[self.robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()]        = self.joint_angles[19]
-        v[self.robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()]         = self.joint_angles[20]
-        v[self.robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()]           = self.joint_angles[21]
-        v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()]           = self.joint_angles[22]
-        v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()]           = self.joint_angles[23]
-        v[self.robot.GetJoint('r_gripper_joint').GetDOFIndex()]              = self.joint_angles[24]
+        for name in self.joint_names:
+            v[self.robot.GetJoint(name).GetDOFIndex()] = self.joint_angles[self.joint_names.index(name)]
+            #print 'I just set in openrave the joint: ', name, ' \n'
+#        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()]             = self.joint_angles[12]
+#        v[self.robot.GetJoint('torso_lift_motor_screw_joint').GetDOFIndex()] = self.joint_angles[13]
+#        v[self.robot.GetJoint('head_pan_joint').GetDOFIndex()]               = self.joint_angles[14]
+#        v[self.robot.GetJoint('head_tilt_joint').GetDOFIndex()]              = self.joint_angles[15]
+#        v[self.robot.GetJoint('laser_tilt_mount_joint').GetDOFIndex()]       = self.joint_angles[16]
+#        v[self.robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()]       = self.joint_angles[17]
+#        v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()]         = self.joint_angles[18]
+#        v[self.robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()]        = self.joint_angles[19]
+#        v[self.robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()]         = self.joint_angles[20]
+#        v[self.robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()]           = self.joint_angles[21]
+#        v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()]           = self.joint_angles[22]
+#        v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()]           = self.joint_angles[23]
+#        v[self.robot.GetJoint('r_gripper_joint').GetDOFIndex()]              = self.joint_angles[24]
 
-        v[self.robot.GetJoint('l_upper_arm_roll_joint').GetDOFIndex()]       = self.joint_angles[31]
-        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]         = self.joint_angles[32]
-        v[self.robot.GetJoint('l_shoulder_lift_joint').GetDOFIndex()]        = self.joint_angles[33]
-        v[self.robot.GetJoint('l_forearm_roll_joint').GetDOFIndex()]         = self.joint_angles[34]
-        v[self.robot.GetJoint('l_elbow_flex_joint').GetDOFIndex()]           = self.joint_angles[35]
-        v[self.robot.GetJoint('l_wrist_flex_joint').GetDOFIndex()]           = self.joint_angles[36]
-        v[self.robot.GetJoint('l_wrist_roll_joint').GetDOFIndex()]           = self.joint_angles[37]
-        v[self.robot.GetJoint('l_gripper_joint').GetDOFIndex()]              = self.joint_angles[38]
+#        v[self.robot.GetJoint('l_upper_arm_roll_joint').GetDOFIndex()]       = self.joint_angles[31]
+#        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]         = self.joint_angles[32]
+#        v[self.robot.GetJoint('l_shoulder_lift_joint').GetDOFIndex()]        = self.joint_angles[33]
+#        v[self.robot.GetJoint('l_forearm_roll_joint').GetDOFIndex()]         = self.joint_angles[34]
+#        v[self.robot.GetJoint('l_elbow_flex_joint').GetDOFIndex()]           = self.joint_angles[35]
+#        v[self.robot.GetJoint('l_wrist_flex_joint').GetDOFIndex()]           = self.joint_angles[36]
+#        v[self.robot.GetJoint('l_wrist_roll_joint').GetDOFIndex()]           = self.joint_angles[37]
+#        v[self.robot.GetJoint('l_gripper_joint').GetDOFIndex()]              = self.joint_angles[38]
 
         self.robot.SetActiveDOFValues(v)
 
@@ -144,13 +157,37 @@ class arm_reacher:
                 print 'traj failed \n'
                 pass
             if (self.traj != None):
-                tmp_traj = np.zeros([self.traj.GetNumWaypoints(),7])
-                for i in xrange(self.traj.GetNumWaypoints()): 
-                    tmp_traj[i,:] = self.traj.GetWaypoint(i)[0:7]
+                tmp_traj = [] #np.zeros([self.traj.GetNumWaypoints(),7])
+                tmp_vel = []
+                tmp_acc = []
                 trajectory = JointTrajectory()
-                point = JointTrajectoryPoint()
-                point.positions = tmp_traj
-                trajectory.points = point
+                for i in xrange(self.traj.GetNumWaypoints()): 
+                    temp = []
+                    for j in xrange(7):
+                        temp.append(float(self.traj.GetWaypoint(i)[j]))
+                    point = JointTrajectoryPoint()
+                    point.positions = temp
+                    #point.positions.append(temp)
+                    #point.accelerations.append([0.,0.,0.,0.,0.,0.,0.])
+                    #point.velocities.append([0.,0.,0.,0.,0.,0.,0.])
+                    trajectory.points.append(point)
+                    #tmp_traj.append(temp)
+                    #tmp_traj.append(list(self.traj.GetWaypoint(i)))
+                    
+                    #tmp_vel.append([0.,0.,0.,0.,0.,0.,0.])
+                    #tmp_acc.append([0.,0.,0.,0.,0.,0.,0.])
+                    #print 'tmp_traj is: \n', tmp_traj
+                    #for j in xrange(7):
+                        #tmp_traj[i,j] = float(self.traj.GetWaypoint(i)[j])
+                #trajectory = JointTrajectory()
+                #point = JointTrajectoryPoint()
+                #point.positions.append(tmp_traj)
+                #point.velocities.append(tmp_vel)
+                #point.accelerations.append(tmp_acc)
+                #point.velocities=[[0.,0.,0.,0.,0.,0.,0.]]
+                #point.accelerations=[[0.,0.,0.,0.,0.,0.,0.]]
+                trajectory.joint_names = ['l_upper_arm_roll_joint','l_shoulder_pan_joint','l_shoulder_lift_joint','l_forearm_roll_joint','l_elbow_flex_joint','l_wrist_flex_joint','l_wrist_roll_joint']
+                #trajectory.points.append(point)
                 #self.mpc_weights_pub.publish(self.weights)
                 self.goal_traj_pub.publish(trajectory)
 
@@ -160,7 +197,7 @@ class arm_reacher:
         with self.state_lock:
             #self.last_msg_time = rospy.Time.now() # timeout for the controller
             #self.msg = msg
-            #self.joint_names = msg.joint_names
+            self.joint_names = msg.name
             self.joint_angles = msg.position
 
     # This is to use a subscriber to get head location. Otherwise, there is a tf listener to get a head location.
