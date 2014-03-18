@@ -1,4 +1,4 @@
 uint32 u
 uint32 v
 ---
-geometry_msgs/PoseStamped tf_reg
+geometry_msgs/PoseStamped reg_pose

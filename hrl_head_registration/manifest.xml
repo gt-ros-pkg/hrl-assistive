@@ -1,13 +1,17 @@
 <package>
   <description brief="hrl_head_registration">
 
-     hrl_head_registration
+     A package for registering the location of a head by ICP against a saved pointcloud.
 
   </description>
-  <author>Kelsey Hawkins</author>
+  <author>Kelsey Hawkins, Phillip M. Grice. Advisor: Prof. Charlie Kemp, Lab: The Healthcare Robotoics Lab at Georgia Tech.</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hrl_head_registration</url>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="tf"/>
   <depend package="roscpp"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
@@ -18,5 +22,3 @@
   <depend package="image_transport"/>
   <depend package="image_geometry"/>
 </package>
-
-
