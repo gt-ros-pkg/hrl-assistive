@@ -11,7 +11,7 @@ roslib.load_manifest('hrl_face_adls')
 import rospy
 from std_msgs.msg import Int8, String, Bool, Header
 from std_srvs.srv import Empty
-from geometry_msgs.msg import WrenchStamped, PoseStamped, PoseArray
+from geometry_msgs.msg import WrenchStamped, PoseStamped, PoseArray, Point, Quaternion
 import rosparam
 import roslaunch.substitution_args
 from tf import TransformListener, ExtrapolationException, LookupException, ConnectivityException
@@ -110,6 +110,7 @@ class FaceADLsManager(object):
         self.ellipsoid = EllipsoidSpace()
         self.controller_switcher = ControllerSwitcher()
         self.ee_frame = '/l_gripper_shaver305_frame'
+        self.head_pose = None
         self.tfl = TransformListener()
         self.is_forced_retreat = False
         self.pose_traj_pub = rospy.Publisher('/haptic_mpc/goal_pose_array', PoseArray)
@@ -130,11 +131,7 @@ class FaceADLsManager(object):
         self.request_registration = rospy.ServiceProxy("/request_registration", RequestRegistration)
 
         self.enable_mpc_srv = rospy.ServiceProxy('/haptic_mpc/enable_mpc', EnableHapticMPC)
-
-        self.test_pose = rospy.Publisher('face_adls/test_pose', PoseStamped, latch=True)
-        self.test_pose1 = rospy.Publisher('face_adls/test_pose1', PoseStamped, latch=True)
-        self.test_pose2 = rospy.Publisher('face_adls/test_pose2', PoseStamped, latch=True)
-        self.test_pose3 = rospy.Publisher('face_adls/test_pose3', PoseStamped, latch=True)
+        self.ell_params_pub = rospy.Publisher("/ellipsoid_params", EllipsoidParams, latch=True)
 
         def stop_move_cb(msg):
             self.stop_moving()
@@ -151,6 +148,50 @@ class FaceADLsManager(object):
         pose_array = PoseArray(head, cart_traj_msg)
         self.pose_traj_pub.publish(pose_array)
         rospy.loginfo( "Sent stop moving commands!")
+
+    def register_ellipse(self, mode, side):
+        reg_e_params = EllipsoidParams()
+        try:
+            now = rospy.Time.now()
+            self.tfl.waitForTransform("/base_link", "/head_frame", now, rospy.Duration(10.))
+            pos, quat = self.tfl.lookupTransform("/head_frame", "/base_frame", now)
+            self.head_pose = PoseStamped()
+            self.head_pose.header.stamp = now
+            self.head_pose.header.frame_id = "/base_link"
+            self.head_pose.pose.position = Point(*pos)
+            self.head_pose.pose.orientation = Quaternion(*quat)
+        except:
+            rospy.logwarn("[%s] Head registration not loaded yet." %rospy.get_name())
+            return (False, reg_e_params)
+        reg_prefix = rospy.get_param("~registration_prefix", "")
+        registration_files = rospy.get_param("~registration_files", None)
+        if mode not in registration_files:
+            rospy.logerr("[%s] Mode not in registration_files parameters" % (rospy.get_name()))
+            return (False, reg_e_params)
+        try:
+            bag_str = reg_prefix + registration_files[mode][side]
+            rospy.loginfo("[%s] Loading %s" %(rospy.get_name(), bag_str))
+            bag = rosbag.Bag(bag_str, 'r')
+            e_params = None
+            for topic, msg, ts in bag.read_messages():
+                e_params = msg
+            assert e_params is not None
+            bag.close()
+        except:
+            rospy.logerr("[%s] Cannot load registration parameters from %s" %(rospy.get_name(), bag_str))
+            return (False, reg_e_params)
+
+        head_reg_mat = PoseConv.to_homo_mat(self.head_pose)
+        ell_reg = PoseConv.to_homo_mat(Transform(e_params.e_frame.transform.translation,
+                                                      e_params.e_frame.transform.rotation))
+        reg_e_params.e_frame = PoseConv.to_tf_stamped_msg(head_reg_mat**-1 * ell_reg)
+        reg_e_params.e_frame.header.frame_id = self.head_reg_tf.header.frame_id
+        reg_e_params.e_frame.child_frame_id = '/ellipse_frame'
+        reg_e_params.height = e_params.height
+        reg_e_params.E = e_params.E
+        self.ell_params_pub.publish(reg_e_params)
+        self.ell_frame = reg_e_params.e_frame
+        return (True, reg_e_params)
 
     def current_ee_pose(self, link, frame='/torso_lift_link'):
         """Get current end effector pose from tf"""
@@ -173,19 +214,19 @@ class FaceADLsManager(object):
         if req.enable:
             face_adls_modes = rospy.get_param('/face_adls_modes', None) 
             params = face_adls_modes[req.mode]
-            self.shaving_side = rospy.get_param('/shaving_side', 'r') # TODO Make more general
+            self.face_side = rospy.get_param('/face_side', 'r') # TODO Make more general
             self.trim_retreat = req.mode == "shaving"
-            self.flip_gripper = self.shaving_side == 'r' and req.mode == "shaving"
-            bounds = params['%s_bounds' % self.shaving_side]
+            self.flip_gripper = self.face_side == 'r' and req.mode == "shaving"
+            bounds = params['%s_bounds' % self.face_side]
             self.ellipsoid.set_bounds(bounds['lat'], bounds['lon'], bounds['height'])#TODO: Change Back
             #self.ellipsoid.set_bounds((-np.pi,np.pi), (-np.pi,np.pi), (0,100))
 
-            reg_resp = self.request_registration(req.mode, self.shaving_side)
-            if not reg_resp.success:
+            success, e_params = self.register_ellipse(req.mode, self.face_side)
+            if not success:
                 self.publish_feedback(Messages.NO_PARAMS_LOADED)
                 return EnableFaceControllerResponse(False)
 
-            reg_pose = PoseConv.to_pose_stamped_msg(reg_resp.e_params.e_frame)
+            reg_pose = PoseConv.to_pose_stamped_msg(e_params.e_frame)
             try:
                 now = rospy.Time.now()
                 reg_pose.header.stamp = now
@@ -195,18 +236,16 @@ class FaceADLsManager(object):
             except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
                 rospy.logwarn("[face_adls_manager] TF Failure converting ellipse to base frame: %s" %e)
 
-            self.ellipsoid.load_ell_params(ellipse_frame_base,
-                                           reg_resp.e_params.E,
-                                           reg_resp.e_params.is_oblate,
-                                           reg_resp.e_params.height)
+            self.ellipsoid.load_ell_params(ellipse_frame_base, e_params.E,
+                                           e_params.is_oblate, e_params.height)
             global_poses_dir = rospy.get_param("~global_poses_dir", "")
-            global_poses_file = params["%s_ell_poses_file" % self.shaving_side]
+            global_poses_file = params["%s_ell_poses_file" % self.face_side]
             global_poses_resolved = roslaunch.substitution_args.resolve_args(
                                             global_poses_dir + "/" + global_poses_file)
             self.global_poses = rosparam.load_file(global_poses_resolved)[0][0]
             self.global_move_poses_pub.publish(sorted(self.global_poses.keys()))
 
-            #Check rotating gripper based on side of body 
+            #Check rotating gripper based on side of body
             if self.flip_gripper:
                 self.gripper_rot = trans.quaternion_from_euler(np.pi, 0, 0)
                 print "Rotating gripper by PI around x-axis"
@@ -362,15 +401,12 @@ class FaceADLsManager(object):
         
         cart_ret_pose = self.ellipsoid.ellipsoidal_to_pose((retreat_ell_pos, retreat_ell_quat))
         cart_ret_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_ret_pose)
-        self.test_pose.publish(cart_ret_msg)
 
         cart_app_pose = self.ellipsoid.ellipsoidal_to_pose((approach_ell_pos, approach_ell_quat))
         cart_app_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_app_pose)
-        self.test_pose1.publish(cart_app_msg)
 
         cart_goal_pose = self.ellipsoid.ellipsoidal_to_pose((final_ell_pos, final_ell_quat))
         cart_goal_msg = PoseConv.to_pose_stamped_msg('ellipse_frame',cart_goal_pose)
-        self.test_pose2.publish(cart_goal_msg)
 
         retreat_ell_traj = self.ellipsoid.create_ellipsoidal_path(curr_ell_pos, curr_ell_quat,
                                                                   retreat_ell_pos, retreat_ell_quat,
@@ -394,7 +430,6 @@ class FaceADLsManager(object):
         ps = PoseStamped()
         ps.header = head
         ps.pose = cart_traj_msg[0]
-        self.test_pose3.publish(ps)
         
         self.force_monitor.update_activity()
             
