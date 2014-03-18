@@ -18,6 +18,7 @@
         <remap from="/head_registration" to="/head_registration_r" />
         <remap from="/points" to="$(arg kinect_points)" />
     </node>
+
     <node pkg="hrl_head_registration" name="l_head_registration_srv" type="head_registration_srv"
           output="screen" args="$(arg head_pcs_dir)/$(arg subject)_l_face.bag">
         <param name="max_iters" value="300" />
@@ -31,26 +32,13 @@
         <remap from="/head_registration" to="/head_registration_l" />
         <remap from="/points" to="$(arg kinect_points)" />
     </node>
-    <node pkg="hrl_face_adls" name="registration_loader" type="registration_loader.py"
+
+    <node pkg="hrl_head_registration" name="registration_loader" type="registration_loader.py"
           output="screen" >
         <remap from="/feedback" to="/wt_log_out" />
         <param name="registration_prefix" value="$(arg ell_regs_dir)/$(arg subject)" />
-        <rosparam>
-            registration_files:
-                shaving:
-                    r: "_shaver_r_ellipsoid_registration.bag"
-                    l: "_shaver_l_ellipsoid_registration.bag"
-                scratching:
-                    r: "_scratcher_r_ellipsoid_registration.bag"
-                    l: "_scratcher_l_ellipsoid_registration.bag"
-                feeding:
-                    r: "_spoon_r_ellipsoid_registration.bag"
-                    l: "_spoon_l_ellipsoid_registration.bag"
-                wiping:
-                    r: "_wiping_r_ellipsoid_registration.bag"
-                    l: "_wiping_l_ellipsoid_registration.bag"
-        </rosparam>
     </node>
+
     <node pkg="hrl_head_registration" name="head_alignment_confirm" type="head_alignment_confirm"
           output="screen" respawn="True" >
         <remap from="/kinect_camera" to="$(arg kinect_camera)" />

@@ -46,6 +46,21 @@
         <param name="init_rot_tolerance" value="1000.0" />
         <param name="kinect_frame" value="head_mount_kinect_rgb_optical_frame" />
         <param name="global_poses_dir" value="$(arg ell_poses_dir)" />
+        <rosparam>
+            registration_files:
+                shaving:
+                    r: "_shaver_r_ellipsoid_registration.bag"
+                    l: "_shaver_l_ellipsoid_registration.bag"
+                scratching:
+                    r: "_scratcher_r_ellipsoid_registration.bag"
+                    l: "_scratcher_l_ellipsoid_registration.bag"
+                feeding:
+                    r: "_spoon_r_ellipsoid_registration.bag"
+                    l: "_spoon_l_ellipsoid_registration.bag"
+                wiping:
+                    r: "_wiping_r_ellipsoid_registration.bag"
+                    l: "_wiping_l_ellipsoid_registration.bag"
+        </rosparam>
     </node>
 
   <!-- Nodes for shaver power and run-stop monitor to stop shaver 
