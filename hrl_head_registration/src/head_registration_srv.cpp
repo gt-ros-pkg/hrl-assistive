@@ -43,14 +43,14 @@ bool regCallback(HeadRegSrv::Request& req, HeadRegSrv::Response& resp)
         ROS_ERROR("[head_registraion] Bad initialization pixel.");
         return false;
     }
-    resp.tf_reg.header.frame_id = cur_pc->header.frame_id;
-    resp.tf_reg.header.stamp = ros::Time::now();
-    tf::poseEigenToMsg(tf_mat, resp.tf_reg.pose);
+    resp.reg_pose.header.frame_id = cur_pc->header.frame_id;
+    resp.reg_pose.header.stamp = ros::Time::now();
+    tf::poseEigenToMsg(tf_mat, resp.reg_pose.pose);
 
     // TODO SHAVING_SIDE
-    string shaving_side;
-    ros::param::param<string>("/shaving_side", shaving_side, "r");
-    double new_hue = (shaving_side[0] == 'r') ? 120 : 240;
+    string face_side;
+    ros::param::param<string>("/face_side", face_side, "r");
+    double new_hue = (face_side[0] == 'r') ? 120 : 240;
     // TODO END SHAVING_SIDE
 
     PCRGB::Ptr aligned_pc(new PCRGB());

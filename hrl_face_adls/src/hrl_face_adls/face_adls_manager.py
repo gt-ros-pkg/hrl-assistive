@@ -22,6 +22,7 @@ import hrl_geom.transformations as trans
 from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 from hrl_ellipsoidal_control.ellipsoidal_parameters import *
+from hrl_ellipsoidal_control.msg import EllipsoidParams
 from hrl_face_adls.face_adls_parameters import *
 from hrl_face_adls.msg import StringArray
 from hrl_face_adls.srv import EnableFaceController, EnableFaceControllerResponse
@@ -203,7 +204,7 @@ class FaceADLsManager(object):
         except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
             rospy.logwarn("[face_adls_manager] TF Failure getting current end-effector pose: %s" %e)
             return None
-        return pos, quat 
+        return pos, quat
 
     def publish_feedback(self, message=None):
         if message is not None:
