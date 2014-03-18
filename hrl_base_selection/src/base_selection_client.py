@@ -48,12 +48,16 @@ def select_base_client():
     psm_goal.pose.orientation.y=ori_goal[1]
     psm_goal.pose.orientation.z=ori_goal[2]
     psm_goal.pose.orientation.w=ori_goal[3]
-
+    head_pub = rospy.Publisher("/haptic_mpc/head_pose", PoseStamped, latch=True)
+    head_pub.publish(psm_head)
+    goal_pub = rospy.Publisher("/haptic_mpc/goal_pose", PoseStamped, latch=True)
+    goal_pub.publish(psm_goal)
 
     rospy.wait_for_service('select_base_position')
     try:
         select_base_position = rospy.ServiceProxy('select_base_position', BaseMove)
         response = select_base_position(psm_goal, psm_head)
+        print 'response is: \n', response
         return response.base_goal#, response.ik_solution
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
@@ -64,6 +68,7 @@ def usage():
 
 
 if __name__ == "__main__":
+    rospy.init_node('client_node')
     #if len(sys.argv) == 3:
     #    current_loc = PoseStamped(sys.argv[0])
     #    goal = PoseStamped(sys.argv[1])
@@ -73,5 +78,6 @@ if __name__ == "__main__":
     #    sys.exit(1)
     print "Requesting Base Goal Position"
     goal = select_base_client()
+    rospy.spin()
     print "Base Goal Position is:\n", goal
     #print "ik solution is: \n", ik

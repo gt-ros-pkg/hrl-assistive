@@ -15,6 +15,7 @@ import hrl_lib.transforms as tr
 from hrl_base_selection.srv import BaseMove
 from helper_functions import createBMatrix
 
+
 def handle_select_base(req):
     print 'My given inputs were: \n', req.goal, req.head
     pos_temp = [req.head.pose.position.x,req.head.pose.position.y,req.head.pose.position.z]
@@ -39,9 +40,11 @@ def handle_select_base(req):
     robot.SetActiveDOFValues(v)
     robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
     robot.SetTransform(np.array(robot_start))
+
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_base_selection')
     env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
+
 
     manip = robot.SetActiveManipulator('leftarm')
     ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)
@@ -99,15 +102,15 @@ def handle_select_base(req):
                         traj = None
                         try:
                             #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
-                            #traj=manipprob.MoveManipulator(goal=sol,outputtrajobj=True)
-                            #print 'Got a trajectory! \n'
+                            traj=manipprob.MoveManipulator(goal=sol,outputtrajobj=True)
+                            print 'Got a trajectory! \n', traj
                             print ''
                         except:
                             #print 'traj = \n',traj
                             traj = None
                             print 'traj failed \n'
                             pass
-                        traj =1 #This gets rid of traj
+                        #traj =1 #This gets rid of traj
                         if (traj != None):
                             (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
                             odom_goal = createBMatrix(trans,rot)*base_position
@@ -124,6 +127,7 @@ def handle_select_base(req):
                             psm.pose.orientation.w=ori_goal[3]
                             print 'I found a goal location! It is at B transform: \n',base_position
                             print 'The quaternion to the goal location is: \n',psm
+                            print 'The trajectory I found is : \n',traj
                             #srv.base_goal.
                             return psm
                         
