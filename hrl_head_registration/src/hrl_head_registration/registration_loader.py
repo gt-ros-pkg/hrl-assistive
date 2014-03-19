@@ -14,7 +14,8 @@ class RegistrationLoader(object):
     WORLD_FRAME = "odom_combined"
     HEAD_FRAME = "head_frame"
     def __init__(self):
-        self.head_reg_pose = None
+        self.head_pose = None
+        self.head_pc_reg = None
         self.head_frame_tf = None
         self.head_frame_bcast = TransformBroadcaster()
         self.tfl = TransformListener()
@@ -24,6 +25,8 @@ class RegistrationLoader(object):
         self.head_registration_l = rospy.ServiceProxy("/head_registration_l", HeadRegistration)
         self.feedback_pub = rospy.Publisher("/feedback", String)
         self.test_pose = rospy.Publisher("/test_head_pose", PoseStamped)
+        self.reg_dir = rospy.get_param("~registration_dir", "")
+        self.subject = rospy.get_param("~subject", None)
 
     def publish_feedback(self, msg):
         rospy.loginfo("[%s] %s" % (rospy.get_name(), msg))
@@ -32,27 +35,42 @@ class RegistrationLoader(object):
     def init_reg_cb(self, req):
         # TODO REMOVE THIS FACE SIDE MESS
         self.face_side = rospy.get_param("/face_side", 'r')
+        bag_str = '_'.join([self.reg_dir, self.subject, self.face_side, "head_transform"]) + ".bag"
+        rospy.loginfo("[%s] Loading %s" %(rospy.get_name(), bag_str))
+        try:
+            bag = rosbag.Bag(bag_str, 'r')
+            for topic, msg, ts in bag.read_messages():
+                head_tf = msg
+            assert isinstance(head_tf, TransformStamped), "Error reading head transform bagfile"
+            bag.close()
+        except:
+            rospy.logerr("[%s] Cannot load registration parameters from %s" %(rospy.get_name(), bag_str))
+
         if self.face_side == 'r':
             head_registration = self.head_registration_r
         else:
             head_registration = self.head_registration_l
-        print "Head Registration: ", head_registration
         try:
-            self.head_reg_pose = head_registration(req.u, req.v).reg_pose
+            self.head_pc_reg = head_registration(req.u, req.v).reg_pose
         except rospy.ServiceException as se:
             self.publish_feedback("Registration failed: %s" %se)
             return None
+
+        pc_reg_mat = PoseConv.to_homo_mat(self.head_pose)
+        head_tf_mat = PoseConv.to_homo_mat(head_tf)
+        self.head_pose = PoseConv.to_pose_stamped_msg(pc_reg_mat**-1 * head_tf_mat)
+
         side = "right" if (self.face_side == 'r') else "left"
         self.publish_feedback("Registered head using %s cheek model, please visually confirm." %side)
-        rospy.loginfo('[%s] Head PC frame registered at:\r\n %s' %(rospy.get_name(), self.head_reg_pose))
-        self.test_pose.publish(self.head_reg_pose)
-        return self.head_reg_pose
+        rospy.loginfo('[%s] Head PC frame registered at:\r\n %s' %(rospy.get_name(), self.head_pose))
+        self.test_pose.publish(self.head_pose)
+        return self.head_pose
 
     def confirm_reg_cb(self, req):
-        if self.head_reg_pose is None:
+        if self.head_pose is None:
             raise rospy.ServiceException("Head has not been registered.");
             return False
-        hp = copy.copy(self.head_reg_pose)
+        hp = copy.copy(self.head_pose)
         now = rospy.Time.now()
         self.tfl.waitForTransform(self.WORLD_FRAME, hp.header.frame_id, now, rospy.Duration(10))
         hp.header.stamp = now
