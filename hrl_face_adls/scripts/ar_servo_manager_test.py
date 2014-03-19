@@ -25,7 +25,6 @@ class ServoingManager(object):
 
     def __init__(self):
         self.tfl = TransformListener()
-        rospy.sleep(1) # Hack to have tf for latched ellipse topic cb
 
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
@@ -34,13 +33,13 @@ class ServoingManager(object):
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
 
         self.ui_input_sub = rospy.Subscriber("action_location_goal", String, self.ui_cb)
-        self.head_pose_sub = rospy.Subscriber("ellipsoid_params", EllipsoidParams, self.ell_cb)
         self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
         self.lock = Lock()
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
+        rospy.loginfo("[%s] Ready")
 
     def servo_fdbk_cb(self, msg):
         if not msg.data == 5:
@@ -48,11 +47,13 @@ class ServoingManager(object):
         rospy.loginfo("Servoing Succeeded.  Wait 30 seconds and publish goal ik")
 
     def ui_cb(self, msg):
+        self.head_pose = self.get_head_pose()
         if self.head_pose is None:
             log_msg = "Must register head before sending action command"
             self.feedback_pub.publish(String(log_msg))
-            rospy.loginfo("[%s]" % rospy.get_name() + log_msg)
+            rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
             return
+        rospy.loginfo("[%s] Found head frame" % rospy.get_name());
 
         loc = msg.data
         if loc not in POSES:
@@ -60,9 +61,10 @@ class ServoingManager(object):
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s]" % rospy.get_name() + log_msg)
             return
+        rospy.loginfo("[%s] Received valid goal location: %s" % (rospy.get_name(), loc))
         pos, quat = POSES[loc]
         goal_ps_ell = PoseStamped()
-        goal_ps_ell.header.frame_id = 'ellipse_frame'
+        goal_ps_ell.header.frame_id = 'head_frame'
         goal_ps_ell.pose.position = Point(*pos)
         goal_ps_ell.pose.orientation = Quaternion(*quat)
 
@@ -77,6 +79,7 @@ class ServoingManager(object):
 
         ar_data = ARServoGoalData()
         base_goal = self.call_base_selection()
+        print "Base Goal returned:\r\n", base_goal
         if base_goal is None:
             rospy.loginfo("No base goal found")
             return
@@ -91,16 +94,6 @@ class ServoingManager(object):
         self.goal_data_pub.publish(ar_data)
 
     def call_base_selection(self):
-        ## Place holder return
-#        bg = PoseStamped()
-#        bg.header.stamp = rospy.Time.now()
-#        bg.header.frame_id = 'ar_marker'
-#        bg.pose.position = Point(0., 0., 0.5)
-#        q = tft.quaternion_from_euler(0., np.pi/2, 0.)
-#        bg.pose.orientation = Quaternion(*q)
-#        return bg
-        ## End Place Holder
-
         bm = BaseMoveRequest()
         bm.head = self.head_pose
         bm.goal = self.goal_pose
@@ -111,30 +104,24 @@ class ServoingManager(object):
             return None
         return resp.base_goal
 
-    def ell_cb(self, ell_msg):
-        head_pose = PoseStamped()
-        head_pose.header = copy.copy(ell_msg.e_frame.header)
-        head_pose.pose.position.x = ell_msg.e_frame.transform.translation.x
-        head_pose.pose.position.y = ell_msg.e_frame.transform.translation.y
-        head_pose.pose.position.z = ell_msg.e_frame.transform.translation.z
-        head_pose.pose.orientation.x = ell_msg.e_frame.transform.rotation.x
-        head_pose.pose.orientation.y = ell_msg.e_frame.transform.rotation.y
-        head_pose.pose.orientation.z = ell_msg.e_frame.transform.rotation.z
-        head_pose.pose.orientation.w = ell_msg.e_frame.transform.rotation.w
-        now = rospy.Time.now()
+    def get_head_pose(self, head_frame="head_frame"):
         try:
-            self.tfl.waitForTransform('base_link', head_pose.header.frame_id, now, rospy.Duration(3))
+            now = rospy.Time.now()
+            self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(3))
+            pos, quat = self.tfl.lookupTransform(head_frame, "/base_link", now)
+            head_pose = PoseStamped()
+            head_pose.header.frame_id = "/base_link"
             head_pose.header.stamp = now
-            self.head_pose = self.tfl.transformPose("base_link", head_pose)
-            rospy.loginfo("[%s] Successfully grabbed ellipse pose" % rospy.get_name())
+            head_pose.pose.position = Point(*pos)
+            head_pose.pose.orientation = Quaternion(*quat)
+            return head_pose
         except Exception as e:
-            rospy.loginfo("TF Exception, wait for new ell registration")
-            self.feedback_pub.publish(String("Please re-register the head"))
+            rospy.loginfo("TF Exception:\r\n%s" %e)
+            self.feedback_pub.publish(String("Error: Please re-register the head"))
 
 
 if __name__ == '__main__':
     rospy.init_node('ar_servo_manager')
     manager = ServoingManager()
     import sys
-    print sys.argv
     rospy.spin()
