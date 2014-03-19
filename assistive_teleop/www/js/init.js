@@ -21,6 +21,7 @@ var assistive_teleop = {
               initBodyRegistration('tabBodyReg');
               initEllControl();
               initCartControl();
+              initTaskInterface('tabTasks');
               if (window.location.hash.search('ft') !== -1) {
                   initFTDisplay('FTDisplay', {});
               }

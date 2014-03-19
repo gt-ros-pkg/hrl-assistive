@@ -15,10 +15,10 @@ from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove, BaseMoveRequest
 from hrl_ellipsoidal_control.msg import EllipsoidParams
 
-POSES = {'knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
-         'arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
-         'shoulder': ([0.108, -0.236, -0.105], [0.346, 0.857, 0.238, 0.299]),
-         'face': ([0.252, -0.067, -0.021], [0.102, 0.771, 0.628, -0.002])}
+POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
+         'Arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
+         'Shoulder': ([0.108, -0.236, -0.105], [0.346, 0.857, 0.238, 0.299]),
+         'Face': ([0.252, -0.067, -0.021], [0.102, 0.771, 0.628, -0.002])}
 
 class ServoingManager(object):
     """ Manager for providing test goals to pr2 ar servoing. """
@@ -28,6 +28,7 @@ class ServoingManager(object):
 
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
+        self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped)
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
@@ -44,6 +45,7 @@ class ServoingManager(object):
     def servo_fdbk_cb(self, msg):
         if not msg.data == 5:
             return
+        self.reach_goal_pub.publish(self.goal_pose)
         rospy.loginfo("Servoing Succeeded.  Wait 30 seconds and publish goal ik")
 
     def ui_cb(self, msg):
