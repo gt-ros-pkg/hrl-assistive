@@ -45,10 +45,10 @@ class arm_reacher:
         self.robot.SetActiveDOFValues(v)
         self.robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
         
-        self.robot_start = np.matrix([[ -0,    1,    0.0,    2.6],
-                                     [ -1.,   -0,    0.00,    1.0],
-                                     [  0.,    0.,    1.00,    0.0],
-                                     [  0.,    0.,    0.0,    1.00]])
+        #self.robot_start = np.matrix([[ -0,    1,    0.0,    2.6],
+        #                             [ -1.,   -0,    0.00,    1.0],
+        #                             [  0.,    0.,    1.00,    0.0],
+        #                             [  0.,    0.,    0.0,    1.00]])
 
         self.robot.SetTransform(np.array(self.robot_start))
 

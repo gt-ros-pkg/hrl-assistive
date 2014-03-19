@@ -17,19 +17,28 @@ from helper_functions import createBMatrix
 
 
 def handle_select_base(req):
-    print 'My given inputs were: \n', req.goal, req.head
+    print 'My given inputs were: \n'
+    print 'goal is: \n',req.goal
+    print 'head is: \n', req.head
     pos_temp = [req.head.pose.position.x,req.head.pose.position.y,req.head.pose.position.z]
     ori_temp = [req.head.pose.orientation.x,req.head.pose.orientation.y,req.head.pose.orientation.z,req.head.pose.orientation.w]
     head = createBMatrix(pos_temp,ori_temp)
+    print 'head from input: \n',head
+
+    #(trans,rot) = listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
+    #pos_temp = trans
+    #ori_temp = rot
+    #head = createBMatrix(pos_temp,ori_temp)
+    #print 'head from tf: \n',head
 
     pos_temp = [req.goal.pose.position.x,req.goal.pose.position.y,req.goal.pose.position.z]
     ori_temp = [req.goal.pose.orientation.x,req.goal.pose.orientation.y,req.goal.pose.orientation.z,req.goal.pose.orientation.w]
     goal = createBMatrix(pos_temp,ori_temp)
-    print 'goal',goal
+    print 'goal: \n',goal
 
     print 'I will move to be able to reach the mouth.'
     env = op.Environment()
-    #:env.SetViewer('qtcoin')
+    env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
     robot = env.GetRobots()[0]
     v = robot.GetActiveDOFValues()
@@ -83,7 +92,7 @@ def handle_select_base(req):
                                              [                     0.,                       0.,                0.,                 1]])
 
                 base_position = pr2_B_wc * wc_B_goalpr2
-                print 'base position: \n',base_position
+                #print 'base position: \n',base_position
                 robot.SetTransform(np.array(base_position))
 
                 #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
@@ -103,7 +112,7 @@ def handle_select_base(req):
                         try:
                             #res = manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
                             traj=manipprob.MoveManipulator(goal=sol,outputtrajobj=True)
-                            print 'Got a trajectory! \n', traj
+                            print 'Got a trajectory! \n'#,traj
                             print ''
                         except:
                             #print 'traj = \n',traj
@@ -112,7 +121,10 @@ def handle_select_base(req):
                             pass
                         #traj =1 #This gets rid of traj
                         if (traj != None):
-                            (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', rospy.Time(0))
+                            now = rospy.Time.now()
+                            listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
+                            (trans,rot) = listener.lookupTransform('/odom_combined', '/base_link', now)
+
                             odom_goal = createBMatrix(trans,rot)*base_position
                             pos_goal = [odom_goal[0,3],odom_goal[1,3],odom_goal[2,3]]
                             ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
