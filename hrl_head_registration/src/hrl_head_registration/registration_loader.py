@@ -4,11 +4,13 @@ import copy
 
 import roslib; roslib.load_manifest('hrl_head_registration')
 import rospy
+import rosbag
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Transform
 from tf import TransformBroadcaster, TransformListener
 
 from hrl_head_registration.srv import HeadRegistration, ConfirmRegistration
+from hrl_geom.pose_converter import PoseConv
 
 class RegistrationLoader(object):
     WORLD_FRAME = "odom_combined"
@@ -35,16 +37,18 @@ class RegistrationLoader(object):
     def init_reg_cb(self, req):
         # TODO REMOVE THIS FACE SIDE MESS
         self.face_side = rospy.get_param("/face_side", 'r')
-        bag_str = '_'.join([self.reg_dir, self.subject, self.face_side, "head_transform"]) + ".bag"
+        bag_str = self.reg_dir + '/' + '_'.join([self.subject, self.face_side, "head_transform"]) + ".bag"
         rospy.loginfo("[%s] Loading %s" %(rospy.get_name(), bag_str))
         try:
             bag = rosbag.Bag(bag_str, 'r')
             for topic, msg, ts in bag.read_messages():
                 head_tf = msg
-            assert isinstance(head_tf, TransformStamped), "Error reading head transform bagfile"
+            assert (head_tf is not None), "Error reading head transform bagfile"
             bag.close()
-        except:
-            rospy.logerr("[%s] Cannot load registration parameters from %s" %(rospy.get_name(), bag_str))
+        except Exception as e:
+            rospy.logerr("[%s] Cannot load registration parameters from %s:\r\n%s" %
+                         (rospy.get_name(), bag_str, e))
+            return None
 
         if self.face_side == 'r':
             head_registration = self.head_registration_r
@@ -56,13 +60,16 @@ class RegistrationLoader(object):
             self.publish_feedback("Registration failed: %s" %se)
             return None
 
-        pc_reg_mat = PoseConv.to_homo_mat(self.head_pose)
-        head_tf_mat = PoseConv.to_homo_mat(head_tf)
+        pc_reg_mat = PoseConv.to_homo_mat(self.head_pc_reg)
+        head_tf_mat = PoseConv.to_homo_mat(Transform(head_tf.transform.translation,
+                                                     head_tf.transform.rotation))
         self.head_pose = PoseConv.to_pose_stamped_msg(pc_reg_mat**-1 * head_tf_mat)
+        self.head_pose.header.frame_id = self.head_pc_reg.header.frame_id
+        self.head_pose.header.stamp = self.head_pc_reg.header.stamp
 
         side = "right" if (self.face_side == 'r') else "left"
-        self.publish_feedback("Registered head using %s cheek model, please visually confirm." %side)
-        rospy.loginfo('[%s] Head PC frame registered at:\r\n %s' %(rospy.get_name(), self.head_pose))
+        self.publish_feedback("Registered head using %s cheek model, please check and confirm." %side)
+#        rospy.loginfo('[%s] Head frame registered at:\r\n %s' %(rospy.get_name(), self.head_pose))
         self.test_pose.publish(self.head_pose)
         return self.head_pose
 
@@ -79,7 +86,7 @@ class RegistrationLoader(object):
         quat = (hp_world.pose.orientation.x, hp_world.pose.orientation.y,
                 hp_world.pose.orientation.z, hp_world.pose.orientation.w)
         self.head_frame_tf = (pos, quat)
-        rospy.loginfo("[%s] Head Registration Confirmed" % rospy.get_name())
+        self.publish_feedback("Head registration confirmed.");
         return True
 
 if __name__ == "__main__":

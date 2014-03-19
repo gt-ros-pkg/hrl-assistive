@@ -31,7 +31,6 @@
     <include file="$(find hrl_face_adls)/launch/head_registration.launch">
         <arg name="subject" value="$(arg subject)" />
         <arg name="head_pcs_dir" value="$(arg head_pcs_dir)" />
-        <arg name="ell_regs_dir" value="$(arg ell_regs_dir)" />
         <arg name="kinect_points" value="$(arg kinect_points)" />
         <arg name="kinect_camera" value="$(arg kinect_camera)" />
     </include>
