@@ -18,6 +18,7 @@ from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 import threading
 import tf
+from visualization_msgs.msg import Marker
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 class arm_reacher:
@@ -32,9 +33,10 @@ class arm_reacher:
     def __init__(self):
         rospy.init_node('arm_reacher')
         self.listener = tf.TransformListener()
+        vis_pub = rospy.Publisher("arm_reacher_wc_model",Marker)
         print 'Arm reaching node has been created.'
         self.env = op.Environment()
-        self.env.SetViewer('qtcoin')
+        #self.env.SetViewer('qtcoin')
         self.env.Load('robots/pr2-beta-static.zae')
         self.robot = self.env.GetRobots()[0]
         v = self.robot.GetActiveDOFValues()
@@ -87,6 +89,7 @@ class arm_reacher:
 
 
         # This is to use tf to get head location. Otherwise, there is a subscriber to get a head location. Comment out if there is no tf to use.
+        listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
         (trans,rot) = self.listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
         pos_temp = trans
         ori_temp = rot
@@ -100,6 +103,34 @@ class arm_reacher:
                                      [                 0.,                  0.,              0.,                   1]])
         self.wheelchair_location = self.pr2_B_wc * self.corner_B_head.I
         self.wheelchair.SetTransform(np.array(self.wheelchair_location))
+
+        pos_goal = [wheelchair_location[0,3],wheelchair_location[1,3],wheelchair_location[2,3]]
+        ori_goal = tr.matrix_to_quaternion(wheelchair_location[0:3,0:3])
+
+        marker = Marker()
+        marker.header.frame_id = "base_link"
+        marker.header.stamp = rospy.Time()
+        marker.ns = "arm_reacher_wc_model"
+        marker.id = 0
+        marker.type = Marker.MESH_RESOURCE;
+        marker.action = Marker.ADD
+        marker.pose.position.x = pos_goal[0]
+        marker.pose.position.y = pos_goal[1]
+        marker.pose.position.z = pos_goal[2]
+        marker.pose.orientation.x = ori_goal[0]
+        marker.pose.orientation.y = ori_goal[1]
+        marker.pose.orientation.z = ori_goal[2]
+        marker.pose.orientation.w = ori_goal[3]
+        marker.scale.x = 0.025
+        marker.scale.y = 0.025
+        marker.scale.z = 0.025
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        #only if using a MESH_RESOURCE marker type:
+        marker.mesh_resource = ''.join([pkg_path, '/models/ADA_Wheelchair.dae']) #"package://pr2_description/meshes/base_v0/base.dae"
+        vis_pub.publish( marker )
 
         v = self.robot.GetActiveDOFValues()
         for name in self.joint_names:

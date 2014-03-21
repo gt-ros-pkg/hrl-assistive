@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys, optparse
 
-import rospy
+import rospy, rospkg
 import openravepy as op
 import numpy as np
 import math as m
@@ -10,6 +10,7 @@ import roslib; roslib.load_manifest('hrl_haptic_mpc')
 import hrl_lib.transforms as tr
 import tf
 import rospy
+from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix
 
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
@@ -32,6 +33,37 @@ def select_base_client():
     psm_head.pose.orientation.z=ori_goal[2]
     psm_head.pose.orientation.w=ori_goal[3]
 
+    rospack = rospkg.RosPack()
+    pkg_path = rospack.get_path('hrl_base_selection')
+    
+
+    marker = Marker()
+    marker.header.frame_id = "/base_link"
+    marker.header.stamp = rospy.Time()
+    marker.ns = "base_service_wc_model"
+    marker.id = 0
+    #marker.type = Marker.SPHERE
+    marker.type = Marker.MESH_RESOURCE;
+    marker.action = Marker.ADD
+    marker.pose.position.x = pos_goal[0]
+    marker.pose.position.y = pos_goal[1]
+    marker.pose.position.z = 0
+    marker.pose.orientation.x = ori_goal[0]
+    marker.pose.orientation.y = ori_goal[1]
+    marker.pose.orientation.z = ori_goal[2]
+    marker.pose.orientation.w = ori_goal[3]
+    marker.scale.x = .025
+    marker.scale.y = .025
+    marker.scale.z = .025
+    marker.color.a = 1.
+    marker.color.r = 0.0
+    marker.color.g = 1.0
+    marker.color.b = 0.0
+    #only if using a MESH_RESOURCE marker type:
+    marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"#~/git/gt-ros-pkg.hrl-assistive/hrl_base_selection/models/ADA_Wheelchair.dae" # ''.join([pkg_path, '/models/ADA_Wheelchair.dae']) #"package://pr2_description/meshes/base_v0/base.dae"
+    vis_pub.publish( marker )
+    print 'I think I just published the wc model \n'
+
     goal_angle = 0#m.pi/2
     pr2_B_goal  =  np.matrix([[    m.cos(goal_angle),     -m.sin(goal_angle),                0.,              2.7],
                               [    m.sin(goal_angle),      m.cos(goal_angle),                0.,              .3],
@@ -50,7 +82,7 @@ def select_base_client():
     psm_goal.pose.orientation.w=ori_goal[3]
     head_pub = rospy.Publisher("/haptic_mpc/head_pose", PoseStamped, latch=True)
     head_pub.publish(psm_head)
-    goal_pub = rospy.Publisher("/haptic_mpc/goal_pose", PoseStamped, latch=True)
+    goal_pub = rospy.Publisher("/arm_reacher/goal_pose", PoseStamped, latch=True)
     goal_pub.publish(psm_goal)
 
     rospy.wait_for_service('select_base_position')
@@ -69,6 +101,7 @@ def usage():
 
 if __name__ == "__main__":
     rospy.init_node('client_node')
+    vis_pub = rospy.Publisher("base_service_wc_model",Marker, latch=True)
     #if len(sys.argv) == 3:
     #    current_loc = PoseStamped(sys.argv[0])
     #    goal = PoseStamped(sys.argv[1])

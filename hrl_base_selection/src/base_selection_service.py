@@ -13,6 +13,7 @@ from geometry_msgs.msg import PoseStamped
 
 import hrl_lib.transforms as tr
 from hrl_base_selection.srv import BaseMove
+from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix
 
 
@@ -24,6 +25,9 @@ def handle_select_base(req):
     ori_temp = [req.head.pose.orientation.x,req.head.pose.orientation.y,req.head.pose.orientation.z,req.head.pose.orientation.w]
     head = createBMatrix(pos_temp,ori_temp)
     print 'head from input: \n',head
+
+
+
 
     #(trans,rot) = listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
     #pos_temp = trans
@@ -38,7 +42,7 @@ def handle_select_base(req):
 
     print 'I will move to be able to reach the mouth.'
     env = op.Environment()
-    env.SetViewer('qtcoin')
+    #env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
     robot = env.GetRobots()[0]
     v = robot.GetActiveDOFValues()
@@ -72,6 +76,34 @@ def handle_select_base(req):
     corner_B_head = np.matrix([[m.cos(0.),-m.sin(0.),0.,.45],[m.sin(0.),m.cos(0.),0.,.34],[0.,0.,1,0.],[0.,0.,0.,1]])
     wheelchair_location = pr2_B_wc * corner_B_head.I
     wheelchair.SetTransform(np.array(wheelchair_location))
+
+    pos_goal = [wheelchair_location[0,3],wheelchair_location[1,3],wheelchair_location[2,3]]
+    ori_goal = tr.matrix_to_quaternion(wheelchair_location[0:3,0:3])
+    
+    marker = Marker()
+    marker.header.frame_id = "/base_link"
+    marker.header.stamp = rospy.Time()
+    marker.ns = "base_service_wc_model"
+    marker.id = 0
+    #marker.type = Marker.SPHERE
+    marker.type = Marker.MESH_RESOURCE;
+    marker.action = Marker.ADD
+    marker.pose.position.x = pos_goal[0]
+    marker.pose.position.y = pos_goal[1]
+    marker.pose.position.z = 0
+    marker.pose.orientation.x = ori_goal[0]
+    marker.pose.orientation.y = ori_goal[1]
+    marker.pose.orientation.z = ori_goal[2]
+    marker.pose.orientation.w = ori_goal[3]
+    marker.scale.x = .025
+    marker.scale.y = .025
+    marker.scale.z = .025
+    marker.color.a = 1.
+    marker.color.r = 0.0
+    marker.color.g = 1.0
+    marker.color.b = 0.0
+    #only if using a MESH_RESOURCE marker type:
+    marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"#~/git/gt-ros-pkg.hrl-assistive/hrl_base_selection/models/ADA_Wheelchair.dae" # ''.join([pkg_path, '/models/ADA_Wheelchair.dae']) #"package://pr2_description/meshes/base_v0/base.dae"
 
     for i in [0.,.1,.2,.3,-.1,-.2,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
         for j in [0.,.05,.1,.13,-.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
@@ -157,5 +189,24 @@ def select_base_server():
 if __name__ == "__main__":
 
     rospy.init_node('select_base_server')
+
+    vis_pub = rospy.Publisher("base_service_wc_model",Marker)# .node_handle.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     listener = tf.TransformListener()
     select_base_server()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
