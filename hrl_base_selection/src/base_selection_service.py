@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
     rospy.init_node('select_base_server')
 
-    vis_pub = rospy.Publisher("base_service_wc_model",Marker)# .node_handle.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+    vis_pub = rospy.Publisher("base_service_wc_model",Marker, latch = True)# .node_handle.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     listener = tf.TransformListener()
     select_base_server()
 

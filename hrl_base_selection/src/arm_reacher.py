@@ -33,7 +33,7 @@ class arm_reacher:
     def __init__(self):
         rospy.init_node('arm_reacher')
         self.listener = tf.TransformListener()
-        vis_pub = rospy.Publisher("arm_reacher_wc_model",Marker)
+        vis_pub = rospy.Publisher("arm_reacher_wc_model",Marker, latch=True)
         print 'Arm reaching node has been created.'
         self.env = op.Environment()
         #self.env.SetViewer('qtcoin')
