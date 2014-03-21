@@ -24,6 +24,7 @@ var TaskInterface = function (ros) {
 var initTaskInterface = function (tabDivId) {
     window.taskUI = new TaskInterface(window.ros);
     var divRef = "#"+tabDivId;
+    $(divRef).css({"position":"relative"});
     $(divRef).append('<table id="' + tabDivId + '_T0">' +
                        '<tr>' + 
                          '<th id="' + tabDivId + '_R0C0">Action</th>' +
@@ -50,5 +51,29 @@ var initTaskInterface = function (tabDivId) {
     $("#send_task").button()
     $(divRef+'_R2C0').click(window.taskUI.sendTask);
 
+    // Info dialog box -- Pops up with instructions for using the body registration tab
+    var INFOTEXT = "The Tasks Tab allows you to command the robot to do various tasks.</br>" +
+                   "To send a task:</br></br>"+
+                   "1. Select the action you would like the robot to perform.</br>"+
+                   "2. Select the location where you would like the robot to perform this action.</br>" +
+                   "3. Click 'Send Task.'</br></br>" +
+                   "The interface will prompt you if further assistance is required."
+
+    $(divRef).append('<div id="'+tabDivId+'_infoDialog">' + INFOTEXT + '</div>');
+    $(divRef+'_infoDialog').dialog({autoOpen:false,
+                              buttons: [{text:"Ok", click:function(){$(this).dialog("close");}}],
+                              modal:true,
+                              title:"Task Command Info",
+                              width:"70%"
+                              });
+
+    //Info button - brings up info dialog
+    $(divRef).append('<button id="'+tabDivId+'_info"> Help </button>');
+    $(divRef+'_info').button();
+    $(divRef+'_info').click(function () { $(divRef+'_infoDialog').dialog("open"); } );
+    $(divRef+'_info').click(function(){$(divRef+'_info').dialig("open")});
+    $(divRef+'_info').css({"position":"absolute",
+                            "top":"10px",
+                            "right":"10px"});
 }
 
