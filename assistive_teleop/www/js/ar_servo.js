@@ -55,29 +55,69 @@ var ArServo = function (ros) {
 function initARServoTab(tabDivId) {
   'use strict';
   window.arServo = new ArServo(window.ros);
-  $('#' + tabDivId).append('<table><tr>' +
+  var divRef = '#'+tabDivId
+  $(divRef).css({"position":"relative"});
+  $(divRef).append('<table><tr>' +
                            '<td id="' + tabDivId + 'R0C0"></td>' +
                            '<td id="' + tabDivId + 'R0C1"></td>' +
                            '</tr></table>');
-  $('#' + tabDivId + 'R0C0').append('<button id="' + tabDivId + '_approach">' +
+  $(divRef+'R0C0').append('<button id="' + tabDivId + '_approach">' +
                                     'Approach </button>')
     .click(function () {
       window.arServo.approach();
     });
 
-  $('#' + tabDivId + 'R0C1').append('<button id="' + tabDivId + '_preempt">' +
+  $(divRef+'R0C1').append('<button id="' + tabDivId + '_preempt">' +
                                     'Stop </button>')
     .click(function () {
       window.arServo.preemptApproach();
     });
-  $('#' + tabDivId + ' :button').button().css({
+  $(divRef+' :button').button().css({
     'height': "75px",
     'width': "200px",
     'font-size': '150%',
     'text-align':"center"
   });
-  $('#'+tabDivId+'_approach'+',#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
+  $(divRef+'_approach'+',#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
 
+  $(divRef).append('<table id="' + tabDivId +
+                   '_T0"><tr><td id="' + tabDivId +
+                   '_R0C0"></td><td id="' + tabDivId +
+                   '_R0C1"></td></tr></table>');
+  $(divRef+'_T0').append('<tr><td id="' + tabDivId + '_R1C0"></td></tr>')
+
+  // Info dialog box -- Pops up with instructions for using the body registration tab
+  var INFOTEXT = "The Servoing Tab allows you to position the robot relative to an Augmented Reality (AR) Tag. </br>" +
+                 "To servo to a location:</br></br>"+
+                 "1. The robot must have a goal position.  This is provided by giving the robot a task.</br>"+
+                 "2. Use the 'Default Controls' tab to bring the desired tag into view of the servoing camera.</br>" +
+                 "3. When the tag is consistently highlighted in the camera, the interface will tell you to begin servoing. " +
+                     "Press 'Approach'</br>"+
+                 "4. The robot will approach the goal location based on the location of the AR Tag.</br>" +
+                 "5. If something interrupts the servoing (collision with arm, lost view of tag, etc.)," +
+                     " correct the problem and continue servoing by pressing 'Approach' again. </br>" +
+                 "6. If you wish to stop servoing, press 'Stop.'  You may resume by pressing 'Approach' again. </br>" +
+                 "7. When the goal has been reached, the interface will inform you that 'Servoing has completed successfully,' "+
+                     "and the view will return to the head camera."
+
+  $(divRef).append('<div id="'+tabDivId+'_infoDialog">' + INFOTEXT + '</div>');
+  $(divRef+'_infoDialog').dialog({autoOpen:false,
+                            buttons: [{text:"Ok", click:function(){$(this).dialog("close");}}],
+                            modal:true,
+                            title:"Servoing Info",
+                            width:"70%"
+                            });
+
+  //Info button - brings up info dialog
+  $(divRef).append('<button id="'+tabDivId+'_info"> Help </button>');
+  $(divRef+'_info').button();
+  $(divRef+'_info').click(function () { $(divRef+'_infoDialog').dialog("open"); } );
+  $(divRef+'_info').click(function(){$(divRef+'_info').dialig("open")});
+  $(divRef+'_info').css({"position":"absolute",
+                          "top":"10px",
+                          "right":"10px"});
+                          
+  
   var arServoFeedbackCb = function (msg) {
     var text = "Unknown result from servoing feedback";
     switch (msg.data) {

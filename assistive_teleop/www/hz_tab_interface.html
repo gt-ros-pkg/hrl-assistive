@@ -84,7 +84,7 @@ var tab_select_cb = function (eve, ui) {
     } else {
        window.ellControl.toggle(false);
     }; 
-    if (ui.panel.id === 'tabARServoing') {
+    if (ui.panel.id === 'tabServoing') {
         window.mjpeg.setCamera('ar_servo/confirmation_rotated');
     };
 };
@@ -147,7 +147,7 @@ var tab_select_cb = function (eve, ui) {
       <div id="tabs">
         <ul>
           <li><a href="#tab_cart_control">Default Controls</a></li>
-          <li><a href="#tabARServoing">AR Servoing</a></li>
+          <li><a href="#tabServoing">Servoing</a></li>
           <li><a href="#tab_traj_play">Traj. Playback</a></li>
           <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
           <li><a href="#tabBodyReg">Body Registration</a></li>
@@ -243,7 +243,7 @@ var tab_select_cb = function (eve, ui) {
          </table>
     </div><!-- END TAB CART CONTROL -->
 
-    <div id="tabARServoing"></div>
+    <div id="tabServoing"></div>
 
     <div id="tab_traj_play">
       <table id="traj_play_layout">
