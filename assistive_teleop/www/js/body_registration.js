@@ -47,13 +47,14 @@ var initBodyRegistration = function (tabDivId) {
 
     window.bodyReg = new BodyRegistration(window.ros);
     divRef = "#"+tabDivId;
+    $(divRef).css({"position":"relative"});
     $(divRef).append('<table id="' + tabDivId +
                      '_T0"><tr><td id="' + tabDivId +
                      '_R0C0"></td><td id="' + tabDivId +
                      '_R0C1"></td></tr></table>');
     $(divRef+'_T0').append('<tr><td id="' + tabDivId + '_R1C0"></td></tr>')
 
-
+    // Info dialog box -- Pops up with instructions for using the body registration tab
     var INFOTEXT = "The Body Registration Tab allows you to help the robot find you in the world.</br>" +
                    "To identify yourself:</br></br>"+
                    "1. Have the robot look at your face using the head camera.</br>"+
@@ -78,8 +79,8 @@ var initBodyRegistration = function (tabDivId) {
     $(divRef+'_info').click(function () { $(divRef+'_infoDialog').dialog("open"); } );
     $(divRef+'_info').click(function(){$(divRef+'_info').dialig("open")});
     $(divRef+'_info').css({"position":"absolute",
-                            "top": "50%",
-                            "right":"10%"});
+                            "top":"10px",
+                            "right":"10px"});
 
     // Register Head button - Starts registration initialization
     $(divRef+'_R0C0').append('<button class="centered" id="reg_head"> Register Head </button>');
