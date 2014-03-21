@@ -29,6 +29,9 @@ var assistive_teleop = {
                   initSkinUtils();
               }
               teleopHead();
+              $('#tabs').css({'top':'0px'})
+              var tabs = $("#tabs").tabs();
+              tabs.find(".ui-tabs-nav").sortable({axis:"xy", stop: function() {tabs.tabs("refresh");}});
             });
     }
 };
