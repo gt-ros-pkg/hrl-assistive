@@ -29,6 +29,8 @@ class ServoingManager(object):
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
         self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped)
+        self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
+        self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
@@ -40,22 +42,23 @@ class ServoingManager(object):
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
-        rospy.loginfo("[%s] Ready")
+        rospy.loginfo("[%s] Ready" %rospy.get_name())
 
     def servo_fdbk_cb(self, msg):
         if not msg.data == 5:
             return
         self.reach_goal_pub.publish(self.goal_pose)
-        rospy.loginfo("Servoing Succeeded.  Wait 30 seconds and publish goal ik")
+        rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
 
     def ui_cb(self, msg):
         self.head_pose = self.get_head_pose()
         if self.head_pose is None:
-            log_msg = "Must register head before sending action command"
+            log_msg = "Please register your head before sending a task."
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
             return
         rospy.loginfo("[%s] Found head frame" % rospy.get_name());
+        self.test_head_pub.publish(self.head_pose)
 
         loc = msg.data
         if loc not in POSES:
@@ -74,6 +77,7 @@ class ServoingManager(object):
         self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(3))
         goal_ps_ell.header.stamp = now
         goal_ps = self.tfl.transformPose('base_link', goal_ps_ell)
+        self.test_pub.publish(goal_ps)
         with self.lock:
             self.action = "touch"
             self.goal_pose = goal_ps
@@ -96,6 +100,16 @@ class ServoingManager(object):
         self.goal_data_pub.publish(ar_data)
 
     def call_base_selection(self):
+        # Place holder return
+        #bg = PoseStamped()
+        #bg.header.stamp = rospy.Time.now()
+        #bg.header.frame_id = 'ar_marker'
+        #bg.pose.position = Point(0., 0., 0.5)
+        #q = tft.quaternion_from_euler(0., np.pi/2, 0.)
+        #bg.pose.orientation = Quaternion(*q)
+        #return bg
+        ## End Place Holder
+
         bm = BaseMoveRequest()
         bm.head = self.head_pose
         bm.goal = self.goal_pose
@@ -110,7 +124,7 @@ class ServoingManager(object):
         try:
             now = rospy.Time.now()
             self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(3))
-            pos, quat = self.tfl.lookupTransform(head_frame, "/base_link", now)
+            pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
             head_pose = PoseStamped()
             head_pose.header.frame_id = "/base_link"
             head_pose.header.stamp = now
@@ -119,7 +133,7 @@ class ServoingManager(object):
             return head_pose
         except Exception as e:
             rospy.loginfo("TF Exception:\r\n%s" %e)
-            self.feedback_pub.publish(String("Error: Please re-register the head"))
+            return None
 
 
 if __name__ == '__main__':
