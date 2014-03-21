@@ -34,7 +34,7 @@
         <arg name="kinect_points" value="$(arg kinect_points)" />
         <arg name="kinect_camera" value="$(arg kinect_camera)" />
     </include>
-    <node pkg="hrl_face_adls" name="face_adls_manager" type="face_adls_manager.py"
+    <!--node pkg="hrl_face_adls" name="face_adls_manager" type="face_adls_manager.py"
           output="screen" >
         <remap from="/face_adls/feedback" to="/wt_log_out" />
         <param name="dangerous_force_thresh" value="10.0" />
@@ -60,7 +60,7 @@
                     r: "_wiping_r_ellipsoid_registration.bag"
                     l: "_wiping_l_ellipsoid_registration.bag"
         </rosparam>
-    </node>
+    </node-->
 
   <!-- Nodes for shaver power and run-stop monitor to stop shaver 
   <node if="$(arg run_tool_power)" name="tool_power_toggle" pkg="rosserial_python"
