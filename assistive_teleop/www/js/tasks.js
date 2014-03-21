@@ -71,7 +71,6 @@ var initTaskInterface = function (tabDivId) {
     $(divRef).append('<button id="'+tabDivId+'_info"> Help </button>');
     $(divRef+'_info').button();
     $(divRef+'_info').click(function () { $(divRef+'_infoDialog').dialog("open"); } );
-    $(divRef+'_info').click(function(){$(divRef+'_info').dialig("open")});
     $(divRef+'_info').css({"position":"absolute",
                             "top":"10px",
                             "right":"10px"});
