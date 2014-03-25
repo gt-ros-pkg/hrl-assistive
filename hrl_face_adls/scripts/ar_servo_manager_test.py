@@ -98,7 +98,7 @@ class ServoingManager(object):
             self.action = None
             self.location = None
         self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
-        rospy.loginfo("[%s] Base position found. Sending Servoing goals.")
+        rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
         self.goal_data_pub.publish(ar_data)
 
     def call_base_selection(self):

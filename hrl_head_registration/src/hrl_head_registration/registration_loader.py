@@ -36,6 +36,7 @@ class RegistrationLoader(object):
 
     def init_reg_cb(self, req):
         # TODO REMOVE THIS FACE SIDE MESS
+        self.publish_feedback("Performing Head Registration. Please Wait.")
         self.face_side = rospy.get_param("/face_side", 'r')
         bag_str = self.reg_dir + '/' + '_'.join([self.subject, self.face_side, "head_transform"]) + ".bag"
         rospy.loginfo("[%s] Loading %s" %(rospy.get_name(), bag_str))
