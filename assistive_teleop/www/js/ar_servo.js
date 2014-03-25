@@ -141,10 +141,14 @@ function initARServoTab(tabDivId) {
       break;
     case 3:
       text = "Unable to Locate AR Tag. ADJUST VIEW AND RETRY.";
+      $('#'+tabDivId+'_approach').show().fadeTo(0, 0.5)
+      $('#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     case 4:
       text = "Servoing";
+      $('#'+tabDivId+'_approach').show().fadeTo(0, 0.5)
+      $('#'+tabDivId+'_preempt').show().fadeTo(0, 1);
       break;
     case 5:
       text = "Servoing Completed Successfully.";
@@ -153,21 +157,24 @@ function initARServoTab(tabDivId) {
       break;
     case 6:
       text = "Detected Collision with arms. Servoing Stopped.";
-      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
+      $('#'+tabDivId+'_approach').show().fadeTo(0, 1)
+      $('#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       break;
     case 7:
       text = "Detected Collision with base laser. Servoing Stopped.";
-      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
+      $('#'+tabDivId+'_approach').show().fadeTo(0, 1)
+      $('#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       break;
     case 8:
       text = "View of AR Tag lost. Servoing Stopped.";
       $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
-      window.mjpeg.setCamera(window.arServo.SeERVO_CONFIRM_IMG_TOPIC);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     case 9:
       text = "Servoing Stopped by User.";
-      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
-      window.mjpeg.setCamera(window.arServo.SeERVO_CONFIRM_IMG_TOPIC);
+      $('#'+tabDivId+'_approach').show().fadeTo(0, 1)
+      $('#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     }
     log(text);
