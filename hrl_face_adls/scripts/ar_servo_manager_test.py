@@ -97,6 +97,8 @@ class ServoingManager(object):
             ar_data.base_pose_goal = base_goal
             self.action = None
             self.location = None
+        self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
+        rospy.loginfo("[%s] Base position found. Sending Servoing goals.")
         self.goal_data_pub.publish(ar_data)
 
     def call_base_selection(self):
@@ -109,6 +111,8 @@ class ServoingManager(object):
         #bg.pose.orientation = Quaternion(*q)
         #return bg
         ## End Place Holder
+        self.feedback_pub.publish("Finding a good base location, please wait.")
+        rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
 
         bm = BaseMoveRequest()
         bm.head = self.head_pose
@@ -117,6 +121,7 @@ class ServoingManager(object):
             resp = self.base_selection_client.call(bm)
         except rospy.ServiceException as se:
             rospy.logerr(se)
+            self.feedback_pub.publish("Failed to find good base position. Please try again.")
             return None
         return resp.base_goal
 

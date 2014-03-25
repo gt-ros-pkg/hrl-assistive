@@ -26,9 +26,6 @@ def handle_select_base(req):
     head = createBMatrix(pos_temp,ori_temp)
     print 'head from input: \n',head
 
-
-
-
     #(trans,rot) = listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
     #pos_temp = trans
     #ori_temp = rot
@@ -40,7 +37,7 @@ def handle_select_base(req):
     goal = createBMatrix(pos_temp,ori_temp)
     print 'goal: \n',goal
 
-    print 'I will move to be able to reach the mouth.'
+    print 'I will move to be able to reach the goal.'
     env = op.Environment()
     #env.SetViewer('qtcoin')
     env.Load('robots/pr2-beta-static.zae')
