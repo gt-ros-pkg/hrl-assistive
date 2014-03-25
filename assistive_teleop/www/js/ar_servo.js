@@ -6,6 +6,7 @@ var ArServo = function (ros) {
   arServo.SERVO_PREEMPT_TOPIC = 'pr2_ar_servo/preempt';
   arServo.SERVO_CONFIRM_IMG_TOPIC = 'ar_servo/confirmation_rotated';
 
+
   arServo.ros = ros;
   arServo.state = 0;
 
@@ -56,6 +57,13 @@ function initARServoTab(tabDivId) {
   'use strict';
   window.arServo = new ArServo(window.ros);
   var divRef = '#'+tabDivId
+
+  $("#tabs").on("tabsbeforeactivate", function (event, ui) {
+    if (ui.newPanel.selector === divRef) {
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
+    };
+  });
+
   $(divRef).css({"position":"relative"});
   $(divRef).append('<table><tr>' +
                            '<td id="' + tabDivId + 'R0C0"></td>' +
@@ -122,10 +130,13 @@ function initARServoTab(tabDivId) {
     switch (msg.data) {
     case 1:
       text = "Searching for AR Tag.";
+      var idx = $("#tabs a[href='#tabServoing']").parent().index();
+      $("#tabs").tabs("option", "active", idx);
       break;
     case 2:
       text = "AR Tag Found - Begin Approach.";
-      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, 1);
+      $('#'+tabDivId+'_approach').show().fadeTo(0, 1)
+      $('#'+tabDivId+'_preempt').show().fadeTo(0, 0.5);
       window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     case 3:

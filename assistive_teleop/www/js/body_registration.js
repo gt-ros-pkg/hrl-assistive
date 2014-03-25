@@ -1,10 +1,11 @@
 var BodyRegistration = function (ros) {
     'use strict';
     var bodyReg = this;
+    bodyReg.REG_CONFIRM_IMG_TOPIC = 'head_registration/confirmation';
     bodyReg.ros = ros;
     bodyReg.headRegCB = function () {
         $('#img_act_select').val('seedReg');
-        window.mjpeg.setCamera('head_registration/confirmation');
+        window.mjpeg.setCamera(bodyReg.REG_CONFIRM_IMG_TOPIC);
         window.log("Click on your check to begin head registration");
     };
 
@@ -47,6 +48,13 @@ var initBodyRegistration = function (tabDivId) {
 
     window.bodyReg = new BodyRegistration(window.ros);
     divRef = "#"+tabDivId;
+
+    $("#tabs").on("tabsbeforeactivate", function (event, ui) {
+      if (ui.newPanel.selector === divRef) {
+        window.mjpeg.setCamera(window.bodyReg.REG_CONFIRM_IMG_TOPIC);
+      }
+    });
+
     $(divRef).css({"position":"relative"});
     $(divRef).append('<table id="' + tabDivId +
                      '_T0"><tr><td id="' + tabDivId +

@@ -141,6 +141,12 @@ var initEllControl = function () {
     window.ellControl = new EllipsoidControl(window.ros);
     window.mirrorPointer = new MirrorPointer(window.ros);
 
+    $("#tabs").on("tabsbeforeactivate", function (event, ui) {
+      if (ui.newPanel.selector === "#tab_ellipse") {
+        window.mjpeg.setCamera('head_registration/confirmation');
+      }
+    });
+
     $('#ell_controller').click(function () {window.ellControl.toggle()});
     $('#adj_mirror').click(window.mirrorPointer.point);
     $('#tool_power').click(window.shaver.toggle);
