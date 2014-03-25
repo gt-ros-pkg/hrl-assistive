@@ -37,7 +37,7 @@ class ArmReacher:
     def __init__(self):
         rospy.init_node('arm_reacher')
         self.listener = tf.TransformListener()
-        vis_pub = rospy.Publisher("arm_reacher_wc_model", Marker, latch=True)
+        self.vis_pub = rospy.Publisher("arm_reacher_wc_model", Marker, latch=True)
         self.env = op.Environment()
         #self.env.SetViewer('qtcoin')
         self.env.Load('robots/pr2-beta-static.zae')
@@ -135,7 +135,7 @@ class ArmReacher:
         marker.color.b = 0.0
         #only if using a MESH_RESOURCE marker type:
         marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"
-        vis_pub.publish( marker )
+        self.vis_pub.publish( marker )
 
         v = self.robot.GetActiveDOFValues()
         for name in self.joint_names:
