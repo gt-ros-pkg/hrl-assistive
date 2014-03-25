@@ -21,11 +21,15 @@ import tf
 from visualization_msgs.msg import Marker
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
-class arm_reacher:
-    head = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
-    robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
-    sol = None
-    traj = None
+class ArmReacher:
+    head = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],
+                      [m.sin(0.),m.cos(0.),0.,0.],
+                      [0.,0.,1.,0.],[0.,0.,0.,1.]])
+
+    robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],
+                             [m.sin(0.),m.cos(0.),0.,0.],
+                             [0.,0.,1.,0.],[0.,0.,0.,1.]])
+    sol = traj =None
     joint_angles = np.zeros(39)
     joint_names = []
     state_lock = threading.RLock()
@@ -33,20 +37,21 @@ class arm_reacher:
     def __init__(self):
         rospy.init_node('arm_reacher')
         self.listener = tf.TransformListener()
-        vis_pub = rospy.Publisher("arm_reacher_wc_model",Marker, latch=True)
-        print 'Arm reaching node has been created.'
+        vis_pub = rospy.Publisher("arm_reacher_wc_model", Marker, latch=True)
         self.env = op.Environment()
         #self.env.SetViewer('qtcoin')
         self.env.Load('robots/pr2-beta-static.zae')
         self.robot = self.env.GetRobots()[0]
         v = self.robot.GetActiveDOFValues()
-        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]= 3.14/2
-        v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
+        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]= np.pi/2.
+        v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -np.pi/2.
         v[self.robot.GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
-        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
+        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .15
         self.robot.SetActiveDOFValues(v)
-        self.robot_start = np.matrix([[m.cos(0.),-m.sin(0.),0.,0],[m.sin(0.),m.cos(0.),0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]])
-        
+        self.robot_start = np.matrix([[m.cos(0.), -m.sin(0.),  0.,  0.],
+                                      [m.sin(0.),  m.cos(0.),  0.,  0.],
+                                      [       0.,         0.,  1.,  0.],
+                                      [       0.,         0.,  0.,  1.]])
         #self.robot_start = np.matrix([[ -0,    1,    0.0,    2.6],
         #                             [ -1.,   -0,    0.00,    1.0],
         #                             [  0.,    0.,    1.00,    0.0],
@@ -54,7 +59,6 @@ class arm_reacher:
 
         self.robot.SetTransform(np.array(self.robot_start))
 
-        
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         self.env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
@@ -68,12 +72,15 @@ class arm_reacher:
 
         self.wheelchair = self.env.GetBodies()[1]
         self.wc_angle =  m.pi
-        self.pr2_B_wc =   np.matrix([[     self.head[0,0],      self.head[0,1],              0.,      self.head[0,3]],
-                                     [     self.head[1,0],      self.head[1,1],              0.,      self.head[1,3]],
-                                     [                 0.,                  0.,              1.,                  0.],
-                                     [                 0.,                  0.,              0.,                   1]])
+        self.pr2_B_wc =   np.matrix([[ self.head[0,0], self.head[0,1],   0.,  self.head[0,3]],
+                                     [ self.head[1,0], self.head[1,1],   0.,  self.head[1,3]],
+                                     [             0.,             0.,   1.,              0.],
+                                     [             0.,             0.,   0.,              1.]])
 
-        self.corner_B_head = np.matrix([[m.cos(0.),-m.sin(0.),0.,.45],[m.sin(0.),m.cos(0.),0.,.34],[0.,0.,1,0.],[0.,0.,0.,1]])
+        self.corner_B_head = np.matrix([[m.cos(0.),-m.sin(0.), 0., 0.45],
+                                        [m.sin(0.),m.cos(0.),  0., 0.44],#0.34
+                                        [       0.,       0.,  1.,   0.],
+                                        [       0.,       0.,  0.,   1.]])
         self.wheelchair_location = self.pr2_B_wc * self.corner_B_head.I
         self.wheelchair.SetTransform(np.array(self.wheelchair_location))
 
@@ -82,29 +89,27 @@ class arm_reacher:
         rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.new_head)
         self.goal_traj_pub = rospy.Publisher("/haptic_mpc/joint_trajectory", JointTrajectory, latch=True)
         #self.mpc_weights_pub = rospy.Publisher("/haptic_mpc/weights", haptic_msgs.HapticMpcWeights)
+        print 'Arm reaching node has been created.'
 
-    def new_goal(self,psm):
+    def new_goal(self, psm):
         print 'I just got a goal location. I will now start reaching! \n'
-
-
-
-        # This is to use tf to get head location. Otherwise, there is a subscriber to get a head location. Comment out if there is no tf to use.
-        listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
-        (trans,rot) = self.listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
-        pos_temp = trans
-        ori_temp = rot
+        # This is to use tf to get head location.
+        # Otherwise, there is a subscriber to get a head location.
+        #Comment out if there is no tf to use.
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
+        pos_temp, ori_temp = self.listener.lookupTransform('/base_link', '/head_frame', now)
         self.head = createBMatrix(pos_temp,ori_temp)
 
+        self.pr2_B_wc =   np.matrix([[ self.head[0,0], self.head[0,1],   0., self.head[0,3]],
+                                     [ self.head[1,0], self.head[1,1],   0., self.head[1,3]],
+                                     [             0.,             0.,   1.,             0.],
+                                     [             0.,             0.,   0.,              1]])
 
+        wheelchair_location = self.pr2_B_wc * self.corner_B_head.I
+        self.wheelchair.SetTransform(np.array(wheelchair_location))
 
-        self.pr2_B_wc =   np.matrix([[     self.head[0,0],      self.head[0,1],              0.,      self.head[0,3]],
-                                     [     self.head[1,0],      self.head[1,1],              0.,      self.head[1,3]],
-                                     [                 0.,                  0.,              1.,                  0.],
-                                     [                 0.,                  0.,              0.,                   1]])
-        self.wheelchair_location = self.pr2_B_wc * self.corner_B_head.I
-        self.wheelchair.SetTransform(np.array(self.wheelchair_location))
-
-        pos_goal = [wheelchair_location[0,3],wheelchair_location[1,3],wheelchair_location[2,3]]
+        pos_goal = wheelchair_location[:3,3]
         ori_goal = tr.matrix_to_quaternion(wheelchair_location[0:3,0:3])
 
         marker = Marker()
@@ -121,15 +126,15 @@ class arm_reacher:
         marker.pose.orientation.y = ori_goal[1]
         marker.pose.orientation.z = ori_goal[2]
         marker.pose.orientation.w = ori_goal[3]
-        marker.scale.x = 0.025
-        marker.scale.y = 0.025
-        marker.scale.z = 0.025
+        marker.scale.x = 0.0254
+        marker.scale.y = 0.0254
+        marker.scale.z = 0.0254
         marker.color.a = 1.0
         marker.color.r = 1.0
         marker.color.g = 0.0
         marker.color.b = 0.0
         #only if using a MESH_RESOURCE marker type:
-        marker.mesh_resource = ''.join([pkg_path, '/models/ADA_Wheelchair.dae']) #"package://pr2_description/meshes/base_v0/base.dae"
+        marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"
         vis_pub.publish( marker )
 
         v = self.robot.GetActiveDOFValues()
@@ -161,16 +166,20 @@ class arm_reacher:
 
         self.robot.SetActiveDOFValues(v)
 
-        pos_temp = [psm.pose.position.x,psm.pose.position.y,psm.pose.position.z]
-        ori_temp = [psm.pose.orientation.x,psm.pose.orientation.y,psm.pose.orientation.z,psm.pose.orientation.w]
+        pos_temp = [psm.pose.position.x,
+                    psm.pose.position.y,
+                    psm.pose.position.z]
+        ori_temp = [psm.pose.orientation.x,
+                    psm.pose.orientation.y,
+                    psm.pose.orientation.z,
+                    psm.pose.orientation.w]
         self.goal = createBMatrix(pos_temp,ori_temp)
         #print 'goal',goal
 
-        self.goal_B_gripper =  np.matrix([[                 0,                  0,               1.,               .1],
-                                          [                 0,                  1,               0.,               0.],
-                                          [               -1.,                 0.,               0.,               0.],
-                                          [                0.,                 0.,               0.,               1.]])
-        
+        self.goal_B_gripper =  np.matrix([[   0.,  0.,   1., 0.1],
+                                          [   0.,  1.,   0.,  0.],
+                                          [  -1.,  0.,   0.,  0.],
+                                          [   0.,  0.,   0.,  1.]])
         self.pr2_B_goal = self.goal*self.goal_B_gripper
 
         self.sol = self.manip.FindIKSolution(np.array(self.pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
@@ -192,7 +201,7 @@ class arm_reacher:
                 tmp_vel = []
                 tmp_acc = []
                 trajectory = JointTrajectory()
-                for i in xrange(self.traj.GetNumWaypoints()): 
+                for i in xrange(self.traj.GetNumWaypoints()):
                     temp = []
                     for j in xrange(7):
                         temp.append(float(self.traj.GetWaypoint(i)[j]))
@@ -204,7 +213,7 @@ class arm_reacher:
                     trajectory.points.append(point)
                     #tmp_traj.append(temp)
                     #tmp_traj.append(list(self.traj.GetWaypoint(i)))
-                    
+
                     #tmp_vel.append([0.,0.,0.,0.,0.,0.,0.])
                     #tmp_acc.append([0.,0.,0.,0.,0.,0.,0.])
                     #print 'tmp_traj is: \n', tmp_traj
@@ -217,14 +226,19 @@ class arm_reacher:
                 #point.accelerations.append(tmp_acc)
                 #point.velocities=[[0.,0.,0.,0.,0.,0.,0.]]
                 #point.accelerations=[[0.,0.,0.,0.,0.,0.,0.]]
-                trajectory.joint_names = ['l_upper_arm_roll_joint','l_shoulder_pan_joint','l_shoulder_lift_joint','l_forearm_roll_joint','l_elbow_flex_joint','l_wrist_flex_joint','l_wrist_roll_joint']
+                trajectory.joint_names = ['l_upper_arm_roll_joint',
+                                          'l_shoulder_pan_joint',
+                                          'l_shoulder_lift_joint',
+                                          'l_forearm_roll_joint',
+                                          'l_elbow_flex_joint',
+                                          'l_wrist_flex_joint',
+                                          'l_wrist_roll_joint']
                 #trajectory.points.append(point)
                 #self.mpc_weights_pub.publish(self.weights)
                 self.goal_traj_pub.publish(trajectory)
 
 
-    def update_robot_state(self,msg):
-
+    def update_robot_state(self, msg):
         with self.state_lock:
             #self.last_msg_time = rospy.Time.now() # timeout for the controller
             #self.msg = msg
@@ -232,14 +246,17 @@ class arm_reacher:
             self.joint_angles = msg.position
 
     # This is to use a subscriber to get head location. Otherwise, there is a tf listener to get a head location.
-    def new_head(self,msg):
+    def new_head(self, msg):
         print 'I have got a head location! \n'
-        pos_temp = [msg.pose.position.x,msg.pose.position.y,msg.pose.position.z]
-        ori_temp = [msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w]
-        self.head = createBMatrix(pos_temp,ori_temp)
-
+        pos_temp = [msg.pose.position.x,
+                    msg.pose.position.y,
+                    msg.pose.position.z]
+        ori_temp = [msg.pose.orientation.x,
+                    msg.pose.orientation.y,
+                    msg.pose.orientation.z,
+                    msg.pose.orientation.w]
+        self.head = createBMatrix(pos_temp, ori_temp)
 
 if __name__ == "__main__":
-    reach = arm_reacher()
+    reach = ArmReacher()
     rospy.spin()
-
