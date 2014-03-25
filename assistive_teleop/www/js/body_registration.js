@@ -15,9 +15,11 @@ var BodyRegistration = function (ros) {
 
     bodyReg.registerHead = function (u,v) {
         bodyReg.headRegServiceClient.callService({u:u,v:v}, function (resp) {
-            console.log('Initialize Head Registration Service Returned.');
+            console.log('Initialize Head Registration Service Returned Success: '+resp.success);
             $('#img_act_select').val('looking');
-            $("#confirm_reg").show();
+            if (resp.success){
+                $("#confirm_reg").show();
+            }
         });
     };
 
@@ -70,7 +72,8 @@ var initBodyRegistration = function (tabDivId) {
                    "3. Select the 'Register Head' button.</br>" +
                    "4. Click on your cheek in the camera view.</br>"+
                    "5. Observe the overlaid points, showing where the robot finds your head.</br>" + 
-                   "6. If the model does not line up with your face, repeat 3-5.</br>" + 
+                   "6. If the model does not line up with your face, "+
+                       "try getting a better view of the face and repeat 3-5.</br>" + 
                    "7. If the model does line up with your face, click 'Confirm' to confirm that it is correct.</br>"
 
     $(divRef).append('<div id="'+tabDivId+'_infoDialog">' + INFOTEXT + '</div>');

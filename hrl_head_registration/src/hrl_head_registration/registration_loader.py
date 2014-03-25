@@ -6,7 +6,7 @@ import roslib; roslib.load_manifest('hrl_head_registration')
 import rospy
 import rosbag
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped, Transform
+from geometry_msgs.msg import PoseStamped, Transform, Point, Quaternion
 from tf import TransformBroadcaster, TransformListener
 
 from hrl_head_registration.srv import HeadRegistration, ConfirmRegistration
@@ -49,7 +49,7 @@ class RegistrationLoader(object):
         except Exception as e:
             rospy.logerr("[%s] Cannot load registration parameters from %s:\r\n%s" %
                          (rospy.get_name(), bag_str, e))
-            return None
+            return (False, PoseStamped())
 
         if self.face_side == 'r':
             head_registration = self.head_registration_r
@@ -57,9 +57,13 @@ class RegistrationLoader(object):
             head_registration = self.head_registration_l
         try:
             self.head_pc_reg = head_registration(req.u, req.v).reg_pose
+            if ((self.head_pc_reg.pose.position == Point(0.0, 0.0, 0.0)) and
+                (self.head_pc_reg.pose.orientation == Quaternion(0.0, 0.0, 0.0, 1.0))):
+               raise rospy.ServiceException("Unable to find a good match.")
+               self.head_pc_reg = None
         except rospy.ServiceException as se:
             self.publish_feedback("Registration failed: %s" %se)
-            return None
+            return (False, PoseStamped())
 
         pc_reg_mat = PoseConv.to_homo_mat(self.head_pc_reg)
         head_tf_mat = PoseConv.to_homo_mat(Transform(head_tf.transform.translation,
@@ -72,7 +76,7 @@ class RegistrationLoader(object):
         self.publish_feedback("Registered head using %s cheek model, please check and confirm." %side)
 #        rospy.loginfo('[%s] Head frame registered at:\r\n %s' %(rospy.get_name(), self.head_pose))
         self.test_pose.publish(self.head_pose)
-        return self.head_pose
+        return (True, self.head_pose)
 
     def confirm_reg_cb(self, req):
         if self.head_pose is None:

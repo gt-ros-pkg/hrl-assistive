@@ -1,4 +1,5 @@
 uint32 u
 uint32 v
 ---
+bool success
 geometry_msgs/PoseStamped reg_pose
