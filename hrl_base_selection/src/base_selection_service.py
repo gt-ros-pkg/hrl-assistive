@@ -181,7 +181,7 @@ class BaseSelector(object):
                                 pass
                             #traj =1 #This gets rid of traj
                             if traj is not None:
-                                now = rospy.Time.now()
+                                now = rospy.Time.now() + rospy.Duration(1)
                                 self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
                                 (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
 

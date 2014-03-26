@@ -96,7 +96,7 @@ class ArmReacher:
         # This is to use tf to get head location.
         # Otherwise, there is a subscriber to get a head location.
         #Comment out if there is no tf to use.
-        now = rospy.Time.now()
+        now = rospy.Time.now() + rospy.Duration(1.0)
         self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
         pos_temp, ori_temp = self.listener.lookupTransform('/base_link', '/head_frame', now)
         self.head = createBMatrix(pos_temp,ori_temp)
