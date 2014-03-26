@@ -40,6 +40,7 @@ class ArmReacher:
         rospy.init_node('arm_reacher')
         self.listener = tf.TransformListener()
         self.vis_pub = rospy.Publisher("~_wc_model", Marker, latch=True)
+        self.goal_pose_pub = rospy.Publisher("/haptic_mpc/goal_pose", PoseStamped) 
         self.feedback_pub = rospy.Publisher("wt_log_out", String)
         self.env = op.Environment()
         #self.env.SetViewer('qtcoin')
@@ -100,10 +101,13 @@ class ArmReacher:
 
     def new_goal(self, psm):
         rospy.loginfo("[%s] I just got a goal location. I will now start reaching!" %rospy.get_name())
+        self.goal_pose_pub.publish(psm)
+        self.pub_feedback("Reaching toward goal location")
+        return
         # This is to use tf to get head location.
         # Otherwise, there is a subscriber to get a head location.
         #Comment out if there is no tf to use.
-        now = rospy.Time.now() + rospy.Duration(1.0)
+        now = rospy.Time.now() + rospy.Duration(0.5)
         self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
         pos_temp, ori_temp = self.listener.lookupTransform('/base_link', '/head_frame', now)
         self.head = createBMatrix(pos_temp,ori_temp)
@@ -164,12 +168,12 @@ class ArmReacher:
                                           [   0.,  0.,   0.,  1.]])
         self.pr2_B_goal = self.goal*self.goal_B_gripper
 
-        self.pub_feedback("Found a good arm configuration for reaching.")
         self.sol = self.manip.FindIKSolution(np.array(self.pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
         if self.sol is None:
             self.pub_feedback("Failed to find a good arm configuration for reaching.")
             return None
         rospy.loginfo("[%s] Got an IK solution: %s" % (rospy.get_name(), self.sol))
+        self.pub_feedback("Found a good arm configuration for reaching.")
 
         self.pub_feedback("Looking for path for arm to goal.")
         traj = None
