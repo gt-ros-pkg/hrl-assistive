@@ -48,6 +48,7 @@ class ServoingManager(object):
         if not msg.data == 5:
             return
         self.reach_goal_pub.publish(self.goal_pose)
+        self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
 
     def ui_cb(self, msg):
