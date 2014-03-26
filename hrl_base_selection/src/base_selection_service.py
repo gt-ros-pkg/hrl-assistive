@@ -123,7 +123,7 @@ class BaseSelector(object):
                                 [       0.,        0.,   0.,         1]])
 
         corner_B_head = np.matrix([[m.cos(0.), -m.sin(0.),  0.,  .45],
-                                   [m.sin(0.),  m.cos(0.),  0.,  .44], #0.34
+                                   [m.sin(0.),  m.cos(0.),  0.,  .42], #0.34
                                    [       0.,         0.,  1.,   0.],
                                    [       0.,         0.,  0.,   1.]])
         wheelchair_location = pr2_B_wc * corner_B_head.I
@@ -150,8 +150,9 @@ class BaseSelector(object):
             for j in [0.,.05,.1, 0.13, -.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
                 for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
                     #goal_pose = req.goal
+                    # transform from head frame in wheelchair to desired base goal
                     wc_B_goalpr2  =   np.matrix([[m.cos(angle_base+k), -m.sin(angle_base+k),   0.,  .4+i],
-                                                 [m.sin(angle_base+k),  m.cos(angle_base+k),   0., -.8+j],
+                                                 [m.sin(angle_base+k),  m.cos(angle_base+k),   0., -.9+j],
                                                  [                 0.,                   0.,    1,    0.],
                                                  [                 0.,                   0.,   0.,     1]])
 
