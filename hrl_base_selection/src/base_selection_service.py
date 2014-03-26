@@ -163,10 +163,9 @@ class BaseSelector(object):
                     #print 'res: \n',res
                     with self.env:
                         print 'checking goal: \n' , np.array(pr2_B_goal)
-                        print "IJK: %s, %s, %s" % (i,j,k)
                         sol = self.manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
                         if sol is not None:
-                            now = rospy.Time.now() + rospy.Duration(1)
+                            now = rospy.Time.now() + rospy.Duration(1.0)
                             self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
                             (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
 

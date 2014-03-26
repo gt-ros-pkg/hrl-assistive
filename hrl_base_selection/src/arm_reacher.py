@@ -101,6 +101,7 @@ class ArmReacher:
 
     def new_goal(self, psm):
         rospy.loginfo("[%s] I just got a goal location. I will now start reaching!" %rospy.get_name())
+        psm.header.stamp = rospy.Time.now()
         self.goal_pose_pub.publish(psm)
         self.pub_feedback("Reaching toward goal location")
         return
