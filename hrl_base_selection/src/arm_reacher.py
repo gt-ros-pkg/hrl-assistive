@@ -169,8 +169,9 @@ class ArmReacher:
         if self.sol is None:
             self.pub_feedback("Failed to find a good arm configuration for reaching.")
             return None
-
         rospy.loginfo("[%s] Got an IK solution: %s" % (rospy.get_name(), self.sol))
+
+        self.pub_feedback("Looking for path for arm to goal.")
         traj = None
         try:
             #self.res = self.manipprob.MoveToHandPosition(matrices=[np.array(self.pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
