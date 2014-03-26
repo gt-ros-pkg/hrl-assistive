@@ -5,6 +5,7 @@ var BodyRegistration = function (ros) {
     bodyReg.ros = ros;
     bodyReg.headRegCB = function () {
         $('#img_act_select').val('seedReg');
+        $('#confirm_reg').hide();
         window.mjpeg.setCamera(bodyReg.REG_CONFIRM_IMG_TOPIC);
         window.log("Click on your check to begin head registration");
     };

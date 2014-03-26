@@ -147,7 +147,7 @@ class BaseSelector(object):
         pr2_B_goal = goal*goal_B_gripper
         angle_base = m.pi/2
         for i in [0.,.1,.2,.3,-.1,-.2,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
-            for j in [0.,.05,.1,.13,-.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
+            for j in [0.,.05,.1, 0.13, -.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
                 for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
                     #goal_pose = req.goal
                     wc_B_goalpr2  =   np.matrix([[m.cos(angle_base+k), -m.sin(angle_base+k),   0.,  .4+i],
@@ -163,48 +163,45 @@ class BaseSelector(object):
                     #print 'res: \n',res
                     with self.env:
                         print 'checking goal: \n' , np.array(pr2_B_goal)
+                        print "IJK: %s, %s, %s" % (i,j,k)
                         sol = self.manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
                         if sol is not None:
+                            now = rospy.Time.now() + rospy.Duration(1)
+                            self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
+                            (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
+
+                            odom_goal = createBMatrix(trans, rot) * base_position
+                            pos_goal = odom_goal[:3,3]
+                            ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
+                            print 'Got an iksolution! \n', sol
+                            psm = PoseStamped()
+                            psm.header.frame_id = '/odom_combined'
+                            psm.pose.position.x=pos_goal[0]
+                            psm.pose.position.y=pos_goal[1]
+                            psm.pose.position.z=pos_goal[2]
+                            psm.pose.orientation.x=ori_goal[0]
+                            psm.pose.orientation.y=ori_goal[1]
+                            psm.pose.orientation.z=ori_goal[2]
+                            psm.pose.orientation.w=ori_goal[3]
+                            print 'I found a goal location! It is at B transform: \n',base_position
+                            print 'The quaternion to the goal location is: \n',psm
+                            return psm
+
                             #self.robot.SetDOFValues(sol,self.manip.GetArmIndices()) # set the current solution
                             #Tee = self.manip.GetEndEffectorTransform()
                             #self.env.UpdatePublishedBodies() # allow viewer to update new robot
-                            print 'Got an iksolution! \n', sol
-                            traj = None
-                            try:
-                                #res = self.manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
-                                traj = self.manipprob.MoveManipulator(goal=sol, outputtrajobj=True)
-                                print 'Got a trajectory! \n'#,traj
-                            except:
-                                #print 'traj = \n',traj
-                                traj = None
-                                print 'traj failed \n'
-                                pass
-                            #traj =1 #This gets rid of traj
-                            if traj is not None:
-                                now = rospy.Time.now() + rospy.Duration(1)
-                                self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
-                                (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
-
-                                odom_goal = createBMatrix(trans, rot) * base_position
-                                #pos_goal = [odom_goal[0,3],
-                                #            odom_goal[1,3],
-                                #            odom_goal[2,3]]
-                                pos_goal = odom_goal[:3,3]
-                                ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
-
-                                psm = PoseStamped()
-                                psm.header.frame_id = '/odom_combined'
-                                psm.pose.position.x=pos_goal[0]
-                                psm.pose.position.y=pos_goal[1]
-                                psm.pose.position.z=pos_goal[2]
-                                psm.pose.orientation.x=ori_goal[0]
-                                psm.pose.orientation.y=ori_goal[1]
-                                psm.pose.orientation.z=ori_goal[2]
-                                psm.pose.orientation.w=ori_goal[3]
-                                print 'I found a goal location! It is at B transform: \n',base_position
-                                print 'The quaternion to the goal location is: \n',psm
-                                print 'The trajectory I found is : \n',traj
-                                return psm
+#                            traj = None
+#                            try:
+#                                #res = self.manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
+#                                traj = self.manipprob.MoveManipulator(goal=sol, outputtrajobj=True)
+#                                print 'Got a trajectory! \n'#,traj
+#                            except:
+#                                #print 'traj = \n',traj
+#                                traj = None
+#                                print 'traj failed \n'
+#                                pass
+#                            #traj =1 #This gets rid of traj
+#                            if traj is not None:
                         else:
                             print 'I found a bad goal location. Trying again!'
         print 'I found nothing! My given inputs were: \n', req.goal, req.head

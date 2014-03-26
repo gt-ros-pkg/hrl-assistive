@@ -83,7 +83,7 @@ class RegistrationLoader(object):
             raise rospy.ServiceException("Head has not been registered.");
             return False
         hp = copy.copy(self.head_pose)
-        now = rospy.Time.now()
+        now = rospy.Time.now() + rospy.Duration(0.5)
         self.tfl.waitForTransform(self.WORLD_FRAME, hp.header.frame_id, now, rospy.Duration(10))
         hp.header.stamp = now
         hp_world = self.tfl.transformPose(self.WORLD_FRAME, hp)
