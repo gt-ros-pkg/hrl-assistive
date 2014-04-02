@@ -34,6 +34,9 @@
         <arg name="kinect_points" value="$(arg kinect_points)" />
         <arg name="kinect_camera" value="$(arg kinect_camera)" />
     </include>
+
+    <node pkg="hrl_face_adls" name="task_manager" type="task_manager.py" output="screen" />
+
     <!--node pkg="hrl_face_adls" name="face_adls_manager" type="face_adls_manager.py"
           output="screen" >
         <remap from="/face_adls/feedback" to="/wt_log_out" />
