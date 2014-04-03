@@ -34,8 +34,8 @@
       r_wrist_flex_joint: 5.568
       r_wrist_roll_joint: 5.568
 
-    vel_saturation_trans: 2.0
-    vel_saturation_rot: 4.0
+    vel_saturation_trans: 0.5
+    vel_saturation_rot: 1.0
   </rosparam>
   
   <rosparam ns="l_cart">
@@ -68,8 +68,9 @@
       l_forearm_roll_joint: 8.376
       l_wrist_flex_joint: 5.568
       l_wrist_roll_joint: 5.568
-    vel_saturation_trans: 2.0
-    vel_saturation_rot: 4.0
+
+    vel_saturation_trans: 0.5
+    vel_saturation_rot: 1.0
   </rosparam>
   
   <arg if="$(arg use_right_arm)"      name="r_controller" value="r_cart" />
