@@ -81,10 +81,16 @@
       <remap from="pose_out" to="/r_cart/command_pose" />
   </node>
 
-  <node name="r_cart_posture" pkg="assistive_teleop" type="jttask_posture.py">
+  <node name="r_cart_posture" pkg="assistive_teleop" type="jttask_posture.py" output="screen">
       <remap from="shakeout_cmd" to="/r_cart/reset_command" />
       <param name="posture" value="elbowupr" />
       <param name="shakeout_posture" value="elbowdownr" />
+  </node>
+
+  <node name="mpc_reset" pkg="hrl_haptic_mpc" type="mpc_reset.py" output="screen">
+      <remap from="fdbk_out" to="wt_log_out" />
+      <remap from="reset" to="l_cart/reset_command" />
+      <param name="controller" value="l_arm_controller" />
   </node>
 
   <!--Setup Cartesian Controller for arm movements -->
