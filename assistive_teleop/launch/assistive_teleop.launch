@@ -81,6 +81,12 @@
       <remap from="pose_out" to="/r_cart/command_pose" />
   </node>
 
+  <node name="r_cart_posture" pkg="assistive_teleop" type="jttask_posture.py">
+      <remap from="shakeout_cmd" to="/r_cart/reset_command" />
+      <param name="posture" value="elbowupr" />
+      <param name="shakeout_posture" value="elbowdownr" />
+  </node>
+
   <!--Setup Cartesian Controller for arm movements -->
   <group if="$(arg use_cart_ctrl)">
     <arg name="l_cart_step_pose_goal" default="haptic_mpc/goal_pose" />

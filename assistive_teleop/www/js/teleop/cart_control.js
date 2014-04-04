@@ -55,7 +55,20 @@ var CartControl = function (options) {
         enableCartCtrlReq.velocity = 0.02;
         var req = new cCon.ros.ServiceRequest(enableCartCtrlReq);
         cCon.enableServiceClient.callService(req, function (resp) {});
-    }
+    };
+
+    cCon.resetPub = new cCon.ros.Topic({
+        name: cCon.side[0]+'_cart/reset_command',
+        messageType: 'std_msgs/Bool'
+    });
+    cCon.resetPub.advertise();
+    cCon.reset = function () {
+        var boolMsg = new cCon.ros.Message({
+            data: true
+        });
+        console.log(boolMsg);
+        cCon.resetPub.publish(boolMsg);
+    };
 };
 
 var initCartControl = function () {
@@ -121,6 +134,12 @@ var initCartControl = function () {
             $('#bpd_default_rot, #cart_frame_select, #cart_frame_select_label, #cart_controller, #cart_cont_state_check').show();
             $('#frame_opt_hand').val('/'+contObj.side[0]+'_gripper_tool_frame');
 
+            if (contObj.side[0] == 'l') {
+                var resetText = "Reset";
+            } else {
+                var resetText = "Shake out";
+            }
+
             $('#scale_slider').unbind("slidestop").bind("slidestop", function (event,ui) {
                 contObj.trans_scale = $('#scale_slider').slider("value");
             });
@@ -147,7 +166,9 @@ var initCartControl = function () {
                 contObj.sendGoal({frame:$('#cart_frame_select').val(),
                                   linear_y:-contObj.trans_scale/4});
                 });
-            $('#bpd_default #b5').hide()
+            $('#bpd_default #b5').show().bind('click.rfh', function(e){
+                contObj.reset();
+                }).text(resetText);
             $('#bpd_default #b4').show().bind('click.rfh', function(e){
                 contObj.sendGoal({frame:$('#cart_frame_select').val(),
                               linear_y:contObj.trans_scale/4});
