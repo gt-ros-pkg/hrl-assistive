@@ -12,14 +12,15 @@ var ClickableElement = function(elementID){
     _element.addEventListener('click', clickableElement.onClickCB);
 }
 
-var PoseSender = function (ros) {
+var PoseSender = function (ros, topic) {
     'use strict';
     var poseSender = this;
     poseSender.ros = ros;
     poseSender.posePub = new poseSender.ros.Topic({
-        name: '/wt_clicked_pose',
+        name: topic,
         messageType: 'geometry_msgs/PoseStamped'})
     poseSender.posePub.advertise();
+
     poseSender.sendPose = function (poseStamped) {
         var msg = new poseSender.ros.Message(poseStamped);
         poseSender.posePub.publish(msg);
@@ -67,6 +68,8 @@ var clickInElement = function (e) {
 };
 
 var initClickableActions = function () {
+    window.rPoseSender = new PoseSender(window.ros, 'wt_r_click_pose');
+    window.lPoseSender = new PoseSender(window.ros, 'wt_l_click_pose');
     $('#image_click_select').html('<select id="img_act_select"> </select>');
     //Add flag option for looking around on click
     $('#img_act_select').append('<option id="looking" '+
@@ -117,8 +120,9 @@ var initClickableActions = function () {
                     } else {
                         result_pose = result.pixel3d;
                         log('pixel_2_3d response received');
-                        window.poseSender.sendPose(result_pose);
+                        window.lPoseSender.sendPose(result_pose);
                         log("Sending Left Arm Reach point command");
+                        $('#img_act_select').val('looking');
                     };
                 }
             )
@@ -126,6 +130,35 @@ var initClickableActions = function () {
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(reachLeftCB);
+
+    // Right hand reach goal on clicked position
+    $('#img_act_select').append('<option id="reachRight" value="reachRight">Right Hand Goal</option>')
+    var reachRightCB = function (e) { //Callback for looking at image
+        var sel = document.getElementById('img_act_select');
+        if (sel[sel.selectedIndex].value === 'reachRight') {
+            pointUV = window.clickInElement(e);
+            var request = new window.ros.ServiceRequest({
+                                        'pixel_u':pointUV[0],
+                                        'pixel_v':pointUV[1]
+                                        });
+            window.p23DClient.serviceClient.callService(request,
+                function(result){
+                    if (result.error_flag !== 0) {
+                        log('Error finding 3D point');
+                        return
+                    } else {
+                        result_pose = result.pixel3d;
+                        log('pixel_2_3d response received');
+                        window.rPoseSender.sendPose(result_pose);
+                        log("Sending Right Arm Reach point command");
+                        $('#img_act_select').val('looking');
+                    };
+                }
+            )
+        }
+    }
+    //Add callback to list of callbacks for clickable element
+    window.clickableCanvas.onClickCBList.push(reachRightCB);
 
     $('#img_act_select').append('<option id="seedReg" '+
                                 'value="seedReg">Register Head</option>')

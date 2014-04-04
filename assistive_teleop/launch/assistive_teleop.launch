@@ -69,11 +69,17 @@
       <param name="use_closest_pixel"  value="True"/>
   </node>
 
-  <!--<node name="clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
-        args="-r -1.570796 3.14159 0." output="screen" >
-      <remap from="pose_in" to="/wt_clicked_pose" />
+  <node name="l_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
+        args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >
+      <remap from="pose_in" to="/wt_l_click_pose" />
       <remap from="pose_out" to="/haptic_mpc/goal_pose" />
-  </node>-->
+  </node>
+
+  <node name="r_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
+        args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >
+      <remap from="pose_in" to="/wt_r_click_pose" />
+      <remap from="pose_out" to="/r_cart/command_pose" />
+  </node>
 
   <!--Setup Cartesian Controller for arm movements -->
   <group if="$(arg use_cart_ctrl)">

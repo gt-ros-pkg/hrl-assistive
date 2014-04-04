@@ -20,10 +20,8 @@ class ClickedPoseRelay(object):
         self.offset_y = translation[1]
         self.offset_z = translation[2]
         self.quat_offset = quaternion
-        rospy.loginfo('['+rospy.get_name()[1:]+']'+
-                      'Pose relay node started with:'+
-                      '\r\nTranslation: '+ str(translation) +
-                      '\r\nRotation: '+ str(quaternion))
+        rospy.loginfo("[%s] Pose relay node started with:\r\nTranslation: %s\r\nRotation: %s"
+                        % (rospy.get_name(), translation, quaternion))
 
     def pose_in_cb(self, ps_in):
         """Apply transform to received pose and republish"""
