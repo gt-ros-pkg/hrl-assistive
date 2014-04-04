@@ -7,16 +7,16 @@
     type: pr2_manipulation_controllers/JTTaskController
     root_name: torso_lift_link
     tip_name: r_gripper_tool_frame
-    k_posture: 15.0
+    k_posture: 8.0
     jacobian_inverse_damping: 0.01
     pose_command_filter: 0.01
     cart_gains:
       trans:
-        p: 800.0
-        d: 15.0
+        p: 600.0
+        d: 10.0
       rot:
-        p: 160.0
-        d: 1.2
+        p: 120.0
+        d: 1.0
     joint_feedforward:
       r_shoulder_pan_joint: 3.33
       r_shoulder_lift_joint: 1.16
@@ -34,8 +34,8 @@
       r_wrist_flex_joint: 5.568
       r_wrist_roll_joint: 5.568
 
-    vel_saturation_trans: 0.5
-    vel_saturation_rot: 1.0
+    vel_saturation_trans: 1.0
+    vel_saturation_rot: 2.0
   </rosparam>
   
   <rosparam ns="l_cart">
