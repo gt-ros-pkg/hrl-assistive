@@ -130,6 +130,15 @@ var initCartControl = function () {
         arm.enable(true);
     };
 
+    var getReferenceFrame = function (auto_preferred) {
+        var selected_frame = $('#cart_frame_select').val();
+        if (selected_frame === 'auto') {
+            return auto_preferred;
+        } else {
+            return selected_frame;
+        }
+    };
+
     var showArmControls = function (contObj) {
             $('#bpd_default_rot, #cart_frame_select, #cart_frame_select_label, #cart_controller, #cart_cont_state_check').show();
             $('#frame_opt_hand').val('/'+contObj.side[0]+'_gripper_tool_frame');
@@ -151,60 +160,60 @@ var initCartControl = function () {
 
             $('#bpd_default :button').unbind('.rfh');
             $('#bpd_default #b9').show().bind('click.rfh', function (e) {
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_torso').val()),
                                   linear_x:contObj.trans_scale/4});
                 });
             $('#bpd_default #b8').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_torso').val()),
                                   linear_z:contObj.trans_scale/4});
                 });
             $('#bpd_default #b7').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_torso').val()),
                                   linear_x:-contObj.trans_scale/4});
                 });
             $('#bpd_default #b6').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_torso').val()),
                                   linear_y:-contObj.trans_scale/4});
                 });
             $('#bpd_default #b5').show().bind('click.rfh', function(e){
                 contObj.reset();
                 }).text(resetText);
             $('#bpd_default #b4').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_torso').val()),
                               linear_y:contObj.trans_scale/4});
                 });
             $('#bpd_default #b3').hide();
             $('#bpd_default #b2').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_torso').val()),
                                   linear_z:-contObj.trans_scale/4});
                 });
             $('#bpd_default #b1').hide();
 
             $('#bpd_default_rot :button').unbind('.rfh');
             $('#bpd_default_rot #b9').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_hand').val()),
                                   angular_x:contObj.rot_scale});
                 });
             $('#bpd_default_rot #b8').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_hand').val()),
                                   angular_y:-contObj.rot_scale});
                 });
             $('#bpd_default_rot #b7').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_hand').val()),
                                   angular_x:-contObj.rot_scale});
                 });
             $('#bpd_default_rot #b6').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_hand').val()),
                                   angular_z:-contObj.rot_scale});
                 });
             $('#bpd_default_rot #b5').hide()
             $('#bpd_default_rot #b4').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_hand').val()),
                                   angular_z:contObj.rot_scale});
                 });
             $('#bpd_default_rot #b3').hide();
             $('#bpd_default_rot #b2').show().bind('click.rfh', function(e){
-                contObj.sendGoal({frame:$('#cart_frame_select').val(),
+                contObj.sendGoal({frame:getReferenceFrame($('#frame_opt_hand').val()),
                                   angular_y:contObj.rot_scale});
                 });
             $('#bpd_default_rot #b1').hide();
