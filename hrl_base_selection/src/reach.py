@@ -109,7 +109,7 @@ class ReachAction(object):
 
     def at_start(self, goal):
         curr = copy.copy(self.joint_posture)
-        err = self.pose_err(curr, goal)
+        err = self.posture_err(curr, goal)
         if (err < self.posture_dist_err_thresh):
             return True
         else:
