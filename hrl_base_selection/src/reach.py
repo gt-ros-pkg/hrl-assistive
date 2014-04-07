@@ -8,16 +8,29 @@ import rospy
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from std_msgs.msg import String
 from tf import transformations as tft
+from sensor_msgs.msg import JointState
 
 from hrl_haptic_manipulation_in_clutter_msgs.msg import HapticMpcWeights
+from hrl_msgs.msg import FloatArray
+
 
 SETUP_POSE = ( (0.38, 0.14, 0.10), (0., 0., -0.7170, 0.7170) )
+
+
+#joint_names = ['l_upper_arm_roll_joint', 'l_shoulder_pan_joint', 'l_shoulder_lift_joint', 'l_forearm_roll_joint', 'l_elbow_flex_joint', 'l_wrist_flex_joint', 'l_wrist_roll_joint']
+
+SETUP_POSTURE = [ 0.6352862697480838, -0.7099055872535953, 0.831145119501267, 4.557598439573811, -2.2861922810069286, -2.1902844910951877, 3.147737233306903]
+
+
 
 class ReachAction(object):
     def __init__(self):
         self.mpc_goal_pub = rospy.Publisher("/haptic_mpc/goal_pose", PoseStamped)
+        self.haptic_weights = rospy.Publisher("haptic_mpc/weights", HapticMpcWeights)
         self.fdbk_pub = rospy.Publisher("wt_log_out", String)
+        self.goal_posture = rospy.Publisher("haptic_mpc/goal_posture", FloatArray)
         self.ee_pose_sub = rospy.Subscriber("/haptic_mpc/gripper_pose", PoseStamped, self.ee_pose_cb)
+        self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
         self.ee_pose = None
         self.goal_pose_sub = rospy.Subscriber("~goal_pose", PoseStamped, self.goal_cb)
         self.goal_pose = None
@@ -26,16 +39,31 @@ class ReachAction(object):
         self.last_progress_err = [np.inf, np.pi/2]
         self.progress_timeout = rospy.Duration(10.)
         self.dist_err_thresh = 0.01
+        self.posture_err_thresh = 0.1
         self.theta_err_thresh = np.pi/18.
 
         self.setup_1_passed = False
         self.setup_2_passed = False
         self.preempted = False
 
-        self.setup_pose = PoseStamped()
-        self.setup_pose.header.frame_id = 'torso_lift_link'
-        self.setup_pose.pose.position = Point(*SETUP_POSE[0])
-        self.setup_pose.pose.orientation = Quaternion(*SETUP_POSE[1])
+        #self.setup_pose = PoseStamped()
+        #self.setup_pose.header.frame_id = 'torso_lift_link'
+        #self.setup_pose.pose.position = Point(*SETUP_POSE[0])
+        #self.setup_pose.pose.orientation = Quaternion(*SETUP_POSE[1])
+
+        self.setup_posture = FloatArray()
+        self.setup_posture = SETUP_POSTURE
+
+        self.posture_weight = HapticMpcWeights()
+        self.posture_weight.position_weight = 0
+        self.posture_weight.orient_weight = 0
+        self.posture_weight.posture_weight = 1
+
+        self.orient_weight = HapticMpcWeights()
+        self.orient_weight.position_weight = 1
+        self.orient_weight.orient_weight = 1
+        self.orient_weight.posture_weight = 0
+        
 
     def pub_feedback(self, msg):
         rospy.loginfo("[%s] %s" % (rospy.get_name(), msg))
@@ -43,6 +71,9 @@ class ReachAction(object):
 
     def ee_pose_cb(self, msg):
         self.ee_pose = msg
+
+    def joint_state_cb(self, msg):
+        self.joint_posture = copy.copy(msg.position[31:37])
 
     def goal_cb(self, ps_msg):
         self.pub_feedback("Received new goal for arm.")
@@ -64,10 +95,22 @@ class ReachAction(object):
         theta_err = np.linalg.norm(euler_angles)
         return d_err, theta_err
 
+    def posture_err(self, ps1, ps2):
+        err = np.linalg.norm(np.subtract(p1,p2))
+        return err
+
     def at_goal(self, goal):
         curr = copy.copy(self.ee_pose)
         d_err, ang_err = self.pose_err(curr, goal)
         if (d_err < self.dist_err_thresh) and (ang_err < self.theta_err_thresh):
+            return True
+        else:
+            return False
+
+    def at_start(self, goal):
+        curr = copy.copy(self.joint_posture)
+        err = self.pose_err(curr, goal)
+        if (err < self.posture_dist_err_thresh):
             return True
         else:
             return False
@@ -79,6 +122,17 @@ class ReachAction(object):
             (ang_err < 0.9 * self.last_progress_err[1])):
             self.last_progress_time = rospy.Time.now()
             self.last_progress_err = [d_err, ang_err]
+            return True
+        elif rospy.Time.now() < self.last_progress_time + self.progress_timeout:
+            return True
+        return False
+
+    def progressing_to_start(self, goal):
+        curr = copy.copy(self.joint_posture)
+        err = self.posture_err(curr, goal)
+        if (err < 0.9 * self.last_progress_err_posture[0]):
+            self.last_progress_time = rospy.Time.now()
+            self.last_progress_err_posture = err
             return True
         elif rospy.Time.now() < self.last_progress_time + self.progress_timeout:
             return True
@@ -97,13 +151,32 @@ class ReachAction(object):
 #            s1_goal.pose.position.z = self.ee_pose.pose.position.z
 #            if not self.reach_to_goal(s1_goal):
 #                 print "Past 1st goal"
-            if not self.reach_to_goal(self.setup_pose):
+            self.haptic_weights.publish(posture_weight)
+            if not self.reach_to_start(self.setup_posture):
                 print "Past 2nd goal"
+            self.haptic_weights.publish(orient_weight)
             if self.reach_to_goal(self.goal_pose):
                 print "[%s] Reached Goal" % rospy.get_name()
             else:
                 print "[%s] Failed to reach Goal" % rospy.get_name()
                 self.goal_pose = None
+
+    def reach_to_start(self, goal, freq=50):
+        rate = rospy.Rate(freq)
+        self.last_progress_time = rospy.Time.now()
+        self.last_progress_err_posture = self.posture_err(goal, self.joint_posture)
+        goal.header.stamp = rospy.Time.now()
+        self.self.goal_posture.publish(goal)
+        while not rospy.is_shutdown():
+            if self.preempted:
+                print "[%s] Preempted" % rospy.get_name()
+                return False
+            if self.at_start(goal):
+                return True
+            if not self.progressing_to_start(goal):
+                print "[%s] Stopped Progressing" % rospy.get_name()
+                return False
+            rate.sleep()
 
     def reach_to_goal(self, goal, freq=50):
         rate = rospy.Rate(freq)

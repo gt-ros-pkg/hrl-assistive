@@ -22,6 +22,9 @@ class BaseSelector(object):
         if transform_listener is None:
             self.listener = tf.TransformListener()
         self.vis_pub = rospy.Publisher("~wc_model", Marker, latch=True)
+        
+        # Publisher to let me test things with arm_reacher
+        self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
         self.base_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
         self.setup_openrave()
         print "Ready to select base."
@@ -30,7 +33,7 @@ class BaseSelector(object):
     def setup_openrave(self):
         # Setup Openrave ENV
         self.env = op.Environment()
-        #self.env.SetViewer('qtcoin')
+        self.env.SetViewer('qtcoin')
         ## Load PR2 Model
         self.env.Load('robots/pr2-beta-static.zae')
         self.robot = self.env.GetRobots()[0]
@@ -146,8 +149,9 @@ class BaseSelector(object):
         #pr2_B_goal = head * head_B_goal
         pr2_B_goal = goal*goal_B_gripper
         angle_base = m.pi/2
-        for i in [0.,.1,.2,.3,-.1,-.2,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
-            for j in [0.,.05,.1, 0.13, -.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
+        print 'The goal gripper pose is: \n' , np.array(pr2_B_goal)
+        for i in [0.,.05,.1,.15,.2,.25,.3,.35,-.05,-.1,-.15,-.2,-.25,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
+            for j in [0.,.05,.1, 0.13,-.05, -.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
                 for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
                     #goal_pose = req.goal
                     # transform from head frame in wheelchair to desired base goal
@@ -163,7 +167,7 @@ class BaseSelector(object):
                     #self.robot.WaitForController(0) # wait
                     #print 'res: \n',res
                     with self.env:
-                        print 'checking goal: \n' , np.array(pr2_B_goal)
+                        print 'checking goal base location: \n' , np.array(base_position)
                         sol = self.manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
                         if sol is not None:
                             now = rospy.Time.now() + rospy.Duration(1.0)
@@ -183,6 +187,22 @@ class BaseSelector(object):
                             psm.pose.orientation.y=ori_goal[1]
                             psm.pose.orientation.z=ori_goal[2]
                             psm.pose.orientation.w=ori_goal[3]
+
+                            # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
+                            goalpr2_B_wc = wc_B_goalpr2.I
+                            print 'pr2_B_wc is: \n',goalpr2_B_wc
+                            pos_goal = goalpr2_B_wc[:3,3]
+                            ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
+                            psm_wc = PoseStamped()
+                            psm_wc.header.frame_id = '/odom_combined'
+                            psm_wc.pose.position.x=pos_goal[0]
+                            psm_wc.pose.position.y=pos_goal[1]
+                            psm_wc.pose.position.z=pos_goal[2]
+                            psm_wc.pose.orientation.x=ori_goal[0]
+                            psm_wc.pose.orientation.y=ori_goal[1]
+                            psm_wc.pose.orientation.z=ori_goal[2]
+                            psm_wc.pose.orientation.w=ori_goal[3]
+                            self.wc_position.publish(psm_wc)
                             print 'I found a goal location! It is at B transform: \n',base_position
                             print 'The quaternion to the goal location is: \n',psm
                             return psm
@@ -204,6 +224,7 @@ class BaseSelector(object):
 #                            if traj is not None:
                         else:
                             print 'I found a bad goal location. Trying again!'
+                            #rospy.sleep(.1)
         print 'I found nothing! My given inputs were: \n', req.goal, req.head
 
 if __name__ == "__main__":
