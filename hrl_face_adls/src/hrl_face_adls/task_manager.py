@@ -27,7 +27,7 @@ class ServoingManager(object):
         self.tfl = TransformListener()
 
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
-        self.servo_goal_pub = rospy.Publisher('servo_goal_pub', PoseStamped)
+        self.servo_goal_pub = rospy.Publisher('servo_goal_pose', PoseStamped, latch=True)
         self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped)
         self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
         self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
