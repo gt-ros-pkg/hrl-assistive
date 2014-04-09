@@ -15,6 +15,7 @@ import hrl_lib.transforms as tr
 from hrl_base_selection.srv import BaseMove
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class BaseSelector(object):
