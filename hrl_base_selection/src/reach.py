@@ -13,15 +13,8 @@ from sensor_msgs.msg import JointState
 from hrl_haptic_manipulation_in_clutter_msgs.msg import HapticMpcWeights
 from hrl_msgs.msg import FloatArray
 
-
 SETUP_POSE = ( (0.38, 0.14, 0.10), (0., 0., -0.7170, 0.7170) )
-
-
-#joint_names = ['l_upper_arm_roll_joint', 'l_shoulder_pan_joint', 'l_shoulder_lift_joint', 'l_forearm_roll_joint', 'l_elbow_flex_joint', 'l_wrist_flex_joint', 'l_wrist_roll_joint']
-
-SETUP_POSTURE = [ 0.6352862697480838, -0.7099055872535953, 0.831145119501267, 4.557598439573811, -2.2861922810069286, -2.1902844910951877, 3.147737233306903]
-
-
+SETUP_POSTURE = [ 0.6352, -0.7099, 0.8311, 4.5575, -2.286, -2.190, 3.1477]
 
 class ReachAction(object):
     def __init__(self):
@@ -63,7 +56,7 @@ class ReachAction(object):
         self.orient_weight.position_weight = 1
         self.orient_weight.orient_weight = 1
         self.orient_weight.posture_weight = 0
-        
+
 
     def pub_feedback(self, msg):
         rospy.loginfo("[%s] %s" % (rospy.get_name(), msg))

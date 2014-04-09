@@ -33,7 +33,7 @@ class BaseSelector(object):
     def setup_openrave(self):
         # Setup Openrave ENV
         self.env = op.Environment()
-        self.env.SetViewer('qtcoin')
+#        self.env.SetViewer('qtcoin')
         ## Load PR2 Model
         self.env.Load('robots/pr2-beta-static.zae')
         self.robot = self.env.GetRobots()[0]
