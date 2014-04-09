@@ -65,9 +65,9 @@ def select_base_client():
     print 'I think I just published the wc model \n'
 
     goal_angle = 0#m.pi/2
-    pr2_B_goal  =  np.matrix([[    m.cos(goal_angle),     -m.sin(goal_angle),                0.,              2.7],
+    pr2_B_goal  =  np.matrix([[    m.cos(goal_angle),     -m.sin(goal_angle),                0.,              2.6],
                               [    m.sin(goal_angle),      m.cos(goal_angle),                0.,              .3],
-                              [                   0.,                     0.,                1.,             1.],
+                              [                   0.,                     0.,                1.,             1.2],
                               [                   0.,                     0.,                0.,              1.]])
     pos_goal = [pr2_B_goal[0,3],pr2_B_goal[1,3],pr2_B_goal[2,3]]
     ori_goal = tr.matrix_to_quaternion(pr2_B_goal[0:3,0:3])
