@@ -18,6 +18,13 @@ from helper_functions import createBMatrix
 
 
 class BaseSelector(object):
+    joint_names = ['l_shoulder_pan_joint',
+                   'l_shoulder_lift_joint',
+                   'l_upper_arm_roll_joint',
+                   'l_elbow_flex_joint',
+                   'l_forearm_roll_joint',
+                   'l_wrist_flex_joint',
+                   'l_wrist_roll_joint']
     def __init__(self, transform_listener=None):
         if transform_listener is None:
             self.listener = tf.TransformListener()
