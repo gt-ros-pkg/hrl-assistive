@@ -10,6 +10,8 @@ from std_msgs.msg import String
 from tf import transformations as tft
 from sensor_msgs.msg import JointState
 
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
 from hrl_haptic_manipulation_in_clutter_msgs.msg import HapticMpcWeights
 from hrl_msgs.msg import FloatArray
 
