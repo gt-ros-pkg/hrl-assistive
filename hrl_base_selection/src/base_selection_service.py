@@ -166,6 +166,12 @@ class BaseSelector(object):
                     #res = self.manipprob.MoveToHandPosition(matrices=[np.array(pr2_B_goal)],seedik=10) # call motion planner with goal joint angles
                     #self.robot.WaitForController(0) # wait
                     #print 'res: \n',res
+
+                    v = self.robot.GetActiveDOFValues()
+                    for name in self.joint_names:
+                        v[self.robot.GetJoint(name).GetDOFIndex()] = self.joint_angles[self.joint_names.index(name)]
+                    self.robot.SetActiveDOFValues(v)
+
                     with self.env:
                         print 'checking goal base location: \n' , np.array(base_position)
                         sol = self.manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)

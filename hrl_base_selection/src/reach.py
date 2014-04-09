@@ -21,7 +21,8 @@ class ReachAction(object):
         self.mpc_goal_pub = rospy.Publisher("/haptic_mpc/goal_pose", PoseStamped)
         self.haptic_weights = rospy.Publisher("haptic_mpc/weights", HapticMpcWeights)
         self.fdbk_pub = rospy.Publisher("wt_log_out", String)
-        self.goal_posture = rospy.Publisher("haptic_mpc/goal_posture", FloatArray)
+        self.goal_posture = rospy.Publisher("haptic_mpc/joint_trajectory", JointTrajectory,latch=True)
+
         self.ee_pose_sub = rospy.Subscriber("/haptic_mpc/gripper_pose", PoseStamped, self.ee_pose_cb)
         self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
         self.ee_pose = None
@@ -153,11 +154,27 @@ class ReachAction(object):
                 self.goal_pose = None
 
     def reach_to_start(self, goal, freq=50):
+        trajectory = JointTrajectory()
+        point = JointTrajectoryPoint()
+        tmp = []
+        tmp.append(goal)
+        point.positions = goal
+        trajectory.points.append(point)
+
+        trajectory.joint_names = ['l_upper_arm_roll_joint',
+                                  'l_shoulder_pan_joint',
+                                  'l_shoulder_lift_joint',
+                                  'l_forearm_roll_joint',
+                                  'l_elbow_flex_joint',
+                                  'l_wrist_flex_joint',
+                                  'l_wrist_roll_joint']
+
+        
         rate = rospy.Rate(freq)
         self.last_progress_time = rospy.Time.now()
         self.last_progress_err_posture = self.posture_err(goal, self.joint_posture)
         goal.header.stamp = rospy.Time.now()
-        self.self.goal_posture.publish(goal)
+        self.goal_posture.publish(trajectory)
         while not rospy.is_shutdown():
             if self.preempted:
                 print "[%s] Preempted" % rospy.get_name()
