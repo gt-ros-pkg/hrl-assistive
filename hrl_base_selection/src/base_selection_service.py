@@ -33,6 +33,13 @@ class BaseSelector(object):
         # Publisher to let me test things with arm_reacher
         self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
         self.base_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
+
+        self.joint_posture = []
+
+        self.joint_names = []
+        self.joint_angles = []
+
+
         self.setup_openrave()
         print "Ready to select base."
 
@@ -69,6 +76,14 @@ class BaseSelector(object):
             ikmodel.autogenerate()
         # create the interface for basic manipulation programs
         self.manipprob = op.interfaces.BaseManipulation(self.robot)
+
+
+    def joint_state_cb(self, msg):
+        #TODO: Fix this.  Get Joint Names from somewhere general (i.e. arm controller state)
+        self.joint_posture = copy.copy(msg.position[31:38])
+
+        self.joint_names = copy.copy(msg.name[31:38])
+        self.joint_angles = copy.copy(msg.position[31:38])
 
     def publish_wc_marker(self, pos, ori):
         marker = Marker()
