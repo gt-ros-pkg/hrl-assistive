@@ -66,7 +66,8 @@ class ReachAction(object):
         self.ee_pose = msg
 
     def joint_state_cb(self, msg):
-        self.joint_posture = copy.copy(msg.position[31:37])
+        #TODO: Fix this.  Get Joint Names from somewhere general (i.e. arm controller state)
+        self.joint_posture = copy.copy(msg.position[31:38])
 
     def goal_cb(self, ps_msg):
         self.pub_feedback("Received new goal for arm.")
@@ -88,7 +89,7 @@ class ReachAction(object):
         theta_err = np.linalg.norm(euler_angles)
         return d_err, theta_err
 
-    def posture_err(self, ps1, ps2):
+    def posture_err(self, p1, p2):
         err = np.linalg.norm(np.subtract(p1,p2))
         return err
 
@@ -103,10 +104,7 @@ class ReachAction(object):
     def at_start(self, goal):
         curr = copy.copy(self.joint_posture)
         err = self.posture_err(curr, goal)
-        if (err < self.posture_dist_err_thresh):
-            return True
-        else:
-            return False
+        return (err < self.posture_dist_err_thresh)
 
     def progressing(self, goal):
         curr = copy.copy(self.ee_pose)
@@ -132,7 +130,7 @@ class ReachAction(object):
         return False
 
     def run(self):
-        while self.ee_pose is None:
+        while not rospy.is_shutdown() and self.ee_pose is None:
             rospy.sleep(0.5)
         rate_limit = rospy.Rate(20)
         while not rospy.is_shutdown():
@@ -144,10 +142,10 @@ class ReachAction(object):
 #            s1_goal.pose.position.z = self.ee_pose.pose.position.z
 #            if not self.reach_to_goal(s1_goal):
 #                 print "Past 1st goal"
-            self.haptic_weights.publish(posture_weight)
+            self.haptic_weights.publish(self.posture_weight)
             if not self.reach_to_start(self.setup_posture):
                 print "Past 2nd goal"
-            self.haptic_weights.publish(orient_weight)
+            self.haptic_weights.publish(self.orient_weight)
             if self.reach_to_goal(self.goal_pose):
                 print "[%s] Reached Goal" % rospy.get_name()
             else:
