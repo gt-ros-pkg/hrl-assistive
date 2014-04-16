@@ -32,7 +32,9 @@ class BaseSelector(object):
         self.vis_pub = rospy.Publisher("~wc_model", Marker, latch=True)
         
         # Publisher to let me test things with arm_reacher
-        self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
+        #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
+
+        # Service
         self.base_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
 
         self.joint_posture = []
@@ -86,6 +88,7 @@ class BaseSelector(object):
         self.joint_names = copy.copy(msg.name[31:38])
         self.joint_angles = copy.copy(msg.position[31:38])
 
+    # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real wheelchair
     def publish_wc_marker(self, pos, ori):
         marker = Marker()
         marker.header.frame_id = "/base_link"
@@ -111,6 +114,7 @@ class BaseSelector(object):
         marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"
         self.vis_pub.publish(marker)
 
+    # Function that determines a good base location to be able to reach the goal location.
     def handle_select_base(self, req):
         print 'My given inputs were: \n'
         print 'goal is: \n',req.goal
@@ -148,6 +152,7 @@ class BaseSelector(object):
                                 [       0.,        0.,   1.,         0.],
                                 [       0.,        0.,   0.,         1]])
 
+        # Transform from te coordinate frame of the wc model in the back right bottom corner, to the head location
         corner_B_head = np.matrix([[m.cos(0.), -m.sin(0.),  0.,  .45],
                                    [m.sin(0.),  m.cos(0.),  0.,  .42], #0.34
                                    [       0.,         0.,  1.,   0.],
@@ -155,9 +160,9 @@ class BaseSelector(object):
         wheelchair_location = pr2_B_wc * corner_B_head.I
         self.wheelchair.SetTransform(np.array(wheelchair_location))
 
-#        pos_goal = [wheelchair_location[0,3],
-#                    wheelchair_location[1,3],
-#                    wheelchair_location[2,3]]
+        pos_goal = [wheelchair_location[0,3],
+                    wheelchair_location[1,3],
+                    wheelchair_location[2,3]]
 
         pos_goal = wheelchair_location[:3,3]
         ori_goal = tr.matrix_to_quaternion(wheelchair_location[0:3,0:3])
@@ -218,20 +223,21 @@ class BaseSelector(object):
                             psm.pose.orientation.w=ori_goal[3]
 
                             # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
-                            goalpr2_B_wc = wc_B_goalpr2.I
-                            print 'pr2_B_wc is: \n',goalpr2_B_wc
-                            pos_goal = goalpr2_B_wc[:3,3]
-                            ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
-                            psm_wc = PoseStamped()
-                            psm_wc.header.frame_id = '/odom_combined'
-                            psm_wc.pose.position.x=pos_goal[0]
-                            psm_wc.pose.position.y=pos_goal[1]
-                            psm_wc.pose.position.z=pos_goal[2]
-                            psm_wc.pose.orientation.x=ori_goal[0]
-                            psm_wc.pose.orientation.y=ori_goal[1]
-                            psm_wc.pose.orientation.z=ori_goal[2]
-                            psm_wc.pose.orientation.w=ori_goal[3]
-                            self.wc_position.publish(psm_wc)
+                            # Only necessary for testing in simulation to set the wheelchair in reach of PR2.
+                            #goalpr2_B_wc = wc_B_goalpr2.I
+                            #print 'pr2_B_wc is: \n',goalpr2_B_wc
+                            #pos_goal = goalpr2_B_wc[:3,3]
+                            #ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
+                            #psm_wc = PoseStamped()
+                            #psm_wc.header.frame_id = '/odom_combined'
+                            #psm_wc.pose.position.x=pos_goal[0]
+                            #psm_wc.pose.position.y=pos_goal[1]
+                            #psm_wc.pose.position.z=pos_goal[2]
+                            #psm_wc.pose.orientation.x=ori_goal[0]
+                            #psm_wc.pose.orientation.y=ori_goal[1]
+                            #psm_wc.pose.orientation.z=ori_goal[2]
+                            #psm_wc.pose.orientation.w=ori_goal[3]
+                            #self.wc_position.publish(psm_wc)
                             print 'I found a goal location! It is at B transform: \n',base_position
                             print 'The quaternion to the goal location is: \n',psm
                             return psm
