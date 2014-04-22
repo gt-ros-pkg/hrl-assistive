@@ -5,7 +5,7 @@ var ArServo = function (ros) {
   arServo.SERVO_APPROACH_TOPIC = 'pr2_ar_servo/tag_confirm';
   arServo.SERVO_PREEMPT_TOPIC = 'pr2_ar_servo/preempt';
   arServo.SERVO_CONFIRM_IMG_TOPIC = 'ar_servo/confirmation_rotated';
-  arServo.BUTTON_FADE_LEVEL = 0.2
+  arServo.BUTTON_FADE_LEVEL = 0.25
   arServo.BUTTON_ACTIVE_LEVEL = 1.0
 
 
