@@ -49,7 +49,7 @@ var assistive_teleop = {
     ros.on('connection', function(e) {
         log("Connected to " + ROBOT + ".");
         extendROSJS();
-        initMjpegCanvas();
+        initMjpegCanvas('mjpegDiv');
         initPr2(); 
         initGripper('horizontal');
         initTorsoSlider('horizontal');

@@ -35,7 +35,7 @@
     <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
 </head>
 
-<body onload="assistive_teleop.start()">
+<body onload="assistive_teleop.start()" ondragstart="return false;" ondrop="return false;">
 
 <table>
   <tr>
@@ -49,9 +49,7 @@
             <table id="videoAndControls"> <!-- Start Cell for video -->
               <tr>
                 <td>
-                  <canvas id="mjpeg_canvas" width="640" height="480">
-                  Your browser does not support HTML5 canvas
-                  </canvas>
+                  <div id="mjpegDiv">Your browser does not support images...</div>
                 </td>
               </tr>
               <tr>
