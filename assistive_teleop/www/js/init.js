@@ -1,5 +1,17 @@
 var assistive_teleop = {
   start :  function () {
+      var ua = navigator.userAgent;
+      var idx = ua.indexOf('Chrome/');
+      if (idx === -1) {
+          $("body").replaceWith("<body><p>Please use Google Chrome</p></body>")
+          alert("Please Use Google Chrome");
+      };
+      var vm = ua.slice(idx+7, idx+9);
+      if (vm <= 30) {
+          $("body").replaceWith("<body><p>Please update your Chrome Browser.</p></body>")
+          alert("Please update your Chrome Browser.");
+      };
+
     window.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     window.PORT = '9091';//Must match port on which rosbridge is being served
     window.log = function (message) {
