@@ -178,8 +178,8 @@ class BaseSelector(object):
         pr2_B_goal = goal*goal_B_gripper
         angle_base = m.pi/2
         print 'The goal gripper pose is: \n' , np.array(pr2_B_goal)
-        for i in [0.,.05,.1,.15,.2,.25,.3,.35,-.05,-.1,-.15,-.2,-.25,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
-            for j in [0.,.05,.1, 0.13,-.05, -.1,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
+        for i in [0.,.05,.1,.15,.2,.25,.3,.35,.4,.45,.5,-.05,-.1,-.15,-.2,-.25,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
+            for j in [0.,.03,.05,.08,-.03,-.05,-.08, -.1,-.12,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
                 for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
                     #goal_pose = req.goal
                     # transform from head frame in wheelchair to desired base goal
