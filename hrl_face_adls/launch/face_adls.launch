@@ -92,11 +92,11 @@
         <param name="init_pos_tolerance" value="100.0" />
         <param name="init_rot_tolerance" value="100.0" />
     </node>
-    -->
 
     <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
           args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_gripper.yaml" 
           output="screen" />
+    -->
 
     <rosparam>
         face_adls_modes:
