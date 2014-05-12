@@ -160,9 +160,9 @@ class BaseSelector(object):
         wheelchair_location = pr2_B_wc * corner_B_head.I
         self.wheelchair.SetTransform(np.array(wheelchair_location))
 
-        pos_goal = [wheelchair_location[0,3],
-                    wheelchair_location[1,3],
-                    wheelchair_location[2,3]]
+#        pos_goal = [wheelchair_location[0,3],
+#                    wheelchair_location[1,3],
+#                    wheelchair_location[2,3]]
 
         pos_goal = wheelchair_location[:3,3]
         ori_goal = tr.matrix_to_quaternion(wheelchair_location[0:3,0:3])
