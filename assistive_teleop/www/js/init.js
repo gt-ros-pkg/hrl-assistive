@@ -21,7 +21,6 @@ var assistive_teleop = {
 
     $('#tabs').css({'top':'0px'})
     var tabs = $("#tabs").tabs();
-    tabs.find(".ui-tabs-nav").sortable({axis:"xy", stop: function() {tabs.tabs("refresh");}});
     $('#cont_sel_container').buttonset();
     $('label:first','#cont_sel_container').removeClass('ui-corner-left')
                                           .addClass('ui-corner-top centered');
