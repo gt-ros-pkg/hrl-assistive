@@ -9,24 +9,24 @@ var MjpegClient = function (options) {
     mjpegClient.quality = options.quality || 90;
 
     mjpegClient.cameraTopics = {'Default':{
-                                  'Head': '/head_mount_kinect/rgb/image_color',
+                                  'Head': '/head_mount_kinect/rgb/image_color;clickable',
                                   'Right Arm': '/r_forearm_cam/image_color_rotated',
                                   'Left Arm': '/l_forearm_cam/image_color_rotated'
                                 },
                                 'Special':{
                                   'AR Tag': '/ar_servo/confirmation_rotated',
-                                  'Head Registration': '/head_registration/confirmation'
+                                  'Head Registration': '/head_registration/confirmation;clickable'
                                 }
     }
 
-    mjpegClient.activeParams = {'topic':mjpegClient.cameraTopics['Default']['Head'],
+    mjpegClient.activeParams = {'topic':mjpegClient.cameraTopics['Default']['Head'].split(';')[0],
                                 'width':mjpegClient.width,
                                 'height':mjpegClient.height,
                                 'quality':mjpegClient.quality}
 
     mjpegClient.server = "http://"+mjpegClient.host+":"+mjpegClient.port;
     mjpegClient.imageId = mjpegClient.divId + "Image";
-    $("#"+mjpegClient.divId).html("<img id="+mjpegClient.imageId+"></img>");
+    $("#"+mjpegClient.divId).append("<img id="+mjpegClient.imageId+"></img>");
 
     mjpegClient.update = function () {
         var srcStr = mjpegClient.server+ "/stream"
@@ -38,34 +38,62 @@ var MjpegClient = function (options) {
     };
 
     // Set parameter value
-    var setParam = function (param, value) {
+    mjpegClient.setParam = function (param, value) {
       mjpegClient.activeParams[param] = value;
       mjpegClient.update();
     };
 
     // Return parameter value
-    var getParam = function (param) {
+    mjpegClient.getParam = function (param) {
       return mjpegClient.activeParams[param];
     };
 
     // Convenience function for back compatability to set camera topic
-    var setCamera = function (topic) {
+    mjpegClient.setCamera = function (topic) {
       mjpegClient.setParam('topic', topic);
+    };
+
+    mjpegClient.getCameraMenu = function () {
+        var html = "<select>";
+        for (group in mjpegClient.cameraTopics) {
+          html += "<optgroup label='"+group+"'>";
+          for (cameraName in mjpegClient.cameraTopics[group]) {
+            html += "<option value='" + mjpegClient.cameraTopics[group][cameraName] + "'>"+ cameraName + "</option>";
+          }
+          html += "</optgroup>";
+        }
+        return html;
     };
 };
 
 var initMjpegCanvas = function (divId) {
-    window.mjpeg = new MjpegClient({'divId': divId,
+    var divRef = '#' + divId;
+    $(divRef).append("<table>"+
+                       "<tr><td colspan='4'><div id='mjpegDiv'></div></td></tr>" +
+                       "<tr id='underVideoBar'>" + 
+                         "<td style='text-align:right'>On Image Click:</td>" +
+                         "<td id='image_click_select'></td>" + 
+                         "<td style='text-align:right'>Camera:</td>" +
+                         "<td id='cameraSelect'></td>" + 
+                       "</tr>" +
+                     "</table>");
+
+
+    window.mjpeg = new MjpegClient({'divId': 'mjpegDiv',
                                     "host": window.ROBOT,
                                     "port": 8080,
                                     "width": 640,
                                     "height": 480,
                                     "quality": 85});
     window.mjpeg.update();    
-    $('#'+divId).off('click');//,'mousedown','mouseup');
-    window.clickableCanvas = new ClickableElement(divId);
-    window.poseSender = new PoseSender(window.ros);
-    window.p23DClient = new pixel23DClient(window.ros);
+
+    $('#cameraSelect').html(window.mjpeg.getCameraMenu());
+    $('#cameraSelect').on('change', function() {
+        window.mjpeg.setCamera( $('#cameraSelect :selected').val() );
+      }
+    );
+    $('#'+divId).off('click');
+
     initClickableActions();
 };
 

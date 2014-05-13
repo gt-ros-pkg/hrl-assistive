@@ -5,9 +5,11 @@ var ClickableElement = function(elementID){
 	var _element = document.getElementById(clickableElement.elementID);
     clickableElement.onClickCBList = [];
     clickableElement.onClickCB = function (e) {
+      if ($('#cameraSelect :selected').val().split(';')[1] === 'clickable') {
         for (var i = 0; i<clickableElement.onClickCBList.length; i += 1) {
             clickableElement.onClickCBList[i](e);
         }
+      }
     }
     _element.addEventListener('click', clickableElement.onClickCB);
 }
@@ -70,6 +72,10 @@ var clickInElement = function (e) {
 var initClickableActions = function () {
     window.rPoseSender = new PoseSender(window.ros, 'wt_r_click_pose');
     window.lPoseSender = new PoseSender(window.ros, 'wt_l_click_pose');
+    window.poseSender = new PoseSender(window.ros);
+    window.clickableCanvas = new ClickableElement(window.mjpeg.imageId);
+    window.p23DClient = new pixel23DClient(window.ros);
+
     $('#image_click_select').html('<select id="img_act_select"> </select>');
     //Add flag option for looking around on click
     $('#img_act_select').append('<option id="looking" '+
