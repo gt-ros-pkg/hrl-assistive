@@ -47,6 +47,7 @@ class RegistrationLoader(object):
             assert (head_tf is not None), "Error reading head transform bagfile"
             bag.close()
         except Exception as e:
+            self.publish_feedback("Registration failed: Error loading saved registration.")
             rospy.logerr("[%s] Cannot load registration parameters from %s:\r\n%s" %
                          (rospy.get_name(), bag_str, e))
             return (False, PoseStamped())
