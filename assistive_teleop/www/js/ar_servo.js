@@ -5,9 +5,6 @@ var ArServo = function (ros) {
   arServo.SERVO_APPROACH_TOPIC = 'pr2_ar_servo/tag_confirm';
   arServo.SERVO_PREEMPT_TOPIC = 'pr2_ar_servo/preempt';
   arServo.SERVO_CONFIRM_IMG_TOPIC = 'ar_servo/confirmation_rotated';
-  arServo.BUTTON_FADE_LEVEL = 0.25
-  arServo.BUTTON_ACTIVE_LEVEL = 1.0
-
 
   arServo.ros = ros;
   arServo.state = 0;
@@ -88,7 +85,7 @@ function initARServoTab(tabDivId) {
     'font-size': '150%',
     'text-align':"center"
   });
-  $(divRef+'_approach'+',#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+  $(divRef+'_approach'+',#'+tabDivId+'_preempt').show().button('option', 'disabled', true);
 
   $(divRef).append('<table id="' + tabDivId +
                    '_T0"><tr><td id="' + tabDivId +
@@ -125,7 +122,6 @@ function initARServoTab(tabDivId) {
   $(divRef+'_info').css({"position":"absolute",
                           "top":"10px",
                           "right":"10px"});
-                          
   
   var arServoFeedbackCb = function (msg) {
     var text = "Unknown result from servoing feedback";
@@ -137,45 +133,45 @@ function initARServoTab(tabDivId) {
       break;
     case 2:
       text = "AR Tag Found - Begin Approach.";
-      $('#'+tabDivId+'_approach').show().fadeTo(0, window.arServo.BUTTON_ACTIVE_LEVEL)
-      $('#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach').button('option', 'disabled', false);
+      $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
       window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     case 3:
       text = "Unable to Locate AR Tag. ADJUST VIEW AND RETRY.";
-      $('#'+tabDivId+'_approach').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL)
-      $('#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach').button('option', 'disabled', true);
+      $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
       window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     case 4:
       text = "Servoing";
-      $('#'+tabDivId+'_approach').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL)
-      $('#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_ACTIVE_LEVEL);
+      $('#'+tabDivId+'_approach').button('option', 'disabled', true);
+      $('#'+tabDivId+'_preempt').button('option', 'disabled', false);
       break;
     case 5:
       text = "Servoing Completed Successfully.";
-      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').button('option', 'disabled', true);
       window.mjpeg.setCamera('/head_mount_kinect/rgb/image_color');
       break;
     case 6:
       text = "Detected Collision with arms. Servoing Stopped.";
-      $('#'+tabDivId+'_approach').show().fadeTo(0, window.arServo.BUTTON_ACTIVE_LEVEL)
-      $('#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach').button('option', 'disabled', false);
+      $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
       break;
     case 7:
       text = "Detected Collision with base laser. Servoing Stopped.";
-      $('#'+tabDivId+'_approach').show().fadeTo(0, window.arServo.BUTTON_ACTIVE_LEVEL)
-      $('#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach').button('option', 'disabled', false);
+      $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
       break;
     case 8:
       text = "View of AR Tag lost. Servoing Stopped.";
-      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').button('option', 'disabled', true);
       window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     case 9:
       text = "Servoing Stopped by User.";
-      $('#'+tabDivId+'_approach').show().fadeTo(0, window.arServo.BUTTON_ACTIVE_LEVEL)
-      $('#'+tabDivId+'_preempt').show().fadeTo(0, window.arServo.BUTTON_FADE_LEVEL);
+      $('#'+tabDivId+'_approach').show().button('option', 'disabled', false);
+      $('#'+tabDivId+'_preempt').show().button('option', 'disabled', true);
       window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
       break;
     }
