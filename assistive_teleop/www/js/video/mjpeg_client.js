@@ -93,8 +93,6 @@ var initMjpegCanvas = function (divId) {
       }
     );
     $('#'+divId).off('click');
-
-    initClickableActions();
 };
 
 //    var image_topics = []

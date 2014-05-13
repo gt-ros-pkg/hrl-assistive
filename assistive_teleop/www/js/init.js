@@ -49,6 +49,7 @@ var assistive_teleop = {
         log("Connected to " + ROBOT + ".");
         extendROSJS();
         initMjpegCanvas('videoAndControls');
+        initClickableActions();
         initPr2(); 
         initGripper('horizontal');
         initTorsoSlider('horizontal');
