@@ -14,10 +14,7 @@ var assistive_teleop = {
 
     window.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     window.PORT = '9091';//Must match port on which rosbridge is being served
-    window.log = function (message) {
-        $('#console').html("<big><strong>" + message.toString() + "</strong></big>"); 
-        console.log("Log to user: " + message.toString());
-    };
+    initUserLog('#console')
 
     $('#tabs').css({'top':'0px'})
     var tabs = $("#tabs").tabs();
