@@ -39,7 +39,7 @@ var pixel23DClient = function (ros) {
                                         serviceType: 'Pixel23d'});
 }
 
-var clickInElement = function (e) {
+var getClickPixel = function (e) {
     //FIXME: This should be made cross-browser. 
     //Clickable Element doesn't seem to work in firefox.
     var posx = 0;
@@ -70,10 +70,20 @@ var clickInElement = function (e) {
     return [posx,posy]
 };
 
+var convertDisplayToCameraPixel = function (pixel, display, camera) {
+  px = pixel[0];
+  py = pixel[1];
+  dw = display.activeParams['width'];
+  dh = display.activeParams['height'];
+  cw = display.cameraData[camera].width;
+  ch = display.cameraData[camera].height;
+  return [Math.round(px/dw*cw), Math.round(py/dh*ch)];
+};
+
 var initClickableActions = function () {
     window.rPoseSender = new PoseSender(window.ros, 'wt_r_click_pose');
     window.lPoseSender = new PoseSender(window.ros, 'wt_l_click_pose');
-    window.poseSender = new PoseSender(window.ros);
+    //window.poseSender = new PoseSender(window.ros);
     window.clickableCanvas = new ClickableElement(window.mjpeg.imageId);
     window.p23DClient = new pixel23DClient(window.ros);
 
@@ -84,24 +94,25 @@ var initClickableActions = function () {
     var lookCB = function (e) { //Callback for looking at image
         var sel = document.getElementById('img_act_select');
         if (sel[sel.selectedIndex].value === 'looking') {
-            pointUV = window.clickInElement(e);
+            var pixel = window.getClickPixel(e);
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            pointUV = convertDisplayToCameraPixel(pixel, window.mjpeg, camera);
             var request = new window.ros.ServiceRequest({
                                         'pixel_u':pointUV[0],
                                         'pixel_v':pointUV[1]});
             window.p23DClient.serviceClient.callService(request,
                 function(result){
                     if (result.error_flag !== 0) {
-                        log('Error finding 3D point');
+                        log('Error finding 3D point.');
                         return
                     } else {
                         result_pose = result.pixel3d;
-                        log('pixel_2_3d response received');
                         clearInterval(window.head.pubInterval);
                         window.head.pointHead(result_pose.pose.position.x,
                                               result_pose.pose.position.y,
                                               result_pose.pose.position.z,
                                               result_pose.header.frame_id);
-                        log("Sending look to point command");
+                        log("Looking at click.");
                     };
                 }
             )
@@ -115,7 +126,9 @@ var initClickableActions = function () {
     var reachLeftCB = function (e) { //Callback for looking at image
         var sel = document.getElementById('img_act_select');
         if (sel[sel.selectedIndex].value === 'reachLeft') {
-            pointUV = window.clickInElement(e);
+            var pixel = window.getClickPixel(e);
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            pointUV = convertDisplayToCameraPixel(pixel, window.mjpeg, camera);
             var request = new window.ros.ServiceRequest({
                                         'pixel_u':pointUV[0],
                                         'pixel_v':pointUV[1]});
@@ -143,7 +156,9 @@ var initClickableActions = function () {
     var reachRightCB = function (e) { //Callback for looking at image
         var sel = document.getElementById('img_act_select');
         if (sel[sel.selectedIndex].value === 'reachRight') {
-            pointUV = window.clickInElement(e);
+            var pixel = window.getClickPixel(e);
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            pointUV = convertDisplayToCameraPixel(pixel, window.mjpeg, camera);
             var request = new window.ros.ServiceRequest({
                                         'pixel_u':pointUV[0],
                                         'pixel_v':pointUV[1]
@@ -172,7 +187,9 @@ var initClickableActions = function () {
     var seedRegCB = function (e) { //Callback for looking at image
         var sel = document.getElementById('img_act_select');
         if (sel[sel.selectedIndex].value === 'seedReg') {
-            pointUV = window.clickInElement(e);
+            var pixel = window.getClickPixel(e);
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            pointUV = convertDisplayToCameraPixel(pixel, window.mjpeg, camera);
             window.bodyReg.registerHead(pointUV[0], pointUV[1]);
             log("Sending Head Registration Command");
         }
