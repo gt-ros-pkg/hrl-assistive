@@ -4,7 +4,7 @@ var ArServo = function (ros) {
   arServo.SERVO_FEEDBACK_TOPIC = 'pr2_ar_servo/state_feedback';
   arServo.SERVO_APPROACH_TOPIC = 'pr2_ar_servo/tag_confirm';
   arServo.SERVO_PREEMPT_TOPIC = 'pr2_ar_servo/preempt';
-  arServo.SERVO_CONFIRM_IMG_TOPIC = 'ar_servo/confirmation_rotated';
+  arServo.SERVO_CONFIRM_CAMERA = 'AR Tag';
 
   arServo.ros = ros;
   arServo.state = 0;
@@ -59,7 +59,7 @@ function initARServoTab(tabDivId) {
 
   $("#tabs").on("tabsbeforeactivate", function (event, ui) {
     if (ui.newPanel.selector === divRef) {
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
     };
   });
 
@@ -135,13 +135,13 @@ function initARServoTab(tabDivId) {
       text = "AR Tag Found - Begin Approach.";
       $('#'+tabDivId+'_approach').button('option', 'disabled', false);
       $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
       break;
     case 3:
       text = "Unable to Locate AR Tag. ADJUST VIEW AND RETRY.";
       $('#'+tabDivId+'_approach').button('option', 'disabled', true);
       $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
       break;
     case 4:
       text = "Servoing";
@@ -151,7 +151,7 @@ function initARServoTab(tabDivId) {
     case 5:
       text = "Servoing Completed Successfully.";
       $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera('/head_mount_kinect/rgb/image_color');
+      window.mjpeg.setCamera('Head');
       break;
     case 6:
       text = "Detected Collision with arms. Servoing Stopped.";
@@ -166,13 +166,13 @@ function initARServoTab(tabDivId) {
     case 8:
       text = "View of AR Tag lost. Servoing Stopped.";
       $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
       break;
     case 9:
       text = "Servoing Stopped by User.";
       $('#'+tabDivId+'_approach').show().button('option', 'disabled', false);
       $('#'+tabDivId+'_preempt').show().button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_IMG_TOPIC);
+      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
       break;
     }
     log(text);

@@ -5,7 +5,8 @@ var ClickableElement = function(elementID){
 	var _element = document.getElementById(clickableElement.elementID);
     clickableElement.onClickCBList = [];
     clickableElement.onClickCB = function (e) {
-      if ($('#cameraSelect :selected').val().split(';')[1] === 'clickable') {
+      var camera = $('#cameraSelect :selected').text();
+      if (window.mjpeg.cameraData[camera].clickable) {
         for (var i = 0; i<clickableElement.onClickCBList.length; i += 1) {
             clickableElement.onClickCBList[i](e);
         }

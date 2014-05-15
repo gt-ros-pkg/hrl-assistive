@@ -4,22 +4,38 @@ var MjpegClient = function (options) {
     mjpegClient.divId = options.divId;
     mjpegClient.host = options.host;
     mjpegClient.port = options.port;
+    mjpegClient.selectBoxId = options.selectBoxId;
     mjpegClient.width = options.width || 640;
     mjpegClient.height = options.height || 480;
     mjpegClient.quality = options.quality || 90;
 
-    mjpegClient.cameraTopics = {'Default':{
-                                  'Head': '/head_mount_kinect/rgb/image_color;clickable',
-                                  'Right Arm': '/r_forearm_cam/image_color_rotated',
-                                  'Left Arm': '/l_forearm_cam/image_color_rotated'
-                                },
-                                'Special':{
-                                  'AR Tag': '/ar_servo/confirmation_rotated',
-                                  'Head Registration': '/head_registration/confirmation;clickable'
-                                }
+    mjpegClient.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
+                                       optgroup:'Default',
+                                       cameraInfo:'/head_mount_kienct/rgb/camera_info',
+                                       clickable:true,
+                                       width:1280,
+                                       height:1024},
+                              'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
+                                            optgroup:'Default',
+                                            cameraInfo: '/r_forearm_cam/camera_info',
+                                            clickable:false},
+                              'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
+                                           optgroup:'Default',
+                                           cameraInfo: '/l_forearm_cam/camera_info',
+                                           clickable:false},
+                              'AR Tag': {topic:'/ar_servo/confirmation_rotated',
+                                         optgroup:'Special',
+                                         cameraInfo:'/r_forearm_cam/camera_info',
+                                         clickable:false},
+                              'Head Registration': {topic: '/head_registration/confirmation',
+                                                    optgroup:'Special',
+                                                    cameraInfo: 'head_mount_kinect/rgb/camera_info',
+                                                    clickable: true,
+                                                    width: 1280,
+                                                    height:1024}
     }
 
-    mjpegClient.activeParams = {'topic':mjpegClient.cameraTopics['Default']['Head'].split(';')[0],
+    mjpegClient.activeParams = {'topic':mjpegClient.cameraData['Head'].topic,
                                 'width':mjpegClient.width,
                                 'height':mjpegClient.height,
                                 'quality':mjpegClient.quality}
@@ -49,84 +65,71 @@ var MjpegClient = function (options) {
     };
 
     // Convenience function for back compatability to set camera topic
-    mjpegClient.setCamera = function (topic) {
-      mjpegClient.setParam('topic', topic);
+    mjpegClient.setCamera = function (cameraName) {
+      $('#'+mjpegClient.selectBoxId+" :selected").attr("selected", "");
+      $('#'+mjpegClient.selectBoxId+" option[value='"+cameraName+"']" ).attr('selected', 'selected').change();
     };
 
-    mjpegClient.getCameraMenu = function () {
-        var html = "<select>";
-        for (group in mjpegClient.cameraTopics) {
-          html += "<optgroup label='"+group+"'>";
-          for (cameraName in mjpegClient.cameraTopics[group]) {
-            html += "<option value='" + mjpegClient.cameraTopics[group][cameraName] + "'>"+ cameraName + "</option>";
+    mjpegClient.createCameraMenu = function (divRef) {
+        $(divRef).append("<select id='"+mjpegClient.selectBoxId+"'></select>");
+        for (camera in mjpegClient.cameraData) {
+          var optgroupLabel = mjpegClient.cameraData[camera].optgroup;
+          var optgroupID = "cameraGroup"+optgroupLabel;
+          if ($('#'+optgroupID).length === 0) {
+            $('#cameraSelect').append("<optgroup id='"+optgroupID+"' label='"+optgroupLabel+"'></optgroup>");
           }
-          html += "</optgroup>";
-        }
-        return html;
+          $('#'+optgroupID).append("<option value='"+camera+"'>"+camera+"</option>");
+        };
     };
 };
 
 var initMjpegCanvas = function (divId) {
     var divRef = '#' + divId;
+    $(divRef).off('click'); //Disable click detection so clickable_element catches it
+    // Build the html for image feed and controls below
     $(divRef).append("<table>"+
                        "<tr><td colspan='4'><div id='mjpegDiv'></div></td></tr>" +
                        "<tr id='underVideoBar'>" + 
                          "<td style='text-align:right'>On Image Click:</td>" +
                          "<td id='image_click_select'></td>" + 
                          "<td style='text-align:right'>Camera:</td>" +
-                         "<td id='cameraSelect'></td>" + 
+                         "<td id='cameraSelectCell'></td>" + 
                        "</tr>" +
                      "</table>");
 
-
+    // Initialize the mjpeg client
     window.mjpeg = new MjpegClient({'divId': 'mjpegDiv',
                                     "host": window.ROBOT,
                                     "port": 8080,
-                                    "width": 640,
-                                    "height": 480,
+                                    "selectBoxId": 'cameraSelect',
+                                    "width": 640,//1280,
+                                    "height": 512,//1024,//480,
                                     "quality": 85});
+    // Initialize the camera selection menu
+    window.mjpeg.createCameraMenu('#cameraSelectCell');
+    $('#cameraSelect').on('change', function() {
+      var topic = window.mjpeg.cameraData[$('#cameraSelect :selected').text()].topic;
+        window.mjpeg.setParam('topic', topic);
+    });
+    // Apply these initial settings
     window.mjpeg.update();    
 
-    $('#cameraSelect').html(window.mjpeg.getCameraMenu());
-    $('#cameraSelect').on('change', function() {
-        window.mjpeg.setCamera( $('#cameraSelect :selected').val() );
-      }
-    );
-    $('#'+divId).off('click');
+    // Make the image resizeable
+    var resizeStopCB = function (event, ui) {
+      window.mjpeg.setParam('height', Math.round(ui.size.height));
+      window.mjpeg.setParam('width', Math.round(ui.size.width));
+      window.mjpeg.update()
+    };
+    $('#'+window.mjpeg.divId).resizable({aspectRatio:true,
+                                         alsoResize:'#'+window.mjpeg.imageId,
+                                         autoHide:true,
+                                         ghost:true,
+                                         delay:250,
+                                         handles:'se',
+                                         distance:7,
+                                         maxWidth:1280,
+                                         minWidth:320,
+                                         maxHeight:1024,
+                                         minHeight:240,
+                                         stop:resizeStopCB});
 };
-
-//    var image_topics = []
-//    var image_topics_names = []
-//    var get_image_topics = function () {
-//        var topicsClient = new window.ros.Service({
-//            name: '/rosapi/topics_for_type',
-//            serviceType: 'rosapi/TopicsForType'})
-//        var req = new window.ros.ServiceRequest({type:'sensor_msgs/Image'})
-//        topicsClient.callService(req, function (resp) {
-//                for (topic in resp.topics) {
-//                    if (resp.topics[topic].indexOf('/image_color') !== -1) {
-//                        image_topics.push(resp.topics[topic]);
-//                    }
-//                }
-//            var findKinect = function (topics_list) {
-//                for (topic in topics_list) {
-//                    if (topics_list[topic].indexOf('/rgb/') !== -1) {
-//                        return topic
-//                    }
-//                }
-//            }
-//            window.mjpeg = new MjpegCanvas({
-//            host:ROBOT,
-//            port:8080,
-//            topic : image_topics,
-//            label : image_topics,
-//            canvasID : 'mjpeg_canvas',
-//            defaultStream: findKinect(image_topics),
-//            width: 640,
-//            height: 480,
-//            quality: 70
-//            })
-//            })
-//    }
-//    get_image_topics()
-//}
