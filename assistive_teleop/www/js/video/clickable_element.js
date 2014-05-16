@@ -190,8 +190,18 @@ var initClickableActions = function () {
             var pixel = window.getClickPixel(e);
             var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
             pointUV = convertDisplayToCameraPixel(pixel, window.mjpeg, camera);
-            window.bodyReg.registerHead(pointUV[0], pointUV[1]);
-            log("Sending Head Registration Command");
+            cw = window.mjpeg.cameraData[camera].width;
+            ch = window.mjpeg.cameraData[camera].height;
+            cw_border = Math.round(cw*0.20);
+            ch_border = Math.round(ch*0.20);
+            if (pointUV[0] < cw_border || pointUV[0] > (cw-cw_border) ||
+                pointUV[1] < ch_border || pointUV[1] > (ch-ch_border)) {
+              window.log("Please center the head in the camera before registering the head");
+              $('#img_act_select').val('looking');
+            } else {
+              window.bodyReg.registerHead(pointUV[0], pointUV[1]);
+              log("Sending Head Registration Command");
+            }
         }
     }
     //Add callback to list of callbacks for clickable element

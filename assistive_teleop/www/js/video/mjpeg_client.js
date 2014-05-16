@@ -1,15 +1,15 @@
 var MjpegClient = function (options) {
     var mjpegClient = this;
     var options = options || {};
-    mjpegClient.divId = options.divId;
-    mjpegClient.host = options.host;
-    mjpegClient.port = options.port;
-    mjpegClient.selectBoxId = options.selectBoxId;
-    mjpegClient.width = options.width || 640;
-    mjpegClient.height = options.height || 480;
-    mjpegClient.quality = options.quality || 90;
+    this.divId = options.divId;
+    this.host = options.host;
+    this.port = options.port;
+    this.selectBoxId = options.selectBoxId;
+    this.width = options.width || 640;
+    this.height = options.height || 480;
+    this.quality = options.quality || 90;
 
-    mjpegClient.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
+    this.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
                                        optgroup:'Default',
                                        cameraInfo:'/head_mount_kienct/rgb/camera_info',
                                        clickable:true,
@@ -41,51 +41,58 @@ var MjpegClient = function (options) {
                                                     height:1024}
     }
 
-    mjpegClient.activeParams = {'topic':mjpegClient.cameraData['Head'].topic,
-                                'width':mjpegClient.width,
-                                'height':mjpegClient.height,
-                                'quality':mjpegClient.quality}
+    this.activeParams = {'topic':this.cameraData['Head'].topic,
+                                'width':this.width,
+                                'height':this.height,
+                                'quality':this.quality}
 
-    mjpegClient.server = "http://"+mjpegClient.host+":"+mjpegClient.port;
-    mjpegClient.imageId = mjpegClient.divId + "Image";
-    $("#"+mjpegClient.divId).append("<img id="+mjpegClient.imageId+"></img>");
+    this.server = "http://"+this.host+":"+this.port;
+    this.imageId = this.divId + "Image";
+    $("#"+this.divId).append("<img id="+this.imageId+"></img>");
 
-    mjpegClient.update = function () {
-        var srcStr = mjpegClient.server+ "/stream"
-        for (param in mjpegClient.activeParams)
+    this.update = function () {
+        var srcStr = this.server+ "/stream"
+        for (param in this.activeParams)
         {
-            srcStr += "?" + param + '=' + mjpegClient.activeParams[param]
+            srcStr += "?" + param + '=' + this.activeParams[param]
         }
-        $("#"+mjpegClient.imageId).attr("src", srcStr);
+        $("#"+this.imageId).attr("src", srcStr)
+                                  .width(this.activeParams['width'])
+                                  .height(this.activeParams['height']);
     };
 
     // Set parameter value
-    mjpegClient.setParam = function (param, value) {
-      mjpegClient.activeParams[param] = value;
-      mjpegClient.update();
+    this.setParam = function (param, value) {
+      this.activeParams[param] = value;
+      this.update();
     };
 
     // Return parameter value
-    mjpegClient.getParam = function (param) {
-      return mjpegClient.activeParams[param];
+    this.getParam = function (param) {
+      return this.activeParams[param];
     };
 
     // Convenience function for back compatability to set camera topic
-    mjpegClient.setCamera = function (cameraName) {
-      $('#'+mjpegClient.selectBoxId+" :selected").attr("selected", "");
-      $('#'+mjpegClient.selectBoxId+" option[value='"+cameraName+"']" ).attr('selected', 'selected').change();
+    this.setCamera = function (cameraName) {
+      $('#'+this.selectBoxId+" :selected").attr("selected", "");
+      $('#'+this.selectBoxId+" option[value='"+cameraName+"']" ).attr('selected', 'selected').change();
     };
 
-    mjpegClient.createCameraMenu = function (divRef) {
-        $(divRef).append("<select id='"+mjpegClient.selectBoxId+"'></select>");
-        for (camera in mjpegClient.cameraData) {
-          var optgroupLabel = mjpegClient.cameraData[camera].optgroup;
-          var optgroupID = "cameraGroup"+optgroupLabel;
-          if ($('#'+optgroupID).length === 0) {
-            $('#cameraSelect').append("<optgroup id='"+optgroupID+"' label='"+optgroupLabel+"'></optgroup>");
-          }
-          $('#'+optgroupID).append("<option value='"+camera+"'>"+camera+"</option>");
-        };
+    this.createCameraMenu = function (divRef) {
+      $(divRef).append("<select id='"+this.selectBoxId+"'></select>");
+      for (camera in this.cameraData) {
+        var optgroupLabel = this.cameraData[camera].optgroup;
+        var optgroupID = "cameraGroup"+optgroupLabel;
+        if ($('#'+optgroupID).length === 0) {
+          $('#cameraSelect').append("<optgroup id='"+optgroupID+"' label='"+optgroupLabel+"'></optgroup>");
+        }
+        $('#'+optgroupID).append("<option value='"+camera+"'>"+camera+"</option>");
+      };
+    };
+
+    this.onSelectChange = function () {
+      var topic = this.cameraData[$('#'+this.selectBoxId+' :selected').text()].topic;
+      this.setParam('topic', topic);
     };
 };
 
@@ -113,10 +120,7 @@ var initMjpegCanvas = function (divId) {
                                     "quality": 85});
     // Initialize the camera selection menu
     window.mjpeg.createCameraMenu('#cameraSelectCell');
-    $('#cameraSelect').on('change', function() {
-      var topic = window.mjpeg.cameraData[$('#cameraSelect :selected').text()].topic;
-        window.mjpeg.setParam('topic', topic);
-    });
+    $('#cameraSelect').on('change', window.mjpeg.onSelectChange.bind(window.mjpeg));
     // Apply these initial settings
     window.mjpeg.update();    
 
