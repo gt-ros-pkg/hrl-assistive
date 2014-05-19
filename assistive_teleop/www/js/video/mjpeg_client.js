@@ -13,8 +13,8 @@ var MjpegClient = function (options) {
                                        optgroup:'Default',
                                        cameraInfo:'/head_mount_kienct/rgb/camera_info',
                                        clickable:true,
-                                       width:1280,
-                                       height:1024},
+                                       width: 640, //1280,
+                                       height:480},//1024}
                               'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
                                             optgroup:'Default',
                                             cameraInfo: '/r_forearm_cam/camera_info',
@@ -37,8 +37,8 @@ var MjpegClient = function (options) {
                                                     optgroup:'Special',
                                                     cameraInfo: 'head_mount_kinect/rgb/camera_info',
                                                     clickable: true,
-                                                    width: 1280,
-                                                    height:1024}
+                                                    width: 640, //1280,
+                                                    height:480}//1024}
     }
 
     this.activeParams = {'topic':this.cameraData['Head'].topic,
