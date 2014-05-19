@@ -1,48 +1,47 @@
-var extendROSJS = function () {
-    window.ros.msgs = {};
-    window.ros.getMsgDetailsClient = new window.ros.Service({
+var extendROSJS = function (ros) {
+    ros.msgs = {};
+    ros.getMsgDetailsClient = new ros.Service({
         name: '/rosapi/message_details',
         serviceType: 'rosapi/MessageDetails'});
 
-    window.ros.getMsgDetails = function (msgType) {
-        var req = new window.ros.ServiceRequest({type: msgType});
-        window.ros.getMsgDetailsClient.callService(req, function(res) {
-            window.ros.msgs = window.ros.msgs || {};
+    ros.getMsgDetails = function (msgType) {
+        var req = new ros.ServiceRequest({type: msgType});
+        ros.getMsgDetailsClient.callService(req, function(res) {
+            ros.msgs = ros.msgs || {};
             for (item in res.typedefs){
-                if (window.ros.msgs[res.typedefs[item].type] === undefined) {
+                if (ros.msgs[res.typedefs[item].type] === undefined) {
                     console.log('Imported '+
                         res.typedefs[item].type.toString()+'Msg')
-                    window.ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+                    ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
                 }
             }
         });
     };
 
-    window.ros.composeMsg = function (type) {
-        if (window.ros.msgs[type] === undefined) {
+    ros.composeMsg = function (type) {
+        if (ros.msgs[type] === undefined) {
             console.error('Cannot compose '+ type + 'message:'+
                           'Message details not imported');
             return
         }
-        var msg = {}
-        for (field in window.ros.msgs[type].fieldnames){
-            var example = window.ros.msgs[type].examples[field];
+        var msg = {};
+        for (field in ros.msgs[type].fieldnames){
+            var example = ros.msgs[type].examples[field];
             if (example === "{}"){
-                msg[window.ros.msgs[type].fieldnames[field]] =
-                        window.ros.composeMsg(window.ros.msgs[type].fieldtypes[field]);
+                msg[ros.msgs[type].fieldnames[field]] =
+                        ros.composeMsg(ros.msgs[type].fieldtypes[field]);
             } else if (example === "[]"){
-                msg[window.ros.msgs[type].fieldnames[field]] = [];
+                msg[ros.msgs[type].fieldnames[field]] = [];
             } else if (example === ""){
-                msg[window.ros.msgs[type].fieldnames[field]] = "";
+                msg[ros.msgs[type].fieldnames[field]] = "";
             } else if (example === "False"){
-                msg[window.ros.msgs[type].fieldnames[field]] = false;
+                msg[ros.msgs[type].fieldnames[field]] = false;
             } else if (parseInt(example) === 0){
-                msg[window.ros.msgs[type].fieldnames[field]] = 0;
+                msg[ros.msgs[type].fieldnames[field]] = 0;
             } else if (example === undefined) {
-                msg[window.ros.msgs[type].fieldnames[field]] = undefined;
+                msg[ros.msgs[type].fieldnames[field]] = undefined;
             }
         }
         return msg
     };
 }
-
