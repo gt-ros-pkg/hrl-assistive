@@ -1,3 +1,4 @@
 geometry_msgs/PointStamped point
 ---
+string[] joint_names
 float32[] joint_angles
