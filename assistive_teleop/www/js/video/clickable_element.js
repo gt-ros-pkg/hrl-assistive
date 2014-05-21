@@ -125,20 +125,32 @@ var initClickableActions = function () {
     $('#img_act_select').append('<option id="looking" '+
                                 'value="looking">Look</option>')
     var lookCB = function (pixel) { //Callback for looking at image
-        if ($('#img_act_select :selected').val() ===   'looking') {
-            var resp_cb = function (result) {
-                if (result.error_flag !== 0) {
-                    log('Error finding 3D point.');
-                } else {
-                    clearInterval(window.head.pubInterval);
-                    window.head.pointHead(result.pixel3d.pose.position.x,
-                                          result.pixel3d.pose.position.y,
-                                          result.pixel3d.pose.position.z,
-                                          result.pixel3d.header.frame_id);
-                    log("Looking at click.");
-                };
+        if ($('#img_act_select :selected').val() === 'looking') {
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            if (camera === 'Right Arm' || camera === 'Left Arm' || camera === 'AR Tag') {
+                var cm = window.mjpeg.cameraModels[window.mjpeg.cameraData[camera].cameraInfo];
+                var xyz =  cm.projectPixel(pixel[0], pixel[1], 2);
+                var psm = window.ros.composeMsg('geometry_msgs/PointStamped'); 
+                psm.header.frame_id = cm.frame_id;
+                psm.point.x = xyz[0];
+                psm.point.y = xyz[1];
+                psm.point.z = xyz[2];
+                window.rCamPointSender.publishTarget(psm);
+            } else {
+                var resp_cb = function (result) {
+                    if (result.error_flag !== 0) {
+                        log('Error finding 3D point.');
+                    } else {
+                        clearInterval(window.head.pubInterval);
+                        window.head.pointHead(result.pixel3d.pose.position.x,
+                                              result.pixel3d.pose.position.y,
+                                              result.pixel3d.pose.position.z,
+                                              result.pixel3d.header.frame_id);
+                        log("Looking at click.");
+                    };
+                }
+                window.p23DClient.call(pixel[0], pixel[1], resp_cb);
             }
-            window.p23DClient.call(pixel[0], pixel[1], resp_cb);
         }
     }
     //Add callback to list of callbacks for clickable element
@@ -201,7 +213,6 @@ var initClickableActions = function () {
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(seedRegCB);
-
     
     $('#img_act_select').append('<option id="rArmCamLook" value="rArmCamLook">Look: Right Arm Camera</option>')
     var rArmCamLookCB = function (pixel) { //Callback for looking at point with right arm camera

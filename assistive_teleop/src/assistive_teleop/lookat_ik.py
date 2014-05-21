@@ -12,9 +12,11 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PointStamped
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pr2_controllers_msgs.msg import JointTrajectoryControllerState
-from tf import TransformListener
+from tf import TransformListener, LookupException, ConnectivityException, ExtrapolationException
 
 from assistive_teleop.srv import LookatIk, LookatIkResponse
+
+FORCE_REBUILD = 1
 
 class CameraLookatIk(object):
     def __init__(self, robotfile, manipname, freeindices):
@@ -35,11 +37,18 @@ class CameraLookatIk(object):
                                                                              forceikfast=True,
                                                                              freeindices=freeindices,
                                                                              freejoints=freejoints)
-        self.ikmodel.freeinc = [1.0, 1.0, 1.0]
+        self.ikmodel.freeinc = [0.15, 0.15, 0.15]
+
         if not self.ikmodel.load():
             rospy.loginfo("[%s] LookatIK Model not available: Generating" %rospy.get_name())
             self.ikmodel.generate()
             self.ikmodel.save()
+        elif FORCE_REBUILD:
+            rospy.loginfo("[%s] Force rebuild of LookatIK Model: Generating" %rospy.get_name())
+            self.ikmodel.generate()
+            self.ikmodel.save()
+#            rospy.loginfo("[%s] Finished rebuilding and saving new LookatIK Model. Closing." %rospy.get_name())
+#            sys.exit()
         else:
             rospy.loginfo("[%s] Lookat IK Model Loaded" %rospy.get_name())
         rospy.Subscriber("/joint_states", JointState, self.joint_state_cb)
@@ -56,7 +65,7 @@ class CameraLookatIk(object):
                 self.tfl.waitForTransform(pt.header.frame_id, self.base_frame, now, rospy.Duration(1.0))
                 pt.header.stamp = now
                 pt = self.tfl.transformPoint(self.base_frame, pt)
-            except (LookException, ConnectivityException, ExtrapolationException):
+            except (LookupException, ConectivityException, ExtrapolationException):
                 rospy.logwarn("[%s] TF Error tranforming point from %s to %s" %(rospy.get_name(),
                                                                                 pt.header.frame_id,
                                                                                 self.base_frame))

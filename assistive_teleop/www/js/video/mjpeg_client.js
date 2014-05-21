@@ -1,15 +1,16 @@
 var MjpegClient = function (options) {
-    var mjpegClient = this;
+    var self = this;
     var options = options || {};
-    this.divId = options.divId;
-    this.host = options.host;
-    this.port = options.port;
-    this.selectBoxId = options.selectBoxId;
-    this.width = options.width || 640;
-    this.height = options.height || 480;
-    this.quality = options.quality || 90;
+    self.ros = options.ros;
+    self.divId = options.divId;
+    self.host = options.host;
+    self.port = options.port;
+    self.selectBoxId = options.selectBoxId;
+    self.width = options.width || 640;
+    self.height = options.height || 480;
+    self.quality = options.quality || 90;
 
-    this.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
+    self.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
                                        optgroup:'Default',
                                        cameraInfo:'/head_mount_kienct/rgb/camera_info',
                                        clickable:true,
@@ -18,7 +19,7 @@ var MjpegClient = function (options) {
                               'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
                                             optgroup:'Default',
                                             cameraInfo: '/r_forearm_cam/camera_info',
-                                            clickable:false,
+                                            clickable:true,
                                             width:640,
                                             height:480},
                               'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
@@ -41,47 +42,61 @@ var MjpegClient = function (options) {
                                                     height:480}//1024}
     }
 
-    this.activeParams = {'topic':this.cameraData['Head'].topic,
-                                'width':this.width,
-                                'height':this.height,
-                                'quality':this.quality}
-
-    this.server = "http://"+this.host+":"+this.port;
-    this.imageId = this.divId + "Image";
-    $("#"+this.divId).append("<img id="+this.imageId+"></img>");
-
-    this.update = function () {
-        var srcStr = this.server+ "/stream"
-        for (param in this.activeParams)
-        {
-            srcStr += "?" + param + '=' + this.activeParams[param]
+    self.cameraModels = {};
+    self.updateCameraModels = function () {
+        for (camera in self.cameraData) {
+            var infoTopic = self.cameraData[camera].cameraInfo;
+            var type = typeof(self.cameraModels[infoTopic]);
+            if (typeof(self.cameraModels[infoTopic]) === "undefined") {
+                self.cameraModels[infoTopic] = new CameraModel({ros:self.ros, infoTopic: infoTopic});
+            } else {
+                self.cameraModels[infoTopic].update();
+            }
         }
-        $("#"+this.imageId).attr("src", srcStr)
-                                  .width(this.activeParams['width'])
-                                  .height(this.activeParams['height']);
+    };
+    self.updateCameraModels();
+
+    self.activeParams = {'topic':self.cameraData['Head'].topic,
+                                'width':self.width,
+                                'height':self.height,
+                                'quality':self.quality}
+
+    self.server = "http://"+self.host+":"+self.port;
+    self.imageId = self.divId + "Image";
+    $("#"+self.divId).append("<img id="+self.imageId+"></img>");
+
+    self.update = function () {
+        var srcStr = self.server+ "/stream"
+        for (param in self.activeParams)
+        {
+            srcStr += "?" + param + '=' + self.activeParams[param]
+        }
+        $("#"+self.imageId).attr("src", srcStr)
+                                  .width(self.activeParams['width'])
+                                  .height(self.activeParams['height']);
     };
 
     // Set parameter value
-    this.setParam = function (param, value) {
-      this.activeParams[param] = value;
-      this.update();
+    self.setParam = function (param, value) {
+      self.activeParams[param] = value;
+      self.update();
     };
 
     // Return parameter value
-    this.getParam = function (param) {
-      return this.activeParams[param];
+    self.getParam = function (param) {
+      return self.activeParams[param];
     };
 
     // Convenience function for back compatability to set camera topic
-    this.setCamera = function (cameraName) {
-      $('#'+this.selectBoxId+" :selected").attr("selected", "");
-      $('#'+this.selectBoxId+" option[value='"+cameraName+"']" ).attr('selected', 'selected').change();
+    self.setCamera = function (cameraName) {
+      $('#'+self.selectBoxId+" :selected").attr("selected", "");
+      $('#'+self.selectBoxId+" option[value='"+cameraName+"']" ).attr('selected', 'selected').change();
     };
 
-    this.createCameraMenu = function (divRef) {
-      $(divRef).append("<select id='"+this.selectBoxId+"'></select>");
-      for (camera in this.cameraData) {
-        var optgroupLabel = this.cameraData[camera].optgroup;
+    self.createCameraMenu = function (divRef) {
+      $(divRef).append("<select id='"+self.selectBoxId+"'></select>");
+      for (camera in self.cameraData) {
+        var optgroupLabel = self.cameraData[camera].optgroup;
         var optgroupID = "cameraGroup"+optgroupLabel;
         if ($('#'+optgroupID).length === 0) {
           $('#cameraSelect').append("<optgroup id='"+optgroupID+"' label='"+optgroupLabel+"'></optgroup>");
@@ -90,10 +105,84 @@ var MjpegClient = function (options) {
       };
     };
 
-    this.onSelectChange = function () {
-      var topic = this.cameraData[$('#'+this.selectBoxId+' :selected').text()].topic;
-      this.setParam('topic', topic);
+    self.onSelectChange = function () {
+      var topic = self.cameraData[$('#'+self.selectBoxId+' :selected').text()].topic;
+      self.setParam('topic', topic);
     };
+};
+
+var CameraModel = function (options) {
+    var self = this;
+    var options = options || {};
+    self.ros = options.ros;
+    self.infoTopic = options.infoTopic;
+    self.width = options.default_width || 640;
+    self.height = options.default_height || 480;
+    self.rotated = options.rotated || false;
+
+    self.D = [];
+    self.K = [];
+    self.R = [];
+    self.P = [];
+    self.KR = [];
+    self.KR_inv = [];
+    self.frame_id = '';
+    self.ros.getMsgDetails('sensor_msgs/CameraInfo');
+
+    self.makeMatrix = function (arr, rows, cols) {
+        // max a (rosw)x(cols) matrix from a single array
+        console.assert(rows*cols === arr.length, 
+                       "Cannot make a %dx%d matrix with only %d numbers!",
+                       rows, cols, arr.length);
+        var matrix = [];
+        for (var r = 0; r<rows; r += 1) {
+            matrix[r] = arr.slice(r*cols, r*cols+cols);
+        }
+        return matrix
+    }
+
+    self.subscriber = new self.ros.Topic({
+        name: self.infoTopic,
+        messageType: 'sensor_msgs/CameraInfo'});
+
+    self.msgCB = function (infoMsg) {
+        console.log("Updated camera model from "+self.infoTopic)
+        if (self.rotated) {
+            self.frame_id = infoMsg.header.frame_id + '_rotated';
+        } else {
+            self.frame_id = infoMsg.header.frame_id;
+        }
+            
+        self.height = infoMsg.height;
+        self.width = infoMsg.width;
+        self.distortion_model = infoMsg.distortion_model;
+        self.D = infoMsg.D;
+        self.K = self.makeMatrix(infoMsg.K, 3, 3);
+        self.R = self.makeMatrix(infoMsg.R, 3, 3);
+        self.P = self.makeMatrix(infoMsg.P, 3, 4);
+        // Not collecting data on binning, ROI
+        self.KR = window.numeric.dot(self.K, self.R);
+        self.KR_inv = window.numeric.inv(self.KR);
+        self.subscriber.unsubscribe(); // Close subscriber to save bandwidth
+        }
+
+    //Get up-to-date data on creation
+    self.subscriber.subscribe(self.msgCB);
+
+    self.update = function () {
+        // Re-subscribe to get new parameters
+        self.subscriber.subscribe(self.msgCB);
+    }
+
+    // back-project a pixel some distance into the real world
+    // Returns a geoemtry_msgs/PointStamped msg
+    self.projectPixel = function (px, py, dist) { 
+       var pixel_hom = [[px],[py],[1]]; //Pixel value in homogeneous coordinates
+       var vec = window.numeric.dot(self.KR_inv, pixel_hom);
+       vec = window.numeric.transpose(vec)[0];
+       var mag = window.numeric.norm2(vec);
+       return window.numeric.mul(dist/mag, vec);
+    }
 };
 
 var initMjpegCanvas = function (divId) {
@@ -111,13 +200,14 @@ var initMjpegCanvas = function (divId) {
                      "</table>");
 
     // Initialize the mjpeg client
-    window.mjpeg = new MjpegClient({'divId': 'mjpegDiv',
-                                    "host": window.ROBOT,
-                                    "port": 8080,
-                                    "selectBoxId": 'cameraSelect',
-                                    "width": 640,//1280,
-                                    "height": 512,//1024,//480,
-                                    "quality": 85});
+    window.mjpeg = new MjpegClient({ros: window.ros,
+                                    divId: 'mjpegDiv',
+                                    host: window.ROBOT,
+                                    port: 8080,
+                                    selectBoxId: 'cameraSelect',
+                                    width: 640,//1280,
+                                    height: 512,//1024,//480,
+                                    quality: 85});
     // Initialize the camera selection menu
     window.mjpeg.createCameraMenu('#cameraSelectCell');
     $('#cameraSelect').on('change', window.mjpeg.onSelectChange.bind(window.mjpeg));
