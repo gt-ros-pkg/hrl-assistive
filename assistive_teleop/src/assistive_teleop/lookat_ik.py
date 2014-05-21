@@ -16,7 +16,7 @@ from tf import TransformListener, LookupException, ConnectivityException, Extrap
 
 from assistive_teleop.srv import LookatIk, LookatIkResponse
 
-FORCE_REBUILD = 1
+FORCE_REBUILD = False
 
 class CameraLookatIk(object):
     def __init__(self, robotfile, manipname, freeindices):

@@ -14,30 +14,35 @@ var MjpegClient = function (options) {
                                        optgroup:'Default',
                                        cameraInfo:'/head_mount_kienct/rgb/camera_info',
                                        clickable:true,
+                                       rotated: false,
                                        width: 640, //1280,
                                        height:480},//1024}
                               'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
                                             optgroup:'Default',
                                             cameraInfo: '/r_forearm_cam/camera_info',
                                             clickable:true,
+                                            rotated: true,
                                             width:640,
                                             height:480},
                               'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
                                            optgroup:'Default',
                                            cameraInfo: '/l_forearm_cam/camera_info',
-                                           clickable:false,
+                                           clickable: false,
+                                           rotated: true,
                                            width:640,
                                            height:480},
                               'AR Tag': {topic:'/ar_servo/confirmation_rotated',
                                          optgroup:'Special',
                                          cameraInfo:'/r_forearm_cam/camera_info',
                                          clickable:false,
+                                         rotated: true,
                                          width:640,
                                          height:480},
                               'Head Registration': {topic: '/head_registration/confirmation',
                                                     optgroup:'Special',
                                                     cameraInfo: 'head_mount_kinect/rgb/camera_info',
                                                     clickable: true,
+                                                    rotated: false,
                                                     width: 640, //1280,
                                                     height:480}//1024}
     }
@@ -48,7 +53,10 @@ var MjpegClient = function (options) {
             var infoTopic = self.cameraData[camera].cameraInfo;
             var type = typeof(self.cameraModels[infoTopic]);
             if (typeof(self.cameraModels[infoTopic]) === "undefined") {
-                self.cameraModels[infoTopic] = new CameraModel({ros:self.ros, infoTopic: infoTopic});
+                var rotated = self.cameraData[camera].rotated;
+                self.cameraModels[infoTopic] = new CameraModel({ros:self.ros,
+                                                                infoTopic: infoTopic,
+                                                                rotated: rotated});
             } else {
                 self.cameraModels[infoTopic].update();
             }
