@@ -94,7 +94,7 @@ class CameraPointer(object):
             rospy.sleep(0.5)
             rospy.loginfo("[{0}] Waiting for joint state from arm controller.".format(rospy.get_name()))
         #Set rate limits on a per-joint basis
-        self.max_vel_rot = [np.pi/3]*len(self.joint_names)
+        self.max_vel_rot = [np.pi]*len(self.joint_names)
         self.target_sub = rospy.Subscriber('{0}/lookat_ik/goal'.format(rospy.get_name()), PointStamped, self.goal_cb)
         rospy.loginfo("[{0}] Ready.".format(rospy.get_name()))
 
@@ -112,15 +112,15 @@ class CameraPointer(object):
                 self.tfl.waitForTransform(pt_msg.header.frame_id,
                                           self.camera_ik.base_frame,
                                           now, rospy.Duration(1.0))
-                pt_msg = self.tfl.transformPoint(self.base_frame, pt_msg)
-            except (LookupException, ConectivityException, ExtrapolationException):
+                pt_msg = self.tfl.transformPoint(self.camera_ik.base_frame, pt_msg)
+            except (LookupException, ConnectivityException, ExtrapolationException):
                 rospy.logwarn("[{0}] TF Error tranforming point from {1} to {2}".format(rospy.get_name(),
                                                                                         pt_msg.header.frame_id,
                                                                                         self.camera_ik.base_frame))
         target = np.array([pt_msg.point.x, pt_msg.point.y, pt_msg.point.z])
         # Get IK Solution
         current_angles = list(copy.copy(self.joint_angles_act))
-        iksol = self.camera_ik.lookat_ik(target, current_angles)
+        iksol = self.camera_ik.lookat_ik(target, current_angles[:len(self.camera_ik.arm_indices)])
         # Start with current angles, then replace angles in camera IK with IK solution
         # Use desired joint angles to avoid sagging over time
         jtp = JointTrajectoryPoint()
