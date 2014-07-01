@@ -1,15 +1,63 @@
-var ClickableElement = function(elementID){
+var ClickableElement = function(elementID) {
     'use strict';
-    var clickableElement = this;
-    clickableElement.elementID = elementID;
-	var _element = document.getElementById(clickableElement.elementID);
-    clickableElement.onClickCBList = [];
-    clickableElement.onClickCB = function (e) {
-        for (var i = 0; i<clickableElement.onClickCBList.length; i += 1) {
-            clickableElement.onClickCBList[i](e);
+    this.elementID = elementID;
+    this.onClickCBList = [];
+    this.getClickPixel = function (e) {
+        //FIXME: This should be made cross-browser. 
+        //Clickable Element doesn't seem to work in firefox.
+        var posx = 0;
+        var posy = 0;
+        if (!e) var e = window.event;
+        if (e.pageX || e.pageY) 	{
+            posx = e.pageX;
+            posy = e.pageY;
+        }
+        else if (e.clientX || e.clientY) 	{
+            posx = e.clientX + document.body.scrollLeft
+                + document.documentElement.scrollLeft;
+            posy = e.clientY + document.body.scrollTop
+                + document.documentElement.scrollTop;
+        }
+        var offsetLeft = 0;
+        var offsetTop = 0;
+        var element = document.getElementById(e.target.id);
+        while (element && !isNaN(element.offsetLeft)
+                && !isNaN(element.offsetTop)) {
+            offsetLeft += element.offsetLeft;
+            offsetTop += element.offsetTop;
+            element = element.offsetParent;
+        }
+        posx -= offsetLeft;
+        posy -= offsetTop;
+        console.log('Element '+e.target.id+' clicked at (x,y) = ('+posx.toString() +','+ posy.toString()+')');
+        return [posx, posy]
+    };
+
+    this.convertDisplayToCameraPixel = function (pixel, display, camera) {
+        var px = pixel[0];
+        var py = pixel[1];
+        var dw = display.activeParams['width'];
+        var dh = display.activeParams['height'];
+        var cw = display.cameraData[camera].width;
+        var ch = display.cameraData[camera].height;
+        return [Math.round(px/dw*cw), Math.round(py/dh*ch)];
+    };
+
+    this.getClickPixelWRTCamera= function (e) {
+        var pixel = this.getClickPixel(e);
+        var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+        return this.convertDisplayToCameraPixel(pixel, window.mjpeg, camera);
+    };
+
+    this.onClickCB = function (e) {
+        var camera = $('#cameraSelect :selected').text();
+        if (window.mjpeg.cameraData[camera].clickable) {
+            var pixel = this.getClickPixelWRTCamera(e)
+            for (var i = 0; i < this.onClickCBList.length; i += 1) {
+                this.onClickCBList[i](pixel);
+            }
         }
     }
-    _element.addEventListener('click', clickableElement.onClickCB);
 }
 
 var PoseSender = function (ros, topic) {
@@ -27,152 +75,162 @@ var PoseSender = function (ros, topic) {
     }
 }
 
-var pixel23DClient = function (ros) {
+var LookatIk = function (ros, goalTopic) {
+    'use strict';
+    this.ros = ros;
+
+    this.targetPublisher = new this.ros.Topic({
+        name: goalTopic,
+        messageType: 'geometry_msgs/PointStamped'});
+    this.targetPublisher.advertise();
+
+    this.publishTarget = function (pointStamped) {
+        var pt = new this.ros.Message(pointStamped);
+        this.targetPublisher.publish(pt);
+    }
+
+    this.callPoseStamped = function (poseStamped) {
+        var msg = this.ros.composeMsg('geometry_msgs/PointStamped');
+        msg.header = poseStamped.header
+        msg.point = poseStamped.pose.position
+        this.publishTarget(msg);
+    }
+}
+
+var Pixel23DClient = function (ros) {
     'use strict';
     var p23D = this;
     p23D.ros = ros;
     p23D.serviceClient =  new p23D.ros.Service({
                                         name: '/pixel_2_3d',
                                         serviceType: 'Pixel23d'});
+    p23D.call = function (u, v, cb) {
+        var req = new p23D.ros.ServiceRequest({'pixel_u':u, 'pixel_v':v});
+        p23D.serviceClient.callService(req, cb);
+    }
 }
 
-var clickInElement = function (e) {
-    //FIXME: This should be made cross-browser. 
-    //Clickable Element doesn't seem to work in firefox.
-    var posx = 0;
-    var posy = 0;
-    if (!e) var e = window.event;
-    if (e.pageX || e.pageY) 	{
-        posx = e.pageX;
-        posy = e.pageY;
-    }
-    else if (e.clientX || e.clientY) 	{
-        posx = e.clientX + document.body.scrollLeft
-            + document.documentElement.scrollLeft;
-        posy = e.clientY + document.body.scrollTop
-            + document.documentElement.scrollTop;
-    }
-    var offsetLeft = 0;
-    var offsetTop = 0;
-    var element = document.getElementById(e.target.id);
-    while (element && !isNaN(element.offsetLeft)
-            && !isNaN(element.offsetTop)) {
-        offsetLeft += element.offsetLeft;
-        offsetTop += element.offsetTop;
-        element = element.offsetParent;
-    }
-    posx -= offsetLeft;
-    posy -= offsetTop;
-    console.log('Element '+e.target.id+' clicked at (x,y) = ('+posx.toString() +','+ posy.toString()+')');
-    return [posx,posy]
-};
 
 var initClickableActions = function () {
     window.rPoseSender = new PoseSender(window.ros, 'wt_r_click_pose');
     window.lPoseSender = new PoseSender(window.ros, 'wt_l_click_pose');
+    window.rCamPointSender = new LookatIk(window.ros, '/rightarm_camera/lookat_ik/goal')
+    //window.poseSender = new PoseSender(window.ros);
+    window.clickableCanvas = new ClickableElement(window.mjpeg.imageId);
+    window.p23DClient = new Pixel23DClient(window.ros);
+
+    $('#'+window.mjpeg.imageId).on('click.rfh', window.clickableCanvas.onClickCB.bind(window.clickableCanvas));
     $('#image_click_select').html('<select id="img_act_select"> </select>');
     //Add flag option for looking around on click
     $('#img_act_select').append('<option id="looking" '+
                                 'value="looking">Look</option>')
-    var lookCB = function (e) { //Callback for looking at image
-        var sel = document.getElementById('img_act_select');
-        if (sel[sel.selectedIndex].value === 'looking') {
-            pointUV = window.clickInElement(e);
-            var request = new window.ros.ServiceRequest({
-                                        'pixel_u':pointUV[0],
-                                        'pixel_v':pointUV[1]});
-            window.p23DClient.serviceClient.callService(request,
-                function(result){
+    var lookCB = function (pixel) { //Callback for looking at image
+        if ($('#img_act_select :selected').val() === 'looking') {
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            if (camera === 'Right Arm' || camera === 'Left Arm' || camera === 'AR Tag') {
+                var cm = window.mjpeg.cameraModels[window.mjpeg.cameraData[camera].cameraInfo];
+                var xyz =  cm.projectPixel(pixel[0], pixel[1], 2);
+                var psm = window.ros.composeMsg('geometry_msgs/PointStamped'); 
+                psm.header.frame_id = cm.frame_id;
+                psm.point.x = xyz[0];
+                psm.point.y = xyz[1];
+                psm.point.z = xyz[2];
+                window.rCamPointSender.publishTarget(psm);
+            } else {
+                var resp_cb = function (result) {
                     if (result.error_flag !== 0) {
-                        log('Error finding 3D point');
-                        return
+                        log('Error finding 3D point.');
                     } else {
-                        result_pose = result.pixel3d;
-                        log('pixel_2_3d response received');
                         clearInterval(window.head.pubInterval);
-                        window.head.pointHead(result_pose.pose.position.x,
-                                              result_pose.pose.position.y,
-                                              result_pose.pose.position.z,
-                                              result_pose.header.frame_id);
-                        log("Sending look to point command");
+                        window.head.pointHead(result.pixel3d.pose.position.x,
+                                              result.pixel3d.pose.position.y,
+                                              result.pixel3d.pose.position.z,
+                                              result.pixel3d.header.frame_id);
+                        log("Looking at click.");
                     };
                 }
-            )
+                window.p23DClient.call(pixel[0], pixel[1], resp_cb);
+            }
         }
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(lookCB);
 
-    $('#img_act_select').append('<option id="reachLeft" '+
-                                'value="reachLeft">Left Hand Goal</option>')
-    var reachLeftCB = function (e) { //Callback for looking at image
-        var sel = document.getElementById('img_act_select');
-        if (sel[sel.selectedIndex].value === 'reachLeft') {
-            pointUV = window.clickInElement(e);
-            var request = new window.ros.ServiceRequest({
-                                        'pixel_u':pointUV[0],
-                                        'pixel_v':pointUV[1]});
-            window.p23DClient.serviceClient.callService(request,
-                function(result){
+    $('#img_act_select').append('<option id="reachLeft" value="reachLeft">Left Hand Goal</option>');
+    var reachLeftCB = function (pixel) { //Callback for looking at image
+        if ($('#img_act_select :selected').val() ===   'reachLeft') {
+            var resultCB = function(result){
                     if (result.error_flag !== 0) {
                         log('Error finding 3D point');
-                        return
                     } else {
-                        result_pose = result.pixel3d;
-                        log('pixel_2_3d response received');
-                        window.lPoseSender.sendPose(result_pose);
+                        window.lPoseSender.sendPose(result.pixel3d);
                         log("Sending Left Arm Reach point command");
                         $('#img_act_select').val('looking');
                     };
                 }
-            )
+            window.p23DClient.call(pixel[0], pixel[1], resultCB);
         }
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(reachLeftCB);
 
     // Right hand reach goal on clicked position
-    $('#img_act_select').append('<option id="reachRight" value="reachRight">Right Hand Goal</option>')
-    var reachRightCB = function (e) { //Callback for looking at image
-        var sel = document.getElementById('img_act_select');
-        if (sel[sel.selectedIndex].value === 'reachRight') {
-            pointUV = window.clickInElement(e);
-            var request = new window.ros.ServiceRequest({
-                                        'pixel_u':pointUV[0],
-                                        'pixel_v':pointUV[1]
-                                        });
-            window.p23DClient.serviceClient.callService(request,
-                function(result){
-                    if (result.error_flag !== 0) {
-                        log('Error finding 3D point');
-                        return
-                    } else {
-                        result_pose = result.pixel3d;
-                        log('pixel_2_3d response received');
-                        window.rPoseSender.sendPose(result_pose);
-                        log("Sending Right Arm Reach point command");
-                        $('#img_act_select').val('looking');
-                    };
-                }
-            )
+    $('#img_act_select').append('<option id="reachRight" value="reachRight">Right Hand Goal</option>');
+    var reachRightCB = function (pixel) { //Callback for looking at image
+        if ($('#img_act_select :selected').val() ===   'reachRight') {
+            var resultCB = function (result) {
+                if (result.error_flag !== 0) {
+                    log('Error finding 3D point');
+                } else {
+                    window.rPoseSender.sendPose(result.pixel3d);
+                    log("Sending Right Arm Reach point command");
+                    $('#img_act_select').val('looking');
+                };
+            }
+            window.p23DClient.call(pixel[0], pixel[1], resultCB);
         }
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(reachRightCB);
 
-    $('#img_act_select').append('<option id="seedReg" '+
-                                'value="seedReg">Register Head</option>')
-    var seedRegCB = function (e) { //Callback for looking at image
-        var sel = document.getElementById('img_act_select');
-        if (sel[sel.selectedIndex].value === 'seedReg') {
-            pointUV = window.clickInElement(e);
-            window.bodyReg.registerHead(pointUV[0], pointUV[1]);
-            log("Sending Head Registration Command");
+    $('#img_act_select').append('<option id="seedReg" value="seedReg">Register Head</option>');
+    var seedRegCB = function (pixel) { //Callback for registering the head
+        if ($('#img_act_select :selected').val() ===  'seedReg') {
+            var camera = $('#'+window.mjpeg.selectBoxId+" :selected").val();
+            cw = window.mjpeg.cameraData[camera].width;
+            ch = window.mjpeg.cameraData[camera].height;
+            cw_border = Math.round(cw*0.20);
+            ch_border = Math.round(ch*0.20);
+            if (pixel[0] < cw_border || pixel[0] > (cw-cw_border) ||
+                pixel[1] < ch_border || pixel[1] > (ch-ch_border)) {
+              window.log("Please center the head in the camera before registering the head");
+              $('#img_act_select').val('looking');
+            } else {
+              window.bodyReg.registerHead(pixel[0], pixel[1]);
+              log("Sending head registration command.");
+            }
         }
     }
     //Add callback to list of callbacks for clickable element
     window.clickableCanvas.onClickCBList.push(seedRegCB);
-}
+    
+    $('#img_act_select').append('<option id="rArmCamLook" value="rArmCamLook">Look: Right Arm Camera</option>')
+    var rArmCamLookCB = function (pixel) { //Callback for looking at point with right arm camera
+        if ($('#img_act_select :selected').val() === 'rArmCamLook') {
+            var resultCB = function(result){
+                if (result.error_flag !== 0) {
+                    log('Error finding 3D point');
+                } else {
+                    window.rCamPointSender.callPoseStamped(result.pixel3d);
+                };
+                $('#img_act_select').val('looking');
+            }
+            window.p23DClient.call(pixel[0], pixel[1], resultCB);
+        }
+    }
+    //Add callback to list of callbacks
+    window.clickableCanvas.onClickCBList.push(rArmCamLookCB);
+};
 
 //<!--<option id="ell_global_move" value="ell_global_move">Move around Ellipse</option>-->\
 //<option id="skin_linear_move" value="skin_linear_move">Move to point with skin</option>\

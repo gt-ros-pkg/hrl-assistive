@@ -143,7 +143,7 @@ var initEllControl = function () {
 
     $("#tabs").on("tabsbeforeactivate", function (event, ui) {
       if (ui.newPanel.selector === "#tab_ellipse") {
-        window.mjpeg.setCamera('head_registration/confirmation');
+        window.mjpeg.setCamera('Head Registration');
       }
     });
 

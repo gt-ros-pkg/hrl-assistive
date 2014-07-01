@@ -62,6 +62,7 @@ class ReachAction(object):
         self.orient_weight.position_weight = 1
         self.orient_weight.orient_weight = 1
         self.orient_weight.posture_weight = 0
+        rospy.loginfo("[%s] Ready" %rospy.get_name())
 
 
     def pub_feedback(self, msg):

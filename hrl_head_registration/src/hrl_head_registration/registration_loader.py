@@ -47,6 +47,7 @@ class RegistrationLoader(object):
             assert (head_tf is not None), "Error reading head transform bagfile"
             bag.close()
         except Exception as e:
+            self.publish_feedback("Registration failed: Error loading saved registration.")
             rospy.logerr("[%s] Cannot load registration parameters from %s:\r\n%s" %
                          (rospy.get_name(), bag_str, e))
             return (False, PoseStamped())
@@ -56,6 +57,9 @@ class RegistrationLoader(object):
         else:
             head_registration = self.head_registration_l
         try:
+            rospy.loginfo("[%s] Requesting head registration for %s at pixel (%d, %d)." %(rospy.get_name(),
+                                                                                          self.subject,
+                                                                                          req.u, req.v))
             self.head_pc_reg = head_registration(req.u, req.v).reg_pose
             if ((self.head_pc_reg.pose.position == Point(0.0, 0.0, 0.0)) and
                 (self.head_pc_reg.pose.orientation == Quaternion(0.0, 0.0, 0.0, 1.0))):
@@ -82,17 +86,21 @@ class RegistrationLoader(object):
         if self.head_pose is None:
             raise rospy.ServiceException("Head has not been registered.");
             return False
-        hp = copy.copy(self.head_pose)
-        now = rospy.Time.now() + rospy.Duration(0.5)
-        self.tfl.waitForTransform(self.WORLD_FRAME, hp.header.frame_id, now, rospy.Duration(10))
-        hp.header.stamp = now
-        hp_world = self.tfl.transformPose(self.WORLD_FRAME, hp)
-        pos = (hp_world.pose.position.x, hp_world.pose.position.y, hp_world.pose.position.z)
-        quat = (hp_world.pose.orientation.x, hp_world.pose.orientation.y,
-                hp_world.pose.orientation.z, hp_world.pose.orientation.w)
-        self.head_frame_tf = (pos, quat)
-        self.publish_feedback("Head registration confirmed.");
-        return True
+        try:
+            hp = copy.copy(self.head_pose)
+            now = rospy.Time.now() + rospy.Duration(0.5)
+            self.tfl.waitForTransform(self.WORLD_FRAME, hp.header.frame_id, now, rospy.Duration(10))
+            hp.header.stamp = now
+            hp_world = self.tfl.transformPose(self.WORLD_FRAME, hp)
+            pos = (hp_world.pose.position.x, hp_world.pose.position.y, hp_world.pose.position.z)
+            quat = (hp_world.pose.orientation.x, hp_world.pose.orientation.y,
+                    hp_world.pose.orientation.z, hp_world.pose.orientation.w)
+            self.head_frame_tf = (pos, quat)
+            self.publish_feedback("Head registration confirmed.");
+            return True
+        except Exception as e:
+            rospy.logerr("[%s] Error: %s" %(rospy.get_name(), e))
+            raise rospy.ServiceException("Error confirming head registration.")
 
 if __name__ == "__main__":
     rospy.init_node("registration_loader")

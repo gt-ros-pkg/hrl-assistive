@@ -16,8 +16,9 @@
 		<param name="marker_color_a" type="double" value="1.0"/>
 		<param name="threshold" type="int" value="100"/>
 		<param name="use_history" type="bool" value="true"/>
-        <remap from="/usb_cam/image_raw" to="/$(arg arm)_forearm_adjusted"/>
-        <remap from="/usb_cam/camera_info" to="/$(arg arm)_forearm_cam/camera_info"/>
+        <!--<remap from="/camera/image_raw" to="/$(arg arm)_forearm_adjusted"/>-->
+        <remap from="/camera/image_raw" to="/$(arg arm)_forearm_cam/image_rect"/>
+        <remap from="/camera/camera_info" to="/$(arg arm)_forearm_cam/camera_info"/>
         <remap from="/ar_pose_marker" to="/r_pr2_ar_pose_marker" />
 	</node>
 
@@ -33,8 +34,9 @@
 		<param name="marker_color_a" type="double" value="1.0"/>
 		<param name="threshold" type="int" value="100"/>
 		<param name="use_history" type="bool" value="true"/>
-        <remap from="/usb_cam/image_raw" to="/$(arg arm)_forearm_adjusted"/>
-        <remap from="/usb_cam/camera_info" to="/$(arg arm)_forearm_cam/camera_info"/>
+        <remap from="/camera/image_raw" to="/$(arg arm)_forearm_adjusted"/>
+        <!--<remap from="/camera/image_raw" to="/$(arg arm)_forearm_cam/image_mono"/>-->
+        <remap from="/camera/camera_info" to="/$(arg arm)_forearm_cam/camera_info"/>
         <remap from="/ar_pose_marker" to="/l_pr2_ar_pose_marker" />
 	</node>
 	
@@ -53,7 +55,6 @@
 
     <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
           output="screen" >
-        <!--<rosparam command="load" file="$(arg ar_dir)/wheelchair_poses.yaml" />-->
     </node>
 
     <rosparam command="load" file="$(arg cam_params_dir)/$(arg arm)_forearm_cam_settings.yaml"

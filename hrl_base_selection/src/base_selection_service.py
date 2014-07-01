@@ -203,10 +203,12 @@ class BaseSelector(object):
                                    [       0.,         0.,  0.,   1.]])
         wheelchair_location = pr2_B_wc * corner_B_head.I
         self.wheelchair.SetTransform(np.array(wheelchair_location))
+
         
         # Published the wheelchair location to create a marker in rviz for visualization to compare where the service believes the wheelchair is to
         # where the person is (seen via kinect).
         pos_goal = wheelchair_location[0:3,3]
+
         ori_goal = tr.matrix_to_quaternion(wheelchair_location[0:3,0:3])
         self.publish_wc_marker(pos_goal, ori_goal)
 
