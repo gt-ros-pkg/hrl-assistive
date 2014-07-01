@@ -72,7 +72,7 @@ class ReachAction(object):
         self.ee_pose = msg
 
     def joint_state_cb(self, msg):
-        #TODO: Fix this.  Get Joint Names from somewhere general (i.e. arm controller state)
+        #TODO: Gets joint positions from arm controller state
         self.joint_posture = copy.copy(msg.actual.positions)
 
     def goal_cb(self, ps_msg):
