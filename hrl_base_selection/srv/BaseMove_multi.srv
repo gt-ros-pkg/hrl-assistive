@@ -1,0 +1,5 @@
+string task
+geometry_msgs/PoseStamped head
+---
+geometry_msgs/PoseStamped base_goal
+
