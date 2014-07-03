@@ -35,6 +35,8 @@ from hrl_lib.util import save_pickle, load_pickle
 import tf.transformations as tft
 from score_generator import ScoreGenerator
 
+import hrl_lib.util as ut
+
 class DataReader(object):
     score_sheet = []
     def __init__(self,subject='sub6_shaver',data_start=0,data_finish=5,model='chair',task='shaving'):
@@ -330,14 +332,15 @@ class DataReader(object):
         ax.set_xlim(-.2,.2)
         ax.set_ylim(-.2,.2)
         ax.set_zlim(-.2,.2)
-        plt.savefig(''.join([pkg_path, '/images/goals_plot_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
+        #plt.savefig(''.join([pkg_path, '/images/goals_plot_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
         
-
-        #plt.show()
+        plt.ion()                                                                                                 
+        plt.show()                                                                                                
+        ut.get_keystroke('Hit a key to proceed next')
 
 if __name__ == "__main__":
     data_start=0
-    data_finish=5#'end'
+    data_finish=1000 #'end'
     model = 'bed'
     subject='sub6_shaver'
     rospy.init_node(''.join(['data_reader_',subject,'_',str(data_start),'_',str(data_finish)]))
@@ -348,12 +351,12 @@ if __name__ == "__main__":
     print 'Now starting to generate the score. This will take a long time if there were many goal locations.'
     start_time = time.time()
     runData.plot_goals()
-    runData.generate_score()
-    print 'Time to generate all scores: %fs'%(time.time()-start_time)
-    print 'Now trying to plot the data. This might take a while for lots of data; depends on amount of data in score sheet. ~60 seconds.'
-    start_time = time.time()
-    runData.plot_score(load=True)
-    print 'Time to plot score: %fs'%(time.time()-start_time)
+    ## runData.generate_score()
+    ## print 'Time to generate all scores: %fs'%(time.time()-start_time)
+    ## print 'Now trying to plot the data. This might take a while for lots of data; depends on amount of data in score sheet. ~60 seconds.'
+    ## start_time = time.time()
+    ## runData.plot_score(load=True)
+    ## print 'Time to plot score: %fs'%(time.time()-start_time)
 
 
 
