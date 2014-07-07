@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # kmeans.py using any of the 20-odd metrics in scipy.spatial.distance
 # kmeanssample 2 pass, first sample sqrt(N)
+# Source: http://stackoverflow.com/questions/5529625/is-it-possible-to-specify-your-own-distance-function-using-scikits-learn-k-means
 
 from __future__ import division
 import random
