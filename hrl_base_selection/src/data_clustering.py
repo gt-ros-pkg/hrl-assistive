@@ -168,6 +168,7 @@ class DataCluster():
         #-----------------------------------------------------------#
         ## Averaging
         avg_clustered_data = []
+        num_clustered_data = []
         count = 0
         for i,g in enumerate(clustered_group):
             count += len(g)
@@ -187,6 +188,7 @@ class DataCluster():
             # Quaternion
             quat_avg = km.AvgQuaternion( X )                                                                
             avg_clustered_data.append([pos_avg, quat_avg])
+            num_clustered_data.append([len(g)])
                 
         ## print "total: ", count
                   
@@ -203,8 +205,8 @@ class DataCluster():
             else:
                 clustered_data = np.vstack([clustered_data,  np.array([mat])])    
 
-        print "Final clustered data: ", clustered_data.shape
-        return clustered_data
+        print "Final clustered data: ", clustered_data.shape, len(num_clustered_data)
+        return clustered_data, num_clustered_data
              
             
 
