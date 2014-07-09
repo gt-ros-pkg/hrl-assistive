@@ -171,6 +171,8 @@ class DataCluster():
         num_clustered_data = []
         count = 0
         for i,g in enumerate(clustered_group):
+            if len(g)==0: continue
+            
             count += len(g)
             ## print "Number of sub samples: ", len(g)
 
