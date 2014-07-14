@@ -14,6 +14,7 @@ from sklearn.cluster import KMeans
 
 # HRL library
 import hrl_lib.util as ut
+import hrl_lib.quaternion as qt
 
 # Local library
 import data_reader as dr
@@ -188,7 +189,7 @@ class DataCluster():
             pos_avg = pos_sum/float(len(g))
 
             # Quaternion
-            quat_avg = km.AvgQuaternion( X )                                                                
+            quat_avg = qt.quat_avg( X )                                                                
             avg_clustered_data.append([pos_avg, quat_avg])
             num_clustered_data.append([len(g)])
                 

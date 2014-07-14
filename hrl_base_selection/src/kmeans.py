@@ -12,6 +12,7 @@ from scipy.sparse import issparse  # $scipy/sparse/csr.py
 # HRL library
 import roslib; roslib.load_manifest('hrl_base_selection')
 import hrl_lib.util as ut
+import hrl_lib.quaternion as qt
 import copy
 
 __date__ = "2011-11-17 Nov denis"
@@ -59,7 +60,7 @@ def kmeans( X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, verbose
 
         # Compute distance
         if metric.find('quaternion') >= 0:
-            D = quat_dist( X, centres )  # |X| x |centres|           
+            D = qt.quat_angles( X, centres )  # |X| x |centres|           
         else:
             D = cdist_sparse( X, centres, metric=metric, p=p )  # |X| x |centres|
 
@@ -79,7 +80,7 @@ def kmeans( X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, verbose
 
                 # Compute average
                 if metric.find('quaternion') >= 0:                    
-                    centres[jc] = AvgQuaternion( X[c] )
+                    centres[jc] = qt.quat_avg( X[c] )
                 else:
                     centres[jc] = X[c].mean( axis=0 )
                                                                       
@@ -155,62 +156,7 @@ def Lqmetric( x, y=None, q=.5 ):
     # yes a metric, may increase weight of near matches; see ...
     return (np.abs(x - y) ** q) .mean() if y is not None \
         else (np.abs(x) ** q) .mean()
-
-def randomQuat( n ):
-
-    u1 = random.random()
-    u2 = random.random()
-    u3 = random.random()
-
-    X = np.array([np.sqrt(1-u1)*np.sin(2.0*np.pi*u2),
-                  np.sqrt(1-u1)*np.cos(2.0*np.pi*u2),
-                  np.sqrt(u1)*np.sin(2.0*np.pi*u3),
-                  np.sqrt(u1)*np.cos(2.0*np.pi*u3)])
-
-    count = 1
-    while True:
-        if count == n: break
-        else: count += 1
-
-        u1 = random.random()
-        u2 = random.random()
-        u3 = random.random()
-
-        X = np.vstack([X, np.array([np.sqrt(1-u1)*np.sin(2.0*np.pi*u2),
-                                    np.sqrt(1-u1)*np.cos(2.0*np.pi*u2),
-                                    np.sqrt(u1)*np.sin(2.0*np.pi*u3),
-                                    np.sqrt(u1)*np.cos(2.0*np.pi*u3)])])
-
-    return X
-        
-def quat_dist( X, Y ):
-
-    d = np.empty( (X.shape[0], Y.shape[0]), np.float64 )
-
-    for i,x in enumerate(X):
-        for j,y in enumerate(Y):
-            d[i,j] = ut.quat_angle(x,y)
-
-    return d
-
-def AvgQuaternion( X ):
-
-    n,m = X.shape
-    cumulative_x = X[0]
-
-    for i,x in enumerate(X):
-
-        if i==0: continue
-        
-        new_x = copy.copy(x)
-        if not AreQuaternionClose(new_x,X[0]):
-            new_x = inverseSignQuaternion(new_x)
-
-        cumulative_x += new_x
-
-    cumulative_x /= float(n)
-
-    return normalizeQuaternion(cumulative_x)
+     
 
 def AreQuaternionClose(q1,q2):
     
@@ -220,13 +166,6 @@ def AreQuaternionClose(q1,q2):
         return False
     else:
         return True
-
-def inverseSignQuaternion(q):
-    return q* (-1.0)    
-
-def normalizeQuaternion(q):
-    mag = np.sqrt(np.sum(q*q))
-    return q/mag
 
 
     
@@ -281,7 +220,7 @@ if __name__ == "__main__":
         
     else:
         metric = "quaternion"  # "chebyshev" = max, "cityblock" L1,  Lqmetric
-        X = randomQuat( N )
+        X = qt.quat_random( N )
 
         
     # cf scikits-learn datasets/
