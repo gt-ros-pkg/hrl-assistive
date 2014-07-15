@@ -289,10 +289,10 @@ class DataCluster():
             angle_array[i,0] = angle
             direc_array[i,:] = direc
 
-        # Normalize angles
-        angle_array = (angle_array + np.pi)/(2.0*np.pi)
+        ## # Normalize angles 
+        angle_array = (angle_array)/np.pi*180.0
 
-        # Normalize labels
+        # Normalize labels 
         max_label = float(np.max(Y))
         fY = np.zeros((len(Y),1))
         for i in xrange(len(Y)):
@@ -316,7 +316,10 @@ class DataCluster():
         ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 1.0, linewidth = 0)
 
         # Plot quaternions
-        ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=angle_array)
+        cmap = plt.cm.hsv
+        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=angle_array,cmap=cmap,vmin=-180.0, vmax=180.0)
+        cbar = plt.colorbar(sc, ticks=np.arange(-180,180+30,30))
+        ## cbar.set_clim(-180.0, 180.0)
         
         ax.set_aspect("equal")
         ax.set_xlim([-1.0,1.0])
@@ -341,7 +344,9 @@ class DataCluster():
         ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 1.0, linewidth = 0)
 
         # Plot quaternions
-        ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=fY)
+        cmap = plt.cm.jet
+        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=Y,vmin=0,vmax=abs(Y).max())
+        plt.colorbar(sc)
         
         ax.set_aspect("equal")
         ax.set_xlim([-1.0,1.0])
