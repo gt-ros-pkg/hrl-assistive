@@ -233,9 +233,6 @@ if __name__ == "__main__":
         centres, xtoc, dist = kmeans( X, randomcentres,
                                       delta=kmdelta, maxiter=kmiter, metric=metric, verbose=2 )
 
-    print centres
-    print xtoc
-    print dist
 
         
     ## print "%.0f msec" % ((time() - t0) * 1000)    

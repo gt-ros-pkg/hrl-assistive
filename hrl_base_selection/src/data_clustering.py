@@ -236,7 +236,7 @@ class DataCluster():
             direc_array[i,:] = direc
 
         # Normalize angles
-        angle_array = (angle_array + np.pi)/(2.0*np.pi)
+        angle_array = (angle_array)/np.pi*180.0
 
         # matplot setup            
         fig = plt.figure(figsize=(12,12))
@@ -252,21 +252,23 @@ class DataCluster():
         x = np.outer(np.cos(u), np.sin(v))
         y = np.outer(np.sin(u), np.sin(v))
         z = np.outer(np.ones(np.size(u)), np.cos(v))
-        ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 0.8, linewidth = 0)
+        ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 0.4, linewidth = 0)
 
         # Plot quaternions
-        ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=angle_array)
+        cmap = plt.cm.hsv        
+        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=angle_array,cmap=cmap,vmin=-180.0, vmax=180.0,s=100) #edgecolor='none'
+        cbar = plt.colorbar(sc, ticks=np.arange(-180,180+30,30))
         
         ax.set_aspect("equal")
         ax.set_xlim([-1.0,1.0])
         ax.set_ylim([-1.0,1.0])
         ax.set_zlim([-1.0,1.0])
-        ax.view_init(20,-120)
                
         font_dict={'fontsize': 30, 'family': 'serif'}        
-        plt.xlabel('x', fontdict=font_dict)
-        plt.ylabel('y', fontdict=font_dict)
-        plt.zlabel('z', fontdict=font_dict)
+        ax.set_xlabel('x', fontdict=font_dict)
+        ax.set_ylabel('y', fontdict=font_dict)
+        ax.set_zlabel('z', fontdict=font_dict)
+        ax.view_init(20,80)
                
         plt.ion()    
         plt.show()
@@ -291,15 +293,16 @@ class DataCluster():
 
         ## # Normalize angles 
         angle_array = (angle_array)/np.pi*180.0
-
-        # Normalize labels 
+            
+        # Normalize labels         
         max_label = float(np.max(Y))
         fY = np.zeros((len(Y),1))
-        for i in xrange(len(Y)):
-            fY[i] = float(Y[i])/max_label
+        if max_label != 0:
+            for i in xrange(len(Y)):
+                fY[i] = float(Y[i])/max_label
             
         # matplot setup 
-        fig = plt.figure(figsize=(16,8))
+        fig = plt.figure(figsize=(24,12))
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
 
@@ -307,17 +310,17 @@ class DataCluster():
         ax = fig.add_subplot(121, projection='3d')
         
         # Plot a sphere
-        r = 0.99
+        r = 1.0
         u = np.linspace(0, 2 * np.pi, 120)
         v = np.linspace(0, np.pi, 60)
         x = np.outer(np.cos(u), np.sin(v))
         y = np.outer(np.sin(u), np.sin(v))
         z = np.outer(np.ones(np.size(u)), np.cos(v))
-        ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 1.0, linewidth = 0)
+        ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 0.4, linewidth = 0)
 
         # Plot quaternions
         cmap = plt.cm.hsv
-        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=angle_array,cmap=cmap,vmin=-180.0, vmax=180.0)
+        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=angle_array,cmap=cmap,vmin=-180.0, vmax=180.0,s=100) #edgecolor='none'
         cbar = plt.colorbar(sc, ticks=np.arange(-180,180+30,30))
         ## cbar.set_clim(-180.0, 180.0)
         
@@ -330,34 +333,35 @@ class DataCluster():
         ax.set_xlabel('x', fontdict=font_dict)
         ax.set_ylabel('y', fontdict=font_dict)
         ax.set_zlabel('z', fontdict=font_dict)
+        ax.view_init(20,80)
 
         #-------------- matplot 2 --------------
         ax = fig.add_subplot(122, projection='3d')
         
         # Plot a sphere
-        r = 0.99
+        r = 0.92
         u = np.linspace(0, 2 * np.pi, 120)
         v = np.linspace(0, np.pi, 60)
         x = np.outer(np.cos(u), np.sin(v))
         y = np.outer(np.sin(u), np.sin(v))
         z = np.outer(np.ones(np.size(u)), np.cos(v))
-        ax.plot_surface(x*r, y*r, z*r,  rstride=1, cstride=1, color='c', alpha = 1.0, linewidth = 0)
+        ## ax.plot_surface(x*r, y*r, z*r, rstride=1, cstride=1, color='c', alpha = 1.0, linewidth = 0)
 
         # Plot quaternions
         cmap = plt.cm.jet
-        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=Y,vmin=0,vmax=abs(Y).max())
-        plt.colorbar(sc)
+        sc = ax.scatter(direc_array[:,0],direc_array[:,1],direc_array[:,2],c=Y,vmin=0,vmax=abs(Y).max(),s=100)
+        ## plt.colorbar(sc)
         
         ax.set_aspect("equal")
         ax.set_xlim([-1.0,1.0])
         ax.set_ylim([-1.0,1.0])
         ax.set_zlim([-1.0,1.0])
-               
         
         font_dict={'fontsize': 30, 'family': 'serif'}        
         ax.set_xlabel('x', fontdict=font_dict)
         ax.set_ylabel('y', fontdict=font_dict)
         ax.set_zlabel('z', fontdict=font_dict)
+        ax.view_init(20,40)
                
         plt.ion()    
         plt.show()
@@ -383,9 +387,43 @@ class DataCluster():
         for i in xrange(N):            
             raw_pos[i,:]  = np.array([0,0,0])
 
-        raw_quat = qt.quat_random( N )
+        ## raw_quat = qt.quat_random( N )
+        
+        quat_mean = np.array([1.,0.,0.,1.5]);
+        raw_quat = qt.quat_QuTem( quat_mean/np.linalg.norm(quat_mean), N, [0.03,0.3,0.3,1.0] )
 
+        ## quat_mean = np.array([0.,1.,0.,-1.5]);
+        ## raw_quat2 = qt.quat_QuTem( quat_mean/np.linalg.norm(quat_mean), N/2.0, [0.1,1.0,0.1,1.0] )
+        ## raw_quat = np.vstack([raw_quat1,raw_quat2])
 
+        ## raw_quat1 = np.array([[1.,  0.,  0.,  0.],
+        ##                       [1.,  0.1, 0.,  0.],
+        ##                       [1.,  0.,  0.1, 0.],
+        ##                       [1.,  0.,  0.,  0.1],
+        ##                       [1.,  0.2, 0.,  0.],
+        ##                       [1.,  0.,  0.2, 0.],
+        ##                       [1.,  0.,  0.,  0.2],
+        ##                       [1.1, 0.1, 0.,  0.],
+        ##                       [1.1, 0.,  0.1, 0.],
+        ##                       [1.1, 0.,  0.,  0.1]])
+        ## raw_quat2 = np.array([[0.,  0.,  1.,  0.],
+        ##                       [0.1, 0.,  1.1, 0.],
+        ##                       [0.1, 0.1, 1.,  0.],
+        ##                       [0.,  1.,  0.,  0.],
+        ##                       [0.1, 1.,  0.1, 0.],
+        ##                       [0.1, 1.1, 0.,  0.],
+        ##                       [0.1, 1.,  0.4, 0.],
+        ##                       [0.1, 1.,  1.1, 0.2],
+        ##                       [0.1, 1.,  1.4, 0.],
+        ##                       [1.1, 1.,  0.1, 0.2],
+        ##                       [1.1, 1.1,  0.1, 0.1]
+        ##                       ])
+
+        ## raw_quat = np.vstack([raw_quat1,raw_quat2])
+        
+        for i in xrange(len(raw_quat)):
+            raw_quat[i,:] /= np.linalg.norm(raw_quat[i,:])
+            
         #-----------------------------------------------------------#
         pos_clustered_group = []
         raw_group = np.hstack([raw_pos,raw_quat])
@@ -400,7 +438,6 @@ class DataCluster():
 
             # samples
             X = group[:,3:]            
-            ## print "Total X: ", X.shape[0], len(X)
 
             # Clustering parameters
             nQuatCluster = self.nQuatCluster
@@ -417,8 +454,7 @@ class DataCluster():
             # Clustering
             while True:
                 centres, xtoc, dist = km.kmeanssample( X, nQuatCluster, nsample=kmsample,
-                                                    delta=kmdelta, maxiter=kmiter, metric=metric, verbose=0 )                          
-        
+                                                       delta=kmdelta, maxiter=kmiter, metric=metric, verbose=0 )                                          
                 # co-distance matrix
                 bReFit = False
                 co_pos_mat = np.zeros((nQuatCluster,nQuatCluster))
@@ -452,16 +488,17 @@ class DataCluster():
             ##                 raw_group = np.vstack([raw_group, group[j,:]])
             ##     clustered_group.append(raw_group)
 
-        ## print "Number of pos+quat groups: ", len(clustered_group)
+        print "Number of pos+quat groups: ", len(clustered_group)
         
         self.q_image_axis_cluster(X, xtoc)
         ## self.q_image_axis_angle(raw_quat) #temp
-            
+
+        #self.q_image_axis_angle(centres)
         
         
 if __name__ == "__main__":
 
-     dc = DataCluster(19,0.01,16,0.02)
+     dc = DataCluster(19,0.01,6,0.02)
      dc.readData()
      ## dc.clustering(dc.runData.raw_goal_data)
      
