@@ -32,6 +32,9 @@ class DataCluster():
 
     def __init__(self, nCluster, minDist, nQuatCluster, minQuatDist):
         print 'Init DataCluster.'
+        self.set_params(nCluster, minDist, nQuatCluster, minQuatDist)
+        
+    def set_params(self, nCluster, minDist, nQuatCluster, minQuatDist):
         self.nCluster = nCluster
         self.fMinDist = minDist
 
@@ -39,7 +42,7 @@ class DataCluster():
         self.fMinQuatDist = minQuatDist
         
         self.ml = KMeans(n_clusters=nCluster, max_iter=300, n_jobs=6)
-
+        
     def readData(self):
         print 'Read data manually.'
         data_start=0
@@ -48,13 +51,9 @@ class DataCluster():
         subject='sub6_shaver'
         print 'Starting to convert data!'
         self.runData = dr.DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model)
-    
-    def clustering(self, raw_data):
-        print 'Start clustering.'
-        print raw_data.shape
 
-        #-----------------------------------------------------------#
-        ## Initialization
+    def mat_to_pos_quat(self, raw_data):
+
         raw_pos  = np.zeros((len(raw_data),3)) #array
         raw_quat = np.zeros((len(raw_data),4))
         
@@ -62,10 +61,11 @@ class DataCluster():
         ## Decompose data into pos,quat pairs
         for i in xrange(len(raw_data)):            
             raw_pos[i,:]  = np.array([raw_data[i][0,3],raw_data[i][1,3],raw_data[i][2,3]])
-            raw_quat[i,:] = tft.quaternion_from_matrix(raw_data[i]) # order? xyzw? wxyz? > probably, xyzw since ROS uses xyzw order.
+            raw_quat[i,:] = tft.quaternion_from_matrix(raw_data[i]) # order? xyzw? wxyz? > probably, xyzw since ROS uses xyzw order.       
+        
+        return raw_pos, raw_quat
 
-        #-----------------------------------------------------------#
-        ## K-mean Clustring by Position
+    def pos_clustering(self, raw_pos):
         while True:
             dict_params={}
             dict_params['n_clusters']=self.nCluster
@@ -98,9 +98,35 @@ class DataCluster():
                 break
                     
         raw_pos_index = self.ml.fit_predict(raw_pos)
-        ## print raw_pos_index
-        ## print self.ml.cluster_centers_
+        return raw_pos_index
 
+    # Return a list of clustered index.
+    def grouping(self, raw_data):
+        print 'Start clustering.'
+        print raw_data.shape
+
+        #-----------------------------------------------------------#
+        ## Initialization
+        raw_pos, raw_quat = self.mat_to_pos_quat(raw_data)
+        
+        #-----------------------------------------------------------#
+        ## K-mean Clustring by Position
+        raw_pos_index = self.pos_clustering(raw_pos)
+        
+        return raw_pos_index
+        
+    def clustering(self, raw_data):
+        print 'Start clustering.'
+        print raw_data.shape
+
+        #-----------------------------------------------------------#
+        ## Initialization
+        raw_pos, raw_quat = self.mat_to_pos_quat(raw_data)
+
+        #-----------------------------------------------------------#
+        ## K-mean Clustring by Position
+        raw_pos_index = self.pos_clustering(raw_pos)
+        
         pos_clustered_group = []
         for i in xrange(self.nCluster):
             raw_group = []
@@ -503,7 +529,11 @@ class DataCluster():
 if __name__ == "__main__":
 
      dc = DataCluster(19,0.01,6,0.02)
-     dc.readData()
+     dc.readData()     
      ## dc.clustering(dc.runData.raw_goal_data)
+
+     dc.set_params(2,0.01,6,0.02)
+     index = dc.grouping(dc.runData.raw_goal_data)
+     print index
      
-     dc.test(dc.runData.raw_goal_data)
+     ## dc.test(dc.runData.raw_goal_data)
