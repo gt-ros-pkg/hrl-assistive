@@ -16,10 +16,19 @@
     <depend package="rospy"/>
     <depend package="std_msgs"/>
     <depend package="geometry_msgs"/>
-    <depend package="pr2_controllers_msgs"/>
+
     <depend package="tf"/>
+
+    <depend package="pr2_controllers_msgs"/>
     <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
     <depend package="hrl_lib"/>
+    <depend package="kinematics_msgs"/>  <!-- used by the PR2 arm client -->
+    <depend package="hrl_darpa_arm" />
+
+    <depend package="sensor_msgs"/>
+    <depend package="visualization_msgs"/>
+
+    <depend package="trajectory_msgs"/>
 
 </package>
 

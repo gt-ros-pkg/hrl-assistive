@@ -18,6 +18,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 import matplotlib.patches as patches
+from matplotlib.cbook import flatten
 
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
@@ -30,10 +31,14 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle
+from random import gauss
+#import hrl_haptic_mpc.haptic_mpc_util
+from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
 
 class ScoreGenerator(object):
 
     def __init__(self,visualize=False,targets='all_goals',goals = None,model='chair'):
+        self.tf_listener = tf.TransformListener()
         self.visualize=visualize
         self.model=model
      
@@ -98,12 +103,15 @@ class ScoreGenerator(object):
     def set_goals(self):
         self.Tgrasps = []
         self.weights = []
+        total = 0
         
         for num,selection in enumerate(self.selection_mat):
+            #print selection
             if selection!=0:
                 self.Tgrasps.append(np.array(self.goal_list[num]))
                 self.weights.append(selection)
-
+                total += selection
+        #print 'Total weights (should be 1) is: ',total
 
     def choose_task(self,task):
         if task == 'all_goals':
@@ -111,7 +119,7 @@ class ScoreGenerator(object):
         elif task == 'wipe_face':
             self.selection_mat = np.array([1,1,1,1,1,1,0,0,0,0,0,0,0])
         elif task == 'shoulder':
-            self.selection_mat = np.array([0,0,0,0,0,0,1,1,0,0,0,0])
+            self.selection_mat = np.array([0,0,0,0,0,0,1,0,0,0,0,0])
         elif task == 'knee':
             self.selection_mat = np.array([0,0,0,0,0,0,0,0,1,1,0,0])
         elif task == 'arm':
@@ -127,12 +135,13 @@ class ScoreGenerator(object):
 
     def handle_score(self):
         print 'Starting to generate the score. This is going to take a while. Estimated 60-100 seconds per goal location.'
-        score_sheet = np.array([t for t in ( (i, j, k, self.generate_score(i,j,k))
+        score_sheet = np.array([t for t in ( (list(flatten([i, j, k, self.generate_score(i,j,k)])))
                          for i in np.arange(-1.5,1.55,.05)
                              for j in np.arange(-1.5,1.55,.05)
                                  for k in np.arange(m.pi,-m.pi,-m.pi/4)
                                   )
                       ])
+        #print score_sheet
         return score_sheet
         
 
@@ -146,14 +155,57 @@ class ScoreGenerator(object):
                                                           [       0.,        0.,     1.,        0.],
                                                           [       0.,        0.,     0.,        1.]])
         self.robot.SetTransform(np.array(base_position))
-        reach_score = 0
+        reach_score = 0.
+        manip_score = 0.
+        reachable = 0.
+        std = 1.
+        mean = 0.
+        allmanip=[]
+        allmanip2=[]
+        space_score = (1./(std*(m.pow((2.*m.pi),0.5))))*m.exp(-(m.pow(np.linalg.norm([i,j])-mean,2.))/(2.*m.pow(std,2.)))
+        #print space_score
         with self.robot:
             if not self.manip.CheckIndependentCollision(op.CollisionReport()):
                 for num,Tgrasp in enumerate(self.Tgrasps):
                     sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                     if sol is not None:
+                        self.robot.SetDOFValues(sol,self.manip.GetArmIndices())
+                        Tee = self.manip.GetEndEffectorTransform()
+                        self.env.UpdatePublishedBodies()
                         reach_score += self.weights[num]
-        return reach_score
+
+                        joint_angles = copy.copy(sol)
+                        #pos, rot = self.robot.kinematics.FK(self.joint_angles)
+                        #self.end_effector_position = pos
+                        #self.end_effector_orient_cart = rot
+                        #J = np.matrix(self.kinematics.jacobian(joint_angles))
+                        #J = [self.robot.kinematics.jacobian(self.joint_angles, self.end_effector_position)]
+                        J = np.matrix(np.vstack([self.manip.CalculateJacobian(),self.manip.CalculateAngularVelocityJacobian()]))
+                        #print 'J0 ',np.linalg.norm(J[3:6,0])
+                        #print 'J1 ',np.linalg.norm(J[3:6,1])
+                        #print 'J2 ',np.linalg.norm(J[3:6,2])
+                        #print 'J3 ',np.linalg.norm(J[3:6,3])
+                        #print 'J4 ',np.linalg.norm(J[3:6,4])
+                        #print 'J5 ',np.linalg.norm(J[3:6,5])
+                        #print 'J6 ',np.linalg.norm(J[3:6,6])
+
+                        #print 'Jacobian is: \n',J
+                        #print Jop
+                        #if np.array_equal(J,Jop):
+                        #    print 'Jacobians are equal!!!'
+                        manip = (m.pow(np.linalg.det(J*J.T),(1./6.)))/(np.trace(J*J.T)/6.)
+                        #manip2 = (m.pow(np.linalg.det(Jop*Jop.T),(1./6.)))/(np.trace(Jop*Jop.T)/6.)
+                        allmanip.append(manip)
+                        #allmanip2.append(manip2)
+                        reachable += 1.
+                        manip_score += manip*self.weights[num]
+        #manip_score = manip_score/reachable
+        #print 'I just tested base position: (', i,', ',j,', ',k,'). Reachable: ',reachable
+        #if reachable !=0:
+            #print 'The most manipulable reach with J was: ',np.max(allmanip)
+            #print 'The most manipulable reach with Jop was: ',np.max(allmanip2)
+        #    print 'weight was: ',self.weights
+        return [reach_score,manip_score,space_score]
 
 
     def setup_openrave(self):
@@ -164,8 +216,14 @@ class ScoreGenerator(object):
         if self.visualize:
             self.env.SetViewer('qtcoin')
 
+        ## Set up robot state node to do Jacobians. This works, but is commented out because we can do it with openrave fine.
+        torso_frame = '/torso_lift_link'
+        inertial_frame = '/base_link'
+        end_effector_frame = '/l_gripper_tool_frame'
+        from pykdl_utils.kdl_kinematics import create_kdl_kin
+        self.kinematics = create_kdl_kin(torso_frame, end_effector_frame)
 
-        ## Load PR2 Model
+        ## Load OpenRave PR2 Model
         self.env.Load('robots/pr2-beta-static.zae')
         self.robot = self.env.GetRobots()[0]
         v = self.robot.GetActiveDOFValues()
@@ -220,7 +278,7 @@ class ScoreGenerator(object):
 if __name__ == "__main__":
     rospy.init_node('score_generator')
     mytask = 'shoulder'
-    mymodel = 'bed'
+    mymodel = 'chair'
     #mytask = 'all_goals'
     start_time = time.time()
     selector = ScoreGenerator(visualize=False,task=mytask,goals = None,model=mymodel)
