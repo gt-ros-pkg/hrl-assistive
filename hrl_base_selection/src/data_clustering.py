@@ -308,6 +308,8 @@ class DataCluster():
 
         #-------------- matplot 1 --------------
         ax = fig.add_subplot(121, projection='3d')
+        font_dict={'fontsize': 45, 'family': 'serif'}            
+        ax.set_title("QuTEM distribution", fontdict=font_dict)
         
         # Plot a sphere
         r = 1.0
@@ -333,10 +335,12 @@ class DataCluster():
         ax.set_xlabel('x', fontdict=font_dict)
         ax.set_ylabel('y', fontdict=font_dict)
         ax.set_zlabel('z', fontdict=font_dict)
-        ax.view_init(20,80)
+        ax.view_init(20,40)
 
         #-------------- matplot 2 --------------
         ax = fig.add_subplot(122, projection='3d')
+        font_dict={'fontsize': 45, 'family': 'serif'}            
+        ax.set_title("Clustering", fontdict=font_dict)
         
         # Plot a sphere
         r = 0.92
