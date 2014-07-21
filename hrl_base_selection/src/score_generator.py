@@ -37,8 +37,11 @@ from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
 
 class ScoreGenerator(object):
 
-    def __init__(self,visualize=False,targets='all_goals',goals = None,model='chair'):
-        self.tf_listener = tf.TransformListener()
+    def __init__(self,visualize=False,targets='all_goals',goals = None,model='chair',tf_listener = None):
+        if tf_listener == None:
+            self.tf_listener = tf.TransformListener()
+        else:
+            self.tf_listener=tf_listener
         self.visualize=visualize
         self.model=model
      
@@ -142,6 +145,7 @@ class ScoreGenerator(object):
                                   )
                       ])
         #print score_sheet
+        print 'the max reach score from the score generator is: ',np.max(score_sheet[:,4])
         return score_sheet
         
 
@@ -205,7 +209,7 @@ class ScoreGenerator(object):
             #print 'The most manipulable reach with J was: ',np.max(allmanip)
             #print 'The most manipulable reach with Jop was: ',np.max(allmanip2)
         #    print 'weight was: ',self.weights
-        return [reach_score,manip_score,space_score]
+        return [space_score,reach_score,manip_score]
 
 
     def setup_openrave(self):

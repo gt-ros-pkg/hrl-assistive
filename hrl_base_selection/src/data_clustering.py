@@ -59,13 +59,14 @@ class DataCluster():
         
         #-----------------------------------------------------------#
         ## Decompose data into pos,quat pairs
-        for i in xrange(len(raw_data)):            
+        for i in xrange(len(raw_data)):  
             raw_pos[i,:]  = np.array([raw_data[i][0,3],raw_data[i][1,3],raw_data[i][2,3]])
-            raw_quat[i,:] = tft.quaternion_from_matrix(raw_data[i]) # order? xyzw? wxyz? > probably, xyzw since ROS uses xyzw order.       
+            raw_quat[i,:] = tft.quaternion_from_matrix(raw_data[i]) # order should be xyzw because ROS uses xyzw order.       
         
         return raw_pos, raw_quat
 
     def pos_clustering(self, raw_pos):
+
         while True:
             dict_params={}
             dict_params['n_clusters']=self.nCluster
@@ -124,7 +125,7 @@ class DataCluster():
         raw_pos, raw_quat = self.mat_to_pos_quat(raw_data)
 
         #-----------------------------------------------------------#
-        ## K-mean Clustring by Position
+        ## K-mean Clustering by Position
         raw_pos_index = self.pos_clustering(raw_pos)
         
         pos_clustered_group = []

@@ -28,6 +28,7 @@ from hrl_base_selection.srv import BaseMove, BaseMove_multi
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from matplotlib.cbook import flatten
 
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
@@ -42,8 +43,13 @@ class DataReader(object):
     score_sheet = []
     def __init__(self,subject='sub6_shaver',data_start=0,data_finish=5,model='chair',task='shaving',pos_clust=5,ori_clust=1):
  
-        self.max_distance = 0.2
+        self.tf_listener = tf.TransformListener()
+
+
+        self.max_distance = 5#0.2
         self.task = task
+
+        self.num_goal_locations = 1
 
         self.pos_clust=pos_clust
         self.ori_clust=ori_clust  
@@ -84,10 +90,6 @@ class DataReader(object):
             self.data_finish = data_finish
         self.length = np.min(np.array([max_length,self.data_finish-self.data_start]))
         
-        if self.length<self.pos_clust:
-            self.pos_clust = copy.copy(self.length)
-        if self.length<self.ori_clust:
-            self.ori_clust = copy.copy(self.length)
 
         world_B_headc_data = np.zeros([self.length,4,4])
         world_B_tool_data = np.zeros([self.length,4,4])
@@ -132,14 +134,26 @@ class DataReader(object):
 # + np.matrix(tft.translation_matrix(goal_values[num,0:3]))))
             #    self.distance.append(np.linalg.norm(temp[0:3,3]))
         self.raw_goal_data = np.array(self.raw_goal_data)
+
+        if len(self.raw_goal_data)<self.pos_clust:
+            self.pos_clust = len(self.raw_goal_data)
+        if len(self.raw_goal_data)<self.ori_clust:
+            self.ori_clust = len(self.raw_goal_data)
+
+        
         enough = False
-        while not enough:
+        iter = 0
+        while not enough and (iter<10):
+            iter +=1
             cluster = clust.DataCluster(self.pos_clust,0.01,self.ori_clust,0.02)
-            self.clustered_goal_data,number,num_pos_clusters = cluster.clustering(self.raw_goal_data)
+            self.clustered_goal_data,number,num_pos_clusters, = cluster.clustering(self.raw_goal_data)
             if num_pos_clusters == self.pos_clust:
                 self.pos_clust +=5
             else:
                 enough = True
+        print 'Raw data: \n',self.raw_goal_data
+        print 'Clustered data: \n',self.clustered_goal_data
+
 
 
         #print 'Now finding how many unique goals there are. Please wait; this can take up to a couple of minutes.'
@@ -170,6 +184,11 @@ class DataReader(object):
             #print 'has a distance of: ',np.linalg.norm(self.clustered_goal_data[num][0:3,3])
         #print 'distance: ',np.array(self.distance)
         self.goal_unique = np.array(self.goal_unique)
+        print 'Goal unique is \n',self.goal_unique
+        self.pos_data = []
+        for item in self.clustered_goal_data:
+            self.pos_data.append([item[0,3],item[1,3],item[2,3]])
+        self.pos_data = np.array(self.pos_data)
         print 'Total number of goals as summed from the clustering: ',np.array(number).sum()
         print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible distance of head center (0.2m)'%(self.length,len(self.raw_goal_data),len(self.goal_unique))
         
@@ -198,7 +217,8 @@ class DataReader(object):
         #fig.colorbar(surf, shrink=0.5, aspect=5)
 #        plt.show()
 
-    def generate_score(self):
+    def generate_score(self,allow_multiple=False):
+        self.num_base_locations = 1
         mytargets = 'all_goals'
         mytask = self.task #'shaving'
         #start = 0
@@ -206,14 +226,56 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
         #print 'Goals: \n',self.clustered_goal_data[0:4]
         #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
         self.score_sheet = selector.handle_score()
-        
-        if np.max(self.score_sheet[:,3])<.95:
-            print 'Less than 95% of goal positions reachable from one base position. I should check if I can reach more goals using multiple base positions.'
+        old_max_score = np.max(self.score_sheet[:,4])
+        print 'The max reach score I got was: ', np.max(self.score_sheet[:,4])
+        ## Handles the option of getting multiple goal positions
+        if allow_multiple:
+            for num_base_locations in xrange(2,5):
+                if (old_max_score<.95) and (num_base_locations <= len(myGoals)):
+                    print 'Less than 95% of goal positions reachable from ',num_base_locations-1, ' base position(s). I should check if I can reach more goals using another base position.'
+                    print 'Once again, it is 60-100 seconds calculation time per goal location.'
+                    scores=[]
+                    new_score = []
+                    new_max_score = 0
+                    goalCluster = []
+                    cluster = clust.DataCluster(num_base_locations,0.001,1,0.02)
+                    clust_numbers = cluster.pos_clustering(self.pos_data)
+                    print 'Clusters assigned to groups: \n',clust_numbers
+                    for i in xrange(num_base_locations):
+                        goalCluster = []
+                        for num,item in enumerate(self.goal_unique):
+                            if clust_numbers[num] == i:
+                                goalCluster.append(item)
+                        goalCluster = np.array(goalCluster)
+                        print goalCluster
+                        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = goalCluster,model=self.model,tf_listener=self.tf_listener)
+                        this_score = selector.handle_score()
+                        new_max_score += np.max(this_score[:,4])
+                        print 'New max score being calculated: ',new_max_score
+                        scores.append(this_score)
+                    #old_max_score = 0
+                    #for i in xrange(self.num_base_locations):
+                    #    old_max_score += np.max(self.score_sheet[:,4+2*i])
+                    print 'Old max score for ',self.num_base_locations,' base locations is: ',old_max_score
+                    if new_max_score > old_max_score:
+                        print 'New max reach score for ',num_base_locations,' base locations is: ',new_max_score
+                        old_max_score = copy.copy(new_max_score)
+                        for i in xrange(len(scores[0])):
+                            score_line = []
+                            score_line.append(list(scores[0][i,0:6]))
+                            for j in xrange(1,num_base_locations):
+                                score_line.append(list(scores[j][i,4:6]))
+                            score_line = list(flatten(score_line))
+                            new_score.append(score_line)
+                        self.score_sheet = copy.copy(np.array(new_score))
+                        self.num_base_locations = num_base_locations
+        #print 'number of scores',len(scores)
 
+        #print 'sample item from score sheet is: ',self.score_sheet[0]
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
@@ -240,11 +302,11 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
         #print 'Goals: \n',self.clustered_goal_data[0:4]
         #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
         self.score_sheet = selector.handle_score()
-
+    
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
@@ -288,20 +350,28 @@ class DataReader(object):
         #print t
         for i in np.arange(-1.5,1.55,.05):
             for j in np.arange(-1.5,1.55,.05):
-                temp1 = []
-                temp2 = []
-                temp3 = []
+                temp = []
                 for item in data:
+                    newline = []
                 #print 'i is:',i
                 #print 'j is:',j
                     if item[0]==i and item[1]==j:
-                        temp1.append(item[3])
-                        temp2.append(item[4])
-                        temp3.append(item[5])
-                if (temp1 != []) and (temp2 != []) and (temp3 != []):
-                    score2d_temp.append([i,j,np.max(temp1),np.max(temp2),np.max(temp3)])
+                        newline.append([i,j,item[3]])
+                        for k in xrange(self.num_base_locations):
+                            newline.append(item[int(4 + 2*k)])
+                            newline.append(item[int(5 + 2*k)])
+                        #print 'newest line ',list(flatten(newline))
+                        temp.append(list(flatten(newline)))
+                temp=np.array(temp)
+                temp_max = []
+                temp_max.append(np.max(temp[:,2]))
+                for k in xrange(self.num_base_locations):
+                    temp_max.append(np.max(temp[:,int(3+2*k)]))
+                    temp_max.append(np.max(temp[:,int(4+2*k)]))
+                #print 'temp_max is ',temp_max
+                score2d_temp.append(list(flatten([i,j,temp_max])))
 
-        #print '2d score:',np.array(score2d_temp)
+        print '2d score:',np.array(score2d_temp)[0]
 
         seen_items = []
         score2d = [] 
@@ -361,48 +431,9 @@ class DataReader(object):
         X  = score2d[:,0]
         Y  = score2d[:,1]
         #Th = score_sheet[:,2]
-        c  = score2d[:,2]
-        c2 = score2d[:,3]
-        c3 = score2d[:,4]
-        #print c3
+        c3  = score2d[:,2]
 
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
-        surf = ax.scatter(X, Y, s=60,c=c,alpha=1)
-        ax.set_xlabel('X Axis')
-        ax.set_ylabel('Y Axis')
-        fig.colorbar(surf, shrink=0.65, aspect=5)
-        ax.add_patch(patch_subject)
-        ax.add_patch(patch_pr2)
-        ax.set_xlim(-2,2)
-        ax.set_ylim(-2,2)
-        fig.set_size_inches(14,11,forward=True)
-        if load:
-            ax.set_title(''.join(['Plot of reach score from ',self.task]))
-            plt.savefig(''.join([pkg_path, '/images/reach_score_of_',self.task,'.png']), bbox_inches='tight')       
-        else:
-            ax.set_title(''.join(['Plot of reach score from ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
-            plt.savefig(''.join([pkg_path, '/images/reach_score_of_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
-        
-        fig2 = plt.figure(2)
-        ax2 = fig2.add_subplot(111)
-        surf2 = ax2.scatter(X, Y,s=60, c=c2,alpha=1)
-        ax2.set_xlabel('X Axis')
-        ax2.set_ylabel('Y Axis')
-        fig2.colorbar(surf2, shrink=0.65, aspect=5)
-        ax2.add_patch(patch_subject)
-        ax2.add_patch(patch_pr2)
-        ax2.set_xlim(-2,2)
-        ax2.set_ylim(-2,2)
-        fig2.set_size_inches(14,11,forward=True)
-        if load:
-            ax2.set_title(''.join(['Plot of manipulability score from ',self.task]))
-            plt.savefig(''.join([pkg_path, '/images/manip_score_of_',self.task,'.png']), bbox_inches='tight')     
-        else:
-            ax2.set_title(''.join(['Plot of manip score from ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
-            plt.savefig(''.join([pkg_path, '/images/manip_score_of_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
-
-        fig3 = plt.figure(3)
+        fig3 = plt.figure(1)
         ax3 = fig3.add_subplot(111)
         surf3 = ax3.scatter(X, Y,s=60, c=c3,alpha=1)
         ax3.set_xlabel('X Axis')
@@ -421,7 +452,48 @@ class DataReader(object):
             plt.savefig(''.join([pkg_path, '/images/space_score_of_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
 
 
+        print 'number of base locations is: ',self.num_base_locations
+        print 'score2d ',score2d[0,:]
+        for i in xrange(self.num_base_locations):
+            
+            c = copy.copy(score2d[:,3+2*i])
+            c2 = copy.copy(score2d[:,4+2*i])
 
+            fig = plt.figure(2+2*i)
+            ax = fig.add_subplot(111)
+            surf = ax.scatter(X, Y, s=60,c=c,alpha=1)
+            ax.set_xlabel('X Axis')
+            ax.set_ylabel('Y Axis')
+            fig.colorbar(surf, shrink=0.65, aspect=5)
+            ax.add_patch(patch_subject)
+            ax.add_patch(patch_pr2)
+            ax.set_xlim(-2,2)
+            ax.set_ylim(-2,2)
+            fig.set_size_inches(14,11,forward=True)
+            if load:
+                ax.set_title(''.join(['Plot of reach score from BP',str(i+1),' ',self.task]))
+                plt.savefig(''.join([pkg_path, '/images/reach_score_of_BP',str(i+1),'_',self.task,'.png']), bbox_inches='tight')       
+            else:
+                ax.set_title(''.join(['Plot of reach score from BP',str(i+1),' ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
+                plt.savefig(''.join([pkg_path, '/images/reach_score_of_BP',str(i+1),'_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
+            
+            fig2 = plt.figure(3+2*i)
+            ax2 = fig2.add_subplot(111)
+            surf2 = ax2.scatter(X, Y,s=60, c=c2,alpha=1)
+            ax2.set_xlabel('X Axis')
+            ax2.set_ylabel('Y Axis')
+            fig2.colorbar(surf2, shrink=0.65, aspect=5)
+            ax2.add_patch(patch_subject)
+            ax2.add_patch(patch_pr2)
+            ax2.set_xlim(-2,2)
+            ax2.set_ylim(-2,2)
+            fig2.set_size_inches(14,11,forward=True)
+            if load:
+                ax2.set_title(''.join(['Plot of manipulability score from BP',str(i+1),' ',self.task]))
+                plt.savefig(''.join([pkg_path, '/images/manip_score_of_BP',str(i+1),'_',self.task,'.png']), bbox_inches='tight')     
+            else:
+                ax2.set_title(''.join(['Plot of manip score from BP',str(i+1),' ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
+                plt.savefig(''.join([pkg_path, '/images/manip_score_of_BP',str(i+1),'_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
 
         plt.ion()                                                                                                 
         plt.show()                                                                                                
@@ -459,10 +531,10 @@ class DataReader(object):
 
 if __name__ == "__main__":
     data_start=0
-    data_finish=1000 #4000 #'end'
+    data_finish='end' #4000 #'end'
     model = 'bed'
-    subject='sub6_shaver'
-    pos_clust = 50
+    subject='test1_shaver'
+    pos_clust = 3
     ori_clust = 5
     rospy.init_node(''.join(['data_reader_',subject,'_',str(data_start),'_',str(data_finish),'_',str(int(time.time()))]))
     start_time = time.time()
@@ -472,7 +544,7 @@ if __name__ == "__main__":
     print 'Now starting to generate the score. This will take a long time if there were many goal locations.'
     start_time = time.time()
     #runData.plot_goals()
-    runData.generate_score()
+    runData.generate_score(allow_multiple=True)
     print 'Time to generate all scores: %fs'%(time.time()-start_time)
     print 'Now trying to plot the data. This might take a while for lots of data; depends on amount of data in score sheet. ~60 seconds.'
     start_time = time.time()
