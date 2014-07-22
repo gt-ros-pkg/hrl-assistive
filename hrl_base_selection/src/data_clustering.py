@@ -33,7 +33,7 @@ class DataCluster():
     def __init__(self, nCluster, minDist, nQuatCluster, minQuatDist):
         print 'Init DataCluster.'
         self.set_params(nCluster, minDist, nQuatCluster, minQuatDist)
-        
+
     def set_params(self, nCluster, minDist, nQuatCluster, minQuatDist):
         self.nCluster = nCluster
         self.fMinDist = minDist
@@ -50,8 +50,8 @@ class DataCluster():
         model = 'bed'
         subject='sub6_shaver'
         print 'Starting to convert data!'
-        self.runData = dr.DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model)
-
+        self.runData = dr.DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model)      
+        
     def mat_to_pos_quat(self, raw_data):
 
         raw_pos  = np.zeros((len(raw_data),3)) #array
@@ -62,7 +62,7 @@ class DataCluster():
         for i in xrange(len(raw_data)):  
             raw_pos[i,:]  = np.array([raw_data[i][0,3],raw_data[i][1,3],raw_data[i][2,3]])
             raw_quat[i,:] = tft.quaternion_from_matrix(raw_data[i]) # order should be xyzw because ROS uses xyzw order.       
-        
+
         return raw_pos, raw_quat
 
     def pos_clustering(self, raw_pos):
@@ -97,7 +97,7 @@ class DataCluster():
                 continue
             else:
                 break
-                    
+            
         raw_pos_index = self.ml.fit_predict(raw_pos)
         return raw_pos_index
 
@@ -127,7 +127,7 @@ class DataCluster():
         #-----------------------------------------------------------#
         ## K-mean Clustering by Position
         raw_pos_index = self.pos_clustering(raw_pos)
-        
+
         pos_clustered_group = []
         for i in xrange(self.nCluster):
             raw_group = []
@@ -210,19 +210,19 @@ class DataCluster():
         count = 0
         for i,g in enumerate(clustered_group):
             if len(g)==0: continue
-            
+
             count += len(g)
             ## print "Number of sub samples: ", len(g)
 
             # Position
             pos_sum = np.array([0.,0.,0.])
             for j,s in enumerate(g):
-                pos_sum += s[0]
-
+                pos_sum += s[0:3]
+                
                 if j==0:
-                    quat_array = s[1]
+                    quat_array = s[3:]
                 else:
-                    quat_array = np.vstack([quat_array, s[1]])
+                    quat_array = np.vstack([quat_array, s[3:]])
             pos_avg = pos_sum/float(len(g))
 
             # Quaternion
@@ -246,7 +246,7 @@ class DataCluster():
                 clustered_data = np.vstack([clustered_data,  np.array([mat])])    
 
         print "Final clustered data: ", clustered_data.shape, len(num_clustered_data)
-        return clustered_data, num_clustered_data, len(pos_clustered_group)
+        ## return clustered_data, num_clustered_data, len(pos_clustered_group)
              
 
     # X is a set of quaternion
@@ -529,12 +529,13 @@ class DataCluster():
         
 if __name__ == "__main__":
 
-     dc = DataCluster(19,0.01,6,0.02)
+     dc = DataCluster(19,0.01,6,0.01)
      dc.readData()     
-     ## dc.clustering(dc.runData.raw_goal_data)
+     dc.set_params(19,0.01,6,0.01)     
+     dc.clustering(dc.runData.raw_goal_data)
 
-     dc.set_params(2,0.01,6,0.02)
-     index = dc.grouping(dc.runData.raw_goal_data)
-     print index
+     #dc.set_params(2,0.01,6,0.02)
+     #index = dc.grouping(dc.runData.raw_goal_data)
+     #print index
      
      ## dc.test(dc.runData.raw_goal_data)
