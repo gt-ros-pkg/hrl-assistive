@@ -47,11 +47,8 @@ class DataReader(object):
 
         self.subject = subject
         self.data_start = data_start
-        # If data_finish is 'end' then it does from whatever is the start data to the end. self.length is the number of data points we are looking at.
-        if data_finish == 'end':
-            self.data_finish = max_length
-        else:
-            self.data_finish = data_finish
+        self.data_finish = data_finish
+
         self.model = model
         self.max_distance = 0.05#5#0.2
         self.task = task
@@ -59,7 +56,7 @@ class DataReader(object):
         self.pos_clust=pos_clust
         self.ori_clust=ori_clust  
 
-    def get_raw_data(self)
+    def get_raw_data(self):
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         #tool_init_pos = np.array([0.357766509056, 0.593838989735, 0.936517715454])
@@ -80,6 +77,11 @@ class DataReader(object):
         
         # max_length is the length of the shorter of the two files. They sometimes differ in length by a few points.
         max_length = np.min([len(world_B_headc_raw_data),len(world_B_tool_raw_data)])
+
+        # If data_finish is 'end' then it does from whatever is the start data to the end. self.length is the number of data points we are looking at.
+        if self.data_finish == 'end':
+            self.data_finish = max_length
+
 
 
         self.length = np.min(np.array([max_length,self.data_finish-self.data_start]))
@@ -141,7 +143,7 @@ class DataReader(object):
         self.raw_goal_data = np.array(self.raw_goal_data)
         return self.raw_goal_data
 
-    def cluster_data(self)
+    def cluster_data(self):
         if len(self.raw_goal_data)<self.pos_clust:
             self.pos_clust = len(self.raw_goal_data)
         if len(self.raw_goal_data)<self.ori_clust:
@@ -565,6 +567,8 @@ if __name__ == "__main__":
     start_time = time.time()
     print 'Starting to convert data!'
     runData = DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model,pos_clust=pos_clust,ori_clust=ori_clust)
+    runData.get_raw_data()
+    runData.cluster_data()
     print 'Time to convert data into useful matrices: %fs'%(time.time()-start_time)
     print 'Now starting to generate the score. This will take a long time if there were many goal locations.'
     start_time = time.time()
