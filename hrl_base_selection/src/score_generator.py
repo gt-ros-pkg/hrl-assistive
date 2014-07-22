@@ -24,8 +24,8 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
 from hrl_base_selection.srv import BaseMove, BaseMove_multi
-from visualization_msgs.msg import Marker
-from helper_functions import createBMatrix
+from visualization_msgs.msg import Marker, MarkerArray
+from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 import pickle as pkl
@@ -96,6 +96,9 @@ class ScoreGenerator(object):
                 self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
                 self.selection_mat.append(target[1])
             self.set_goals()
+            #print 'The list of goals from the score generator: \n',
+            #for item in self.goal_list:
+            #    print item
             #self.goal_list = goals
 
         
@@ -221,11 +224,11 @@ class ScoreGenerator(object):
             self.env.SetViewer('qtcoin')
 
         ## Set up robot state node to do Jacobians. This works, but is commented out because we can do it with openrave fine.
-        torso_frame = '/torso_lift_link'
-        inertial_frame = '/base_link'
-        end_effector_frame = '/l_gripper_tool_frame'
-        from pykdl_utils.kdl_kinematics import create_kdl_kin
-        self.kinematics = create_kdl_kin(torso_frame, end_effector_frame)
+        #torso_frame = '/torso_lift_link'
+        #inertial_frame = '/base_link'
+        #end_effector_frame = '/l_gripper_tool_frame'
+        #from pykdl_utils.kdl_kinematics import create_kdl_kin
+        #self.kinematics = create_kdl_kin(torso_frame, end_effector_frame)
 
         ## Load OpenRave PR2 Model
         self.env.Load('robots/pr2-beta-static.zae')
@@ -273,10 +276,119 @@ class ScoreGenerator(object):
             print 'I got a bad model. What is going on???'
             return None
         self.subject = self.env.GetBodies()[1]
-        subject_location = self.pr2_B_headfloor * originsubject_B_headfloor.I
-        self.subject.SetTransform(np.array(subject_location))
+        self.subject_location = self.pr2_B_headfloor * originsubject_B_headfloor.I
+        self.subject.SetTransform(np.array(self.subject_location))
 
         print 'OpenRave has succesfully been initialized. \n'
+
+
+    def show_rviz(self):
+        sub_pos,sub_ori = Bmat_to_pos_quat(self.subject_location)
+        self.publish_sub_marker(sub_pos,sub_ori)
+
+        self.publish_goal_markers(self.goal_list)
+        #for i in xrange(len(self.goal_list)):
+        #    g_pos,g_ori = Bmat_to_pos_quat(self.goal_list[i])
+        #    self.publish_goal_marker(g_pos, g_ori, ''.join(['goal_',str(i)]))
+
+    # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real wheelchair
+    def publish_goal_markers(self, goals):
+        vis_pub = rospy.Publisher('~goal_markers', MarkerArray, latch=True)
+        goal_markers = MarkerArray()
+        for num,item in enumerate(goals):
+            pos,ori = Bmat_to_pos_quat(item)
+            marker = Marker()
+            #marker.header.frame_id = "/base_footprint"
+            marker.header.frame_id = "/base_link"
+            marker.header.stamp = rospy.Time()
+            marker.ns = str(num)
+            marker.id = 0
+            marker.type = Marker.ARROW
+            marker.action = Marker.ADD
+            marker.pose.position.x = pos[0]
+            marker.pose.position.y = pos[1]
+            marker.pose.position.z = pos[2]
+            marker.pose.orientation.x = ori[0]
+            marker.pose.orientation.y = ori[1]
+            marker.pose.orientation.z = ori[2]
+            marker.pose.orientation.w = ori[3]
+            marker.scale.x = .4
+            marker.scale.y = .4
+            marker.scale.z = .2
+            marker.color.a = 1.
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+            goal_markers.markers.append(marker)
+        vis_pub.publish(goal_markers)
+        print 'Published a goal marker to rviz'
+
+    # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real wheelchair
+    def publish_goal_marker(self, pos, ori, name):
+        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, latch=True)
+        marker = Marker()
+        #marker.header.frame_id = "/base_footprint"
+        marker.header.frame_id = "/base_link"
+        marker.header.stamp = rospy.Time()
+        marker.ns = name
+        marker.id = 0
+        marker.type = Marker.ARROW
+        marker.action = Marker.ADD
+        marker.pose.position.x = pos[0]
+        marker.pose.position.y = pos[1]
+        marker.pose.position.z = pos[2]
+        marker.pose.orientation.x = ori[0]
+        marker.pose.orientation.y = ori[1]
+        marker.pose.orientation.z = ori[2]
+        marker.pose.orientation.w = ori[3]
+        marker.scale.x = .5
+        marker.scale.y = .5
+        marker.scale.z = .5
+        marker.color.a = 1.
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        vis_pub.publish(marker)
+        print 'Published a goal marker to rviz'
+        
+
+    # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real wheelchair
+    def publish_sub_marker(self, pos, ori):
+        marker = Marker()
+        #marker.header.frame_id = "/base_footprint"
+        marker.header.frame_id = "/base_link"
+        marker.header.stamp = rospy.Time()
+        marker.id = 0
+        marker.type = Marker.MESH_RESOURCE;
+        marker.action = Marker.ADD
+        marker.pose.position.x = pos[0]
+        marker.pose.position.y = pos[1]
+        marker.pose.position.z = pos[2]
+        marker.pose.orientation.x = ori[0]
+        marker.pose.orientation.y = ori[1]
+        marker.pose.orientation.z = ori[2]
+        marker.pose.orientation.w = ori[3]
+        marker.scale.x = .0254
+        marker.scale.y = .0254
+        marker.scale.z = .0254
+        marker.color.a = 1.
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        if self.model=='chair':
+            name = 'wc_model'
+            marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"
+        elif self.model=='bed':
+            name = 'bed_model'
+            marker.mesh_resource = "package://hrl_base_selection/models/head_bed.dae"
+        else:
+            print 'I got a bad model. What is going on???'
+            return None
+        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, latch=True)
+        marker.ns = ''.join(['base_service_',name])
+        vis_pub.publish(marker)
+        print 'Published a model of the subject to rviz'
+        
 
 
 if __name__ == "__main__":

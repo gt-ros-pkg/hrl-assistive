@@ -4,6 +4,7 @@ import roslib; roslib.load_manifest('hrl_haptic_mpc')
 import rospy
 
 import hrl_lib.transforms as tr
+import tf.transformations as tft
 import openravepy as op
 
 from geometry_msgs.msg import PoseStamped, Twist
@@ -38,9 +39,6 @@ def base_goal_publisher(goal):
             pub1.publish(tw)
             rospy.sleep(.5)
 
-
-
-
 def createBMatrix(pos, ori):
     goalB = np.zeros([4,4])
     goalB[3, 3] = 1
@@ -50,3 +48,10 @@ def createBMatrix(pos, ori):
         goalB[i, 3] = pos[i]
 	
     return np.matrix(goalB)
+
+def Bmat_to_pos_quat(Bmat):
+    pos  = np.array([Bmat[0,3],Bmat[1,3],Bmat[2,3]])
+    quat = tft.quaternion_from_matrix(Bmat) # order is xyzw because ROS uses xyzw order.    
+
+    return pos, quat
+
