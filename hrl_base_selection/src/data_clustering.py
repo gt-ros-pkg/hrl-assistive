@@ -246,7 +246,7 @@ class DataCluster():
                 clustered_data = np.vstack([clustered_data,  np.array([mat])])    
 
         print "Final clustered data: ", clustered_data.shape, len(num_clustered_data)
-        ## return clustered_data, num_clustered_data, len(pos_clustered_group)
+        return clustered_data, num_clustered_data, len(pos_clustered_group)
              
 
     # X is a set of quaternion
