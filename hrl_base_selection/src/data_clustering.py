@@ -227,7 +227,6 @@ class DataCluster():
 
             # Quaternion
             quat_avg = qt.quat_avg( quat_array )         
-            print quat_avg
             avg_clustered_data.append([pos_avg, quat_avg])
             num_clustered_data.append([len(g)])
                 
