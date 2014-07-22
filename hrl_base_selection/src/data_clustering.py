@@ -218,15 +218,16 @@ class DataCluster():
             pos_sum = np.array([0.,0.,0.])
             for j,s in enumerate(g):
                 pos_sum += s[0:3]
-                
+
                 if j==0:
-                    quat_array = s[3:]
+                    quat_array = np.array([s[3:]])
                 else:
                     quat_array = np.vstack([quat_array, s[3:]])
             pos_avg = pos_sum/float(len(g))
 
             # Quaternion
-            quat_avg = qt.quat_avg( X )                                                                
+            quat_avg = qt.quat_avg( quat_array )         
+            print quat_avg
             avg_clustered_data.append([pos_avg, quat_avg])
             num_clustered_data.append([len(g)])
                 
