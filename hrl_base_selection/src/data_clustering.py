@@ -51,6 +51,9 @@ class DataCluster():
         subject='sub6_shaver'
         print 'Starting to convert data!'
         self.runData = dr.DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model)      
+        #dr_obs = dr.DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model)        
+        #self.runData = dr_obs.get_raw_data(self)
+
         
     def mat_to_pos_quat(self, raw_data):
 

@@ -1,0 +1,45 @@
+<package>
+    <description brief="sandbox_dpark_darpa_m3">
+
+        sandbox_dpark_darpa_m3
+
+    </description>
+    <author>Daehyung Park. Advisor : Prof. Charlie Kemp. Healthcare
+        Robotics Lab, Georgia Tech</author>
+    <license>BSD</license>
+    <review status="unreviewed" notes=""/>
+    <url>http://ros.org/wiki/sandbox_dpark_darpa_m3</url>
+
+    <depend package="rospy"/>
+    <depend package="hrl_lib"/>
+
+    <!--depend package="hrl_lib"/>
+    <depend package="actionlib"/>
+    <depend package="pr2_controllers_msgs"/>
+    <depend package="geometry_msgs"/>"
+    <depend package="kinematics_msgs"/>
+    <depend package="arm_navigation_msgs"/>
+    <depend package="trajectory_msgs"/>
+
+    <depend package="std_msgs"/>    
+    <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
+    <depend package="hrl_haptic_manipulation_in_clutter_srvs"/>
+    <depend package="hrl_common_code_darpa_m3"/>
+    <depend package="hrl_software_simulation_darpa_m3"/>
+    <depend package="hrl_motion_planners_darpa_m3"/>
+
+    <depend package="hrl_haptic_mpc"/>
+
+    <depend package="tf"/>
+    <depend package="kdl"/>
+    <depend package="urdf_parser_py"/>
+    <depend package="pykdl_utils"/>
+    <depend package="hrl_geom"/>
+    <depend package="hrl_srvs"/-->
+
+    <!-- RViZ -->
+    <!--depend package="interactive_markers"/-->
+
+</package>
+
+
