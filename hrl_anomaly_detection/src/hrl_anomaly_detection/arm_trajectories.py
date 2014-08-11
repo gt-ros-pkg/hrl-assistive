@@ -1,23 +1,23 @@
 
-## import scipy.optimize as so
+import scipy.optimize as so
 
-## import math, numpy as np
-## import pylab as pl
-## import sys, optparse, time
-## import copy
+import math, numpy as np
+import pylab as pl
+import sys, optparse, time
+import copy
 
 ## from mayavi import mlab
 
-## import roslib; roslib.load_manifest('hrl_anomaly_detection')
+import roslib; roslib.load_manifest('hrl_anomaly_detection')
 
-## #import util as ut
+import hrl_lib.util as ut
 ## import roslib; roslib.load_manifest('modeling_forces')
 ## #import cody_arms.arms as ca
 
 ## roslib.load_manifest('hrl_cody_arms')
 ## import hrl_cody_arms.cody_arm_kinematics as cak
 
-## import hrl_lib.matplotlib_util as mpu
+import hrl_lib.matplotlib_util as mpu
 ## import hrl_lib.util as ut, hrl_lib.transforms as tr
 ## import hrl_tilting_hokuyo.display_3d_mayavi as d3m
 
@@ -163,34 +163,34 @@ class ForceTrajectory():
 ##         axes.axes.label_format = '%-#6.2g'
 ##         axes.title_text_property.font_size=4
 
-## ## return two lists containing the radial and tangential components of the forces.
-## # @param f_list - list of forces. (each force is a list of 2 or 3 floats)
-## # @param p_list - list of positions. (each position is a list of 2 or 3 floats)
-## # @param cx - x coord of the center of the circle.
-## # @param cy - y coord of the center of the circle.
-## # @return list of magnitude of radial component, list of magnitude
-## # tangential component, list of the force along the remaining
-## # direction
-## def compute_radial_tangential_forces(f_list,p_list,cx,cy):
-##     f_rad_l,f_tan_l, f_res_l = [], [], []
-##     for f,p in zip(f_list,p_list):
-##         rad_vec = np.array([p[0]-cx,p[1]-cy])
-##         rad_vec = rad_vec/np.linalg.norm(rad_vec)
-##         tan_vec = (np.matrix([[0,-1],[1,0]]) * np.matrix(rad_vec).T).A1
-##         f_vec = np.array([f[0],f[1]])
+## return two lists containing the radial and tangential components of the forces.
+# @param f_list - list of forces. (each force is a list of 2 or 3 floats)
+# @param p_list - list of positions. (each position is a list of 2 or 3 floats)
+# @param cx - x coord of the center of the circle.
+# @param cy - y coord of the center of the circle.
+# @return list of magnitude of radial component, list of magnitude
+# tangential component, list of the force along the remaining
+# direction
+def compute_radial_tangential_forces(f_list,p_list,cx,cy):
+    f_rad_l,f_tan_l, f_res_l = [], [], []
+    for f,p in zip(f_list,p_list):
+        rad_vec = np.array([p[0]-cx,p[1]-cy])
+        rad_vec = rad_vec/np.linalg.norm(rad_vec)
+        tan_vec = (np.matrix([[0,-1],[1,0]]) * np.matrix(rad_vec).T).A1
+        f_vec = np.array([f[0],f[1]])
 
-##         f_tan_mag = np.dot(f_vec, tan_vec)
-##         f_rad_mag = np.dot(f_vec, rad_vec)
+        f_tan_mag = np.dot(f_vec, tan_vec)
+        f_rad_mag = np.dot(f_vec, rad_vec)
 
-## #        f_res_mag = np.linalg.norm(f_vec- rad_vec*f_rad_mag - tan_vec*f_tan_mag)
-##         f_rad_mag = abs(f_rad_mag)
-##         f_tan_mag = abs(f_tan_mag)
+#        f_res_mag = np.linalg.norm(f_vec- rad_vec*f_rad_mag - tan_vec*f_tan_mag)
+        f_rad_mag = abs(f_rad_mag)
+        f_tan_mag = abs(f_tan_mag)
 
-##         f_rad_l.append(f_rad_mag)
-##         f_tan_l.append(f_tan_mag)
-##         f_res_l.append(abs(f[2]))
+        f_rad_l.append(f_rad_mag)
+        f_tan_l.append(f_tan_mag)
+        f_res_l.append(abs(f[2]))
 
-##     return f_rad_l, f_tan_l, f_res_l
+    return f_rad_l, f_tan_l, f_res_l
         
 
 
@@ -227,66 +227,66 @@ class ForceTrajectory():
 
 
 
-## ## find the x and y coord of the center of the circle and the radius that
-## # best matches the data.
-## # @param rad_guess - guess for the radius of the circle
-## # @param x_guess - guess for x coord of center
-## # @param y_guess - guess for y coord of center.
-## # @param pts - 2xN np matrix of points.
-## # @param method - optimization method. ('fmin' or 'fmin_bfgs')
-## # @param verbose - passed onto the scipy optimize functions. whether to print out the convergence info.
-## # @return r,x,y  (radius, x and y coord of the center of the circle)
-## def fit_circle(rad_guess, x_guess, y_guess, pts, method, verbose=True,
-##                rad_fix = False):
-##     def error_function(params):
-##         center = np.matrix((params[0],params[1])).T
-##         if rad_fix:
-##             rad = rad_guess
-##         else:
-##             rad = params[2]
+## find the x and y coord of the center of the circle and the radius that
+# best matches the data.
+# @param rad_guess - guess for the radius of the circle
+# @param x_guess - guess for x coord of center
+# @param y_guess - guess for y coord of center.
+# @param pts - 2xN np matrix of points.
+# @param method - optimization method. ('fmin' or 'fmin_bfgs')
+# @param verbose - passed onto the scipy optimize functions. whether to print out the convergence info.
+# @return r,x,y  (radius, x and y coord of the center of the circle)
+def fit_circle(rad_guess, x_guess, y_guess, pts, method, verbose=True,
+               rad_fix = False):
+    def error_function(params):
+        center = np.matrix((params[0],params[1])).T
+        if rad_fix:
+            rad = rad_guess
+        else:
+            rad = params[2]
 
-##         err = ut.norm(pts-center).A1 - rad
-##         res = np.dot(err,err)
-##         #if not rad_fix and rad < 0.3:
-##         #    res = res*(0.3-rad)*100
-##         return res
+        err = ut.norm(pts-center).A1 - rad
+        res = np.dot(err,err)
+        #if not rad_fix and rad < 0.3:
+        #    res = res*(0.3-rad)*100
+        return res
 
-##     params_1 = [x_guess,y_guess]
-##     if not rad_fix:
-##         params_1.append(rad_guess)
-##     if method == 'fmin':
-##         r = so.fmin(error_function,params_1,xtol=0.0002,ftol=0.000001,full_output=1,disp=verbose)
-##         opt_params_1,fopt_1 = r[0],r[1]
-##     elif method == 'fmin_bfgs':
-##         r = so.fmin_bfgs(error_function, params_1, full_output=1,
-##                          disp = verbose, gtol=1e-5)
-##         opt_params_1,fopt_1 = r[0],r[1]
-##     else:
-##         raise RuntimeError('unknown method: '+method)
+    params_1 = [x_guess,y_guess]
+    if not rad_fix:
+        params_1.append(rad_guess)
+    if method == 'fmin':
+        r = so.fmin(error_function,params_1,xtol=0.0002,ftol=0.000001,full_output=1,disp=verbose)
+        opt_params_1,fopt_1 = r[0],r[1]
+    elif method == 'fmin_bfgs':
+        r = so.fmin_bfgs(error_function, params_1, full_output=1,
+                         disp = verbose, gtol=1e-5)
+        opt_params_1,fopt_1 = r[0],r[1]
+    else:
+        raise RuntimeError('unknown method: '+method)
 
-##     params_2 = [x_guess,y_guess+2*rad_guess]
-##     if not rad_fix:
-##         params_2.append(rad_guess)
-##     if method == 'fmin':
-##         r = so.fmin(error_function,params_2,xtol=0.0002,ftol=0.000001,full_output=1,disp=verbose)
-##         opt_params_2,fopt_2 = r[0],r[1]
-##     elif method == 'fmin_bfgs':
-##         r = so.fmin_bfgs(error_function, params_2, full_output=1,
-##                          disp = verbose, gtol=1e-5)
-##         opt_params_2,fopt_2 = r[0],r[1]
-##     else:
-##         raise RuntimeError('unknown method: '+method)
+    params_2 = [x_guess,y_guess+2*rad_guess]
+    if not rad_fix:
+        params_2.append(rad_guess)
+    if method == 'fmin':
+        r = so.fmin(error_function,params_2,xtol=0.0002,ftol=0.000001,full_output=1,disp=verbose)
+        opt_params_2,fopt_2 = r[0],r[1]
+    elif method == 'fmin_bfgs':
+        r = so.fmin_bfgs(error_function, params_2, full_output=1,
+                         disp = verbose, gtol=1e-5)
+        opt_params_2,fopt_2 = r[0],r[1]
+    else:
+        raise RuntimeError('unknown method: '+method)
 
-##     if fopt_2<fopt_1:
-##         if rad_fix:
-##             return rad_guess,opt_params_2[0],opt_params_2[1]
-##         else:
-##             return opt_params_2[2],opt_params_2[0],opt_params_2[1]
-##     else:
-##         if rad_fix:
-##             return rad_guess,opt_params_1[0],opt_params_1[1]
-##         else:
-##             return opt_params_1[2],opt_params_1[0],opt_params_1[1]
+    if fopt_2<fopt_1:
+        if rad_fix:
+            return rad_guess,opt_params_2[0],opt_params_2[1]
+        else:
+            return opt_params_2[2],opt_params_2[0],opt_params_2[1]
+    else:
+        if rad_fix:
+            return rad_guess,opt_params_1[0],opt_params_1[1]
+        else:
+            return opt_params_1[2],opt_params_1[0],opt_params_1[1]
 
 
 ## ## changes the cartesian trajectory to put everything in the same frame.

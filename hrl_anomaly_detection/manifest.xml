@@ -13,6 +13,9 @@
     <depend package="rospy"/>
     <depend package="hrl_lib"/>
 
+    <depend package="modeling_forces"/>
+
+
     <!--depend package="hrl_lib"/>
     <depend package="actionlib"/>
     <depend package="pr2_controllers_msgs"/>

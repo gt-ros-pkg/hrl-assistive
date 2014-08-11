@@ -44,12 +44,12 @@ def plot_all_angle_force(dirName, human=True):
     plt.show()
 
 # For single file
-def plot_angle_force(fileName, human=True):
+def plot_angle_force(fileName, x_name=None, y_name=None,  human=True):
     
     # Plot results
     plt.figure()
 
-    ax = plt.subplot(111, aspect='equal')
+    ax = plt.subplot(111)
 
     plt.xlabel("$x_1$")
     plt.ylabel("$x_2$")
@@ -62,9 +62,23 @@ def plot_angle_force(fileName, human=True):
         else:
             plt.plot(data['mechanism_x']*180.0/np.pi, data['force_tan_list'], "b-")
     else:
-        print data.keys()           
 
-        plt.plot(data['ftan_list'], "b-")
+        if x_name == None:
+            plt.plot(data[y_name], "b-")
+        else:
+            x_data = np.array(data[x_name])
+            if x_name.find('ang') >= 0 or x_name.find('config') >= 0:
+                x_data = x_data * 180.0/np.pi
+                ax.set_xlim(0,35)
+            else:
+                ax.set_xlim(np.min(x_data),np.max(x_data))
+                            
+            plt.plot(x_data,data[y_name], "b-")
+            ax.set_xlabel(x_name)
+
+        ax.set_ylim((min(data[y_name]),max(data[y_name])))
+        ax.set_ylabel(y_name)
+            
                    
     plt.show()
 
@@ -72,21 +86,24 @@ def plot_angle_force(fileName, human=True):
 
 if __name__ == '__main__':
 
+    ## Human openning
     #dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/aggregated_pkls_April9_8pm/tests/HSI_kitchen_cabinet_right_charlie'
     ## plot_all_angle_force(dirName, False)
 
-    
+    ## Robot openning with anormal situation
     ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec12_005340.pkl'    
-    ## plot_angle_force(dirName, False)
+    ## plot_angle_force(dirName, y_name='ftan_list' ,human=False)
 
     ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/perfect_perception/kitchen_cabinet_collision_box_cody_new.pkl'
     ## plot_angle_force(dirName, False)
 
-    fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_box/pull_trajectories_kitchen_cabinet_2010Dec10_060454.pkl'
+    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
 
     import arm_trajectories as at
-
     data = ut.load_pickle(fileName)   
 
+    print data.keys()
     
+    ## plot_angle_force(dirName, x_name="online_ang", y_name='online_ftan' ,human=False)
+    plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)
     
