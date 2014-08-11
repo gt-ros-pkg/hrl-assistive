@@ -1,14 +1,14 @@
 
-import scipy.optimize as so
+## import scipy.optimize as so
 
-import math, numpy as np
-import pylab as pl
-import sys, optparse, time
-import copy
+## import math, numpy as np
+## import pylab as pl
+## import sys, optparse, time
+## import copy
 
-from mayavi import mlab
+## from mayavi import mlab
 
-import roslib; roslib.load_manifest('hrl_anomaly_detection')
+## import roslib; roslib.load_manifest('hrl_anomaly_detection')
 
 ## #import util as ut
 ## import roslib; roslib.load_manifest('modeling_forces')

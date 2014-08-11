@@ -2,14 +2,14 @@ clc
 clear all
 close all
 
-dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www';
+%dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www';
+dirName='/home/dpark/git/hrl-assistive/hrl_anomaly_detection/matlab/data';
 
 filelist = getAllFiles(dirName);
 
 for elm = filelist'
    [pathstr, name, ext] = fileparts(elm{1});
    if strcmp(ext,'.pkl')==true
-      elm{1}
       try
         pkl_data = loadpickle(elm{1});
       catch
