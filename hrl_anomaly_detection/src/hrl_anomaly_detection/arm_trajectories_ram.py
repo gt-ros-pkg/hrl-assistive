@@ -33,7 +33,7 @@ def estimate_mechanism_kinematics(pull_dict, pr2_log):
         # not performing force filtering for PR2 trajectories.
         # might have to add that in later.
         p_list, f_list = pull_dict['ee_list'], pull_dict['f_list']
-        p_list = p_list[::2]
+        p_list = p_list[::2] # N x dim
         f_list = f_list[::2]
         pts = np.matrix(p_list).T
         px = pts[0,:].A1
@@ -71,14 +71,18 @@ def force_trajectory_in_hindsight(pull_dict, mechanism_type, pr2_log):
         p_list = p_list[::2]
         f_list = f_list[::2]
 
+    #################################################################        
     if mechanism_type == 'rotary':
+        # Estimate mechanism kinematics parameters
         r, cx, cy = estimate_mechanism_kinematics(pull_dict, pr2_log)
         print 'rad, cx, cy:', r, cx, cy
+
+        # Get angle and tangential force lists (1xN, 1xN)
         frad_list,ftan_list,_ = at.compute_radial_tangential_forces(f_list,
                                                             p_list,cx,cy)
         p0 = p_list[0]
         rad_vec_init = np.matrix((p0[0]-cx, p0[1]-cy)).T
-        rad_vec_init = rad_vec_init / np.linalg.norm(rad_vec_init)
+        rad_vec_init = rad_vec_init / np.linalg.norm(rad_vec_init) # unit initial c-ee vector
         config_list = []
         for p in p_list:
             rvec = np.matrix((p[0]-cx, p[1]-cy)).T

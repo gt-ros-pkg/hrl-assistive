@@ -51,11 +51,13 @@ def plot_trial(pkl_nm, max_ang, start_idx=None, mech_idx=None,
     h_config = np.array(h_config)
     h_ftan = np.array(h_ftan)
     h_ftan = h_ftan[h_config < max_ang]
-    h_config = h_config[h_config < max_ang]
+    h_config = h_config[h_config < max_ang] # cut
     bin_size = math.radians(1.)
     h_config_degrees = np.degrees(h_config)
     ftan_raw = h_ftan
-    h_config, h_ftan = maa.bin(h_config, h_ftan, bin_size, np.mean, True)
+
+    # resampling with specific interval
+    h_config, h_ftan = maa.bin(h_config, h_ftan, bin_size, np.mean, True) 
     pp.plot(np.degrees(h_config), h_ftan, 'yo-', mew=0, ms=0,
             label='applied force', linewidth=2)
     pp.xlabel('Angle (degrees)')
@@ -114,9 +116,11 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
     one_d = ut.load_pickle(one_pkl_nm) # load collision_pr2 pickle
     one_trial = np.array(one_d['vec_list'][0:1]) # mechx
     #one_trial = one_trial.reshape(1,len(one_trial))
-    dt = second_time[mech]
 
-
+    # how do we decide max angle from dt? and what is dt?
+    # Probably, the max angle is decided by the maximum angle of blocked trials...
+    dt = second_time[mech] 
+    
     # Applied force
     plot_trial(pkl_nm, math.radians(len(dt[0][0])), start_idx,
                mech_idx, class_idx, plt_st, plt_mech, plt_sem) 
@@ -305,6 +309,10 @@ if __name__ == '__main__':
     data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl')
 
+    print pth
+    print data_path
+    print "------------------------------"
+    
     semantic = blocked_thresh_dict['mean_charlie']
     second_time = blocked_thresh_dict['mean_known_mech']
     
