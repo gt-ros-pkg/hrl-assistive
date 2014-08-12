@@ -3,12 +3,12 @@ import scipy.optimize as so
 import matplotlib.pyplot as pp
 import numpy as np, math
 import sys, os, time
-sys.path.append(os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook')
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 
 ## import ram_db as rd
 import mechanism_analyse_RAM as mar
 import mechanism_analyse_advait as maa
+## sys.path.append(os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook')
 
 ## import roslib; roslib.load_manifest('modeling_forces')
 import hrl_lib.util as ut, hrl_lib.transforms as tr
@@ -101,9 +101,8 @@ def plot_trial(pkl_nm, max_ang, start_idx=None, mech_idx=None,
 def test_known_semantic_class(detect_tuple):
     # only sematic class is known.
     n_std, mn, std = detect_tuple
-    n_std = 3.2
-#    pp.plot(mn, 'g-', linewidth=1.5, label='Mean (Semantic Class)')
-
+    n_std = 3.2 # anomaly detection threshold for 1st operation force curve 
+    #    pp.plot(mn, 'g-', linewidth=1.5, label='Mean (Semantic Class)')
     #lab = 'Min force to detect collision \n using semantic class'
     #lab = 'Semantic class'
     lab = 'Operating 1st time'
@@ -116,20 +115,18 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
     one_d = ut.load_pickle(one_pkl_nm) # load collision_pr2 pickle
     one_trial = np.array(one_d['vec_list'][0:1]) # mechx
     #one_trial = one_trial.reshape(1,len(one_trial))
-
-    # how do we decide max angle from dt? and what is dt?
-    # Probably, the max angle is decided by the maximum angle of blocked trials...
     dt = second_time[mech] 
     
     # Applied force
     plot_trial(pkl_nm, math.radians(len(dt[0][0])), start_idx,
                mech_idx, class_idx, plt_st, plt_mech, plt_sem) 
 
+    # Operating 1st time
+    test_known_semantic_class(semantic[cls])
+    
     # Expected force and operating 2nd time 
     test_known_mechanism(dt, one_trial)
 
-    # Operating 1st time
-    test_known_semantic_class(semantic[cls])
     pp.title(mech)
     mpu.legend(display_mode='normal')
 
@@ -239,6 +236,8 @@ def kitchen_cabinet_box_pr2():
     x1,y1 = 14., 7.44
     x2,y2 = 14.47, 8.96
     x3,y3 = 14.84, 10.11
+
+    # Plot operating, applied, and expected forces
     robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, None, None, None,
                      (x1, y1), (x2, y2), (x3, y3))
     pp.text(x1-0.5, y1-1.5, '1', withdash=True) # pr2_box_kitchen
@@ -307,14 +306,10 @@ if __name__ == '__main__':
 
     pth       = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
-    blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl')
-
-    print pth
-    print data_path
-    print "------------------------------"
+    blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
     
-    semantic = blocked_thresh_dict['mean_charlie']
-    second_time = blocked_thresh_dict['mean_known_mech']
+    semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)
+    second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)
     
 #    ikea_cabinet_no_collision()
 #    fridge_chair_collision()

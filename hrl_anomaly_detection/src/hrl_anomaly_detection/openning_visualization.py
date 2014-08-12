@@ -97,12 +97,15 @@ if __name__ == '__main__':
     ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/perfect_perception/kitchen_cabinet_collision_box_cody_new.pkl'
     ## plot_angle_force(dirName, False)
 
-    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    ## dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/RAM_db_of_different_kinds/RAM_db/ikea_cabinet_cody_10cm_cody.pkl'
 
+    
     import arm_trajectories as at
     data = ut.load_pickle(fileName)   
 
     print data.keys()
+    print data['name']
     
     ## plot_angle_force(dirName, x_name="online_ang", y_name='online_ftan' ,human=False)
     plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)
