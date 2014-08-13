@@ -10,7 +10,8 @@ import numpy as np
 import roslib; roslib.load_manifest('hrl_anomaly_detection') 
 import hrl_lib.util as ut
 import matplotlib.pyplot as plt
-import pkl_converter as pk
+## import pkl_converter as pk
+import common as co
 
 def plot_all_angle_force(dirName, human=True):
     
@@ -22,7 +23,7 @@ def plot_all_angle_force(dirName, human=True):
     plt.xlabel("$x_1$")
     plt.ylabel("$x_2$")
 
-    lFile = pk.getAllFiles(dirName)
+    lFile = co.getAllFiles(dirName)
     for f in lFile:
         strPath, strFile = os.path.split(f)
         if strFile.find('_new.pkl')>=0:
@@ -97,15 +98,15 @@ if __name__ == '__main__':
     ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/perfect_perception/kitchen_cabinet_collision_box_cody_new.pkl'
     ## plot_angle_force(dirName, False)
 
-    ## dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/RAM_db_of_different_kinds/RAM_db/ikea_cabinet_cody_10cm_cody.pkl'
+    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/perfect_perception/kitchen_cabinet_collision_box_pr2_new.pkl'
 
     
     import arm_trajectories as at
     data = ut.load_pickle(fileName)   
 
     print data.keys()
-    print data['name']
+    print data['vec_list'][0:1]
     
     ## plot_angle_force(dirName, x_name="online_ang", y_name='online_ftan' ,human=False)
     plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)

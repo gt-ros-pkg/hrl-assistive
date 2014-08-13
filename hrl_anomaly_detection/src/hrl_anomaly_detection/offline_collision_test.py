@@ -112,8 +112,11 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
                      mech_idx=None, class_idx=None, plt_st=None,
                      plt_mech=None, plt_sem=None):
 
-    one_d = ut.load_pickle(one_pkl_nm) # load collision_pr2 pickle
-    one_trial = np.array(one_d['vec_list'][0:1]) # mechx
+    # pkl_nm    : collision pickle
+    # one_pkl_nm: perfect_perception
+    
+    one_d = ut.load_pickle(one_pkl_nm) 
+    one_trial = np.array(one_d['vec_list'][0:1]) # ee force_profile ? 4xN
     #one_trial = one_trial.reshape(1,len(one_trial))
     dt = second_time[mech] 
     
@@ -122,6 +125,9 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
                mech_idx, class_idx, plt_st, plt_mech, plt_sem) 
 
     # Operating 1st time
+    # semantic: human and robot data in where each category has (n_std, mn, std) <= force profile
+    # 'RAM_db/*.pkl' 'RAM_db/robot_trials/perfect_perception/*.pkl' 'RAM_db/robot_trials/simulate_perception/*.pkl'
+    # mechanism anlyse RAM with blocked option generates semantic data
     test_known_semantic_class(semantic[cls])
     
     # Expected force and operating 2nd time 
@@ -227,7 +233,13 @@ def kitchen_cabinet_box_pr2():
     #cls = 'Office Cabinet'
     cls = mech = 'kitchen_cabinet_pr2'
     pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+    one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+
+    # robot_trial
+    # 1) collision: ['ftan_list', 'ee_list', 'config_list', 'f_list', 'frad_list', 'cep_list']
+    # 2) perfect  : ['std', 'rad', 'name', 'typ', 'vec_list', 'config', 'mean'] # vec_list gives ee_pos?       
+    
+    ## one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 125, 128, 136)
     
     mpu.set_figure_size(10, 7.0)
@@ -307,9 +319,12 @@ if __name__ == '__main__':
     pth       = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
-    
+
     semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)
     second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)
+
+    print semantic['kitchen_cabinet_pr2']
+    sys.exit()
     
 #    ikea_cabinet_no_collision()
 #    fridge_chair_collision()
