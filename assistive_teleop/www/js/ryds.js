@@ -1,6 +1,6 @@
 var RYDS = function (ros) {
   'use strict';
-  ryds = this;
+  var ryds = this;
   ryds.ros = ros;
   ryds.USER_INPUT_TOPIC = "user_input";
   ryds.EMERGENCY_TOPIC = "emergency";
@@ -44,7 +44,7 @@ var RYDS = function (ros) {
 }
 
 
-var initRYDSTab (tabDivId) {
+var initRYDSTab = function (tabDivId) {
   'use strict';
   window.ryds = new RYDS(window.ros);
   var divRef = '#'+tabDivId;
@@ -69,7 +69,7 @@ var initRYDSTab (tabDivId) {
   $(divRef+'R0C2').append('<button id="' + tabDivId + '_continue">' +
                                     'Continue </button>')
     .click(function () {
-      window.arServo.continue_();
+      window.ryds.continue_();
     });
 
   $(divRef+' :button').button().css({
