@@ -5,7 +5,7 @@ import scipy.optimize as so
 import os, sys, time
 import matplotlib.pyplot as pp
 
-from mvpa2.datasets import Dataset
+from mvpa2.datasets.base import Dataset
 from mvpa2.clfs.knn import kNN
 from mvpa2.clfs.libsvmc.svm import SVM
 ## from mvpa2.clfs.transerror import TransferError
@@ -497,7 +497,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
 
     #chunks=None
     feats = np.column_stack(feat_list)
-    data = Dataset(samples=feats.A.T, labels=labels, chunks=chunks) # make samples with labels
+    data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels
 
     if feat_list_test == []:
         print '############################3'
@@ -547,6 +547,11 @@ def blocked_detection(mech_vec_list, mech_nm_list):
     #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
     ## splitter = NFoldSplitter(cvtype=1)
     splitter = NFoldPartitioner(cvtype=1) # 1-fold => (l_wdata)(l_vdata)
+
+    print data
+    splitter.generate(data)
+    print  splitter.get_partition_specs(data)
+    sys.exit()
     
     mean_thresh_charlie_dict = {}
     #for l_wdata, l_vdata in label_splitter(data):
@@ -1171,6 +1176,9 @@ if __name__ == '__main__':
 
     opt, args = p.parse_args()
 
+    root_path = os.environ['HRLBASEPATH']+'/'
+
+    
     if opt.fig_roc_human:
         pkl_list = glob.glob('RAM_db/*.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
@@ -1300,16 +1308,13 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         initial_force_histogram(mech_vec_list, mech_nm_list)
 
     if opt.blocked:
-        print "=================="
         ## human data only
         #pkl_list = glob.glob('RAM_db/*.pkl')
 
         # human and robot data
         ## pkl_list = glob.glob('RAM_db/*.pkl') + glob.glob('RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob('RAM_db/robot_trials/simulate_perception/*.pkl')
-        pkl_list = glob.glob('src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob('src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob('src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
-
-        print 'pkl_list:', pkl_list
-        sys.exit()
+        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+        ## pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
         
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list

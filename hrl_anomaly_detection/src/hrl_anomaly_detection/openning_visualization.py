@@ -99,15 +99,15 @@ if __name__ == '__main__':
     ## plot_angle_force(dirName, False)
 
     dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/perfect_perception/kitchen_cabinet_collision_box_pr2_new.pkl'
+    dirName = fileName='/home/dpark/svn/robot1/src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/ikea_cabinet_known_rad_pr2_new.pkl'
 
     
     import arm_trajectories as at
     data = ut.load_pickle(fileName)   
 
     print data.keys()
-    print data['vec_list'][0:1]
     
     ## plot_angle_force(dirName, x_name="online_ang", y_name='online_ftan' ,human=False)
-    plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)
+    ## plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)
+    plot_angle_force(dirName, x_name="config", y_name='vec_list' ,human=False)
     

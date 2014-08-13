@@ -51,6 +51,7 @@ if __name__ == '__main__':
 
     dirName='/home/mycroft/dpark_test/hrl_anomaly_detection/matlab/data/'
     dirName='/home/mycroft/svn/robot1_data/usr/advait/ram_www'
+    dirName='/home/mycroft/svn/robot1/src/projects/modeling_forces/'
     
     lFile = getAllFiles(dirName)
 
@@ -68,10 +69,13 @@ if __name__ == '__main__':
             mat_fileName     = fileName+'.mat'
 
             if os.path.isfile(mat_fileName): continue
-            print f
             
             if new_pkl_fileName not in lFile:
-                pkl_data = ut.load_pickle(f)
+                try:
+                    pkl_data = ut.load_pickle(f)
+                except:
+                    print "Failure: ", f
+                    continue
                 
                 data = {}
                 count = 0 

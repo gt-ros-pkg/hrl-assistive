@@ -34,6 +34,7 @@ if __name__ == '__main__':
 
     dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www'
     ## dirName='../../matlab/data/'
+    dirName='/home/dpark/svn/robot1/src/projects/modeling_forces/'
 
     lFile = getAllFiles(dirName)
 
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 
             new_fileName = fileName[:-7]+'_new.pkl'
             ## if os.path.isfile(new_fileName): continue
-            
+
             strPath, strFile = os.path.split(f)
             
             import imp 
@@ -79,7 +80,7 @@ if __name__ == '__main__':
                 import klepto_data
             except:
                 print "failed to load ", f
-                sys.exit()
+                continue
 
             ## print klepto_data.memo.keys()
             
