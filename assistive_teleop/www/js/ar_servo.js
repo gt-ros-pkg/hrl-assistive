@@ -54,12 +54,12 @@ var ArServo = function (ros) {
 
 function initARServoTab(tabDivId) {
   'use strict';
-  window.arServo = new ArServo(window.ros);
+  assistive_teleop.arServo = new ArServo(assistive_teleop.ros);
   var divRef = '#'+tabDivId
 
   $("#tabs").on("tabsbeforeactivate", function (event, ui) {
     if (ui.newPanel.selector === divRef) {
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
+      assistive_teleop.mjpeg.setCamera(assistive_teleop.arServo.SERVO_CONFIRM_CAMERA);
     };
   });
 
@@ -71,13 +71,13 @@ function initARServoTab(tabDivId) {
   $(divRef+'R0C0').append('<button id="' + tabDivId + '_approach">' +
                                     'Approach </button>')
     .click(function () {
-      window.arServo.approach();
+      assistive_teleop.arServo.approach();
     });
 
   $(divRef+'R0C1').append('<button id="' + tabDivId + '_preempt">' +
                                     'Stop </button>')
     .click(function () {
-      window.arServo.preemptApproach();
+      assistive_teleop.arServo.preemptApproach();
     });
   $(divRef+' :button').button().css({
     'height': "75px",
@@ -135,13 +135,13 @@ function initARServoTab(tabDivId) {
       text = "AR Tag Found - Begin Approach.";
       $('#'+tabDivId+'_approach').button('option', 'disabled', false);
       $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
+      assistive_teleop.mjpeg.setCamera(assistive_teleop.arServo.SERVO_CONFIRM_CAMERA);
       break;
     case 3:
       text = "Unable to Locate AR Tag. ADJUST VIEW AND RETRY.";
       $('#'+tabDivId+'_approach').button('option', 'disabled', true);
       $('#'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
+      assistive_teleop.mjpeg.setCamera(assistive_teleop.arServo.SERVO_CONFIRM_CAMERA);
       break;
     case 4:
       text = "Servoing";
@@ -151,7 +151,7 @@ function initARServoTab(tabDivId) {
     case 5:
       text = "Servoing Completed Successfully.";
       $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera('Head');
+      assistive_teleop.mjpeg.setCamera('Head');
       break;
     case 6:
       text = "Detected Collision with arms. Servoing Stopped.";
@@ -166,16 +166,16 @@ function initARServoTab(tabDivId) {
     case 8:
       text = "View of AR Tag lost. Servoing Stopped.";
       $('#'+tabDivId+'_approach'+', #'+tabDivId+'_preempt').button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
+      assistive_teleop.mjpeg.setCamera(assistive_teleop.arServo.SERVO_CONFIRM_CAMERA);
       break;
     case 9:
       text = "Servoing Stopped by User.";
       $('#'+tabDivId+'_approach').show().button('option', 'disabled', false);
       $('#'+tabDivId+'_preempt').show().button('option', 'disabled', true);
-      window.mjpeg.setCamera(window.arServo.SERVO_CONFIRM_CAMERA);
+      assistive_teleop.mjpeg.setCamera(assistive_teleop.arServo.SERVO_CONFIRM_CAMERA);
       break;
     }
     log(text);
   };
-  window.arServo.stateCBList.push(arServoFeedbackCb);
+  assistive_teleop.arServo.stateCBList.push(arServoFeedbackCb);
 }

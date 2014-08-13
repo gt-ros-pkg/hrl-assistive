@@ -72,24 +72,24 @@ var CartControl = function (options) {
 };
 
 var initCartControl = function () {
-    window.cartControl = [new CartControl({side: 'left',
-                                           ros: window.ros,
+    assistive_teleop.cartControl = [new CartControl({side: 'left',
+                                           ros: assistive_teleop.ros,
                                            endLink: "l_gripper_tool_frame",
                                            ctrlParams: "$(find hrl_face_adls)/params/l_jt_task_shaver45.yaml",
                                            ctrlName: "l_cart_jt_task_shaver"}),
                           new CartControl({side:'right', 
-                                           ros: window.ros,
+                                           ros: assistive_teleop.ros,
                                            endLink: "r_gripper_tool_frame",
                                            ctrlParams: "$(find hrl_face_adls)/params/r_jt_task_tool.yaml",
                                            ctrlName: "r_cart_jt_task_tool"})];
                           
     $('#cont_l_arm').bind('click.rfh', function () {
-            //enableCartControl(window.cartControl[0]);
-            showArmControls(window.cartControl[0]);
+            //enableCartControl(assistive_teleop.cartControl[0]);
+            showArmControls(assistive_teleop.cartControl[0]);
         });
     $('#cont_r_arm').bind('click.rfh', function () {
-            //enableCartControl(window.cartControl[1]);
-             showArmControls(window.cartControl[1]);
+            //enableCartControl(assistive_teleop.cartControl[1]);
+             showArmControls(assistive_teleop.cartControl[1]);
         });
     $('#default_rot_slider').slider({value : Math.PI/4,
                                      min : 0,
@@ -101,24 +101,24 @@ var initCartControl = function () {
     var lCartStateCB = function (msg) {
         console.log("Received L Cart Controller State: "+msg.data.toString());
         if (msg.data){
-            showArmControls(window.cartControl[0]);
+            showArmControls(assistive_teleop.cartControl[0]);
             $('#cont_l_arm').attr('checked','checked').button('refresh');
         } else {
             $('#cont_l_arm').attr('checked','').button('refresh');
         };
     };
-    window.cartControl[0].enabledSubCBList.push(lCartStateCB)
+    assistive_teleop.cartControl[0].enabledSubCBList.push(lCartStateCB)
 
     var rCartStateCB = function (msg) {
         console.log("Received R Cart Controller State: "+msg.data.toString());
         if (msg.data){
-            showArmControls(window.cartControl[1]);
+            showArmControls(assistive_teleop.cartControl[1]);
             $('#cont_r_arm').attr('checked','checked').button('refresh');
         } else {
             $('#cont_r_arm').attr('checked','').button('refresh');
         };
     };
-    window.cartControl[1].enabledSubCBList.push(rCartStateCB)
+    assistive_teleop.cartControl[1].enabledSubCBList.push(rCartStateCB)
 
     var hideControls = function () {
         $('#bpd_default :button, #bpd_default_rot :button, #scale_slider, #default_rot_slider').hide();
