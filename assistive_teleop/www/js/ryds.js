@@ -3,12 +3,19 @@ var RYDS = function (ros) {
   ryds = this;
   ryds.ros = ros;
   ryds.USER_INPUT_TOPIC = "user_input";
+  ryds.EMERGENCY_TOPIC = "emergency";
 
   ryds.userInputPub = new ryds.ros.Topic({
     name: ryds.USER_INPUT_TOPIC,
     messageType: 'std_msgs/String'
   });
   ryds.userInputPub.advertise();
+
+  ryds.emergencyPub = new ryds.ros.Topic({
+    name: ryds.EMERGENCY_TOPIC,
+    messageType: 'std_msgs/String'
+  });
+  ryds.emergencyPub.advertise();
 
   ryds.start = function () {
     var msg = new ryds.ros.Message({
@@ -20,9 +27,9 @@ var RYDS = function (ros) {
 
   ryds.stop = function () {
     var msg = new ryds.ros.Message({
-      data: 'Stop'
+      data: 'STOP'
     });
-    ryds.userInputPub.publish(msg);
+    ryds.emergencyPub.publish(msg);
     console.log('Publishing Stop msg to RYDS system.');
   };
 
