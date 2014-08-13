@@ -21,7 +21,7 @@ var Pr2Base = function (ros) {
         if ($(selector).hasClass('ui-state-active')){
             base.pubCmd(x,y,rot);
             setTimeout(function () {
-                window.base.drive(selector, x, y, rot)
+                base.drive(selector, x, y, rot)
                 }, 100);
         } else {
             console.log('End driving for '+selector);

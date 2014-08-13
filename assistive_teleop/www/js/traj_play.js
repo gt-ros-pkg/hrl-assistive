@@ -45,19 +45,20 @@ var initTrajPlay = function () {
     //FIXME/TODO: Fix nested parameter calls.  Separate arms and parameters 
     //on backend so separate nodes can work independently.  Current version 
     //is functional but ugly.
-    window.trajPlayList = [new TrajectoryPlayback('left', window.ros),
-                           new TrajectoryPlayback('right', window.ros)]
-    window.trajPlayList[0].modesParam.get(function (valList) {
-        window.trajPlayList[0].modesParam.value = valList;
-        window.trajPlayList[1].modesParam.value = valList;
-        console.log('Param: '+trajPlayList[0].modesParam.name+' -- Value:'+valList.toString());
+    assistive_teleop.trajPlayList = [new TrajectoryPlayback('left', assistive_teleop.ros),
+                           new TrajectoryPlayback('right', assistive_teleop
+                      .ros)]
+    assistive_teleop.trajPlayList[0].modesParam.get(function (valList) {
+        assistive_teleop.trajPlayList[0].modesParam.value = valList;
+        assistive_teleop.trajPlayList[1].modesParam.value = valList;
+        console.log('Param: '+assistive_teleop.trajPlayList[0].modesParam.name+' -- Value:'+valList.toString());
         for (var i in valList){
             $('#traj_play_act_sel').append('<option value="'+valList[i]+'">'+valList[i]+'</option>');
             };
-        window.trajPlayList[0].trajFilesParam.get(function (val) {
-            console.log('Param: '+trajPlayList[0].modesParam.name+' -- Value:'+val.toString());
-            window.trajPlayList[0].trajFilesParam.value = val;
-            window.trajPlayList[1].trajFilesParam.value = val;
+        assistive_teleop.trajPlayList[0].trajFilesParam.get(function (val) {
+            console.log('Param: '+assistive_teleop.trajPlayList[0].modesParam.name+' -- Value:'+val.toString());
+            assistive_teleop.trajPlayList[0].trajFilesParam.value = val;
+            assistive_teleop.trajPlayList[1].trajFilesParam.value = val;
             updateInterface();
             });
         });
@@ -65,7 +66,7 @@ var initTrajPlay = function () {
     var updateInterface = function () {
         var act = $('#traj_play_act_sel option:selected').val(); 
         var hand = $('#traj_play_arm_sel option:selected').val();
-        var opts = window.trajPlayList[0].trajFilesParam.value[act][hand]
+        var opts = assistive_teleop.trajPlayList[0].trajFilesParam.value[act][hand]
         $('#traj_play_select').empty();
         for (var key in opts) {
             $('#traj_play_select').append('<option value="'+key+'">'+key+'</option>');
@@ -75,20 +76,20 @@ var initTrajPlay = function () {
     var sendTrajPlayGoal = function () {
         var hand = $('#traj_play_arm_sel option:selected').val();
         if (hand === 'Left') {
-            window.trajPlayList[0].sendGoal();
+            assistive_teleop.trajPlayList[0].sendGoal();
         } else if (hand === 'Right') {
-            window.trajPlayList[1].sendGoal();
+            assistive_teleop.trajPlayList[1].sendGoal();
         };
     };
 
     var pauseTrajPlay = function () {
-        window.trajPlayList[0].pause();
-        window.trajPlayList[1].pause();
+        assistive_teleop.trajPlayList[0].pause();
+        assistive_teleop.trajPlayList[1].pause();
         };
 
     var stopTrajPlay = function () {
-        window.trajPlayList[0].stop();
-        window.trajPlayList[1].stop();
+        assistive_teleop.trajPlayList[0].stop();
+        assistive_teleop.trajPlayList[1].stop();
     };
 
     $("#traj_radio").buttonset().addClass('centered');

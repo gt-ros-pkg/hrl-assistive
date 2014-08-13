@@ -1,6 +1,6 @@
 var RYDS = function (ros) {
   'use strict';
-  ryds = this;
+  var ryds = this;
   ryds.ros = ros;
   ryds.USER_INPUT_TOPIC = "user_input";
   ryds.EMERGENCY_TOPIC = "emergency";
@@ -44,9 +44,9 @@ var RYDS = function (ros) {
 }
 
 
-var initRYDSTab (tabDivId) {
+var initRYDSTab = function (tabDivId) {
   'use strict';
-  window.ryds = new RYDS(window.ros);
+  assistive_teleop.ryds = new RYDS(assistive_teleop.ros);
   var divRef = '#'+tabDivId;
 
   $(divRef).append('<table><tr>' +
@@ -57,19 +57,19 @@ var initRYDSTab (tabDivId) {
   $(divRef+'R0C0').append('<button id="' + tabDivId + '_start">' +
                                     'Start </button>')
     .click(function () {
-      window.ryds.start();
+      assistive_teleop.ryds.start();
     });
 
   $(divRef+'R0C1').append('<button id="' + tabDivId + '_stop">' +
                                     'Stop </button>')
     .click(function () {
-      window.ryds.stop();
+      assistive_teleop.ryds.stop();
     });
 
   $(divRef+'R0C2').append('<button id="' + tabDivId + '_continue">' +
                                     'Continue </button>')
     .click(function () {
-      window.arServo.continue_();
+      assistive_teleop.ryds.continue_();
     });
 
   $(divRef+' :button').button().css({
