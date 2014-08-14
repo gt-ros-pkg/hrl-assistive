@@ -10,10 +10,10 @@ from mvpa2.clfs.knn import kNN
 from mvpa2.clfs.libsvmc.svm import SVM
 ## from mvpa2.clfs.transerror import TransferError
 ## from mvpa2.algorithms.cvtranserror import CrossValidatedTransferError
-## from mvpa2.datasets.splitters import NFoldSplitter
 ## from mvpa2.datasets.splitters import HalfSplitter
 
 from mvpa2.generators.partition import NFoldPartitioner
+from mvpa2.generators import splitters
 
 import mechanism_analyse_advait as maa
 sys.path.append(os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook')
@@ -497,7 +497,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
 
     #chunks=None
     feats = np.column_stack(feat_list)
-    data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels
+    data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels, chunks is name of sample
 
     if feat_list_test == []:
         print '############################3'
@@ -513,12 +513,16 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
 
 def blocked_detection_n_equals_1(mech_vec_list, mech_nm_list):
     data, _ = create_blocked_dataset_semantic_classes(mech_vec_list, mech_nm_list, append_robot = False)
-    splitter = NFoldSplitter(cvtype=1)
-    label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+    nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+    spl = splitters.Splitter(attr='partitions')
+    splits = [list(spl.generate(x)) for x in nfs.generate(data)]
+    
+    ## splitter = NFoldSplitter(cvtype=1)
+    ## label_splitter = NFoldSplitter(cvtype=1, attr='labels')
     mean_thresh_known_mech_dict = {}
-    for l_wdata, l_vdata in label_splitter(data):
+    for l_wdata, l_vdata in splits:
         mean_thresh_known_mech_list = []
-        Ms = compute_Ms(data, l_vdata.labels[0], plot=False)
+        Ms = compute_Ms(data, l_vdata.targets[0], plot=False)
 
         mechs = l_vdata.uniquechunks
         for m in mechs:
@@ -539,25 +543,24 @@ def blocked_detection_n_equals_1(mech_vec_list, mech_nm_list):
     d['mean_known_mech'] = mean_thresh_known_mech_dict
     ut.save_pickle(d, 'blocked_thresh_dict.pkl')
 
+    
 def blocked_detection(mech_vec_list, mech_nm_list):
 
     # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
     data, _ = create_blocked_dataset_semantic_classes(mech_vec_list,
                                     mech_nm_list, append_robot = True)
-    #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
-    ## splitter = NFoldSplitter(cvtype=1)
-    splitter = NFoldPartitioner(cvtype=1) # 1-fold => (l_wdata)(l_vdata)
 
-    print data
-    splitter.generate(data)
-    print  splitter.get_partition_specs(data)
-    sys.exit()
-    
+    # create the generator
+    #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+    nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
+    spl = splitters.Splitter(attr='partitions')
+    splits = [list(spl.generate(x)) for x in nfs.generate(data)]
+        
     mean_thresh_charlie_dict = {}
     #for l_wdata, l_vdata in label_splitter(data):
-    for l_wdata, l_vdata in splitter(data):
+    for l_wdata, l_vdata in splits:
         non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0]
-        idxs = np.where(l_wdata.labels[non_robot_idxs] == l_vdata.labels[0])[0]
+        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0]
         train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
 
         #idxs = np.where(l_wdata.labels == l_vdata.labels[0])[0]
@@ -768,9 +771,14 @@ def generate_roc_curve_no_prior(mech_vec_list, mech_nm_list):
     pp.xlim(-0.5,45)
 
 def compute_Ms(data, semantic_class, plot):
-    label_splitter = NFoldSplitter(cvtype=1, attr='labels')
-    a = label_splitter.splitDataset(data, [semantic_class])
-    semantic_data = a[0]
+    nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+    spl = splitters.Splitter(attr='targets',attr_value=[semantic_class])
+    a   = [list(spl.generate(x)) for x in nfs.generate(data)]
+    semantic_data = a[0][0]
+    
+    ## label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+    ## a = label_splitter.splitDataset(data, [semantic_class])
+    ## semantic_data = a[0]
 
     mechs = semantic_data.uniquechunks
     mn_list, std_list = [], []
@@ -1321,7 +1329,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
 
         blocked_detection(mech_vec_list, mech_nm_list)
         blocked_detection_n_equals_1(mech_vec_list, mech_nm_list)
-
+        
         #test_blocked_detection(mech_vec_list, mech_nm_list)
         #test_blocked_detection_new(mech_vec_list, mech_nm_list)
 
