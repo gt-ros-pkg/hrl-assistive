@@ -319,12 +319,10 @@ if __name__ == '__main__':
     pth       = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
+    #blocked_thresh_dict = ut.load_pickle('./blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
 
     semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)
     second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)
-
-    print semantic['kitchen_cabinet_pr2']
-    sys.exit()
     
 #    ikea_cabinet_no_collision()
 #    fridge_chair_collision()

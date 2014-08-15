@@ -548,19 +548,43 @@ def blocked_detection(mech_vec_list, mech_nm_list):
 
     # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
     data, _ = create_blocked_dataset_semantic_classes(mech_vec_list,
-                                    mech_nm_list, append_robot = True)
+                                    mech_nm_list, append_robot = True)    
 
+    ## # there can be multiple chunks with a target, chunk is unique...
+    ## mean_thresh_charlie_dict = {}    
+    ## for chunk in data.uniquechunks:
+    ##     non_robot_idxs = np.where(['robot' not in i for i in data.chunks])[0] # if there is no robot, true 
+    ##     idxs = np.where(data.chunks[non_robot_idxs] == chunk)[0] # find same target samples in non_robot target samples
+    ##     train_trials = (data.samples[non_robot_idxs])[idxs]
+
+    ##     # skip empty set
+    ##     if (train_trials.shape)[0] == 0: continue
+
+    ##     mean_force_profile = np.mean(train_trials, 0)
+    ##     std_force_profile = np.std(train_trials, 0)
+            
+    ##     if 'robot' in chunk:
+    ##         # remove the trailing _robot
+    ##         key = chunk[0:-6]
+    ##     else:
+    ##         key = chunk
+    ##     mean_thresh_charlie_dict[key] = (mean_force_profile * 0.,
+    ##                                      mean_force_profile, std_force_profile)
+
+        
     # create the generator
     #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
     nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
     spl = splitters.Splitter(attr='partitions')
     splits = [list(spl.generate(x)) for x in nfs.generate(data)]
-        
+
+    # Pick each chunk once in l_vdata, where the set of chunks are unique
+    # NOTE: l_wdata does not include the sample of l_vdata. See autonomous robots paper
     mean_thresh_charlie_dict = {}
     #for l_wdata, l_vdata in label_splitter(data):
     for l_wdata, l_vdata in splits:
-        non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0]
-        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0]
+        non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
+        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] # find same target samples in non_robot target samples
         train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
 
         #idxs = np.where(l_wdata.labels == l_vdata.labels[0])[0]
@@ -588,6 +612,7 @@ def blocked_detection(mech_vec_list, mech_nm_list):
     d = {'mean_charlie': mean_thresh_charlie_dict}
     ut.save_pickle(d, 'blocked_thresh_dict.pkl')
     pp.show()
+    
 
 def generate_roc_curve(mech_vec_list, mech_nm_list,
                        semantic_range = np.arange(0.2, 2.7, 0.3),
@@ -771,8 +796,9 @@ def generate_roc_curve_no_prior(mech_vec_list, mech_nm_list):
     pp.xlim(-0.5,45)
 
 def compute_Ms(data, semantic_class, plot):
+
     nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
-    spl = splitters.Splitter(attr='targets',attr_value=[semantic_class])
+    spl = splitters.Splitter(attr='targets',attr_values=[semantic_class])
     a   = [list(spl.generate(x)) for x in nfs.generate(data)]
     semantic_data = a[0][0]
     
