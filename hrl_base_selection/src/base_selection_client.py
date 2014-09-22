@@ -16,11 +16,17 @@ from helper_functions import createBMatrix
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
 
 def select_base_client():
-    angle = m.pi
-    pr2_B_head  =  np.matrix([[    m.cos(angle),     -m.sin(angle),                0.,              3.],
-                              [    m.sin(angle),      m.cos(angle),                0.,              .3],
-                              [              0.,                0.,                1.,             1.4],
-                              [              0.,                0.,                0.,              1.]])
+    angle = -m.pi/2
+    pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
+                               [   m.sin(angle),   m.cos(angle),          0.,       2.5],
+                               [             0.,             0.,          1.,       1.1546],
+                               [             0.,             0.,          0.,        1.]])
+    an = -m.pi/2
+    pr2_B_head2 = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.],
+                             [         0.,   1.,         0.,       0.], 
+                             [ -m.sin(an),   0.,  m.cos(an),       0.],
+                             [         0.,   0.,         0.,       1.]])
+    pr2_B_head=pr2_B_head1*pr2_B_head2
     pos_goal = [pr2_B_head[0,3],pr2_B_head[1,3],pr2_B_head[2,3]]
     ori_goal = tr.matrix_to_quaternion(pr2_B_head[0:3,0:3])
     psm_head = PoseStamped()
@@ -36,7 +42,7 @@ def select_base_client():
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_base_selection')
     
-
+    
     marker = Marker()
     marker.header.frame_id = "/base_link"
     marker.header.stamp = rospy.Time()
@@ -85,10 +91,14 @@ def select_base_client():
     goal_pub = rospy.Publisher("/arm_reacher/goal_pose", PoseStamped, latch=True)
     goal_pub.publish(psm_goal)
 
+    task = 'shaving'
+
     rospy.wait_for_service('select_base_position')
     try:
-        select_base_position = rospy.ServiceProxy('select_base_position', BaseMove)
-        response = select_base_position(psm_goal, psm_head)
+        #select_base_position = rospy.ServiceProxy('select_base_position', BaseMove)
+        #response = select_base_position(psm_goal, psm_head)
+        select_base_position = rospy.ServiceProxy('select_base_position', BaseMove_multi)
+        response = select_base_position(task, psm_head)
         print 'response is: \n', response
         return response.base_goal#, response.ik_solution
     except rospy.ServiceException, e:
