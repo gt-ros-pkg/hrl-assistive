@@ -92,23 +92,6 @@ class BaseSelector(object):
             v[self.robot.GetJoint(name).GetDOFIndex()] = self.joint_angles[self.joint_names.index(name)]
         self.robot.SetActiveDOFValues(v)
 
-        # Set up inverse reachability
-        self.irmodel = op.databases.inversereachability.InverseReachabilityModel(robot=self.robot)
-        print 'loading irmodel'
-        starttime = time.time()
-        if not self.irmodel.load():            
-            print 'do you want to generate irmodel for your robot? it might take several hours'
-            print 'or you can go to http://people.csail.mit.edu/liuhuan/pr2/openrave/openrave_database/ to get the database for PR2'
-            input = raw_input('[Y/n]\n')
-            if input == 'y' or input == 'Y' or input == '\n' or input == '':
-                self.irmodel.autogenerate()
-                self.irmodel.load()
-            else:
-                raise ValueError('')
-        print 'time to load inverse-reachability model: %fs'%(time.time()-starttime)
-        # make sure the robot and manipulator match the database
-        assert self.irmodel.robot == self.robot and self.irmodel.manip == self.robot.GetActiveManipulator()   
-
         ## Find and load Wheelchair Model
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
@@ -150,7 +133,6 @@ class BaseSelector(object):
         self.vis_pub.publish(marker)
 
     # Function that determines a good base location to be able to reach the goal location.
-    def handle_select_base(self, req):#, task):
     def handle_select_base(self, req):#, task):
         #choose_task(req.task)
         print 'I have received inputs!'
@@ -197,8 +179,8 @@ class BaseSelector(object):
                                 [       0.,        0.,   0.,         1]])
 
         # Transform from the coordinate frame of the wc model in the back right bottom corner, to the head location
-        corner_B_head = np.matrix([[m.cos(0.), -m.sin(0.),  0.,  .45],
-                                   [m.sin(0.),  m.cos(0.),  0.,  .42], #0.34
+        corner_B_head = np.matrix([[m.cos(0.), -m.sin(0.),  0.,  .442603],
+                                   [m.sin(0.),  m.cos(0.),  0.,  .384275], #0.34
                                    [       0.,         0.,  1.,   0.],
                                    [       0.,         0.,  0.,   1.]])
         wheelchair_location = pr2_B_wc * corner_B_head.I
@@ -225,129 +207,27 @@ class BaseSelector(object):
         angle_base = m.pi/2
         #print 'The goal gripper pose is: \n' , np.array(pr2_B_goal)
 
-        # Find a base location using Inverse Reachability
-        Tgrasp = np.array(copy.copy(pr2_B_goal))
-        densityfn,samplerfn,bounds = self.irmodel.computeBaseDistribution(Tgrasp,logllthresh=1.8)
-        if densityfn == None:
-            print 'The specified grasp is not reachable using IR method! \n'
-            return None
-        N = 10
-        goals = []
-        numfailures = 0
-        starttime = time.time()
-        timeout = float('inf')
-        with self.robot:
-            while len(goals) < N and numfailures<50000:
-                #print numfailures
-                if time.time()-starttime > timeout:
-                    break
-                poses,jointstate = samplerfn(20*N)
-                #poses,jointstate = samplerfn(N-len(goals))
-                for pose in poses:
-                    #print 'pose is: \n',pose
-                    loc = op.matrixFromPose(pose)
-                    #print 'B transform is: \n',loc
-                    self.robot.SetTransform(loc)
-                    self.robot.SetDOFValues(*jointstate)
-                    #print op.matrixFromPose(pose), '\n'
-                    #print m.acos(op.matrixFromPose(pose)[0,0]),'\n'
-                    #rospy.sleep(.1)
-                    #print 'Made it past sleep'
-                    # validate that base is not in collision
-                    if not self.manip.CheckIndependentCollision(op.CollisionReport()):
-                        q = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-                        if q is not None:
-                            if np.abs(m.acos(op.matrixFromPose(pose)[0,0]))<m.pi/4:
-                                values = self.robot.GetDOFValues()
-                                values[self.manip.GetArmIndices()] = q
-                                goals.append((Tgrasp,pose,values))
-                            else:
-                                numfailures += 1
-                        elif self.manip.FindIKSolution(Tgrasp,0) is None:
-                            numfailures += 1
-                            #print 'failure: \n',numfailures
-                    else:
-                        numfailures += 1
-                        #print 'collision failure! \n', numfailures
-        #print 'showing %d results'%N
-        goal = goals[0]
-        print 'total failed base positions: \n', numfailures
-        Tgrasp_best,pose_best,values_best = copy.copy(goal)
-        #print 'Tgrasp_best is: \n',Tgrasp_best
-        #print 'pose_best is: \n',pose_best
-        #print 'values_best is: \n',values_best
-        for ind,goal in enumerate(goals):
-            #raw_input('press ENTER to show goal %d'%ind)
-            #print 'Shoinw show goal %d \n'%ind
-            Tgrasp,pose,values = copy.copy(goal)
-            if np.linalg.norm(op.matrixFromPose(pose)[0:3,3])<np.linalg.norm(op.matrixFromPose(pose_best)[0:3,3]):
-                Tgrasp_best = Tgrasp
-                pose_best = pose
-                values_best = values
-            #self.robot.SetTransform(pose)
-            #self.robot.SetDOFValues(values)
-        base_location = op.matrixFromPose(pose_best)
-        self.robot.SetTransform(op.matrixFromPose(pose_best))
-        self.robot.SetActiveDOFValues(values_best)
-        
-        print 'The best base location according the inverse reachability is: \n', base_location
+	    # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
+	    # Only necessary for testing in simulation to set the wheelchair in reach of PR2.
+	    #goalpr2_B_wc = wc_B_goalpr2.I
+	    #print 'pr2_B_wc is: \n',goalpr2_B_wc
+	    #pos_goal = goalpr2_B_wc[:3,3]
+	    #ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
+	    #psm_wc = PoseStamped()
+	    #psm_wc.header.frame_id = '/odom_combined'
+	    #psm_wc.pose.position.x=pos_goal[0]
+	    #psm_wc.pose.position.y=pos_goal[1]
+	    #psm_wc.pose.position.z=pos_goal[2]
+	    #psm_wc.pose.orientation.x=ori_goal[0]
+	    #psm_wc.pose.orientation.y=ori_goal[1]
+	    #psm_wc.pose.orientation.z=ori_goal[2]
+	    #psm_wc.pose.orientation.w=ori_goal[3]
+	    #self.wc_position.publish(psm_wc)
 
-        now = rospy.Time.now() + rospy.Duration(1.0)
-        self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
-        (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
-
-        odom_goal = createBMatrix(trans, rot) * base_location
-        pos_goal = odom_goal[:3,3]
-        ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
-        #print 'Got an iksolution! \n', sol
-        psm = PoseStamped()
-        psm.header.frame_id = '/odom_combined'
-        psm.pose.position.x=pos_goal[0]
-        psm.pose.position.y=pos_goal[1]
-        psm.pose.position.z=pos_goal[2]
-        psm.pose.orientation.x=ori_goal[0]
-        psm.pose.orientation.y=ori_goal[1]
-        psm.pose.orientation.z=ori_goal[2]
-        psm.pose.orientation.w=ori_goal[3]
-
-                            # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
-                            # Only necessary for testing in simulation to set the wheelchair in reach of PR2.
-                            #goalpr2_B_wc = wc_B_goalpr2.I
-                            #print 'pr2_B_wc is: \n',goalpr2_B_wc
-                            #pos_goal = goalpr2_B_wc[:3,3]
-                            #ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
-                            #psm_wc = PoseStamped()
-                            #psm_wc.header.frame_id = '/odom_combined'
-                            #psm_wc.pose.position.x=pos_goal[0]
-                            #psm_wc.pose.position.y=pos_goal[1]
-                            #psm_wc.pose.position.z=pos_goal[2]
-                            #psm_wc.pose.orientation.x=ori_goal[0]
-                            #psm_wc.pose.orientation.y=ori_goal[1]
-                            #psm_wc.pose.orientation.z=ori_goal[2]
-                            #psm_wc.pose.orientation.w=ori_goal[3]
-                            #self.wc_position.publish(psm_wc)
-        print 'I found a goal location! It is at B transform: \n',base_location
-        print 'The quaternion to the goal location is: \n',psm
-        return psm
-        
-    def choose_task(task):
-        if task == 'wipe_face':
-            self.selection_mat = np.array([1,1,1,1,1,0,0,0,0,0,0])
-        elif task == 'shoulder':
-            self.selection_mat = np.array([0,0,0,0,0,1,1,0,0,0,0])
-        elif task == 'knee':
-            self.selection_mat = np.array([0,0,0,0,0,0,0,1,1,0,0])
-        elif task == 'hand':
-            self.selection_mat = np.array([0,0,0,0,0,0,1,0,0,1,1])
-        else:
-            print 'Somehow I got a bogus task!? \n'
-            return None
-        return self.selection_mat
-'''
         # Find a base location by testing various base locations online for IK solution
         for i in [0.,.05,.1,.15,.2,.25,.3,.35,.4,.45,.5,-.05,-.1,-.15,-.2,-.25,-.3]:#[.1]:#[0.,.1,.3,.5,.8,1,-.1,-.2,-.3]:
             for j in [0.,.03,.05,.08,-.03,-.05,-.08, -.1,-.12,-.2,-.3]:#[.2]:#[0.,.1,.3,.5,.8,-.1,-.2,-.3]:
-                for k in [0]:#[-m.pi/2]:#[0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2]:
+                for k in [0.,m.pi/4,m.pi/2,-m.pi/4,-m.pi/2,m.pi,3*m.pi/2]:
                     #goal_pose = req.goal
                     # transform from head frame in wheelchair to desired base goal
                     wc_B_goalpr2  =   np.matrix([[m.cos(angle_base+k), -m.sin(angle_base+k),   0.,  .4+i],
@@ -369,45 +249,46 @@ class BaseSelector(object):
 
                     with self.env:
                         #print 'checking goal base location: \n' , np.array(base_position)
-                        sol = self.manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
-                        if sol is not None:
-                            now = rospy.Time.now() + rospy.Duration(1.0)
-                            self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
-                            (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
+                        if not self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            sol = self.manip.FindIKSolution(np.array(pr2_B_goal), op.IkFilterOptions.CheckEnvCollisions)
+                            if sol is not None:
+                                now = rospy.Time.now() + rospy.Duration(1.0)
+                                self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
+                                (trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
+    
+                                odom_goal = createBMatrix(trans, rot) * base_position
+                                pos_goal = odom_goal[:3,3]
+                                ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
+                                #print 'Got an iksolution! \n', sol
+                                psm = PoseStamped()
+                                psm.header.frame_id = '/odom_combined'
+                                psm.pose.position.x=pos_goal[0]
+                                psm.pose.position.y=pos_goal[1]
+                                psm.pose.position.z=pos_goal[2]
+                                psm.pose.orientation.x=ori_goal[0]
+                                psm.pose.orientation.y=ori_goal[1]
+                                psm.pose.orientation.z=ori_goal[2]
+                                psm.pose.orientation.w=ori_goal[3]
 
-                            odom_goal = createBMatrix(trans, rot) * base_position
-                            pos_goal = odom_goal[:3,3]
-                            ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
-                            #print 'Got an iksolution! \n', sol
-                            psm = PoseStamped()
-                            psm.header.frame_id = '/odom_combined'
-                            psm.pose.position.x=pos_goal[0]
-                            psm.pose.position.y=pos_goal[1]
-                            psm.pose.position.z=pos_goal[2]
-                            psm.pose.orientation.x=ori_goal[0]
-                            psm.pose.orientation.y=ori_goal[1]
-                            psm.pose.orientation.z=ori_goal[2]
-                            psm.pose.orientation.w=ori_goal[3]
-
-                            # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
-                            # Only necessary for testing in simulation to set the wheelchair in reach of PR2.
-                            #goalpr2_B_wc = wc_B_goalpr2.I
-                            #print 'pr2_B_wc is: \n',goalpr2_B_wc
-                            #pos_goal = goalpr2_B_wc[:3,3]
-                            #ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
-                            #psm_wc = PoseStamped()
-                            #psm_wc.header.frame_id = '/odom_combined'
-                            #psm_wc.pose.position.x=pos_goal[0]
-                            #psm_wc.pose.position.y=pos_goal[1]
-                            #psm_wc.pose.position.z=pos_goal[2]
-                            #psm_wc.pose.orientation.x=ori_goal[0]
-                            #psm_wc.pose.orientation.y=ori_goal[1]
-                            #psm_wc.pose.orientation.z=ori_goal[2]
-                            #psm_wc.pose.orientation.w=ori_goal[3]
-                            #self.wc_position.publish(psm_wc)
-                            print 'I found a goal location! It is at B transform: \n',base_position
-                            print 'The quaternion to the goal location is: \n',psm
-                            return psm
+                                # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
+                                # Only necessary for testing in simulation to set the wheelchair in reach of PR2.
+                                #goalpr2_B_wc = wc_B_goalpr2.I
+                                #print 'pr2_B_wc is: \n',goalpr2_B_wc
+                                #pos_goal = goalpr2_B_wc[:3,3]
+                                #ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
+                                #psm_wc = PoseStamped()
+                                #psm_wc.header.frame_id = '/odom_combined'
+                                #psm_wc.pose.position.x=pos_goal[0]
+                                #psm_wc.pose.position.y=pos_goal[1]
+                                #psm_wc.pose.position.z=pos_goal[2]
+                                #psm_wc.pose.orientation.x=ori_goal[0]
+                                #psm_wc.pose.orientation.y=ori_goal[1]
+                                #psm_wc.pose.orientation.z=ori_goal[2]
+                                #psm_wc.pose.orientation.w=ori_goal[3]
+                                #self.wc_position.publish(psm_wc)
+                                print 'I found a goal location! It is at B transform: \n',base_position
+                                print 'The quaternion to the goal location is: \n',psm
+                                return psm
 
                             #self.robot.SetDOFValues(sol,self.manip.GetArmIndices()) # set the current solution
                             #Tee = self.manip.GetEndEffectorTransform()
@@ -428,7 +309,25 @@ class BaseSelector(object):
                             print 'I found a bad goal location. Trying again!'
                             #rospy.sleep(.1)
         print 'I found nothing! My given inputs were: \n', req.goal, req.head
-'''
+
+        print 'I found a goal location! It is at B transform: \n',base_location
+        print 'The quaternion to the goal location is: \n',psm
+        return psm
+        
+    def choose_task(task):
+        if task == 'wipe_face':
+            self.selection_mat = np.array([1,1,1,1,1,0,0,0,0,0,0])
+        elif task == 'shoulder':
+            self.selection_mat = np.array([0,0,0,0,0,1,1,0,0,0,0])
+        elif task == 'knee':
+            self.selection_mat = np.array([0,0,0,0,0,0,0,1,1,0,0])
+        elif task == 'hand':
+            self.selection_mat = np.array([0,0,0,0,0,0,1,0,0,1,1])
+        else:
+            print 'Somehow I got a bogus task!? \n'
+            return None
+        return self.selection_mat
+
 if __name__ == "__main__":
     rospy.init_node('select_base_server')
     selector = BaseSelector()
