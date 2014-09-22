@@ -169,8 +169,8 @@ var CameraModel = function (options) {
         self.R = self.makeMatrix(infoMsg.R, 3, 3);
         self.P = self.makeMatrix(infoMsg.P, 3, 4);
         // Not collecting data on binning, ROI
-        self.KR = window.numeric.dot(self.K, self.R);
-        self.KR_inv = window.numeric.inv(self.KR);
+        self.KR = numeric.dot(self.K, self.R);
+        self.KR_inv = numeric.inv(self.KR);
         self.subscriber.unsubscribe(); // Close subscriber to save bandwidth
         }
 
@@ -186,10 +186,10 @@ var CameraModel = function (options) {
     // Returns a geoemtry_msgs/PointStamped msg
     self.projectPixel = function (px, py, dist) { 
        var pixel_hom = [[px],[py],[1]]; //Pixel value in homogeneous coordinates
-       var vec = window.numeric.dot(self.KR_inv, pixel_hom);
-       vec = window.numeric.transpose(vec)[0];
-       var mag = window.numeric.norm2(vec);
-       return window.numeric.mul(dist/mag, vec);
+       var vec = numeric.dot(self.KR_inv, pixel_hom);
+       vec = numeric.transpose(vec)[0];
+       var mag = numeric.norm2(vec);
+       return numeric.mul(dist/mag, vec);
     }
 };
 
@@ -208,28 +208,28 @@ var initMjpegCanvas = function (divId) {
                      "</table>");
 
     // Initialize the mjpeg client
-    window.mjpeg = new MjpegClient({ros: window.ros,
+    assistive_teleop.mjpeg = new MjpegClient({ros: assistive_teleop.ros,
                                     divId: 'mjpegDiv',
-                                    host: window.ROBOT,
+                                    host: assistive_teleop.ROBOT,
                                     port: 8080,
                                     selectBoxId: 'cameraSelect',
                                     width: 640,//1280,
                                     height: 512,//1024,//480,
                                     quality: 85});
     // Initialize the camera selection menu
-    window.mjpeg.createCameraMenu('#cameraSelectCell');
-    $('#cameraSelect').on('change', window.mjpeg.onSelectChange.bind(window.mjpeg));
+    assistive_teleop.mjpeg.createCameraMenu('#cameraSelectCell');
+    $('#cameraSelect').on('change', assistive_teleop.mjpeg.onSelectChange.bind(assistive_teleop.mjpeg));
     // Apply these initial settings
-    window.mjpeg.update();    
+    assistive_teleop.mjpeg.update();    
 
     // Make the image resizeable
     var resizeStopCB = function (event, ui) {
-      window.mjpeg.setParam('height', Math.round(ui.size.height));
-      window.mjpeg.setParam('width', Math.round(ui.size.width));
-      window.mjpeg.update()
+      assistive_teleop.mjpeg.setParam('height', Math.round(ui.size.height));
+      assistive_teleop.mjpeg.setParam('width', Math.round(ui.size.width));
+      assistive_teleop.mjpeg.update()
     };
-    $('#'+window.mjpeg.divId).resizable({aspectRatio:true,
-                                         alsoResize:'#'+window.mjpeg.imageId,
+    $('#'+assistive_teleop.mjpeg.divId).resizable({aspectRatio:true,
+                                         alsoResize:'#'+assistive_teleop.mjpeg.imageId,
                                          autoHide:true,
                                          ghost:true,
                                          delay:250,

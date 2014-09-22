@@ -1,0 +1,29 @@
+# Copied meta-data from svn #
+#############################
+.svn
+
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+*~
+# files created by text editors #
+#################################
+*.swp
+
+# ROS specific files and folders #
+##################################
+bin
+build
+msg_gen
+srv_gen
+
+# specific to the hrl_haptic_manipulation_in_clutter git repository #
+#####################################################################
+#hrl_software_simulation_darpa_m3/bin
+
