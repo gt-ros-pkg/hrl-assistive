@@ -14,7 +14,7 @@ var UserLog = function (options) {
     var msg = message.toString();
     console.log("Log to user: " + msg);
     userLog.history[time] = msg;
-    userLog.timers.push(setTimeout(userLog.update, userlog.timeout + 100));
+    userLog.timers.push(setTimeout(userLog.update, userLog.timeout + 100));
     userLog.newestTime = time;
     userLog.update();
   };
@@ -28,9 +28,9 @@ var UserLog = function (options) {
       var timeIn = sortedKeys[i];
       if (timeIn >= cutoff_time) {
         if (timeIn == userLog.newestTime) {
-          html += "<big><strong>" + userLog.history[timeIn] + "</strong></big></br>";
+          html = "<big><strong>" + userLog.history[timeIn] + "</strong></big></br>" + html;
         } else {
-          html += "<big>" + userLog.history[timeIn] + "</big></br>";
+          html = "<big>" + userLog.history[timeIn] + "</big></br>" + html;
         }
       }
     }
@@ -39,10 +39,13 @@ var UserLog = function (options) {
 }
 
 var initUserLog = function (divId) {
-    window.userlog = new UserLog({'divId':divId, 'timeout':10} );
+    assistive_teleop.userlog = new UserLog({'divId':divId, 'timeout':10} );
+
+    //Alias for simpler calls
+    assistive_teleop.log = assistive_teleop.userlog.log;
 
     //Add wrapper for compatibiltiy with existing code.
     window.log = function(message) { 
-      window.userlog.log(message);
+      assistive_teleop.userlog.log(message);
     }
 }

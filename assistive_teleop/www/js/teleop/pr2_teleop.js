@@ -77,7 +77,7 @@ var teleopHead = function () {
     $('#bpd_default').find(':button').unbind('.rfh').text('');
     $('#b9, #b7', '#bpd_default').hide();
     $('#b8, #b6, #b5, #b4, #b2', '#bpd_default').bind('click.rfh', function (e) {
-        assistive_teleop.clearInterval(assistive_teleop.head.pubInterval);
+        clearInterval(assistive_teleop.head.pubInterval);
     });
     $('#bpd_default #b8').show().bind('click.rfh', function (e) { //head up 
         assistive_teleop.head.delPosition(0.0, -assistive_teleop.head.sliderScale);
@@ -92,7 +92,7 @@ var teleopHead = function () {
         assistive_teleop.head.delPosition(assistive_teleop.head.sliderScale, 0.0);
     });
     $('#bpd_default #b3').show().removeClass('arrow_rot_x_pos').text("Track Right Hand").bind('click.rfh', function (e) {
-        assistive_teleop.clearInterval(assistive_teleop.head.pubInterval);
+        clearInterval(assistive_teleop.head.pubInterval);
         assistive_teleop.head.pubInterval = setInterval(function () {
             assistive_teleop.head.pointHead(0, 0, 0, 'r_gripper_tool_frame');
         }, 100);
@@ -101,7 +101,7 @@ var teleopHead = function () {
         assistive_teleop.head.delPosition(0.0, assistive_teleop.head.sliderScale);
     });
     $('#bpd_default #b1').show().removeClass('arrow_rot_x_neg').text("Track Left Hand").bind('click.rfh', function (e) {
-        assistive_teleop.clearInterval(assistive_teleop.head.pubInterval);
+        clearInterval(assistive_teleop.head.pubInterval);
         assistive_teleop.head.pubInterval = setInterval(function () {
             assistive_teleop.head.pointHead(0, 0, 0, 'l_gripper_tool_frame');
         }, 100);

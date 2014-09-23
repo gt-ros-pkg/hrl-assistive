@@ -23,8 +23,9 @@ var TrajectoryPlayback = function (arm, ros) {
     trajPlay.modesParam = new trajPlay.ros.Param({
         name: 'face_adls_traj_modes'});
     trajPlay.trajFilesParam = new trajPlay.ros.Param({
-        name: 'face_adls_traj_files' });
+        name: 'face_adls_traj_files'});
     trajPlay.sendGoal = function () {
+        assistive_teleop.skinUtil.disableSkin();
         var goal = trajPlay.ros.composeMsg('hrl_pr2_traj_playback/TrajectoryPlayGoal');
         var act = $('#traj_play_act_sel option:selected').val(); 
         var hand = $('#traj_play_arm_sel option:selected').val();
