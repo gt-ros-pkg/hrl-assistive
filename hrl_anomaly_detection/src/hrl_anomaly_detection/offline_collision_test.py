@@ -120,7 +120,7 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
     #one_trial = one_trial.reshape(1,len(one_trial))
     dt = second_time[mech] 
     
-    # Applied force
+    # Applied force (collision)
     plot_trial(pkl_nm, math.radians(len(dt[0][0])), start_idx,
                mech_idx, class_idx, plt_st, plt_mech, plt_sem) 
 
@@ -317,11 +317,12 @@ def kitchen_cabinet_locked_pr2():
 if __name__ == '__main__':
 
     pth       = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
-    data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
+    ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
+    
     blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
     #blocked_thresh_dict = ut.load_pickle('./blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
 
-    semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)
+    semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)  <= force profiles
     second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)
     
 #    ikea_cabinet_no_collision()
@@ -335,9 +336,16 @@ if __name__ == '__main__':
     pp.show()
 
 
-
-
-
+    
+    #1: When sematic (category, 'kitchen_cabinet_pr2') is known, 
+    #   it gives 'operating 1st time' opening force boundary.
+    #   Force profile (+std*std) is listed by door angle.
+    #   ex) blocked_thresh_dict['mean_charlie']
+    #2: When mechanism (category+????) is known, it gives 'operating 2nd time' opening force boundary.
+    #   Force profile (+std*std) is listed by door angle.
+    #   ex) robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl
+    #3: Real collision profile.
+    #   ex) robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl
 
 
 

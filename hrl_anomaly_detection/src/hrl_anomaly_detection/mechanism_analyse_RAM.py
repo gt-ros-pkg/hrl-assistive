@@ -846,12 +846,13 @@ def compute_Ms(data, semantic_class, plot):
 
         ax2 = ax1.twinx()
         c2 = 'b'
-        ax2.errorbar(range(len(mn)), std_mn, std_std, color=c2)
+        ax2.errorbar(range(len(mn)), mn_std, var_std, color=c2)
         ax2.set_ylabel('std', color=c2)
         for tl in ax2.get_yticklabels():
             tl.set_color(c2)
         pp.legend()
         pp.title(semantic_class)
+        fig.savefig('/home/dpark/Dropbox/HRL/mech.pdf', format='pdf')
 
     #return mn_mn, std_mn, mn_std, std_std
     return mn_mn, var_mn, mn_std, var_std
