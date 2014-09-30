@@ -214,8 +214,8 @@ var initMjpegCanvas = function (divId) {
                                     host: assistive_teleop.ROBOT,
                                     port: 8080,
                                     selectBoxId: 'cameraSelect',
-                                    width: 640,//1280,
-                                    height: 512,//1024,//480,
+                                    width: 1280,//640
+                                    height: 1024,// 512
                                     quality: 85});
     // Initialize the camera selection menu
     assistive_teleop.mjpeg.createCameraMenu('#cameraSelectCell');
@@ -229,9 +229,9 @@ var initMjpegCanvas = function (divId) {
       assistive_teleop.mjpeg.setParam('width', Math.round(ui.size.width));
       assistive_teleop.mjpeg.update()
     };
-    $('#'+assistive_teleop.mjpeg.divId).resizable({aspectRatio:true,
-                                         alsoResize:'#'+assistive_teleop.mjpeg.imageId,
-                                         autoHide:true,
+    $('#'+assistive_teleop.mjpeg.imageId).resizable({aspectRatio:true,
+                                         //alsoResize:'#'+assistive_teleop.mjpeg.imageId,
+                                         autoHide:false,
                                          ghost:true,
                                          delay:250,
                                          handles:'se',

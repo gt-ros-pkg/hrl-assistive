@@ -9,11 +9,15 @@
   <link type="text/css" href="jqueryui/themes/sunny/jquery-ui.min.css" rel="stylesheet" />
   <script type="text/javascript" src="jqueryui/jquery-1.10.2.js"></script>
   <script type="text/javascript" src="jqueryui/ui/minified/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="js/numeric-1.2.6.js"></script>
 
-  <script type="text/javascript" src="js/ros/eventemitter2.js"></script>
-  <script type="text/javascript" src="js/ros/ros.js"></script>
+  <script type="text/javascript" src="js/ros/EventEmitter2/eventemitter2.js"></script>
+<!--  <script type="text/javascript" src="js/ros/ros.js"></script>-->
+  <script type="text/javascript" src="js/ros/roslibjs/roslib.js"></script>
   <script type="text/javascript" src="js/ros/extend_ros.js"></script>
   <script type="text/javascript" src="js/ros/actionclient.js"></script>
+  <script type="text/javascript" src="js/ros/threejs/three.js"></script>
+  <script type="text/javascript" src="js/ros/ros3d.js"></script>
 
   <script type="text/javascript" src="js/init.js"></script>
   <script type="text/javascript" src="js/log.js"></script>
@@ -26,7 +30,7 @@
   
 </head>
 
-<body onload="assistive_teleop.init" ondragstart="return false;" ondrop="return false;">
+<body onload="assistive_teleop.init()" ondragstart="return false;" ondrop="return false;">
  <div id="status-bar">
      <div id="status-bar">
          <div id="notifications"></div>
@@ -34,7 +38,9 @@
          <div id="battery-status"></div>  
      </div>
  </div>
- <div id="video-main"></div>
+ <div id="video-main" style="float:right; position:relative;">
+     <div id="markers" style="position:absolute; left:0px; top:0px"></div>
+ </div>
 
 </body>
 
