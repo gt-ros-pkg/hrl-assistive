@@ -36,13 +36,13 @@ var ForceDisplay = function (ros) {
     };
     
     forceDisplay.activityThresh = new forceDisplay.ros.Param({
-        name: 'face_adls_manager/activity_force_thresh'});
+        name: 'activity_force_thresh'});
     forceDisplay.dangerThresh = new forceDisplay.ros.Param({
-        name: 'face_adls_manager/dangerous_force_thresh'});
+        name: 'dangerous_force_thresh'});
 };
 
 var initFTDisplay = function (divId, options) {
-    window.ftDisplay = new ForceDisplay(window.ros);
+    assistive_teleop.ftDisplay = new ForceDisplay(assistive_teleop.ros);
     var yellowPercent = options.yellowPercent || 50;
     var maxForce = options.maxForce || 15;
     var height = options.height || '450px';
@@ -93,27 +93,27 @@ var initFTDisplay = function (divId, options) {
     $('#'+divId+'FTRezeroButton').css('width','70px');
    
     // Readjust layout based on parameters
-    window.ftDisplay.dangerThresh.get(function (val) {
-        window.ftDisplay.dangerThresh.value = val;
-        console.log('Param: '+ ftDisplay.dangerThresh.name +'\r\n'+
+    assistive_teleop.ftDisplay.dangerThresh.get(function (val) {
+        assistive_teleop.ftDisplay.dangerThresh.value = val;
+        console.log('Param: '+ assistive_teleop.ftDisplay.dangerThresh.name +'\r\n'+
                     ' Value: ' + val.toString());
-        window.ftDisplay.activityThresh.get(function (val) {
-            window.ftDisplay.activityThresh.value = val;
-            var dangerThr = window.ftDisplay.dangerThresh.value;
+        assistive_teleop.ftDisplay.activityThresh.get(function (val) {
+            assistive_teleop.ftDisplay.activityThresh.value = val;
+            var dangerThr = assistive_teleop.ftDisplay.dangerThresh.value;
             $('#'+divId+'FTDangerLabel').html(dangerThr.toString()+' N');
             var dangerPct = 100*(maxForce-dangerThr)/maxForce;
             $('#'+divId+'FTActivityLabel').html(val.toString()+' N');
             var actPct = 100*(maxForce - val)/maxForce - dangerPct;
             $('#'+divId+'FTDangerRef').css('height',dangerPct+'%'); 
             $('#'+divId+'FTActivityRef').css('height',actPct+'%'); 
-            console.log('Param: '+ ftDisplay.activityThresh.name +'\r\n'+
+            console.log('Param: '+ assistive_teleop.ftDisplay.activityThresh.name +'\r\n'+
                         ' Value: ' + val.toString());
         });
     });
 
     // Update Display based upon published data
     var updateReadout = function (ws) {
-       var mag = window.ftDisplay.magnitude();
+       var mag = assistive_teleop.ftDisplay.magnitude();
        var pct = (mag/maxForce)*100;
        if (pct > 100.0) {pct = 100.0};
        $('#'+divId+'FTTextDisplay').html('<p><strong>'+mag.toFixed(1)+' N </strong></p>')
@@ -130,10 +130,10 @@ var initFTDisplay = function (divId, options) {
        $('#'+divId+'FTColorWrapper').css('background-color', color);
        $('#'+divId+'FTColorBar').css('height', Math.round(100-pct)+'%');
        }; 
-    window.ftDisplay.stateSubCBList.push(updateReadout);
+    assistive_teleop.ftDisplay.stateSubCBList.push(updateReadout);
 
     $('#'+divId+'FTRezeroButton').click(function () {
-        window.ftDisplay.rezeroPub.publish({data:true});
+        assistive_teleop.ftDisplay.rezeroPub.publish({data:true});
         log("Sending command to Re-zero Force/Torque Sensor");
     });
 };
