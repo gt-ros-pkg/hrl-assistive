@@ -19,12 +19,42 @@
 
   <script type="text/javascript" src="js/video/mjpeg_client.js"></script>
   <script type="text/javascript" src="js/video/clickable_element.js"></script>
+
+  <script type="text/javascript">
+
+    this.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
+    this.PORT = '9091';//Must match port on which rosbridge is being served
+    var init = function () {
+        initMjpegCanvas("video-main");
+        this.ros = new ROS('ws://'+ this.ROBOT + ':'+ this.PORT);
+        this.ros.on('close', function(e) {
+            log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
+          }
+        );
+        this.ros.on('error', function(e) {
+          log("Rosbridge Connection Error!");
+          }
+        );
+        this.ros.on('connection', function(e) {
+            log("Connected to " + assistive_teleop.ROBOT + ".");
+            extendROSJS(assistive_teleop.ros);
+            initMjpegCanvas('video_main');
+          }
+    }
+  </script>
+
   
 </head>
 
-<body onload="init.js" ondragstart="return false;" ondrop="return false;">
-
- <div id="video_main"></div>
+<body onload="init" ondragstart="return false;" ondrop="return false;">
+ <div id="status-bar">
+     <div id="status-bar">
+         <div id="notifications"></div>
+         <div id="network-status"></div>
+         <div id="battery-status"></div>  
+     </div>
+ </div>
+ <div id="video-main"></div>
 
 </body>
 

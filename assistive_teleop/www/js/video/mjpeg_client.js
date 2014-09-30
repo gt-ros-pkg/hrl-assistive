@@ -196,8 +196,9 @@ var CameraModel = function (options) {
 var initMjpegCanvas = function (divId) {
     var divRef = '#' + divId;
     $(divRef).off('click'); //Disable click detection so clickable_element catches it
+    $(divRef).append("<div id='mjpegDiv'></div>");
     // Build the html for image feed and controls below
-    $(divRef).append("<table>"+
+/*    $(divRef).append("<table>"+
                        "<tr><td colspan='4'><div id='mjpegDiv'></div></td></tr>" +
                        "<tr id='underVideoBar'>" + 
                          "<td style='text-align:right'>On Image Click:</td>" +
@@ -206,7 +207,7 @@ var initMjpegCanvas = function (divId) {
                          "<td id='cameraSelectCell'></td>" + 
                        "</tr>" +
                      "</table>");
-
+*/
     // Initialize the mjpeg client
     assistive_teleop.mjpeg = new MjpegClient({ros: assistive_teleop.ros,
                                     divId: 'mjpegDiv',

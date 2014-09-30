@@ -1,0 +1,30 @@
+#status-bar {
+    width:100%;
+    height: 1.4em;
+    background-color:rgba(0,0,0,0.87);
+}
+
+#notifications {
+    display: inline-block;
+    max-width: 87%;
+    color:rgba(255,255,255,0.87);
+    margin: 0.1em 1em;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#network-status{
+    display: inline-block;
+    float:right;
+    height:100%;
+    width: 20px;
+    background-color: rgba(0,0,255,0.87);
+}
+
+#battery-status{
+    display: inline-block;
+    float: right:
+    height: 100%;
+    width: 15px;
+    background-color: rgba(0,255,0,0.87);
+}
