@@ -16,15 +16,12 @@ var assistive_teleop = {
       return true;
   },
 
-  start :  function () {
-    var good_browser = this.checkBrowser();
-    if (!good_browser) {
-    return;
-    }
+  init :  function () {
+    if (!this.checkBrowser()) {return}
 
     this.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     this.PORT = '9091';//Must match port on which rosbridge is being served
-    initUserLog('#console')
+    initUserLog('#notifications')
 
     $('#tabs').css({'top':'0px'})
     var tabs = $("#tabs").tabs();

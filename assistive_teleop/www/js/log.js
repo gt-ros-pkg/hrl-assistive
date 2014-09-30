@@ -28,9 +28,9 @@ var UserLog = function (options) {
       var timeIn = sortedKeys[i];
       if (timeIn >= cutoff_time) {
         if (timeIn == userLog.newestTime) {
-          html = "<big><strong>" + userLog.history[timeIn] + "</strong></big></br>" + html;
+          html = userLog.history[timeIn] + html;
         } else {
-          html = "<big>" + userLog.history[timeIn] + "</big></br>" + html;
+          html = userLog.history[timeIn]  + html;
         }
       }
     }
