@@ -2,7 +2,8 @@
 
 import sys, os
 import numpy as np, math
-import roslib; roslib.load_manifest('hrl_anomaly_detection') 
+
+import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
 import inspect
 import warnings
@@ -12,6 +13,8 @@ import random
 import hrl_lib.util as ut
 
 import data_gen
+
+
 
 class learning_psr():
     def __init__(self, data_path):
@@ -61,7 +64,7 @@ class learning_psr():
     #
     def fit(self):
 
-        
+        pass
 
         
 
