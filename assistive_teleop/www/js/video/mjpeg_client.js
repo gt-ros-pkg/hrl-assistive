@@ -208,13 +208,16 @@ var initMjpegCanvas = function (divId) {
 */
     // Initialize the mjpeg client
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
+    var width = 0.8 * window.innerWidth;
+    var height = 0.95 * window.innerHeight;
+    $('#'+divId).css({'height':height, 'width':width});
     assistive_teleop.mjpeg = new MjpegClient({ros: assistive_teleop.ros,
                                     divId: 'mjpegDiv',
                                     host: assistive_teleop.ROBOT,
                                     port: 8080,
                                     selectBoxId: 'cameraSelect',
-                                    width: 0.7*$(window).width(),//1280,//640
-                                    height: $(window).height(),// 1024,// 512
+                                    width: width,//1280,//640
+                                    height: height,// 1024,// 512
                                     quality: 85});
     assistive_teleop.mjpeg.update();    
     // Initialize the camera selection menu

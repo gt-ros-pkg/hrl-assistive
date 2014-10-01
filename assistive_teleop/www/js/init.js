@@ -21,6 +21,10 @@ var assistive_teleop = {
 
     this.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     this.PORT = '9091';//Must match port on which rosbridge is being served
+    $("body").css({"height": window.innerHeight, "width":window.innerWidth});
+    window.addEventListener('resize', function () {
+        $("body").css({"height": window.innerHeight, "width":window.innerWidth});
+    });
     initUserLog('#notifications')
 
   //  $('#tabs').css({'top':'0px'})

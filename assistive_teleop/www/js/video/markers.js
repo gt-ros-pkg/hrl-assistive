@@ -1,9 +1,11 @@
 var initMarkerDisplay = function (divID) {
     // Create the main viewer.
+    var width = 0.8 * window.innerWidth;
+    var height = 0.95 * window.innerHeight;
     assistive_teleop.viewer = new ROS3D.Viewer({
         divID : divID,
-        width : 1280,
-        height : 1024,
+        width : width,
+        height : height,
         antialias : true
     });
 
