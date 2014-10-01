@@ -31,39 +31,87 @@ class traj_data():
         self.semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)  <= force profiles
         self.second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)        
 
-        self.max_force = 0.0
+        self.force_table = None  # discrete force table        
+        self.force_max   = 0.0
+        self.force_resol = 0.5
+
+        self.trans_size = None
+        self.trans_mat = None        
+        self.trans_mat = None
+        self.trans_prob_mat = None
+        self.start_prob_vec = None
         
         pass
 
+    
     def find_nearest(self, array,value):
         idx = (np.abs(array-value)).argmin()
-        return array[idx]
+        return array[idx], idx
+
+    
+    def reset_trans_mat(self):
+
+        self.trans_size = int(np.ceil(self.force_max / self.force_resol)) + 1
+        self.trans_mat = np.zeros((self.trans_size, self.trans_size))
+        self.trans_prob_mat = np.zeros((self.trans_size, self.trans_size))
+        self.start_prob_vec = np.zeros((self.trans_size,1)) + 1.0/float(self.trans_size)
+        
+    def update_trans_mat_all(self, test_dict):
+        for key in test_dict.keys():
+            self.update_trans_mat(test_dict[key])
+        
+        self.set_trans_mat()
+        
+        
+    def update_trans_mat(self, profile):
+
+        for i in xrange(len(profile)):
+            # skip first element
+            if i==0: continue
+
+            _, x_idx = self.find_nearest(self.force_table, profile[i-1])
+            _, y_idx = self.find_nearest(self.force_table, profile[i])
+
+            self.trans_mat[x_idx,y_idx] += 1.0
+            ## print x_idx, y_idx, profile[i-1], profile[i]
+                        
+    def set_trans_mat(self):
+
+        for j in xrange(self.trans_size):
+            total = np.sum(self.trans_mat[:,j])
+            if total == 0: 
+                self.trans_prob_mat[:,j] = 1.0 / float(self.trans_size)
+            else:
+                self.trans_prob_mat[:,j] = self.trans_mat[:,j] / total
+
     
     def discrete_profile(self, plot=False):
-
         
         # Get max force
-        max_force = 0.0        
         for key in self.semantic.keys():
-            if max_force < max(self.semantic[key][1]):
-                max_force = max(self.semantic[key][1])
+            if self.force_max < max(self.semantic[key][1]):
+                self.force_max = max(self.semantic[key][1])
 
-        self.max_force = np.ceil(max_force)
+        self.force_max = np.ceil(self.force_max)
 
         # Discrete Force list
-        discrete_table = np.arange(0.0, self.max_force+0.000001, 0.5)
+        self.force_table = np.arange(0.0, self.force_max+0.000001, self.force_resol)
         
         # Discretize it
         test_dict = {}
         for key in self.semantic.keys():
 
             # Discrete Force profile
-            discrete_force = np.zeros(self.semantic[key][1].shape)
+            force_profile = np.zeros(self.semantic[key][1].shape)
             for i,f in enumerate(self.semantic[key][1]):
-                discrete_force[i] = self.find_nearest(discrete_table,f)
+                force_profile[i], _ = self.find_nearest(self.force_table,f)
 
-            test_dict[key] = discrete_force
+            test_dict[key] = force_profile
 
+        # Reset transition probability matrix wrt force_max
+        self.reset_trans_mat()
+
+            
         # plot
         if plot:
             mpu.set_figure_size(10, 7.0)
@@ -108,9 +156,15 @@ if __name__ == '__main__':
     td        = traj_data()
     test_dict = td.discrete_profile(False)
 
-    kf = cross_validation.KFold(len(test_dict.keys()), n_folds = 2, shuffle=True)
-    for train_index, test_index in kf:
-        print train_index, test_index
+    td.update_trans_mat_all(test_dict)
+
+
+    ## print td.trans_mat
+    ## print td.trans_prob_mat      
+    
+    ## kf = cross_validation.KFold(len(test_dict.keys()), n_folds = 2, shuffle=True)
+    ## for train_index, test_index in kf:
+    ##     print train_index, test_index
 
     
     ## td.sampling_histories()
