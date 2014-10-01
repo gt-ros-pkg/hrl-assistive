@@ -3,8 +3,6 @@ var ClickableElement = function(elementID) {
     this.elementID = elementID;
     this.onClickCBList = [];
     this.getClickPixel = function (e) {
-        //FIXME: This should be made cross-browser. 
-        //Clickable Element doesn't seem to work in firefox.
         var posx = 0;
         var posy = 0;
         if (!e) var e = window.event;

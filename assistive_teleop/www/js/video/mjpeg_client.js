@@ -149,7 +149,8 @@ var CameraModel = function (options) {
         return matrix
     }
 
-    self.subscriber = new self.ros.Topic({
+    self.subscriber = new ROSLIB.Topic({
+        ros: self.ros,     
         name: self.infoTopic,
         messageType: 'sensor_msgs/CameraInfo'});
 
@@ -194,9 +195,6 @@ var CameraModel = function (options) {
 };
 
 var initMjpegCanvas = function (divId) {
-    var divRef = '#' + divId;
-    $(divRef).off('click'); //Disable click detection so clickable_element catches it
-    $(divRef).append("<div id='mjpegDiv'></div>");
     // Build the html for image feed and controls below
 /*    $(divRef).append("<table>"+
                        "<tr><td colspan='4'><div id='mjpegDiv'></div></td></tr>" +
@@ -209,36 +207,37 @@ var initMjpegCanvas = function (divId) {
                      "</table>");
 */
     // Initialize the mjpeg client
+    $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     assistive_teleop.mjpeg = new MjpegClient({ros: assistive_teleop.ros,
                                     divId: 'mjpegDiv',
                                     host: assistive_teleop.ROBOT,
                                     port: 8080,
                                     selectBoxId: 'cameraSelect',
-                                    width: 1280,//640
-                                    height: 1024,// 512
+                                    width: 0.7*$(window).width(),//1280,//640
+                                    height: $(window).height(),// 1024,// 512
                                     quality: 85});
-    // Initialize the camera selection menu
-    assistive_teleop.mjpeg.createCameraMenu('#cameraSelectCell');
-    $('#cameraSelect').on('change', assistive_teleop.mjpeg.onSelectChange.bind(assistive_teleop.mjpeg));
-    // Apply these initial settings
     assistive_teleop.mjpeg.update();    
+    // Initialize the camera selection menu
+//    assistive_teleop.mjpeg.createCameraMenu('#cameraSelectCell');
+//    $('#cameraSelect').on('change', assistive_teleop.mjpeg.onSelectChange.bind(assistive_teleop.mjpeg));
+    // Apply these initial settings
 
     // Make the image resizeable
-    var resizeStopCB = function (event, ui) {
-      assistive_teleop.mjpeg.setParam('height', Math.round(ui.size.height));
-      assistive_teleop.mjpeg.setParam('width', Math.round(ui.size.width));
-      assistive_teleop.mjpeg.update()
-    };
-    $('#'+assistive_teleop.mjpeg.imageId).resizable({aspectRatio:true,
-                                         //alsoResize:'#'+assistive_teleop.mjpeg.imageId,
-                                         autoHide:false,
-                                         ghost:true,
-                                         delay:250,
-                                         handles:'se',
-                                         distance:7,
-                                         maxWidth:1280,
-                                         minWidth:320,
-                                         maxHeight:1024,
-                                         minHeight:240,
-                                         stop:resizeStopCB});
+//    var resizeStopCB = function (event, ui) {
+//      assistive_teleop.mjpeg.setParam('height', Math.round(ui.size.height));
+//      assistive_teleop.mjpeg.setParam('width', Math.round(ui.size.width));
+//      assistive_teleop.mjpeg.update()
+//    };
+//    $('#'+assistive_teleop.mjpeg.imageId).resizable({aspectRatio:true,
+//                                         //alsoResize:'#'+assistive_teleop.mjpeg.imageId,
+//                                         autoHide:false,
+//                                         ghost:true,
+//                                         delay:250,
+//                                         handles:'se',
+//                                         distance:7,
+//                                         maxWidth:1280,
+//                                         minWidth:320,
+//                                         maxHeight:1024,
+//                                         minHeight:240,
+//                                         stop:resizeStopCB});
 };

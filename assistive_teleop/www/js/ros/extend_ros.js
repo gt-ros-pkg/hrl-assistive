@@ -1,11 +1,12 @@
 var extendROSJS = function (ros) {
     ros.msgs = {};
-    ros.getMsgDetailsClient = new ros.Service({
+    ros.getMsgDetailsClient = new ROSLIB.Service({
+        ros: ros,
         name: '/rosapi/message_details',
         serviceType: 'rosapi/MessageDetails'});
 
     ros.getMsgDetails = function (msgType) {
-        var req = new ros.ServiceRequest({type: msgType});
+        var req = new ROSLIB.ServiceRequest({type: msgType});
         ros.getMsgDetailsClient.callService(req, function(res) {
             ros.msgs = ros.msgs || {};
             for (item in res.typedefs){
