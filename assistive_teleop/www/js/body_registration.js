@@ -5,7 +5,7 @@ var BodyRegistration = function (ros) {
     bodyReg.ros = ros;
     bodyReg.headRegCB = function () {
         $('#img_act_select').val('seedReg');
-        $('#confirm_reg').hide();
+        $('#confirm_reg').button({disabled: true});
         assistive_teleop.mjpeg.setCamera(bodyReg.REG_CONFIRM_CAMERA);
         assistive_teleop.log("Click on your check to begin head registration");
     };
@@ -19,7 +19,7 @@ var BodyRegistration = function (ros) {
             console.log('Initialize Head Registration Service Returned Success: '+resp.success);
             $('#img_act_select').val('looking');
             if (resp.success){
-                $("#confirm_reg").show();
+                $("#confirm_reg").button({disabled: false });
             }
         });
     };
@@ -44,7 +44,7 @@ var BodyRegistration = function (ros) {
         if (resp) {
             console.log("Head Registration Confirmed.");
         }});
-    }
+    };
 }
 
 var initBodyRegistration = function (tabDivId) {
@@ -60,9 +60,7 @@ var initBodyRegistration = function (tabDivId) {
 
     $(divRef).css({"position":"relative"});
     $(divRef).append('<table id="' + tabDivId +
-                     '_T0"><tr><td id="' + tabDivId +
-                     '_R0C0"></td><td id="' + tabDivId +
-                     '_R0C1"></td></tr></table>');
+                     '_T0"><tr><td id="' + tabDivId + '_R0C0"></td><td id="' + tabDivId + '_R0C1"></td><td id="' + tabDivId + '_R0C2"></td><td id="' + tabDivId + '_R0C3"></td><td id="' + tabDivId + '_R0C4"></td></tr></table>');
     $(divRef+'_T0').append('<tr><td id="' + tabDivId + '_R1C0"></td></tr>')
 
     // Info dialog box -- Pops up with instructions for using the body registration tab
@@ -101,7 +99,7 @@ var initBodyRegistration = function (tabDivId) {
 
     // Confirm Registration Button - Confirms a correct registration
     $(divRef+'_R0C1').append('<button class="centered" id="confirm_reg"> Confirm </button>');
-    $("#confirm_reg").button().hide();
+    $("#confirm_reg").button({disabled: true });
     $("#confirm_reg").attr("title", "Click to confirm that head registration is correct.");
     $(divRef+'_R0C1').click(assistive_teleop.bodyReg.confirmRegistration);
 
@@ -116,5 +114,6 @@ var initBodyRegistration = function (tabDivId) {
     $("#face_side_form").attr("title", "Select the side of your face the robot is viewing.");
     $("#face_side_form").change(assistive_teleop.bodyReg.setSideParam);
     assistive_teleop.bodyReg.setSideParam();
+
 }
 
