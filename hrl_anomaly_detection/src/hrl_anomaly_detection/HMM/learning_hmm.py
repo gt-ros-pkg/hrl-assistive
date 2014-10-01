@@ -13,18 +13,19 @@ import random
 import hrl_lib.util as ut
 
 import door_open_data as dod
-from ghmm import *
+import ghmm
 
 class learning_hmm():
-    def __init__(self, data_path, start_prob, trans_prob, mean, covars):
+    def __init__(self, data_path):
 
-        self.start_prob = start_prob
-        self.trans_prob = trans_prob
-        self.mean       = mean
-        self.covars     = covars
+        ## self.model = hmm.GaussianHMM(3, "full", self.startprob, self.transmat)
 
-        self.model = hmm.GaussianHMM(3, "full", self.startprob, self.transmat)
+        F = ghmm.Float()  # emission domain of this model
+        
+        # Confusion Matrix NOTE ???
+        ## cmat = np.zeros((4,4))
 
+        
         pass
 
     #----------------------------------------------------------------------        
@@ -64,10 +65,52 @@ class learning_hmm():
 
     #----------------------------------------------------------------------        
     #
-    def fit(self):
+    def fit(self, X):
 
+        # We should think about multivariate Gaussian pdf.
+        
+        mu, sigma = vectors_to_mean_vars(X,self.nState)
+        
+        ## # Initial Probability Matrix       
+        ## self.start_prob = start_prob
+        ## First state must be 1 !!!
+       
+        # Transition probabilities per state        
+        self.trans_prob = trans_prob
+
+        # Emission probability matrix
+        B = np.hstack([mu, sigma])
+
+        
+        m = HMMFromMatrices(sigma, DiscreteDistribution(sigma), A, B, pi)
+        
         pass
 
+    #----------------------------------------------------------------------        
+    #
+    def vectors_to_mean_vars(self, vecs, nState):
+
+        m,n,k = vecs.shape # features, length, samples
+        mu    = np.zeros((m,nState,k))
+        sigma = np.zeros((m,nState,k))
+
+        nDivs = n/float(nState)
+
+        for i in xrange(m):
+            index = 0
+            while (index < nState):
+                m_init = index*nDivs
+                temp_vec = vecs[i][(m_init):(m_init+nDivs),:]
+                
+                mu[i][index] = np.mean(temp_vec, axis=0)
+                sigma[i][index] = np.std(temp_vec, axis=0)
+                index = index+1
+
+        return mu,sigma
+        
+
+
+    
 
 if __name__ == '__main__':
 
@@ -77,21 +120,18 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    mean   = 0.0
-    covars = 1.0
+    nState    = 10.0
     
     ######################################################    
     # Get Raw Data
     td = dod.traj_data()
-
-    test_dict = td.discrete_profile(False)
-    td.update_trans_mat_all(test_dict)
+    data_vecs = td.get_raw_data()
 
     ######################################################    
     # Training and Prediction
-    lh = learning_hmm(data_path,td.start_prob_vec, td.trans_prob_mat, mean, covars)
-
-    lh.fit()
+    lh = learning_hmm(data_path, nState)
+    
+    lh.fit(data_vecs)
 
     
     

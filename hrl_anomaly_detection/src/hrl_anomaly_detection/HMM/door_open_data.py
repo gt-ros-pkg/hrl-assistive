@@ -40,6 +40,9 @@ class traj_data():
         self.trans_mat = None
         self.trans_prob_mat = None
         self.start_prob_vec = None
+
+        self.means = None
+        self.vars  = None
         
         pass
 
@@ -133,6 +136,29 @@ class traj_data():
         return test_dict
 
         
+    ## def feature_to_mu_sigma(fvec, nState): 
+
+    ##     index = 0
+    ##     m,n = np.shape(fvec)
+    ##     #print m,n
+    ##     mu = np.matrix(np.zeros((nState,1)))
+    ##     sigma = np.matrix(np.zeros((nState,1)))
+    ##     DIVS = m/float(nState)
+
+    ##     while (index < nState):
+    ##         m_init = index*DIVS
+    ##         temp_fvec = fvec[(m_init):(m_init+DIVS),0:]
+    ##         #if index == 1:
+    ##             #print temp_fvec
+    ##         mu[index] = scp.mean(temp_fvec)
+    ##         sigma[index] = scp.std(temp_fvec)
+    ##         index = index+1
+
+    ##     return mu,sigma
+
+
+
+        
     
     def test(self):
 
@@ -141,8 +167,6 @@ class traj_data():
         print max(self.semantic['kitchen_cabinet_pr2'][1])
 
         # With respect to all semantic data, convert those into discrete action-observation
-
-        
         
         return
 
