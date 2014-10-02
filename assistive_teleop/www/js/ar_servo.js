@@ -21,13 +21,14 @@ var ArServo = function (ros) {
     var msg = new arServo.ros.composeMsg('hrl_pr2_ar_servo/ARServoGoalData');
     console.log(msg);
     msg.marker_topic = arServo.TEST_TAG_TOPIC; 
-    msg.base_pose_goal.pose.position.x = 0,
-    msg.base_pose_goal.pose.position.y = 0,
-    msg.base_pose_goal.pose.position.z = 1,
-    msg.base_pose_goal.pose.orientation.x = 0,
-    msg.base_pose_goal.pose.orientation.y = 1,
-    msg.base_pose_goal.pose.orientation.z = 0,
-    msg.base_pose_goal.pose.orientation.w = 0,
+    msg.tag_goal_pose.header.frame_id = "/base_link",
+    msg.tag_goal_pose.pose.position.x = 1;
+    msg.tag_goal_pose.pose.position.y = 0;
+    msg.tag_goal_pose.pose.position.z = 0.6;
+    msg.tag_goal_pose.pose.orientation.x = -0.5;// 0.70710678,
+    msg.tag_goal_pose.pose.orientation.y = 0.5;//.70710678,
+    msg.tag_goal_pose.pose.orientation.z = 0.5;//0.70710678,
+    msg.tag_goal_pose.pose.orientation.w = -0.5//70710678,
     arServo.testPub.publish(msg);
   }
 
