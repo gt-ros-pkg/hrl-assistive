@@ -12,7 +12,6 @@ var RYDS = function (ros) {
     ryds.BOWL_LOCATION_TOPIC = "RYDS_CupLocation";
     ryds.BOWL_CONFIRMATION_TOPIC = "RYDS_BowlConfirmation";
     ryds.CONFIRM_TOPIC="RYDS_Confirm";
-    ryds.finalPose = 'hey there'; //place holder for actual pose
 
     //RYDS Publishers
     ryds.userInputPub = new ryds.ros.Topic({
