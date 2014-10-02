@@ -74,8 +74,21 @@ var RYDS = function (ros) {
     
     //Callback for Bowl System
     ryds.BowlLocationSub.subscribe(function(msg) {
-       ryds.finalPose = msg.data;
-       $("#confirm_bowl_reg").button({ disabled: false });
+       ryds.finalPose = new ryds.ros.Message({
+          pose: {
+            position: {
+              x: msg.pose.position.x,
+              y: msg.pose.position.y,
+              z: msg.pose.position.z
+            },
+            orientation: {
+              x: msg.pose.orientation.x,
+              y: msg.pose.orientation.y,
+              z: msg.pose.orientation.z,
+            }
+          }
+       });
+       //$("#confirm_bowl_reg").button({ disabled: false });
        assistive_teleop.log("Press 'Confirm Registration' to complete registration process");
        ryds.BowlLocationSub.unsubscribe();
     });
@@ -167,7 +180,7 @@ var initRYDSTab = function (tabDivId) {
     //Confirm Bowl Registration Button
     //Bowl Confirmation Button
     $(divRef+'_R0C1').append('<button class="centered" id="confirm_bowl_reg"> Confirm Registration</button>');
-    $("#confirm_bowl_reg").button({disabled: true });
+    $("#confirm_bowl_reg").button({disabled: false}); //true });
     $("#confirm_bowl_reg").attr("title", "Click to confirm that bowl registration is correct.");
     $(divRef+'_R0C1').click(assistive_teleop.ryds.confirmBowlRegistration);
     
