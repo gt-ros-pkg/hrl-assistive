@@ -122,14 +122,11 @@ class ServoingManager(object):
         bm.head = self.head_pose
         bm.goal = self.goal_pose
         try:
-            print "pre base selection"
             resp = self.base_selection_client.call(bm)
-            print "post base selection"
         except rospy.ServiceException as se:
             rospy.logerr(se)
             self.feedback_pub.publish("Failed to find good base position. Please try again.")
             return None
-        print "post post base selction"
         return resp.base_goal
 
     def get_head_pose(self, head_frame="head_frame"):
