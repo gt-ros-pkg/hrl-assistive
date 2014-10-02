@@ -255,7 +255,7 @@ def create_mvpa_dataset(proj_mat, mech_vec_list, mech_nm_list):
 
         if nm not in rd.tags_dict:
             print nm + ' is not in tags_dict'
-            raw_input('Hit ENTER to continue')
+            #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
         for v in v_mat.T:
@@ -444,7 +444,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict: #name filtering
             print nm + ' is not in tags_dict'
-            raw_input('Hit ENTER to continue')
+            #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
         if 'recessed' in nm:

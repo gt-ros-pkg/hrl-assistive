@@ -29,7 +29,17 @@ def get_all_blocked_detection():
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
     mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
-    print name_list
+    data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
+                                    mech_nm_list, append_robot = True)    
+
+    
+    ## print np.array([np.array(mech_vec_list).T]).shape
+    ## print mech_vec_list[0].shape
+    ## print mech_vec_list[2].shape
+    ## print mech_vec_list[3].shape
+    ## print np.array([data.T]).shape
+    
+    return np.array([data.T])
 
     
     

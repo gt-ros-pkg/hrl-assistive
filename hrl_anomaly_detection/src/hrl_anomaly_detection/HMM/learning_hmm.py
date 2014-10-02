@@ -12,14 +12,16 @@ import random
 # Util
 import hrl_lib.util as ut
 
-import door_open_data as dod
+## import door_open_data as dod
 import ghmm
+import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 
 class learning_hmm():
-    def __init__(self, data_path):
+    def __init__(self, data_path, nState):
 
         ## self.model = hmm.GaussianHMM(3, "full", self.startprob, self.transmat)
 
+        self.nState = nState
         F = ghmm.Float()  # emission domain of this model
         
         # Confusion Matrix NOTE ???
@@ -67,9 +69,10 @@ class learning_hmm():
     #
     def fit(self, X):
 
-        # We should think about multivariate Gaussian pdf.
-        
-        mu, sigma = vectors_to_mean_vars(X,self.nState)
+        # We should think about multivariate Gaussian pdf.        
+        mu, sigma = self.vectors_to_mean_vars(X,self.nState)
+
+        print mu, sigma
         
         ## # Initial Probability Matrix       
         ## self.start_prob = start_prob
@@ -91,19 +94,24 @@ class learning_hmm():
     def vectors_to_mean_vars(self, vecs, nState):
 
         m,n,k = vecs.shape # features, length, samples
-        mu    = np.zeros((m,nState,k))
-        sigma = np.zeros((m,nState,k))
+        mu    = np.zeros((m,nState))
+        sigma = np.zeros((m,nState))
 
-        nDivs = n/float(nState)
+        nDivs = int(n/float(nState))
 
         for i in xrange(m):
             index = 0
             while (index < nState):
                 m_init = index*nDivs
-                temp_vec = vecs[i][(m_init):(m_init+nDivs),:]
-                
-                mu[i][index] = np.mean(temp_vec, axis=0)
-                sigma[i][index] = np.std(temp_vec, axis=0)
+                temp_vec = vecs[i,(m_init):(m_init+nDivs)]
+
+                ## print temp_vec.shape, temp_vec.flatten().shape
+                ## print i
+                ## print vecs[0].shape
+                ## print temp_vec[0]
+                ## print np.mean(temp_vec)
+                mu[i][index] = np.mean(temp_vec)
+                sigma[i][index] = np.std(temp_vec)
                 index = index+1
 
         return mu,sigma
@@ -120,12 +128,11 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 10.0
+    nState    = 36
     
     ######################################################    
     # Get Raw Data
-    td = dod.traj_data()
-    data_vecs = td.get_raw_data()
+    data_vecs = mad.get_all_blocked_detection()
 
     ######################################################    
     # Training and Prediction
