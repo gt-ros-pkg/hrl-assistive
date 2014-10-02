@@ -51,7 +51,8 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
             continue
         len_list.append(l)
         d_list.append(d)
-    min_max_config = np.min(len_list) # necessary?
+        
+    ## min_max_config = np.min(len_list) # necessary?
     min_max_config = reject_len
 
     mech_vec_list = []

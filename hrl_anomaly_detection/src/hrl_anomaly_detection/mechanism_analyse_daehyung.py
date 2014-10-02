@@ -18,16 +18,21 @@ from mvpa2.generators.partition import NFoldPartitioner
 from mvpa2.generators import splitters
 
 
-import mechanism_analyse_RAM as mar
+import advait.mechanism_analyse_RAM as mar
 
 
 def get_all_blocked_detection():
     root_path = os.environ['HRLBASEPATH']+'/'
     
-    pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') #+ glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+    pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
 
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+    mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
+    print name_list
+
+    
+    
 
 # Get mean force profile by chunks
 def blocked_detection(mech_vec_list, mech_nm_list):
@@ -151,7 +156,8 @@ if __name__ == '__main__':
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
     mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
-    blocked_detection(mech_vec_list, mech_nm_list)
+    get_all_blocked_detection()
+    ## blocked_detection(mech_vec_list, mech_nm_list)
     #blocked_detection_n_equals_1(mech_vec_list, mech_nm_list)
     
     ## get_discrete_test_from_mean_dict('non_robot_mean_dict.pkl')
