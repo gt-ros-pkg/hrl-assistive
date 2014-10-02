@@ -21,6 +21,14 @@ from mvpa2.generators import splitters
 import mechanism_analyse_RAM as mar
 
 
+def get_all_blocked_detection():
+    root_path = os.environ['HRLBASEPATH']+'/'
+    
+    pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') #+ glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+
+    r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+
+
 # Get mean force profile by chunks
 def blocked_detection(mech_vec_list, mech_nm_list):
     
