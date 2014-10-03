@@ -15,8 +15,13 @@ var initMarkerDisplay = function (divID) {
         angularThres : 0.01,
         transThres : 0.01,
         rate : 10.0,
-        fixedFrame : '/my_frame'
+        fixedFrame : '/base_link'
     });
+
+    var updateCamera = function(transform) {
+        
+    }
+    assistive_teleop.tfClient.subscribe('head_mount_kinect_rgb_optical_frame', updateCamera);
 
     // Setup the marker client.
     assistive_teleop.markerClient = new ROS3D.MarkerClient({
