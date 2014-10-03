@@ -213,7 +213,29 @@ var initClickableActions = function () {
     }
     //Add callback to list of callbacks for clickable element
     assistive_teleop.clickableCanvas.onClickCBList.push(seedRegCB);
-    
+
+    //Add callback for Bowl Registration
+    $('#img_act_select').append('<option id="BowlReg" value="BowlReg">Register Bowl</option>');
+    var LookBowlCB = function (pixel) { //Callback for registering the head
+        if ($('#img_act_select :selected').val() ===  'BowlReg') {
+            var camera = $('#'+assistive_teleop.mjpeg.selectBoxId+" :selected").val();
+            cw = assistive_teleop.mjpeg.cameraData[camera].width;
+            ch = assistive_teleop.mjpeg.cameraData[camera].height;
+            cw_border = Math.round(cw*0.20);
+            ch_border = Math.round(ch*0.20);
+            if (pixel[0] < cw_border || pixel[0] > (cw-cw_border) ||
+                pixel[1] < ch_border || pixel[1] > (ch-ch_border)) {
+              assistive_teleop.log("Please center the bowl in the camera before registering the bowl");
+              $('#img_act_select').val('looking');
+            } else {
+              assistive_teleop.ryds.RegisterBowl(pixel[0], pixel[1]);
+              log("Sending bowl registration command.");
+            }
+        }
+    }
+    //Add callback to list of callbacks for clickable element
+    assistive_teleop.clickableCanvas.onClickCBList.push(LookBowlCB);
+
     $('#img_act_select').append('<option id="rArmCamLook" value="rArmCamLook">Look: Right Arm Camera</option>')
     var rArmCamLookCB = function (pixel) { //Callback for looking at point with right arm camera
         if ($('#img_act_select :selected').val() === 'rArmCamLook') {

@@ -13,6 +13,22 @@ var RYDS = function (ros) {
     ryds.BOWL_CONFIRMATION_TOPIC = "RYDS_BowlConfirmation";
     ryds.CONFIRM_TOPIC="RYDS_Confirm";
 
+    //Bowl Registration Service     
+    ryds.bowlRegServiceClient = new ryds.ros.Service({
+        name:'/finding_bowl_service',
+        serviceType:'pixel_2_3d'
+    });
+
+    ryds.RegisterBowl = function (u,v) {
+        bodyReg.bowlRegServiceClient.callService({u:u,v:v}, function (resp) {
+            console.log('Initialize Bowl Registration Service Returned Success: '+resp.success);
+            $('#img_act_select').val('looking');
+            if (resp.success){
+                $("#confirm_reg").button({disabled: false });
+            }
+        });
+    };
+
     //RYDS Publishers
     ryds.userInputPub = new ryds.ros.Topic({
         name: ryds.USER_INPUT_TOPIC,
@@ -103,7 +119,7 @@ var RYDS = function (ros) {
         var msg = new ryds.ros.Message({
             data : "RYDS_FindingCup"
         });
-        $('#img_act_select').val('seedReg');
+        $('#img_act_select').val('BowlReg');
         ryds.bowlRegistrationPub.publish(msg);
         assistive_teleop.log("Click on the bowl to begin bowl registration");
         console.log('Publishing start message to Bowl registration system');
