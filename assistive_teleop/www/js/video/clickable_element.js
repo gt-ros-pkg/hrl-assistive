@@ -216,7 +216,7 @@ var initClickableActions = function () {
 
     //Add callback for Bowl Registration
     $('#img_act_select').append('<option id="BowlReg" value="BowlReg">Register Bowl</option>');
-    var LookBowlCB = function (pixel) { //Callback for registering the head
+    var LookBowlCB = function (pixel) { //Callback for registering the bowl
         if ($('#img_act_select :selected').val() ===  'BowlReg') {
             var camera = $('#'+assistive_teleop.mjpeg.selectBoxId+" :selected").val();
             cw = assistive_teleop.mjpeg.cameraData[camera].width;
@@ -228,8 +228,8 @@ var initClickableActions = function () {
               assistive_teleop.log("Please center the bowl in the camera before registering the bowl");
               $('#img_act_select').val('looking');
             } else {
-              assistive_teleop.ryds.RegisterBowl(pixel[0], pixel[1]);
-              log("Sending bowl registration command.");
+            assistive_teleop.ryds.RegisterBowl(pixel[0], pixel[1]);
+            log("Sending bowl registration command.");
             }
         }
     }

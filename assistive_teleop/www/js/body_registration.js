@@ -17,6 +17,7 @@ var BodyRegistration = function (ros) {
     bodyReg.registerHead = function (u,v) {
         bodyReg.headRegServiceClient.callService({u:u,v:v}, function (resp) {
             console.log('Initialize Head Registration Service Returned Success: '+resp.success);
+            console.log(resp);
             $('#img_act_select').val('looking');
             if (resp.success){
                 $("#confirm_reg").button({disabled: false });
