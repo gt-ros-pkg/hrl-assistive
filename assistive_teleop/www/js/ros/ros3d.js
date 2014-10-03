@@ -2752,7 +2752,8 @@ ROS3D.Viewer = function(options) {
   this.scene = new THREE.Scene();
 
   // create the global camera
-  this.camera = new THREE.PerspectiveCamera(40, width / height, 0.01, 1000);
+  //this.camera = new THREE.PerspectiveCamera(40, width / height, 0.01, 1000);
+  this.camera = new THREE.PerspectiveCamera(43, 1.3333, 0.02, 30);
   this.camera.position.x = cameraPosition.x;
   this.camera.position.y = cameraPosition.y;
   this.camera.position.z = cameraPosition.z;
