@@ -12,7 +12,7 @@ var extendROSJS = function (ros) {
             for (item in res.typedefs){
                 if (ros.msgs[res.typedefs[item].type] === undefined) {
                     console.log('Imported '+
-                        res.typedefs[item].type.toString()+'Msg')
+                        res.typedefs[item].type.toString()+' Msg')
                     ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
                 }
             }

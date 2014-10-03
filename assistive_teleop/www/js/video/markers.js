@@ -19,7 +19,12 @@ var initMarkerDisplay = function (divID) {
     });
 
     var updateCamera = function(transform) {
-        
+        console.log("Got transform for kinect");
+        console.log(transform);
+        assistive_teleop.viewer.camera.position.set(transform.translation.x,
+                                                    transform.translation.y,
+                                                    transform.translation.z);
+        assistive_teleop.viewer.camera.lookAt(1,1,1);
     }
     assistive_teleop.tfClient.subscribe('head_mount_kinect_rgb_optical_frame', updateCamera);
 
