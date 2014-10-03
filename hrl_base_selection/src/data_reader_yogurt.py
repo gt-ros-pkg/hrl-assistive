@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import roslib
+roslib.load_manifest('hrl_base_selection')
+roslib.load_manifest('hrl_haptic_mpc')
+roslib.load_manifest('hrl_lib')
+import numpy as np
+import math as m
+import time
+import roslib
+import rospy
+from helper_functions import createBMatrix, Bmat_to_pos_quat
+from data_reader import DataReader
+
+
+class DataReader_Yogurt(object):
+    def __init__(self, visualize=False, subject='any_subject', task='yogurt', model='chair', tf_listener=None):
+
+        self.model = model
+        self.task = task
+        self.subject = subject
+
+        baselink_B_liftlink = createBMatrix([-0.05, 0.0, 0.751177], [0, 0, 0, 1])
+        goals = [[0.5309877259429142, 0.4976163448816489, 0.16719537682372823,
+                  0.7765742993649133, -0.37100605554316285, -0.27784851903166524, 0.42671660945891],
+                 [0.5098543997629579, 0.8806008953235813, -0.0974591835731535,
+                  0.45253993336907683, 0.533997128372586, -0.17283744712356874, 0.6929515801756649],
+                 [0.2741387011303321, 0.05522571699560719, -0.011919598309888757,
+                 -0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394]]
+        liftlink_B_goal = createBMatrix([0.5309877259429142, 0.4976163448816489, 0.16719537682372823],
+                                        [0.7765742993649133, -0.37100605554316285, -0.27784851903166524,
+                                         0.42671660945891])
+        data = np.array([baselink_B_liftlink*createBMatrix(goals[0][0:3], goals[0][3:]),  # In reference to base link
+                         baselink_B_liftlink*createBMatrix(goals[1][0:3], goals[1][3:]),  # In reference to base link
+                         createBMatrix(goals[2][0:3], goals[2][3:])])  # This one is in reference to the head
+
+        num = np.ones([3, 1])
+        reference_options = ['head', 'base_link']
+        reference = np.array([[1], [1], [0]])
+
+
+
+        print 'Starting to convert data!'
+        runData = DataReader(subject=self.subject, model=self.model, task=self.task)
+
+        runData.receive_input_data(data, num, reference_options, reference)
+        runData.generate_output_goals()
+        runData.generate_score(viz_rviz=True, visualize=False, plot=False)
+
+if __name__ == "__main__":
+    model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
+    task = 'yogurt'
+    subject = 'any_subject'
+    rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
+    start_time = time.time()
+    yogurt_data_reader = DataReader_Yogurt(model=model, task=task, subject=subject)
+    print 'Done! Time to generate all scores: %fs' % (time.time() - start_time)
+    rospy.spin()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

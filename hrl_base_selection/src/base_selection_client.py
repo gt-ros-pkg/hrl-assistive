@@ -11,6 +11,7 @@ import hrl_lib.transforms as tr
 import tf
 import rospy
 from visualization_msgs.msg import Marker
+import time
 from helper_functions import createBMatrix
 
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
@@ -91,18 +92,27 @@ def select_base_client():
     goal_pub = rospy.Publisher("/arm_reacher/goal_pose", PoseStamped, latch=True)
     goal_pub.publish(psm_goal)
 
-    task = 'shaving'
+    # task = 'shaving'
+    task = 'yogurt'
+    model = 'chair'
 
+    start_time = time.time()
     rospy.wait_for_service('select_base_position')
     try:
         #select_base_position = rospy.ServiceProxy('select_base_position', BaseMove)
         #response = select_base_position(psm_goal, psm_head)
         select_base_position = rospy.ServiceProxy('select_base_position', BaseMove_multi)
-        response = select_base_position(task, psm_head)
+        response = select_base_position(task, model)
         print 'response is: \n', response
-        return response.base_goal#, response.ik_solution
+        print 'Total time for service to return the response was: %fs' % (time.time()-start_time)
+        return response.base_goal, response.configuration_goal#, response.ik_solution
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+
+def publish_to_autobed(config):
+    bed_pub = rospy.Publisher("autobed_cmd", float64[], latch=True)
+    bed_pub.publish(config[0:2])
+
 
 def usage():
     return "%s [current_loc goal head]"%sys.argv[0]
@@ -111,7 +121,7 @@ def usage():
 
 if __name__ == "__main__":
     rospy.init_node('client_node')
-    vis_pub = rospy.Publisher("base_service_wc_model",Marker, latch=True)
+    vis_pub = rospy.Publisher("base_service_wc_model", Marker, latch=True)
     #if len(sys.argv) == 3:
     #    current_loc = PoseStamped(sys.argv[0])
     #    goal = PoseStamped(sys.argv[1])
@@ -120,7 +130,9 @@ if __name__ == "__main__":
     #    print usage()
     #    sys.exit(1)
     print "Requesting Base Goal Position"
-    goal = select_base_client()
+    goal, config = select_base_client()
+    publish_to_autobed(config)
     rospy.spin()
     print "Base Goal Position is:\n", goal
+    print "Config Goal is:\n", config
     #print "ik solution is: \n", ik
