@@ -47,9 +47,12 @@ class ServoingManager(object):
     def servo_fdbk_cb(self, msg):
         if not msg.data == 5:
             return
-        self.reach_goal_pub.publish(self.goal_pose)
-        self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
-        rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
+        #self.reach_goal_pub.publish(self.goal_pose)
+        #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
+        #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
+        msg = "Servoing Succeeded. Please proceed by bringing up the arms."
+        self.feedback_pub.publish(msg)
+        rospy.loginfo(msg)
 
     def ui_cb(self, msg):
         self.head_pose = self.get_head_pose()

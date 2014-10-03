@@ -13,10 +13,11 @@ import matplotlib.pyplot as plt
 ## import pkl_converter as pk
 import common as co
 
+# Plot all opening and closing data
 def plot_all_angle_force(dirName, human=True):
     
     # Plot results
-    plt.figure()
+    fig = plt.figure()
 
     ax = plt.subplot(111, aspect='equal')
 
@@ -33,6 +34,8 @@ def plot_all_angle_force(dirName, human=True):
             except:
                 continue            
 
+            print data.keys()
+
             if human:
                 if strFile.find('close')>=0:
                     plt.plot(data['mechanism_x']*180.0/np.pi, data['force_tan_list'], "r-")
@@ -41,14 +44,15 @@ def plot_all_angle_force(dirName, human=True):
             else:
                 print data.keys()                
                 plt.plot(data['config_list']*180.0/np.pi, data['ftan_list'], "b-")
-                   
+
+    fig.savefig('/home/dpark/Dropbox/HRL/mech.pdf', format='pdf')                    
     plt.show()
 
 # For single file
 def plot_angle_force(fileName, x_name=None, y_name=None,  human=True):
     
     # Plot results
-    plt.figure()
+    fig = plt.figure()
 
     ax = plt.subplot(111)
 
@@ -73,14 +77,14 @@ def plot_angle_force(fileName, x_name=None, y_name=None,  human=True):
                 ax.set_xlim(0,35)
             else:
                 ax.set_xlim(np.min(x_data),np.max(x_data))
-                            
+
             plt.plot(x_data,data[y_name], "b-")
             ax.set_xlabel(x_name)
 
         ax.set_ylim((min(data[y_name]),max(data[y_name])))
         ax.set_ylabel(y_name)
             
-                   
+    fig.savefig('/home/dpark/Dropbox/HRL/mech.pdf', format='pdf')                       
     plt.show()
 
 
@@ -88,8 +92,8 @@ def plot_angle_force(fileName, x_name=None, y_name=None,  human=True):
 if __name__ == '__main__':
 
     ## Human openning
-    #dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/aggregated_pkls_April9_8pm/tests/HSI_kitchen_cabinet_right_charlie'
-    ## plot_all_angle_force(dirName, False)
+    ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/aggregated_pkls_April9_8pm/tests/HSI_kitchen_cabinet_right_charlie'
+    ## plot_all_angle_force(dirName, True)
 
     ## Robot openning with anormal situation
     ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec12_005340.pkl'    
@@ -98,16 +102,25 @@ if __name__ == '__main__':
     ## dirName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/perfect_perception/kitchen_cabinet_collision_box_cody_new.pkl'
     ## plot_angle_force(dirName, False)
 
-    dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    dirName = fileName='/home/dpark/svn/robot1/src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/ikea_cabinet_known_rad_pr2_new.pkl'
+
+    dirName='/home/dpark/svn/robot1/src/projects/modeling_forces/handheld_hook/RAM_db'
+    plot_all_angle_force(dirName, True)
+
+
+
+
 
     
-    import arm_trajectories as at
-    data = ut.load_pickle(fileName)   
+    ## dirName = fileName='/home/dpark/svn/robot1_data/usr/advait/ram_www/data_from_robot_trials/robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    ## dirName = fileName='/home/dpark/svn/robot1/src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/ikea_cabinet_known_rad_pr2_new.pkl'
 
-    print data.keys()
     
-    ## plot_angle_force(dirName, x_name="online_ang", y_name='online_ftan' ,human=False)
-    ## plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)
-    plot_angle_force(dirName, x_name="config", y_name='vec_list' ,human=False)
+    ## import arm_trajectories as at
+    ## data = ut.load_pickle(fileName)   
+
+    ## print data.keys()
+    
+    ## ## plot_angle_force(dirName, x_name="online_ang", y_name='online_ftan' ,human=False)
+    ## ## plot_angle_force(dirName, x_name="config_list", y_name='ftan_list' ,human=False)
+    ## plot_angle_force(dirName, x_name="config", y_name='vec_list' ,human=False)
     

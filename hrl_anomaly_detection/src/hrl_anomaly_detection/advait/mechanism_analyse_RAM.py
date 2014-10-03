@@ -51,7 +51,8 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
             continue
         len_list.append(l)
         d_list.append(d)
-    min_max_config = np.min(len_list) # necessary?
+        
+    ## min_max_config = np.min(len_list) # necessary?
     min_max_config = reject_len
 
     mech_vec_list = []
@@ -254,7 +255,7 @@ def create_mvpa_dataset(proj_mat, mech_vec_list, mech_nm_list):
 
         if nm not in rd.tags_dict:
             print nm + ' is not in tags_dict'
-            raw_input('Hit ENTER to continue')
+            #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
         for v in v_mat.T:
@@ -443,7 +444,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict: #name filtering
             print nm + ' is not in tags_dict'
-            raw_input('Hit ENTER to continue')
+            #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
         if 'recessed' in nm:
@@ -846,12 +847,13 @@ def compute_Ms(data, semantic_class, plot):
 
         ax2 = ax1.twinx()
         c2 = 'b'
-        ax2.errorbar(range(len(mn)), std_mn, std_std, color=c2)
+        ax2.errorbar(range(len(mn)), mn_std, var_std, color=c2)
         ax2.set_ylabel('std', color=c2)
         for tl in ax2.get_yticklabels():
             tl.set_color(c2)
         pp.legend()
         pp.title(semantic_class)
+        fig.savefig('/home/dpark/Dropbox/HRL/mech.pdf', format='pdf')
 
     #return mn_mn, std_mn, mn_std, std_std
     return mn_mn, var_mn, mn_std, var_std

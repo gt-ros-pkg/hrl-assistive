@@ -7,6 +7,22 @@ var SkinUtilities = function(ros) {
     skutil.taxelArrayTopics = [];
     skutil.ros.getMsgDetails('hrl_haptic_manipulation_in_clutter_msgs/HapticMpcWeights');
 
+    skutil.enableSkinSrvClient = new skutil.ros.Service({
+        name: '/haptic_mpc/enable_mpc',
+        serviceType: 'hrl_haptic_manipulation_in_clutter_srvs/EnableHapticMPC'});
+
+    skutil.enableSkinSrvCB = function (resp) {
+        assistive_teleop.log("Haptic MPC is currently "+resp.current_state);
+    }
+
+    skutil.enableSkin = function () {
+        skutil.enableSkinSrvClient.callService({"new_state":"enabled"}, skutil.enableSkinSrvCB);
+    }
+
+    skutil.disableSkin = function () {
+        skutil.enableSkinSrvClient.callService({"new_state":"disabled"}, skutil.enableSkinSrvCB);
+    }
+
     //Util for re-zeroing skin
     skutil.zero_pub_topics = [
     '/pr2_fabric_gripper_sensor/zero_sensor',
@@ -52,7 +68,7 @@ var SkinUtilities = function(ros) {
     skutil.mpcWeightsPub.advertise();
 
     skutil.setMpcWeights = function (pos_weight, orient_weight) {
-        var msg = new window.ros.composeMsg('hrl_haptic_manipulation_in_clutter_msgs/HapticMpcWeights');
+        var msg = new skutil.ros.composeMsg('hrl_haptic_manipulation_in_clutter_msgs/HapticMpcWeights');
         msg.pos_weight = pos_weight;
         msg.orient_weight = orient_weight;
         skutil.mpcWeightsPub.publish(msg);
@@ -102,13 +118,13 @@ var initSkinUtils = function () {
       '<td><input type="checkbox" id="skinUsePPS">Using PPS Sensors</input></td>'+
       '<td><button id="rezeroSkinButton">Rezero Skin</input></td>');
 
-    window.skinUtil = new SkinUtilities(window.ros);
+    assistive_teleop.skinUtil = new SkinUtilities(assistive_teleop.ros);
     $('#skinUseOrientation').change(function () {
         if (this.checked) {
-            window.skinUtil.setMpcWeights(5.0, 4.0);
+            assistive_teleop.skinUtil.setMpcWeights(5.0, 4.0);
             log('Turning On Orientation')
         } else {
-            window.skinUtil.setMpcWeights(5.0, 0.0);
+            assistive_teleop.skinUtil.setMpcWeights(5.0, 0.0);
             log('Turning Off Orientation');
         };
     })
@@ -122,20 +138,20 @@ var initSkinUtils = function () {
             console.log('Received: NOT using orientation')
         };
     }
-    window.skinUtil.mpcWeightsSubCBList.push(updateOrientationCheckbox);
+    assistive_teleop.skinUtil.mpcWeightsSubCBList.push(updateOrientationCheckbox);
         
     $('#rezeroSkinButton').click(function () {
-        window.skinUtil.rezeroSkin();        
+        assistive_teleop.skinUtil.rezeroSkin();        
     });
     
     $('#skinUsePPS').change(function () {
         if (this.checked) {
-            window.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
-            window.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');
+            assistive_teleop.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+            assistive_teleop.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');
             log('Turning on PPS Sensors');
         } else {
-            window.skinUtil.removeTaxelArray('/pr2_pps_left_sensor/taxels/forces');
-            window.skinUtil.removeTaxelArray('/pr2_pps_right_sensor/taxels/forces');
+            assistive_teleop.skinUtil.removeTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+            assistive_teleop.skinUtil.removeTaxelArray('/pr2_pps_right_sensor/taxels/forces');
             log('Turning off PPS Sensors');
         };
     });
@@ -157,5 +173,5 @@ var initSkinUtils = function () {
             $('#skinUsePPS').attr('checked', false);
         };
     };
-    window.skinUtil.taxelArrayListSubCBList.push(updateUsePPSCheckbox);
+    assistive_teleop.skinUtil.taxelArrayListSubCBList.push(updateUsePPSCheckbox);
 }
