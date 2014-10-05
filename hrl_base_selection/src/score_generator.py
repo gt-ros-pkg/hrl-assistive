@@ -35,26 +35,40 @@ roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle
 from random import gauss
 #import hrl_haptic_mpc.haptic_mpc_util
-from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
+#from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
 import hrl_lib.util as ut
 
 class ScoreGenerator(object):
 
-    def __init__(self,visualize=False,targets='all_goals',goals = None,model='autobed',tf_listener = None):
-        if tf_listener == None:
+    def __init__(self, visualize=False, targets='all_goals', reference_names=['head'], goals=None, model='autobed',
+                 tf_listener=None):
+        if tf_listener is None:
             self.tf_listener = tf.TransformListener()
         else:
             self.tf_listener=tf_listener
-        self.visualize=visualize
-        self.model=model
+        self.visualize = visualize
+        self.model = model
         self.goals = goals
+        self.pr2_B_reference = []
+        self.reference_names = reference_names
+
+        self.reachable = {}
+        self.manipulable = {}
+        self.scores = {}
+        self.score_length = {}
+         
+        # The reference frame for the pr2 base link
+        pr2_B_base_link = np.matrix([[       1.,        0.,   0.,         0.0],
+                                       [       0.,        1.,   0.,         0.0],
+                                       [       0.,        0.,   1.,         0.0],
+                                       [       0.,        0.,   0.,         1.0]])
+
         # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
         if self.model == 'chair':
-            pr2_B_head =   np.matrix([[       1.,        0.,   0.,         0.0],
-                                      [       0.,        1.,   0.,         0.0],
-                                      [       0.,        0.,   1.,     1.33626],
-                                      [       0.,        0.,   0.,         1.0]])
-
+            pr2_B_head = np.matrix([[       1.,        0.,   0.,         0.0],
+                                    [       0.,        1.,   0.,         0.0],
+                                    [       0.,        0.,   1.,     1.33626],
+                                    [       0.,        0.,   0.,         1.0]])
         if self.model == 'bed':
             an = -m.pi/4
             pr2_B_head = np.matrix([[ m.cos(an),  0., m.sin(an),     0.], #.45 #.438
@@ -62,29 +76,36 @@ class ScoreGenerator(object):
                                     [-m.sin(an),  0., m.cos(an), 1.1546],
                                     [        0.,  0.,        0.,     1.]])
         if self.model == 'autobed':
-            an = -m.pi/4
-
             pr2_B_head = np.matrix([[   2.59156317e-01,   2.12275759e-04,  -9.65835368e-01,              0.], #.45 #.438
                                     [  -2.12275759e-04,   9.99999964e-01,   1.62826039e-04,              0.], #0.34 #.42
                                     [   9.65835368e-01,   1.62826039e-04,   2.59156353e-01,  6.85000000e-01],
                                     [        0.,  0.,        0.,     1.]])
+        for item in self.reference_names:
+            if item == 'head':
+                self.pr2_B_reference.append(pr2_B_head)
+            elif item == 'base_link':
+                self.pr2_B_reference.append(pr2_B_base_link)
         # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
-        self.pr2_B_headfloor =   np.matrix([[       1.,        0.,   0.,         0.],
-                                            [       0.,        1.,   0.,         0.],
-                                            [       0.,        0.,   1.,         0.],
-                                            [       0.,        0.,   0.,         1.]])
+        self.pr2_B_headfloor = np.matrix([[       1.,        0.,   0.,         0.],
+                                          [       0.,        1.,   0.,         0.],
+                                          [       0.,        0.,   1.,         0.],
+                                          [       0.,        0.,   0.,         1.]])
+
         # Gripper coordinate system has z in direction of the gripper, x is the axis of the gripper opening and closing.
-        # This transform corrects that to make x in the direction of the gripper, z the axis of the gripper open. Centered at the very tip of the gripper.
-        self.goal_B_gripper =  np.matrix([[  0.,  0.,   1.,   0.0],
-                                          [  0.,  1.,   0.,   0.0],
-                                          [ -1.,  0.,   0.,   0.0],
-                                          [  0.,  0.,   0.,   1.0]])
+        # This transform corrects that to make x in the direction of the gripper, z the axis of the gripper open.
+        # Centered at the very tip of the gripper.
+        self.goal_B_gripper = np.matrix([[0.,  0.,   1.,   0.0],
+                                         [0.,  1.,   0.,   0.0],
+                                         [-1.,  0.,   0.,   0.0],
+                                         [0.,  0.,   0.,   1.0]])
         
         self.selection_mat = []
+        self.reference_mat = []
         self.Tgrasps = []
         self.weights = []
         self.goal_list = []
-        if self.goals == None:
+        self.number_goals = len(self.Tgrasps)
+        if self.goals is None:
             TARGETS =  np.array([[[0.252, -0.067, -0.021], [0.102, 0.771, 0.628, -0.002]],    #Face area
                                  [[0.252, -0.097, -0.021], [0.102, 0.771, 0.628, -0.002]],    #Face area
                                  [[0.252, -0.097, -0.061], [0.102, 0.771, 0.628, -0.002]],    #Face area
@@ -99,14 +120,23 @@ class ScoreGenerator(object):
                                  [[0.367, -0.228, -0.317], [0.282, 0.850, 0.249,  0.370]]])   #Arm area
             for target in TARGETS:
                 #self.goal_list.append(pr2_B_head*createBMatrix(target[0],target[1])*goal_B_gripper)
-                self.goal_list.append(pr2_B_head*createBMatrix(target[0],target[1]))
+                self.goal_list = []
+                self.goal_list.append(pr2_B_head*createBMatrix(target[0], target[1]))
+                self.goal_list = np.array(self.goal_list)
             self.choose_task(targets)
         else:
-            print 'Score generator received a list of desired goal locations. It contains ',len(goals),' goal locations.'
-            for target in self.goals:
+            print 'Score generator received a list of desired goal locations. It contains ', len(goals), ' goal ' \
+                                                                                                         'locations.'
+            self.selection_mat = np.zeros(len(self.goals))
+            self.goal_list = np.zeros([len(self.goals), 4, 4])
+            self.reference_mat = np.zeros(len(self.goals))
+            for i in xrange(len(self.goals)):
                 #self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
-                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
-                self.selection_mat.append(target[1])
+                self.reference_mat[i] = int(self.goals[i, 2])
+                self.goal_list[i] = copy.copy(self.pr2_B_reference[int(self.reference_mat[i])] *
+                                              np.matrix(self.goals[i, 0]))
+                self.selection_mat[i] = self.goals[i, 1]
+
             self.set_goals()
 
             #print 'The weight of all goals: \n',self.weights
@@ -116,9 +146,6 @@ class ScoreGenerator(object):
             #    print item
             #self.goal_list = goals
 
-        
-        
-
         self.setup_openrave()
 
     def set_goals(self):
@@ -126,26 +153,26 @@ class ScoreGenerator(object):
         self.weights = []
         #total = 0
         
-        for num,selection in enumerate(self.selection_mat):
+        for num, selection in enumerate(self.selection_mat):
             #print selection
-            if selection!=0:
+            if selection != 0:
                 #self.Tgrasps.append(np.array(self.goal_list[num]))
                 self.Tgrasps.append(np.array(np.matrix(self.goal_list[num])*self.goal_B_gripper))
                 self.weights.append(selection)
                 #total += selection
         #print 'Total weights (should be 1) is: ',total
 
-    def choose_task(self,task):
+    def choose_task(self, task):
         if task == 'all_goals':
             self.selection_mat = np.ones(len(self.goal_list))
         elif task == 'wipe_face':
-            self.selection_mat = np.array([1,1,1,1,1,1,0,0,0,0,0,0,0])
+            self.selection_mat = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0])
         elif task == 'shoulder':
-            self.selection_mat = np.array([0,0,0,0,0,0,1,0,0,0,0,0])
+            self.selection_mat = np.array([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0])
         elif task == 'knee':
-            self.selection_mat = np.array([0,0,0,0,0,0,0,0,1,1,0,0])
+            self.selection_mat = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0])
         elif task == 'arm':
-            self.selection_mat = np.array([0,0,0,0,0,0,0,1,0,0,1,1])
+            self.selection_mat = np.array([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1])
         else:
             print 'Somehow I got a bogus task!? \n'
             return None
@@ -155,14 +182,14 @@ class ScoreGenerator(object):
 
 
 
-    def handle_score(self,plot=False):
+    def handle_score(self, plot=False):
         start_time = time.time()
         x_min = -1.0
         x_max = 2.0+.01
-        x_int = 0.3
+        x_int = 0.05
         y_min = -1.5
         y_max = 1.5 + .01
-        y_int = 0.3
+        y_int = 0.05
         theta_min = -m.pi
         theta_max = m.pi
         theta_int = m.pi/2
@@ -173,27 +200,40 @@ class ScoreGenerator(object):
         bedz_max = 0.2+.01
         bedz_int = 0.1
         bedtheta_min = 0.
-        bedtheta_max = 1.3962634+.01
-        bedtheta_int = 0.6981317
+        bedtheta_max = 1.22173048+.1
+        bedtheta_int = 0.61086524
         headx_min = 0.
         headx_max = 0.0+.01
-        headx_int = 0.1
+        headx_int = 0.05
         heady_min = -0.1
         heady_max = 0.1+.01
-        heady_int = 0.1
+        heady_int = 0.05
+        if self.model == 'autobed':
+            x_int = .1
+            y_int = .1
+        if self.model == 'chair':
+            bedz_min = 0.
+            bedtheta_min = 0.
+            headx_min = 0.
+            heady_min = 0.
+            bedz_int = 100.
+            bedtheta_int = 100.
+            headx_int = 100.
+            heady_int = 100.
         print 'Starting to generate the score. This is going to take a while. Estimated 100+ seconds per goal location.'
-        score_stuff = np.array([t for t in ( (list(flatten([i, j, th, z, bz, bth,headx,heady, self.generate_score(i,j,th,z,bz,bth,headx,heady)])))
-                         for i in np.arange(x_min,x_max,x_int)
-                             for j in np.arange(y_min,y_max,y_int)
-                                 for th in np.arange(theta_min,theta_max,theta_int)
-                                     for z in np.arange(z_min,z_max,z_int)
-                                         for bz in np.arange(bedz_min,bedz_max,bedz_int)
-                                             for bth in np.arange(bedtheta_min,bedtheta_max,bedtheta_int)
-                                                 for headx in np.arange(headx_min,headx_max,headx_int)
-                                                     for heady in np.arange(heady_min,heady_max,heady_int)
-                                      ) 
-                      ])
-        print 'Time to generate all scores for individual base locations: %fs'%(time.time()-start_time)
+        score_stuff = np.array([t for t in ((list(flatten([x, y, th, z, bz, bth, headx, heady,
+                                                           self.generate_score(x, y, th, z, bz, bth, headx, heady)])))
+                                            for x in np.arange(x_min, x_max, x_int)
+                                            for y in np.arange(y_min, y_max, y_int)
+                                            for th in np.arange(theta_min, theta_max, theta_int)
+                                            for z in np.arange(z_min, z_max, z_int)
+                                            for bz in np.arange(bedz_min, bedz_max, bedz_int)
+                                            for bth in np.arange(bedtheta_min, bedtheta_max, bedtheta_int)
+                                            for headx in np.arange(headx_min, headx_max, headx_int)
+                                            for heady in np.arange(heady_min, heady_max, heady_int)
+                                            )
+                                ])
+        print 'Time to generate all scores for individual base locations: %fs' % (time.time()-start_time)
         start_time = time.time()
 
         # Reduces the degrees of the score. This reduces the length of the score. We ultimately only care about the best
@@ -206,24 +246,26 @@ class ScoreGenerator(object):
         #for item in score_stuff:
         #    if item[7]>0:
         #        print item
-        self.reachable = {}
-        self.manipulable = {}
-        temp_scores=[]
-        self.scores = {}
-        self.score_length = {}
-        for hx in np.arange(headx_min,headx_max,headx_int):
-            for hy in np.arange(heady_min,heady_max,heady_int):
-                self.scores[hx,hy]=[]
-                self.reachable[hx,hy]=[]
-                self.manipulable[hx,hy]=[]
+        # self.reachable = {}
+        # self.manipulable = {}
+        # self.scores = {}
+        # self.score_length = {}
+        for hx in np.arange(headx_min, headx_max, headx_int):
+            for hy in np.arange(heady_min, heady_max, heady_int):
+                self.scores[hx, hy] = []
+                self.reachable[hx, hy] = []
+                self.manipulable[hx, hy] = []
+                this_score = []
+                this_reachable = []
+                this_manipulable = []
 
-                for i in np.arange(x_min,x_max,x_int):
-                    for j in np.arange(y_min,y_max,y_int):
-                        for bz in np.arange(bedz_min,bedz_max,bedz_int):
-                            for bth in np.arange(bedtheta_min,bedtheta_max,bedtheta_int):
+                for x in np.arange(x_min, x_max, x_int):
+                    for y in np.arange(y_min, y_max, y_int):
+                        for bz in np.arange(bedz_min, bedz_max, bedz_int):
+                            for bth in np.arange(bedtheta_min, bedtheta_max, bedtheta_int):
 
                                 #print 'bz: ',bz
-                                temp_scores=[]
+                                temp_scores = []
                                 del_index = []
                                 s_len = copy.copy(len(score_stuff))
                                 for k in xrange(s_len):
@@ -249,10 +291,18 @@ class ScoreGenerator(object):
                                                         #print 'BedZ: ',score_stuff[t,4], np.round(bz,4)
                                                         #print 'BedTheta:', score_stuff[t,5], np.round(bth,4)
 
-                                    #if ((score_stuff[t,0]==np.round(i,4)) and (score_stuff[t,1]==np.round(j,4)) and (score_stuff[t,4]==np.round(bz,4)) and (score_stuff[t,5]==np.round(bth,4))):
-                                    #if np.array_equal(np.round([score_stuff[t,0],score_stuff[t,1],score_stuff[t,4],score_stuff[t,5]],4),np.round([i, j, bz, bth],4)):
-                                    if "{0:.3f}".format(score_stuff[t,0])=="{0:.3f}".format(i) and "{0:.3f}".format(score_stuff[t,1])=="{0:.3f}".format(j) and "{0:.3f}".format(score_stuff[t,4])=="{0:.3f}".format(bz) and "{0:.3f}".format(score_stuff[t,5])=="{0:.3f}".format(bth) and "{0:.3f}".format(score_stuff[t,6])=="{0:.3f}".format(bth) and "{0:.3f}".format(score_stuff[t,7])=="{0:.3f}".format(bth):
-                                        if score_stuff[t,9]>0.:
+                                    #if ((score_stuff[t,0]==np.round(i,4)) and (score_stuff[t,1]==np.round(j,4)) and
+                                    # (score_stuff[t,4]==np.round(bz,4)) and (score_stuff[t,5]==np.round(bth,4))):
+                                    #if np.array_equal(np.round([score_stuff[t,0],score_stuff[t,1],score_stuff[t,4],
+                                    # score_stuff[t,5]],4),np.round([i, j, bz, bth],4)):
+                                    if "{0:.3f}".format(score_stuff[t, 0]) == "{0:.3f}".format(x) and \
+                                       "{0:.3f}".format(score_stuff[t, 1]) == "{0:.3f}".format(y) and \
+                                       "{0:.3f}".format(score_stuff[t, 4]) == "{0:.3f}".format(bz) and \
+                                       "{0:.3f}".format(score_stuff[t, 5]) == "{0:.3f}".format(bth) and \
+                                       "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(bth) and \
+                                       "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth):
+
+                                        if score_stuff[t, 9] > 0.:
                                             #print score_stuff[t]
                                             #print 'raw things:'
                                             #print score_stuff[t]                                   
@@ -263,23 +313,27 @@ class ScoreGenerator(object):
                                     #print 'temp scores:'
                                     #for item in temp_scores:
                                     #    print item
-                                    score_stuff = np.delete(score_stuff,del_index,0)
-                                    temp_scores = copy.copy(np.array(sorted(temp_scores, key=itemgetter(9,10), reverse=True))[0])
-                                    self.scores[hx,hy].append(temp_scores[0:11])
+                                    score_stuff = np.delete(score_stuff, del_index, 0)
+                                    temp_scores = copy.copy(np.array(sorted(temp_scores, key=itemgetter(9, 10),
+                                                                            reverse=True))[0])
+                                    this_score.append(temp_scores[0:11])
+                                    # self.scores[hx, hy].append(temp_scores[0:11])
                                     reachable_line = []
                                     manipulable_line = []
                                     #print 'I was able to find a base location where I can reach at least one goal'
                                     for number in xrange(int((len(temp_scores)-11)/2.)):
                                         reachable_line.append(temp_scores[11+2*number])
                                         manipulable_line.append(temp_scores[12+2*number])
-                                    self.reachable[hx,hy].append(reachable_line)
-                                    self.manipulable[hx,hy].append(manipulable_line)
-                self.reachable[hx,hy] = np.array(self.reachable[hx,hy])
-                self.manipulable[hx,hy] = np.array(self.manipulable[hx,hy])
-        #print 'reachable ',self.reachable
+                                    this_reachable.append(reachable_line)
+                                    this_manipulable.append(manipulable_line)
+                                    # self.reachable[hx, hy].append(reachable_line)
+                                    # self.manipulable[hx, hy].append(manipulable_line)
+                self.reachable[hx, hy] = np.array(this_reachable)
+                self.manipulable[hx, hy] = np.array(this_manipulable)
+                #print 'reachable ',self.reachable
 
-                self.score_length[hx,hy] = len(self.scores[hx,hy])
-                self.scores[hx,hy] = np.array(self.scores[hx,hy])
+                self.score_length[hx, hy] = len(this_score)
+                self.scores[hx, hy] = np.array(this_score)
 
         self.number_goals = len(self.Tgrasps)
         #print 'scores:'
@@ -287,74 +341,73 @@ class ScoreGenerator(object):
         #    if item[7]>0:
         #        print item
 
-
-        print 'The number of base configurations with default body location with non-zero reach scores is: ',self.score_length[0.,0.]
-        print 'The number of goals is: ',self.number_goals
+        print 'The number of base configurations with default body location with non-zero reach scores is: ', \
+            self.score_length[0., 0.]
+        print 'The number of goals is: ', self.number_goals
         there_is_a_good_location = False
         for item in self.scores:
             if self.score_length[item] > 0.:
                 there_is_a_good_location = True
         if not there_is_a_good_location:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
-            return [[[0],[0],[0],[0],[0],[0]],[0,0,0]]
-        max_base_locations = np.min([3,self.number_goals+1])
+            return [[[0], [0], [0], [0], [0], [0]], [0, 0, 0]]
+        max_base_locations = np.min([3, self.number_goals+1])
         print 'Time to manage data sets and eliminate base configurations with zero reach score: %fs'%(time.time()-start_time)
         start_time = time.time()
-        print 'Now starting to look at multiple base location combinations. Checking ',max_base_locations-1,' max number of bases in combination. This may take a long time as well.'
+        print 'Now starting to look at multiple base location combinations. Checking ', max_base_locations-1, ' max ' \
+              'number of bases in combination. This may take a long time as well.'
 
         mult_base_scores = {}
 
-        for hx in np.arange(headx_min,headx_max,headx_int):
-            for hy in np.arange(heady_min,heady_max,heady_int):
-                mult_base_scores[hx,hy] = np.array([t for t in ( (list([self.get_xyths(item,hx,hy), self.combination_score(item,hx,hy)]))
-                                     for num_base_locations in xrange(1,max_base_locations)
-                                         for item in comb(xrange(self.score_length[hx,hy]),num_base_locations)
-                                               )
-                                             if ((t[1]!=None) and (t[0]!=None))
-                                          ])  
-                mult_base_scores[hx,hy] = np.array(sorted(mult_base_scores[hx,hy], key=lambda t:t[1][2], reverse=True))
-        print 'Time to generate all scores for combinations of base locations: %fs'%(time.time()-start_time)
+        for hx in np.arange(headx_min, headx_max, headx_int):
+            for hy in np.arange(heady_min, heady_max, heady_int):
+                mult_base_scores[hx, hy] = np.array([t for t in ((list([self.get_xyths(item, hx, hy), self.combination_score(item,hx,hy)]))
+                                                                  for num_base_locations in xrange(1,max_base_locations)
+                                                                  for item in comb(xrange(self.score_length[hx,hy]),num_base_locations)
+                                                                 )
+                                                     if ((t[1]!=None) and (t[0]!=None))
+                                                     ])
+                mult_base_scores[hx, hy] = np.array(sorted(mult_base_scores[hx, hy], key=lambda t:t[1][2], reverse=True))
+        print 'Time to generate all scores for combinations of base locations: %fs' % (time.time()-start_time)
         
         #print mult_base_scores
 
         if plot:
             print 'I am now going to plot the scoresheet for individual base locations for the default body location.'
-            self.plot_scores(np.array(self.scores[0.,0.]))
-        if self.score_length[0.,0.]==0:
+            self.plot_scores(np.array(self.scores[0., 0.]))
+        if self.score_length[0., 0.] == 0:
             default_is_zero = True
         else:
             default_is_zero = False
-        return mult_base_scores,default_is_zero
+        return mult_base_scores, default_is_zero
 
-    def combination_score(self,item,hx,hz):
-        this_personal_space = 0.
-        this_distance = 0.
+    def combination_score(self, item, hx, hz):
         this_reachable = np.zeros(self.number_goals)
         this_manipulable = np.zeros(self.number_goals)
-        this_personal_space = np.max([t for t in ((self.scores[hx,hz][i][6])
-                     for i in item
-                       )
-                    ])
+        this_personal_space = np.max([t for t in ((self.scores[hx, hz][i][6])
+                                                  for i in item
+                                                  )
+                                      ])
         for g in xrange(self.number_goals):
-            this_reachable[g] = np.max([t for t in ((self.reachable[hx,hz][i][g])
-                     for i in item
-                       )
-                    ])
-            this_manipulable[g] = np.max([t for t in ((self.manipulable[hx,hz][i][g])
-                     for i in item
-                       )
-                    ])
-        comparison = np.max([t for t in ((np.sum(self.reachable[hx,hz][i]))
-                     for i in item
-                       )
-                    ])
-        if np.sum(this_reachable)<=comparison and len(item)>1:
+            this_reachable[g] = np.max([t for t in ((self.reachable[hx, hz][i][g])
+                                                    for i in item
+                                                    )
+                                        ])
+            this_manipulable[g] = np.max([t for t in ((self.manipulable[hx, hz][i][g])
+                                                      for i in item
+                                                      )
+                                          ])
+        comparison = np.max([t for t in ((np.sum(self.reachable[hx, hz][i]))
+                                         for i in item
+                                         )
+                             ])
+        if np.sum(this_reachable) <= comparison and len(item) > 1:
             return None
         else:
-            return [this_personal_space,np.sum(this_reachable),np.sum(this_manipulable)]
+            return [this_personal_space, np.sum(this_reachable), np.sum(this_manipulable)]
 
 
-    def get_xyths(self,item,hx,hz):
+    def get_xyths(self, item, hx, hz):
         this_x = []
         this_y = []
         this_theta = [] 
@@ -363,28 +416,28 @@ class ScoreGenerator(object):
         this_btheta = []
         too_close = False
         for i in item:
-            this_x.append(round(self.scores[hx,hz][i][0],3))
-            this_y.append(round(self.scores[hx,hz][i][1],3))
-            this_theta.append(self.scores[hx,hz][i][2])
-            this_z.append(self.scores[hx,hz][i][3])
-            this_bz.append(self.scores[hx,hz][i][4])
-            this_btheta.append(self.scores[hx,hz][i][5])
-        comparison = np.vstack([this_x,this_y,this_bz,this_btheta,this_theta,this_z])
+            this_x.append(round(self.scores[hx, hz][i][0], 3))
+            this_y.append(round(self.scores[hx, hz][i][1], 3))
+            this_theta.append(self.scores[hx, hz][i][2])
+            this_z.append(self.scores[hx, hz][i][3])
+            this_bz.append(self.scores[hx, hz][i][4])
+            this_btheta.append(self.scores[hx, hz][i][5])
+        comparison = np.vstack([this_x, this_y, this_bz, this_btheta, this_theta, this_z])
         for i in xrange(len(item)-1):
-            diff = np.linalg.norm(comparison[0:4,i]-comparison[0:4,i+1])
-            if diff<.4:
+            diff = np.linalg.norm(comparison[0:4, i]-comparison[0:4, i+1])
+            if diff < .4:
                 too_close = True
-        if too_close == True and len(item)>1:
+        if too_close and len(item) > 1:
             return None
         else:
-            return [this_x,this_y,this_theta,this_z,this_bz,this_btheta]
+            return [this_x, this_y, this_theta, this_z, this_bz, this_btheta]
         
 
 
 
     
 
-    def generate_score(self,i,j,th,z,bz,bth,headx,heady):
+    def generate_score(self, i, j, th, z, bz, bth, headx, heady):
         #print 'Calculating new score'
         #starttime = time.time()
         base_position = self.pr2_B_headfloor * np.matrix([[ m.cos(th), -m.sin(th),     0.,         i],
@@ -396,15 +449,43 @@ class ScoreGenerator(object):
         v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
         
         self.robot.SetActiveDOFValues(v)
+        if self.model == 'chair':
+            pr2_B_head = np.matrix([[1.,        0.,   0.,         0.0],
+                                    [0.,        1.,   0.,         0.0],
+                                    [0.,        0.,   1.,     1.33626],
+                                    [0.,        0.,   0.,         1.0]])
+            self.selection_mat = np.zeros(len(self.goals))
+            self.goal_list = np.zeros([len(self.goals), 4, 4])
+            for i in xrange(len(self.reference_names)):
+                if self.reference_names[i] == 'head':
+                    self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform()).I*pr2_B_head
+                elif self.reference_names[i] == 'base_link':
+                    self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
+
+
+            for i in xrange(len(self.goals)):
+                self.goal_list[i] = copy.copy(self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
+                self.selection_mat[i] = copy.copy(self.goals[i, 1])
+#            for target in self.goals:
+#                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
+#                self.selection_mat.append(target[1])
+            self.set_goals()
+
         if self.model == 'autobed':
             self.selection_mat = np.zeros(len(self.goals))
-            self.goal_list = np.zeros([len(self.goals),4,4])
-            self.set_autobed(bz,bth,headx,heady)
+            self.goal_list = np.zeros([len(self.goals), 4, 4])
+            self.set_autobed(bz, bth, headx, heady)
             headmodel = self.autobed.GetLink('head_link')
-            pr2_B_head = np.matrix(headmodel.GetTransform())
+            for i in xrange(len(self.reference_names)):
+                if self.reference_names[i] == 'head':
+                    self.pr2_B_reference[i] = np.matrix(headmodel.GetTransform())
+                elif self.reference_names[i] == 'base_link':
+                    self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
+                
+
             for i in xrange(len(self.goals)):
-                self.goal_list[i] = copy.copy(pr2_B_head*np.matrix(self.goals[i,0]))
-                self.selection_mat[i] = copy.copy(self.goals[i,1])
+                self.goal_list[i] = copy.copy(self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
+                self.selection_mat[i] = copy.copy(self.goals[i, 1])
 #            for target in self.goals:
 #                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
 #                self.selection_mat.append(target[1])
@@ -415,24 +496,25 @@ class ScoreGenerator(object):
         goal_scores = []
         std = 1.
         mean = 0.
-        allmanip=[]
+        allmanip = []
         manip = 0.
         reached = 0.
         
         #allmanip2=[]
-        space_score = (1./(std*(m.pow((2.*m.pi),0.5))))*m.exp(-(m.pow(np.linalg.norm([i,j])-mean,2.))/(2.*m.pow(std,2.)))
+        space_score = (1./(std*(m.pow((2.*m.pi), 0.5))))*m.exp(-(m.pow(np.linalg.norm([i, j])-mean, 2.)) /
+                                                               (2.*m.pow(std, 2.)))
         #print space_score
         with self.robot:
             if not self.manip.CheckIndependentCollision(op.CollisionReport()):
                 #print 'not colliding with environment'
                 for num,Tgrasp in enumerate(self.Tgrasps):
-                    sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+                    sol = self.manip.FindIKSolution(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                     #sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.IgnoreSelfCollisions)
                     manip = 0.
                     reached = 0.
                     if sol is not None:
                         #print 'I was able to find a grasp to this goal'
-                        self.robot.SetDOFValues(sol,self.manip.GetArmIndices())
+                        self.robot.SetDOFValues(sol, self.manip.GetArmIndices())
                         Tee = self.manip.GetEndEffectorTransform()
                         self.env.UpdatePublishedBodies()
                         #rospy.sleep(.2)
@@ -445,7 +527,7 @@ class ScoreGenerator(object):
                         #self.end_effector_orient_cart = rot
                         #J = np.matrix(self.kinematics.jacobian(joint_angles))
                         #J = [self.robot.kinematics.jacobian(self.joint_angles, self.end_effector_position)]
-                        J = np.matrix(np.vstack([self.manip.CalculateJacobian(),self.manip.CalculateAngularVelocityJacobian()]))
+                        J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
                         #print 'J0 ',np.linalg.norm(J[3:6,0])
                         #print 'J1 ',np.linalg.norm(J[3:6,1])
                         #print 'J2 ',np.linalg.norm(J[3:6,2])
@@ -465,10 +547,10 @@ class ScoreGenerator(object):
                         
                         manip_score += copy.copy(reached * manip*self.weights[num])
                     #reach_score += copy.copy(reached * self.weights[num])
-                    goal_scores.append([copy.copy(reached * self.weights[num]),copy.copy(manip*self.weights[num])])
+                    goal_scores.append([copy.copy(reached * self.weights[num]), copy.copy(manip*self.weights[num])])
             else:
                 for num in xrange(len(self.Tgrasps)):
-                    goal_scores.append([0,0])
+                    goal_scores.append([0, 0])
                     #print 'goal_scores: ', goal_scores
         #manip_score = manip_score/reachable
         #print 'I just tested base position: (', i,', ',j,', ',k,'). Reachable: ',reachable
@@ -480,7 +562,7 @@ class ScoreGenerator(object):
             #print 'reach score was ',"{0:.3f}".format(reach_score)
         #print 'finished calculating a score'
         #print 'Time to calculate a score: %fs'%(time.time()-starttime)
-        return space_score,reach_score,manip_score,goal_scores
+        return space_score, reach_score, manip_score, goal_scores
 
 
     def setup_openrave(self):
@@ -491,7 +573,8 @@ class ScoreGenerator(object):
         if self.visualize:
             self.env.SetViewer('qtcoin')
 
-        ## Set up robot state node to do Jacobians. This works, but is commented out because we can do it with openrave fine.
+        ## Set up robot state node to do Jacobians. This works, but is commented out because we can do it with openrave
+        #  fine.
         #torso_frame = '/torso_lift_link'
         #inertial_frame = '/base_link'
         #end_effector_frame = '/l_gripper_tool_frame'
@@ -650,6 +733,7 @@ class ScoreGenerator(object):
 
 
     def show_rviz(self):
+        #rospy.init_node(''.join(['base_selection_goal_visualization']))
         sub_pos,sub_ori = Bmat_to_pos_quat(self.subject_location)
         self.publish_sub_marker(sub_pos,sub_ori)
 
@@ -675,8 +759,8 @@ class ScoreGenerator(object):
     def publish_goal_markers(self, goals):
         vis_pub = rospy.Publisher('~goal_markers', MarkerArray, latch=True)
         goal_markers = MarkerArray()
-        for num,item in enumerate(goals):
-            pos,ori = Bmat_to_pos_quat(item)
+        for num, item in enumerate(goals):
+            pos, ori = Bmat_to_pos_quat(item)
             marker = Marker()
             #marker.header.frame_id = "/base_footprint"
             marker.header.frame_id = "/base_link"
@@ -705,7 +789,7 @@ class ScoreGenerator(object):
 
     # Publishes a goal marker location used by openrave to rviz so we can see how it overlaps with the subject
     def publish_goal_marker(self, pos, ori, name):
-        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, latch=True)
+        vis_pub = rospy.Publisher(''.join(['~', name]), Marker, latch=True)
         marker = Marker()
         #marker.header.frame_id = "/base_footprint"
         marker.header.frame_id = "/base_link"
@@ -739,7 +823,7 @@ class ScoreGenerator(object):
         marker.header.frame_id = "/base_link"
         marker.header.stamp = rospy.Time()
         marker.id = 0
-        marker.type = Marker.MESH_RESOURCE;
+        marker.type = Marker.MESH_RESOURCE
         marker.action = Marker.ADD
         marker.pose.position.x = pos[0]
         marker.pose.position.y = pos[1]

@@ -12,7 +12,7 @@ from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from tf import TransformListener, transformations as tft
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
-from hrl_base_selection.srv import BaseMove, BaseMoveRequest
+from hrl_base_selection.srv import BaseMove_multi  # , BaseMoveRequest
 from hrl_ellipsoidal_control.msg import EllipsoidParams
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
@@ -24,6 +24,9 @@ class ServoingManager(object):
     """ Manager for providing test goals to pr2 ar servoing. """
 
     def __init__(self):
+        self.task = 'yogurt'
+        self.model = 'chair'
+
         self.tfl = TransformListener()
 
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
@@ -33,7 +36,7 @@ class ServoingManager(object):
         self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
 
-        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
+        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 
         self.ui_input_sub = rospy.Subscriber("action_location_goal", String, self.ui_cb)
         self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
@@ -88,12 +91,25 @@ class ServoingManager(object):
             self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
         ar_data = ARServoGoalData()
-        base_goal = self.call_base_selection()
-        print "Base Goal returned:\r\n", base_goal
+        base_goal, configuration_goal = self.call_base_selection()
+        print "Base Goals returned:\r\n", base_goal
         if base_goal is None:
             rospy.loginfo("No base goal found")
             return
-        self.servo_goal_pub.publish(base_goal)
+        base_goals_list = []
+        for i in xrange(int(len(base_goal)/7)):
+            psm = PoseStamped()
+            psm.header.frame_id = '/base_link'
+            psm.pose.position.x = base_goal[int(0+7*i)]
+            psm.pose.position.y = base_goal[int(1+7*i)]
+            psm.pose.position.z = base_goal[int(2+7*i)]
+            psm.pose.orientation.x = base_goal[int(3+7*i)]
+            psm.pose.orientation.y = base_goal[int(4+7*i)]
+            psm.pose.orientation.z = base_goal[int(5+7*i)]
+            psm.pose.orientation.w = base_goal[int(6+7*i)]
+            base_goals_list.append(copy.copy(psm))
+        # Here should publish configuration_goal items to robot Z axis and to Autobed.
+        self.servo_goal_pub.publish(base_goals_list)
 
         with self.lock:
             ar_data.tag_id = -1
@@ -118,19 +134,17 @@ class ServoingManager(object):
         self.feedback_pub.publish("Finding a good base location, please wait.")
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
 
-        bm = BaseMoveRequest()
-        bm.head = self.head_pose
-        bm.goal = self.goal_pose
+        # bm = BaseMoveRequest()
+        # bm.model = self.model
+        # bm.task = self.task
         try:
-            print "pre base selection"
-            resp = self.base_selection_client.call(bm)
-            print "post base selection"
+            resp = self.base_selection_client(self.task, self.model)
+            # resp = self.base_selection_client.call(bm)
         except rospy.ServiceException as se:
             rospy.logerr(se)
             self.feedback_pub.publish("Failed to find good base position. Please try again.")
             return None
-        print "post post base selction"
-        return resp.base_goal
+        return resp.base_goal, resp.configuration_goal
 
     def get_head_pose(self, head_frame="head_frame"):
         try:

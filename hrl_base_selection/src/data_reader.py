@@ -41,7 +41,7 @@ import hrl_lib.util as ut
 
 class DataReader(object):
     
-    def __init__(self,input_data=None,subject='sub6_shaver',data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1):
+    def __init__(self,input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1):
         self.score_sheet = []
         self.tf_listener = tf.TransformListener()
 
@@ -58,11 +58,22 @@ class DataReader(object):
 
         self.input_data=input_data
 
-    def receive_input_data(self,data,num):
+        self.reference_options = reference_options
+
+        self.clustered_goal_data = []
+        self.clustered_number = []
+        self.reference_options = []
+        self.clustered_reference = []
+
+    def receive_input_data(self, data, num, reference_options, reference):
         self.clustered_goal_data = data
-        self.number = num
+        self.clustered_number = num
+        self.reference_options = reference_options
+        self.clustered_reference = reference
+        self.length = len(num)
+        self.raw_goal_data = data
 
-
+    # Currently set to use only one reference frame, the head.
     def get_raw_data(self):
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
@@ -74,16 +85,16 @@ class DataReader(object):
         #world_B_toolinit = createBMatrix(tool_init_pos,tft.quaternion_from_euler(tool_init_rot[0],tool_init_rot[1],tool_init_rot[2],'rxyz'))
         self.file_length = 0
         
-        world_B_headc_raw_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/',self.subject,'_head.log']))])
+        world_B_headc_reference_raw_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/',self.subject,'_head.log']))])
         world_B_tool_raw_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/',self.subject,'_tool.log']))]) 
 
         #dist = []
-        #for num,line in enumerate(world_B_headc_raw_data):
-            #dist.append(np.linalg.norm(world_B_headc_raw_data[num,1:4] - world_B_tool_raw_data[num,1:4]))
+        #for num,line in enumerate(world_B_headc_reference_raw_data):
+            #dist.append(np.linalg.norm(world_B_headc_reference_raw_data[num,1:4] - world_B_tool_raw_data[num,1:4]))
         #print 'raw distance: \n',np.min(np.array(dist))
         
         # max_length is the length of the shorter of the two files. They sometimes differ in length by a few points.
-        max_length = np.min([len(world_B_headc_raw_data),len(world_B_tool_raw_data)])
+        max_length = np.min([len(world_B_headc_reference_raw_data),len(world_B_tool_raw_data)])
 
         # If data_finish is 'end' then it does from whatever is the start data to the end. self.length is the number of data points we are looking at.
         if self.data_finish == 'end':
@@ -101,11 +112,11 @@ class DataReader(object):
         self.length = np.min(np.array([max_length,self.data_finish-self.data_start]))
         
 
-        world_B_headc_data = np.zeros([self.length,4,4])
+        world_B_headc_reference_data = np.zeros([self.length,4,4])
         world_B_tool_data = np.zeros([self.length,4,4])
 
-        for num,line in enumerate(world_B_headc_raw_data[self.data_start:self.data_finish]):
-            world_B_headc_data[num] = np.array(createBMatrix([line[1],line[2],line[3]],tft.quaternion_from_euler(line[4],line[5],line[6],'rxyz')))
+        for num,line in enumerate(world_B_headc_reference_raw_data[self.data_start:self.data_finish]):
+            world_B_headc_reference_data[num] = np.array(createBMatrix([line[1],line[2],line[3]],tft.quaternion_from_euler(line[4],line[5],line[6],'rxyz')))
 
         for num,line in enumerate(world_B_tool_raw_data[self.data_start:self.data_finish]):
             world_B_tool_data[num] = np.array(createBMatrix([line[1],line[2],line[3]],tft.quaternion_from_euler(line[4],line[5],line[6],'rxyz')))
@@ -114,6 +125,13 @@ class DataReader(object):
         #raw_tool_tip_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/sub1_shaver_self_1_tool_tip.log']))])
         #tool_tip_data = np.zeros([len(raw_tool_tip_data),4,4])
 
+        # We set the reference options here.
+        self.reference_options = []
+        self.reference_options.append('head') 
+        self.reference = [] # Head references are associated with a value in self.reference of 0.
+
+
+
         #for num,line in enumerate(raw_tool_tip_data):
         #    tool_tip_data[num] = np.array(createBMatrix([line[2],line[3],line[4]],tft.quaternion_from_euler#(line[5],line[6],line[7],'rxyz')))
         self.distance = []
@@ -121,23 +139,25 @@ class DataReader(object):
         self.max_start_distance = 5 #0.2
         i = 0
         while self.raw_goal_data == []:
-            #temp = np.array(np.matrix(world_B_headc_data[i]).I*np.matrix(world_B_tool_data[i])*tool_correction)
-            temp = np.array(np.matrix(world_B_headc_data[i]).I*np.matrix(world_B_tool_data[i]))
+            #temp = np.array(np.matrix(world_B_headc_reference_data[i]).I*np.matrix(world_B_tool_data[i])*tool_correction)
+            temp = np.array(np.matrix(world_B_headc_reference_data[i]).I*np.matrix(world_B_tool_data[i]))
             if np.linalg.norm(temp[0:3,3])<self.max_start_distance:
                 self.raw_goal_data.append(temp)
+                self.reference.append(0)
             else:
                 i+=1
-                print 'The first ',i,' data point in the file was noise'
+                print 'The first ',i,' data points in the file was noise'
 
 
         for num in xrange(1,self.length):
-            #temp = np.array(np.matrix(world_B_headc_data[num]).I*np.matrix(world_B_tool_data[num])*tool_correction)
-            temp = np.array(np.matrix(world_B_headc_data[num]).I*np.matrix(world_B_tool_data[num]))
+            #temp = np.array(np.matrix(world_B_headc_reference_data[num]).I*np.matrix(world_B_tool_data[num])*tool_correction)
+            temp = np.array(np.matrix(world_B_headc_reference_data[num]).I*np.matrix(world_B_tool_data[num]))
             pos2,ori2=Bmat_to_pos_quat(temp)
             pos1,ori1=Bmat_to_pos_quat(self.raw_goal_data[len(self.raw_goal_data)-1])
            
             if np.linalg.norm(pos1-pos2)<self.max_distance:
                 self.raw_goal_data.append(temp)
+                self.reference.append(0)
                 self.file_length+=1
                 self.distance.append(np.linalg.norm(temp[0:3,3]))
                 #print 'This point has a distance of: ',np.linalg.norm(temp[0:3,3])
@@ -158,28 +178,51 @@ class DataReader(object):
 # + np.matrix(tft.translation_matrix(goal_values[num,0:3]))))
             #    self.distance.append(np.linalg.norm(temp[0:3,3]))
         self.raw_goal_data = np.array(self.raw_goal_data)
+        print 'Minimum distance between center of head and goal location from raw data = ', np.min(np.array(self.distance))
         return self.raw_goal_data
 
     def cluster_data(self):
-        if len(self.raw_goal_data)<self.pos_clust:
-            self.pos_clust = len(self.raw_goal_data)
-        if len(self.raw_goal_data)<self.ori_clust:
-            self.ori_clust = len(self.raw_goal_data)
+        self.pos_clust = np.min([len(self.raw_goal_data),self.pos_clust])
+        self.ori_clust = np.min([len(self.raw_goal_data),self.ori_clust])
+        self.clustered_goal_data = np.zeros([1,4,4])
+        self.clustered_number = np.zeros([1,1])
+        self.clustered_reference = np.zeros([1,1])
 
-        enough = False
-        iter = 0
-        while not enough and (iter<10):
-            iter +=1
-            cluster = clust.DataCluster(self.pos_clust,0.01,self.ori_clust,0.02)
-            self.clustered_goal_data,self.number,num_pos_clusters, = cluster.clustering(self.raw_goal_data)
-            if num_pos_clusters == self.pos_clust:
-                self.pos_clust +=10
-            else:
-                enough = True
+        # Clusters should be done separately for goals with different reference frames. Here I separate the data by reference frame, run clustering, then recombine the data.
+        for i in xrange(len(self.reference_options)):
+            opt_cluster = np.zeros([self.reference.count(i),4,4])
+            pos_clust = np.min([self.pos_clust,len(opt_cluster)])
+            ori_clust = np.min([self.ori_clust,len(opt_cluster)])
+            j = 0
+            for num,ref in enumerate(self.reference):
+                if ref == i:
+                    opt_cluster[j] = self.raw_goal_data[num]
+                    j+=1
+            enough = False
+            count = 0
+            while not enough and (count<10):
+                count += 1
+                cluster = clust.DataCluster(pos_clust, 0.01, ori_clust, 0.02)
+                clustered_goal_data, number, num_pos_clusters = cluster.clustering(opt_cluster)
+                clustered_reference = np.zeros([len(clustered_goal_data),1])+i
+                if num_pos_clusters == self.pos_clust:
+                    self.pos_clust += 10
+                else:
+                    enough = True
+            self.clustered_goal_data = np.vstack([self.clustered_goal_data, clustered_goal_data])
+            self.clustered_number = np.vstack([self.clustered_number, number])
+            self.clustered_reference = np.vstack([self.clustered_reference, clustered_reference])
+        self.clustered_goal_data = np.delete(self.clustered_goal_data, 0, 0)
+        self.clustered_number = np.delete(self.clustered_number, 0, 0)
+        self.clustered_reference = np.delete(self.clustered_reference, 0, 0)
 
+        self.cluster_distance = []
+        for item in self.clustered_goal_data:
+            self.cluster_distance.append(np.linalg.norm(item[0:3, 3]))
+        print 'Minimum distance between center of head and goal location from clustered data = ', np.min(np.array(self.cluster_distance))
         #print 'Raw data: \n',self.raw_goal_data#[0:20]
         #print 'Clustered data: \n',self.clustered_goal_data#[0:20]
-        return self.clustered_goal_data
+        return self.clustered_goal_data, self.clustered_number, self.clustered_reference
 
 
 
@@ -201,26 +244,29 @@ class DataReader(object):
         #self.goal_unique = np.array(self.goal_unique)
         #print 'final score unique is: ',self.goal_unique
 
-    def sample_raw_data(self,raw_data,num):
+    def sample_raw_data(self, raw_data, num):
         sampled = []
         for i in xrange(num):
             sampled.append(raw_data[int(i*len(raw_data)/num)])
         return np.array(sampled)
 
-    def generate_output_goals(self,test_goals=None):
+    def generate_output_goals(self, test_goals=None):
         #print test_goals
-        if test_goals == None:
+        if test_goals is None:
             goals = self.clustered_goal_data
-            number = self.number
+            number = self.clustered_number
+            reference = self.clustered_reference
         else:
-            goals=test_goals
+            goals = test_goals
             number = []
+            reference = []
             for item in goals:
-               number.append([1])
+               number.append(1)
+               reference.append(0)
                #number = np.ones(len(goals))
         self.goal_unique = [] 
         for num in xrange(len(number)):
-            self.goal_unique.append([goals[num],(float(number[num][0]))/(float(np.array(number).sum()))])
+            self.goal_unique.append([goals[num], (float(number[num][0]))/(float(np.array(number).sum())), reference[num]])
             #print 'I am appending this to distance: ', np.linalg.norm(self.clustered_goal_data[num][0:3,3])
             #if (num > 200) and (num < 240):
             #print 'clustered goal data number: ',num,'\n',self.clustered_goal_data[num]
@@ -229,17 +275,13 @@ class DataReader(object):
         #print 'distance: ',np.array(self.distance)
         self.goal_unique = np.array(self.goal_unique)
         #print 'Goal unique is \n',self.goal_unique
-        self.pos_data = []
-        self.cluster_distance = []
-        for item in goals:
-            self.pos_data.append([item[0,3],item[1,3],item[2,3]])
-            self.cluster_distance.append(np.linalg.norm(item[0:3,3]))
-        self.pos_data = np.array(self.pos_data)
+
         print 'Total number of goals as summed from the clustering: ',np.array(number).sum()
-        print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible distance of head center (0.2m)'%(self.length,len(self.raw_goal_data),len(self.goal_unique))
+        print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible ' \
+              'distance of head center (0.2m)' % (self.length, len(self.raw_goal_data), len(self.goal_unique))
         
-        print 'Minimum distance between center of head and goal location from raw data = ',np.min(np.array(self.distance))
-        print 'Minimum distance between center of head and goal location from clustered data = ',np.min(np.array(self.cluster_distance))
+
+
         return self.goal_unique
 
 
@@ -265,29 +307,31 @@ class DataReader(object):
         #fig.colorbar(surf, shrink=0.5, aspect=5)
 #        plt.show()
 
-    def generate_score(self,viz_rviz=False,visualize=False,plot=False):
+    def generate_score(self, viz_rviz=False, visualize=False, plot=False):
         self.num_base_locations = 1
         mytargets = 'all_goals'
         mytask = self.task #'shaving'
+        myReferenceNames = self.reference_options
         #start = 0
         #end = 3
-        myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
-        print 'There are ',len(myGoals),' goals being sent to score generator.'
+        myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
+        print 'There are ', len(myGoals), ' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=visualize,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
+        selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
+                                  goals=myGoals, model=self.model, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
-        score_sheet,default_is_zero = selector.handle_score(plot=plot)
+        score_sheet, default_is_zero = selector.handle_score(plot=plot)
         if not default_is_zero:
             print 'The score sheet top item: '
             print '([x, y, theta, z, bed_z, bed_head_rest_theta], [space_score, reachability, manipulability])'
-            print score_sheet[0.,0.][0]
-            print 'The number of base configurations on the score sheet for the default human position (with score > 0) is: ',len(score_sheet[0.,0.])
+            print score_sheet[0., 0.][0]
+            print 'The number of base configurations on the score sheet for the default human position (with score > 0) is: ', len(score_sheet[0., 0.])
             print 'See the created pkl file for the entire set of data.'
         else:
             print 'The score is 0 for the default human position on the bed. It\'s possible that there is a good score at other human positions, but I can\'t easily output it here.'
             print 'See the created pkl file for the entire set of data.'
-            print score_sheet[0.,0.]
+            print score_sheet[0., 0.]
         #print 'Goals: \n',self.clustered_goal_data[0:4]
         #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
 #        score_sheet,goal_scores = selector.handle_score()
@@ -342,7 +386,7 @@ class DataReader(object):
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
-        save_pickle(score_sheet,''.join([pkg_path, '/data/',self.task,'_',self.model,'_score_data.pkl']))
+        save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_score_data.pkl']))
         print 'There was no existing score data for this task. I therefore created a new file.'
 #        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
 #            data1 = load_pickle(''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
@@ -359,7 +403,7 @@ class DataReader(object):
 #            print 'There was no existing score data for this task. I therefore created a new file.'
 #        return self.score_sheet,reachable,manipulable
         return score_sheet
-
+    '''
     def dangling_code(self):
 
 
@@ -405,7 +449,7 @@ class DataReader(object):
 
 
 
-
+    '''
 #        old_max_score = np.max(self.score_sheet[:,4])
 #        print 'The max reach score (% out of 1.00) I got when using only 1 base position was: ', np.max(self.score_sheet[:,4])
 #        ## Handles the option of getting multiple goal positions
@@ -668,9 +712,9 @@ class DataReader(object):
                 ax2.set_title(''.join(['Plot of manip score from BP',str(i+1),' ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
                 plt.savefig(''.join([pkg_path, '/images/manip_score_of_BP',str(i+1),'_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
 
-        plt.ion()                                                                                                 
+        #plt.ion()
         plt.show()                                                                                                
-        ut.get_keystroke('Hit a key to proceed next')
+        #ut.get_keystroke('Hit a key to proceed next')
 
     def plot_goals(self):
         fig = plt.figure()
@@ -716,17 +760,19 @@ class DataReader(object):
 
 
 if __name__ == "__main__":
-    data_start=0
-    data_finish=5 #4000 #'end'
+    data_start = 0
+    data_finish = 5 #4000 #'end'
     model = 'autobed' #options are: 'chair', 'bed', 'autobed'
     task = 'shaving'
-    subject='sub3_shaver'
+    subject = 'sub3_shaver'
     pos_clust = 200
     ori_clust = 5
-    rospy.init_node(''.join(['data_reader_',subject,'_',str(data_start),'_',str(data_finish),'_',str(int(time.time()))]))
+    rospy.init_node(''.join(['data_reader_', subject, '_', str(data_start), '_', str(data_finish), '_',
+                             str(int(time.time()))]))
     start_time = time.time()
     print 'Starting to convert data!'
-    runData = DataReader(subject=subject,data_start=data_start,data_finish=data_finish,model=model,task=task,pos_clust=pos_clust,ori_clust=ori_clust)
+    runData = DataReader(subject=subject, data_start=data_start, data_finish=data_finish, model=model, task=task,
+                         pos_clust=pos_clust, ori_clust=ori_clust)
     raw_data = runData.get_raw_data()
 
     ## To test clustering by using raw data sampled instead of clusters
@@ -742,8 +788,8 @@ if __name__ == "__main__":
     start_time = time.time()
     #runData.pub_rviz()
     #runData.plot_goals()
-    runData.generate_score(viz_rviz=True,visualize=False,plot=False)
-    print 'Time to generate all scores: %fs'%(time.time()-start_time)
+    runData.generate_score(viz_rviz=True, visualize=False, plot=False)
+    print 'Time to generate all scores: %fs' % (time.time()-start_time)
     #print 'Now trying to plot the data. This might take a while for lots of data; depends on amount of data in score sheet. ~60 seconds.'
     #start_time = time.time()
     #runData.plot_score(load=False)
