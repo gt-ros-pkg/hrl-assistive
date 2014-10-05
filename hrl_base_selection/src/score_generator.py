@@ -208,6 +208,9 @@ class ScoreGenerator(object):
         heady_min = -0.1
         heady_max = 0.1+.01
         heady_int = 0.05
+        if self.model == 'autobed':
+            x_int = .1
+            y_int = .1
         if self.model == 'chair':
             bedz_min = 0.
             bedtheta_min = 0.
@@ -255,7 +258,6 @@ class ScoreGenerator(object):
                 this_score = []
                 this_reachable = []
                 this_manipulable = []
-
 
                 for x in np.arange(x_min, x_max, x_int):
                     for y in np.arange(y_min, y_max, y_int):

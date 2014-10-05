@@ -34,6 +34,15 @@ class DataReader_Yogurt(object):
                          baselink_B_liftlink*createBMatrix(goals[1][0:3], goals[1][3:]),  # In reference to base link
                          createBMatrix(goals[2][0:3], goals[2][3:])])  # This one is in reference to the head
 
+        for item in data:
+            print Bmat_to_pos_quat(item)
+
+        # For my information, these are the [xyz] and quaternion [x,y,z,w] for the PoseStamped messages for the goal
+        # positions. The first two have parent tf /base_link. The third has parent link /head
+        # (array([ 0.48098773,  0.49761634,  0.91837238]), array([ 0.7765743 , -0.37100606, -0.27784852,  0.42671661]))
+        # (array([ 0.4598544 ,  0.8806009 ,  0.65371782]), array([ 0.45253993,  0.53399713, -0.17283745,  0.69295158]))
+        # (array([ 0.2741387 ,  0.05522572, -0.0119196 ]), array([-0.0235809 ,  0.74836334,  0.6627746 ,  0.0112287 ]))
+
         num = np.ones([3, 1])
         reference_options = ['head', 'base_link']
         reference = np.array([[1], [1], [0]])
