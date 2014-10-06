@@ -109,7 +109,7 @@ class ServoingManager(object):
             psm.pose.orientation.w = base_goal[int(6+7*i)]
             base_goals_list.append(copy.copy(psm))
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
-        self.servo_goal_pub.publish(base_goals_list)
+        self.servo_goal_pub.publish(base_goals_list[0])
 
         with self.lock:
             ar_data.tag_id = -1
