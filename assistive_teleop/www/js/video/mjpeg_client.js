@@ -12,7 +12,7 @@ var MjpegClient = function (options) {
 
     self.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
                                        optgroup:'Default',
-                                       cameraInfo:'/head_mount_kienct/rgb/camera_info',
+                                       cameraInfo:'/head_mount_kinect/rgb/camera_info',
                                        clickable:true,
                                        rotated: false,
                                        width: 640, //1280,
