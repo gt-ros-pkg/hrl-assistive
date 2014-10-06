@@ -61,7 +61,7 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.testing = True
+        self.testing = False
         if self.testing:
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
@@ -315,7 +315,7 @@ class BaseSelector(object):
             self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
             # subject_location = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
 
-        if model =='autobed':
+        if model == 'autobed':
             an = -m.pi/2
             self.headfloor_B_head = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.], #.45 #.438
                                                [         0.,   1.,         0.,       0.], #0.34 #.42
@@ -362,7 +362,7 @@ class BaseSelector(object):
         # Get score data and convert to goal locations
         print 'Time to receive head location and start things off: %fs' % (time.time()-start_time)
         start_time = time.time()
-        all_scores = self.load_task(req.task, req.model)
+        all_scores = self.load_task(task, model)
         scores = all_scores[headx, heady]
         if scores == None:
             print 'Failed to load precomputed reachability data. That is a problem. Abort!'
@@ -377,7 +377,7 @@ class BaseSelector(object):
         alpha = 0.002  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .02  # Weight on distance to move to get to that goal location
+        zeta = .2  # Weight on distance to move to get to that goal location
         pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
         headfloor_B_pr2 = pr2_B_headfloor.I
         pr2_loc = np.array([np.array(self.origin_B_pr2[0, 3]), np.array(self.origin_B_pr2[1, 3])])
