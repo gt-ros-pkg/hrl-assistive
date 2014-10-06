@@ -18,6 +18,7 @@
   <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
       <param name="port" type="int" value="8080" />
   </node>
+  <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf_web_republisher" output="screen" />
 
   <!-- Launch Kinect (needed for pixel_2_3d -->
   <include if="$(arg launch_kinect)" file="/etc/ros/distro/openni_head.launch" />
