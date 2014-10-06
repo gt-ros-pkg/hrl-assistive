@@ -2757,12 +2757,14 @@ ROS3D.Viewer = function(options) {
   this.camera.position.x = cameraPosition.x;
   this.camera.position.y = cameraPosition.y;
   this.camera.position.z = cameraPosition.z;
-  // add controls to the camera
-  this.cameraControls = new ROS3D.OrbitControls({
-    scene : this.scene,
-    camera : this.camera
-  });
-  this.cameraControls.userZoomSpeed = 1.5;
+  //[PG] - Add camera up to match ros displays
+  this.camera.up = new THREE.Vector3(0, 0, 1);
+  // add controls to the camera [PG] - Remove, unnecessary
+//  this.cameraControls = new ROS3D.OrbitControls({
+//    scene : this.scene,
+//    camera : this.camera
+//  });
+  //this.cameraControls.userZoomSpeed = 1.5;
 
   // lights
   this.scene.add(new THREE.AmbientLight(0x555555));
@@ -2772,14 +2774,14 @@ ROS3D.Viewer = function(options) {
   // propagates mouse events to three.js objects
   this.selectableObjects = new THREE.Object3D();
   this.scene.add(this.selectableObjects);
- // var mouseHandler = new ROS3D.MouseHandler({
- //   renderer : this.renderer,
- //   camera : this.camera,
- //   rootObject : this.selectableObjects,
- //   fallbackTarget : this.cameraControls
- // });
-
-  // highlights the receiver of mouse events
+//  var mouseHandler = new ROS3D.MouseHandler({
+//    renderer : this.renderer,
+//    camera : this.camera,
+//    rootObject : this.selectableObjects,
+//    fallbackTarget : this.cameraControls
+//  });
+//
+//  // highlights the receiver of mouse events
 //  this.highlighter = new ROS3D.Highlighter({
 //    mouseHandler : mouseHandler
 //  });
@@ -2789,9 +2791,9 @@ ROS3D.Viewer = function(options) {
    */
   function draw() {
     // update the controls
-    that.cameraControls.update();
+    //that.cameraControls.update();
 
-    // put light to the top-left of the camera
+    //// put light to the top-left of the camera
     that.directionalLight.position = that.camera.localToWorld(new THREE.Vector3(0, 0, 10));
     that.directionalLight.position.normalize();
 
