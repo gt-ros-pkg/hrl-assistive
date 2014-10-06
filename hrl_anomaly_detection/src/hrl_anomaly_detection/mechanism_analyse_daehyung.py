@@ -4,6 +4,7 @@
 import sys
 import os
 import time
+import math
 import numpy as np
 import glob
 
@@ -19,29 +20,174 @@ from mvpa2.generators import splitters
 
 
 import advait.mechanism_analyse_RAM as mar
+import advait.ram_db as rd
 
 
 def get_all_blocked_detection():
     root_path = os.environ['HRLBASEPATH']+'/'
     
-    pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+    ## pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+    pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
 
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
     mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
-    data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
+    data, labels, chunks = create_blocked_dataset_semantic_classes(mech_vec_list,
                                     mech_nm_list, append_robot = True)    
 
-    
-    ## print np.array([np.array(mech_vec_list).T]).shape
-    ## print mech_vec_list[0].shape
-    ## print mech_vec_list[2].shape
-    ## print mech_vec_list[3].shape
-    ## print np.array([data.T]).shape
-    
-    return np.array([data.T])
+    return np.array(data), labels, chunks
 
+def create_blocked_dataset_semantic_classes(mech_vec_list,
+                                            mech_nm_list, append_robot):
+    all_vecs = np.column_stack(mech_vec_list)
+    lab_num = 0
+    chunk_num = 0
+    labels = []
+    feat_list = []
+    chunks = []
+    labels_test = []
+    feat_list_test = []
+    chunks_test = []
+    for i, v_mat in enumerate(mech_vec_list):
+        nm = mech_nm_list[i]
+        if nm not in rd.tags_dict: #name filtering
+            print nm + ' is not in tags_dict'
+            #raw_input('Hit ENTER to continue')
+            continue
+        tags = rd.tags_dict[nm]
+        if 'recessed' in nm:
+            continue
+        if 'HSI_Executive_Board_Room_Cabinet_Left' in nm:
+            continue
+
+        if rd.ig in tags or rd.te in tags:
+            continue
+
+        if rd.k in tags and rd.r in tags:
+            #lab_str = 'Refrigerator'
+            lab_str = 'Fridge'
+            lab_num = 0
+        elif rd.k in tags and rd.f in tags:
+            lab_str = 'Freezer'
+            lab_num = 1
+        elif rd.k in tags and rd.c in tags:
+            lab_str = 'Kitchen Cabinet'
+            lab_num = 2
+        elif rd.o in tags and rd.c in tags:
+            lab_str = 'Office Cabinet'
+            lab_num = 3
+            if 'HSI_kitchen_cabinet_left' in nm:
+                v_mat = 1.0*v_mat + 0.
+        elif rd.do in tags and rd.s in tags:
+            lab_str = 'Springloaded Door'
+            lab_num = 4
+        else:
+            continue
+        for v in v_mat.T:
+            if rd.te in tags:
+                labels_test.append(lab_str)
+                chunks_test.append(mech_nm_list[i])
+            else:
+                labels.append(lab_str)
+                if rd.ro in tags and append_robot:
+                    chunks.append(mech_nm_list[i]+'_robot')
+                else:
+                    chunks.append(mech_nm_list[i])
+        if rd.te in tags:
+            feat_list_test.append(v_mat)
+        else:
+            feat_list.append(v_mat)
+        print '-------------------------'
+        print 'nm:', nm
+        if nm == 'HSI_kitchen_cabinet_right':
+            print '####################33'
+            print '####################33'
+            print '####################33'
+            
+    #chunks=None
+    feats = np.column_stack(feat_list)
+
+    # (length x samples), mechanism tags, mechanism+actor tags
+    return feats, labels, chunks
+
+
+def get_trans_mat(vecs, nState):
+
+    #init
+    discrete_max  = 0.0
+    discrete_vecs = np.zeros(vecs.shape)
+
+    # discretization
+    discrete_max = np.nanmax(vecs)
+
+    # Non-negative states
+    ## state_table = np.arange(0.0, discrete_max+0.000001, resol)
+    state_table = np.linspace(0.0, discrete_max, nState)
+
+    # Reset transition probability matrix
+    trans_size = len(state_table) #int(np.ceil(discrete_max / resol)) + 1
+    trans_mat  = np.zeros((trans_size, trans_size))
+    trans_prob_mat = np.zeros((trans_size, trans_size))
+
+    # Discretization and Update transition probability matrix
+    m,n = vecs.shape
+    for i in xrange(m):
+        for j in xrange(n):
+            if math.isnan(vecs[i][j]): 
+                ## discrete_vecs[i][j] = vecs[i][j]                
+                ## continue
+                discrete_vecs[i][j] = (vecs[i][j-1] + vecs[i][j-1]) / 2.0
+                if math.isnan(discrete_vecs[i][j]): 
+                    print "we found nan"
+                    sys.exit()
+            else:                        
+                discrete_vecs[i][j], _ = find_nearest(state_table, vecs[i][j])
+
+            if i != 0:
+                _, x_idx = find_nearest(state_table, discrete_vecs[i-1][j])
+                _, y_idx = find_nearest(state_table, discrete_vecs[i][j])
+
+                trans_mat[x_idx,y_idx] += 1.0
+
+    # Set transition probability matrix
+    for j in xrange(trans_size):
+        total = np.sum(trans_mat[:,j])
+        if total == 0: 
+            trans_prob_mat[:,j] = 1.0 / float(trans_size)
+        else:
+            trans_prob_mat[:,j] = trans_mat[:,j] / total
+
+    return trans_prob_mat, discrete_vecs
+
+
+def approx_missing_value(vecs):
+
+    new_vecs = np.zeros(vecs.shape)
     
+    m,n = vecs.shape
+    for i in xrange(m):
+        for j in xrange(n):
+            if math.isnan(vecs[i][j]): 
+                new_vecs[i][j] = (vecs[i][j-1] + vecs[i][j-1]) / 2.0
+                if math.isnan(new_vecs[i][j]): 
+                    print "we found nan"
+                    sys.exit()
+            else:                        
+                new_vecs[i][j] = vecs[i][j]
+    
+    return new_vecs
+
+def find_nearest(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return array[idx], idx
+
+
+
+
+
+
+
+
     
 
 # Get mean force profile by chunks

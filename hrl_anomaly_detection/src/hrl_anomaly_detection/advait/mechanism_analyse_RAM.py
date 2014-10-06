@@ -17,9 +17,10 @@ from mvpa2.generators import splitters
 
 import mechanism_analyse_advait as maa
 sys.path.append(os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook')
-import ram_db as rd
 
-import roslib; roslib.load_manifest('modeling_forces')
+## import roslib; roslib.load_manifest('modeling_forces')
+import roslib; roslib.load_manifest('hrl_anomaly_detection') 
+import ram_db as rd
 import hrl_lib.util as ut
 import hrl_lib.matplotlib_util as mpu
 
@@ -496,6 +497,9 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
             print '####################33'
             print '####################33'
 
+    ## print labels # mechanism
+    ## print len(chunks) # mechanism + actor?
+            
     #chunks=None
     feats = np.column_stack(feat_list)
     data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels, chunks is name of sample
