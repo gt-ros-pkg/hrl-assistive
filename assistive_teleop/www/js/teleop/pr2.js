@@ -3,7 +3,8 @@ var Pr2Base = function (ros) {
     var base = this;
     base.ros = ros;
     base.ros.getMsgDetails('geometry_msgs/Twist');
-    base.commandPub = new base.ros.Topic({
+    base.commandPub = new ROSLIB.Topic({
+        ros: base.ros,
         name: 'base_controller/command',
         messageType: 'geometry_msgs/Twist'
     });
@@ -13,8 +14,7 @@ var Pr2Base = function (ros) {
         cmd.linear.x = x;
         cmd.linear.y = y;
         cmd.angular.z = rot;
-        var cmdMsg = new base.ros.Message(cmd);
-        base.commandPub.publish(cmdMsg);
+        base.commandPub.publish(cmd);
     };
 
     base.drive = function (selector, x, y, rot) {
@@ -36,7 +36,8 @@ var Pr2Gripper = function (side, ros) {
     gripper.ros = ros;
     gripper.state = 0.0;
     gripper.ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
-    gripper.stateSub = new gripper.ros.Topic({
+    gripper.stateSub = new ROSLIB.Topic({
+        ros: gripper.ros,
         name: gripper.side.substring(0, 1) + '_gripper_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointControllerState'
     });
@@ -52,7 +53,8 @@ var Pr2Gripper = function (side, ros) {
     };
     gripper.stateSub.subscribe(gripper.stateCB);
     
-    gripper.goalPub = new gripper.ros.Topic({
+    gripper.goalPub = new ROSLIB.Topic({
+        ros: gripper.ros,
         name: gripper.side.substring(0, 1) + '_gripper_controller/gripper_action/goal',
         messageType: 'pr2_controllers_msgs/Pr2GripperCommandActionGoal'
     });
@@ -61,8 +63,7 @@ var Pr2Gripper = function (side, ros) {
         var goalMsg = gripper.ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
         goalMsg.goal.command.position = pos;
         goalMsg.goal.command.max_effort = eff;
-        var msg = new gripper.ros.Message(goalMsg);
-        gripper.goalPub.publish(msg);
+        gripper.goalPub.publish(goalMsg);
     };
     gripper.open = function () {
         gripper.setPosition(0.09);
@@ -77,23 +78,27 @@ var Pr2Head = function (ros) {
     var head = this;
     head.ros = ros;
     head.state = [0.0, 0.0];
+    head.limits = [[-2.85, 2.85], [1.18, -0.38]];
     head.joints = ['head_pan_joint', 'head_tilt_joint'];
     head.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
     head.ros.getMsgDetails('pr2_controllers_msgs/JointTrajectoryActionGoal');
-    head.jointPub = new head.ros.Topic({
+    head.jointPub = new ROSLIB.Topic({
+        ros: head.ros,
         name: 'head_traj_controller/joint_trajectory_action/goal',
         messageType: 'pr2_controllers_msgs/JointTrajectoryActionGoal'
     });
     head.jointPub.advertise();
 
     head.ros.getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
-    head.pointPub = new head.ros.Topic({
+    head.pointPub = new ROSLIB.Topic({
+        ros: head.ros,
         name: 'head_traj_controller/point_head_action/goal',
         messageType: 'pr2_controllers_msgs/PointHeadActionGoal'
     });
     head.pointPub.advertise();
 
-    head.stateSub = new head.ros.Topic({
+    head.stateSub = new ROSLIB.Topic({
+        ros: head.ros,
         name: '/head_traj_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
@@ -108,19 +113,25 @@ var Pr2Head = function (ros) {
     };
     head.stateSub.subscribe(head.stateCB);
 
+    head.enforceLimits = function (pan, tilt) {
+        pan  = pan < head.limits[0][0] ? pan : head.limits[0][0];
+        pan  = pan > head.limits[0][1] ? pan : head.limits[0][0];
+        tilt  = tilt < head.limits[1][0] ? tilt : head.limits[1][0];
+        tilt  = tilt < head.limits[1][1] ? tilt : head.limits[1][1];
+        return [pan, tilt];
+    };
+
     head.setPosition = function (pan, tilt) {
         var dPan = Math.abs(pan - head.state[0]);
         var dTilt = Math.abs(tilt - head.state[1]);
-        var dist = Math.sqrt(dPan * dPan + dTilt * dTilt);
         var trajPointMsg = head.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
-        trajPointMsg.positions = [pan, tilt];
+        trajPointMsg.positions = head.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
-        trajPointMsg.time_from_start.secs = Math.max(dist, 1);
+        trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
         var goalMsg = head.ros.composeMsg('pr2_controllers_msgs/JointTrajectoryActionGoal');
         goalMsg.goal.trajectory.joint_names = head.joints;
         goalMsg.goal.trajectory.points.push(trajPointMsg);
-        var msg = new head.ros.Message(goalMsg);
-        head.jointPub.publish(msg);
+        head.jointPub.publish(goalMsg);
     };
     head.delPosition = function (delPan, delTilt) {
         var pan = head.state[0] += delPan;
@@ -143,8 +154,7 @@ var Pr2Head = function (ros) {
         };
         headPointMsg.goal.pointing_frame = head.pointingFrame;
         headPointMsg.goal.max_velocity = 0.35;
-        var msg = new head.ros.Message(headPointMsg);
-        head.pointPub.publish(msg);
+        head.pointPub.publish(headPointMsg);
     };
 };
 
@@ -155,13 +165,15 @@ var Pr2Torso = function (ros) {
     torso.state = 0.0;
     torso.ros.getMsgDetails('pr2_controllers_msgs/SingleJointPositionActionGoal');
 
-    torso.goalPub = new torso.ros.Topic({
+    torso.goalPub = new ROSLIB.Topic({
+        ros: torso.ros,
         name: 'torso_controller/position_joint_action/goal',
         messageType: 'pr2_controllers_msgs/SingleJointPositionActionGoal'
     });
     torso.goalPub.advertise();
 
-    torso.stateSub = new torso.ros.Topic({
+    torso.stateSub = new ROSLIB.Topic({
+        ros: torso.ros,
         name: 'torso_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
@@ -183,7 +195,6 @@ var Pr2Torso = function (ros) {
         var goal_msg = torso.ros.composeMsg('pr2_controllers_msgs/SingleJointPositionActionGoal');
         goal_msg.goal.position = z;
         goal_msg.goal.max_velocity = 1.0;
-        var msg = new torso.ros.Message(goal_msg);
-        torso.goalPub.publish(msg);
+        torso.goalPub.publish(goal_msg);
     };
 };
