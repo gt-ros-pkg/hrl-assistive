@@ -1,0 +1,27 @@
+.cursor-eyes {
+    cursor: url('cursors/eyes/eyes.png');
+}
+.cursor-eyes-left {
+    cursor: url('cursors/eyes/eyes-left.png');
+}
+.cursor-eyes-right {
+    cursor: url('cursors/eyes/eyes-right.png');
+}
+.cursor-eyes-up {
+    cursor: url('cursors/eyes/eyes-up.png');
+}
+.cursor-eyes-down {
+    cursor: url('cursors/eyes/eyes-down.png');
+}
+.cursor-eyes-up-left {
+    cursor: url('cursors/eyes/eyes-up-left.png');
+}
+.cursor-eyes-up-right {
+    cursor: url('cursors/eyes/eyes-up-right.png');
+}
+.cursor-eyes-down-left {
+    cursor: url('cursors/eyes/eyes-down-left.png');
+}
+.cursor-eyes-down-right {
+    cursor: url('cursors/eyes/eyes-down-right.png');
+}

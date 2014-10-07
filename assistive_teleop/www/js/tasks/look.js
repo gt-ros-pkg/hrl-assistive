@@ -5,13 +5,37 @@ assistive_teleop.Look = function (options) {
     self.div = options.div || 'markers';
     self.camera = options.camera || new assistive_teleop.ROSCameraModel();
     self.head = options.head || new Pr2Head(self.ros);
+    self.buttonText = 'Looking';
+    self.buttonIcon = '';
 
     self.thresholds = options.thresholds || {top:0.15,
                                              bottom: 0.85,
                                              right: 0.85,
                                              left: 0.15};
+    self.cursorClasses = {1: 'cursor-eyes-down-left',
+                          2: 'cursor-eyes-down',
+                          3: 'cursor-eyes-down-right',
+                          4: 'cursor-eyes-left',
+                          5: 'cursor-eyes',
+                          6: 'cursor-eyes-right',
+                          7: 'cursor-eyes-up-left',
+                          8: 'cursor-eyes-up',
+                          9: 'cursor-eyes-up-right'}
+
     self.start = function () {
         $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor);
+        for ( var idx in self.cursorClasses ) {
+            $('#'+self.div).removeClass( self.cursorClasses[ idx ] );
+        }
+    }
+
+    self.stop = function () {
+        $('#'+self.div+' canvas').off('mousemove.rfh');
+        $('#'+self.div).removeClass('');    
+    }
+
+    self.setCursor = function (e) {
+        $('#'+self.div).addClass(self.cursorClasses[self.getRegion(e)]);
     }
 
     self.getRegion = function (e) {
@@ -87,51 +111,6 @@ assistive_teleop.Look = function (options) {
         } else {
             self.head.delPosition(dx,dy);
         }
-        
-    }
-
-    self.setCursor = function (e) {
-//        switch (self.getRegion(pct_x, pct_y)) {
-//            case 1: var dir = 'down-left';
-//                    break;
-//            case 2: var dir = 'down';
-//                    break;
-//            case 3: var dir = 'down-right';
-//                    break;
-//            case 4: var dir = 'left';
-//                    break;
-//            case 5: var dir = '';
-//                    break;
-//            case 6: var dir = 'right';
-//                    break;
-//            case 7: var dir = 'up-left';
-//                    break;
-//            case 8: var dir = 'up';
-//                    break;
-//            case 9: var dir = 'up-right';
-//            }
-//        $('#'+self.div).css({'cursor': 'url("css/cursors/eyes/eyes-'+dir+'.png")'});
-        var region = self.getRegion(e);
-        switch (region) {
-            case 1: var dir = 'sw-resize';
-                    break;
-            case 2: var dir = 's-resize';
-                    break;
-            case 3: var dir = 'se-resize';
-                    break;
-            case 4: var dir = 'w-resize';
-                    break;
-            case 5: var dir = 'crosshair';
-                    break;
-            case 6: var dir = 'e-resize';
-                    break;
-            case 7: var dir = 'nw-resize';
-                    break;
-            case 8: var dir = 'n-resize';
-                    break;
-            case 9: var dir = 'ne-resize';
-            }
-        $('#'+self.div).css({'cursor': dir});
     }
 }
 
