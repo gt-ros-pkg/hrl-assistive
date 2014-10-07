@@ -1,16 +1,19 @@
-R4H.TaskMenu = function (divId) {
+RFH.TaskMenu = function (divId) {
     "use strict";
     var self = this;
     self.divId = divId;
     self.tasks = [];
 
     self.addTask = function (taskObject, position) {
-        var position = position !== undefined ? position : a.length;
+        var position = position !== undefined ? position : self.tasks.length;
         self.tasks.splice(position, 0, taskObject);
         $('#'+divId).append('<button id="'+taskObject.buttonText+'" class="menu-item">'+taskObject.buttonText+'</button>');
+        $('#'+taskObject.buttonText).button();
         $('#'+taskObject.buttonText).addClass(taskObject.buttonClass);
-        $('#'+taskObject.buttonText).on('click.rfh', function(){self.startTask(taskObject)});
-        //Add callbacks, etc.
+        $('#'+taskObject.buttonText+' > span').on('click.rfh',
+                                                  function(event){
+                                                        self.startTask(taskObject)
+                                                        });
     }
 
     self.startTask = function (taskObject) {
@@ -18,9 +21,9 @@ R4H.TaskMenu = function (divId) {
         taskObject.start();
     }
     
-    self.startTask = function (taskObject) {
-        $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.startTask(taskObject)});
+    self.stopTask = function (taskObject) {
         taskObject.stop();
+        $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.startTask(taskObject)});
     }
 
     self.removeTask = function (taskObject) {
@@ -28,9 +31,9 @@ R4H.TaskMenu = function (divId) {
     }
 }
 
-R4H.initTaskMenu = function (divId) {
-    R4H.taskMenu = new R4H.TaskMenu( divId );
-    R4H.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
+RFH.initTaskMenu = function (divId) {
+    RFH.taskMenu = new RFH.TaskMenu( divId );
+    RFH.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
                                                     div: 'markers',
                                                     camera: RFH.mjpeg.cameraModel}));
 }

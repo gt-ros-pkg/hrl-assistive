@@ -24,19 +24,21 @@ RFH.Look = function (options) {
 
     self.start = function () {
         $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor);
+    }
+    
+    self.stop = function () {
+        $('#'+self.div+' canvas').off('mousemove.rfh');
         for ( var idx in self.cursorClasses ) {
             $('#'+self.div).removeClass( self.cursorClasses[ idx ] );
         }
-    }
-
-    self.stop = function () {
-        $('#'+self.div+' canvas').off('mousemove.rfh');
-        $('#'+self.div).removeClass('');    
-    }
+    };
 
     self.setCursor = function (e) {
-        $('#'+self.div).addClass(self.cursorClasses[self.getRegion(e)]);
-    }
+        for ( var idx in self.cursorClasses ) {
+            $('#'+self.div+' canvas').removeClass( self.cursorClasses[ idx ] );
+        }
+        $('#'+self.div+' canvas').addClass(self.cursorClasses[self.getRegion(e)]);
+    };
 
     self.getRegion = function (e) {
         var pt = RFH.positionInElement(e) 

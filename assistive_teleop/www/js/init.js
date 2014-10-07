@@ -69,11 +69,6 @@ var RFH = {
   //    '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
   //    '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power').button();
 
-    var initTasks = function () {
-        RFH.tasks = {};
-        initLook();
-    }
-
     this.ros = new ROSLIB.Ros({url: 'ws://'+ this.ROBOT + ':'+ this.PORT});
     this.ros.on('close', function(e) {
         log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
@@ -88,7 +83,7 @@ var RFH = {
         extendROSJS(RFH.ros);
         initMjpegCanvas('video-main');
         initMarkerDisplay('markers');
-        initTasks();
+        RFH.initTaskMenu('main-menu');
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');
