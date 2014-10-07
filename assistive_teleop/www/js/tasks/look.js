@@ -6,10 +6,10 @@ assistive_teleop.Look = function (options) {
     self.camera = options.camera || new assistive_teleop.ROSCameraModel();
     self.head = options.head || new Pr2Head(self.ros);
 
-    self.thresholds = options.thresholds || {top:0.11,
-                                             bottom: 0.89,
-                                             right: 0.89,
-                                             left: 0.11};
+    self.thresholds = options.thresholds || {top:0.15,
+                                             bottom: 0.85,
+                                             right: 0.85,
+                                             left: 0.15};
     self.start = function () {
         $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor);
     }
@@ -44,7 +44,7 @@ assistive_teleop.Look = function (options) {
     self.onClick = function (e) {
         var dx = 0, dy = 0, point = false;
         var hfov = 1, vfov = 0.75; //FOV of kinect is ~1 radians wide, 0.75 radians tall
-        var SCALE = 0.85; //Scale large motions so we don't over shoot
+        var SCALE = 0.8; //Scale large motions so we don't over shoot
         switch (self.getRegion(e)) {
             case 1: 
                 var dx = SCALE * hfov;
