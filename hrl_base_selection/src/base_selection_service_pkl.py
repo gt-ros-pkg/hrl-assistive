@@ -269,12 +269,6 @@ class BaseSelector(object):
         #             req.head.pose.orientation.w]
         # self.pr2_B_head = createBMatrix(pos_temp, ori_temp)
         # #print 'head from input: \n', head
-        now = rospy.Time.now()
-        self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
-        (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
-        now = rospy.Time.now()
-        self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
-        (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
         if not self.testing:
             try:
                 now = rospy.Time.now()
