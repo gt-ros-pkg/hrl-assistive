@@ -43,13 +43,13 @@ var ClickableElement = function(elementID) {
 
     this.getClickPixelWRTCamera= function (e) {
         var pixel = this.getClickPixel(e);
-        var camera = $('#'+assistive_teleop.mjpeg.selectBoxId+" :selected").val();
-        return this.convertDisplayToCameraPixel(pixel, assistive_teleop.mjpeg, camera);
+        var camera = $('#'+RFH.mjpeg.selectBoxId+" :selected").val();
+        return this.convertDisplayToCameraPixel(pixel, RFH.mjpeg, camera);
     };
 
     this.onClickCB = function (e) {
         var camera = $('#cameraSelect :selected').text();
-        if (assistive_teleop.mjpeg.cameraData[camera].clickable) {
+        if (RFH.mjpeg.cameraData[camera].clickable) {
             var pixel = this.getClickPixelWRTCamera(e)
             for (var i = 0; i < this.onClickCBList.length; i += 1) {
                 this.onClickCBList[i](pixel);
@@ -110,49 +110,49 @@ var Pixel23DClient = function (ros) {
 
 
 var initClickableActions = function () {
-    assistive_teleop.rPoseSender = new PoseSender(assistive_teleop.ros, 'wt_r_click_pose');
-    assistive_teleop.lPoseSender = new PoseSender(assistive_teleop.ros, 'wt_l_click_pose');
-    assistive_teleop.rCamPointSender = new LookatIk(assistive_teleop.ros, '/rightarm_camera/lookat_ik/goal')
-    //assistive_teleop.poseSender = new PoseSender(assistive_teleop.ros);
-    assistive_teleop.clickableCanvas = new ClickableElement(assistive_teleop.mjpeg.imageId);
-    assistive_teleop.p23DClient = new Pixel23DClient(assistive_teleop.ros);
+    RFH.rPoseSender = new PoseSender(RFH.ros, 'wt_r_click_pose');
+    RFH.lPoseSender = new PoseSender(RFH.ros, 'wt_l_click_pose');
+    RFH.rCamPointSender = new LookatIk(RFH.ros, '/rightarm_camera/lookat_ik/goal')
+    //RFH.poseSender = new PoseSender(RFH.ros);
+    RFH.clickableCanvas = new ClickableElement(RFH.mjpeg.imageId);
+    RFH.p23DClient = new Pixel23DClient(RFH.ros);
 
-    $('#'+assistive_teleop.mjpeg.imageId).on('click.rfh', assistive_teleop.clickableCanvas.onClickCB.bind(assistive_teleop.clickableCanvas));
+    $('#'+RFH.mjpeg.imageId).on('click.rfh', RFH.clickableCanvas.onClickCB.bind(RFH.clickableCanvas));
     $('#image_click_select').html('<select id="img_act_select"> </select>');
     //Add flag option for looking around on click
     $('#img_act_select').append('<option id="looking" '+
                                 'value="looking">Look</option>')
     var lookCB = function (pixel) { //Callback for looking at image
         if ($('#img_act_select :selected').val() === 'looking') {
-            var camera = $('#'+assistive_teleop.mjpeg.selectBoxId+" :selected").val();
+            var camera = $('#'+RFH.mjpeg.selectBoxId+" :selected").val();
             if (camera === 'Right Arm' || camera === 'Left Arm' || camera === 'AR Tag') {
-                var cm = assistive_teleop.mjpeg.cameraModels[assistive_teleop.mjpeg.cameraData[camera].cameraInfo];
+                var cm = RFH.mjpeg.cameraModels[RFH.mjpeg.cameraData[camera].cameraInfo];
                 var xyz =  cm.projectPixel(pixel[0], pixel[1], 2);
-                var psm = assistive_teleop.ros.composeMsg('geometry_msgs/PointStamped'); 
+                var psm = RFH.ros.composeMsg('geometry_msgs/PointStamped'); 
                 psm.header.frame_id = cm.frame_id;
                 psm.point.x = xyz[0];
                 psm.point.y = xyz[1];
                 psm.point.z = xyz[2];
-                assistive_teleop.rCamPointSender.publishTarget(psm);
+                RFH.rCamPointSender.publishTarget(psm);
             } else {
                 var resp_cb = function (result) {
                     if (result.error_flag !== 0) {
                         log('Error finding 3D point.');
                     } else {
-                        clearInterval(assistive_teleop.head.pubInterval);
-                        assistive_teleop.head.pointHead(result.pixel3d.pose.position.x,
+                        clearInterval(RFH.head.pubInterval);
+                        RFH.head.pointHead(result.pixel3d.pose.position.x,
                                               result.pixel3d.pose.position.y,
                                               result.pixel3d.pose.position.z,
                                               result.pixel3d.header.frame_id);
                         log("Looking at click.");
                     };
                 }
-                assistive_teleop.p23DClient.call(pixel[0], pixel[1], resp_cb);
+                RFH.p23DClient.call(pixel[0], pixel[1], resp_cb);
             }
         }
     }
     //Add callback to list of callbacks for clickable element
-    assistive_teleop.clickableCanvas.onClickCBList.push(lookCB);
+    RFH.clickableCanvas.onClickCBList.push(lookCB);
 
     $('#img_act_select').append('<option id="reachLeft" value="reachLeft">Left Hand Goal</option>');
     var reachLeftCB = function (pixel) { //Callback for looking at image
@@ -161,16 +161,16 @@ var initClickableActions = function () {
                     if (result.error_flag !== 0) {
                         log('Error finding 3D point');
                     } else {
-                        assistive_teleop.lPoseSender.sendPose(result.pixel3d);
+                        RFH.lPoseSender.sendPose(result.pixel3d);
                         log("Sending Left Arm Reach point command");
                         $('#img_act_select').val('looking');
                     };
                 }
-            assistive_teleop.p23DClient.call(pixel[0], pixel[1], resultCB);
+            RFH.p23DClient.call(pixel[0], pixel[1], resultCB);
         }
     }
     //Add callback to list of callbacks for clickable element
-    assistive_teleop.clickableCanvas.onClickCBList.push(reachLeftCB);
+    RFH.clickableCanvas.onClickCBList.push(reachLeftCB);
 
     // Right hand reach goal on clicked position
     $('#img_act_select').append('<option id="reachRight" value="reachRight">Right Hand Goal</option>');
@@ -180,37 +180,37 @@ var initClickableActions = function () {
                 if (result.error_flag !== 0) {
                     log('Error finding 3D point');
                 } else {
-                    assistive_teleop.rPoseSender.sendPose(result.pixel3d);
+                    RFH.rPoseSender.sendPose(result.pixel3d);
                     log("Sending Right Arm Reach point command");
                     $('#img_act_select').val('looking');
                 };
             }
-            assistive_teleop.p23DClient.call(pixel[0], pixel[1], resultCB);
+            RFH.p23DClient.call(pixel[0], pixel[1], resultCB);
         }
     }
     //Add callback to list of callbacks for clickable element
-    assistive_teleop.clickableCanvas.onClickCBList.push(reachRightCB);
+    RFH.clickableCanvas.onClickCBList.push(reachRightCB);
 
     $('#img_act_select').append('<option id="seedReg" value="seedReg">Register Head</option>');
     var seedRegCB = function (pixel) { //Callback for registering the head
         if ($('#img_act_select :selected').val() ===  'seedReg') {
-            var camera = $('#'+assistive_teleop.mjpeg.selectBoxId+" :selected").val();
-            cw = assistive_teleop.mjpeg.cameraData[camera].width;
-            ch = assistive_teleop.mjpeg.cameraData[camera].height;
+            var camera = $('#'+RFH.mjpeg.selectBoxId+" :selected").val();
+            cw = RFH.mjpeg.cameraData[camera].width;
+            ch = RFH.mjpeg.cameraData[camera].height;
             cw_border = Math.round(cw*0.20);
             ch_border = Math.round(ch*0.20);
             if (pixel[0] < cw_border || pixel[0] > (cw-cw_border) ||
                 pixel[1] < ch_border || pixel[1] > (ch-ch_border)) {
-              assistive_teleop.log("Please center the head in the camera before registering the head");
+              RFH.log("Please center the head in the camera before registering the head");
               $('#img_act_select').val('looking');
             } else {
-              assistive_teleop.bodyReg.registerHead(pixel[0], pixel[1]);
+              RFH.bodyReg.registerHead(pixel[0], pixel[1]);
               log("Sending head registration command.");
             }
         }
     }
     //Add callback to list of callbacks for clickable element
-    assistive_teleop.clickableCanvas.onClickCBList.push(seedRegCB);
+    RFH.clickableCanvas.onClickCBList.push(seedRegCB);
     
     $('#img_act_select').append('<option id="rArmCamLook" value="rArmCamLook">Look: Right Arm Camera</option>')
     var rArmCamLookCB = function (pixel) { //Callback for looking at point with right arm camera
@@ -219,13 +219,13 @@ var initClickableActions = function () {
                 if (result.error_flag !== 0) {
                     log('Error finding 3D point');
                 } else {
-                    assistive_teleop.rCamPointSender.callPoseStamped(result.pixel3d);
+                    RFH.rCamPointSender.callPoseStamped(result.pixel3d);
                 };
                 $('#img_act_select').val('looking');
             }
-            assistive_teleop.p23DClient.call(pixel[0], pixel[1], resultCB);
+            RFH.p23DClient.call(pixel[0], pixel[1], resultCB);
         }
     }
     //Add callback to list of callbacks
-    assistive_teleop.clickableCanvas.onClickCBList.push(rArmCamLookCB);
+    RFH.clickableCanvas.onClickCBList.push(rArmCamLookCB);
 };

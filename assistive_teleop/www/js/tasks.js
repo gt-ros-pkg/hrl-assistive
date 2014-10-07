@@ -17,12 +17,12 @@ var TaskInterface = function (ros) {
       });
       taskUI.sendTaskPub.publish(msg);
       var txt = "Sending Task: " + act + " the " + loc;
-      assistive_teleop.log(txt);
+      RFH.log(txt);
     };
 }
 
 var initTaskInterface = function (tabDivId) {
-    assistive_teleop.taskUI = new TaskInterface(assistive_teleop.ros);
+    RFH.taskUI = new TaskInterface(RFH.ros);
     var divRef = "#"+tabDivId;
     $(divRef).css({"position":"relative"});
     $(divRef).append('<table id="' + tabDivId + '_T0">' +
@@ -49,7 +49,7 @@ var initTaskInterface = function (tabDivId) {
                              '</select>');
     $(divRef+'_R2C0').append('<button id="send_task"> Send Task </button>');
     $("#send_task").button()
-    $(divRef+'_R2C0').click(assistive_teleop.taskUI.sendTask);
+    $(divRef+'_R2C0').click(RFH.taskUI.sendTask);
 
     // Info dialog box -- Pops up with instructions for using the body registration tab
     var INFOTEXT = "The Tasks Tab allows you to command the robot to do various tasks.</br>" +

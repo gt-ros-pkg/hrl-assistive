@@ -12,7 +12,7 @@ var SkinUtilities = function(ros) {
         serviceType: 'hrl_haptic_manipulation_in_clutter_srvs/EnableHapticMPC'});
 
     skutil.enableSkinSrvCB = function (resp) {
-        assistive_teleop.log("Haptic MPC is currently "+resp.current_state);
+        RFH.log("Haptic MPC is currently "+resp.current_state);
     }
 
     skutil.enableSkin = function () {
@@ -118,13 +118,13 @@ var initSkinUtils = function () {
       '<td><input type="checkbox" id="skinUsePPS">Using PPS Sensors</input></td>'+
       '<td><button id="rezeroSkinButton">Rezero Skin</input></td>');
 
-    assistive_teleop.skinUtil = new SkinUtilities(assistive_teleop.ros);
+    RFH.skinUtil = new SkinUtilities(RFH.ros);
     $('#skinUseOrientation').change(function () {
         if (this.checked) {
-            assistive_teleop.skinUtil.setMpcWeights(5.0, 4.0);
+            RFH.skinUtil.setMpcWeights(5.0, 4.0);
             log('Turning On Orientation')
         } else {
-            assistive_teleop.skinUtil.setMpcWeights(5.0, 0.0);
+            RFH.skinUtil.setMpcWeights(5.0, 0.0);
             log('Turning Off Orientation');
         };
     })
@@ -138,20 +138,20 @@ var initSkinUtils = function () {
             console.log('Received: NOT using orientation')
         };
     }
-    assistive_teleop.skinUtil.mpcWeightsSubCBList.push(updateOrientationCheckbox);
+    RFH.skinUtil.mpcWeightsSubCBList.push(updateOrientationCheckbox);
         
     $('#rezeroSkinButton').click(function () {
-        assistive_teleop.skinUtil.rezeroSkin();        
+        RFH.skinUtil.rezeroSkin();        
     });
     
     $('#skinUsePPS').change(function () {
         if (this.checked) {
-            assistive_teleop.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
-            assistive_teleop.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');
+            RFH.skinUtil.addTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+            RFH.skinUtil.addTaxelArray('/pr2_pps_right_sensor/taxels/forces');
             log('Turning on PPS Sensors');
         } else {
-            assistive_teleop.skinUtil.removeTaxelArray('/pr2_pps_left_sensor/taxels/forces');
-            assistive_teleop.skinUtil.removeTaxelArray('/pr2_pps_right_sensor/taxels/forces');
+            RFH.skinUtil.removeTaxelArray('/pr2_pps_left_sensor/taxels/forces');
+            RFH.skinUtil.removeTaxelArray('/pr2_pps_right_sensor/taxels/forces');
             log('Turning off PPS Sensors');
         };
     });
@@ -173,5 +173,5 @@ var initSkinUtils = function () {
             $('#skinUsePPS').attr('checked', false);
         };
     };
-    assistive_teleop.skinUtil.taxelArrayListSubCBList.push(updateUsePPSCheckbox);
+    RFH.skinUtil.taxelArrayListSubCBList.push(updateUsePPSCheckbox);
 }

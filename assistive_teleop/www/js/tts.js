@@ -15,7 +15,7 @@ var TextToSpeech = function (div, ros) {
 }
 
 function initTTS(ttsTabId){
-    assistive_teleop.tts = new TextToSpeech(ttsTabId, assistive_teleop.ros);
+    RFH.tts = new TextToSpeech(ttsTabId, RFH.ros);
     var phrases = ['Yes',
                     'No',
                     'Maybe',
@@ -43,11 +43,11 @@ function initTTS(ttsTabId){
         $('#tts_select').append('<option value="'+phrases[i]+'">'+phrases[i]+'</option>');
     };
     $("#tts_select").change(function () {
-        assistive_teleop.tts.say($(this).val());
+        RFH.tts.say($(this).val());
         $('#txt2say').val($(this).val());
     });
     $('#submit_text').click(function(){
-        assistive_teleop.tts.say($('#txt2say').val());
+        RFH.tts.say($('#txt2say').val());
     });
     $("#txt2say").keyboard({layout:'qwerty', stayOpen:true});
 }

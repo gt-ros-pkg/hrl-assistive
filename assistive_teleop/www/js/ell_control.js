@@ -53,9 +53,9 @@ var EllipsoidControl = function (ros) {
             console.log("Ellipsoid Controller Active")
             $("#ell_controller").attr("checked","checked").button('refresh');
             $('#shave_list').empty();
-            for (var i=0; i <assistive_teleop.ellControl.globalPoses.length; i += 1) {
-                $('#shave_list').append('<option val="'+assistive_teleop.ellControl.globalPoses[i]+
-                                        '">'+ assistive_teleop.ellControl.globalPoses[i]+'</option>');
+            for (var i=0; i <RFH.ellControl.globalPoses.length; i += 1) {
+                $('#shave_list').append('<option val="'+RFH.ellControl.globalPoses[i]+
+                                        '">'+ RFH.ellControl.globalPoses[i]+'</option>');
             };
             $(".ell_control").show();
            } else {
@@ -137,39 +137,39 @@ var MirrorPointer = function (ros) {
 }
 
 var initEllControl = function () {
-    assistive_teleop.shaver = new PoweredTool(assistive_teleop.ros);
-    assistive_teleop.ellControl = new EllipsoidControl(assistive_teleop.ros);
-    assistive_teleop.mirrorPointer = new MirrorPointer(assistive_teleop.ros);
+    RFH.shaver = new PoweredTool(RFH.ros);
+    RFH.ellControl = new EllipsoidControl(RFH.ros);
+    RFH.mirrorPointer = new MirrorPointer(RFH.ros);
 
     $("#tabs").on("tabsbeforeactivate", function (event, ui) {
       if (ui.newPanel.selector === "#tab_ellipse") {
-        assistive_teleop.mjpeg.setCamera('Head Registration');
+        RFH.mjpeg.setCamera('Head Registration');
       }
     });
 
-    $('#ell_controller').click(function () {assistive_teleop.ellControl.toggle()});
-    $('#adj_mirror').click(assistive_teleop.mirrorPointer.point);
-    $('#tool_power').click(assistive_teleop.shaver.toggle);
+    $('#ell_controller').click(function () {RFH.ellControl.toggle()});
+    $('#adj_mirror').click(RFH.mirrorPointer.point);
+    $('#tool_power').click(RFH.shaver.toggle);
     $('#send_shave_select').click(function () {
         console.log('Sending Command to move to '+$('#shave_list option:selected').text())
-        assistive_teleop.ellControl.sendGlobalMove($('#shave_list option:selected').text());
+        RFH.ellControl.sendGlobalMove($('#shave_list option:selected').text());
     });
-    $('#shave_stop').click(assistive_teleop.ellControl.stopMove);
+    $('#shave_stop').click(RFH.ellControl.stopMove);
    
-    $('#bpd_ell_trans #b2').click(function () {assistive_teleop.ellControl.sendLocalMove('translate_down')});
-    $('#bpd_ell_trans #b4').click(function () {assistive_teleop.ellControl.sendLocalMove('translate_left')});
-    $('#bpd_ell_trans #b6').click(function () {assistive_teleop.ellControl.sendLocalMove('translate_right')});
-    $('#bpd_ell_trans #b7').click(function () {assistive_teleop.ellControl.sendLocalMove('translate_in')});
-    $('#bpd_ell_trans #b8').click(function () {assistive_teleop.ellControl.sendLocalMove('translate_up')});
-    $('#bpd_ell_trans #b9').click(function () {assistive_teleop.ellControl.sendLocalMove('translate_out')});
+    $('#bpd_ell_trans #b2').click(function () {RFH.ellControl.sendLocalMove('translate_down')});
+    $('#bpd_ell_trans #b4').click(function () {RFH.ellControl.sendLocalMove('translate_left')});
+    $('#bpd_ell_trans #b6').click(function () {RFH.ellControl.sendLocalMove('translate_right')});
+    $('#bpd_ell_trans #b7').click(function () {RFH.ellControl.sendLocalMove('translate_in')});
+    $('#bpd_ell_trans #b8').click(function () {RFH.ellControl.sendLocalMove('translate_up')});
+    $('#bpd_ell_trans #b9').click(function () {RFH.ellControl.sendLocalMove('translate_out')});
    
-    $('#bpd_ell_rot #b1').click(function () {assistive_teleop.ellControl.sendLocalMove('reset_rotation')});
-    $('#bpd_ell_rot #b2').click(function () {assistive_teleop.ellControl.sendLocalMove('rotate_y_neg')});
-    $('#bpd_ell_rot #b4').click(function () {assistive_teleop.ellControl.sendLocalMove('rotate_z_pos')});
-    $('#bpd_ell_rot #b6').click(function () {assistive_teleop.ellControl.sendLocalMove('rotate_z_neg')});
-    $('#bpd_ell_rot #b7').click(function () {assistive_teleop.ellControl.sendLocalMove('rotate_x_pos')});
-    $('#bpd_ell_rot #b8').click(function () {assistive_teleop.ellControl.sendLocalMove('rotate_y_pos')});
-    $('#bpd_ell_rot #b9').click(function () {assistive_teleop.ellControl.sendLocalMove('rotate_x_neg')});
+    $('#bpd_ell_rot #b1').click(function () {RFH.ellControl.sendLocalMove('reset_rotation')});
+    $('#bpd_ell_rot #b2').click(function () {RFH.ellControl.sendLocalMove('rotate_y_neg')});
+    $('#bpd_ell_rot #b4').click(function () {RFH.ellControl.sendLocalMove('rotate_z_pos')});
+    $('#bpd_ell_rot #b6').click(function () {RFH.ellControl.sendLocalMove('rotate_z_neg')});
+    $('#bpd_ell_rot #b7').click(function () {RFH.ellControl.sendLocalMove('rotate_x_pos')});
+    $('#bpd_ell_rot #b8').click(function () {RFH.ellControl.sendLocalMove('rotate_y_pos')});
+    $('#bpd_ell_rot #b9').click(function () {RFH.ellControl.sendLocalMove('rotate_x_neg')});
 
     $(".ell_control").hide();
 };

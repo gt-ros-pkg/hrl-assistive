@@ -1,4 +1,4 @@
-var assistive_teleop = {
+var RFH = {
     positionInElement: function (e) {
         var posx = 0;
         var posy = 0;
@@ -70,7 +70,7 @@ var assistive_teleop = {
   //    '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power').button();
 
     var initTasks = function () {
-        assistive_teleop.tasks = {};
+        RFH.tasks = {};
         initLook();
     }
 
@@ -84,8 +84,8 @@ var assistive_teleop = {
       }
     );
     this.ros.on('connection', function(e) {
-        log("Connected to " + assistive_teleop.ROBOT + ".");
-        extendROSJS(assistive_teleop.ros);
+        log("Connected to " + RFH.ROBOT + ".");
+        extendROSJS(RFH.ros);
         initMjpegCanvas('video-main');
         initMarkerDisplay('markers');
         initTasks();

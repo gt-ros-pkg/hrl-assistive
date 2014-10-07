@@ -39,13 +39,13 @@ var UserLog = function (options) {
 }
 
 var initUserLog = function (divId) {
-    assistive_teleop.userlog = new UserLog({'divId':divId, 'timeout':10} );
+    RFH.userlog = new UserLog({'divId':divId, 'timeout':10} );
 
     //Alias for simpler calls
-    assistive_teleop.log = assistive_teleop.userlog.log;
+    RFH.log = RFH.userlog.log;
 
     //Add wrapper for compatibiltiy with existing code.
     window.log = function(message) { 
-      assistive_teleop.userlog.log(message);
+      RFH.userlog.log(message);
     }
 }

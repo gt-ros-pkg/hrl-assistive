@@ -29,7 +29,7 @@
 //                        width: 640, //1280,
 //                        height:480}//1024}
 
-assistive_teleop.MjpegClient = function (options) {
+RFH.MjpegClient = function (options) {
     var self = this;
     var options = options || {};
     self.imageTopic = options.imageTopic;
@@ -40,7 +40,7 @@ assistive_teleop.MjpegClient = function (options) {
                          'quality': options.quality || 80,
                          'topic': options.imageTopic}
 
-    self.cameraModel = new assistive_teleop.ROSCameraModel({ros: options.ros,
+    self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
                                                             infoTopic: options.infoTopic,
                                                             rotated: options.rotated || false});
 
@@ -74,7 +74,7 @@ assistive_teleop.MjpegClient = function (options) {
 
 };
 
-assistive_teleop.ROSCameraModel = function (options) {
+RFH.ROSCameraModel = function (options) {
     var self = this;
     var options = options || {};
     self.ros = options.ros;
@@ -150,11 +150,11 @@ var initMjpegCanvas = function (divId) {
     var width = 0.8 * window.innerWidth;
     var height = 0.95 * window.innerHeight;
     $('#'+divId).css({'height':height, 'width':width});
-    assistive_teleop.mjpeg = new assistive_teleop.MjpegClient({ros: assistive_teleop.ros,
+    RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
                                                                imageTopic: '/head_mount_kinect/rgb/image_color',
                                                                infoTopic: '/head_mount_kinect/rgb/camera_info',
                                                                divId: 'mjpegDiv',
-                                                               host: assistive_teleop.ROBOT,
+                                                               host: RFH.ROBOT,
                                                                port: 8080,
                                                                width: width,
                                                                height: height,

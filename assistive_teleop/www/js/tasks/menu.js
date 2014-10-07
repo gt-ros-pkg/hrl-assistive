@@ -30,7 +30,7 @@ R4H.TaskMenu = function (divId) {
 
 R4H.initTaskMenu = function (divId) {
     R4H.taskMenu = new R4H.TaskMenu( divId );
-    R4H.taskMenu.addTask(new assistive_teleop.Look({ros: assistive_teleop.ros, 
+    R4H.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
                                                     div: 'markers',
-                                                    camera: assistive_teleop.mjpeg.cameraModel}));
+                                                    camera: RFH.mjpeg.cameraModel}));
 }

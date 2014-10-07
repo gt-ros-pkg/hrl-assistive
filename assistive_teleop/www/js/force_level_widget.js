@@ -42,7 +42,7 @@ var ForceDisplay = function (ros) {
 };
 
 var initFTDisplay = function (divId, options) {
-    assistive_teleop.ftDisplay = new ForceDisplay(assistive_teleop.ros);
+    RFH.ftDisplay = new ForceDisplay(RFH.ros);
     var yellowPercent = options.yellowPercent || 50;
     var maxForce = options.maxForce || 15;
     var height = options.height || '450px';
@@ -93,27 +93,27 @@ var initFTDisplay = function (divId, options) {
     $('#'+divId+'FTRezeroButton').css('width','70px');
    
     // Readjust layout based on parameters
-    assistive_teleop.ftDisplay.dangerThresh.get(function (val) {
-        assistive_teleop.ftDisplay.dangerThresh.value = val;
-        console.log('Param: '+ assistive_teleop.ftDisplay.dangerThresh.name +'\r\n'+
+    RFH.ftDisplay.dangerThresh.get(function (val) {
+        RFH.ftDisplay.dangerThresh.value = val;
+        console.log('Param: '+ RFH.ftDisplay.dangerThresh.name +'\r\n'+
                     ' Value: ' + val.toString());
-        assistive_teleop.ftDisplay.activityThresh.get(function (val) {
-            assistive_teleop.ftDisplay.activityThresh.value = val;
-            var dangerThr = assistive_teleop.ftDisplay.dangerThresh.value;
+        RFH.ftDisplay.activityThresh.get(function (val) {
+            RFH.ftDisplay.activityThresh.value = val;
+            var dangerThr = RFH.ftDisplay.dangerThresh.value;
             $('#'+divId+'FTDangerLabel').html(dangerThr.toString()+' N');
             var dangerPct = 100*(maxForce-dangerThr)/maxForce;
             $('#'+divId+'FTActivityLabel').html(val.toString()+' N');
             var actPct = 100*(maxForce - val)/maxForce - dangerPct;
             $('#'+divId+'FTDangerRef').css('height',dangerPct+'%'); 
             $('#'+divId+'FTActivityRef').css('height',actPct+'%'); 
-            console.log('Param: '+ assistive_teleop.ftDisplay.activityThresh.name +'\r\n'+
+            console.log('Param: '+ RFH.ftDisplay.activityThresh.name +'\r\n'+
                         ' Value: ' + val.toString());
         });
     });
 
     // Update Display based upon published data
     var updateReadout = function (ws) {
-       var mag = assistive_teleop.ftDisplay.magnitude();
+       var mag = RFH.ftDisplay.magnitude();
        var pct = (mag/maxForce)*100;
        if (pct > 100.0) {pct = 100.0};
        $('#'+divId+'FTTextDisplay').html('<p><strong>'+mag.toFixed(1)+' N </strong></p>')
@@ -130,10 +130,10 @@ var initFTDisplay = function (divId, options) {
        $('#'+divId+'FTColorWrapper').css('background-color', color);
        $('#'+divId+'FTColorBar').css('height', Math.round(100-pct)+'%');
        }; 
-    assistive_teleop.ftDisplay.stateSubCBList.push(updateReadout);
+    RFH.ftDisplay.stateSubCBList.push(updateReadout);
 
     $('#'+divId+'FTRezeroButton').click(function () {
-        assistive_teleop.ftDisplay.rezeroPub.publish({data:true});
+        RFH.ftDisplay.rezeroPub.publish({data:true});
         log("Sending command to Re-zero Force/Torque Sensor");
     });
 };

@@ -46,7 +46,7 @@ var RYDS = function (ros) {
 
 var initRYDSTab = function (tabDivId) {
   'use strict';
-  assistive_teleop.ryds = new RYDS(assistive_teleop.ros);
+  RFH.ryds = new RYDS(RFH.ros);
   var divRef = '#'+tabDivId;
 
   $(divRef).append('<table><tr>' +
@@ -57,19 +57,19 @@ var initRYDSTab = function (tabDivId) {
   $(divRef+'R0C0').append('<button id="' + tabDivId + '_start">' +
                                     'Start </button>')
     .click(function () {
-      assistive_teleop.ryds.start();
+      RFH.ryds.start();
     });
 
   $(divRef+'R0C1').append('<button id="' + tabDivId + '_stop">' +
                                     'Stop </button>')
     .click(function () {
-      assistive_teleop.ryds.stop();
+      RFH.ryds.stop();
     });
 
   $(divRef+'R0C2').append('<button id="' + tabDivId + '_continue">' +
                                     'Continue </button>')
     .click(function () {
-      assistive_teleop.ryds.continue_();
+      RFH.ryds.continue_();
     });
 
   $(divRef+' :button').button().css({

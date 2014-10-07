@@ -1,9 +1,9 @@
-assistive_teleop.Look = function (options) {
+RFH.Look = function (options) {
     'use strict';
     var self = this;
     self.ros = options.ros;
     self.div = options.div || 'markers';
-    self.camera = options.camera || new assistive_teleop.ROSCameraModel();
+    self.camera = options.camera || new RFH.ROSCameraModel();
     self.head = options.head || new Pr2Head(self.ros);
     self.buttonText = 'Looking';
     self.buttonClass = 'look-button';
@@ -39,7 +39,7 @@ assistive_teleop.Look = function (options) {
     }
 
     self.getRegion = function (e) {
-        var pt = assistive_teleop.positionInElement(e) 
+        var pt = RFH.positionInElement(e) 
         console.log("Target Element Size: (x="+e.target.clientWidth+", y="+e.target.clientHeight+")");
         var pct_x = pt[0]/e.target.clientWidth;
         var pct_y = pt[1]/e.target.clientHeight;
@@ -103,7 +103,7 @@ assistive_teleop.Look = function (options) {
                 break;
         }
         if (point) {
-            var pt = assistive_teleop.positionInElement(e); 
+            var pt = RFH.positionInElement(e); 
             var px = (pt[0]/e.target.clientWidth) * self.camera.width;
             var py = (pt[1]/e.target.clientHeight) * self.camera.height;
             var xyz =  self.camera.projectPixel(px, py);

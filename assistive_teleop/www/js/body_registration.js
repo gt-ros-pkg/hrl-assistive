@@ -6,8 +6,8 @@ var BodyRegistration = function (ros) {
     bodyReg.headRegCB = function () {
         $('#img_act_select').val('seedReg');
         $('#confirm_reg').hide();
-        assistive_teleop.mjpeg.setCamera(bodyReg.REG_CONFIRM_CAMERA);
-        assistive_teleop.log("Click on your check to begin head registration");
+        RFH.mjpeg.setCamera(bodyReg.REG_CONFIRM_CAMERA);
+        RFH.log("Click on your check to begin head registration");
     };
 
     bodyReg.headRegServiceClient = new bodyReg.ros.Service({
@@ -49,12 +49,12 @@ var BodyRegistration = function (ros) {
 
 var initBodyRegistration = function (tabDivId) {
 
-    assistive_teleop.bodyReg = new BodyRegistration(assistive_teleop.ros);
+    RFH.bodyReg = new BodyRegistration(RFH.ros);
     divRef = "#"+tabDivId;
 
     $("#tabs").on("tabsbeforeactivate", function (event, ui) {
       if (ui.newPanel.selector === divRef) {
-        assistive_teleop.mjpeg.setCamera(assistive_teleop.bodyReg.REG_CONFIRM_CAMERA);
+        RFH.mjpeg.setCamera(RFH.bodyReg.REG_CONFIRM_CAMERA);
       }
     });
 
@@ -97,13 +97,13 @@ var initBodyRegistration = function (tabDivId) {
     $(divRef+'_R0C0').append('<button class="centered" id="reg_head"> Register Head </button>');
     $("#reg_head").button();
     $("#reg_head").attr("title", "Click to initialize head registration.");
-    $(divRef+'_R0C0').click(assistive_teleop.bodyReg.headRegCB);
+    $(divRef+'_R0C0').click(RFH.bodyReg.headRegCB);
 
     // Confirm Registration Button - Confirms a correct registration
     $(divRef+'_R0C1').append('<button class="centered" id="confirm_reg"> Confirm </button>');
     $("#confirm_reg").button().hide();
     $("#confirm_reg").attr("title", "Click to confirm that head registration is correct.");
-    $(divRef+'_R0C1').click(assistive_teleop.bodyReg.confirmRegistration);
+    $(divRef+'_R0C1').click(RFH.bodyReg.confirmRegistration);
 
     //Face side selector
     $(divRef+'_R1C0').append('<form id="face_side_form">' + 
@@ -114,7 +114,7 @@ var initBodyRegistration = function (tabDivId) {
                              '</form>');
     $("#face_side_form").buttonset();
     $("#face_side_form").attr("title", "Select the side of your face the robot is viewing.");
-    $("#face_side_form").change(assistive_teleop.bodyReg.setSideParam);
-    assistive_teleop.bodyReg.setSideParam();
+    $("#face_side_form").change(RFH.bodyReg.setSideParam);
+    RFH.bodyReg.setSideParam();
 }
 

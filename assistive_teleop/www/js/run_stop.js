@@ -16,7 +16,7 @@ var RunStop = function (ros) {
 };
 
 var initRunStop = function (divId) {
-    var runStop = new RunStop(assistive_teleop.ros);
+    var runStop = new RunStop(RFH.ros);
     $('#'+divId).append('<button id="'+divId+'StopButton">'+
                         '<button id="'+divId+'RunButton">');
     $('#'+divId+'StopButton').html('STOP ROBOT');
