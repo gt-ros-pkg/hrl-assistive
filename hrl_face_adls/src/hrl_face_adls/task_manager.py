@@ -14,6 +14,7 @@ from tf import TransformListener, transformations as tft
 from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove_multi  # , BaseMoveRequest
 from hrl_ellipsoidal_control.msg import EllipsoidParams
+from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
          'Arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
@@ -35,6 +36,8 @@ class ServoingManager(object):
         self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
         self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
+        self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
+                                              SingleJointPositionActionGoal, latch=True)
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 
@@ -91,30 +94,38 @@ class ServoingManager(object):
             self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
         ar_data = ARServoGoalData()
-        base_goal, configuration_goal = self.call_base_selection()
-        print "Base Goals returned:\r\n", base_goal
-        if base_goal is None:
+        base_goals, configuration_goals = self.call_base_selection()
+        print "Base Goals returned:\r\n", base_goals
+        if base_goals is None:
             rospy.loginfo("No base goal found")
             return
         base_goals_list = []
-        for i in xrange(int(len(base_goal)/7)):
+        configuration_goals_list = []
+        for i in xrange(int(len(base_goals)/7)):
             psm = PoseStamped()
             psm.header.frame_id = '/base_link'
-            psm.pose.position.x = base_goal[int(0+7*i)]
-            psm.pose.position.y = base_goal[int(1+7*i)]
-            psm.pose.position.z = base_goal[int(2+7*i)]
-            psm.pose.orientation.x = base_goal[int(3+7*i)]
-            psm.pose.orientation.y = base_goal[int(4+7*i)]
-            psm.pose.orientation.z = base_goal[int(5+7*i)]
-            psm.pose.orientation.w = base_goal[int(6+7*i)]
+            psm.pose.position.x = base_goals[int(0+7*i)]
+            psm.pose.position.y = base_goals[int(1+7*i)]
+            psm.pose.position.z = base_goals[int(2+7*i)]
+            psm.pose.orientation.x = base_goals[int(3+7*i)]
+            psm.pose.orientation.y = base_goals[int(4+7*i)]
+            psm.pose.orientation.z = base_goals[int(5+7*i)]
+            psm.pose.orientation.w = base_goals[int(6+7*i)]
             base_goals_list.append(copy.copy(psm))
+            configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
+                                             configuration_goals[2+3*i]])
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
         self.servo_goal_pub.publish(base_goals_list[0])
+
+        torso_lift_msg = SingleJointPositionActionGoal()
+        torso_lift_msg.goal.position = configuration_goals_list[0][0]
+        self.torso_lift_pub.publish(torso_lift_msg)
+
 
         with self.lock:
             ar_data.tag_id = -1
             ar_data.marker_topic = self.marker_topic
-            ar_data.base_pose_goal = base_goal
+            ar_data.base_pose_goal = base_goals_list[0]
             self.action = None
             self.location = None
         self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
