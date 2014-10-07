@@ -5,14 +5,24 @@ import rospy, rospkg
 import openravepy as op
 import numpy as np
 import math as m
-from hrl_base_selection.srv import *
+import copy
+from hrl_base_selection.srv import BaseMove_multi
 import roslib; roslib.load_manifest('hrl_haptic_mpc')
+import time
+import roslib
+roslib.load_manifest('hrl_base_selection')
+roslib.load_manifest('hrl_haptic_mpc')
+import rospy, rospkg
+import tf
+roslib.load_manifest('hrl_base_selection')
 import hrl_lib.transforms as tr
 import tf
 import rospy
 from visualization_msgs.msg import Marker
 import time
+from hrl_msgs.msg import FloatArrayBare
 from helper_functions import createBMatrix
+from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
 
@@ -109,15 +119,21 @@ def select_base_client():
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
-def publish_to_autobed(config):
-    bed_pub = rospy.Publisher("autobed_cmd", float64[], latch=True)
-    bed_pub.publish(config[0:2])
+def publish_to_autobed(configuration_goals_list):
+    autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, latch=True)
+    autobed_goal = FloatArrayBare()
+    autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1], 0.]
+    autobed_pub.publish(autobed_goal)
 
+def publish_to_zaxis(config):
+    torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
+                                     SingleJointPositionActionGoal, latch=True)
+    torso_lift_msg = SingleJointPositionActionGoal()
+    torso_lift_msg.goal.position = config[0][0]
+    torso_lift_pub.publish(torso_lift_msg)
 
 def usage():
     return "%s [current_loc goal head]"%sys.argv[0]
-
-
 
 if __name__ == "__main__":
     rospy.init_node('client_node')
@@ -130,9 +146,35 @@ if __name__ == "__main__":
     #    print usage()
     #    sys.exit(1)
     print "Requesting Base Goal Position"
-    goal, config = select_base_client()
-    publish_to_autobed(config)
+    goal_array, config_array = select_base_client()
+    base_goals = []
+    configuration_goals = []
+    for item in goal_array:
+        base_goals.append(item)
+    for item in config_array:
+        configuration_goals.append(item)
+
+    base_goals_list = []
+    configuration_goals_list = []
+    for i in xrange(int(len(base_goals)/7)):
+        psm = PoseStamped()
+        psm.header.frame_id = '/base_link'
+        psm.pose.position.x = base_goals[int(0+7*i)]
+        psm.pose.position.y = base_goals[int(1+7*i)]
+        psm.pose.position.z = base_goals[int(2+7*i)]
+        psm.pose.orientation.x = base_goals[int(3+7*i)]
+        psm.pose.orientation.y = base_goals[int(4+7*i)]
+        psm.pose.orientation.z = base_goals[int(5+7*i)]
+        psm.pose.orientation.w = base_goals[int(6+7*i)]
+        psm.header.frame_id = '/base_link'
+        base_goals_list.append(copy.copy(psm))
+        configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
+                                         configuration_goals[2+3*i]])
+
+    publish_to_autobed(configuration_goals_list)
+    publish_to_zaxis(configuration_goals_list)
+
+    print "Base Goal Position is:\n", base_goals_list[0]
+    print "Config Goal is:\n", configuration_goals_list[0]
     rospy.spin()
-    print "Base Goal Position is:\n", goal
-    print "Config Goal is:\n", config
     #print "ik solution is: \n", ik

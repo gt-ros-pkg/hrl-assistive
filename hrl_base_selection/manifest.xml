@@ -22,6 +22,7 @@
     <depend package="pr2_controllers_msgs"/>
     <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
     <depend package="hrl_lib"/>
+    <depend package="hrl_msgs"/>
     <depend package="kinematics_msgs"/>  <!-- used by the PR2 arm client -->
     <depend package="hrl_darpa_arm" />
 

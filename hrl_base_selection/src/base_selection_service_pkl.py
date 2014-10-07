@@ -22,7 +22,7 @@ import matplotlib.patches as patches
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove, BaseMove_multi
+from hrl_base_selection.srv import BaseMove_multi
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -61,7 +61,7 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.testing = False
+        self.testing = True
         if self.testing:
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],

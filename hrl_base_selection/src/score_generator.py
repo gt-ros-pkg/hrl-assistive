@@ -192,7 +192,7 @@ class ScoreGenerator(object):
         y_int = 0.05
         theta_min = -m.pi
         theta_max = m.pi
-        theta_int = m.pi/2
+        theta_int = m.pi/4
         z_min = 0.
         z_max = 0.30+.01
         z_int = 0.15
@@ -268,8 +268,7 @@ class ScoreGenerator(object):
                                 temp_scores = []
                                 del_index = []
                                 s_len = copy.copy(len(score_stuff))
-                                for k in xrange(s_len):
-                                    t = k
+                                for t in xrange(s_len):
                                     #t = s_len - k - 1
                                     #if bz == score_stuff[t,4] and bz>.11:
                                     #    if i==score_stuff[t,0] and i>.85:
@@ -300,20 +299,23 @@ class ScoreGenerator(object):
                                        "{0:.3f}".format(score_stuff[t, 4]) == "{0:.3f}".format(bz) and \
                                        "{0:.3f}".format(score_stuff[t, 5]) == "{0:.3f}".format(bth) and \
                                        "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(bth) and \
-                                       "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth):
+                                       "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth) and \
+                                       "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(hx) and \
+                                       "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(hy):
 
                                         if score_stuff[t, 9] > 0.:
                                             #print score_stuff[t]
                                             #print 'raw things:'
                                             #print score_stuff[t]                                   
                                             temp_scores.append(score_stuff[t])
-                                            del_index.append(t)
+                                        del_index.append(t)
                                         #score_stuff = np.delete(score_stuff,t,0)
+                                score_stuff = np.delete(score_stuff, del_index, 0)
                                 if temp_scores != []: 
                                     #print 'temp scores:'
                                     #for item in temp_scores:
                                     #    print item
-                                    score_stuff = np.delete(score_stuff, del_index, 0)
+
                                     temp_scores = copy.copy(np.array(sorted(temp_scores, key=itemgetter(9, 10),
                                                                             reverse=True))[0])
                                     this_score.append(temp_scores[0:11])
