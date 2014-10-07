@@ -114,10 +114,10 @@ var Pr2Head = function (ros) {
     head.stateSub.subscribe(head.stateCB);
 
     head.enforceLimits = function (pan, tilt) {
-        pan  = pan < head.limits[0][0] ? pan : head.limits[0][0];
-        pan  = pan > head.limits[0][1] ? pan : head.limits[0][0];
+        pan  = pan > head.limits[0][0] ? pan : head.limits[0][0];
+        pan  = pan < head.limits[0][1] ? pan : head.limits[0][1];
         tilt  = tilt < head.limits[1][0] ? tilt : head.limits[1][0];
-        tilt  = tilt < head.limits[1][1] ? tilt : head.limits[1][1];
+        tilt  = tilt > head.limits[1][1] ? tilt : head.limits[1][1];
         return [pan, tilt];
     };
 
@@ -140,7 +140,6 @@ var Pr2Head = function (ros) {
     };
     head.pointHead = function (x, y, z, frame) {
         var headPointMsg = head.ros.composeMsg('pr2_controllers_msgs/PointHeadActionGoal');
-        headPointMsg.goal.target = head.ros.composeMsg('geometry_msgs/PointStamped');
         headPointMsg.goal.pointing_axis = {
             x: 0,
             y: 0,
