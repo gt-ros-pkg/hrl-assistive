@@ -61,7 +61,7 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.testing = True
+        self.testing = False
         if self.testing:
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
