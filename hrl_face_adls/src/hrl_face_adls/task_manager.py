@@ -124,7 +124,7 @@ class ServoingManager(object):
             configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
                                              configuration_goals[2+3*i]])
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
-        msg.tag_goal_pose.header.frame_id
+        # msg.tag_goal_pose.header.frame_id
         self.servo_goal_pub.publish(base_goals_list[0])
 
         torso_lift_msg = SingleJointPositionActionGoal()
@@ -140,7 +140,7 @@ class ServoingManager(object):
 
 
         ar_data = ARServoGoalData()
-        'base_link' in msg.tag_goal_pose.header.frame_id
+        # 'base_link' in msg.tag_goal_pose.header.frame_id
         with self.lock:
             # ar_data.tag_id = -1
             # ar_data.marker_topic = self.marker_topic
