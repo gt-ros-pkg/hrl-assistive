@@ -82,10 +82,10 @@ class learning_hmm():
         A, _ = mad.get_trans_mat(X, self.nState)
 
         # We should think about multivariate Gaussian pdf.        
-        mu, sigma = self.vectors_to_mean_vars(X)
+        self.mu, self.sigma = self.vectors_to_mean_vars(X)
 
         # Emission probability matrix
-        B = np.hstack([mu, sigma])
+        B = np.hstack([self.mu, self.sigma])
         B = B.tolist()
         
         # pi - initial probabilities per state
@@ -137,7 +137,7 @@ class learning_hmm():
         ## logp1 = self.ml.loglikelihood(final_ts_obj)
         ## print "logp = " + str(logp1) + "\n"
         
-        # alpha: X_test length x #latent States
+        # alpha: X_test length x #latent States at the moment t when state i is ended
         (alpha,scale) = self.ml.forward(final_ts_obj)
         ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
         ## print "scale = " + str(scale) + "\n"
@@ -152,7 +152,6 @@ class learning_hmm():
 
             total = 0.0        
             for j in xrange(self.nState): # N                  
-
                 total += self.ml.getTransition(j,i) * alpha[-1][j]
                 
             (mu, sigma) = self.ml.getEmission(i)
@@ -160,11 +159,13 @@ class learning_hmm():
             pred_numerator += norm(loc=mu,scale=sigma).pdf(X_predict) * total
             pred_denominator += alpha[-1][i]*beta[-1][i]
 
+        ## for i in xrange(len(alpha)):
+        ##     print X_test[i]
 
-        for i in xrange(len(alpha)):
-            print X_test[i], alpha[i]
+        ## for i in xrange(self.nState):            
+        ##     print alpha[-1][i]
             
-        return pred_numerator/pred_denominator
+        return pred_numerator #/pred_denominator
             
 
     #----------------------------------------------------------------------        
@@ -190,44 +191,53 @@ class learning_hmm():
             time.sleep(1.0)                
             sys.exit()
 
-    
     #----------------------------------------------------------------------        
     #
-    def path_plot(self, X_test, path_obj):
-
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
-
-        for i in xrange(X_test.shape[1]):
-            ax.plot(X_test[:,i], '-')    
-            
-        ax.set_xlabel("Angle")
-        ax.set_ylabel("Force")
-
-        ## plt.show()
-        fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
+    def init_plot(self):
         
+        self.fig = plt.figure(1)
+        self.ax = self.fig.add_subplot(111)
+
+    #----------------------------------------------------------------------        
+    #
+    def all_path_plot(self, X_test):
+        
+        for i in xrange(X_test.shape[0]):
+            self.ax.plot(X_test[i], '-')    
+        
+    #----------------------------------------------------------------------        
+    #
+    def path_plot(self, X_test, X_predict=None, alpha=0.0):
+        
+        self.ax.plot(X_test, '-')    
+
+        if X_predict != None:
+            x_array = np.arange(len(X_test)-1,len(X_test)-1+len(X_predict)+0.0001,1.0)
+            y_array = np.hstack([X_test[-1], X_predict])
+            self.ax.plot(x_array, y_array, 'b-', alpha=alpha+0.2, linewidth=1.0+alpha*3.0)    
+                    
 
     #----------------------------------------------------------------------        
     #
     def mean_path_plot(self, mu, var):
-
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
         
-        ax.plot(mu, 'k-')    
+        self.ax.plot(mu, 'k-')    
 
         x_axis = np.linspace(0,len(mu),len(mu))
-        ax.fill_between(x_axis, mu-var**2, mu+var**2, facecolor='green', alpha=0.5)
-            
-        ax.set_xlabel("Angle")
-        ax.set_ylabel("Force")
 
-        ## plt.show()
-        fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
+        ## print x_axis.shape, mu.shape, var.shape
         
+        self.ax.fill_between(x_axis, mu[:,0]-var[:,0]**2, mu[:,0]+var[:,0]**2, facecolor='green', alpha=0.5)
+                    
 
+    #----------------------------------------------------------------------        
+    #
+    def final_plot(self):
+        self.ax.set_xlabel("Angle")
+        self.ax.set_ylabel("Force")
         
+        plt.show()
+        ## self.fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
 
 if __name__ == '__main__':
 
@@ -237,7 +247,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 10
+    nState    = 15
     nStep     = 36
     pkl_file  = "door_opening_data.pkl"    
 
@@ -269,24 +279,36 @@ if __name__ == '__main__':
     lh.fit(data_vecs[0])    
     ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
 
-    x_test    = data_vecs[0][:30,15].tolist()
+    x_test    = data_vecs[0][:6,100].tolist()
 
     # Future profile
-    ## future_obsrv = np.arange(0.0, 50.1, 10.0)
-    future_obsrv = [5]
+    future_obsrv = np.arange(0.0, 15.1, 0.2)
+    ##future_obsrv = [5]
 
+    lh.init_plot()
+    
     future_prob = []
     for x in future_obsrv:           
         x_predict = x    
         future_prob.append( lh.predict(x_test, x_predict) )
         print "--------------"
+
+    print max(future_prob)
+        
+    future_prob /= (max(future_prob)*2.0)
+    for i,x in enumerate(future_prob):           
+        lh.path_plot(x_test, [future_obsrv[i]], x)
+
+    ## print lh.mean_path_plot(lh.mu, lh.sigma)
+        
+    lh.final_plot()
         
     ## print x_test
-    print x_test[-4:]
+    ## print x_test[-4:]
 
-    fig = plt.figure(1)
-    ax = fig.add_subplot(111)
+    ## fig = plt.figure(1)
+    ## ax = fig.add_subplot(111)
 
-    ax.plot(future_obsrv, future_prob)
-    plt.show()
+    ## ax.plot(future_obsrv, future_prob)
+    ## plt.show()
 
