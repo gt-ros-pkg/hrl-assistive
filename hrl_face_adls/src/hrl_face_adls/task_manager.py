@@ -142,8 +142,8 @@ class ServoingManager(object):
         ar_data = ARServoGoalData()
         # 'base_link' in msg.tag_goal_pose.header.frame_id
         with self.lock:
-            # ar_data.tag_id = -1
-            # ar_data.marker_topic = self.marker_topic
+            ar_data.tag_id = -1
+            ar_data.marker_topic = self.marker_topic
             ar_data.tag_goal_pose = base_goals_list[0]
             self.action = None
             self.location = None
