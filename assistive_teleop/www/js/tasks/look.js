@@ -6,7 +6,7 @@ assistive_teleop.Look = function (options) {
     self.camera = options.camera || new assistive_teleop.ROSCameraModel();
     self.head = options.head || new Pr2Head(self.ros);
     self.buttonText = 'Looking';
-    self.buttonIcon = '';
+    self.buttonClass = 'look-button';
 
     self.thresholds = options.thresholds || {top:0.15,
                                              bottom: 0.85,
@@ -112,13 +112,4 @@ assistive_teleop.Look = function (options) {
             self.head.delPosition(dx,dy);
         }
     }
-}
-
-
-var initLook = function ()  {
-    assistive_teleop.tasks['look'] = new assistive_teleop.Look({ros: assistive_teleop.ros, 
-                                                             div: 'markers',
-                                                             camera: assistive_teleop.mjpeg.cameraModel});
-    $('#menu-item-look').button().on('click.rfh', function(){assistive_teleop.tasks.look.start()});
-    $('#clickable-canvas').on('click.rfh', assistive_teleop.tasks.look.onClick);
 }

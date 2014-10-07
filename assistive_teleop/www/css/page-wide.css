@@ -15,3 +15,14 @@ body {
     height: 80px;
     width: 80px;
 }
+
+#video-main {
+    float: right;
+    position: relative;
+}
+
+#markers {
+    position: absolute;
+    left: 0px;
+    top: 0px
+}

@@ -1,3 +1,7 @@
+.look-button{
+    background-image: url(icons/look.png);
+}
+
 .cursor-eyes {
     cursor: url('cursors/eyes/eyes.png');
 }
