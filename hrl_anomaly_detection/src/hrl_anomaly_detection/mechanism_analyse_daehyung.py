@@ -21,7 +21,38 @@ from mvpa2.generators import splitters
 
 import advait.mechanism_analyse_RAM as mar
 import advait.ram_db as rd
+import advait.mechanism_analyse_advait as maa
+import advait.arm_trajectories_ram as atr
 
+
+def get_a_blocked_detection():
+
+    cls = mech = 'kitchen_cabinet_pr2'
+    ## pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    ## one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+    pkl_nm = '/home/dpark/Dropbox/HRL/pr2_pull_2010Dec10_071602_new.pkl'
+
+    max_ang = math.radians(30)
+
+    
+    pull_dict = ut.load_pickle(pkl_nm)
+    typ = 'rotary'
+    pr2_log =  'pr2' in pkl_nm
+    h_config, h_ftan = atr.force_trajectory_in_hindsight(pull_dict,
+                                                   typ, pr2_log)
+
+    h_config = np.array(h_config)
+    h_ftan = np.array(h_ftan)
+    h_ftan = h_ftan[h_config < max_ang]
+    h_config = h_config[h_config < max_ang] # cut
+    bin_size = math.radians(1.)
+    h_config_degrees = np.degrees(h_config)
+    ftan_raw = h_ftan
+
+    # resampling with specific interval
+    h_config, h_ftan = maa.bin(h_config, h_ftan, bin_size, np.mean, True) 
+    return h_config, h_ftan
+    
 
 def get_all_blocked_detection():
     root_path = os.environ['HRLBASEPATH']+'/'
