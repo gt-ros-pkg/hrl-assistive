@@ -1,3 +1,17 @@
 body {
     margin: 0px;
 }
+
+#main-menu {
+    display:inline-block;
+    height: 60%;
+    width: 18%;
+    min-width: 164px;
+    border: 3px solid black;
+}
+
+.menu-item {
+    display:inline-block;
+    height: 80px;
+    width: 80px;
+}

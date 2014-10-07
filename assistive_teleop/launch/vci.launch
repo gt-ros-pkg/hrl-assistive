@@ -23,12 +23,12 @@
   <!-- Launch Kinect (needed for pixel_2_3d -->
   <include if="$(arg launch_kinect)" file="/etc/ros/distro/openni_head.launch" />
 
+  <node name="head_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
+
   <!-- Throttling nodes for robot state 
   <node name="torso_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
-
-  <node name="head_state_throttle" pkg="topic_tools" type="throttle"
-        args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
 
   <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /r_gripper_controller/state 1 /r_gripper_controller/state_throttled" />

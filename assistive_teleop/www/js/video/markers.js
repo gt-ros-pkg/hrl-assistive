@@ -8,6 +8,7 @@ var initMarkerDisplay = function (divID) {
         height : height,
         antialias : true
     });
+    assistive_teleop.viewer.renderer.context.canvas.id = "clickable-canvas";
 
     // Setup a client to listen to TFs.
     assistive_teleop.tfClient = new ROSLIB.TFClient({
