@@ -1,75 +1,49 @@
-var MjpegClient = function (options) {
+
+//Old camera parameters
+//  'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
+//                optgroup:'Default',
+//                cameraInfo: '/r_forearm_cam/camera_info',
+//                clickable:true,
+//                rotated: true,
+//                width:640,
+//                height:480},
+//  'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
+//               optgroup:'Default',
+//               cameraInfo: '/l_forearm_cam/camera_info',
+//               clickable: false,
+//               rotated: true,
+//               width:640,
+//               height:480},
+//  'AR Tag': {topic:'/ar_servo/confirmation_rotated',
+//             optgroup:'Special',
+//             cameraInfo:'/r_forearm_cam/camera_info',
+//             clickable:false,
+//             rotated: true,
+//             width:640,
+//             height:480},
+//  'Head Registration': {topic: '/head_registration/confirmation',
+//                        optgroup:'Special',
+//                        cameraInfo: 'head_mount_kinect/rgb/camera_info',
+//                        clickable: true,
+//                        rotated: false,
+//                        width: 640, //1280,
+//                        height:480}//1024}
+
+assistive_teleop.MjpegClient = function (options) {
     var self = this;
     var options = options || {};
-    self.ros = options.ros;
+    self.imageTopic = options.imageTopic;
     self.divId = options.divId;
-    self.host = options.host;
-    self.port = options.port;
-    self.selectBoxId = options.selectBoxId;
-    self.width = options.width || 640;
-    self.height = options.height || 480;
-    self.quality = options.quality || 90;
+    self.server = "http://"+options.host+":"+options.port;
+    self.activeParams = {'width': options.width,
+                         'height': options.height,
+                         'quality': options.quality || 80,
+                         'topic': options.imageTopic}
 
-    self.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
-                                       optgroup:'Default',
-                                       cameraInfo:'/head_mount_kinect/rgb/camera_info',
-                                       clickable:true,
-                                       rotated: false,
-                                       width: 640, //1280,
-                                       height:480},//1024}
-                              'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
-                                            optgroup:'Default',
-                                            cameraInfo: '/r_forearm_cam/camera_info',
-                                            clickable:true,
-                                            rotated: true,
-                                            width:640,
-                                            height:480},
-                              'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
-                                           optgroup:'Default',
-                                           cameraInfo: '/l_forearm_cam/camera_info',
-                                           clickable: false,
-                                           rotated: true,
-                                           width:640,
-                                           height:480},
-                              'AR Tag': {topic:'/ar_servo/confirmation_rotated',
-                                         optgroup:'Special',
-                                         cameraInfo:'/r_forearm_cam/camera_info',
-                                         clickable:false,
-                                         rotated: true,
-                                         width:640,
-                                         height:480},
-                              'Head Registration': {topic: '/head_registration/confirmation',
-                                                    optgroup:'Special',
-                                                    cameraInfo: 'head_mount_kinect/rgb/camera_info',
-                                                    clickable: true,
-                                                    rotated: false,
-                                                    width: 640, //1280,
-                                                    height:480}//1024}
-    }
+    self.cameraModel = new assistive_teleop.ROSCameraModel({ros: options.ros,
+                                                            infoTopic: options.infoTopic,
+                                                            rotated: options.rotated || false});
 
-    self.cameraModels = {};
-    self.updateCameraModels = function () {
-        for (camera in self.cameraData) {
-            var infoTopic = self.cameraData[camera].cameraInfo;
-            var type = typeof(self.cameraModels[infoTopic]);
-            if (typeof(self.cameraModels[infoTopic]) === "undefined") {
-                var rotated = self.cameraData[camera].rotated;
-                self.cameraModels[infoTopic] = new CameraModel({ros:self.ros,
-                                                                infoTopic: infoTopic,
-                                                                rotated: rotated});
-            } else {
-                self.cameraModels[infoTopic].update();
-            }
-        }
-    };
-    self.updateCameraModels();
-
-    self.activeParams = {'topic':self.cameraData['Head'].topic,
-                                'width':self.width,
-                                'height':self.height,
-                                'quality':self.quality}
-
-    self.server = "http://"+self.host+":"+self.port;
     self.imageId = self.divId + "Image";
     $("#"+self.divId).append("<img id="+self.imageId+"></img>");
 
@@ -95,152 +69,94 @@ var MjpegClient = function (options) {
       return self.activeParams[param];
     };
 
-    // Convenience function for back compatability to set camera topic
-    self.setCamera = function (cameraName) {
-      $('#'+self.selectBoxId+" :selected").attr("selected", "");
-      $('#'+self.selectBoxId+" option[value='"+cameraName+"']" ).attr('selected', 'selected').change();
-    };
+    self.cameraModel.getCameraInfo();
+    self.update();
 
-    self.createCameraMenu = function (divRef) {
-      $(divRef).append("<select id='"+self.selectBoxId+"'></select>");
-      for (camera in self.cameraData) {
-        var optgroupLabel = self.cameraData[camera].optgroup;
-        var optgroupID = "cameraGroup"+optgroupLabel;
-        if ($('#'+optgroupID).length === 0) {
-          $('#cameraSelect').append("<optgroup id='"+optgroupID+"' label='"+optgroupLabel+"'></optgroup>");
-        }
-        $('#'+optgroupID).append("<option value='"+camera+"'>"+camera+"</option>");
-      };
-    };
-
-    self.onSelectChange = function () {
-      var topic = self.cameraData[$('#'+self.selectBoxId+' :selected').text()].topic;
-      self.setParam('topic', topic);
-    };
 };
 
-var CameraModel = function (options) {
+assistive_teleop.ROSCameraModel = function (options) {
     var self = this;
     var options = options || {};
     self.ros = options.ros;
     self.infoTopic = options.infoTopic;
-    self.width = options.default_width || 640;
-    self.height = options.default_height || 480;
     self.rotated = options.rotated || false;
-
-    self.D = [];
-    self.K = [];
-    self.R = [];
-    self.P = [];
-    self.KR = [];
-    self.KR_inv = [];
+    self.width = options.width || 640;
+    self.height = options.height || 480;
     self.frame_id = '';
+    self.distortion_model = '';
+    self.D = [0,0,0,0,0];
+    self.K = [[1,0,0],[0,1,0],[0,0,1]];
+    self.R = [[1,0,0],[0,1,0],[0,0,1]];
+    self.KR = [[1,0,0],[0,1,0],[0,0,1]];
+    self.KR_inv = [[1,0,0],[0,1,0],[0,0,1]];
+    self.P = [[1,0,0,0],[0,1,0,0],[0,0,1,0]];
+    self.has_data = false;
+
     self.ros.getMsgDetails('sensor_msgs/CameraInfo');
 
-    self.makeMatrix = function (arr, rows, cols) {
-        // max a (rosw)x(cols) matrix from a single array
-        console.assert(rows*cols === arr.length, 
-                       "Cannot make a %dx%d matrix with only %d numbers!",
-                       rows, cols, arr.length);
-        var matrix = [];
-        for (var r = 0; r<rows; r += 1) {
-            matrix[r] = arr.slice(r*cols, r*cols+cols);
-        }
-        return matrix
-    }
-
-    self.subscriber = new ROSLIB.Topic({
+    self.cameraInfoSubscriber = new ROSLIB.Topic({
         ros: self.ros,     
         name: self.infoTopic,
         messageType: 'sensor_msgs/CameraInfo'});
 
     self.msgCB = function (infoMsg) {
-        console.log("Updated camera model from "+self.infoTopic)
-        if (self.rotated) {
-            self.frame_id = infoMsg.header.frame_id + '_rotated';
-        } else {
-            self.frame_id = infoMsg.header.frame_id;
-        }
-            
-        self.height = infoMsg.height;
+        console.log("Updating camera model from "+self.infoTopic)
+        self.frame_id = infoMsg.header.frame_id;
+        if (self.rotated) { self.frame_id += '_rotated'; }
         self.width = infoMsg.width;
+        self.height = infoMsg.height;
         self.distortion_model = infoMsg.distortion_model;
         self.D = infoMsg.D;
-        self.K = self.makeMatrix(infoMsg.K, 3, 3);
-        self.R = self.makeMatrix(infoMsg.R, 3, 3);
-        self.P = self.makeMatrix(infoMsg.P, 3, 4);
+        self.K = [infoMsg.K.slice(0,3),
+                  infoMsg.K.slice(3,6), 
+                  infoMsg.K.slice(6,9)];
+
+        self.R = [infoMsg.R.slice(0,3),
+                  infoMsg.R.slice(3,6), 
+                  infoMsg.R.slice(6,9)];
+
+        self.P = [infoMsg.P.slice(0,4),
+                  infoMsg.P.slice(4,8), 
+                  infoMsg.P.slice(8,12)];
+
         // Not collecting data on binning, ROI
         self.KR = numeric.dot(self.K, self.R);
         self.KR_inv = numeric.inv(self.KR);
-        self.subscriber.unsubscribe(); // Close subscriber to save bandwidth
+        self.has_data = true;
+        self.cameraInfoSubscriber.unsubscribe(); // Close subscriber to save bandwidth
         }
-
-    //Get up-to-date data on creation
-    self.subscriber.subscribe(self.msgCB);
-
-    self.update = function () {
+    
+    self.getCameraInfo = function () {
         // Re-subscribe to get new parameters
-        self.subscriber.subscribe(self.msgCB);
+        self.cameraInfoSubscriber.subscribe(self.msgCB);
     }
 
     // back-project a pixel some distance into the real world
     // Returns a geoemtry_msgs/PointStamped msg
     self.projectPixel = function (px, py, dist) { 
+       if (!self.has_data) { console.error("Camera Model has not received data from "+self.infoTopic); };
+       var d = dist !== undefined ? dist : 2; 
        var pixel_hom = [[px],[py],[1]]; //Pixel value in homogeneous coordinates
        var vec = numeric.dot(self.KR_inv, pixel_hom);
        vec = numeric.transpose(vec)[0];
        var mag = numeric.norm2(vec);
-       return numeric.mul(dist/mag, vec);
+       return numeric.mul(d/mag, vec);
     }
 };
 
 var initMjpegCanvas = function (divId) {
-    // Build the html for image feed and controls below
-/*    $(divRef).append("<table>"+
-                       "<tr><td colspan='4'><div id='mjpegDiv'></div></td></tr>" +
-                       "<tr id='underVideoBar'>" + 
-                         "<td style='text-align:right'>On Image Click:</td>" +
-                         "<td id='image_click_select'></td>" + 
-                         "<td style='text-align:right'>Camera:</td>" +
-                         "<td id='cameraSelectCell'></td>" + 
-                       "</tr>" +
-                     "</table>");
-*/
     // Initialize the mjpeg client
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     var width = 0.8 * window.innerWidth;
     var height = 0.95 * window.innerHeight;
     $('#'+divId).css({'height':height, 'width':width});
-    assistive_teleop.mjpeg = new MjpegClient({ros: assistive_teleop.ros,
-                                    divId: 'mjpegDiv',
-                                    host: assistive_teleop.ROBOT,
-                                    port: 8080,
-                                    selectBoxId: 'cameraSelect',
-                                    width: width,//1280,//640
-                                    height: height,// 1024,// 512
-                                    quality: 85});
-    assistive_teleop.mjpeg.update();    
-    // Initialize the camera selection menu
-//    assistive_teleop.mjpeg.createCameraMenu('#cameraSelectCell');
-//    $('#cameraSelect').on('change', assistive_teleop.mjpeg.onSelectChange.bind(assistive_teleop.mjpeg));
-    // Apply these initial settings
-
-    // Make the image resizeable
-//    var resizeStopCB = function (event, ui) {
-//      assistive_teleop.mjpeg.setParam('height', Math.round(ui.size.height));
-//      assistive_teleop.mjpeg.setParam('width', Math.round(ui.size.width));
-//      assistive_teleop.mjpeg.update()
-//    };
-//    $('#'+assistive_teleop.mjpeg.imageId).resizable({aspectRatio:true,
-//                                         //alsoResize:'#'+assistive_teleop.mjpeg.imageId,
-//                                         autoHide:false,
-//                                         ghost:true,
-//                                         delay:250,
-//                                         handles:'se',
-//                                         distance:7,
-//                                         maxWidth:1280,
-//                                         minWidth:320,
-//                                         maxHeight:1024,
-//                                         minHeight:240,
-//                                         stop:resizeStopCB});
+    assistive_teleop.mjpeg = new assistive_teleop.MjpegClient({ros: assistive_teleop.ros,
+                                                               imageTopic: '/head_mount_kinect/rgb/image_color',
+                                                               infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                                               divId: 'mjpegDiv',
+                                                               host: assistive_teleop.ROBOT,
+                                                               port: 8080,
+                                                               width: width,
+                                                               height: height,
+                                                               quality: 85});
 };

@@ -1,27 +1,29 @@
-var Look = function (options) {
+assistive_teleop.Look = function (options) {
     'use strict';
-    var look = this;
-    look.ros = options.ros;
-    look.div = options.div || 'markers';
-    look.head = options.head || new Pr2Head(look.ros);
-    look.thresholds = options.thresholds || {top:0.15,
+    var self = this;
+    self.ros = options.ros;
+    self.div = options.div || 'markers';
+    self.camera = options.camera || new assistive_teleop.ROSCameraModel();
+    self.head = options.head || new Pr2Head(self.ros);
+
+    self.thresholds = options.thresholds || {top:0.15,
                                              bottom: 0.85,
                                              right: 0.85,
                                              left: 0.15};
-    look.start = function () {
-        $('#'+look.div+' canvas').on('mousemove.rfh', look.setCursor);
+    self.start = function () {
+        $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor);
     }
 
-    look.getRegion = function (e) {
+    self.getRegion = function (e) {
         var pt = assistive_teleop.positionInElement(e) 
         console.log("Target Element Size: (x="+e.target.clientWidth+", y="+e.target.clientHeight+")");
         var pct_x = pt[0]/e.target.clientWidth;
         var pct_y = pt[1]/e.target.clientHeight;
         var l = false, r = false, t = false, b = false;
-        if (pct_x < look.thresholds.left) {l = true};
-        if (pct_x > look.thresholds.right) {r = true};
-        if (pct_y > look.thresholds.bottom) {b = true};
-        if (pct_y < look.thresholds.top) {t = true};
+        if (pct_x < self.thresholds.left) {l = true};
+        if (pct_x > self.thresholds.right) {r = true};
+        if (pct_y > self.thresholds.bottom) {b = true};
+        if (pct_y < self.thresholds.top) {t = true};
         //Divide rectangular region into top/bottom/left/right/center combos
         //Numbers correspond to layout on keyboard numpad;
         if (!(b || t || l || r)) return 5; //largest area -> most common -> check first
@@ -39,11 +41,11 @@ var Look = function (options) {
         else return 6;
     }
 
-    look.onClick = function (e) {
+    self.onClick = function (e) {
         var dx = 0, dy = 0, point = false;
         var hfov = 1, vfov = 0.75; //FOV of kinect is ~1 radians wide, 0.75 radians tall
         var SCALE = 0.8; //Scale large motions so we don't over shoot
-        switch (look.getRegion(e)) {
+        switch (self.getRegion(e)) {
             case 1: 
                 var dx = SCALE * hfov;
                 var dy = SCALE * vfov;
@@ -77,16 +79,19 @@ var Look = function (options) {
                 break;
         }
         if (point) {
-            console.log('Looking at point -- ADD THIS');
-            //Look at a point in the field of view
+            var pt = assistive_teleop.positionInElement(e); 
+            var px = (pt[0]/e.target.clientWidth) * self.camera.width;
+            var py = (pt[1]/e.target.clientHeight) * self.camera.height;
+            var xyz =  self.camera.projectPixel(px, py);
+            self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
         } else {
-            look.head.delPosition(dx,dy)
+            self.head.delPosition(dx,dy);
         }
         
     }
 
-    look.setCursor = function (e) {
-//        switch (look.getRegion(pct_x, pct_y)) {
+    self.setCursor = function (e) {
+//        switch (self.getRegion(pct_x, pct_y)) {
 //            case 1: var dir = 'down-left';
 //                    break;
 //            case 2: var dir = 'down';
@@ -105,8 +110,8 @@ var Look = function (options) {
 //                    break;
 //            case 9: var dir = 'up-right';
 //            }
-//        $('#'+look.div).css({'cursor': 'url("css/cursors/eyes/eyes-'+dir+'.png")'});
-        var region = look.getRegion(e);
+//        $('#'+self.div).css({'cursor': 'url("css/cursors/eyes/eyes-'+dir+'.png")'});
+        var region = self.getRegion(e);
         switch (region) {
             case 1: var dir = 'sw-resize';
                     break;
@@ -126,13 +131,15 @@ var Look = function (options) {
                     break;
             case 9: var dir = 'ne-resize';
             }
-        $('#'+look.div).css({'cursor': dir});
+        $('#'+self.div).css({'cursor': dir});
     }
 }
 
 
 var initLook = function ()  {
-    assistive_teleop.tasks.look = new Look({ros: assistive_teleop.ros, div: 'markers'});
+    assistive_teleop.tasks['look'] = new assistive_teleop.Look({ros: assistive_teleop.ros, 
+                                                             div: 'markers',
+                                                             camera: assistive_teleop.mjpeg.cameraModel});
     $('#menu-item-look').button().on('click.rfh', function(){assistive_teleop.tasks.look.start()});
     $('#clickable-canvas').on('click.rfh', assistive_teleop.tasks.look.onClick);
 }
