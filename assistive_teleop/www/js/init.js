@@ -1,4 +1,33 @@
 var assistive_teleop = {
+    positionInElement: function (e) {
+        var posx = 0;
+        var posy = 0;
+        if (!e) var e = window.event;
+        if (e.pageX || e.pageY) 	{
+            posx = e.pageX;
+            posy = e.pageY;
+        }
+        else if (e.clientX || e.clientY) 	{
+            posx = e.clientX + document.body.scrollLeft
+                + document.documentElement.scrollLeft;
+            posy = e.clientY + document.body.scrollTop
+                + document.documentElement.scrollTop;
+        }
+        var offsetLeft = 0;
+        var offsetTop = 0;
+        var element = document.getElementById(e.target.id);
+        while (element && !isNaN(element.offsetLeft)
+                && !isNaN(element.offsetTop)) {
+            offsetLeft += element.offsetLeft;
+            offsetTop += element.offsetTop;
+            element = element.offsetParent;
+        }
+        posx -= offsetLeft;
+        posy -= offsetTop;
+        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
+        return [posx, posy]
+    },
+
   checkBrowser: function () {
       var ua = navigator.userAgent;
       var idx = ua.indexOf('Chrome/');
@@ -40,6 +69,11 @@ var assistive_teleop = {
   //    '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
   //    '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power').button();
 
+    var initTasks = function () {
+        assistive_teleop.tasks = {};
+        initLook();
+    }
+
     this.ros = new ROSLIB.Ros({url: 'ws://'+ this.ROBOT + ':'+ this.PORT});
     this.ros.on('close', function(e) {
         log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
@@ -54,6 +88,7 @@ var assistive_teleop = {
         extendROSJS(assistive_teleop.ros);
         initMjpegCanvas('video-main');
         initMarkerDisplay('markers');
+        initTasks();
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');
