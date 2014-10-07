@@ -56,7 +56,7 @@ class BaseSelector(object):
 
         self.robot_z = 0
         self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
-        
+        self.pr2_B_ar = None
         # Publisher to let me test things with arm_reacher
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
@@ -269,16 +269,21 @@ class BaseSelector(object):
         #             req.head.pose.orientation.w]
         # self.pr2_B_head = createBMatrix(pos_temp, ori_temp)
         # #print 'head from input: \n', head
-
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
+        (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
+        (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
         if not self.testing:
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(3))
+                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
                 (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
 
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(3))
+                self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
                 (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
                 self.pr2_B_ar = createBMatrix(trans, rot)
 
@@ -295,7 +300,7 @@ class BaseSelector(object):
                     self.ar_B_model = createBMatrix(trans, rot)
 
             except Exception as e:
-                rospy.loginfo("TF Exception. Could not get the AR_tag location, bed locatoin, or "
+                rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
                               "head location:\r\n%s" % e)
                 return None
 
