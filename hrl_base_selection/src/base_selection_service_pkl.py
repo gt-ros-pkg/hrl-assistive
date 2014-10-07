@@ -271,16 +271,35 @@ class BaseSelector(object):
         # #print 'head from input: \n', head
 
         if not self.testing:
-            # This lets the service use TF to get the head location instead of requiring it as an input.
-            (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', rospy.Time(0))
-            self.pr2_B_head = createBMatrix(trans, rot)
-            #print 'head from tf: \n',head
+            try:
+                now = rospy.Time.now()
+                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(3))
+                (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
+                self.pr2_B_head = createBMatrix(trans, rot)
 
-        if model == 'autobed':
-            # This lets the service use TF to get the head location instead of requiring it as an input.
-            (trans, rot) = self.listener.lookupTransform('/base_link', '/bed_frame', rospy.Time(0))
-            self.pr2_B_model = createBMatrix(trans, rot)
-            #print 'head from tf: \n',head
+                now = rospy.Time.now()
+                self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(3))
+                (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
+                self.pr2_B_ar = createBMatrix(trans, rot)
+
+                if np.linalg.norm(trans) > 1.5:
+                    rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
+                                  'tag. Alternatively, the PR2 may have lost sight of the AR tag or it is having silly '
+                                  'issues recognizing it. ')
+                    return None
+
+                if model == 'autobed':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
+                    (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
+                    self.ar_B_model = createBMatrix(trans, rot)
+
+            except Exception as e:
+                rospy.loginfo("TF Exception. Could not get the AR_tag location, bed locatoin, or "
+                              "head location:\r\n%s" % e)
+                return None
+
+
 
 
         print 'I will now determine a good base location.'
@@ -477,17 +496,21 @@ class BaseSelector(object):
 
         pr2_base_output = []
         configuration_output = []
+
+        # The output is a list of floats that are the position and quaternions for the transform from the goal location
+        # to the ar tag. It also outputs a list of floats that is [robot z axis, bed height, head rest angle (degrees)].
         for i in xrange(len(best_score[0])):
             origin_B_goal = np.matrix([[m.cos(best_score[2][i]), -m.sin(best_score[2][i]), 0., best_score[0][i]],
                                        [m.sin(best_score[2][i]),  m.cos(best_score[2][i]), 0., best_score[1][i]],
                                        [0.,                      0.,                           1.,           0.],
                                        [0.,                      0.,                           0.,           1.]])
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
-            pos_goal, ori_goal = Bmat_to_pos_quat(pr2_B_goal)
+            goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
+            pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
             # odom_B_goal = odom_B_pr2 * self.origin_B_pr2.I * origin_B_goal
             # pos_goal, ori_goal = Bmat_to_pos_quat(odom_B_goal)
             pr2_base_output.append([pos_goal, ori_goal])
-            configuration_output.append([best_score[3][i], best_score[4][i], best_score[5][i]])
+            configuration_output.append([best_score[3][i], best_score[4][i], np.degrees(best_score[5][i])])
 
             ## I no longer return posestamped messages. Now I return a list of floats.
             # psm = PoseStamped()
@@ -506,13 +529,6 @@ class BaseSelector(object):
         # (could output multiple base locations). So each set of 7 values is for one base location.
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))
             
-
-
-
-
-
-
-        
         # Visualize the solutions
         #with self.robot:
             #print 'checking goal base location: \n' , np.array(base_position)
