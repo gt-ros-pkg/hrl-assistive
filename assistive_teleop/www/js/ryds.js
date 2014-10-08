@@ -16,7 +16,7 @@ var RYDS = function (ros) {
     //Bowl Registration Service     
     ryds.bowlRegServiceClient = new ryds.ros.Service({
         name:'/finding_bowl_service',
-        serviceType:'pixel_2_3d/pixel_2_3d'///Pixel23d'
+        serviceType:'cup_finder/cup_finder'///Pixel23d'
     });
 
     ryds.RegisterBowl = function (u, v) {
@@ -95,7 +95,7 @@ var RYDS = function (ros) {
        ryds.finalPose = msg
        $("#confirm_bowl_reg").button({ disabled: false });
        assistive_teleop.log("Press 'Confirm Registration' to complete registration process");
-       ryds.BowlLocationSub.unsubscribe();
+       //ryds.BowlLocationSub.unsubscribe();
     });
 
     ryds.BowlConfirmationPub = new ryds.ros.Topic({
@@ -121,8 +121,12 @@ var RYDS = function (ros) {
         $('#img_act_select').val('looking');
         ryds.bowlRegistrationPub.publish(msg);
         ryds.bowlConfirmPub.publish(msg);
-        ryds.BowlConfirmationPub.publish(ryds.finalPose);
         assistive_teleop.log("Bowl registration confirmed");
+        var i = 0;
+        while (i<10) {
+            ryds.BowlConfirmationPub.publish(ryds.finalPose);
+            i=i+1;
+        }
     }
 
 }
