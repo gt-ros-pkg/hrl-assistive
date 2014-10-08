@@ -10,15 +10,6 @@ var initMarkerDisplay = function (divID) {
     });
     RFH.viewer.renderer.context.canvas.id = "clickable-canvas";
 
-    // Setup a client to listen to TFs.
-    RFH.tfClient = new ROSLIB.TFClient({
-        ros : RFH.ros,
-        angularThres : 0.01,
-        transThres : 0.01,
-        rate : 10.0,
-        fixedFrame : '/base_link'
-    });
-
     var updateCamera = function(transform) {
         RFH.viewer.camera.position.set(transform.translation.x,
                                                     transform.translation.y,

@@ -36,15 +36,13 @@ RFH.TaskMenu = function (divId) {
 
 RFH.initTaskMenu = function (divId) {
     RFH.taskMenu = new RFH.TaskMenu( divId );
-    RFH.pr2Head = new Pr2Head(RFH.ros);
     RFH.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
                                        div: 'markers',
-                                       head: RFH.pr2Head,
-                                       camera: RFH.mjpeg.cameraModel}
-                                       )
-                        );
+                                       head: RFH.pr2.head,
+                                       camera: RFH.mjpeg.cameraModel}));
     RFH.taskMenu.addTask(new RFH.Drive({ros: RFH.ros, 
                                        div: 'markers',
                                        camera: RFH.mjpeg.cameraModel,
-                                       head: RFH.pr2Head}));
+                                       head: RFH.pr2.head,
+                                       torso: RFH.pr2.torso}));
 }

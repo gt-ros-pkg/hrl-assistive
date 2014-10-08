@@ -1,4 +1,4 @@
-var Pr2Base = function (ros) {
+var PR2Base = function (ros) {
     'use strict';
     var base = this;
     base.ros = ros;
@@ -29,7 +29,7 @@ var Pr2Base = function (ros) {
     };
 };
 
-var Pr2Gripper = function (side, ros) {
+var PR2Gripper = function (side, ros) {
     'use strict';
     var gripper = this;
     gripper.side = side;
@@ -73,7 +73,7 @@ var Pr2Gripper = function (side, ros) {
     };
 };
 
-var Pr2Head = function (ros) {
+var PR2Head = function (ros) {
     'use strict';
     var head = this;
     head.ros = ros;
@@ -157,7 +157,7 @@ var Pr2Head = function (ros) {
     };
 };
 
-var Pr2Torso = function (ros) {
+var PR2Torso = function (ros) {
     'use strict';
     var torso = this;
     torso.ros = ros;
@@ -197,3 +197,14 @@ var Pr2Torso = function (ros) {
         torso.goalPub.publish(goal_msg);
     };
 };
+
+var PR2 = function (ros) {
+    'use strict';
+    var self = this;
+    self.ros = ros;
+    self.torso = new PR2Torso(self.ros);
+    self.r_gripper = new PR2Gripper('right', self.ros);
+    self.l_gripper = new PR2Gripper('left', self.ros);
+    self.base = new PR2Base(self.ros);
+    self.head = new PR2Head(self.ros);
+}
