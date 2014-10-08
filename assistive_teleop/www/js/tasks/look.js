@@ -5,7 +5,7 @@ RFH.Look = function (options) {
     self.div = options.div || 'markers';
     self.camera = options.camera || new RFH.ROSCameraModel();
     self.head = options.head || new Pr2Head(self.ros);
-    self.buttonText = 'Looking';
+    self.buttonText = 'Look';
     self.buttonClass = 'look-button';
 
     self.thresholds = options.thresholds || {top:0.15,
