@@ -7,7 +7,6 @@ RFH.Look = function (options) {
     self.head = options.head || new Pr2Head(self.ros);
     self.buttonText = 'Look';
     self.buttonClass = 'look-button';
-
     self.thresholds = options.thresholds || {top:0.15,
                                              bottom: 0.85,
                                              right: 0.85,
@@ -23,11 +22,11 @@ RFH.Look = function (options) {
                           9: 'cursor-eyes-up-right'}
 
     self.start = function () {
-        $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor);
+        $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor).on('click.rfh', self.onClick);
     }
     
     self.stop = function () {
-        $('#'+self.div+' canvas').off('mousemove.rfh');
+        $('#'+self.div+' canvas').off('mousemove.rfh click.rfh');
         for ( var idx in self.cursorClasses ) {
             $('#'+self.div+' canvas').removeClass( self.cursorClasses[ idx ] );
         }
