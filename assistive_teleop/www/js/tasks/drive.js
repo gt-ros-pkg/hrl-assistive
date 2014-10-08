@@ -4,7 +4,8 @@ RFH.Drive = function (options) {
     var self = this;
     self.ros = options.ros;
     self.div = options.div || 'markers';
-    self.head = options.head || new Pr2Head(self.ros);
+    self.head = options.head;
+    self.camera = options.camera;
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
 
@@ -14,7 +15,10 @@ RFH.Drive = function (options) {
 
     self.stop = function () {
         alert ("Stopping Driving task");
+    }
 
+    self.onClick = function (e) {
+        
     }
 
 }
