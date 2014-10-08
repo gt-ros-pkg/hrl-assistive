@@ -1,7 +1,8 @@
 <launch>
     <arg name="subject" />
     <arg name="run_tool_power" default="true" />
-    <arg name="shaving_board" default="/dev/shaver_arduino" />
+    <!--<arg name="shaving_board" default="/dev/shaver_arduino" />-->
+    <arg name="shaving_board" default="/dev/ttyUSB3" />
 
     <!--        directories          -->
     <arg name="data_pkg" value="$(find rfh_data)" />
@@ -37,6 +38,10 @@
 
     <node pkg="hrl_face_adls" name="task_manager" type="task_manager.py" output="screen" />
 
+    <param name="dangerous_force_thresh" value="10.0" />
+    <param name="contact_force_thresh" value="3.0" />
+    <param name="activity_force_thresh" value="3.0" />
+
     <!--node pkg="hrl_face_adls" name="face_adls_manager" type="face_adls_manager.py"
           output="screen" >
         <remap from="/face_adls/feedback" to="/wt_log_out" />
@@ -65,13 +70,16 @@
         </rosparam>
     </node-->
 
-  <!-- Nodes for shaver power and run-stop monitor to stop shaver 
+  <!-- Nodes for shaver power and run-stop monitor to stop shaver -->
   <node if="$(arg run_tool_power)" name="tool_power_toggle" pkg="rosserial_python"
         type="serial_node.py" args="$(arg shaving_board)" output="screen"/>
 
   <node if="$(arg run_tool_power)" name="razor_run_stop_monitor" pkg="hrl_face_adls"
         type="razor_runstop.py" output="screen"/>
-   -->
+
+  <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
+          args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_gripper.yaml" 
+          output="screen" />
 
  <!-- Mirror pointer node points mirror at registered head location 
   <node name="mirror_pointer" pkg="hrl_face_adls" type="mirror_pointer.py" output="screen">
@@ -93,9 +101,6 @@
         <param name="init_rot_tolerance" value="100.0" />
     </node>
 
-    <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
-          args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_gripper.yaml" 
-          output="screen" />
     -->
 
     <rosparam>
