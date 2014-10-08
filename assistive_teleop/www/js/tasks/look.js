@@ -29,7 +29,7 @@ RFH.Look = function (options) {
     self.stop = function () {
         $('#'+self.div+' canvas').off('mousemove.rfh');
         for ( var idx in self.cursorClasses ) {
-            $('#'+self.div).removeClass( self.cursorClasses[ idx ] );
+            $('#'+self.div+' canvas').removeClass( self.cursorClasses[ idx ] );
         }
     };
 
