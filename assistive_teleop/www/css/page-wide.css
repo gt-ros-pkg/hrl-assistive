@@ -2,27 +2,55 @@ body {
     margin: 0px;
 }
 
-#main-menu {
+#left-col {
+    position: relative;
     display:inline-block;
-    height: 60%;
-    width: 18%;
-    min-width: 164px;
-    border: 3px solid black;
+    height: 95%;
+    width: 20%;
+    min-width: 128px;
+
+}
+
+
+#main-menu {
+    display: block;
+    height: 40%;
+    width: 100%;
+}
+
+#main-menu h3 {
+    display: block;
+    width: 100%;
+    text-align: center;
 }
 
 .menu-item {
     display:inline-block;
     height: 80px;
-    width: 80px;
+    width: 48%;
 }
 
 #video-main {
     float: right;
     position: relative;
+    height:95%;
 }
 
 #markers {
     position: absolute;
     left: 0px;
     top: 0px
+}
+
+#controls {
+    display:inline-block;
+    height: 60%;
+    width: 100%;
+    min-width: 128px;
+}
+
+#controls h3 {
+    display: block;
+    width: 100%;
+    text-align: center;
 }
