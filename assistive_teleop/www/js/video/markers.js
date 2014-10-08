@@ -12,12 +12,12 @@ var initMarkerDisplay = function (divID) {
 
     var updateCamera = function(transform) {
         RFH.viewer.camera.position.set(transform.translation.x,
-                                                    transform.translation.y,
-                                                    transform.translation.z);
+                                       transform.translation.y,
+                                       transform.translation.z);
         RFH.viewer.camera.quaternion = new THREE.Quaternion(transform.rotation.x,
-                                                                         transform.rotation.y,
-                                                                         transform.rotation.z,
-                                                                         transform.rotation.w);
+                                                            transform.rotation.y,
+                                                            transform.rotation.z,
+                                                            transform.rotation.w);
         RFH.viewer.camera.updateMatrix();
         RFH.viewer.camera.updateMatrixWorld();
         out = RFH.viewer.camera.localToWorld(new THREE.Vector3(1,0,0));
