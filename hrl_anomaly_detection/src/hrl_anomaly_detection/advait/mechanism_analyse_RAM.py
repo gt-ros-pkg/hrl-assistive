@@ -17,9 +17,10 @@ from mvpa2.generators import splitters
 
 import mechanism_analyse_advait as maa
 sys.path.append(os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook')
-import ram_db as rd
 
-import roslib; roslib.load_manifest('modeling_forces')
+## import roslib; roslib.load_manifest('modeling_forces')
+import roslib; roslib.load_manifest('hrl_anomaly_detection') 
+import ram_db as rd
 import hrl_lib.util as ut
 import hrl_lib.matplotlib_util as mpu
 
@@ -51,7 +52,8 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
             continue
         len_list.append(l)
         d_list.append(d)
-    min_max_config = np.min(len_list) # necessary?
+        
+    ## min_max_config = np.min(len_list) # necessary?
     min_max_config = reject_len
 
     mech_vec_list = []
@@ -254,7 +256,7 @@ def create_mvpa_dataset(proj_mat, mech_vec_list, mech_nm_list):
 
         if nm not in rd.tags_dict:
             print nm + ' is not in tags_dict'
-            raw_input('Hit ENTER to continue')
+            #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
         for v in v_mat.T:
@@ -443,7 +445,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict: #name filtering
             print nm + ' is not in tags_dict'
-            raw_input('Hit ENTER to continue')
+            #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
         if 'recessed' in nm:
@@ -495,6 +497,9 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
             print '####################33'
             print '####################33'
 
+    ## print labels # mechanism
+    ## print len(chunks) # mechanism + actor?
+            
     #chunks=None
     feats = np.column_stack(feat_list)
     data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels, chunks is name of sample

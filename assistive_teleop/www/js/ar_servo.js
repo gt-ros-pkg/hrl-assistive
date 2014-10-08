@@ -4,10 +4,33 @@ var ArServo = function (ros) {
   arServo.SERVO_FEEDBACK_TOPIC = 'pr2_ar_servo/state_feedback';
   arServo.SERVO_APPROACH_TOPIC = 'pr2_ar_servo/tag_confirm';
   arServo.SERVO_PREEMPT_TOPIC = 'pr2_ar_servo/preempt';
+  arServo.TEST_GOAL_TOPIC = 'ar_servo_goal_data';
+  arServo.TEST_TAG_TOPIC = 'r_pr2_ar_pose_marker';
   arServo.SERVO_CONFIRM_CAMERA = 'AR Tag';
 
   arServo.ros = ros;
   arServo.state = 0;
+
+  arServo.ros.getMsgDetails('hrl_pr2_ar_servo/ARServoGoalData');
+  arServo.testPub = new arServo.ros.Topic({
+    name: arServo.TEST_GOAL_TOPIC,
+    messageType: 'hrl_pr2_ar_servo/ARServoGoalData'
+  });
+  arServo.testPub.advertise();
+  arServo.sendTestGoal = function () {
+    var msg = new arServo.ros.composeMsg('hrl_pr2_ar_servo/ARServoGoalData');
+    console.log(msg);
+    msg.marker_topic = arServo.TEST_TAG_TOPIC; 
+    msg.tag_goal_pose.header.frame_id = "/base_link",
+    msg.tag_goal_pose.pose.position.x = 1;
+    msg.tag_goal_pose.pose.position.y = 0;
+    msg.tag_goal_pose.pose.position.z = 0.6;
+    msg.tag_goal_pose.pose.orientation.x = -0.5;// 0.70710678,
+    msg.tag_goal_pose.pose.orientation.y = 0.5;//.70710678,
+    msg.tag_goal_pose.pose.orientation.z = 0.5;//0.70710678,
+    msg.tag_goal_pose.pose.orientation.w = -0.5//70710678,
+    arServo.testPub.publish(msg);
+  }
 
   arServo.approachPub = new arServo.ros.Topic({
     name: arServo.SERVO_APPROACH_TOPIC,
@@ -67,6 +90,7 @@ function initARServoTab(tabDivId) {
   $(divRef).append('<table><tr>' +
                            '<td id="' + tabDivId + 'R0C0"></td>' +
                            '<td id="' + tabDivId + 'R0C1"></td>' +
+                           '<td id="' + tabDivId + 'R0C2"></td>' +
                            '</tr></table>');
   $(divRef+'R0C0').append('<button id="' + tabDivId + '_approach">' +
                                     'Approach </button>')
@@ -74,11 +98,14 @@ function initARServoTab(tabDivId) {
       assistive_teleop.arServo.approach();
     });
 
-  $(divRef+'R0C1').append('<button id="' + tabDivId + '_preempt">' +
-                                    'Stop </button>')
+  $(divRef+'R0C1').append('<button id="' + tabDivId + '_preempt">Stop </button>')
     .click(function () {
       assistive_teleop.arServo.preemptApproach();
     });
+
+  $(divRef+'R0C2').append('<button id="'+tabDivId+'_test">Test</button>').click(function () {
+      assistive_teleop.arServo.sendTestGoal();
+      });
   $(divRef+' :button').button().css({
     'height': "75px",
     'width': "200px",

@@ -70,7 +70,7 @@
         </rosparam>
     </node-->
 
-  <!-- Nodes for shaver power and run-stop monitor to stop shaver -->
+  <!-- Nodes for shaver power and run-stop monitor to stop shaver 
   <node if="$(arg run_tool_power)" name="tool_power_toggle" pkg="rosserial_python"
         type="serial_node.py" args="$(arg shaving_board)" output="screen"/>
 
@@ -80,6 +80,7 @@
   <node pkg="hrl_ft" name="netft_gravity_zeroing" type="wrench_zeroing.py" 
           args="-l -r -z -b -f $(arg ft_dir)/ft_zero_params_gripper.yaml" 
           output="screen" />
+  -->  
 
  <!-- Mirror pointer node points mirror at registered head location 
   <node name="mirror_pointer" pkg="hrl_face_adls" type="mirror_pointer.py" output="screen">
