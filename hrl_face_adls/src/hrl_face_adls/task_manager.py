@@ -16,6 +16,7 @@ from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove_multi  # , BaseMoveRequest
 from hrl_ellipsoidal_control.msg import EllipsoidParams
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
+from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
          'Arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
@@ -43,6 +44,8 @@ class ServoingManager(object):
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 
+        self.reach_service = rospy.ServiceProxy("/base_selection/arm_reach_enable", None_Bool)
+
         self.ui_input_sub = rospy.Subscriber("action_location_goal", String, self.ui_cb)
         self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
@@ -59,8 +62,10 @@ class ServoingManager(object):
         #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
         msg = "Servoing Succeeded. Please proceed by bringing up the arms."
+        self.call_arm_reacher()
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
+
 
     def ui_cb(self, msg):
         self.head_pose = self.get_head_pose()
@@ -149,6 +154,32 @@ class ServoingManager(object):
         self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
         rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
         self.goal_data_pub.publish(ar_data)
+
+    def call_arm_reacher(self):
+        # Place holder return
+        #bg = PoseStamped()
+        #bg.header.stamp = rospy.Time.now()
+        #bg.header.frame_id = 'ar_marker'
+        #bg.pose.position = Point(0., 0., 0.5)
+        #q = tft.quaternion_from_euler(0., np.pi/2, 0.)
+        #bg.pose.orientation = Quaternion(*q)
+        #return bg
+        ## End Place Holder
+        self.feedback_pub.publish("Reaching arm to goal, please wait.")
+        rospy.loginfo("[%s] Calling arm reacher. Please wait." %rospy.get_name())
+
+        # bm = BaseMoveRequest()
+        # bm.model = self.model
+        # bm.task = self.task
+        resp = self.call_arm_reacher()
+        # try:
+        #     resp = self.call_arm_reacher()
+        #     # resp = self.base_selection_client.call(bm)
+        # except rospy.ServiceException as se:
+        #     rospy.logerr(se)
+        #     self.feedback_pub.publish("Failed to find good base position. Please try again.")
+        #     return None
+        return resp
 
     def call_base_selection(self):
         # Place holder return
