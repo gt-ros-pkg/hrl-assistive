@@ -49,6 +49,8 @@ def select_base_client():
     psm_head.pose.orientation.y=ori_goal[1]
     psm_head.pose.orientation.z=ori_goal[2]
     psm_head.pose.orientation.w=ori_goal[3]
+    head_pub = rospy.Publisher("/haptic_mpc/head_pose", PoseStamped, latch=True)
+    head_pub.publish(psm_head)
 
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_base_selection')
@@ -97,8 +99,6 @@ def select_base_client():
     psm_goal.pose.orientation.y=ori_goal[1]
     psm_goal.pose.orientation.z=ori_goal[2]
     psm_goal.pose.orientation.w=ori_goal[3]
-    head_pub = rospy.Publisher("/haptic_mpc/head_pose", PoseStamped, latch=True)
-    head_pub.publish(psm_head)
     goal_pub = rospy.Publisher("/arm_reacher/goal_pose", PoseStamped, latch=True)
     goal_pub.publish(psm_goal)
 
