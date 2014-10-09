@@ -290,20 +290,22 @@ class ScoreGenerator(object):
                                                         #print 'BedZ: ',score_stuff[t,4], np.round(bz,4)
                                                         #print 'BedTheta:', score_stuff[t,5], np.round(bth,4)
 
-                                    #if ((score_stuff[t,0]==np.round(i,4)) and (score_stuff[t,1]==np.round(j,4)) and
+                                    # if ((score_stuff[t,0]==np.round(i,4)) and (score_stuff[t,1]==np.round(j,4)) and
                                     # (score_stuff[t,4]==np.round(bz,4)) and (score_stuff[t,5]==np.round(bth,4))):
-                                    #if np.array_equal(np.round([score_stuff[t,0],score_stuff[t,1],score_stuff[t,4],
-                                    # score_stuff[t,5]],4),np.round([i, j, bz, bth],4)):
-                                    if "{0:.3f}".format(score_stuff[t, 0]) == "{0:.3f}".format(x) and \
-                                       "{0:.3f}".format(score_stuff[t, 1]) == "{0:.3f}".format(y) and \
-                                       "{0:.3f}".format(score_stuff[t, 4]) == "{0:.3f}".format(bz) and \
-                                       "{0:.3f}".format(score_stuff[t, 5]) == "{0:.3f}".format(bth) and \
-                                       "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(bth) and \
-                                       "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth) and \
-                                       "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(hx) and \
-                                       "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(hy):
+                                    if np.array_equal(np.round([score_stuff[t, 0], score_stuff[t, 1], score_stuff[t, 4],
+                                                                score_stuff[t, 5], score_stuff[t, 6],
+                                                                score_stuff[t, 7]], 4),
+                                                      np.round([x, y, bz, bth, hx, hy], 4)):
+                                    # if "{0:.3f}".format(score_stuff[t, 0]) == "{0:.3f}".format(x) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 1]) == "{0:.3f}".format(y) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 4]) == "{0:.3f}".format(bz) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 5]) == "{0:.3f}".format(bth) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(bth) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(hx) and \
+                                    #    "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(hy):
 
-                                        if score_stuff[t, 9] > 0.:
+                                        if score_stuff[t, 9] > 0.80:
                                             #print score_stuff[t]
                                             #print 'raw things:'
                                             #print score_stuff[t]                                   
@@ -386,7 +388,7 @@ class ScoreGenerator(object):
     def combination_score(self, item, hx, hz):
         this_reachable = np.zeros(self.number_goals)
         this_manipulable = np.zeros(self.number_goals)
-        this_personal_space = np.max([t for t in ((self.scores[hx, hz][i][6])
+        this_personal_space = np.max([t for t in ((self.scores[hx, hz][i][8])
                                                   for i in item
                                                   )
                                       ])
@@ -439,34 +441,34 @@ class ScoreGenerator(object):
 
     
 
-    def generate_score(self, i, j, th, z, bz, bth, headx, heady):
+    def generate_score(self, x, y, th, z, bz, bth, headx, heady):
         #print 'Calculating new score'
         #starttime = time.time()
-        base_position = self.pr2_B_headfloor * np.matrix([[ m.cos(th), -m.sin(th),     0.,         i],
-                                                          [ m.sin(th),  m.cos(th),     0.,         j],
-                                                          [        0.,         0.,     1.,        0.],
-                                                          [        0.,         0.,     0.,        1.]])
-        self.robot.SetTransform(np.array(base_position))
+        origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                  [ m.sin(th),  m.cos(th),     0.,         y],
+                                  [        0.,         0.,     1.,        0.],
+                                  [        0.,         0.,     0.,        1.]])
+        self.robot.SetTransform(np.array(origin_B_pr2))
         v = self.robot.GetActiveDOFValues()
         v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
-        
         self.robot.SetActiveDOFValues(v)
+
         if self.model == 'chair':
-            pr2_B_head = np.matrix([[1.,        0.,   0.,         0.0],
-                                    [0.,        1.,   0.,         0.0],
-                                    [0.,        0.,   1.,     1.33626],
-                                    [0.,        0.,   0.,         1.0]])
+            origin_B_head = np.matrix([[1.,        0.,   0.,         0.0],
+                                       [0.,        1.,   0.,         0.0],
+                                       [0.,        0.,   1.,     1.33626],
+                                       [0.,        0.,   0.,         1.0]])
             self.selection_mat = np.zeros(len(self.goals))
             self.goal_list = np.zeros([len(self.goals), 4, 4])
             for i in xrange(len(self.reference_names)):
                 if self.reference_names[i] == 'head':
-                    self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform()).I*pr2_B_head
+                    self.pr2_B_reference[i] = origin_B_pr2.I*origin_B_head
                 elif self.reference_names[i] == 'base_link':
-                    self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
-
+                    self.pr2_B_reference[i] = np.matrix(np.eye(4))
+                    # self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
 
             for i in xrange(len(self.goals)):
-                self.goal_list[i] = copy.copy(self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
+                self.goal_list[i] = copy.copy(origin_B_pr2*self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
                 self.selection_mat[i] = copy.copy(self.goals[i, 1])
 #            for target in self.goals:
 #                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
@@ -478,19 +480,21 @@ class ScoreGenerator(object):
             self.goal_list = np.zeros([len(self.goals), 4, 4])
             self.set_autobed(bz, bth, headx, heady)
             headmodel = self.autobed.GetLink('head_link')
+            origin_B_head = np.matrix(headmodel.GetTransform())
             for i in xrange(len(self.reference_names)):
                 if self.reference_names[i] == 'head':
-                    self.pr2_B_reference[i] = np.matrix(headmodel.GetTransform())
+                    self.pr2_B_reference[i] = origin_B_pr2.I*origin_B_head
+                    # self.pr2_B_reference[i] = np.matrix(headmodel.GetTransform())
                 elif self.reference_names[i] == 'base_link':
-                    self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
+                    self.pr2_B_reference[i] = np.matrix(np.eye(4))
+                    # self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
                 
-
             for i in xrange(len(self.goals)):
-                self.goal_list[i] = copy.copy(self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
+                self.goal_list[i] = copy.copy(origin_B_pr2*self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
                 self.selection_mat[i] = copy.copy(self.goals[i, 1])
-#            for target in self.goals:
-#                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
-#                self.selection_mat.append(target[1])
+            # for target in self.goals:
+            #     self.goal_list.append(pr2_B_head*np.matrix(target[0]))
+            #     self.selection_mat.append(target[1])
             self.set_goals()
         #print 'Time to update autobed things: %fs'%(time.time()-starttime)
         reach_score = 0.
@@ -503,13 +507,14 @@ class ScoreGenerator(object):
         reached = 0.
         
         #allmanip2=[]
-        space_score = (1./(std*(m.pow((2.*m.pi), 0.5))))*m.exp(-(m.pow(np.linalg.norm([i, j])-mean, 2.)) /
+        space_score = (1./(std*(m.pow((2.*m.pi), 0.5))))*m.exp(-(m.pow(np.linalg.norm([x, y])-mean, 2.)) /
                                                                (2.*m.pow(std, 2.)))
         #print space_score
         with self.robot:
             if not self.manip.CheckIndependentCollision(op.CollisionReport()):
                 #print 'not colliding with environment'
-                for num,Tgrasp in enumerate(self.Tgrasps):
+                for num, Tgrasp in enumerate(self.Tgrasps):
+                    sol = None
                     sol = self.manip.FindIKSolution(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                     #sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.IgnoreSelfCollisions)
                     manip = 0.
@@ -523,7 +528,7 @@ class ScoreGenerator(object):
                         reached = 1.
                         reach_score += copy.copy(reached * self.weights[num])
 
-                        joint_angles = copy.copy(sol)
+                        # joint_angles = copy.copy(sol)
                         #pos, rot = self.robot.kinematics.FK(self.joint_angles)
                         #self.end_effector_position = pos
                         #self.end_effector_orient_cart = rot
@@ -542,7 +547,7 @@ class ScoreGenerator(object):
                         #print Jop
                         #if np.array_equal(J,Jop):
                         #    print 'Jacobians are equal!!!'
-                        manip = copy.copy((m.pow(np.linalg.det(J*J.T),(1./6.)))/(np.trace(J*J.T)/6.))
+                        manip = copy.copy((m.pow(np.linalg.det(J*J.T), (1./6.)))/(np.trace(J*J.T)/6.))
                         #manip2 = (m.pow(np.linalg.det(Jop*Jop.T),(1./6.)))/(np.trace(Jop*Jop.T)/6.)
                         allmanip.append(manip)
                         #allmanip2.append(manip2)
@@ -552,7 +557,7 @@ class ScoreGenerator(object):
                     goal_scores.append([copy.copy(reached * self.weights[num]), copy.copy(manip*self.weights[num])])
             else:
                 for num in xrange(len(self.Tgrasps)):
-                    goal_scores.append([0, 0])
+                    goal_scores.append([0., 0.])
                     #print 'goal_scores: ', goal_scores
         #manip_score = manip_score/reachable
         #print 'I just tested base position: (', i,', ',j,', ',k,'). Reachable: ',reachable
@@ -565,7 +570,6 @@ class ScoreGenerator(object):
         #print 'finished calculating a score'
         #print 'Time to calculate a score: %fs'%(time.time()-starttime)
         return space_score, reach_score, manip_score, goal_scores
-
 
     def setup_openrave(self):
         # Setup Openrave ENV
@@ -612,7 +616,7 @@ class ScoreGenerator(object):
         pkg_path = rospack.get_path('hrl_base_selection')
 
         # Transform from the coordinate frame of the wc model in the back right bottom corner, to the head location on the floor
-        if self.model=='chair':
+        if self.model == 'chair':
             '''
             self.env.Load(''.join([pkg_path, '/collada/wheelchair_rounded.dae']))
             originsubject_B_headfloor = np.matrix([[m.cos(0.), -m.sin(0.),  0.,      0.], #.45 #.438
@@ -622,41 +626,43 @@ class ScoreGenerator(object):
             '''
             # This is the old wheelchair model
             self.env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
-            originsubject_B_headfloor = np.matrix([[m.cos(0.), -m.sin(0.),  0., .442603], #.45 #.438
-                                                   [m.sin(0.),  m.cos(0.),  0., .384275], #0.34 #.42
-                                                   [       0.,         0.,  1.,      0.],
-                                                   [       0.,         0.,  0.,      1.]])
+            self.originsubject_B_headfloor = np.matrix([[1., 0.,  0., .442603], #.45 #.438
+                                                        [0., 1.,  0., .384275], #0.34 #.42
+                                                        [0., 0.,  1.,      0.],
+                                                        [0., 0.,  0.,      1.]])
+            self.originsubject_B_originworld = copy.copy(self.originsubject_B_headfloor)
             
-        elif self.model=='bed':
+        elif self.model == 'bed':
             self.env.Load(''.join([pkg_path, '/models/head_bed.dae']))
             an = 0#m.pi/2
-            originsubject_B_headfloor = np.matrix([[ m.cos(an),  0., m.sin(an),  .2954], #.45 #.438
-                                                   [        0.,  1.,        0.,     0.], #0.34 #.42
-                                                   [-m.sin(an),  0., m.cos(an),     0.],
-                                                   [        0.,  0.,        0.,     1.]])
-        elif self.model=='autobed':
+            self.originsubject_B_headfloor = np.matrix([[ m.cos(an),  0., m.sin(an),  .2954], #.45 #.438
+                                                        [        0.,  1.,        0.,     0.], #0.34 #.42
+                                                        [-m.sin(an),  0., m.cos(an),     0.],
+                                                        [        0.,  0.,        0.,     1.]])
+            self.originsubject_B_originworld = copy.copy(self.originsubject_B_headfloor)
+        elif self.model == 'autobed':
             self.env.Load(''.join([pkg_path, '/collada/bed_and_body_v3_rounded.dae']))
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
 
             #0 degrees, 0 height
-            v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()]= 0.0
-            v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()]= -0.
-            v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()]= -.1
-            v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()]= .4
-            v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()]= -.72
-            v[self.autobed.GetJoint('body_quad_left_joint').GetDOFIndex()]= -0.4
-            v[self.autobed.GetJoint('body_quad_right_joint').GetDOFIndex()]= -0.4
-            v[self.autobed.GetJoint('quad_calf_left_joint').GetDOFIndex()]= 0.1
-            v[self.autobed.GetJoint('quad_calf_right_joint').GetDOFIndex()]= 0.1
-            v[self.autobed.GetJoint('calf_foot_left_joint').GetDOFIndex()]= .02
-            v[self.autobed.GetJoint('calf_foot_right_joint').GetDOFIndex()]= .02
-            v[self.autobed.GetJoint('body_arm_left_joint').GetDOFIndex()]=  -.12
-            v[self.autobed.GetJoint('body_arm_right_joint').GetDOFIndex()]= -.12
-            v[self.autobed.GetJoint('arm_forearm_left_joint').GetDOFIndex()]= 0.05
-            v[self.autobed.GetJoint('arm_forearm_right_joint').GetDOFIndex()]= 0.05
-            v[self.autobed.GetJoint('forearm_hand_left_joint').GetDOFIndex()]= -0.1
-            v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()]= -0.1
+            v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = 0.0
+            v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()] = -0.
+            v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = -.1
+            v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = .4
+            v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = -.72
+            v[self.autobed.GetJoint('body_quad_left_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('body_quad_right_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('quad_calf_left_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('quad_calf_right_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('calf_foot_left_joint').GetDOFIndex()] = .02
+            v[self.autobed.GetJoint('calf_foot_right_joint').GetDOFIndex()] = .02
+            v[self.autobed.GetJoint('body_arm_left_joint').GetDOFIndex()] = -.12
+            v[self.autobed.GetJoint('body_arm_right_joint').GetDOFIndex()] = -.12
+            v[self.autobed.GetJoint('arm_forearm_left_joint').GetDOFIndex()] = 0.05
+            v[self.autobed.GetJoint('arm_forearm_right_joint').GetDOFIndex()] = 0.05
+            v[self.autobed.GetJoint('forearm_hand_left_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()] = -0.1
             #v[self.autobed.GetJoint('leg_rest_upper_joint').GetDOFIndex()]= -0.1
             self.autobed.SetActiveDOFValues(v)
             self.env.UpdatePublishedBodies()
@@ -664,35 +670,32 @@ class ScoreGenerator(object):
             head_T = np.matrix(headmodel.GetTransform())
 
             an = 0#m.pi/2
-            '''
-            originsubject_B_headfloor = np.matrix([[ m.cos(an),  0., m.sin(an),  head_T[0,3]], #.45 #.438
-                                                   [        0.,  1.,        0.,  head_T[1,3]], #0.34 #.42
-                                                   [-m.sin(an),  0., m.cos(an),           0.],
-                                                   [        0.,  0.,        0.,           1.]])
-            '''
-            originsubject_B_headfloor = np.matrix([[ m.cos(an),  0., m.sin(an),           0.], #.45 #.438
-                                                   [        0.,  1.,        0.,           0.], #0.34 #.42
-                                                   [-m.sin(an),  0., m.cos(an),           0.],
-                                                   [        0.,  0.,        0.,           1.]])
+
+            self.originsubject_B_headfloor = np.matrix([[1.,  0., 0.,  head_T[0, 3]],  #.45 #.438
+                                                        [0.,  1., 0.,  head_T[1, 3]],  # 0.34 #.42
+                                                        [0.,  0., 1.,           0.],
+                                                        [0.,  0., 0.,           1.]])
+            self.originsubject_B_originworld = np.matrix(np.eye(4))
+
         else:
             print 'I got a bad model. What is going on???'
             return None
         self.subject = self.env.GetBodies()[1]
-        self.subject_location = self.pr2_B_headfloor * originsubject_B_headfloor.I
-        self.subject.SetTransform(np.array(self.subject_location))
+        # self.subject_location = originsubject_B_headfloor.I
+        self.subject.SetTransform(np.array(self.originsubject_B_originworld.I))
 
         print 'OpenRave has succesfully been initialized. \n'
 
-    def set_autobed(self,z,headrest_th,head_x,head_y):
+    def set_autobed(self, z, headrest_th, head_x, head_y):
         bz = z
         bth = m.degrees(headrest_th)
         v = self.autobed.GetActiveDOFValues()
-        v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()]= bz
-        v[self.autobed.GetJoint('head_bed_updown_joint').GetDOFIndex()]= head_x
-        v[self.autobed.GetJoint('head_bed_leftright_joint').GetDOFIndex()]= head_y
+        v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()] = bz
+        v[self.autobed.GetJoint('head_bed_updown_joint').GetDOFIndex()] = head_x
+        v[self.autobed.GetJoint('head_bed_leftright_joint').GetDOFIndex()] = head_y
 
             # 0 degrees, 0 height
-        if (bth >= 0) and (bth<= 40): #between 0 and 40 degrees
+        if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
             v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()]= (bth/40)*(0.6981317 - 0)+0
             v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()]= (bth/40)*(-.2-(-.1))+(-.1)
             v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()]= (bth/40)*(-.17-.4)+.4
@@ -709,7 +712,7 @@ class ScoreGenerator(object):
             v[self.autobed.GetJoint('arm_forearm_right_joint').GetDOFIndex()]= (bth/40)*(.58-0.05)+.05
             v[self.autobed.GetJoint('forearm_hand_left_joint').GetDOFIndex()]= -0.1
             v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()]= -0.1
-        elif (bth >40) and (bth<= 80): #between 0 and 40 degrees
+        elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
             v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()]= ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
             v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()]= ((bth-40)/40)*(-.55-(-.2))+(-.2)
             v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()]= ((bth-40)/40)*(-.51-(-.17))+(-.17)
@@ -729,28 +732,27 @@ class ScoreGenerator(object):
         else:
             print 'Error: Bed angle out of range (should be 0 - 80 degrees'
 
-
         self.autobed.SetActiveDOFValues(v)
         self.env.UpdatePublishedBodies()
 
 
     def show_rviz(self):
         #rospy.init_node(''.join(['base_selection_goal_visualization']))
-        sub_pos,sub_ori = Bmat_to_pos_quat(self.subject_location)
-        self.publish_sub_marker(sub_pos,sub_ori)
+        sub_pos, sub_ori = Bmat_to_pos_quat(self.originsubject_B_originworld)
+        self.publish_sub_marker(sub_pos, sub_ori)
 
-        if self.model == 'autobed':
-            self.selection_mat = np.zeros(len(self.goals))
-            self.goal_list = np.zeros([len(self.goals),4,4])
-            headmodel = self.autobed.GetLink('head_link')
-            pr2_B_head = np.matrix(headmodel.GetTransform())
-            for i in xrange(len(self.goals)):
-                self.goal_list[i] = copy.copy(pr2_B_head*np.matrix(self.goals[i,0]))
-                self.selection_mat[i] = copy.copy(self.goals[i,1])
-#            for target in self.goals:
-#                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
-#                self.selection_mat.append(target[1])
-            self.set_goals()
+#         if self.model == 'autobed':
+#             self.selection_mat = np.zeros(len(self.goals))
+#             self.goal_list = np.zeros([len(self.goals),4,4])
+#             headmodel = self.autobed.GetLink('head_link')
+#             pr2_B_head = np.matrix(headmodel.GetTransform())
+#             for i in xrange(len(self.goals)):
+#                 self.goal_list[i] = copy.copy(pr2_B_head*np.matrix(self.goals[i,0]))
+#                 self.selection_mat[i] = copy.copy(self.goals[i,1])
+# #            for target in self.goals:
+# #                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
+# #                self.selection_mat.append(target[1])
+#             self.set_goals()
 
         self.publish_goal_markers(self.goal_list)
         #for i in xrange(len(self.goal_list)):

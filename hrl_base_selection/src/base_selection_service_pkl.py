@@ -45,13 +45,14 @@ class BaseSelector(object):
                    'l_forearm_roll_joint',
                    'l_wrist_flex_joint',
                    'l_wrist_roll_joint']
-    def __init__(self, transform_listener=None,model='chair'):
+
+    def __init__(self, transform_listener=None, model='chair', testing=False):
         if transform_listener is None:
             self.listener = tf.TransformListener()
         else:
             self.listener = transform_listener
 
-        self.model = model
+        # self.model = model
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, latch=True)
 
         self.robot_z = 0
@@ -61,27 +62,30 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.testing = False
+        self.testing = testing
         if self.testing:
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
                                        [   m.sin(angle),   m.cos(angle),          0.,       2.5],
                                        [             0.,             0.,          1.,       1.1546],
                                        [             0.,             0.,          0.,        1.]])
-            an = -m.pi/2
+            an = -m.pi/4
             pr2_B_head2 = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.],
                                      [         0.,   1.,         0.,       0.],
                                      [ -m.sin(an),   0.,  m.cos(an),       0.],
                                      [         0.,   0.,         0.,       1.]])
             self.pr2_B_head = pr2_B_head1*pr2_B_head2
 
+            self.pr2_B_ar = np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,       1.],
+                                       [   m.sin(angle),   m.cos(angle),          0.,       0.],
+                                       [             0.,             0.,          1.,       .5],
+                                       [             0.,             0.,          0.,       1.]])
 
-
-
-
-
-
-
+        start_time = time.time()
+        print 'Loading data, please wait.'
+        self.chair_scores = self.load_task('yogurt', 'chair')
+        self.autobed_scores = self.load_task('yogurt', 'autobed')
+        print 'Time to receive load data: %fs' % (time.time()-start_time)
         # Service
         self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
         
@@ -89,7 +93,6 @@ class BaseSelector(object):
         #self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
         
         print "Ready to select base."
-
 
         '''
         self.joint_names = []
@@ -122,8 +125,6 @@ class BaseSelector(object):
         for target in TARGETS:
             self.POSES.append(createBMatrix(target[0],target[1]))
         '''
-
-
 
     def setup_openrave(self):
         '''
@@ -189,7 +190,6 @@ class BaseSelector(object):
         '''
         print 'I ran openrave setup despite it not doing anything'
 
-
     def joint_state_cb(self, msg):
         #This gets the joint states of the entire robot.
         for num, name in enumerate(msg.name):
@@ -251,7 +251,9 @@ class BaseSelector(object):
     #def handle_select_base(self, req):#, task):
     def handle_select_base(self, req):
         model = req.model
+        self.model = model
         task = req.task
+        self.task = task
         if model == 'autobed':
             autobed_sub = rospy.Subscriber('/bed_states', JointState, self.bed_state_cb)
         print 'I have received inputs!'
@@ -298,6 +300,24 @@ class BaseSelector(object):
                               "head location:\r\n%s" % e)
                 return None
 
+        print 'The homogeneous tranfrom from PR2 base link to head: \n', self.pr2_B_head
+        z_origin = np.array([0, 0, 1])
+        x_head = np.array([self.pr2_B_head[0, 0], self.pr2_B_head[1, 0], self.pr2_B_head[2, 0]])
+        y_head_project = np.cross(z_origin, x_head)
+        y_head_project = y_head_project/np.linalg.norm(y_head_project)
+        x_head_project = np.cross(y_head_project, z_origin)
+        x_head_project = x_head_project/np.linalg.norm(x_head_project)
+        self.pr2_B_head_project = np.eye(4)
+        for i in xrange(3):
+            self.pr2_B_head_project[i, 0] = x_head_project[i]
+            self.pr2_B_head_project[i, 1] = y_head_project[i]
+            self.pr2_B_head_project[i, 3] = self.pr2_B_head[i, 3]
+
+        self.pr2_B_headfloor = copy.copy(np.matrix(self.pr2_B_head_project))
+        self.pr2_B_headfloor[2, 3] = 0.
+        print 'The homogeneous transform from PR2 base link to the head location projected onto the ground plane: \n', \
+            self.pr2_B_headfloor
+
 
 
 
@@ -306,19 +326,20 @@ class BaseSelector(object):
         heady = 0
         # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
         if model == 'chair':
-            self.headfloor_B_head = np.matrix([[       1.,        0.,   0.,         0.0],
-                                               [       0.,        1.,   0.,         0.0],
-                                               [       0.,        0.,   1.,     1.33626],
-                                               [       0.,        0.,   0.,         1.0]])
+            # self.pr2_B_headfloor = copy.copy(np.matrix(self.pr2_B_head_project))
+            # self.pr2_B_headfloor[2, 3] = 0.
+
 
             # Transform from the coordinate frame of the wc model in the back right bottom corner, to the head location
             originsubject_B_headfloor = np.matrix([[m.cos(0.), -m.sin(0.),  0., .442603], #.45 #.438
                                                    [m.sin(0.),  m.cos(0.),  0., .384275], #0.34 #.42
                                                    [       0.,         0.,  1.,      0.],
                                                    [       0.,         0.,  0.,      1.]])
-            self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
+            self.origin_B_pr2 = copy.copy(self.pr2_B_headfloor.I)
+            # self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
             # reference_floor_B_pr2 = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
 
+        # Regular bed is now deprecated. To use need to fix to be similar to chair.
         if model =='bed':
             an = -m.pi/2
             self.headfloor_B_head = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.], #.45 #.438
@@ -334,41 +355,46 @@ class BaseSelector(object):
             # subject_location = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
 
         if model == 'autobed':
-            an = -m.pi/2
-            self.headfloor_B_head = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.], #.45 #.438
-                                               [         0.,   1.,         0.,       0.], #0.34 #.42
-                                               [ -m.sin(an),   0.,  m.cos(an),   1.1546],
-                                               [         0.,   0.,         0.,       1.]])
-            an2 = 0
-            self.origin_B_model = np.matrix([[       1.,        0.,   0.,              0.0],
-                                             [       0.,        1.,   0.,              0.0],
-                                             [       0.,        0.,   1., self.bed_state_z],
-                                             [       0.,        0.,   0.,              1.0]])
-            self.origin_B_pr2 = self.origin_B_model * self.pr2_B_model.I
-            model_B_head = self.pr2_B_model.I * self.pr2_B_head
+            # an = -m.pi/2
+            # self.headfloor_B_head = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.], #.45 #.438
+            #                                    [         0.,   1.,         0.,       0.], #0.34 #.42
+            #                                    [ -m.sin(an),   0.,  m.cos(an),   1.1546],
+            #                                    [         0.,   0.,         0.,       1.]])
+            # an2 = 0
+            # self.origin_B_model = np.matrix([[       1.,        0.,   0.,              0.0],
+            #                                  [       0.,        1.,   0.,              0.0],
+            #                                  [       0.,        0.,   1., self.bed_state_z],
+            #                                  [       0.,        0.,   0.,              1.0]])
+            self.model_B_pr2 = self.ar_B_model.I * self.pr2_B_ar.I
+            self.origin_B_pr2 = copy.copy(self.model_B_pr2)
+            model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             ## This next bit selects what entry in the dictionary of scores to use based on the location of the head
             # with respect to the bed model. Currently it just selects the dictionary entry with the closest relative
             # head location. Ultimately it should use a gaussian to get scores from the dictionary based on the actual
             # head location.
 
-            if model_B_head[0, 3] > -.025 and model_B_head[0,3] < .025:
-                headx = 0
-            elif model_B_head[0, 3] >= .025 and model_B_head[0,3] < .05:
-                headx = 0
-            elif model_B_head[0, 3] <= -2.5 and model_B_head[0,3] > .05:
-                headx = 0
+            if model_B_head[0, 3] > -.025 and model_B_head[0, 3] < .025:
+                headx = 0.
+            elif model_B_head[0, 3] >= .025 and model_B_head[0, 3] < .75:
+                headx = 0.
+            elif model_B_head[0, 3] <= -.025 and model_B_head[0, 3] > -.75:
+                headx = 0.
+            elif model_B_head[0, 3] >= .075:
+                headx = 0.
+            elif model_B_head[0, 3] <= -.075:
+                headx = 0.
 
-            if model_B_head[1, 3] > -.025 and model_B_head[0,3] < .025:
-                headx = 0
-            elif model_B_head[1, 3] >= .025 and model_B_head[0,3] < .075:
-                headx = .05
-            elif model_B_head[1, 3] > -.075 and model_B_head[0,3] <= .025:
-                headx = -.05
+            if model_B_head[1, 3] > -.025 and model_B_head[1, 3] < .025:
+                heady = 0
+            elif model_B_head[1, 3] >= .025 and model_B_head[1, 3] < .075:
+                heady = .05
+            elif model_B_head[1, 3] > -.075 and model_B_head[1, 3] <= -.025:
+                heady = -.05
             elif model_B_head[1, 3] >= .075:
-                headx = .1
+                heady = .1
             elif model_B_head[1, 3] <= -.075:
-                headx = -.1
+                heady = -.1
 
             # subject_location = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
 
@@ -380,7 +406,11 @@ class BaseSelector(object):
         # Get score data and convert to goal locations
         print 'Time to receive head location and start things off: %fs' % (time.time()-start_time)
         start_time = time.time()
-        all_scores = self.load_task(task, model)
+        if self.model == 'chair':
+            all_scores = self.chair_scores
+        elif self.model == 'autobed':
+            all_scores = self.autobed_scores
+        # all_scores = self.load_task(task, model)
         scores = all_scores[headx, heady]
         if scores == None:
             print 'Failed to load precomputed reachability data. That is a problem. Abort!'
@@ -392,13 +422,13 @@ class BaseSelector(object):
         print 'Time to load pickle: %fs' % (time.time()-start_time)
         start_time = time.time()
         ## Set the weights for the different scores.
-        alpha = 0.002  # Weight on base's closeness to goal
+        alpha = 0.000  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = .2  # Weight on distance to move to get to that goal location
-        pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
-        headfloor_B_pr2 = pr2_B_headfloor.I
-        pr2_loc = np.array([np.array(self.origin_B_pr2[0, 3]), np.array(self.origin_B_pr2[1, 3])])
+        # pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
+        # headfloor_B_pr2 = pr2_B_headfloor.I
+        pr2_loc = np.array([self.origin_B_pr2[0, 3], self.origin_B_pr2[1, 3]])
         length = len(scores)
         temp_scores = np.zeros([length, 1])
         temp_locations = scores[:, 0]
@@ -590,6 +620,7 @@ class BaseSelector(object):
                             #self.wc_position.publish(psm_wc)
 
         #print 'The quaternion to the goal location is: \n',psm
+
     def plot_final_score_sheet(self):
         visualize_plot = True
         if visualize_plot:
@@ -640,25 +671,25 @@ class BaseSelector(object):
     
     
             verts_wc = [(-.438, -.32885), # left, bottom
-                     (-.438, .32885), # left, top
-                     (.6397, .32885), # right, top
-                     (.6397, -.32885), # right, bottom
-                     (0., 0.), # ignored
-                    ]
+                        (-.438, .32885), # left, top
+                        (.6397, .32885), # right, top
+                        (.6397, -.32885), # right, bottom
+                        (0., 0.), # ignored
+                        ]
             
             verts_pr2 = [(-1.5,  -1.5), # left, bottom
-                       ( -1.5, -.835), # left, top
-                       (-.835, -.835), # right, top
-                       (-.835,  -1.5), # right, bottom
-                       (   0.,    0.), # ignored
-                    ]
+                         ( -1.5, -.835), # left, top
+                         (-.835, -.835), # right, top
+                         (-.835,  -1.5), # right, bottom
+                         (   0.,    0.), # ignored
+                         ]
 
             codes = [Path.MOVETO,
                      Path.LINETO,
                      Path.LINETO,
                      Path.LINETO,
                      Path.CLOSEPOLY,
-                    ]
+                     ]
            
             path_wc = Path(verts_wc, codes)
             path_pr2 = Path(verts_pr2, codes)
@@ -705,9 +736,9 @@ class BaseSelector(object):
 
 
 if __name__ == "__main__":
-    model = 'bed'
+    #model = 'bed'
     rospy.init_node('select_base_server')
-    selector = BaseSelector(model=model)
+    selector = BaseSelector(testing=True)
     rospy.spin()
 
 

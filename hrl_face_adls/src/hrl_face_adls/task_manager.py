@@ -138,7 +138,6 @@ class ServoingManager(object):
             autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1], 0.]
             self.autobed_pub.publish(autobed_goal)
 
-
         ar_data = ARServoGoalData()
         # 'base_link' in msg.tag_goal_pose.header.frame_id
         with self.lock:
