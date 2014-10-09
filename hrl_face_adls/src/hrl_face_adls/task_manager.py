@@ -62,7 +62,7 @@ class ServoingManager(object):
         #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
         msg = "Servoing Succeeded. Please proceed by bringing up the arms."
-        self.call_arm_reacher()
+        #self.call_arm_reacher()
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
 

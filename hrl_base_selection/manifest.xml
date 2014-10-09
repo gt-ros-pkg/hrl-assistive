@@ -30,6 +30,8 @@
     <depend package="visualization_msgs"/>
 
     <depend package="trajectory_msgs"/>
+    <depend package="sandbox_dpark_darpa_m3"/>
+
 
 </package>
 

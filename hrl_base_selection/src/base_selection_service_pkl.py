@@ -738,7 +738,7 @@ class BaseSelector(object):
 if __name__ == "__main__":
     #model = 'bed'
     rospy.init_node('select_base_server')
-    selector = BaseSelector(testing=True)
+    selector = BaseSelector(testing=False)
     rospy.spin()
 
 
