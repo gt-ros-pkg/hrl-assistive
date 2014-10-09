@@ -69,7 +69,7 @@ RFH.MjpegClient = function (options) {
       return self.activeParams[param];
     };
 
-    self.cameraModel.getCameraInfo();
+    self.cameraModel.updateCameraInfo();
     self.update();
 
 };
@@ -126,7 +126,7 @@ RFH.ROSCameraModel = function (options) {
         self.cameraInfoSubscriber.unsubscribe(); // Close subscriber to save bandwidth
         }
     
-    self.getCameraInfo = function () {
+    self.updateCameraInfo = function () {
         // Re-subscribe to get new parameters
         self.cameraInfoSubscriber.subscribe(self.msgCB);
     }
@@ -151,12 +151,12 @@ var initMjpegCanvas = function (divId) {
     var height = 0.95 * window.innerHeight;
     $('#'+divId).css({'height':height, 'width':width});
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                                               imageTopic: '/head_mount_kinect/rgb/image_color',
-                                                               infoTopic: '/head_mount_kinect/rgb/camera_info',
-                                                               divId: 'mjpegDiv',
-                                                               host: RFH.ROBOT,
-                                                               port: 8080,
-                                                               width: width,
-                                                               height: height,
-                                                               quality: 85});
+                                     imageTopic: '/head_mount_kinect/rgb/image_color',
+                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     divId: 'mjpegDiv',
+                                     host: RFH.ROBOT,
+                                     port: 8080,
+                                     width: width,
+                                     height: height,
+                                     quality: 85});
 };

@@ -25,6 +25,10 @@ RFH.Drive = function (options) {
         var pt = RFH.positionInElement(e); 
         var px = (pt[0]/e.target.clientWidth) * self.camera.width;
         var py = (pt[1]/e.target.clientHeight) * self.camera.height;
+        if (self.camerea.frame_id === '') {
+            alert("Camera position not up to date.  Cannot drive safely.");
+            self.camera.updateCameraInfo();
+            }
         var xyz = self.camera.projectPixel(px, py, 1.0);
         var pose = new ROSLIB.Pose({position:{x: xyz[0],
                                               y: xyz[1], 
