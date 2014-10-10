@@ -516,7 +516,7 @@ class BaseSelector(object):
 
         print 'I have finished preparing the data for the task!'
 
-        if self.score_sheet[0, 6] == 0:
+        if self.score_sheet[0, 1] == 0:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return None, None
                           
@@ -543,16 +543,17 @@ class BaseSelector(object):
         # (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
         # odom_B_pr2 = createBMatrix(trans, rot)
 
-        best_score = score_sheet[0]
+        best_score_cfg = score_sheet[0, 0]
+        best_score_score = score_sheet[0, 1]
 
         pr2_base_output = []
         configuration_output = []
 
         # The output is a list of floats that are the position and quaternions for the transform from the goal location
         # to the ar tag. It also outputs a list of floats that is [robot z axis, bed height, head rest angle (degrees)].
-        for i in xrange(len(best_score[0])):
-            origin_B_goal = np.matrix([[m.cos(best_score[2][i]), -m.sin(best_score[2][i]), 0., best_score[0][i]],
-                                       [m.sin(best_score[2][i]),  m.cos(best_score[2][i]), 0., best_score[1][i]],
+        for i in xrange(len(best_score_cfg[0])):
+            origin_B_goal = np.matrix([[m.cos(best_score_cfg[2][i]), -m.sin(best_score_cfg[2][i]), 0., best_score_cfg[0][i]],
+                                       [m.sin(best_score_cfg[2][i]),  m.cos(best_score_cfg[2][i]), 0., best_score_cfg[1][i]],
                                        [0.,                      0.,                           1.,           0.],
                                        [0.,                      0.,                           0.,           1.]])
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
@@ -561,7 +562,7 @@ class BaseSelector(object):
             # odom_B_goal = odom_B_pr2 * self.origin_B_pr2.I * origin_B_goal
             # pos_goal, ori_goal = Bmat_to_pos_quat(odom_B_goal)
             pr2_base_output.append([pos_goal, ori_goal])
-            configuration_output.append([best_score[3][i], best_score[4][i], np.degrees(best_score[5][i])])
+            configuration_output.append([best_score_cfg[3][i], best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
 
             ## I no longer return posestamped messages. Now I return a list of floats.
             # psm = PoseStamped()
