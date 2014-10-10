@@ -69,7 +69,7 @@ class ServoingManager(object):
         #self.reach_goal_pub.publish(self.goal_pose)
         #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
-        msg = "Servoing Succeeded. Please proceed by bringing up the arms."
+        msg = "Servoing Succeeded."
         if self.base_selection_complete:
             movement = False
             msg = "Servoing Succeeded. Arms will proceed to move."
