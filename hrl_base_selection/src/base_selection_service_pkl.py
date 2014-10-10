@@ -509,7 +509,7 @@ class BaseSelector(object):
                 #reachable.append(score[1])
                 #manipulable.append(score[2])
         print 'Final version of scores is: \n', out_score[0]
-        self.score_sheet = np.array(sorted(out_score, key=lambda t:t[6], reverse=True))
+        self.score_sheet = np.array(sorted(out_score, key=lambda t:t[1], reverse=True))
         self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score_sheet[0]
         print 'Number of scores in score sheet: ', self.score_length
