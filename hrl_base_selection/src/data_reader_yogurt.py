@@ -23,16 +23,19 @@ class DataReader_Yogurt(object):
         baselink_B_liftlink = createBMatrix([-0.05, 0.0, 0.751177], [0, 0, 0, 1])
         goals = [[0.5309877259429142, 0.4976163448816489, 0.16719537682372823,
                   0.7765742993649133, -0.37100605554316285, -0.27784851903166524, 0.42671660945891],
-                 [0.5098543997629579, 0.8806008953235813, -0.0974591835731535,
-                  0.45253993336907683, 0.533997128372586, -0.17283744712356874, 0.6929515801756649],
+                 [0.516341299985487, 0.8915608293219441, 0.1950343868326016,
+                  0.6567058177198967, 0.16434420640210323, 0.0942917725129517, 0.7299571990406495],
                  [0.2741387011303321, 0.05522571699560719, -0.011919598309888757,
-                 -0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394]]
+                 -0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394],
+                 [0.12608632401364894, 0.03540318703608347, 0.00607600258150498,
+                  -0.015224467044577382, 0.7345761465214938, 0.6783020152473445, -0.008513323454022942]]
         liftlink_B_goal = createBMatrix([0.5309877259429142, 0.4976163448816489, 0.16719537682372823],
                                         [0.7765742993649133, -0.37100605554316285, -0.27784851903166524,
                                          0.42671660945891])
         data = np.array([baselink_B_liftlink*createBMatrix(goals[0][0:3], goals[0][3:]),  # In reference to base link
                          baselink_B_liftlink*createBMatrix(goals[1][0:3], goals[1][3:]),  # In reference to base link
-                         createBMatrix(goals[2][0:3], goals[2][3:])])  # This one is in reference to the head
+                         createBMatrix(goals[2][0:3], goals[2][3:]),
+                         createBMatrix(goals[3][0:3], goals[3][3:])])  # This one is in reference to the head
 
         for item in data:
             print Bmat_to_pos_quat(item)
@@ -45,7 +48,7 @@ class DataReader_Yogurt(object):
 
         num = np.ones([3, 1])
         reference_options = ['head', 'base_link']
-        reference = np.array([[1], [1], [0]])
+        reference = np.array([[1], [1], [0], [0]])
 
 
 
@@ -57,7 +60,7 @@ class DataReader_Yogurt(object):
         runData.generate_score(viz_rviz=True, visualize=False, plot=False)
 
 if __name__ == "__main__":
-    model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
+    model = 'chair'  # options are: 'chair', 'bed', 'autobed'
     task = 'yogurt'
     subject = 'any_subject'
     rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))

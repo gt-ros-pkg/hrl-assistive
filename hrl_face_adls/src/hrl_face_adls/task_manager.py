@@ -30,6 +30,12 @@ class ServoingManager(object):
         self.task = 'yogurt'
         self.model = 'chair'
 
+        if self.model == 'autobed':
+            self.bed_state_z = 0.
+            self.bed_state_head_theta = 0.
+            self.bed_state_leg_theta = 0.
+            self.autobed_sub = rospy.Subscriber('/bed_states', FloatArrayBare, self.bed_state_cb)
+
         self.tfl = TransformListener()
 
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
@@ -53,7 +59,9 @@ class ServoingManager(object):
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
-        rospy.loginfo("[%s] Ready" %rospy.get_name())
+        rospy.loginfo("[%s] Ready" %rospy.get_name()).
+
+        self.base_selection_complete = False
 
     def servo_fdbk_cb(self, msg):
         if not msg.data == 5:
@@ -62,12 +70,17 @@ class ServoingManager(object):
         #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
         msg = "Servoing Succeeded. Please proceed by bringing up the arms."
-        self.call_arm_reacher()
+        if self.base_selection_complete:
+            movement = False
+            movement = self.call_arm_reacher()
+            if movement = True:
+                self.base_selection_complete = False
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
 
 
     def ui_cb(self, msg):
+        self.base_selection_complete = False
         self.head_pose = self.get_head_pose()
         if self.head_pose is None:
             log_msg = "Please register your head before sending a task."
@@ -140,7 +153,7 @@ class ServoingManager(object):
         # testing
         if self.model == 'autobed' or True:
             autobed_goal = FloatArrayBare()
-            autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1], 0.]
+            autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1], self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
 
         ar_data = ARServoGoalData()
@@ -153,6 +166,7 @@ class ServoingManager(object):
             self.location = None
         self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
         rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
+        self.base_selection_complete = True
         self.goal_data_pub.publish(ar_data)
 
     def call_arm_reacher(self):
@@ -206,6 +220,11 @@ class ServoingManager(object):
             self.feedback_pub.publish("Failed to find good base position. Please try again.")
             return None
         return resp.base_goal, resp.configuration_goal
+
+    def bed_state_cb(self, data):
+        self.bed_state_z = data.data[1]
+        self.bed_state_head_theta = data.data[0]
+        self.bed_state_leg_theta = data.data[2]
 
     def get_head_pose(self, head_frame="head_frame"):
         try:

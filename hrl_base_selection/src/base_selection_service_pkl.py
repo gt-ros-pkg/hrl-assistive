@@ -30,6 +30,7 @@ from itertools import combinations as comb
 import tf.transformations as tft
 from matplotlib.cbook import flatten
 from sensor_msgs.msg import JointState
+from hrl_msgs.msg import FloatArrayBare
 
 import pickle
 roslib.load_manifest('hrl_lib')
@@ -54,6 +55,10 @@ class BaseSelector(object):
 
         # self.model = model
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, latch=True)
+
+        self.bed_state_z = 0.
+        self.bed_state_head_theta = 0.
+        self.bed_state_leg_theta = 0.
 
         self.robot_z = 0
         self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
@@ -244,8 +249,9 @@ class BaseSelector(object):
         self.vis_pub.publish(marker)
 
     def bed_state_cb(self, data):
-        self.bed_state_z = data[0]
-        self.bed_state_head_theta = data[1]
+        self.bed_state_z = data.data[1]
+        self.bed_state_head_theta = data.data[0]
+        self.bed_state_leg_theta = data.data[2]
 
      # Function that determines a good base location to be able to reach the goal location.
     #def handle_select_base(self, req):#, task):
@@ -255,7 +261,7 @@ class BaseSelector(object):
         task = req.task
         self.task = task
         if model == 'autobed':
-            autobed_sub = rospy.Subscriber('/bed_states', JointState, self.bed_state_cb)
+            self.autobed_sub = rospy.Subscriber('/bed_states', FloatArrayBare, self.bed_state_cb)
         print 'I have received inputs!'
         start_time = time.time()
         #print 'My given inputs were: \n'
@@ -277,23 +283,32 @@ class BaseSelector(object):
                 self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
                 (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
-
-                now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
-                (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
-                self.pr2_B_ar = createBMatrix(trans, rot)
-
-                if np.linalg.norm(trans) > 1.5:
-                    rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
-                                  'tag. Alternatively, the PR2 may have lost sight of the AR tag or it is having silly '
-                                  'issues recognizing it. ')
-                    return None
-
-                if model == 'autobed':
+                if model == 'chair':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
-                    (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
-                    self.ar_B_model = createBMatrix(trans, rot)
+                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
+                    self.pr2_B_ar = createBMatrix(trans, rot)
+                elif model == 'autobed':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_link', '/ar_marker_autobed', now, rospy.Duration(10))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker_autobed', now)
+                    self.pr2_B_ar = createBMatrix(trans, rot)
+                    ar_trans_B = np.eye(4)
+                    ar_trans_B[0:3,3] = np.array([0.5, .5, .3+self.bed_state_z/100])
+                    ar_rotz_B = np.eye(4)
+                    ar_rotz_B [0:2,0:2] = np.array([[-1,0],[0,-1]])
+                    ar_rotx_B = np.eye(4)
+                    ar_rotx_B[1:3,1:3] = np.array([[0,1],[1,0]])
+                    self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(rotz_B)*np.matrix(ar_rotx_B)
+                    # now = rospy.Time.now()
+                    # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
+                    # (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
+                    # self.ar_B_model = createBMatrix(trans, rot)
+                if np.linalg.norm(trans) > 2:
+                    rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
+                                  'tag. Or just move it closer via other means. Alternatively, the PR2 may have lost '
+                                  'sight of the AR tag or it is having silly issues recognizing it. ')
+                    return None
 
             except Exception as e:
                 rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
@@ -365,7 +380,7 @@ class BaseSelector(object):
             #                                  [       0.,        1.,   0.,              0.0],
             #                                  [       0.,        0.,   1., self.bed_state_z],
             #                                  [       0.,        0.,   0.,              1.0]])
-            self.model_B_pr2 = self.ar_B_model.I * self.pr2_B_ar.I
+            self.model_B_pr2 = self.model_B_ar * self.pr2_B_ar.I
             self.origin_B_pr2 = copy.copy(self.model_B_pr2)
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
@@ -738,7 +753,7 @@ class BaseSelector(object):
 if __name__ == "__main__":
     #model = 'bed'
     rospy.init_node('select_base_server')
-    selector = BaseSelector(testing=True)
+    selector = BaseSelector(testing=False)
     rospy.spin()
 
 
