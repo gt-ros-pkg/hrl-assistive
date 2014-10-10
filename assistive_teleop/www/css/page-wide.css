@@ -1,4 +1,11 @@
 body {
+    -webkit-touch-callout: none;/*for mobile*/
+    -webkit-user-select: none;/*for chrome*/
+    -khtml-user-select: none;/*for safari*/
+    -moz-user-select: none;/*for Mozilla*/
+    -ms-user-select: none;/*for mircosoft*/
+    -o-user-select: none;/*for opera*/
+    user-select: none;/*base css ,but not work in all browsers*/
     margin: 0px;
 }
 
@@ -54,3 +61,5 @@ body {
     width: 100%;
     text-align: center;
 }
+
+

@@ -47,7 +47,6 @@ var RFH = {
 
   init :  function () {
     if (!this.checkBrowser()) {return}
-
     this.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     this.PORT = '9091';//Must match port on which rosbridge is being served
     $("body").css({"height": window.innerHeight, "width":window.innerWidth});
