@@ -31,10 +31,16 @@
                                                        /Main_Control
                                                        /task_check
                                                        /head_check
+                                                       /head_check_confirm
+                                                       /base_controller/command
                                                        /feedback
                                                        /test_head_pose
                                                        /RYDS_BowlConfirmation
                                                        /haptic_mpc/goal_pose
+                                                       /haptic_mpc/weights
+                                                       /haptic_mpc/goal_posture
                                                        /right/haptic_mpc/goal_pose
+                                                       /right/haptic_mpc/weights
+                                                       /right/haptic_mpc/goal_posture
                                                        " output="screen"/>
 </launch>
