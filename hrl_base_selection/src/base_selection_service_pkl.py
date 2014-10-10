@@ -89,7 +89,7 @@ class BaseSelector(object):
         start_time = time.time()
         print 'Loading data, please wait.'
         self.chair_scores = self.load_task('yogurt', 'chair')
-        self.autobed_scores = self.load_task('yogurt', 'autobed')
+        self.autobed_scores = self.load_task('yogurt', 'chair')
         print 'Time to receive load data: %fs' % (time.time()-start_time)
         # Service
         self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
@@ -501,11 +501,15 @@ class BaseSelector(object):
         #print 'Time to run through data: %fs'%(time.time()-start_time)
         #temp_locations = np.delete(temp_scores,0,0)
         temp_scores = np.hstack([list(temp_locations), temp_scores])
+        out_score = []
+        for i in xrange(length):
+            out_score.append([temp_locations[i], temp_scores[i]])
+        out_score = np.array(out_score)
 
                 #reachable.append(score[1])
                 #manipulable.append(score[2])
-        print 'Final version of temp scores is: \n', temp_scores[0]
-        self.score_sheet = np.array(sorted(temp_scores, key=lambda t:t[6], reverse=True))
+        print 'Final version of scores is: \n', out_score[0]
+        self.score_sheet = np.array(sorted(out_score, key=lambda t:t[6], reverse=True))
         self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score_sheet[0]
         print 'Number of scores in score sheet: ', self.score_length
