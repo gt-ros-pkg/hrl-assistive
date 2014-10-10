@@ -152,7 +152,7 @@ class ServoingManager(object):
 
         # Move autobed if we are dealing with autobed. If not autobed, don't move it. Temporarily fixed to True for
         # testing
-        if self.model == 'autobed' or True:
+        if self.model == 'autobed':
             autobed_goal = FloatArrayBare()
             autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1], self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
