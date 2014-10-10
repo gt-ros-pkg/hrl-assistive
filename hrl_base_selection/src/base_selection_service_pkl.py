@@ -500,7 +500,7 @@ class BaseSelector(object):
             #    temp_locations = np.delete(temp_locations,j,0)
         #print 'Time to run through data: %fs'%(time.time()-start_time)
         #temp_locations = np.delete(temp_scores,0,0)
-        temp_scores = np.hstack([list(temp_locations), temp_scores])
+        # temp_scores = np.hstack([list(temp_locations), temp_scores])
         out_score = []
         for i in xrange(length):
             out_score.append([temp_locations[i], temp_scores[i]])
