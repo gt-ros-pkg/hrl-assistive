@@ -10,6 +10,7 @@ var PR2Base = function (ros) {
     });
     base.commandPub.advertise();
     base.pubCmd = function (x, y, rot) {
+        console.log("Base Command: ("+x+", "+y+", "+rot+").");
         var cmd = base.ros.composeMsg('geometry_msgs/Twist');
         cmd.linear.x = x;
         cmd.linear.y = y;

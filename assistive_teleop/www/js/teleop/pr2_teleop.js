@@ -164,13 +164,13 @@ var initTorsoSlider = function (orientation) {
 }
 
 var initPr2 = function () {
-    RFH.head = new Pr2Head(RFH.ros); 
+    RFH.head = new PR2Head(RFH.ros); 
     RFH.head.sliderScale = 0.5;
-    RFH.base = new Pr2Base(RFH.ros);    
+    RFH.base = new PR2Base(RFH.ros);    
     RFH.base.scaleSlider = 0.5;
-    RFH.gripper = [new Pr2Gripper('left', RFH.ros),
-                      new Pr2Gripper('right', RFH.ros)];
-    RFH.torso = new Pr2Torso(RFH.ros);
+    RFH.gripper = [new PR2Gripper('left', RFH.ros),
+                   new PR2Gripper('right', RFH.ros)];
+    RFH.torso = new PR2Torso(RFH.ros);
     RFH.wtLog = new RFH.ros.Topic({
         name: 'wt_log_out',
         messageType:'std_msgs/String'});
