@@ -438,7 +438,7 @@ class BaseSelector(object):
         start_time = time.time()
 
         ## Set the weights for the different scores.
-        alpha = 0.002  # Weight on base's closeness to goal
+        alpha = 0.1  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = .2  # Weight on distance to move to get to that goal location
