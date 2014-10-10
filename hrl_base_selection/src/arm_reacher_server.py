@@ -10,6 +10,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 
+
 class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm='l'):
 
@@ -27,25 +28,36 @@ class armReachAction(mpcBaseAction):
         else:
             return None_BoolResponse(False)
 
-        
     def run(self):
 
         self.setOrientationControl()
 
         pos  = Point()
         quat = Quaternion()
-        
-        #going to home location in front of camera:
-        (pos.x, pos.y, pos.z) = (0.5309877259429142, 0.4976163448816489, 0.16719537682372823)
-        (quat.x, quat.y, quat.z, quat.w) = (0.7765742993649133, -0.37100605554316285, -0.27784851903166524, 0.42671660945891)
-        timeout = 35.0        
-        self.setOrientGoal(pos, quat, timeout)
 
-        #moving vertically to over bowl:
-        (pos.x, pos.y, pos.z) = (0.516341299985487, 0.8915608293219441, 0.1950343868326016)
-        (quat.x, quat.y, quat.z, quat.w) = (0.6567058177198967, 0.16434420640210323, 0.0942917725129517, 0.7299571990406495)
+        #going to home with arm curled high near left shoulder:
+        (pos.x, pos.y, pos.z) = ([0.301033944729, 0.461276517595, 0.196885866571)
+        (quat.x, quat.y, quat.z, quat.w) = (0.553557277528, 0.336724229346, -0.075691681684, 0.757932650828)
         timeout = 35.0
         self.setOrientGoal(pos, quat, timeout)
+
+        #moving to high in front of chest, pointing down:
+        (pos.x, pos.y, pos.z) = (0.377839595079, 0.11569018662, 0.0419789999723)
+        (quat.x, quat.y, quat.z, quat.w) = (0.66106069088, 0.337429642677, -0.519856214523, 0.422953367233)
+        timeout = 35.0
+        self.setOrientGoal(pos, quat, timeout)
+
+        # #going to home location in front of camera:
+        # (pos.x, pos.y, pos.z) = (0.5309877259429142, 0.4976163448816489, 0.16719537682372823)
+        # (quat.x, quat.y, quat.z, quat.w) = (0.7765742993649133, -0.37100605554316285, -0.27784851903166524, 0.42671660945891)
+        # timeout = 35.0
+        # self.setOrientGoal(pos, quat, timeout)
+        #
+        # #moving vertically to over bowl:
+        # (pos.x, pos.y, pos.z) = (0.516341299985487, 0.8915608293219441, 0.1950343868326016)
+        # (quat.x, quat.y, quat.z, quat.w) = (0.6567058177198967, 0.16434420640210323, 0.0942917725129517, 0.7299571990406495)
+        # timeout = 35.0
+        # self.setOrientGoal(pos, quat, timeout)
 
         frame_id = '/head_frame'
         #going to in front of subjects face:        
@@ -62,7 +74,6 @@ class armReachAction(mpcBaseAction):
         
         return True
         
-
 if __name__ == '__main__':
 
     import optparse
