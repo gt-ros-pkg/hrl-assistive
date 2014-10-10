@@ -442,10 +442,10 @@ class BaseSelector(object):
         start_time = time.time()
 
         ## Set the weights for the different scores.
-        alpha = 0.1  # Weight on base's closeness to goal
+        alpha = 0.001  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .5  # Weight on distance to move to get to that goal location
+        zeta = .7  # Weight on distance to move to get to that goal location
         # pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
         # headfloor_B_pr2 = pr2_B_headfloor.I
         pr2_loc = np.array([self.origin_B_pr2[0, 3], self.origin_B_pr2[1, 3]])
