@@ -45,4 +45,6 @@ RFH.initTaskMenu = function (divId) {
                                        camera: RFH.mjpeg.cameraModel,
                                        tfClient: RFH.tfClient,
                                        base: RFH.pr2.base}));
+    RFH.taskMenu.addTask(new RFH.Torso({div: 'markers',
+                                        torso: RFH.pr2.torso}));
 }

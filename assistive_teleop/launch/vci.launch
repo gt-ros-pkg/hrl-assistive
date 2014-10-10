@@ -27,13 +27,13 @@
         args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
 
   <node name="torso_state_throttle" pkg="topic_tools" type="throttle"
-        args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
+        args="messages /torso_controller/state 4 /torso_controller/state_throttled" />
 
   <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
-        args="messages /r_gripper_controller/state 1 /r_gripper_controller/state_throttled" />
+        args="messages /r_gripper_controller/state 4 /r_gripper_controller/state_throttled" />
 
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
-        args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
+        args="messages /l_gripper_controller/state 4 /l_gripper_controller/state_throttled" />
 
   <!-- Throttling nodes for robot state 
 
