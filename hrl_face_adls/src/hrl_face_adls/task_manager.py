@@ -59,7 +59,7 @@ class ServoingManager(object):
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
-        rospy.loginfo("[%s] Ready" %rospy.get_name()).
+        rospy.loginfo("[%s] Ready" %rospy.get_name())
 
         self.base_selection_complete = False
 
