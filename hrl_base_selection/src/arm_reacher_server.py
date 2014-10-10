@@ -67,7 +67,7 @@ class armReachAction(mpcBaseAction):
         self.setOrientGoal(pos, quat, timeout, frame_id)
 
         #going to subjects mouth:
-        (pos.x, pos.y, pos.z) = (0.12608632401364894, 0.03540318703608347, 0.00607600258150498)
+        (pos.x, pos.y, pos.z) = (0.20608632401364894, 0.03540318703608347, 0.00607600258150498)
         (quat.x, quat.y, quat.z, quat.w) = (-0.015224467044577382, 0.7345761465214938, 0.6783020152473445, -0.008513323454022942)
         timeout = 35.0
         self.setOrientGoal(pos, quat, timeout, frame_id)
