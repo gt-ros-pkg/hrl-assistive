@@ -315,7 +315,7 @@ class BaseSelector(object):
                               "head location:\r\n%s" % e)
                 return None
 
-        print 'The homogeneous tranfrom from PR2 base link to head: \n', self.pr2_B_head
+        print 'The homogeneous transfrom from PR2 base link to head: \n', self.pr2_B_head
         z_origin = np.array([0, 0, 1])
         x_head = np.array([self.pr2_B_head[0, 0], self.pr2_B_head[1, 0], self.pr2_B_head[2, 0]])
         y_head_project = np.cross(z_origin, x_head)
@@ -434,8 +434,9 @@ class BaseSelector(object):
 #            if score[0][4]!=0:
 #                print score[0]
         
-        print 'Time to load pickle: %fs' % (time.time()-start_time)
+        # print 'Time to load pickle: %fs' % (time.time()-start_time)
         start_time = time.time()
+
         ## Set the weights for the different scores.
         alpha = 0.000  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
@@ -477,10 +478,12 @@ class BaseSelector(object):
                 # print scores[0, 0]
                 # print 'i ', i
                 dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
-            dist_score += np.max([t for t in ((np.linalg.norm(self.robot_z - scores[j, 0][3][i]))
-                                              for i in xrange(len(scores[j, 0][0]))
-                                              )
-                                  ])
+
+            # This adds to dist score a cost for moving the robot in the z axis. Commented out currently.
+            # dist_score += np.max([t for t in ((np.linalg.norm(self.robot_z - scores[j, 0][3][i]))
+            #                                   for i in xrange(len(scores[j, 0][0]))
+            #                                   )
+            #                       ])
 
 
             thisScore = -alpha*scores[j, 1][0]+beta*scores[j, 1][1]+gamma*scores[j, 1][2]-zeta*dist_score
