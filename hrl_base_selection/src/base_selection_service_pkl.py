@@ -438,7 +438,7 @@ class BaseSelector(object):
         start_time = time.time()
 
         ## Set the weights for the different scores.
-        alpha = 0.000  # Weight on base's closeness to goal
+        alpha = 0.002  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = .2  # Weight on distance to move to get to that goal location
@@ -477,7 +477,11 @@ class BaseSelector(object):
                 # print pr2_loc
                 # print scores[0, 0]
                 # print 'i ', i
+                current_x = self.origin_B_pr2[0:3, 0]
+                des_x = np.array([m.cos(scores[j, 0][2][i]), m.sin(scores[j, 0][2][i]), 0])
+                angle_change = m.acos(np.dot(current_x,des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
                 dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
+                dist_score += angle_change
 
             # This adds to dist score a cost for moving the robot in the z axis. Commented out currently.
             # dist_score += np.max([t for t in ((np.linalg.norm(self.robot_z - scores[j, 0][3][i]))
