@@ -72,6 +72,7 @@ class ServoingManager(object):
         msg = "Servoing Succeeded. Please proceed by bringing up the arms."
         if self.base_selection_complete:
             movement = False
+            msg = "Servoing Succeeded. Arms will proceed to move."
             movement = self.call_arm_reacher()
             if movement is True:
                 self.base_selection_complete = False
