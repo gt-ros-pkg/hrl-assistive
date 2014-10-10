@@ -10,6 +10,7 @@ RFH.Drive = function (options) {
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
     self.headTF = new ROSLIB.Transform();
+    self.timer = null;
     self.clamp = function (x,a,b) {
         return ( x < a ) ? a : ( ( x > b ) ? b : x );
     }
@@ -32,27 +33,27 @@ RFH.Drive = function (options) {
     self.start = function () {
         //TODO: set informative cursor
         // everything i can think of to not get stuck driving...
-        $(document).on("mouseleave mouseout", self.setunsafe);
-        $('#'+self.div+' canvas').on('mouseleave mouseout', self.setunsafe)
-        $('#'+self.div+' canvas').on('mousedown.rfh', self.drive_go);
-        $('#'+self.div+' canvas').on('mouseup.rfh', self.drive_stop);
-        $('#'+self.div+' canvas').hover( self.setsafe, self.setunsafe );
+        $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
+        $('#'+self.div+' canvas').on('mouseleave.rfh mouseout.rfh', self.setUnsafe)
+        $('#'+self.div+' canvas').on('mousedown.rfh', self.driveGo);
+        $('#'+self.div+' canvas').on('mouseup.rfh', self.driveStop);
+        $('#'+self.div+' canvas').on('blur.rfh', self.driveStop);
     }
 
     self.stop = function () {
-        $(document).off("mouseleave mouseout");
+        $(document).off("mouseleave.rfh mouseout.rfh");
         $('#'+self.div+' canvas').removeClass('drive-safe');
-        $('#'+self.div+' canvas').off('mouseleave mouseout mousedown.rfh mouseup.rfh hover')
+        $('#'+self.div+' canvas').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover')
     }
 
-    self.drive_go = function (event) {
-        $('#'+self.div+' canvas').on('mousemove', self.driveToGoal); 
-    }
-
-    self.drive_stop = function (event) {
-        self.setUnsafe();
-        $('#'+self.div+' canvas').off('mousemove');
+    self.driveGo = function (event) {
         self.setSafe();
+        $('#'+self.div+' canvas').on('mousemove.rfh', self.driveToGoal); 
+    }
+
+    self.driveStop = function (event) {
+        self.setUnsafe();
+        $('#'+self.div+' canvas').off('mousemove.rfh');
    } 
 
     self.setSafe = function () {
@@ -60,16 +61,19 @@ RFH.Drive = function (options) {
     }
 
     self.setUnsafe = function (event) {
+        //alert("Unsafe: "+event.type);
+        clearInterval(self.timer);
         $('#'+self.div+' canvas').removeClass('drive-safe');
     }
 
     self.driveToGoal = function (event) {
+        clearTimeout(self.timer);
         try { 
             var rtxy = self.getRTheta(event);
         } catch (err) {
             return;
         };
-        self.sendCmd(rtxy[0], rtxy[1], rtxy[2], rtxy[3]); 
+        self.timer = setTimeout(function(){self.sendCmd(rtxy[0], rtxy[1], rtxy[2], rtxy[3]);}, 1);
     }
 
     self.getRTheta = function (e) {
@@ -111,13 +115,18 @@ RFH.Drive = function (options) {
            var cmd_y = self.sign(y) * self.clamp(0.1*Math.abs(y), 0.0, 0.2);
         } else {
             cmd_theta = 0.5 * self.clamp( theta, -Math.PI/6, Math.PI/6 );
-            if ( theta < Math.PI/6 && theta < -Math.PI/6) {
+            if ( theta < Math.PI/6 && theta > -Math.PI/6) {
                 //Moving mostly forward, SERVO
-                var cmd_x = self.sign(x) * self.clamp(0.1*Math.abs(x), 0.0, 0.2);
-                var cmd_y = self.sign(y) * self.clamp(0.1*Math.abs(y), 0.0, 0.2);
+               // var cmd_x = self.sign(x) * self.clamp(0.1*Math.abs(x), 0.0, 0.2);
+               //var cmd_y = self.sign(y) * self.clamp(0.1*Math.abs(y), 0.0, 0.2);
+                var cmd_x = self.clamp(0.1 * x, -0.2, 0.2);
+                var cmd_y = self.clamp(0.1 * y, -0.2, 0.2);
             }
         }
+        //cmd_x = Math.abs(cmd_x) < 0.02 ? 0 : cmd_x;
+        //cmd_y = Math.abs(cmd_y) < 0.02 ? 0 : cmd_y;
+        //cmd_theta = Math.abs(cmd_theta) < 0.075 ? 0 : cmd_theta;
         self.base.pubCmd(cmd_x, cmd_y, cmd_theta);
-        setTimeout(function(){self.sendCmd(r, theta, x, y);}, 100);
+        self.timer = setTimeout(function(){self.sendCmd(r, theta, x, y);}, 50);
     }
 }
