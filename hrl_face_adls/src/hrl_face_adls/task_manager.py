@@ -226,10 +226,10 @@ class ServoingManager(object):
         self.bed_state_head_theta = data.data[0]
         self.bed_state_leg_theta = data.data[2]
 
-    def get_head_pose(self, head_frame="head_frame"):
+    def get_head_pose(self, head_frame="/head_frame"):
         try:
             now = rospy.Time.now()
-            self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(3))
+            self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(10))
             pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
             head_pose = PoseStamped()
             head_pose.header.frame_id = "/base_link"

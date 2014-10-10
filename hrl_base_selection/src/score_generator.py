@@ -190,8 +190,8 @@ class ScoreGenerator(object):
         y_min = -1.5
         y_max = 1.5 + .01
         y_int = 0.05
-        theta_min = -m.pi
-        theta_max = m.pi
+        theta_min = 0.
+        theta_max = 2*m.pi-.01
         theta_int = m.pi/4
         z_min = 0.
         z_max = 0.30+.01
@@ -261,77 +261,79 @@ class ScoreGenerator(object):
 
                 for x in np.arange(x_min, x_max, x_int):
                     for y in np.arange(y_min, y_max, y_int):
-                        for bz in np.arange(bedz_min, bedz_max, bedz_int):
-                            for bth in np.arange(bedtheta_min, bedtheta_max, bedtheta_int):
+                        for th in np.arange(theta_min, theta_max, theta_int):
+                            for bz in np.arange(bedz_min, bedz_max, bedz_int):
+                                for bth in np.arange(bedtheta_min, bedtheta_max, bedtheta_int):
 
-                                #print 'bz: ',bz
-                                temp_scores = []
-                                del_index = []
-                                s_len = copy.copy(len(score_stuff))
-                                for t in xrange(s_len):
-                                    #t = s_len - k - 1
-                                    #if bz == score_stuff[t,4] and bz>.11:
-                                    #    if i==score_stuff[t,0] and i>.85:
-                                    #        if score_stuff[t,7]>0:
-                                    #            print 'X: ', score_stuff[t,0], np.round(i,4)
-                                    #            print 'Y: ', score_stuff[t,1], np.round(j,4)
-                                    #            print 'BedZ: ',score_stuff[t,4], np.round(bz,4)
-                                    #            print 'BedTheta:', score_stuff[t,5], np.round(bth,4)
-                                            #print score_stuff[t]
-                                            #if bz == score_stuff[t,4]:
-                                                #print 'they are obviously the same'
-                               
-                                    #print i,' ',j,' ',k,' ',l,' ',score_stuff[t]
-                                    #if score_stuff[t,7]>0:
-                                        #if score_stuff[t,0]==.9 and i == .9:
-                                            #if score_stuff[t,1]==-.6 and j == -.6:
-                                                        #print 'X: ', score_stuff[t,0], np.round(i,4)
-                                                        #print 'Y: ', score_stuff[t,1], np.round(j,4)
-                                                        #print 'BedZ: ',score_stuff[t,4], np.round(bz,4)
-                                                        #print 'BedTheta:', score_stuff[t,5], np.round(bth,4)
+                                    #print 'bz: ',bz
+                                    temp_scores = []
+                                    del_index = []
+                                    s_len = copy.copy(len(score_stuff))
+                                    for t in xrange(s_len):
+                                        #t = s_len - k - 1
+                                        #if bz == score_stuff[t,4] and bz>.11:
+                                        #    if i==score_stuff[t,0] and i>.85:
+                                        #        if score_stuff[t,7]>0:
+                                        #            print 'X: ', score_stuff[t,0], np.round(i,4)
+                                        #            print 'Y: ', score_stuff[t,1], np.round(j,4)
+                                        #            print 'BedZ: ',score_stuff[t,4], np.round(bz,4)
+                                        #            print 'BedTheta:', score_stuff[t,5], np.round(bth,4)
+                                                #print score_stuff[t]
+                                                #if bz == score_stuff[t,4]:
+                                                    #print 'they are obviously the same'
 
-                                    # if ((score_stuff[t,0]==np.round(i,4)) and (score_stuff[t,1]==np.round(j,4)) and
-                                    # (score_stuff[t,4]==np.round(bz,4)) and (score_stuff[t,5]==np.round(bth,4))):
-                                    if np.array_equal(np.round([score_stuff[t, 0], score_stuff[t, 1], score_stuff[t, 4],
-                                                                score_stuff[t, 5], score_stuff[t, 6],
-                                                                score_stuff[t, 7]], 4),
-                                                      np.round([x, y, bz, bth, hx, hy], 4)):
-                                    # if "{0:.3f}".format(score_stuff[t, 0]) == "{0:.3f}".format(x) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 1]) == "{0:.3f}".format(y) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 4]) == "{0:.3f}".format(bz) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 5]) == "{0:.3f}".format(bth) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(bth) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(hx) and \
-                                    #    "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(hy):
+                                        #print i,' ',j,' ',k,' ',l,' ',score_stuff[t]
+                                        #if score_stuff[t,7]>0:
+                                            #if score_stuff[t,0]==.9 and i == .9:
+                                                #if score_stuff[t,1]==-.6 and j == -.6:
+                                                            #print 'X: ', score_stuff[t,0], np.round(i,4)
+                                                            #print 'Y: ', score_stuff[t,1], np.round(j,4)
+                                                            #print 'BedZ: ',score_stuff[t,4], np.round(bz,4)
+                                                            #print 'BedTheta:', score_stuff[t,5], np.round(bth,4)
 
-                                        if score_stuff[t, 9] > 0.80:
-                                            #print score_stuff[t]
-                                            #print 'raw things:'
-                                            #print score_stuff[t]                                   
-                                            temp_scores.append(score_stuff[t])
-                                        del_index.append(t)
-                                        #score_stuff = np.delete(score_stuff,t,0)
-                                score_stuff = np.delete(score_stuff, del_index, 0)
-                                if temp_scores != []: 
-                                    #print 'temp scores:'
-                                    #for item in temp_scores:
-                                    #    print item
+                                        # if ((score_stuff[t,0]==np.round(i,4)) and (score_stuff[t,1]==np.round(j,4)) and
+                                        # (score_stuff[t,4]==np.round(bz,4)) and (score_stuff[t,5]==np.round(bth,4))):
+                                        if np.array_equal(np.round([score_stuff[t, 0], score_stuff[t, 1],
+                                                                    score_stuff[t, 2], score_stuff[t, 4],
+                                                                    score_stuff[t, 5], score_stuff[t, 6],
+                                                                    score_stuff[t, 7]], 4),
+                                                          np.round([x, y, th, bz, bth, hx, hy], 4)):
+                                        # if "{0:.3f}".format(score_stuff[t, 0]) == "{0:.3f}".format(x) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 1]) == "{0:.3f}".format(y) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 4]) == "{0:.3f}".format(bz) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 5]) == "{0:.3f}".format(bth) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(bth) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(bth) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 6]) == "{0:.3f}".format(hx) and \
+                                        #    "{0:.3f}".format(score_stuff[t, 7]) == "{0:.3f}".format(hy):
 
-                                    temp_scores = copy.copy(np.array(sorted(temp_scores, key=itemgetter(9, 10),
-                                                                            reverse=True))[0])
-                                    this_score.append(temp_scores[0:11])
-                                    # self.scores[hx, hy].append(temp_scores[0:11])
-                                    reachable_line = []
-                                    manipulable_line = []
-                                    #print 'I was able to find a base location where I can reach at least one goal'
-                                    for number in xrange(int((len(temp_scores)-11)/2.)):
-                                        reachable_line.append(temp_scores[11+2*number])
-                                        manipulable_line.append(temp_scores[12+2*number])
-                                    this_reachable.append(reachable_line)
-                                    this_manipulable.append(manipulable_line)
-                                    # self.reachable[hx, hy].append(reachable_line)
-                                    # self.manipulable[hx, hy].append(manipulable_line)
+                                            if score_stuff[t, 9] > 0.80:
+                                                #print score_stuff[t]
+                                                #print 'raw things:'
+                                                #print score_stuff[t]
+                                                temp_scores.append(score_stuff[t])
+                                            del_index.append(t)
+                                            #score_stuff = np.delete(score_stuff,t,0)
+                                    score_stuff = np.delete(score_stuff, del_index, 0)
+                                    if temp_scores != []:
+                                        #print 'temp scores:'
+                                        #for item in temp_scores:
+                                        #    print item
+
+                                        temp_scores = copy.copy(np.array(sorted(temp_scores, key=itemgetter(9, 10),
+                                                                                reverse=True))[0])
+                                        this_score.append(temp_scores[0:11])
+                                        # self.scores[hx, hy].append(temp_scores[0:11])
+                                        reachable_line = []
+                                        manipulable_line = []
+                                        #print 'I was able to find a base location where I can reach at least one goal'
+                                        for number in xrange(int((len(temp_scores)-11)/2.)):
+                                            reachable_line.append(temp_scores[11+2*number])
+                                            manipulable_line.append(temp_scores[12+2*number])
+                                        this_reachable.append(reachable_line)
+                                        this_manipulable.append(manipulable_line)
+                                        # self.reachable[hx, hy].append(reachable_line)
+                                        # self.manipulable[hx, hy].append(manipulable_line)
                 self.reachable[hx, hy] = np.array(this_reachable)
                 self.manipulable[hx, hy] = np.array(this_manipulable)
                 #print 'reachable ',self.reachable

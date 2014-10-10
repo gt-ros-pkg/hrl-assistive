@@ -441,7 +441,7 @@ class BaseSelector(object):
         alpha = 0.1  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .8  # Weight on distance to move to get to that goal location
+        zeta = .5  # Weight on distance to move to get to that goal location
         # pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
         # headfloor_B_pr2 = pr2_B_headfloor.I
         pr2_loc = np.array([self.origin_B_pr2[0, 3], self.origin_B_pr2[1, 3]])
@@ -481,9 +481,9 @@ class BaseSelector(object):
                 des_x = np.array([m.cos(scores[j, 0][2][i]), m.sin(scores[j, 0][2][i]), 0])
                 angle_change = m.acos(np.dot(current_x, des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
                 dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
-                if np.round(scores[j, 0][2][i],3) == 2.356:
-                    print 'using 3/4 pi'
-                    angle_change = 0
+                # if np.round(scores[j, 0][2][i],3) == 2.356:
+                #     print 'using 3/4 pi'
+                #     angle_change = 0
                 dist_score += angle_change
                 # I should eventually use the following line instead, because it normalizes to 0-1 range. This way the
                 # weights can be compared better.
