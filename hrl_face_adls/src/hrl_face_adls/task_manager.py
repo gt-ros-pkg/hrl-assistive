@@ -73,9 +73,9 @@ class ServoingManager(object):
         if self.base_selection_complete:
             movement = False
             msg = "Servoing Succeeded. Arms will proceed to move."
+            self.base_selection_complete = False
             movement = self.call_arm_reacher()
-            if movement is True:
-                self.base_selection_complete = False
+
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
 
@@ -186,7 +186,6 @@ class ServoingManager(object):
         # bm = BaseMoveRequest()
         # bm.model = self.model
         # bm.task = self.task
-        resp = self.call_arm_reacher()
         # try:
         #     resp = self.call_arm_reacher()
         #     # resp = self.base_selection_client.call(bm)
@@ -194,7 +193,7 @@ class ServoingManager(object):
         #     rospy.logerr(se)
         #     self.feedback_pub.publish("Failed to find good base position. Please try again.")
         #     return None
-        return resp
+        return self.reach_service()
 
     def call_base_selection(self):
         # Place holder return
