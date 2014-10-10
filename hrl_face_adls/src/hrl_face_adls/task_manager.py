@@ -34,7 +34,7 @@ class ServoingManager(object):
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
-            self.autobed_sub = rospy.Subscriber('/bed_states', FloatArrayBare, self.bed_state_cb)
+            self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
 
         self.tfl = TransformListener()
 
@@ -46,7 +46,7 @@ class ServoingManager(object):
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
         self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                               SingleJointPositionActionGoal, latch=True)
-        self.autobed_pub = rospy.Publisher('/abdin', FloatArrayBare, latch=True)
+        self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, latch=True)
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 

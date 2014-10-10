@@ -47,7 +47,7 @@ class DataReader_Yogurt(object):
         # (array([ 0.4598544 ,  0.8806009 ,  0.65371782]), array([ 0.45253993,  0.53399713, -0.17283745,  0.69295158]))
         # (array([ 0.2741387 ,  0.05522572, -0.0119196 ]), array([-0.0235809 ,  0.74836334,  0.6627746 ,  0.0112287 ]))
 
-        num = np.ones([3, 1])
+        num = np.ones([len(data), 1])
         reference_options = ['head', 'base_link']
         reference = np.array([[1], [1], [0], [0]])
 
@@ -61,10 +61,10 @@ class DataReader_Yogurt(object):
         runData.generate_score(viz_rviz=True, visualize=False, plot=False)
 
 if __name__ == "__main__":
-    model = 'chair'  # options are: 'chair', 'bed', 'autobed'
+    model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
     task = 'yogurt'
     subject = 'any_subject'
-    rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
+    rospy.init_node(''.join(['data_reader_', subject, '_', model, '_quick_', task]))
     start_time = time.time()
     yogurt_data_reader = DataReader_Yogurt(model=model, task=task, subject=subject)
     print 'Done! Time to generate all scores: %fs' % (time.time() - start_time)

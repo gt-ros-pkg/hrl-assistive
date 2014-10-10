@@ -50,7 +50,7 @@ class DataReader(object):
         self.data_finish = data_finish
 
         self.model = model
-        self.max_distance = 5 #0.02
+        self.max_distance = 10 #0.02
         self.task = task
         self.num_goal_locations = 1
         self.pos_clust=pos_clust
@@ -386,7 +386,7 @@ class DataReader(object):
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
-        save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_score_data.pkl']))
+        save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
         print 'There was no existing score data for this task. I therefore created a new file.'
 #        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
 #            data1 = load_pickle(''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))

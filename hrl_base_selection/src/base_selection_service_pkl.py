@@ -261,7 +261,7 @@ class BaseSelector(object):
         task = req.task
         self.task = task
         if model == 'autobed':
-            self.autobed_sub = rospy.Subscriber('/bed_states', FloatArrayBare, self.bed_state_cb)
+            self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
         print 'I have received inputs!'
         start_time = time.time()
         #print 'My given inputs were: \n'
@@ -290,15 +290,19 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/ar_marker_autobed', now, rospy.Duration(10))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker_autobed', now)
+                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     ar_trans_B = np.eye(4)
-                    ar_trans_B[0:3,3] = np.array([0.5, .5, .3+self.bed_state_z/100])
+                    # -.445 if right side of body. .445 if left side.
+                    # This is the translational transform from bed origin to the ar tag tf.
+                    ar_trans_B[0:3,3] = np.array([0.625, -.445, .275+(self.bed_state_z-9)/100])
                     ar_rotz_B = np.eye(4)
-                    ar_rotz_B [0:2,0:2] = np.array([[-1,0],[0,-1]])
+                    # If left side of body should be np.array([[-1,0],[0,-1]])
+                    # If right side of body should be np.array([[1,0],[0,1]])
+                    ar_rotz_B [0:2,0:2] = np.array([[1, 0],[0, 1]])
                     ar_rotx_B = np.eye(4)
-                    ar_rotx_B[1:3,1:3] = np.array([[0,1],[1,0]])
+                    ar_rotx_B[1:3,1:3] = np.array([[0,1],[-1,0]])
                     self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(rotz_B)*np.matrix(ar_rotx_B)
                     # now = rospy.Time.now()
                     # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
