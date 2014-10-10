@@ -477,9 +477,9 @@ class BaseSelector(object):
                 # print pr2_loc
                 # print scores[0, 0]
                 # print 'i ', i
-                current_x = self.origin_B_pr2[0:3, 0]
+                current_x = np.array([self.origin_B_pr2[0, 0], self.origin_B_pr2[1, 0], self.origin_B_pr2[2, 0]])
                 des_x = np.array([m.cos(scores[j, 0][2][i]), m.sin(scores[j, 0][2][i]), 0])
-                angle_change = m.acos(np.dot(current_x,des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
+                angle_change = m.acos(np.dot(current_x, des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
                 dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
                 dist_score += angle_change
 
