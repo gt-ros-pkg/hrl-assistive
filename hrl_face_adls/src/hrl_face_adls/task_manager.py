@@ -73,7 +73,7 @@ class ServoingManager(object):
         if self.base_selection_complete:
             movement = False
             movement = self.call_arm_reacher()
-            if movement = True:
+            if movement is True:
                 self.base_selection_complete = False
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
