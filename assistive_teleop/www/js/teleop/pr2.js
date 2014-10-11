@@ -59,6 +59,8 @@ var PR2Gripper = function (side, ros) {
         name: gripper.side.substring(0, 1) + '_gripper_controller/gripper_action/goal',
         messageType: 'pr2_controllers_msgs/Pr2GripperCommandActionGoal'
     });
+    gripper.goalPub.advertise();
+
     gripper.setPosition = function (pos, effort) {
         var eff = effort || -1;
         var goalMsg = gripper.ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
@@ -66,9 +68,11 @@ var PR2Gripper = function (side, ros) {
         goalMsg.goal.command.max_effort = eff;
         gripper.goalPub.publish(goalMsg);
     };
+
     gripper.open = function () {
         gripper.setPosition(0.09);
     };
+
     gripper.close = function () {
         gripper.setPosition(-0.001);
     };
