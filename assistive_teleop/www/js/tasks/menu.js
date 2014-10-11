@@ -3,6 +3,8 @@ RFH.TaskMenu = function (divId) {
     var self = this;
     self.divId = divId;
     self.tasks = [];
+    self.activeTask = null;
+    self.waitTimer = null;
 
     self.addTask = function (taskObject, position) {
         var position = position !== undefined ? position : self.tasks.length;
@@ -20,17 +22,35 @@ RFH.TaskMenu = function (divId) {
     };
 
     self.startTask = function (taskObject) {
+        self.activeTask.click();//Just auto-click the existing task off first...coult this possibly actually work?
+        $('*').addClass('no-cursor');//TODO: find a better way to do this?
+        self.waitForTaskStop();
         $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.stopTask(taskObject)});
         taskObject.start();
+        self.activeTask = taskObject;
+        $('*').removeClass('no-cursor');
     };
     
     self.stopTask = function (taskObject) {
         taskObject.stop();
+        self.activeTask = null;
         $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.startTask(taskObject)});
     };
 
+    self.waitForTaskStop = function (task) {
+        task =  (task === null) ? self.activeTask : task;
+        if (self.activeTask) {
+            self.waitTimer = setTimeout(function(){ self.waitForTaskStop(task) }, 100);
+        } else {
+            return true;
+        }
+    };
+
     self.removeTask = function (taskObject) {
-        //Stop task, remove button, etc.
+        self.stopTast(taskObject);
+        $('#'+taskObject.buttonText).off('click.rfh');
+        $('#'+self.divId).removeChild('#'+taskObject.buttonText);
+        self.tasks.pop(self.tasks.indexOf(taskObject));
     };
 }
 

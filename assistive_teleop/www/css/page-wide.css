@@ -62,4 +62,6 @@ body {
     text-align: center;
 }
 
-
+.no-cursor {
+    cursor: none !important;
+}
