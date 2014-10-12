@@ -13,16 +13,16 @@ RFH.Gripper = function (options) {
                         }
                    ).hide(
                    ).css({"position":"absolute",
-                          "top":"10%",
-                          "height":"80%",
-                          "left":"3%"}
+                          "bottom":"3%",
+                          "height":"3%",
+                           self.side:"3%"}
                    );
 
     self.gripperSlider.slider({
         min: 0.0,
         max: 0.085,
         step: 0.001,
-        orientation: 'vertical'});
+        orientation: 'horizontal'});
 
     self.start = function () {
         $('#'+self.buttonText+'Slider').show();
@@ -38,5 +38,4 @@ RFH.Gripper = function (options) {
         }
     };
     self.gripper.stateCBList.push(self.gripperStateDisplay);
-
 }
