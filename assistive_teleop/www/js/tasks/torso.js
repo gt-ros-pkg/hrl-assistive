@@ -19,8 +19,8 @@ RFH.Torso = function (options) {
                    );
 
     self.torsoSlider.slider({
-        min: 0.0,
-        max: 0.3,
+        min: 0.011,
+        max: 0.325,
         step: 0.01,
         orientation: 'vertical'});
 
