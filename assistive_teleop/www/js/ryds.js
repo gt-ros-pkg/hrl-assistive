@@ -16,7 +16,7 @@ var RYDS = function (ros) {
     //Bowl Registration Service     
     ryds.bowlRegServiceClient = new ryds.ros.Service({
         name:'/finding_bowl_service',
-        serviceType:'cup_finder/cup_finder'///Pixel23d'
+        serviceType:'cup_finder/CupFinder'///Pixel23d'
     });
 
     ryds.RegisterBowl = function (u, v) {
