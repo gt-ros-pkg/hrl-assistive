@@ -151,7 +151,7 @@ var initRYDSTab = function (tabDivId) {
     $(divRef+'_T0').append('<tr><td id="' + tabDivId + '_R1C0"></td><td id="'+ tabDivId + '_R1C1"></td><td id="' + tabDivId + '_R1C2"></td></tr>')
 
     //Info Dialogue Box
-    var INFOTEXT = "The RYDS Tab allows you to use the robot to perform a feeding task. This system assumes that you have already registered your head in the 'Body Registration' Tab. </br>" +
+    var INFOTEXT = "The RYDS Tab allows you to use the robot to perform a feeding task.</br>" +
                    "To identify the bowl being used:</br></br>"+
                    "1. Have the robot look at the bowl using the head camera.</br>"+
                    "2. Select the 'Register Bowl' button.</br>" +
@@ -160,9 +160,12 @@ var initRYDSTab = function (tabDivId) {
                    "5. If the model does not line up with the bowl, "+
                        "try getting a better view of the bowl and repeat 2-4.</br>" + 
                    "6. If the model does line up with the bowl, click 'Confirm Registration' to confirm that it is correct.</br>" +
-                   "7. After you have registered the bowl, click the 'Start' button to begin the feeding task. </br>"+
-                   "8. If you wish to continue the feeding task, click the 'Continue' button. </br>" +
-                   "9. If you wish to stop the feeding task at any time, click the 'Stop' button. </br>" 
+                   "7. After you have registered the bowl, click on the 'Body Registration' tab. </br>" +
+                   "8. Register your head using the instructions provided. (See the help button on the 'Body Registration' tab) </br>" +
+                   "9. After you have registered your head. Click on the 'RYDS' tab again. </br>"
+                   "10. Click the 'Start' button to begin the feeding task. </br>"+
+                   "11. If you wish to continue the feeding task, click the 'Continue' button. </br>" +
+                   "12. If you wish to stop the feeding task at any time, click the 'Stop' button. </br>" 
 
     $(divRef).append('<div id="'+tabDivId+'_infoDialog">' + INFOTEXT + '</div>');
     $(divRef+'_infoDialog').dialog({autoOpen:false,
