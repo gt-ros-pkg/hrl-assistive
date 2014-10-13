@@ -5,6 +5,18 @@ RFH.Torso = function (options) {
     self.torso = options.torso; 
     self.buttonText = 'Spine';
     self.buttonClass = 'spine-button';
+    self.tallIcon = jQuery('<img/>', {id: "tallIcon", src:"./css/icons/tall.png"}).appendTo('#'+self.div);
+    self.tallIcon.css({"height":"12%",
+                        "width":"auto",
+                        "position":"absolute",
+                        "top":"2%",
+                        "left":"2%"}).hide();
+    self.shortIcon = jQuery('<img/>', {id: "shortIcon", src:"./css/icons/short.png"}).appendTo('#'+self.div);
+    self.shortIcon.css({"height":"11%",
+                        "width":"auto",
+                        "position":"absolute",
+                        "bottom":"2%",
+                        "left":"2%"}).hide();
     self.torsoSlider = jQuery('<div/>', {id: self.buttonText+'Slider'}).appendTo('#'+self.div);
     self.torsoSlider.off("slidestop"
                    ).on("slidestop.rfh",
@@ -13,9 +25,9 @@ RFH.Torso = function (options) {
                         }
                    ).hide(
                    ).css({"position":"absolute",
-                          "top":"10%",
-                          "height":"80%",
-                          "left":"3%"}
+                          "top":"16%",
+                          "height":"68%",
+                          "left":"2%"}
                    );
 
     self.torsoSlider.slider({
@@ -25,11 +37,11 @@ RFH.Torso = function (options) {
         orientation: 'vertical'});
 
     self.start = function () {
-        $('#'+self.buttonText+'Slider').show();
+        $('#'+self.buttonText+'Slider, #tallIcon, #shortIcon').show();
     }
     
     self.stop = function () {
-        $('#'+self.buttonText+'Slider').hide();
+        $('#'+self.buttonText+'Slider, #tallIcon, #shortIcon').hide();
     };
 
     self.torsoStateDisplay = function (msg) {
