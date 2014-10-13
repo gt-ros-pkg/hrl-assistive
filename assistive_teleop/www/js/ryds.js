@@ -156,9 +156,8 @@ var initRYDSTab = function (tabDivId) {
                    "1. Have the robot look at the bowl using the head camera.</br>"+
                    "2. Select the 'Register Bowl' button.</br>" +
                    "3. Click on the bowl in the camera view.</br>"+
-                   "4. Observe the overlaid points, showing where the robot finds the bowl.</br>" + 
-                   "5. If the model does not line up with the bowl, "+
-                       "try getting a better view of the bowl and repeat 2-4.</br>" + 
+                   "4. Observe the overlaid points, showing where the robot finds the bowl. </br>" + 
+                   "5. If the model does not line up with the bowl, try getting a better view of the bowl and repeat 2-4.</br>" + 
                    "6. If the model does line up with the bowl, click 'Confirm Registration' to confirm that it is correct.</br>" +
                    "7. After you have registered the bowl, click on the 'Body Registration' tab. </br>" +
                    "8. Register your head using the instructions provided. (See the help button on the 'Body Registration' tab) </br>" +
