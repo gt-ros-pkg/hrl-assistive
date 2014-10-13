@@ -23,7 +23,7 @@ RFH.TaskMenu = function (divId) {
 
     self.startTask = function (taskObject) {
         if (self.activeTask){
-            $("#"+self.activeTask.buttonText).click();//Just auto-click the existing task off first...coult this possibly actually work?
+            $("#"+self.activeTask.buttonText).click();
             $('*').addClass('no-cursor');//TODO: find a better way to do this?
             self.waitForTaskStop();
         }
@@ -69,4 +69,9 @@ RFH.initTaskMenu = function (divId) {
                                        base: RFH.pr2.base}));
     RFH.taskMenu.addTask(new RFH.Torso({div: 'markers',
                                         torso: RFH.pr2.torso}));
+    RFH.taskMenu.addTask(new RFH.Grippers({div: 'markers',
+                                           l_gripper: RFH.pr2.l_gripper,
+                                           r_gripper: RFH.pr2.r_gripper,
+                                           }));
+
 }
