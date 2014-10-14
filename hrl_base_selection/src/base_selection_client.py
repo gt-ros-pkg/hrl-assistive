@@ -168,8 +168,8 @@ if __name__ == "__main__":
         psm.pose.orientation.w = base_goals[int(6+7*i)]
         psm.header.frame_id = '/base_link'
         base_goals_list.append(copy.copy(psm))
-        configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
-                                         configuration_goals[2+3*i]])
+        configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i]+9.+10,
+                                         configuration_goals[2+3*i]+40.])
 
     publish_to_autobed(configuration_goals_list)
     publish_to_zaxis(configuration_goals_list)

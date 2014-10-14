@@ -2,7 +2,6 @@
 
 import numpy as np
 import math as m
-import openravepy as op
 import copy
 
 import time
@@ -89,7 +88,7 @@ class BaseSelector(object):
         start_time = time.time()
         print 'Loading data, please wait.'
         self.chair_scores = self.load_task('yogurt', 'chair')
-        self.autobed_scores = self.load_task('yogurt', 'chair')
+        self.autobed_scores = self.load_task('yogurt', 'autobed')
         print 'Time to receive load data: %fs' % (time.time()-start_time)
         # Service
         self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
@@ -280,17 +279,17 @@ class BaseSelector(object):
         if not self.testing:
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(10))
+                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(15))
                 (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
+                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(10))
+                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     ar_trans_B = np.eye(4)
@@ -300,7 +299,7 @@ class BaseSelector(object):
                     ar_rotz_B = np.eye(4)
                     # If left side of body should be np.array([[-1,0],[0,-1]])
                     # If right side of body should be np.array([[1,0],[0,1]])
-                    ar_rotz_B [0:2,0:2] = np.array([[1, 0],[0, 1]])
+                    ar_rotz_B [0:2,0:2] = np.array([[-1, 0],[0, -1]])
                     ar_rotx_B = np.eye(4)
                     ar_rotx_B[1:3,1:3] = np.array([[0,1],[-1,0]])
                     self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(rotz_B)*np.matrix(ar_rotx_B)
@@ -576,7 +575,7 @@ class BaseSelector(object):
             # odom_B_goal = odom_B_pr2 * self.origin_B_pr2.I * origin_B_goal
             # pos_goal, ori_goal = Bmat_to_pos_quat(odom_B_goal)
             pr2_base_output.append([pos_goal, ori_goal])
-            configuration_output.append([best_score_cfg[3][i], best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
+            configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
 
             ## I no longer return posestamped messages. Now I return a list of floats.
             # psm = PoseStamped()

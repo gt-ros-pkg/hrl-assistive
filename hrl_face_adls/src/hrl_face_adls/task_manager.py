@@ -28,7 +28,7 @@ class ServoingManager(object):
 
     def __init__(self):
         self.task = 'yogurt'
-        self.model = 'chair'
+        self.model = 'chair' # options are 'chair' and 'autobed'
 
         if self.model == 'autobed':
             self.bed_state_z = 0.
@@ -63,6 +63,8 @@ class ServoingManager(object):
 
         self.base_selection_complete = False
 
+        self.send_task_count = 0
+
     def servo_fdbk_cb(self, msg):
         if not msg.data == 5:
             return
@@ -70,17 +72,27 @@ class ServoingManager(object):
         #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
         msg = "Servoing Succeeded."
-        if self.base_selection_complete:
+        if self.base_selection_complete and self.send_task_count > 1:
             movement = False
             msg = "Servoing Succeeded. Arms will proceed to move."
             self.base_selection_complete = False
+            self.send_task_count = 0
             movement = self.call_arm_reacher()
-
+            
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
 
 
     def ui_cb(self, msg):
+        if self.model == 'chair':
+            self.send_task_count = 0
+        if self.send_task_count > 4:
+            self.send_task_count = 0
+        if self.send_task_count > 0:
+            self.send_task_count += 1
+            return
+        if self.model == 'chair':
+            self.send_task_count = 3
         self.base_selection_complete = False
         self.head_pose = self.get_head_pose()
         if self.head_pose is None:
@@ -105,7 +117,7 @@ class ServoingManager(object):
         goal_ps_ell.pose.orientation = Quaternion(*quat)
 
         now = rospy.Time.now()
-        self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(3))
+        self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(10))
         goal_ps_ell.header.stamp = now
         goal_ps = self.tfl.transformPose('base_link', goal_ps_ell)
         self.test_pub.publish(goal_ps)
@@ -154,7 +166,7 @@ class ServoingManager(object):
         # testing
         if self.model == 'autobed':
             autobed_goal = FloatArrayBare()
-            autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1], self.bed_state_leg_theta]
+            autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1]+9, self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
 
         ar_data = ARServoGoalData()
@@ -168,6 +180,7 @@ class ServoingManager(object):
         self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
         rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
         self.base_selection_complete = True
+        self.send_task_count += 1
         self.goal_data_pub.publish(ar_data)
 
     def call_arm_reacher(self):
@@ -229,7 +242,7 @@ class ServoingManager(object):
     def get_head_pose(self, head_frame="/head_frame"):
         try:
             now = rospy.Time.now()
-            self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(10))
+            self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(15))
             pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
             head_pose = PoseStamped()
             head_pose.header.frame_id = "/base_link"

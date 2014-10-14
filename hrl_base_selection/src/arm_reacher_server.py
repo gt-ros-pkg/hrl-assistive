@@ -38,13 +38,13 @@ class armReachAction(mpcBaseAction):
         #going to home with arm curled high near left shoulder:
         (pos.x, pos.y, pos.z) = (0.301033944729, 0.461276517595, 0.196885866571)
         (quat.x, quat.y, quat.z, quat.w) = (0.553557277528, 0.336724229346, -0.075691681684, 0.757932650828)
-        timeout = 35.0
+        timeout = 20.0
         self.setOrientGoal(pos, quat, timeout)
 
         #moving to high in front of chest, pointing down:
         (pos.x, pos.y, pos.z) = (0.377839595079, 0.11569018662, 0.0419789999723)
         (quat.x, quat.y, quat.z, quat.w) = (0.66106069088, 0.337429642677, -0.519856214523, 0.422953367233)
-        timeout = 35.0
+        timeout = 20.0
         self.setOrientGoal(pos, quat, timeout)
 
         # #going to home location in front of camera:
@@ -59,18 +59,33 @@ class armReachAction(mpcBaseAction):
         # timeout = 35.0
         # self.setOrientGoal(pos, quat, timeout)
 
+        # These are the goals for autobed's data
         frame_id = '/head_frame'
-        #going to in front of subjects face:        
+        # #going to in front of subjects face:        
         (pos.x, pos.y, pos.z) = (0.2741387011303321, 0.05522571699560719, -0.011919598309888757)
         (quat.x, quat.y, quat.z, quat.w) = (-0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394)
-        timeout = 35.0
+        timeout = 10.0
         self.setOrientGoal(pos, quat, timeout, frame_id)
 
-        #going to subjects mouth:
+        # #going to subjects mouth:
         (pos.x, pos.y, pos.z) = (0.20608632401364894, 0.03540318703608347, 0.00607600258150498)
         (quat.x, quat.y, quat.z, quat.w) = (-0.015224467044577382, 0.7345761465214938, 0.6783020152473445, -0.008513323454022942)
         timeout = 35.0
         self.setOrientGoal(pos, quat, timeout, frame_id)
+
+        # These are the goals for wheelchair's new data (10/13/14)
+        # frame_id = '/head_frame'
+        # #going to in front of subjects face:        
+        # (pos.x, pos.y, pos.z) = (0.2741387011303321, 0.005522571699560719, -0.011919598309888757)
+        # (quat.x, quat.y, quat.z, quat.w) = (-0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394)
+        # timeout = 10.0
+        # self.setOrientGoal(pos, quat, timeout, frame_id)
+
+        # #going to subjects mouth:
+        # (pos.x, pos.y, pos.z) = (0.13608632401364894, 0.003540318703608347, 0.00607600258150498)
+        # (quat.x, quat.y, quat.z, quat.w) = (-0.015224467044577382, 0.7345761465214938, 0.6783020152473445, -0.008513323454022942)
+        # timeout = 35.0
+        # self.setOrientGoal(pos, quat, timeout, frame_id)
         
         return True
         
