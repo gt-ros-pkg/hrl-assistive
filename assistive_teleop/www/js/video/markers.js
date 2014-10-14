@@ -27,10 +27,19 @@ var initMarkerDisplay = function (divID) {
     RFH.tfClient.subscribe('head_mount_kinect_rgb_link', updateCamera);
 
     // Setup the marker client.
-    RFH.markerClient = new ROS3D.MarkerClient({
-        ros : RFH.ros,
-        tfClient : RFH.tfClient,
-        topic : '/visualization_marker',
-        rootObject : RFH.viewer.scene
+//    RFH.markerClient = new ROS3D.MarkerClient({
+//        ros : RFH.ros,
+//        tfClient : RFH.tfClient,
+//        topic : '/visualization_marker',
+//        rootObject : RFH.viewer.scene
+//    });
+
+    RFH.rMPCMarkerClient = new ROS3D.InteractiveMarkerClient({
+        ros: RFH.ros,
+        tfClient: RFH.tfClient,
+        topic: '/haptic_mpc/interactive_markers',//TODO: FIXME (Get correct name)
+        camera: RFH.viewer.renderer.camera,
+        rootObject: RFH.viewer.scene
+
     });
 }

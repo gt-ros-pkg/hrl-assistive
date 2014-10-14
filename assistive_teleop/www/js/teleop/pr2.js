@@ -203,6 +203,58 @@ var PR2Torso = function (ros) {
     };
 };
 
+//var PR2ArmJoints = function (ros) {
+//    'use strict';
+//    var self = this;
+//    this.state = null;
+//    self.getMsgDetails('p
+//};
+
+var PR2ArmMPC = function (options) {
+    'use strict';
+    var self = this;
+    self.ros = options.ros;
+    self.side = options.side;
+    self.stateTopic = options.stateTopic || 'haptic_mpc/gripper_pose';
+    self.goalTopic = options.goalTopic || 'haptic_mpc/goal_pose';
+    self.state = null;
+    self.ros.getMsgDetails('geometry_msgs/PoseStamped');
+
+    self.setState = function (msg) {
+        self.state = msg;
+    };
+    self.stateCBList = [self.setState];
+    self.stateCB = function (msg) {
+        for (var i=0; i<self.stateCBList.length, i += 1) {
+            self.stateCBList[i](msg);
+        }
+    };
+    self.stateSubscriber = new ROSLIB.Topic({
+        ros: self.ros,
+        name: self.stateTopic,
+        messageType: 'geometry_msgs/PoseStamped'
+    });
+    self.stateSubscriber.subscribe(self.stateCB);
+
+    self.goalPosePublisher = new ROSLIB.Topic({
+        ros: self.ros,
+        name: self.goalTopic,
+        messageType: 'geometry_msgs/PoseStamped';
+    });
+    self.goalPosePublisher.advertise();
+
+    self.sendGoal = function (options) {
+        var position =  options.position || self.state.pose.position;
+        var orientation =  options.orientation || self.state.pose.orientation;
+        var frame_id =  options.frame_id || self.state.header.frame_id;
+        var msg = self.ros.composeMsg('geometry_msgs/PoseStamped');
+        msg.header.frame_id = frame_id;
+        msg.pose.position = position;
+        msg.pose.orientation = orientation;
+        self.goalPosePublisher.publish(msg);
+    }
+}
+
 var PR2 = function (ros) {
     'use strict';
     var self = this;
@@ -212,4 +264,9 @@ var PR2 = function (ros) {
     self.l_gripper = new PR2Gripper('left', self.ros);
     self.base = new PR2Base(self.ros);
     self.head = new PR2Head(self.ros);
+    self.r_arm_cart = new PR2ArmMPC({side:'right',
+                                     ros: self.ros,
+                                     stateTopic:'/right/haptic_mpc/gripper_pose',
+                                     goalTopic: '/right/haptic_mpc/goal_pose'});
+    self.l_arm_cart = new PR2ArmMPC({side:'left', ros: self.ros});
 }
