@@ -225,7 +225,7 @@ var PR2ArmMPC = function (options) {
     };
     self.stateCBList = [self.setState];
     self.stateCB = function (msg) {
-        for (var i=0; i<self.stateCBList.length, i += 1) {
+        for (var i=0; i<self.stateCBList.length; i += 1) {
             self.stateCBList[i](msg);
         }
     };
@@ -239,7 +239,7 @@ var PR2ArmMPC = function (options) {
     self.goalPosePublisher = new ROSLIB.Topic({
         ros: self.ros,
         name: self.goalTopic,
-        messageType: 'geometry_msgs/PoseStamped';
+        messageType: 'geometry_msgs/PoseStamped'
     });
     self.goalPosePublisher.advertise();
 
