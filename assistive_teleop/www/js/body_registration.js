@@ -20,7 +20,14 @@ var BodyRegistration = function (ros) {
             console.log(resp);
             $('#img_act_select').val('looking');
             if (resp.success){
-                $("#confirm_reg").button({disabled: false });
+                if (resp.reg_pose.pose.position.x>1.0&resp.reg_pose.pose.position.y>1.0&resp.reg_pose.pose.position.z>2.0){
+                    assistive_teleop.log("Head registration insufficient, please try again");
+                    console.log('Head registration insufficient');
+                
+                } else {
+                    assistive_teleop.log('Head registration complete. Please press Confirm Registration to continue');
+                    $("#confirm_reg").button({disabled: false });
+                }
             }
         });
     };

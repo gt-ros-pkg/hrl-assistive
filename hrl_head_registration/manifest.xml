@@ -22,4 +22,5 @@
   <depend package="image_transport"/>
   <depend package="image_geometry"/>
   <depend package="hrl_geom"/>
+  <depend package="hrl_lib"/>
 </package>
