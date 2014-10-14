@@ -73,5 +73,7 @@ RFH.initTaskMenu = function (divId) {
                                            l_gripper: RFH.pr2.l_gripper,
                                            r_gripper: RFH.pr2.r_gripper,
                                            }));
+    RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
+                                                     tfClient: RFH.tfClient}));
 
 }

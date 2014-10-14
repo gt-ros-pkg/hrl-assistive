@@ -142,6 +142,13 @@ RFH.ROSCameraModel = function (options) {
        var mag = numeric.norm2(vec);
        return numeric.mul(d/mag, vec);
     }
+
+    self.projectPoint = function (px, py, pz) {
+        var pixel_hom = numeric.dot(self.P, [[px],[py],[pz],[1]]);
+        var pix_x = pixel_hom[0]/pixel_hom[2];
+        var pix_y = pixel_hom[1]/pixel_hom[2];
+        return [pix_x/self.width, pix_y/self.height];
+    }
 };
 
 var initMjpegCanvas = function (divId) {
