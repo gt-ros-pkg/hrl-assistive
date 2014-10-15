@@ -295,7 +295,7 @@ class BaseSelector(object):
                     ar_trans_B = np.eye(4)
                     # -.445 if right side of body. .445 if left side.
                     # This is the translational transform from bed origin to the ar tag tf.
-                    ar_trans_B[0:3,3] = np.array([0.625, -.445, .275+(self.bed_state_z-9)/100])
+                    ar_trans_B[0:3,3] = np.array([1.165, -.445, .21+(self.bed_state_z-9)/100])
                     ar_rotz_B = np.eye(4)
                     # If left side of body should be np.array([[-1,0],[0,-1]])
                     # If right side of body should be np.array([[1,0],[0,1]])
