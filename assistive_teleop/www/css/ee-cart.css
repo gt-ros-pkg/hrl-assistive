@@ -1,29 +1,42 @@
 .cart-ctrl-container {
     position: absolute;
-    width: 100px;
+    background-color: rgba(0,0,0,0.31);
+    border-radius: 50%;
+    bottom: 40px;
+    width: 200px;
     height: 200px;
 }
 
 .away-button {
-    position: relative;
+    position: absolute;
+    top: 0px;
+    left:25%;
     display: block;
     height: 25%;
-    width: 100%;
-    background-image: url("./css/icons/arrow-away.png");
+    width: 50%;
+    background-image: url("./icons/arrow-away.png");
 }
 
 .toward-button {
-    position: relative;
+    position: absolute;
+    bottom: 0px;
+    left: 25%;
     display: block;
     height: 25%;
-    width: 100%;
-    background-image: url("./css/icons/arrow-toward.png");
+    width: 50%;
+    background-image: url("./icons/arrow-toward.png");
 }
 .target {
-    height: 50%;
-    width: 100%;
+    position:absolute;
+    left:30%;
+    top:30%;
+    height: 40%;
+    width: 40%;
     display: block;
     border-radius: 50%;
     background-color: rgba(215, 43, 62, 0.85);
-    background-image: url("./css/icons/arrow-drag.png");
+    background-image: url("./icons/arrow-drag.png");
+    background-size: 80% 80%;
+    background-repeat: no-repeat;
+    background-position: center center;
 }
