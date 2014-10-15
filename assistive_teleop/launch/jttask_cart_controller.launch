@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="use_right_arm" default="true" />
-  <arg name="use_left_arm"  default="true" />
+  <arg name="use_left_arm"  default="false" />
 
   <rosparam ns="r_cart">
     type: pr2_manipulation_controllers/JTTaskController

@@ -3,6 +3,7 @@ RFH.CartesianEEControl = function (options) {
     var self = this;
     self.div = options.div || 'markers';
     self.arm = options.arm;
+    self.smooth = self.arm instanceof PR2ArmJTTask;
     self.tfClient = options.tfClient;
     self.camera = options.camera;
     self.buttonText = self.arm.side[0] === 'r' ? 'Right_Hand' : 'Left_Hand';
@@ -10,9 +11,9 @@ RFH.CartesianEEControl = function (options) {
     self.targetId = self.arm.side[0]+'CtrlIcon';
     self.targetIcon = new RFH.EECartControlIcon({divId: self.targetId,
                                                  parentId: self.div,
-                                                 arm: self.arm});
+                                                 arm: self.arm,
+                                                 smooth: self.smooth});
     $('#'+self.targetId).css(self.arm.side.toString(), "60px").hide();
-
 
     self.start = function () {
         $('#'+self.targetId).show();
@@ -48,39 +49,45 @@ RFH.EECartControlIcon = function (options) {
                                  revert: true});
 
     self.awayCB = function (event) {
+        var dx = self.smooth ? 0.005 : 0.03;
+        var dt = self.smooth ? 50 : 1000;
         if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
             goal.pose.position = self.arm.state.pose.position;
-            goal.pose.position.x += 0.03;
+            goal.pose.position.x += dx;
             goal.pose.orientation = self.arm.state.pose.orientation;
             self.arm.goalPosePublisher.publish(goal);
-            setTimeout(function () {self.awayCB(event)}, 1000);
+            setTimeout(function () {self.awayCB(event)}, dt);
         } 
     }
     $('#'+self.divId+' .away-button').on('mousedown.rfh', self.awayCB);
 
     self.towardCB = function (event) {
+        var dx = self.smooth ? 0.003 : 0.03;
+        var dt = self.smooth ? 100 : 1000;
         if ($('#'+self.divId+' .toward-button').hasClass('ui-state-active')){
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
             goal.pose.position = self.arm.state.pose.position;
-            goal.pose.position.x -= 0.03;
+            goal.pose.position.x -= dx;
             goal.pose.orientation = self.arm.state.pose.orientation;
             self.arm.goalPosePublisher.publish(goal);
-            setTimeout(function () {self.towardCB(event)}, 1000);
+            setTimeout(function () {self.towardCB(event)}, dt);
         }
     }
     $('#'+self.divId+' .toward-button').on('mousedown.rfh', self.towardCB);
 
     self.onDrag = function (event, ui) {
+        var mod_del = self.smooth ? 0.005 : 0.0025;
+        var dt = self.smooth ? 100 : 1000;
         clearTimeout(self.dragTimer);
         var time = new Date();
         var timeleft = time - self.lastDragTime;
         if (timeleft > 1000) {
             self.lastDragTime = time;
-            var dx = -0.0025 * (ui.position.left - ui.originalPosition.left);
-            var dy = -0.0025 * (ui.position.top - ui.originalPosition.top);
+            var dx = -mod_del * (ui.position.left - ui.originalPosition.left);
+            var dy = -mod_del * (ui.position.top - ui.originalPosition.top);
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
             goal.pose.position = self.arm.state.pose.position;
@@ -88,7 +95,7 @@ RFH.EECartControlIcon = function (options) {
             goal.pose.position.z += dy;
             goal.pose.orientation = self.arm.state.pose.orientation;
             self.arm.goalPosePublisher.publish(goal);
-            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, 1000);
+            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, dt);
         } else {
             self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, timeleft);
         }
