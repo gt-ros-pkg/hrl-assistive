@@ -144,7 +144,7 @@ RFH.EERotControlIcon = function (options) {
                                  revert: true});
 
     self.awayCB = function (event) {
-        var dx = self.smooth ? 0.005 : 0.03;
+        var dx = self.smooth ? 0.005 : 0.05;
         var dt = self.smooth ? 50 : 1000;
         if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
@@ -160,7 +160,7 @@ RFH.EERotControlIcon = function (options) {
 
     self.towardCB = function (event) {
         
-        var dx = self.smooth ? 0.003 : 0.03;
+        var dx = self.smooth ? 0.003 : 0.05;
         var dt = self.smooth ? 100 : 1000;
         if ($('#'+self.divId+' .toward-button').hasClass('ui-state-active')){
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
@@ -177,7 +177,7 @@ RFH.EERotControlIcon = function (options) {
     self.onDrag = function (event, ui) {
         // x -> rot around Z
         // y -> rot around y
-        var mod_del = self.smooth ? 0.005 : 0.0025;
+        var mod_del = self.smooth ? 0.005 : 0.005;
         var dt = self.smooth ? 100 : 1000;
         clearTimeout(self.dragTimer);
         var time = new Date();
