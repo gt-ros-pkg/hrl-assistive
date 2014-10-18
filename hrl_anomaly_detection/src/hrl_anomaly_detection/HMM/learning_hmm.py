@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-import sys, os
+import sys, os, copy
 import numpy as np, math
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
@@ -191,26 +191,36 @@ class learning_hmm():
         # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
         # Output:  P(X_{N+M} | X)
 
-        if M==0:
-            # Initialization            
-            future_prob = np.zeros((self.nMaxPathPerStep,len(self.obsrv_range)))
-
+        # Initialization            
+        future_prob = np.zeros((self.nMaxPathPerStep,len(self.obsrv_range)))
+        X = copy.copy(X_test)
+        
+        for i in xrange(self.nMaxPathPerStep):
+        
             # Get all probability
-            for i in xrange(len(self.obsrv_range)):           
-                future_prob[M][i] += self.predict(X_test, self.obsrv_range[i])             
+            for j in xrange(len(self.obsrv_range)):           
+                future_prob[i][j] += self.predict(X, self.obsrv_range[j])             
 
-            # Run recursively
-            M += 1
-            future_prob[M] += self.predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=M):            
-            return future_prob
-                
-        elif M < self.nMaxPathPerStep:
-            M += 1
-            future_prob[M] += self.predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=0):            
-            return future_prob            
-        else:
+            # Select observation with maximum probability
+            idx_list = [k[0] for k in sorted(enumerate(future_prob[i]), key=lambda x:x[1], reverse=True)]
+                              
+            # Udate 
+            X.append(self.obsrv_range[idx_list[0]])
             
-            return future_prob
+        return future_prob
+                
+        ##     # Run recursively
+        ##     M += 1
+        ##     future_prob[M] += self.predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=M):            
+        ##     return future_prob
+                
+        ## elif M < self.nMaxPathPerStep:
+        ##     M += 1
+        ##     future_prob[M] += self.predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=0):            
+        ##     return future_prob            
+        ## else:
+            
+        ##     return future_prob
 
         ## # Get selected probability in order
         ## idx_list = [i[0] for i in sorted(enumerate(future_prob), key=lambda x:x[1], reverse=True)]
@@ -257,7 +267,7 @@ class learning_hmm():
         
     #----------------------------------------------------------------------        
     #
-    def predictive_path_plot(self, X_test, X_pred, X_pred_prob, x_test_next):
+    def predictive_path_plot(self, X_test, X_pred_prob, x_test_next, X_test_all=None):
 
         self.fig = plt.figure(1)
         gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
@@ -265,25 +275,43 @@ class learning_hmm():
         ## Main predictive distribution
         self.ax = self.fig.add_subplot(gs[0])
 
-        # 1) Observation
+        # 1) Observation        
         self.ax.plot(X_test, 'k-o')    
+        if X_test_all != None:
+            self.ax.plot(X_test_all, 'k-')                
         ## self.ax.plot(X_test, '-o', ms=10, lw=1, alpha=0.5, mfc='orange')    
+        print X_test, x_test_next
 
         # 2) Next true observation
-        x_array = np.arange(len(X_test)-1,len(X_test)+0.0001,1.0)
-        y_array = np.array([X_test[-1], x_test_next])                        
+        y_array = np.hstack([X_test[-1], x_test_next])                        
+        x_array = np.arange(0, len(x_test_next)+0.0001,1.0) + len(X_test) -1        
         self.ax.plot(x_array, y_array, 'k-', linewidth=1.0)    
-        
+                
         # 3) Prediction        
-        for x, x_pred in zip(X_pred, X_pred_prob):
-            y_array = np.array([X_test[-1], x])                        
-            alpha   = x_pred / 2.0 + 0.5
-            if x_pred > 1.0: x_pred = 1.0
-            self.ax.plot(x_array, y_array, 'r-', alpha=x_pred**1., linewidth=1.0)    
+        n,m = X_pred_prob.shape
+        x_last = X_test[-1]
+        for i in xrange(n):
+            
+            x_pred_max = 0.0
+            x_best     = 0.0            
+            for x, x_pred in zip(self.obsrv_range, X_pred_prob[i]):
+                y_array = np.array([x_last, x])
+
+                if x_pred_max < x_pred:
+                    x_pred_max = x_pred 
+                    x_best     = x
+                
+                alpha   = x_pred / 2.0 + 0.5
+                if x_pred > 1.0: x_pred = 1.0
+                self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=x_pred**1., linewidth=1.0)    
+
+            print x_best
+            x_last  = x_best
+                
 
         ## Side distribution
         self.ax1 = self.fig.add_subplot(gs[1])
-        self.ax1.plot(X_pred_prob, X_pred, 'r-')
+        self.ax1.plot(X_pred_prob[-1], self.obsrv_range, 'r-')
 
         ## self.ax1.tick_params(\
         ##                      axis='y',          # changes apply to the x-axis
@@ -330,11 +358,11 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 15
+    nState    = 25
     nStep     = 36
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 2
-    nMaxPathPerStep = 5
+    nMaxPathPerStep = 20
     data_column_idx = 1
     fObsrvResol = 0.2
 
@@ -382,25 +410,29 @@ if __name__ == '__main__':
     ## print len(h_ftan)
     
     
-    for i in xrange(1,2,2):
-        ## x_test      = data_vecs[0][:12,i].tolist()
-        ## x_test_next = data_vecs[0][12:12+1,i]
-        x_test = h_ftan[:15]
-        x_test_next = h_ftan[15:16][0]
+    for i in xrange(2,3,2):
+        nProgress = 5
+        x_test      = data_vecs[0][:nProgress,i].tolist()
+        x_test_next = data_vecs[0][nProgress:nProgress+lh.nMaxPathPerStep,i].tolist()
+        x_test_all  = data_vecs[0][:,i].tolist()
+        ## x_test = h_ftan[:15]
+        ## x_test_next = h_ftan[15:15+lh.nMaxPathPerStep]
 
-
-        if False:
+        if False:            
             # Get all probability
-            future_prob = np.zeros(lh.obsrv_range.shape)
+            future_prob = np.zeros((1,lh.obsrv_range.shape[0]))
             for j in xrange(len(lh.obsrv_range)):           
-                future_prob[j] = lh.predict(x_test, lh.obsrv_range[j]) 
+                future_prob[0][j] = lh.predict(x_test, lh.obsrv_range[j]) 
 
-            lh.predictive_path_plot(np.array(x_test), lh.obsrv_range, future_prob, x_test_next)
+            lh.predictive_path_plot(np.array(x_test), future_prob, np.array(x_test_next))
             lh.final_plot()
 
         else:
             future_prob = lh.predict_multi_step(x_test)
+            lh.predictive_path_plot(np.array(x_test), future_prob, np.array(x_test_next), x_test_all)
+            lh.final_plot()
 
+            
     ## print lh.mean_path_plot(lh.mu, lh.sigma)
         
     ## print x_test
