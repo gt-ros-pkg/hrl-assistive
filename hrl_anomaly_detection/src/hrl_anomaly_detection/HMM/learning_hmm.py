@@ -358,13 +358,13 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 25
-    nStep     = 36
+    nState    = 20
+    nStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 2
+    nFutureStep = 2 #not used
     nMaxPathPerStep = 20
-    data_column_idx = 1
-    fObsrvResol = 0.2
+    ## data_column_idx = 1
+    fObsrvResol = 0.05
 
     ######################################################    
     # Get Training Data
@@ -411,7 +411,7 @@ if __name__ == '__main__':
     
     
     for i in xrange(2,3,2):
-        nProgress = 5
+        nProgress = 15
         x_test      = data_vecs[0][:nProgress,i].tolist()
         x_test_next = data_vecs[0][nProgress:nProgress+lh.nMaxPathPerStep,i].tolist()
         x_test_all  = data_vecs[0][:,i].tolist()
