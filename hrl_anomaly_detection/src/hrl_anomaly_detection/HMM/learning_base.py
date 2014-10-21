@@ -17,6 +17,7 @@ import hrl_lib.util as ut
 from sklearn.cross_validation import train_test_split
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
+from sklearn.externals import six
 
 class learning_base():
     def __init__(self, data_path, aXData):
@@ -24,7 +25,7 @@ class learning_base():
         # Common parameters
         self.data_path = data_path
         self.aXData = aXData
-        ## self.aYData = None
+        ## self.aYData = aYData
 
         # Tunable parameters        
         pass
@@ -32,29 +33,29 @@ class learning_base():
 
     @classmethod                                                                                                  
     def _get_param_names(cls):                                                                                    
-        """Get parameter names for the estimator"""                                                               
-        # fetch the constructor or the original constructor before                                                
-        # deprecation wrapping if any                                                                             
-        init = getattr(cls.__init__, 'deprecated_original', cls.__init__)                                         
-        if init is object.__init__:                                                                               
-            # No explicit constructor to introspect                                                               
-            return []                                                                                             
-        
-        # introspect the constructor arguments to find the model parameters                                       
-        # to represent                                                                                            
-        args, varargs, kw, default = inspect.getargspec(init)                                                     
-        if varargs is not None:                                                                                   
-                raise RuntimeError("scikit-learn estimators should always " 
+        """Get parameter names for the estimator"""    
+        # fetch the constructor or the original constructor before  
+        # deprecation wrapping if any
+        init = getattr(cls.__init__, 'deprecated_original', cls.__init__)                   
+        if init is object.__init__:                                   
+            # No explicit constructor to introspect    
+            return []                                    
+
+        # introspect the constructor arguments to find the model parameters 
+        # to represent 
+        args, varargs, kw, default = inspect.getargspec(init)  
+        if varargs is not None:                              
+                raise RuntimeError("scikit-learn estimators should always "
                                    "specify their parameters in the signature" 
                                    " of their __init__ (no varargs)."
                                    " %s doesn't follow this convention." 
                                    % (cls, )) 
 
         # Remove 'self'                                                                                           
-        # XXX: This is going to fail if the init is a staticmethod, but                                           
-        # who would do this?                                                                                      
-        args.pop(0)                                                                                               
-        args.sort()                                                                                               
+        # XXX: This is going to fail if the init is a staticmethod, but
+        # who would do this?                                     
+        args.pop(0)                                    
+        args.sort()                                             
         return args
 
         
@@ -158,15 +159,17 @@ class learning_base():
 
         # Split the dataset in two equal parts
         X_train, X_test = train_test_split(self.aXData, test_size=0.5, random_state=0)
+        Y_train = [1.0]*X_train.shape[0] # Dummy
 
+        
         scores = ['precision', 'recall']
-
         for score in scores:
             print("# Tuning hyper-parameters for %s" % score)
             print()
 
             clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=score)
-            clf.fit(X_train)
+            clf.fit(X_train, Y_train)
+            sys.exit()
             
             print("Best parameters set found on development set:")
             print()

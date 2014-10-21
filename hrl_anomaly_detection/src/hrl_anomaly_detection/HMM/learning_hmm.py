@@ -56,13 +56,13 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X):
+    def fit(self, X_train, Y_train=None):
         
         # Transition probability matrix (Initial transition probability, TODO?)
-        A, _ = mad.get_trans_mat(X, self.nState)
+        A, _ = mad.get_trans_mat(X_train, self.nState)
 
         # We should think about multivariate Gaussian pdf.        
-        self.mu, self.sigma = self.vectors_to_mean_vars(X)
+        self.mu, self.sigma = self.vectors_to_mean_vars(X_train)
 
         # Emission probability matrix
         B = np.hstack([self.mu, self.sigma]) # Must be [i,:] = [mu, sigma]
@@ -75,8 +75,8 @@ class learning_hmm(learning_base):
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
         ## self.ml = ghmm.HMMFromMatrices(self.F, ghmm.DiscreteDistribution(self.F), A, B, pi)
         
-        print "Run Baum Welch method with (samples, length)", X.shape
-        train_seq = X.tolist()
+        print "Run Baum Welch method with (samples, length)", X_train.shape
+        train_seq = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
         self.ml.baumWelch(final_seq)
 
@@ -84,7 +84,7 @@ class learning_hmm(learning_base):
         print "Completed to fitting", np.array(final_seq).shape
 
         # Future observation range
-        self.max_obsrv = X.max()
+        self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.5, self.fObsrvResol)
 
         
@@ -112,7 +112,7 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
-    def predict(self, X_test):
+    def multi_step_predict(self, X_test):
         # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
         # Output:  P(X_{N+M} | X)
 
@@ -126,7 +126,7 @@ class learning_hmm(learning_base):
 
             # Get all probability
             for j in xrange(len(self.obsrv_range)):           
-                X_pred_prob[j][i] += self.one_step_predict(X, self.obsrv_range[j])             
+                X_pred_prob[j][i] += self.predict(X+[self.obsrv_range[j]])             
 
             # Select observation with maximum probability
             idx_list = [k[0] for k in sorted(enumerate(X_pred_prob[:,i]), key=lambda x:x[1], reverse=True)]
@@ -140,9 +140,15 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def one_step_predict(self, X_test, x_predict):
-        # X_test: N length array
-        # x_predict: scalar
+    def predict(self, X):
+        # Input
+        # @ X_test: N length array
+        # @ x_pred: scalar
+        # Output
+        # @ probability
+
+        X_test = X[:-1]
+        x_pred = X[-1]
 
         # Past profile
         final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
@@ -151,7 +157,7 @@ class learning_hmm(learning_base):
         ## logp1 = self.ml.loglikelihood(final_ts_obj)
         ## print "logp = " + str(logp1) + "\n"
         
-        # alpha: X_test length x #latent States at the moment t when state i is ended
+        # alpha: X_test length y #latent States at the moment t when state i is ended
         #        test_profile_length x number_of_hidden_state
         (alpha,scale) = self.ml.forward(final_ts_obj)
         ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
@@ -172,7 +178,7 @@ class learning_hmm(learning_base):
                 
             (mu, sigma) = self.ml.getEmission(i)
 
-            pred_numerator += norm(loc=mu,scale=sigma).pdf(x_predict) * total
+            pred_numerator += norm(loc=mu,scale=sigma).pdf(x_pred) * total
             pred_denominator += alpha[-1][i]*beta[-1][i]
 
         return pred_numerator / pred_denominator
@@ -186,7 +192,9 @@ class learning_hmm(learning_base):
         ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
 
         from sklearn.metrics import r2_score
-        X_pred, _ = self.predict(X_test)
+        X_pred, _ = self.multi_step_predict(X_test)
+        print X_test_next, X_pred
+        
         return r2_score(X_test_next, X_pred, sample_weight=sample_weight)
 
 
@@ -310,7 +318,7 @@ if __name__ == '__main__':
     nState    = 36
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 10
+    nFutureStep = 2
     ## data_column_idx = 1
     fObsrvResol = 0.2
 
@@ -341,9 +349,13 @@ if __name__ == '__main__':
     data_chunks = [data_chunks[i] for i in idxs]
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
 
+    ## X data
     data_vecs = np.array([data_vecs.T]) # category x number_of_data x profile_length
     data_vecs[0] = mad.approx_missing_value(data_vecs[0])    
 
+    ## ## time step data
+    ## m, n = data_vecs[0].shape
+    ## aXData = np.array([np.arange(0.0,float(n)-0.0001,1.0).tolist()] * m)
     
     ######################################################    
     # Training 
@@ -352,7 +364,6 @@ if __name__ == '__main__':
 
     if opt.bCrossVal:
         print "Cross Validation"
-
         tuned_parameters = [{'nState': [15,20,25,30,35], 'nFutureStep': [2,4,6,8,10], 'fObsrvResol': [0.05,0.1,0.15,0.2]}]
         lh.param_estimation(tuned_parameters, 10)
         
@@ -375,7 +386,7 @@ if __name__ == '__main__':
             ## x_test = h_ftan[:15]
             ## x_test_next = h_ftan[15:15+lh.nFutureStep]
 
-            x_pred, x_pred_prob = lh.predict(x_test)
+            x_pred, x_pred_prob = lh.multi_step_predict(x_test)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
 
