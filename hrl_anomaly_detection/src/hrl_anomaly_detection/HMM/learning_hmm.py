@@ -24,115 +24,84 @@ import ghmm
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from scipy.stats import norm
 
+from learning_base import learning_base
 
-class learning_hmm():
-    def __init__(self, data_path, nState, nStep, nFutureStep=1, nMaxPathPerStep=5, fObsrvResol=0.2):
 
-        ## self.model = hmm.GaussianHMM(3, "full", self.startprob, self.transmat)
+class learning_hmm(learning_base):
+    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2):
 
-        self.nState= nState
-        self.nStep = nStep
+        learning_base.__init__(self, data_path, aXData)
+        
+        ## Tunable parameters                
+        self.nState= nState # the number of hidden states
         self.nFutureStep = nFutureStep
-        self.nMaxPathPerStep = nMaxPathPerStep
         self.fObsrvResol = fObsrvResol
 
+        ## Un-tunable parameters
+        self.nMaxStep = nMaxStep  # the length of profile
+        self.future_obsrv = None  # Future observation range
+        
         # emission domain of this model        
         self.F = ghmm.Float()  
         
         # Confusion Matrix NOTE ???
         ## cmat = np.zeros((4,4))
 
-        # Future observation range
-        self.future_obsrv = None
-        
+        # Assign local functions
+        learning_base.__dict__['fit'] = self.fit        
+        learning_base.__dict__['predict'] = self.predict
+        learning_base.__dict__['score'] = self.score                
         pass
-
-    #----------------------------------------------------------------------        
-    #    
-    @classmethod
-    def _get_param_names(cls):
-
-        """Get parameter names for the estimator"""
-        # fetch the constructor or the original constructor before
-        # deprecation wrapping if any                                       
-        init = getattr(cls.__init__, 'deprecated_original', cls.__init__)
-  
-        if init is object.__init__:
-            # No explicit constructor to introspect          
-            return []
-                                                                                                     
-        
-        # introspect the constructor arguments to find the model parameters                                      
-        # to represent
-                                                                                                    
-        args, varargs, kw, default = inspect.getargspec(init)
-                                                             
-        if varargs is not None:
-            raise RuntimeError("scikit-learn estimators should always " 
-                                   "specify their parameters in the signature" 
-                                   " of their __init__ (no varargs)."
-                                   " %s doesn't follow this convention." 
-                                   % (cls, )) 
-
-        # Remove 'self'                                                                                         
-        # XXX: This is going to fail if the init is a staticmethod, but
-        # who would do this?
-        args.pop(0)
-        args.sort() 
-        return args
 
 
     #----------------------------------------------------------------------        
     #
     def fit(self, X):
         
-        # Transition probability matrix
+        # Transition probability matrix (Initial transition probability, TODO?)
         A, _ = mad.get_trans_mat(X, self.nState)
 
         # We should think about multivariate Gaussian pdf.        
         self.mu, self.sigma = self.vectors_to_mean_vars(X)
 
         # Emission probability matrix
-        B = np.hstack([self.mu, self.sigma])
-        B = B.tolist()
+        B = np.hstack([self.mu, self.sigma]) # Must be [i,:] = [mu, sigma]
+        ## B = B.T.tolist()
         
-        # pi - initial probabilities per state
+        # pi - initial probabilities per state 
         pi = [1.0/float(self.nState)] * self.nState
-        
+
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
         ## self.ml = ghmm.HMMFromMatrices(self.F, ghmm.DiscreteDistribution(self.F), A, B, pi)
         
-        print "Run Baum Welch method with (data, length)", X.T.shape
-        train_seq = X.T.tolist()
+        print "Run Baum Welch method with (samples, length)", X.shape
+        train_seq = X.tolist()
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
         self.ml.baumWelch(final_seq)
 
         ## self.mean_path_plot(mu[:,0], sigma[:,0])        
-        print "Completed to fitting"
+        print "Completed to fitting", np.array(final_seq).shape
 
         # Future observation range
         self.max_obsrv = X.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.5, self.fObsrvResol)
-        
-        ## best_observ_idx = np.zeros((nMaxPathPerStep,1))
-        
-        
 
+        
     #----------------------------------------------------------------------        
     #
     def vectors_to_mean_vars(self, vecs):
 
-        n,k   = vecs.shape # length, samples
-        mu    = np.zeros((self.nStep,1))
-        sigma = np.zeros((self.nStep,1))
+        _,n   = vecs.shape # samples, length
+        mu    = np.zeros((self.nState,1))
+        sigma = np.zeros((self.nState,1))
 
-        nDivs = int(n/float(self.nStep))
+        nDivs = int(n/float(self.nState))
 
         index = 0
-        while (index < self.nStep):
+        while (index < self.nState):
             m_init = index*nDivs
-            temp_vec = vecs[(m_init):(m_init+nDivs)]
+            temp_vec = vecs[:,(m_init):(m_init+nDivs)]
 
             mu[index] = np.mean(temp_vec)
             sigma[index] = np.std(temp_vec)
@@ -142,8 +111,36 @@ class learning_hmm():
         
 
     #----------------------------------------------------------------------        
+    # Compute the estimated probability (0.0~1.0)
+    def predict(self, X_test):
+        # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
+        # Output:  P(X_{N+M} | X)
+
+        # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
+        X = copy.copy(X_test)
+        X_pred = [0.0]*self.nFutureStep
+
+        # Recursive prediction
+        for i in xrange(self.nFutureStep):
+
+            # Get all probability
+            for j in xrange(len(self.obsrv_range)):           
+                X_pred_prob[j][i] += self.one_step_predict(X, self.obsrv_range[j])             
+
+            # Select observation with maximum probability
+            idx_list = [k[0] for k in sorted(enumerate(X_pred_prob[:,i]), key=lambda x:x[1], reverse=True)]
+                              
+            # Udate 
+            X.append(self.obsrv_range[idx_list[0]])
+            X_pred[i] = self.obsrv_range[idx_list[0]]
+            
+        return X_pred, X_pred_prob
+
+
+    #----------------------------------------------------------------------        
     #
-    def predict(self, X_test, x_predict):
+    def one_step_predict(self, X_test, x_predict):
         # X_test: N length array
         # x_predict: scalar
 
@@ -155,14 +152,16 @@ class learning_hmm():
         ## print "logp = " + str(logp1) + "\n"
         
         # alpha: X_test length x #latent States at the moment t when state i is ended
+        #        test_profile_length x number_of_hidden_state
         (alpha,scale) = self.ml.forward(final_ts_obj)
         ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
         ## print "scale = " + str(scale) + "\n"
-
+        ## print np.array(X_test).shape, np.array(alpha).shape
+        
         # beta
         beta = self.ml.backward(final_ts_obj,scale)
         ## print "beta", np.array(beta).shape, " = \n " + str(beta) + "\n"
-
+        
         pred_numerator = 0.0
         pred_denominator = 0.0
         for i in xrange(self.nState): # N+1
@@ -176,62 +175,20 @@ class learning_hmm():
             pred_numerator += norm(loc=mu,scale=sigma).pdf(x_predict) * total
             pred_denominator += alpha[-1][i]*beta[-1][i]
 
-        ## for i in xrange(len(alpha)):
-        ##     print X_test[i]
-
-        ## for i in xrange(self.nState):            
-        ##     print alpha[-1][i]
-            
         return pred_numerator / pred_denominator
+                        
 
+    #----------------------------------------------------------------------
+    # Returns the mean accuracy on the given test data and labels.
+    def score(self, X_test, X_test_next, sample_weight=None):
 
-    #----------------------------------------------------------------------        
-    #
-    def predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=0):
-        # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
-        # Output:  P(X_{N+M} | X)
+        ## from sklearn.metrics import accuracy_score
+        ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
 
-        # Initialization            
-        future_prob = np.zeros((self.nMaxPathPerStep,len(self.obsrv_range)))
-        X = copy.copy(X_test)
-        
-        for i in xrange(self.nMaxPathPerStep):
-        
-            # Get all probability
-            for j in xrange(len(self.obsrv_range)):           
-                future_prob[i][j] += self.predict(X, self.obsrv_range[j])             
+        from sklearn.metrics import r2_score
+        X_pred, _ = self.predict(X_test)
+        return r2_score(X_test_next, X_pred, sample_weight=sample_weight)
 
-            # Select observation with maximum probability
-            idx_list = [k[0] for k in sorted(enumerate(future_prob[i]), key=lambda x:x[1], reverse=True)]
-                              
-            # Udate 
-            X.append(self.obsrv_range[idx_list[0]])
-            
-        return future_prob
-                
-        ##     # Run recursively
-        ##     M += 1
-        ##     future_prob[M] += self.predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=M):            
-        ##     return future_prob
-                
-        ## elif M < self.nMaxPathPerStep:
-        ##     M += 1
-        ##     future_prob[M] += self.predict_multi_step(self, X_test, X_pred=None, P_pred=None, M=0):            
-        ##     return future_prob            
-        ## else:
-            
-        ##     return future_prob
-
-        ## # Get selected probability in order
-        ## idx_list = [i[0] for i in sorted(enumerate(future_prob), key=lambda x:x[1], reverse=True)]
-
-        ## for j in idx_list[:nMaxPathPerStep]:
-        ##     predict_multi_step(self, X_test, nStep):
-        ##     print j
-        
-        # prob, mu, var
-        ## return future_prob
-        
 
     #----------------------------------------------------------------------        
     #
@@ -239,23 +196,14 @@ class learning_hmm():
 
         self.ml.write(obs_name)
 
-    #----------------------------------------------------------------------        
-    #
-    def load_obs(self, obs_name):
-
-        self.ml.write(obs_name)
         
     #----------------------------------------------------------------------        
     #
     def load_obs(self, obs_name):
 
-        try:     
-            self.ml = joblib.load(obs_name)        
-        except:
-            rospy.signal_shutdown('Failed to load learned object. Retry!')                            
-            time.sleep(1.0)                
-            sys.exit()
+        self.ml.write(obs_name)
 
+        
     #----------------------------------------------------------------------        
     #
     def all_path_plot(self, X_test):
@@ -264,10 +212,11 @@ class learning_hmm():
         
         for i in xrange(X_test.shape[0]):
             self.ax.plot(X_test[i], '-')    
-        
+
+            
     #----------------------------------------------------------------------        
     #
-    def predictive_path_plot(self, X_test, X_pred_prob, x_test_next, X_test_all=None):
+    def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next):
 
         self.fig = plt.figure(1)
         gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
@@ -277,41 +226,36 @@ class learning_hmm():
 
         # 1) Observation        
         self.ax.plot(X_test, 'k-o')    
-        if X_test_all != None:
-            self.ax.plot(X_test_all, 'k-')                
         ## self.ax.plot(X_test, '-o', ms=10, lw=1, alpha=0.5, mfc='orange')    
-        print X_test, x_test_next
 
-        # 2) Next true observation
-        y_array = np.hstack([X_test[-1], x_test_next])                        
-        x_array = np.arange(0, len(x_test_next)+0.0001,1.0) + len(X_test) -1        
+        # 2) Next predictive & true observation
+        y_array = np.hstack([X_test[-1], X_test_next])                        
+        x_array = np.arange(0, len(X_test_next)+0.0001,1.0) + len(X_test) -1        
         self.ax.plot(x_array, y_array, 'k-', linewidth=1.0)    
-                
+
+        y_array = np.hstack([X_test[-1], X_pred])                        
+        self.ax.plot(x_array, y_array, 'b-', linewidth=2.0)    
+        
         # 3) Prediction        
         n,m = X_pred_prob.shape
         x_last = X_test[-1]
-        for i in xrange(n):
+        for i in xrange(m):
             
             x_pred_max = 0.0
             x_best     = 0.0            
-            for x, x_pred in zip(self.obsrv_range, X_pred_prob[i]):
+            for x, prob in zip(self.obsrv_range, X_pred_prob[:,i]):
                 y_array = np.array([x_last, x])
-
-                if x_pred_max < x_pred:
-                    x_pred_max = x_pred 
-                    x_best     = x
                 
-                alpha   = x_pred / 2.0 + 0.5
-                if x_pred > 1.0: x_pred = 1.0
-                self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=x_pred**1., linewidth=1.0)    
+                alpha   = prob / 2.0 + 0.5
+                if prob > 1.0: prob = 1.0
+                self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=prob**1., linewidth=1.0)    
 
-            print x_best
-            x_last  = x_best
+            x_last = X_pred[i]
                 
 
         ## Side distribution
         self.ax1 = self.fig.add_subplot(gs[1])
-        self.ax1.plot(X_pred_prob[-1], self.obsrv_range, 'r-')
+        self.ax1.plot(X_pred_prob[:,-1], self.obsrv_range, 'r-')
 
         ## self.ax1.tick_params(\
         ##                      axis='y',          # changes apply to the x-axis
@@ -350,21 +294,25 @@ class learning_hmm():
         plt.show()
         ## self.fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
 
+        
 if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
+    p.add_option('--renew', action='store_true', dest='renew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
+                 default=False, help='N-fold cross validation for parameter')             
     opt, args = p.parse_args()
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 20
-    nStep     = 36 # total step of data. It should be automatically assigned...
+    nState    = 36
+    nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 2 #not used
-    nMaxPathPerStep = 20
+    nFutureStep = 10
     ## data_column_idx = 1
-    fObsrvResol = 0.05
+    fObsrvResol = 0.2
 
     ######################################################    
     # Get Training Data
@@ -392,47 +340,46 @@ if __name__ == '__main__':
     data_mech = [data_mech[i] for i in idxs]
     data_chunks = [data_chunks[i] for i in idxs]
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
-    
-    data_vecs = np.array([data_vecs])
+
+    data_vecs = np.array([data_vecs.T]) # category x number_of_data x profile_length
     data_vecs[0] = mad.approx_missing_value(data_vecs[0])    
 
+    
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path, nState, nStep, nFutureStep=nFutureStep, nMaxPathPerStep=nMaxPathPerStep, fObsrvResol=fObsrvResol)
+    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol)
 
-    lh.fit(data_vecs[0])    
-    ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
 
-    ######################################################    
-    # Test data
-    h_config, h_ftan = mad.get_a_blocked_detection()
-    ## print np.array(h_config)*180.0/3.14
-    ## print len(h_ftan)
-    
-    
-    for i in xrange(2,3,2):
-        nProgress = 15
-        x_test      = data_vecs[0][:nProgress,i].tolist()
-        x_test_next = data_vecs[0][nProgress:nProgress+lh.nMaxPathPerStep,i].tolist()
-        x_test_all  = data_vecs[0][:,i].tolist()
-        ## x_test = h_ftan[:15]
-        ## x_test_next = h_ftan[15:15+lh.nMaxPathPerStep]
+    if opt.bCrossVal:
+        print "Cross Validation"
 
-        if False:            
-            # Get all probability
-            future_prob = np.zeros((1,lh.obsrv_range.shape[0]))
-            for j in xrange(len(lh.obsrv_range)):           
-                future_prob[0][j] = lh.predict(x_test, lh.obsrv_range[j]) 
+        tuned_parameters = [{'nState': [15,20,25,30,35], 'nFutureStep': [2,4,6,8,10], 'fObsrvResol': [0.05,0.1,0.15,0.2]}]
+        lh.param_estimation(tuned_parameters, 10)
+        
+    else:
+        lh.fit(lh.aXData)    
+        ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
 
-            lh.predictive_path_plot(np.array(x_test), future_prob, np.array(x_test_next))
+        ######################################################    
+        # Test data
+        ## h_config, h_ftan = mad.get_a_blocked_detection()
+        ## print np.array(h_config)*180.0/3.14
+        ## print len(h_ftan)
+
+
+        for i in xrange(2,3,2):
+            nProgress = 10
+            x_test      = data_vecs[0][i,:nProgress].tolist()
+            x_test_next = data_vecs[0][i,nProgress:nProgress+lh.nFutureStep].tolist()
+            x_test_all  = data_vecs[0][i,:].tolist()
+            ## x_test = h_ftan[:15]
+            ## x_test_next = h_ftan[15:15+lh.nFutureStep]
+
+            x_pred, x_pred_prob = lh.predict(x_test)
+            lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
 
-        else:
-            future_prob = lh.predict_multi_step(x_test)
-            lh.predictive_path_plot(np.array(x_test), future_prob, np.array(x_test_next), x_test_all)
-            lh.final_plot()
 
-            
     ## print lh.mean_path_plot(lh.mu, lh.sigma)
         
     ## print x_test

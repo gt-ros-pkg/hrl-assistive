@@ -143,7 +143,9 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
 
 
 def get_trans_mat(vecs, nState):
-
+    # Still it's not correct since I am using observations instead of hidden states.
+    # vecs = number_of_data x profile_length
+    
     #init
     discrete_max  = 0.0
     discrete_vecs = np.zeros(vecs.shape)
@@ -161,21 +163,21 @@ def get_trans_mat(vecs, nState):
     trans_prob_mat = np.zeros((trans_size, trans_size))
 
     # Discretization and Update transition probability matrix
-    m,n = vecs.shape
-    for i in xrange(m):
-        for j in xrange(n):
+    n,m = vecs.shape
+    for i in xrange(n):
+        for j in xrange(m):
             if math.isnan(vecs[i][j]): 
                 ## discrete_vecs[i][j] = vecs[i][j]                
                 ## continue
-                discrete_vecs[i][j] = (vecs[i][j-1] + vecs[i][j-1]) / 2.0
+                discrete_vecs[i][j] = (vecs[i][j-1] + vecs[i][j+1]) / 2.0
                 if math.isnan(discrete_vecs[i][j]): 
                     print "we found nan"
                     sys.exit()
             else:                        
                 discrete_vecs[i][j], _ = find_nearest(state_table, vecs[i][j])
 
-            if i != 0:
-                _, x_idx = find_nearest(state_table, discrete_vecs[i-1][j])
+            if j != 0:
+                _, x_idx = find_nearest(state_table, discrete_vecs[i][j-1])
                 _, y_idx = find_nearest(state_table, discrete_vecs[i][j])
 
                 trans_mat[x_idx,y_idx] += 1.0
@@ -195,11 +197,11 @@ def approx_missing_value(vecs):
 
     new_vecs = np.zeros(vecs.shape)
     
-    m,n = vecs.shape
-    for i in xrange(m):
-        for j in xrange(n):
+    n,m = vecs.shape
+    for i in xrange(n):
+        for j in xrange(m):
             if math.isnan(vecs[i][j]): 
-                new_vecs[i][j] = (vecs[i][j-1] + vecs[i][j-1]) / 2.0
+                new_vecs[i][j] = (vecs[i][j-1] + vecs[i][j+1]) / 2.0
                 if math.isnan(new_vecs[i][j]): 
                     print "we found nan"
                     sys.exit()

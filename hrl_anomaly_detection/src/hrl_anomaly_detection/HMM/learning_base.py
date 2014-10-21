@@ -2,7 +2,7 @@
 
 import sys, os
 import numpy as np, math
-import roslib; roslib.load_manifest('sandbox_dpark_darpa_m3')
+import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
 import inspect
 import warnings
@@ -10,51 +10,23 @@ import random
 
 # Util
 import hrl_lib.util as ut
-from hrl_srvs.srv import FloatArray_FloatArray, FloatArray_FloatArrayResponse
+#from hrl_srvs.srv import FloatArray_FloatArray, FloatArray_FloatArrayResponse
 
-import scipy
-from scipy import optimize
+## import scipy
+## from scipy import optimize
 from sklearn.cross_validation import train_test_split
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
 
-import dim_reduction_joint as drj
-import dim_reduction as dr
-import sandbox_dpark_darpa_m3.lib.ode_sim_lib.ode_sim_param as param
-
-TOL=0.0001
-
 class learning_base():
-    def __init__(self, s_robot, data_path, drj_renew=False):
+    def __init__(self, data_path, aXData):
 
-        # Tunable parameters
-        self.s_robot = s_robot
-        self.b_mobile_base = False
+        # Common parameters
         self.data_path = data_path
-        self.drj_renew = drj_renew
-        
-        self.aXData = None
-        self.aYData = None
+        self.aXData = aXData
+        ## self.aYData = None
 
-        self.use_mobile_base = False
-
-        # Simulation Parameters
-        self.l_robot = None
-        if self.s_robot == 'sim3':
-            self.l_robot = '--planar_three_link_capsule'
-         
-        self.pm  = param.parameters(self.l_robot)    
-        param_pkl = os.path.join(data_path,'param','work_param.pkl')
-        self.pm.load_param(param_pkl)
-        
-        ## Get joints with dimension reduction
-        self.DRJ = drj.JOINT_DIM_REDUCTION(self.s_robot,self.l_robot,self.data_path, pm=self.pm)    
-        pkl_file = os.path.join(data_path, 'param', 'planar_three_link_capsule_joints.pkl')
-        self.DRJ.jointDimReduction(pkl_file, drj_renew)
-        self.DR = dr.DIM_REDUCTION(s_robot, data_path, method='fa')
-
-        self.nMaxJoint = len(self.DRJ.rbt.lJtsMax)
-        
+        # Tunable parameters        
         pass
 
 
@@ -103,15 +75,49 @@ class learning_base():
     #----------------------------------------------------------------------        
     #
     def get_params(self, deep=False):
-        print "No get_params method is defined."
-        pass
+
+        out = dict()
+        for key in self._get_param_names():
+            # We need deprecation warnings to always be on in order to
+            # catch deprecated param values.
+            # This is set in utils/__init__.py but it gets overwritten
+            # when running under python3 somehow.
+            warnings.simplefilter("always", DeprecationWarning)
+            try:
+                with warnings.catch_warnings(record=True) as w:
+                    value = getattr(self, key, None)
+                if len(w) and w[0].category == DeprecationWarning:
+                # if the parameter is deprecated, don't show it
+                    continue
+            finally:
+                warnings.filters.pop(0)
+
+            # XXX: should we rather test if instance of estimator?
+            if deep and hasattr(value, 'get_params'):
+                deep_items = value.get_params().items()
+                out.update((key + '__' + k, val) for k, val in deep_items)
+            out[key] = value
+        
+        return dict(out.items())
 
     
     #----------------------------------------------------------------------        
     #
     def set_params(self, **params):
-        print "No set_params method is defined."
-        pass
+
+        if not params:                                                                                            
+            # Simple optimisation to gain speed (inspect is slow)                                                 
+            return self 
+
+        valid_params = self.get_params(deep=True)            
+        for key, value in six.iteritems(params): 
+            # simple objects case
+            if not key in valid_params:
+                raise ValueError('Invalid parameter %s ' 'for estimator %s'
+                                 % (key, self.__class__.__name__))                
+            setattr(self, key, value)
+                       
+        return self
 
         
     #----------------------------------------------------------------------        
@@ -121,130 +127,6 @@ class learning_base():
         return
 
     
-    #----------------------------------------------------------------------        
-    # Estimated probability of success checking with 
-    def predict_with_constraints(self, x, sign=1.0):
-
-        lJoint = x[-self.nMaxJoint:]
-
-        mEE,_ = self.DRJ.rbt.kinematics.FK(lJoint, self.nMaxJoint)
-
-        if (mEE[0,0] < self.pm.lStartXlim[0] - TOL or
-            mEE[0,0] > self.pm.lStartXlim[1] + TOL or
-            mEE[1,0] < self.pm.lStartYlim[0] - TOL or
-            mEE[1,0] > self.pm.lStartYlim[1] + TOL or
-            mEE[2,0] < self.pm.lStartZlim[0] - TOL or
-            mEE[2,0] > self.pm.lStartZlim[1] + TOL):
-            return -100.0*sign
-
-        else:
-            return self.predict(x, bBinary=False)*sign
-
-        
-    #----------------------------------------------------------------------        
-    # 
-    def optimization(self, x_fixed):
-            
-        ###############################################################                         
-        # Set initial point for optimization
-        # 1) Grid search for initial x0
-        joints    = self.DRJ.getAllJointsOnStartLine() # dim reduction for joints
-        nSample,_ = joints.shape
-        aGoal     = np.zeros((joints.shape[0],len(x_fixed))) + x_fixed
-        
-        raw_X     = np.hstack([aGoal,joints])
-        normal_X  = self.DR.transform(raw_X) # dim reduction for all data        
-        #y         = self.Likelihood_ratio(normal_X)
-        y         = self.predict(raw_X, False)
-
-        x0_ind = np.argmax(y)
-        x0     = raw_X[x0_ind,:]
-            
-        # 2) Random selection for initial x0
-        ## for nStart in xrange(nRndStart):            
-            ## # Get random ee pose
-            ## x = random.uniform((self.pm).lStartXlim[0], (self.pm).lStartXlim[1])
-            ## y = random.uniform((self.pm).lStartYlim[0], (self.pm).lStartYlim[1])
-            ## z = random.uniform((self.pm).lStartZlim[0], (self.pm).lStartZlim[1])
-            ## mStart = np.matrix([x,y,z]).T
-
-            ## # Get random joint angles over the above ee pose
-            ## ret, lJointInit, _ = self.DRJ.rbt.getJointByPhi(mStart)
-            ## x0 = np.hstack([x_fixed, np.array(lJointInit)])
-
-            
-        ###############################################################                                     
-        # Set bound for x data.
-        lBounds = []
-
-        # Fixed feature range
-        for d in x0[:-self.nMaxJoint]:
-            lBounds.append([d,d])
-
-        # Pseudo initial condition range        
-        for i in xrange(self.nMaxJoint):
-            lBounds.append([self.DRJ.rbt.lJtsMin[i], self.DRJ.rbt.lJtsMax[i]])
-
-
-        ###############################################################                
-        # Optimization part
-        direct_optimization = True
-        if direct_optimization:
-
-            lBestCondition = optimize.minimize(self.predict_with_constraints,x0,args=(-1.0,), method='L-BFGS-B', bounds=tuple(lBounds), options={'maxiter': 60})
-
-        else:
-            # Bounds class to set x range
-            class Bounds(object):
-                def __init__(self, aBounds):
-                    self.xmax = aBounds[:,0]
-                    self.xmin = aBounds[:,1]
-                def __call__(self, **kwargs):
-                    x = kwargs["x_new"]
-                    tmax = bool(np.all(x <= self.xmax))
-                    tmin = bool(np.all(x >= self.xmin))
-                    return tmax and tmin
-
-            bound_test = Bounds(np.array(lBounds))
-
-            # basinhopping uses minimize function
-            minimizer_kwargs={}
-            minimizer_kwargs['args'] = (-1.0,)
-            minimizer_kwargs['method'] = 'L-BFGS-B'
-            minimizer_kwargs['bounds'] = tuple(lBounds)
-            #minimizer_kwargs['options'] = {'maxiter': 50}
-
-            lBestCondition = optimize.basinhopping(self.predict_with_constraints,x0,niter=50,minimizer_kwargs=minimizer_kwargs, accept_test=bound_test, stepsize=0.5)
-
-        ###############################################################                            
-        ## if lBestCondition['fun'] > self.predict_with_constraints(x0, sign=-1.0):
-        ##     print "Wrong optimization, return initial minimum point."
-        ##     continue
-
-        ## print "****************"
-        ## print "Best Condition = "
-        ## print lBestCondition
-        ## print "****************"
-
-        ###############################################################                            
-        # Get a best condition (I have to simplify this part)
-        lConditions = []        
-        lConditions.append(lBestCondition['x'])
-            
-        # Find an optimum from multiple minimum.
-        fLow = 1000.0
-        lOptCondition = []
-        for i, condition in enumerate(lConditions):
-
-            fCurrent = self.predict(condition, bBinary=False, sign=-1.0)
-            if fLow > fCurrent:
-                fLow = fCurrent
-                lOptCondition = condition
-                
-        print "Minimum: ", fLow, lOptCondition
-        return lOptCondition                
-
-        
     #----------------------------------------------------------------------        
     #
     def cross_validation(self, nFold):
@@ -267,7 +149,7 @@ class learning_base():
     #
     def param_estimation(self, tuned_parameters, nFold):
 
-        nSample = len(self.aYData)
+        nSample = len(self.aXData)
         
         # Variable check
         if nFold > nSample:
@@ -275,7 +157,7 @@ class learning_base():
             sys.exit()
 
         # Split the dataset in two equal parts
-        X_train, X_test, y_train, y_test = train_test_split(self.aXData, self.aYData, test_size=0.5, random_state=0)
+        X_train, X_test = train_test_split(self.aXData, test_size=0.5, random_state=0)
 
         scores = ['precision', 'recall']
 
@@ -284,7 +166,7 @@ class learning_base():
             print()
 
             clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=score)
-            clf.fit(X_train, y_train)
+            clf.fit(X_train)
             
             print("Best parameters set found on development set:")
             print()
@@ -328,23 +210,23 @@ class learning_base():
         return normal_X
 
     
-    #----------------------------------------------------------------------
-    #
-    def service(self, req):
-        print "Request: ", req.val
+    ## #----------------------------------------------------------------------
+    ## #
+    ## def service(self, req):
+    ##     print "Request: ", req.val
 
-        aGoal = np.array((req.val)[0:2])
+    ##     aGoal = np.array((req.val)[0:2])
 
-        # Get a best start
-        aBestCondition = self.optimization(aGoal)
+    ##     # Get a best start
+    ##     aBestCondition = self.optimization(aGoal)
 
-        lJoint = aBestCondition[-self.nMaxJoint:].tolist()
+    ##     lJoint = aBestCondition[-self.nMaxJoint:].tolist()
 
-        # Not implemented        
-        if self.use_mobile_base:
-            mBase  = np.matrix([0.0, aBestStart[-3], 0.0]).T
-            lJoint = lJoint + [mBase[1,0]]
+    ##     # Not implemented        
+    ##     if self.use_mobile_base:
+    ##         mBase  = np.matrix([0.0, aBestStart[-3], 0.0]).T
+    ##         lJoint = lJoint + [mBase[1,0]]
             
-        print "Response: ", lJoint
-        return FloatArray_FloatArrayResponse(lJoint)
+    ##     print "Response: ", lJoint
+    ##     return FloatArray_FloatArrayResponse(lJoint)
     
