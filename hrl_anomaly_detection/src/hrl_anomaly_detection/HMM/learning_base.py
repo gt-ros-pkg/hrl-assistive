@@ -132,7 +132,7 @@ class learning_base():
     #
     def cross_validation(self, nFold):
 
-        nSample = len(self.aYData)
+        nSample = len(self.aXData)
         
         # Variable check
         if nFold > nSample:
@@ -141,7 +141,7 @@ class learning_base():
 
         # K-fold CV
         from sklearn import cross_validation
-        scores = cross_validation.cross_val_score(self, self.aXData, self.aYData, cv=nFold)
+        scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold)
 
         print scores
         
@@ -159,37 +159,41 @@ class learning_base():
 
         # Split the dataset in two equal parts
         X_train, X_test = train_test_split(self.aXData, test_size=0.5, random_state=0)
-        Y_train = [1.0]*X_train.shape[0] # Dummy
+        #Y_train = [1.0]*X_train.shape[0] # Dummy
 
+
+        clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=self.score)
+        clf.fit(X_train) # [n_samples, n_features] 
         
-        scores = ['precision', 'recall']
-        for score in scores:
-            print("# Tuning hyper-parameters for %s" % score)
-            print()
+        
+        ## scores = ['precision', 'recall']
+        ## for score in scores:
+        ##     print("# Tuning hyper-parameters for %s" % score)
+        ##     print()
 
-            clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=score)
-            clf.fit(X_train, Y_train)
-            sys.exit()
+        ##     clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=score)
+        ##     clf.fit(X_train) # [n_samples, n_features] 
+        ##     sys.exit()
             
-            print("Best parameters set found on development set:")
-            print()
-            print(clf.best_estimator_)
-            print()
-            print("Grid scores on development set:")
-            print()
-            for params, mean_score, scores in clf.grid_scores_:
-                print("%0.3f (+/-%0.03f) for %r"
-                      % (mean_score, scores.std() / 2, params))
-            print()
+        ##     print("Best parameters set found on development set:")
+        ##     print()
+        ##     print(clf.best_estimator_)
+        ##     print()
+        ##     print("Grid scores on development set:")
+        ##     print()
+        ##     for params, mean_score, scores in clf.grid_scores_:
+        ##         print("%0.3f (+/-%0.03f) for %r"
+        ##               % (mean_score, scores.std() / 2, params))
+        ##     print()
             
-            print("Detailed classification report:")
-            print()
-            print("The model is trained on the full development set.")
-            print("The scores are computed on the full evaluation set.")
-            print()
-            y_true, y_pred = y_test, clf.predict(X_test)
-            print(classification_report(y_true, y_pred))
-            print()
+        ##     print("Detailed classification report:")
+        ##     print()
+        ##     print("The model is trained on the full development set.")
+        ##     print("The scores are computed on the full evaluation set.")
+        ##     print()
+        ##     y_true, y_pred = y_test, clf.predict(X_test)
+        ##     print(classification_report(y_true, y_pred))
+        ##     print()
                 
     #----------------------------------------------------------------------        
     # Normalize along with each feature, where X is sample X feature

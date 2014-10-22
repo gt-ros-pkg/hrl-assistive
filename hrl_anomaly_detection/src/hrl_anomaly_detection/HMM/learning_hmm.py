@@ -28,7 +28,7 @@ from learning_base import learning_base
 
 
 class learning_hmm(learning_base):
-    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2):
+    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10):
 
         learning_base.__init__(self, data_path, aXData)
         
@@ -36,6 +36,7 @@ class learning_hmm(learning_base):
         self.nState= nState # the number of hidden states
         self.nFutureStep = nFutureStep
         self.fObsrvResol = fObsrvResol
+        self.nCurrentStep = nCurrentStep
 
         ## Un-tunable parameters
         self.nMaxStep = nMaxStep  # the length of profile
@@ -56,7 +57,7 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, Y_train=None):
+    def fit(self, X_train):
         
         # Transition probability matrix (Initial transition probability, TODO?)
         A, _ = mad.get_trans_mat(X_train, self.nState)
@@ -126,7 +127,9 @@ class learning_hmm(learning_base):
 
             # Get all probability
             for j in xrange(len(self.obsrv_range)):           
-                X_pred_prob[j][i] += self.predict(X+[self.obsrv_range[j]])             
+                a = self.predict([X+[self.obsrv_range[j]]])
+                print np.array(a).shape, a
+                X_pred_prob[j][i] += self.predict([X+[self.obsrv_range[j]]])             
 
             # Select observation with maximum probability
             idx_list = [k[0] for k in sorted(enumerate(X_pred_prob[:,i]), key=lambda x:x[1], reverse=True)]
@@ -142,58 +145,80 @@ class learning_hmm(learning_base):
     #
     def predict(self, X):
         # Input
-        # @ X_test: N length array
-        # @ x_pred: scalar
+        # @ X_test: samples x known steps
+        # @ x_pred: samples x 1
         # Output
-        # @ probability
+        # @ probability: samples x 1 [list]
 
-        X_test = X[:-1]
-        x_pred = X[-1]
+        if type(X) == np.ndarray:
+            X = X.tolist()
 
-        # Past profile
-        final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+        n = len(X)
+        prob = [0.0] * n
 
-        ## print "\nForward"
-        ## logp1 = self.ml.loglikelihood(final_ts_obj)
-        ## print "logp = " + str(logp1) + "\n"
-        
-        # alpha: X_test length y #latent States at the moment t when state i is ended
-        #        test_profile_length x number_of_hidden_state
-        (alpha,scale) = self.ml.forward(final_ts_obj)
-        ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
-        ## print "scale = " + str(scale) + "\n"
-        ## print np.array(X_test).shape, np.array(alpha).shape
-        
-        # beta
-        beta = self.ml.backward(final_ts_obj,scale)
-        ## print "beta", np.array(beta).shape, " = \n " + str(beta) + "\n"
-        
-        pred_numerator = 0.0
-        pred_denominator = 0.0
-        for i in xrange(self.nState): # N+1
+        for i in xrange(n):
 
-            total = 0.0        
-            for j in xrange(self.nState): # N                  
-                total += self.ml.getTransition(j,i) * alpha[-1][j]
-                
-            (mu, sigma) = self.ml.getEmission(i)
+            if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
+                X_test = X[i][:self.nCurrentStep]
+                X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
+            else:
+                X_test = X[i][:-1]
+                X_pred = X[i][-1]
 
-            pred_numerator += norm(loc=mu,scale=sigma).pdf(x_pred) * total
-            pred_denominator += alpha[-1][i]*beta[-1][i]
+            # Past profile
+            final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
 
-        return pred_numerator / pred_denominator
-                        
+            ## print "\nForward"
+            ## logp1 = self.ml.loglikelihood(final_ts_obj)
+            ## print "logp = " + str(logp1) + "\n"
+
+            # alpha: X_test length y #latent States at the moment t when state i is ended
+            #        test_profile_length x number_of_hidden_state
+            (alpha,scale) = self.ml.forward(final_ts_obj)
+            ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
+            ## print "scale = " + str(scale) + "\n"
+            ## print np.array(X_test).shape, np.array(alpha).shape
+
+            # beta
+            beta = self.ml.backward(final_ts_obj,scale)
+            ## print "beta", np.array(beta).shape, " = \n " + str(beta) + "\n"
+
+            pred_numerator = 0.0
+            pred_denominator = 0.0
+            for j in xrange(self.nState): # N+1
+
+                total = 0.0        
+                for k in xrange(self.nState): # N                  
+                    total += self.ml.getTransition(k,j) * alpha[-1][k]
+
+                (mu, sigma) = self.ml.getEmission(j)
+
+                pred_numerator += norm(loc=mu,scale=sigma).pdf(X_pred) * total
+                pred_denominator += alpha[-1][j]*beta[-1][j]
+
+            prob[i] = pred_numerator / pred_denominator
+
+        return prob
 
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
-    def score(self, X_test, X_test_next, sample_weight=None):
+    def score(self, X, sample_weight=None):
 
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        print X
+        print np.array(X).shape
+        
+        if type(X) == np.ndarray:            
+            X=X.tolist()
+
+        X_test = X[:-1]
+        X_test_next = X[-1]
+        
         ## from sklearn.metrics import accuracy_score
         ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
 
         from sklearn.metrics import r2_score
         X_pred, _ = self.multi_step_predict(X_test)
-        print X_test_next, X_pred
         
         return r2_score(X_test_next, X_pred, sample_weight=sample_weight)
 
@@ -310,7 +335,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=False, help='N-fold cross validation for parameter')             
+                 default=True, help='N-fold cross validation for parameter')
     opt, args = p.parse_args()
 
     ## Init variables    
@@ -321,6 +346,7 @@ if __name__ == '__main__':
     nFutureStep = 2
     ## data_column_idx = 1
     fObsrvResol = 0.2
+    nCurrentStep = 10
 
     ######################################################    
     # Get Training Data
@@ -359,7 +385,7 @@ if __name__ == '__main__':
     
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol)
+    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep)
 
 
     if opt.bCrossVal:
@@ -379,9 +405,8 @@ if __name__ == '__main__':
 
 
         for i in xrange(2,3,2):
-            nProgress = 10
-            x_test      = data_vecs[0][i,:nProgress].tolist()
-            x_test_next = data_vecs[0][i,nProgress:nProgress+lh.nFutureStep].tolist()
+            x_test      = data_vecs[0][i,:nCurrentStep].tolist()
+            x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
             x_test_all  = data_vecs[0][i,:].tolist()
             ## x_test = h_ftan[:15]
             ## x_test_next = h_ftan[15:15+lh.nFutureStep]
