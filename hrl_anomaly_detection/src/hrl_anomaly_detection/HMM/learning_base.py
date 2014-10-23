@@ -161,8 +161,8 @@ class learning_base():
         X_train, X_test = train_test_split(self.aXData, test_size=0.5, random_state=0)
         #Y_train = [1.0]*X_train.shape[0] # Dummy
 
-
-        clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=self.score)
+        scores = ['precision', 'recall']        
+        clf = GridSearchCV(self, tuned_parameters, cv=nFold, n_jobs=1)
         clf.fit(X_train) # [n_samples, n_features] 
         
         
@@ -237,3 +237,30 @@ class learning_base():
     ##     print "Response: ", lJoint
     ##     return FloatArray_FloatArrayResponse(lJoint)
     
+
+
+## class _PredictScorer(_BaseScorer):
+    
+##     def __call__(self, estimator, X, y_true):
+##         """Evaluate predicted target values for X relative to y_true.       
+##         Parameters
+##         ----------
+##         estimator : object
+##         Trained estimator to use for scoring. Must have a predict_proba
+##         method; the output of that is used to compute the score.                                                                                                                                                                  
+
+##         X : array-like or sparse matrix
+##         Test data that will be fed to estimator.predict.                                                                                                                                                                          
+
+##         y_true : array-like
+
+##         Gold standard target values for X.                                                                                                                                                                                        
+
+##         Returns                                                                                                                                                                                                                      
+##         -------
+##         score : float
+##         Score function applied to prediction of estimator on X.
+##         """  
+##         y_pred = estimator.predict(X)
+        
+##         return self._sign * self._score_func(y_true, y_pred, **self._kwargs)       

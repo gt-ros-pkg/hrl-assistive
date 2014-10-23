@@ -125,22 +125,51 @@ class learning_hmm(learning_base):
         # Recursive prediction
         for i in xrange(self.nFutureStep):
 
-            # Get all probability
-            for j in xrange(len(self.obsrv_range)):           
-                a = self.predict([X+[self.obsrv_range[j]]])
-                print np.array(a).shape, a
-                X_pred_prob[j][i] += self.predict([X+[self.obsrv_range[j]]])             
+            X_pred[i], X_pred_prob[:,i] = self.one_step_predict(X)
 
-            # Select observation with maximum probability
-            idx_list = [k[0] for k in sorted(enumerate(X_pred_prob[:,i]), key=lambda x:x[1], reverse=True)]
-                              
             # Udate 
-            X.append(self.obsrv_range[idx_list[0]])
-            X_pred[i] = self.obsrv_range[idx_list[0]]
+            X.append(X_pred[i])
+            
+            ## # Get all probability
+            ## for j in xrange(len(self.obsrv_range)):           
+            ##     a = self.predict([X+[self.obsrv_range[j]]])
+            ##     X_pred_prob[j][i] += self.predict([X+[self.obsrv_range[j]]])             
+
+            ## # Select observation with maximum probability
+            ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob[:,i]), key=lambda x:x[1], reverse=True)]
+                              
+            ## # Udate 
+            ## X.append(self.obsrv_range[idx_list[0]])
+            ## X_pred[i] = self.obsrv_range[idx_list[0]]
             
         return X_pred, X_pred_prob
 
 
+    #----------------------------------------------------------------------        
+    #
+    def one_step_predict(self, X):
+        # Input
+        # @ X_test: samples x known steps
+        # Output
+        # @ X_pred: 1
+        # @ X_pred_prob: samples x 1
+
+        # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range)))
+        if type(X) == np.ndarray:
+            X = X.tolist()
+
+        # Get all probability
+        for i in xrange(len(self.obsrv_range)):           
+            a = self.predict([X+[self.obsrv_range[i]]])
+            X_pred_prob[i] += self.predict([X+[self.obsrv_range[i]]])             
+
+        # Select observation with maximum probability
+        idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
+        
+        return self.obsrv_range[idx_list[0]], X_pred_prob
+
+        
     #----------------------------------------------------------------------        
     #
     def predict(self, X):
@@ -202,25 +231,42 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
-    def score(self, X, sample_weight=None):
+    def score(self, *args, **kwargs):
+        # Neccessary package
+        from sklearn.metrics import r2_score
 
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        print X
-        print np.array(X).shape
-        
+        # Get input
+        X = args[0]        
         if type(X) == np.ndarray:            
             X=X.tolist()
 
-        X_test = X[:-1]
-        X_test_next = X[-1]
-        
+        sample_weight=None # TODO: future input
+
+        #
+        n = len(X)
+        score = np.zeros((n))
+        for i in xrange(n):
+
+            if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
+                X_test = X[i][:self.nCurrentStep]
+                X_test_next = X[i][self.nCurrentStep:self.nCurrentStep+1]
+            else:
+                X_test = X[i][:-1]
+                X_test_next = X[i][-1]
+
+            X_pred, _ = self.one_step_predict(X_test)
+
+            print X_test_next
+            print X_pred[0]
+            score[i] = r2_score(X_test_next, X_pred[0:], sample_weight=sample_weight)
+            print np.array(X_test).shape
+            print np.array(X_test_next).shape
+            sys.exit()
+            
         ## from sklearn.metrics import accuracy_score
         ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
-
-        from sklearn.metrics import r2_score
-        X_pred, _ = self.multi_step_predict(X_test)
         
-        return r2_score(X_test_next, X_pred, sample_weight=sample_weight)
+        return score
 
 
     #----------------------------------------------------------------------        
@@ -343,7 +389,7 @@ if __name__ == '__main__':
     nState    = 36
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 2
+    nFutureStep = 4
     ## data_column_idx = 1
     fObsrvResol = 0.2
     nCurrentStep = 10
