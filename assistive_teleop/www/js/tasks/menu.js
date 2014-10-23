@@ -14,10 +14,9 @@ RFH.TaskMenu = function (divId) {
         checkbox.id = taskObject.buttonText;
         var label = document.createElement('label');
         label.htmlFor = taskObject.buttonText;
-        label.appendChild(document.createTextNode(taskObject.buttonText));
         $('#'+divId).append(checkbox, label);
-        $('#'+taskObject.buttonText).button({label:taskObject.buttonText});
-        $('#'+taskObject.buttonText).addClass(taskObject.buttonClass);
+        $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
+        $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item');
         $('#'+taskObject.buttonText).on('click.rfh', function(event){ self.startTask(taskObject) });
     };
 
