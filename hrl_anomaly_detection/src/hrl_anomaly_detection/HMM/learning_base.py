@@ -148,7 +148,8 @@ class learning_base():
         
     #----------------------------------------------------------------------        
     #
-    def param_estimation(self, tuned_parameters, nFold):
+    def param_estimation(self, tuned_parameters, nFold, save_file=None):
+        # nFold: integer and less than the total number of samples.
 
         nSample = len(self.aXData)
         
@@ -158,12 +159,40 @@ class learning_base():
             sys.exit()
 
         # Split the dataset in two equal parts
-        X_train, X_test = train_test_split(self.aXData, test_size=0.5, random_state=0)
-        #Y_train = [1.0]*X_train.shape[0] # Dummy
+        X_train = self.aXData
 
-        scores = ['precision', 'recall']        
-        clf = GridSearchCV(self, tuned_parameters, cv=nFold, n_jobs=1)
+        print("Tuning hyper-parameters for %s :", X_train.shape)
+        print()        
+        clf = GridSearchCV(self, tuned_parameters, cv=nFold, n_jobs=4)
         clf.fit(X_train) # [n_samples, n_features] 
+
+        print("Best parameters set found on development set:")
+        print()
+        print(clf.best_estimator_)
+        print()
+        print("Grid scores on development set:")
+        print()
+
+        params_list = []
+        mean_list = []
+        std_list = []
+        
+        for params, mean_score, scores in clf.grid_scores_:
+            print("%0.3f (+/-%0.03f) for %r"
+                  % (mean_score, scores.std() / 2, params))
+            params_list.append(params)
+            mean_list.append(mean_score)
+            std_list.append(scores.std())
+        print()
+
+        # Save data
+        data = {}
+        data['mean'] = mean_list
+        data['std'] = std_list
+        data['params'] = params_list
+        if save_file == None:
+            save_file='tune_data.pkl'            
+        ut.save_pickle(data, save_file)
         
         
         ## scores = ['precision', 'recall']
@@ -173,7 +202,6 @@ class learning_base():
 
         ##     clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=score)
         ##     clf.fit(X_train) # [n_samples, n_features] 
-        ##     sys.exit()
             
         ##     print("Best parameters set found on development set:")
         ##     print()
@@ -186,14 +214,14 @@ class learning_base():
         ##               % (mean_score, scores.std() / 2, params))
         ##     print()
             
-        ##     print("Detailed classification report:")
-        ##     print()
-        ##     print("The model is trained on the full development set.")
-        ##     print("The scores are computed on the full evaluation set.")
-        ##     print()
-        ##     y_true, y_pred = y_test, clf.predict(X_test)
-        ##     print(classification_report(y_true, y_pred))
-        ##     print()
+            ## print("Detailed classification report:")
+            ## print()
+            ## print("The model is trained on the full development set.")
+            ## print("The scores are computed on the full evaluation set.")
+            ## print()
+            ## y_true, y_pred = y_test, clf.predict(X_test)
+            ## print(classification_report(y_true, y_pred))
+            ## print()
                 
     #----------------------------------------------------------------------        
     # Normalize along with each feature, where X is sample X feature
@@ -239,28 +267,3 @@ class learning_base():
     
 
 
-## class _PredictScorer(_BaseScorer):
-    
-##     def __call__(self, estimator, X, y_true):
-##         """Evaluate predicted target values for X relative to y_true.       
-##         Parameters
-##         ----------
-##         estimator : object
-##         Trained estimator to use for scoring. Must have a predict_proba
-##         method; the output of that is used to compute the score.                                                                                                                                                                  
-
-##         X : array-like or sparse matrix
-##         Test data that will be fed to estimator.predict.                                                                                                                                                                          
-
-##         y_true : array-like
-
-##         Gold standard target values for X.                                                                                                                                                                                        
-
-##         Returns                                                                                                                                                                                                                      
-##         -------
-##         score : float
-##         Score function applied to prediction of estimator on X.
-##         """  
-##         y_pred = estimator.predict(X)
-        
-##         return self._sign * self._score_func(y_true, y_pred, **self._kwargs)       

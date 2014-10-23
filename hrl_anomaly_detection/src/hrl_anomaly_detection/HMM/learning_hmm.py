@@ -76,13 +76,13 @@ class learning_hmm(learning_base):
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
         ## self.ml = ghmm.HMMFromMatrices(self.F, ghmm.DiscreteDistribution(self.F), A, B, pi)
         
-        print "Run Baum Welch method with (samples, length)", X_train.shape
+        ## print "Run Baum Welch method with (samples, length)", X_train.shape
         train_seq = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
         self.ml.baumWelch(final_seq)
 
         ## self.mean_path_plot(mu[:,0], sigma[:,0])        
-        print "Completed to fitting", np.array(final_seq).shape
+        ## print "Completed to fitting", np.array(final_seq).shape
 
         # Future observation range
         self.max_obsrv = X_train.max()
@@ -229,44 +229,56 @@ class learning_hmm(learning_base):
 
         return prob
 
+        
+    ## #----------------------------------------------------------------------
+    ## # Returns the mean accuracy on the given test data and labels.
+    ## def score(self, *args, **kwargs):
+    ##     # Neccessary package
+    ##     from sklearn.metrics import r2_score
+
+    ##     print args
+    ##     print kwargs
+
+    ##     sample_weight=None # TODO: future input
+        
+    ##     return r2_score(X, X_pred, sample_weight=sample_weight)
+
+        
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
-    def score(self, *args, **kwargs):
+    def score(self, X_test, **kwargs):
         # Neccessary package
         from sklearn.metrics import r2_score
 
         # Get input
-        X = args[0]        
-        if type(X) == np.ndarray:            
-            X=X.tolist()
+        if type(X_test) == np.ndarray:
+            X=X_test.tolist()
 
         sample_weight=None # TODO: future input
 
         #
         n = len(X)
-        score = np.zeros((n))
+        score  = np.zeros((n))
+        X_next = np.zeros((n))
+        X_pred = np.zeros((n))
+
         for i in xrange(n):
 
             if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
-                X_test = X[i][:self.nCurrentStep]
-                X_test_next = X[i][self.nCurrentStep:self.nCurrentStep+1]
+                X_past = X[i][:self.nCurrentStep]
+                X_next[i] = X[i][self.nCurrentStep]
             else:
-                X_test = X[i][:-1]
-                X_test_next = X[i][-1]
+                X_past = X[i][:-1]
+                X_next[i] = X[i][-1]
 
-            X_pred, _ = self.one_step_predict(X_test)
+            X_pred[i], _ = self.one_step_predict(X_past)
 
-            print X_test_next
-            print X_pred[0]
-            score[i] = r2_score(X_test_next, X_pred[0:], sample_weight=sample_weight)
-            print np.array(X_test).shape
-            print np.array(X_test_next).shape
-            sys.exit()
+        return r2_score(X_next, X_pred, sample_weight=sample_weight)
             
         ## from sklearn.metrics import accuracy_score
         ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
         
-        return score
+        ## return np.sum(score)/float(n)
 
 
     #----------------------------------------------------------------------        
@@ -436,8 +448,16 @@ if __name__ == '__main__':
 
     if opt.bCrossVal:
         print "Cross Validation"
-        tuned_parameters = [{'nState': [15,20,25,30,35], 'nFutureStep': [2,4,6,8,10], 'fObsrvResol': [0.05,0.1,0.15,0.2]}]
-        lh.param_estimation(tuned_parameters, 10)
+
+        import socket, time
+        host_name = socket.gethostname()
+        t=time.gmtime(1234567890)        
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+time.asctime(t)+'.pkl')
+
+        tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25,0.3]}]
+        ## tuned_parameters = [{'nState': [20,25,30]}]
+        
+        lh.param_estimation(tuned_parameters, 10, save_file=save_file)
         
     else:
         lh.fit(lh.aXData)    
@@ -448,7 +468,6 @@ if __name__ == '__main__':
         ## h_config, h_ftan = mad.get_a_blocked_detection()
         ## print np.array(h_config)*180.0/3.14
         ## print len(h_ftan)
-
 
         for i in xrange(2,3,2):
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
