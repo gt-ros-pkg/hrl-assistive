@@ -28,7 +28,7 @@ from learning_base import learning_base
 
 
 class learning_hmm(learning_base):
-    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10):
+    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None):
 
         learning_base.__init__(self, data_path, aXData)
         
@@ -37,7 +37,8 @@ class learning_hmm(learning_base):
         self.nFutureStep = nFutureStep
         self.fObsrvResol = fObsrvResol
         self.nCurrentStep = nCurrentStep
-
+        self.step_size_list = step_size_list
+        
         ## Un-tunable parameters
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
@@ -506,6 +507,7 @@ if __name__ == '__main__':
     ## data_column_idx = 1
     fObsrvResol = 0.2
     nCurrentStep = 13
+    step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
     ######################################################    
     # Get Training Data
@@ -544,10 +546,7 @@ if __name__ == '__main__':
     
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep)
-
-    lh.step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    
+    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, step_size_list=step_size_list)    
 
     if opt.bCrossVal:
         print "Cross Validation"
