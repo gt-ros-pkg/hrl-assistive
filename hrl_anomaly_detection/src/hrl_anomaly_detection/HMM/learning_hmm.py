@@ -57,17 +57,29 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train):
+    def fit(self, X_train, verbose=False):
         
         # Transition probability matrix (Initial transition probability, TODO?)
         A, _ = mad.get_trans_mat(X_train, self.nState)
 
+        if verbose:
+            print A.shape
+            n,m = A.shape
+            for i in xrange(n):
+                a = None
+                for j in xrange(m):
+                    if a==None:
+                        a = "%0.3f" % A[i,j]
+                    else:
+                        a += "  "
+                        a += "%0.3f" % A[i,j]
+                print a
+                                
         # We should think about multivariate Gaussian pdf.        
         self.mu, self.sigma = self.vectors_to_mean_vars(X_train)
 
         # Emission probability matrix
         B = np.hstack([self.mu, self.sigma]) # Must be [i,:] = [mu, sigma]
-        ## B = B.T.tolist()
         
         # pi - initial probabilities per state 
         pi = [1.0/float(self.nState)] * self.nState
@@ -86,34 +98,72 @@ class learning_hmm(learning_base):
 
         # Future observation range
         self.max_obsrv = X_train.max()
-        self.obsrv_range = np.arange(0.0, self.max_obsrv*1.5, self.fObsrvResol)
+        self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
 
         
     #----------------------------------------------------------------------        
     #
-    def vectors_to_mean_vars(self, vecs):
+    def vectors_to_mean_vars(self, vecs, optimize=False):
 
         _,n   = vecs.shape # samples, length
         mu    = np.zeros((self.nState,1))
         sigma = np.zeros((self.nState,1))
 
-        nDivs = int(n/float(self.nState))
+        if optimize==False:
+            nDivs = int(n/float(self.nState))
 
-        index = 0
-        while (index < self.nState):
-            m_init = index*nDivs
+            index = 0
+            while (index < self.nState):
+                m_init = index*nDivs
+                temp_vec = vecs[:,(m_init):(m_init+nDivs)]
+
+                mu[index] = np.mean(temp_vec)
+                sigma[index] = np.std(temp_vec)
+                index = index+1
+
+        else:
+            from scipy import optimize
+            
+            x0 = [int(n/float(self.nState))] * self.nState
+
+            bnds=[]
+            for i in xrange(self.nState):
+                bnds.append([0,self.nState])
+                
+            res = optimize.minimize(self.mean_vars_score,x0,args=(vecs), method='SLSQP', bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraints}), options={'maxiter': 50})
+            print res 
+                
+        return mu,sigma
+
+
+    #----------------------------------------------------------------------        
+    #
+    def mean_vars_score(self, x0, *args):
+
+        vecs = args[0]
+        
+        mu    = np.zeros((self.nState,1))
+        sigma = np.zeros((self.nState,1))
+        
+        for i, nDivs in enumerate(x0):
+            m_init = i*nDivs
             temp_vec = vecs[:,(m_init):(m_init+nDivs)]
 
             mu[index] = np.mean(temp_vec)
             sigma[index] = np.std(temp_vec)
-            index = index+1
 
-        return mu,sigma
+        return np.std(sigma)
+
+    #----------------------------------------------------------------------        
+    #
+    def mean_vars_constraints(self, x0):
+        if np.sum(x0) == self.nState: return True
+        else: return False
         
 
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
-    def multi_step_predict(self, X_test):
+    def multi_step_predict(self, X_test, verbose=False):
         # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
         # Output:  P(X_{N+M} | X)
 
@@ -129,19 +179,19 @@ class learning_hmm(learning_base):
 
             # Udate 
             X.append(X_pred[i])
-            
-            ## # Get all probability
-            ## for j in xrange(len(self.obsrv_range)):           
-            ##     a = self.predict([X+[self.obsrv_range[j]]])
-            ##     X_pred_prob[j][i] += self.predict([X+[self.obsrv_range[j]]])             
 
-            ## # Select observation with maximum probability
-            ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob[:,i]), key=lambda x:x[1], reverse=True)]
-                              
-            ## # Udate 
-            ## X.append(self.obsrv_range[idx_list[0]])
-            ## X_pred[i] = self.obsrv_range[idx_list[0]]
-            
+            if verbose:
+                print "-----------------"
+                print X_pred_prob[:,i].shape
+                a = None
+                for p in X_pred_prob[:,i]:
+                    if a==None:
+                        a = "%0.3f" % p
+                    else:
+                        a += "  "
+                        a += "%0.3f" % p
+                print a
+                        
         return X_pred, X_pred_prob
 
 
@@ -228,20 +278,6 @@ class learning_hmm(learning_base):
             prob[i] = pred_numerator / pred_denominator
 
         return prob
-
-        
-    ## #----------------------------------------------------------------------
-    ## # Returns the mean accuracy on the given test data and labels.
-    ## def score(self, *args, **kwargs):
-    ##     # Neccessary package
-    ##     from sklearn.metrics import r2_score
-
-    ##     print args
-    ##     print kwargs
-
-    ##     sample_weight=None # TODO: future input
-        
-    ##     return r2_score(X, X_pred, sample_weight=sample_weight)
 
         
     #----------------------------------------------------------------------
@@ -393,18 +429,20 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=True, help='N-fold cross validation for parameter')
+                 default=False, help='N-fold cross validation for parameter')
+    p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
+                 default=False, help='Optimize mean and vars for B matrix')
     opt, args = p.parse_args()
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 36
+    nState    = 30
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 4
     ## data_column_idx = 1
     fObsrvResol = 0.2
-    nCurrentStep = 10
+    nCurrentStep = 12
 
     ######################################################    
     # Get Training Data
@@ -427,7 +465,7 @@ if __name__ == '__main__':
     idxs = np.where(['Office Cabinet' in i for i in data_mech])[0].tolist()
 
     ## print data_mech
-    print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
+    ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
     data_vecs = data_vecs[:,idxs]
     data_mech = [data_mech[i] for i in idxs]
     data_chunks = [data_chunks[i] for i in idxs]
@@ -458,6 +496,10 @@ if __name__ == '__main__':
         ## tuned_parameters = [{'nState': [20,25,30]}]
         
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
+
+    elif opt.bOptMeanVar:
+        print "Optimize B matrix"
+        lh.vectors_to_mean_vars(lh.aXData, optimize=True)
         
     else:
         lh.fit(lh.aXData)    
@@ -476,7 +518,7 @@ if __name__ == '__main__':
             ## x_test = h_ftan[:15]
             ## x_test_next = h_ftan[15:15+lh.nFutureStep]
 
-            x_pred, x_pred_prob = lh.multi_step_predict(x_test)
+            x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=True)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
 
