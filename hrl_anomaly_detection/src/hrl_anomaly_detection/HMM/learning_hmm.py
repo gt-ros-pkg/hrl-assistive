@@ -61,22 +61,9 @@ class learning_hmm(learning_base):
         
         # Transition probability matrix (Initial transition probability, TODO?)
         A, _ = mad.get_trans_mat(X_train, self.nState)
-
-        if verbose:
-            print A.shape
-            n,m = A.shape
-            for i in xrange(n):
-                a = None
-                for j in xrange(m):
-                    if a==None:
-                        a = "%0.3f" % A[i,j]
-                    else:
-                        a += "  "
-                        a += "%0.3f" % A[i,j]
-                print a
                                 
         # We should think about multivariate Gaussian pdf.        
-        self.mu, self.sigma = self.vectors_to_mean_vars(X_train)
+        self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
 
         # Emission probability matrix
         B = np.hstack([self.mu, self.sigma]) # Must be [i,:] = [mu, sigma]
@@ -100,6 +87,35 @@ class learning_hmm(learning_base):
         self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
 
+
+        if verbose:
+            print "A: ", A.shape
+            n,m = A.shape
+            for i in xrange(n):
+                a = None
+                for j in xrange(m):
+                    if a==None:
+                        a = "%0.3f" % A[i,j]
+                    else:
+                        a += "  "
+                        a += "%0.3f" % A[i,j]
+                print a
+            print "----------------------------------------------"
+            for i in xrange(n):
+                a = None
+                for j in xrange(m):
+                    if a==None:
+                        a = "%0.3f" % self.ml.getTransition(i,j)
+                    else:
+                        a += "  "
+                        a += "%0.3f" % self.ml.getTransition(i,j)
+                print a
+                
+            print "B: ", B.shape
+            print B
+            print "----------------------------------------------"
+            for i in xrange(n):
+                print self.ml.getEmission(i)
         
     #----------------------------------------------------------------------        
     #
@@ -110,12 +126,23 @@ class learning_hmm(learning_base):
         sigma = np.zeros((self.nState,1))
 
         if optimize==False:
-            nDivs = int(n/float(self.nState))
-
+            
+            if self.step_size_list == None:
+                print "Use existing step size list!!"
+                # Initial 
+                self.step_size_list = [1] * self.nState
+                while sum(self.step_size_list)!=self.nMaxStep:
+                    idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
+                    if idx < 0 or idx >= self.nState: 
+                        continue
+                    else:
+                        self.step_size_list[idx] += 1                
+            
             index = 0
+            m_init = 0
             while (index < self.nState):
-                m_init = index*nDivs
-                temp_vec = vecs[:,(m_init):(m_init+nDivs)]
+                temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
+                m_init = m_init + int(self.step_size_list[index])
 
                 mu[index] = np.mean(temp_vec)
                 sigma[index] = np.std(temp_vec)
@@ -123,44 +150,78 @@ class learning_hmm(learning_base):
 
         else:
             from scipy import optimize
-            
-            x0 = [int(n/float(self.nState))] * self.nState
 
+            # Initial 
+            x0 = [1] * self.nState
+            while sum(x0)!=self.nMaxStep:
+                idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
+                if idx < 0 or idx >= self.nState: 
+                    continue
+                else:
+                    x0[idx] += 1
+                
             bnds=[]
             for i in xrange(self.nState):
-                bnds.append([0,self.nState])
+                bnds.append([0,self.nMaxStep])
                 
-            res = optimize.minimize(self.mean_vars_score,x0,args=(vecs), method='SLSQP', bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraints}), options={'maxiter': 50})
-            print res 
+            ## res = optimize.minimize(self.mean_vars_score,x0,args=(vecs), method='SLSQP', bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraints}), options={'maxiter': 50})
+            res = optimize.minimize(self.mean_vars_score,x0, method='SLSQP', bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraint1}, {'type':'eq','fun':self.mean_vars_constraint2}), options={'maxiter': 50})
+            self.step_size_list = res['x'] 
+            print "Best step_size_list: "
+            string = None
+            for x in self.step_size_list:
+                if string == None:
+                    string = str(x)+", " 
+                else:
+                    string += str(x)+", "
+            print string
                 
+            
+            index = 0
+            m_init = 0
+            while (index < self.nState):
+                temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
+                m_init = m_init + int(self.step_size_list[index])
+
+                mu[index] = np.mean(temp_vec)
+                sigma[index] = np.std(temp_vec)
+                index = index+1
+
         return mu,sigma
 
 
     #----------------------------------------------------------------------        
     #
-    def mean_vars_score(self, x0, *args):
+    ## def mean_vars_score(self, x0, *args):
+    def mean_vars_score(self, x0):
 
-        vecs = args[0]
-        
-        mu    = np.zeros((self.nState,1))
+        vecs = self.aXData #args[0]        
+        ## mu    = np.zeros((self.nState,1))
         sigma = np.zeros((self.nState,1))
-        
+
         for i, nDivs in enumerate(x0):
             m_init = i*nDivs
-            temp_vec = vecs[:,(m_init):(m_init+nDivs)]
+            try:
+                temp_vec = vecs[:,int(m_init):int(m_init+nDivs)]
+            except:
+                return 0.0
 
-            mu[index] = np.mean(temp_vec)
-            sigma[index] = np.std(temp_vec)
-
+            ## mu[i] = np.mean(temp_vec)
+            sigma[i] = np.std(temp_vec)
         return np.std(sigma)
 
     #----------------------------------------------------------------------        
     #
-    def mean_vars_constraints(self, x0):
-        if np.sum(x0) == self.nState: return True
-        else: return False
-        
+    def mean_vars_constraint1(self, x0):
+        return np.sum(x0) - self.nMaxStep
 
+    def mean_vars_constraint2(self, x0):
+        for x in x0:
+            if x < 1: return 1.0 
+            if np.isnan(x)==True: return 1.0
+        return 0.0
+        
+        
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
     def multi_step_predict(self, X_test, verbose=False):
@@ -180,7 +241,7 @@ class learning_hmm(learning_base):
             # Udate 
             X.append(X_pred[i])
 
-            if verbose:
+            if False: #verbose:
                 print "-----------------"
                 print X_pred_prob[:,i].shape
                 a = None
@@ -199,7 +260,7 @@ class learning_hmm(learning_base):
     #
     def one_step_predict(self, X):
         # Input
-        # @ X_test: samples x known steps
+        # @ X_test: 1 x known steps #samples x known steps
         # Output
         # @ X_pred: 1
         # @ X_pred_prob: samples x 1
@@ -210,14 +271,14 @@ class learning_hmm(learning_base):
             X = X.tolist()
 
         # Get all probability
-        for i in xrange(len(self.obsrv_range)):           
-            a = self.predict([X+[self.obsrv_range[i]]])
-            X_pred_prob[i] += self.predict([X+[self.obsrv_range[i]]])             
-
+        for i, obsrv in enumerate(self.obsrv_range):           
+            if abs(X[-1]-obsrv) > 4.0: continue
+            X_pred_prob[i] += self.predict([X+[obsrv]])        #???? normalized??     
+            
         # Select observation with maximum probability
         idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
-        
-        return self.obsrv_range[idx_list[0]], X_pred_prob
+
+        return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
 
         
     #----------------------------------------------------------------------        
@@ -373,9 +434,9 @@ class learning_hmm(learning_base):
             for x, prob in zip(self.obsrv_range, X_pred_prob[:,i]):
                 y_array = np.array([x_last, x])
                 
-                alpha   = prob / 2.0 + 0.5
-                if prob > 1.0: prob = 1.0
-                self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=prob**1., linewidth=1.0)    
+                alpha   = 1.0 - np.exp(-prob*50.0)
+                if alpha > 1.0: alpha = 1.0
+                self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=alpha, linewidth=1.0)    
 
             x_last = X_pred[i]
                 
@@ -432,6 +493,8 @@ if __name__ == '__main__':
                  default=False, help='N-fold cross validation for parameter')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
+    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
+                 default=False, help='Print out everything')
     opt, args = p.parse_args()
 
     ## Init variables    
@@ -439,10 +502,10 @@ if __name__ == '__main__':
     nState    = 30
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 4
+    nFutureStep = 10
     ## data_column_idx = 1
     fObsrvResol = 0.2
-    nCurrentStep = 12
+    nCurrentStep = 13
 
     ######################################################    
     # Get Training Data
@@ -483,6 +546,8 @@ if __name__ == '__main__':
     # Training 
     lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep)
 
+    lh.step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    
 
     if opt.bCrossVal:
         print "Cross Validation"
@@ -492,7 +557,7 @@ if __name__ == '__main__':
         t=time.gmtime(1234567890)        
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+time.asctime(t)+'.pkl')
 
-        tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25,0.3]}]
+        tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         ## tuned_parameters = [{'nState': [20,25,30]}]
         
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
@@ -502,7 +567,7 @@ if __name__ == '__main__':
         lh.vectors_to_mean_vars(lh.aXData, optimize=True)
         
     else:
-        lh.fit(lh.aXData)    
+        lh.fit(lh.aXData, verbose=opt.bVerbose)    
         ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
 
         ######################################################    
@@ -518,7 +583,7 @@ if __name__ == '__main__':
             ## x_test = h_ftan[:15]
             ## x_test_next = h_ftan[15:15+lh.nFutureStep]
 
-            x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=True)
+            x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
 
