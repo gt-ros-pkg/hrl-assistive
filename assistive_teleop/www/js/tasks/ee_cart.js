@@ -15,15 +15,18 @@ RFH.CartesianEEControl = function (options) {
                                                  smooth: self.smooth});
     $('#'+self.posCtrlId).css(self.arm.side.toString(), "60px").hide();
     self.clickToggleId = self.arm.side[0]+'ClickPointToggle';
+    self.clickToggleLabel = self.arm.side[0]+'ClickPointToggleLabel';
 
     self.clickPointToggle = document.createElement('input');
     self.clickPointToggle.type = "checkbox";
     self.clickPointToggle.id = self.clickToggleId;
     var label = document.createElement('label');
     label.htmlFor = self.clickToggleId;
+    label.id = self.clickToggleLabel;
     label.appendChild(document.createTextNode("Touch Spot"));
     $('#controls').append(self.clickPointToggle, label)
     $('#'+self.clickToggleId).button().hide();
+    $('#'+self.clickToggleLabel).hide();
 //    self.rotCtrlId = self.arm.side[0]+'rotCtrlIcon';
 //    self.rotIcon = new RFH.EERotControlIcon({divId: self.posCtrlId,
 //                                                 parentId: self.div,
@@ -33,6 +36,7 @@ RFH.CartesianEEControl = function (options) {
     self.start = function () {
         $('#'+self.posCtrlId).show();
         $('#'+self.clickToggleId).show();
+        $('#'+self.clickToggleLabel).show();
         clearInterval(RFH.pr2.head.pubInterval);
         RFH.pr2.head.pubInterval = setInterval(function () {
             RFH.pr2.head.pointHead(0, 0, 0, self.arm.side[0]+'_gripper_tool_frame');
@@ -42,6 +46,7 @@ RFH.CartesianEEControl = function (options) {
     self.stop = function () {
         $('#'+self.posCtrlId).hide();
         $('#'+self.clickToggleId).hide();
+        $('#'+self.clickToggleLabel).hide();
         clearInterval(RFH.pr2.head.pubInterval);
     };
 
