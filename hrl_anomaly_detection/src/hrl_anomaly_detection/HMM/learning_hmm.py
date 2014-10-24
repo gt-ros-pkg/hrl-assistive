@@ -128,7 +128,7 @@ class learning_hmm(learning_base):
 
         if optimize==False:
             
-            if self.step_size_list == None:
+            if self.step_size_list == None or len(self.step_size_list) != self.nState:
                 print "Use existing step size list!!"
                 # Initial 
                 self.step_size_list = [1] * self.nState
