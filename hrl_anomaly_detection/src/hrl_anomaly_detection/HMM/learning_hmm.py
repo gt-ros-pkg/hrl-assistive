@@ -147,7 +147,7 @@ class learning_hmm(learning_base):
                     m_init = m_init + int(self.step_size_list[index])
                 except:
                     print "==========================================================="
-                    print (m_init), (m_init + int(self.step_size_list[index]))
+                    print (m_init), (m_init + int(self.step_size_list[index])), self.nState
                     print "==========================================================="
 
                 mu[index] = np.mean(temp_vec)
