@@ -15,7 +15,9 @@ if __name__ == '__main__':
 
 
     data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune'
+    output_file = open('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune/'+'performance.txt', "w")
 
+    
     file_list = glob.glob(data_path+'/*.pkl')
     for pkl_file in file_list:
         try:
@@ -33,5 +35,22 @@ if __name__ == '__main__':
             touch(failure_file)            
             sys.exit()
 
+        
+        mean_list = data['mean']
+        std_list = data['std']
+        params_list = data['params']
 
-        print data
+        fObsrvResol_list = []
+        nState_list = []            
+        nCurrentStep_list = []            
+        for param in params_list:
+            fObsrvResol_list.append(param['fObsrvResol'])
+            nState_list.append(param['nState'])
+            nCurrentStep_list.append(param['nCurrentStep'])
+
+        for i in xrange(len(mean_list)):
+            string =  "%f, %f, %f, %f, %f \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], nCurrentStep_list[i])
+
+            output_file.write("%s" % string)
+    output_file.close()
+            
