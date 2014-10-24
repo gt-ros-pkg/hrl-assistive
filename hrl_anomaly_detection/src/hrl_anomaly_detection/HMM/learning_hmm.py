@@ -557,7 +557,8 @@ if __name__ == '__main__':
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'+str(t[3])+str(t[4])+'.pkl')
 
         #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+        tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         ## tuned_parameters = [{'nState': [20,25], 'nFutureStep': [1], 'fObsrvResol': [0.1,0.2], 'nCurrentStep': [5,10]}]
         
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
