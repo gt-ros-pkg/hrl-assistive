@@ -142,8 +142,13 @@ class learning_hmm(learning_base):
             index = 0
             m_init = 0
             while (index < self.nState):
-                temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
-                m_init = m_init + int(self.step_size_list[index])
+                try:
+                    temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
+                    m_init = m_init + int(self.step_size_list[index])
+                except:
+                    print "==========================================================="
+                    print (m_init), (m_init + int(self.step_size_list[index]))
+                    print "==========================================================="
 
                 mu[index] = np.mean(temp_vec)
                 sigma[index] = np.std(temp_vec)
