@@ -147,6 +147,8 @@ class learning_hmm(learning_base):
                     m_init = m_init + int(self.step_size_list[index])
                 except:
                     print "==========================================================="
+                    a = self.step_size_list[index]
+                    print a
                     print (m_init), (m_init + int(self.step_size_list[index])), self.nState
                     print "==========================================================="
 
