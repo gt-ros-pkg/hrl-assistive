@@ -143,11 +143,11 @@ class learning_hmm(learning_base):
             m_init = 0
             while (index < self.nState):
                 try:
+                    a = self.step_size_list[index]                    
                     temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
                     m_init = m_init + int(self.step_size_list[index])
                 except:
                     print "==========================================================="
-                    a = self.step_size_list[index]
                     print a
                     print (m_init), (m_init + int(self.step_size_list[index])), self.nState
                     print "==========================================================="
