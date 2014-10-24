@@ -129,7 +129,7 @@ class learning_hmm(learning_base):
         if optimize==False:
             
             if self.step_size_list == None or len(self.step_size_list) != self.nState:
-                print "Use existing step size list!!"
+                ## print "Use new step size list!!"
                 # Initial 
                 self.step_size_list = [1] * self.nState
                 while sum(self.step_size_list)!=self.nMaxStep:
@@ -142,15 +142,8 @@ class learning_hmm(learning_base):
             index = 0
             m_init = 0
             while (index < self.nState):
-                try:
-                    a = self.step_size_list[index]                    
-                    temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
-                    m_init = m_init + int(self.step_size_list[index])
-                except:
-                    print "==========================================================="
-                    print a, index, m_init, self.nState, len(self.step_size_list)
-                    print (m_init), (m_init + int(self.step_size_list[index])), self.nState
-                    print "==========================================================="
+                temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
+                m_init = m_init + int(self.step_size_list[index])
 
                 mu[index] = np.mean(temp_vec)
                 sigma[index] = np.std(temp_vec)
@@ -553,7 +546,7 @@ if __name__ == '__main__':
 
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0][0:20], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, step_size_list=step_size_list)    
+    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, step_size_list=step_size_list)    
 
     if opt.bCrossVal:
         print "Cross Validation"
