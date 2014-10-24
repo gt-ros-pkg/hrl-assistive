@@ -543,10 +543,10 @@ if __name__ == '__main__':
     ## ## time step data
     ## m, n = data_vecs[0].shape
     ## aXData = np.array([np.arange(0.0,float(n)-0.0001,1.0).tolist()] * m)
-    
+
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, step_size_list=step_size_list)    
+    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0][0:20], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, step_size_list=step_size_list)    
 
     if opt.bCrossVal:
         print "Cross Validation"
