@@ -586,7 +586,7 @@ if __name__ == '__main__':
         
         tuned_parameters = [{'nState': [28], 'nFutureStep': [1], 'fObsrvResol': [0.1], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
         
-        lh.param_estimation(tuned_parameters, 10, save_file=save_file)
+        lh.param_estimation(tuned_parameters, 20, save_file=save_file)
 
     elif opt.bOptMeanVar:
         print "Optimize B matrix"
