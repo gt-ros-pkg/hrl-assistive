@@ -553,8 +553,8 @@ if __name__ == '__main__':
 
         import socket, time
         host_name = socket.gethostname()
-        t=time.gmtime(1234567890)        
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+time.asctime(t)+'.pkl')
+        t=time.gmtime()                
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+t[0]+t[1]+t[2]+'_'+t[3]+t[4]+'.pkl')
 
         tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         tuned_parameters = [{'nState': [20,25], 'nFutureStep': [1], 'fObsrvResol': [0.1,0.2], 'nCurrentStep': [5,10]}]
