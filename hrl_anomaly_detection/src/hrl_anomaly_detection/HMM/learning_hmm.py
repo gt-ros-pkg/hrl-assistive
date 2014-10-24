@@ -138,6 +138,9 @@ class learning_hmm(learning_base):
                         continue
                     else:
                         self.step_size_list[idx] += 1                
+            else:
+                print "Use new step size list!!"                            
+                print self.step_size_list
             
             index = 0
             m_init = 0
@@ -406,7 +409,8 @@ class learning_hmm(learning_base):
     #----------------------------------------------------------------------        
     #
     def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next):
-
+        print "Start to print out"
+        
         self.fig = plt.figure(1)
         gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
 
@@ -500,15 +504,21 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 30
+    nState    = 28
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 8
+    nFutureStep = 4
     ## data_column_idx = 1
-    fObsrvResol = 0.2
-    nCurrentStep = 5
-    step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    fObsrvResol = 0.1
+    nCurrentStep = 15
 
+    if False: #nState == 28:
+        step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
+    elif nState == 30:
+        step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    else:
+        step_size_list = None
+        
     ######################################################    
     # Get Training Data
     if os.path.isfile(pkl_file):
@@ -560,7 +570,21 @@ if __name__ == '__main__':
         ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+
+
+        step_size_list_set = []
+        for i in xrange(10):
+            step_size_list = [1] * lh.nState
+            while sum(step_size_list)!=lh.nMaxStep:
+                idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
+                if idx < 0 or idx >= lh.nState: 
+                    continue
+                else:
+                    step_size_list[idx] += 1                
+            step_size_list_set.append(step_size_list)                    
+        
+        tuned_parameters = [{'nState': [28], 'nFutureStep': [1], 'fObsrvResol': [0.1], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
         
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
 
@@ -578,7 +602,8 @@ if __name__ == '__main__':
         ## print np.array(h_config)*180.0/3.14
         ## print len(h_ftan)
 
-        for i in xrange(2,3,2):
+        for i in xrange(28,29,2):
+            
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
             x_test_all  = data_vecs[0][i,:].tolist()

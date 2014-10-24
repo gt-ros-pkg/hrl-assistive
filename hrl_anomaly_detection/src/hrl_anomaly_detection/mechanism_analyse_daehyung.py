@@ -187,6 +187,10 @@ def get_trans_mat(vecs, nState):
         total = np.sum(trans_mat[i,:])
         if total == 0: 
             trans_prob_mat[i,:] = 1.0 / float(trans_size)
+            ## trans_prob_mat[i,i] += 0.5
+            ## if i!=0: trans_prob_mat[i,i-1] += 0.25
+            ## if i!=trans_size: trans_prob_mat[i,i+1] += 0.25
+            ## trans_prob_mat[i,:] = trans_prob_mat[i,:] / np.sum(trans_prob_mat[i,:])
         else:
             trans_prob_mat[i,:] = trans_mat[i,:] / total
 
