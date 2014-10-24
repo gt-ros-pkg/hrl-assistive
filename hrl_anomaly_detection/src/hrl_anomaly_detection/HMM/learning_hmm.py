@@ -557,9 +557,9 @@ if __name__ == '__main__':
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+time.asctime(t)+'.pkl')
 
         tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [20,25], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.2]}]
+        tuned_parameters = [{'nState': [20,25], 'nFutureStep': [1], 'fObsrvResol': [0.1,0.2], 'nCurrentStep': [5,10]}]
         
-        lh.param_estimation(tuned_parameters, 10, save_file=save_file)
+        lh.param_estimation(tuned_parameters, 2, save_file=save_file)
 
     elif opt.bOptMeanVar:
         print "Optimize B matrix"
