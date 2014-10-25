@@ -180,13 +180,16 @@ def get_trans_mat(vecs, nState):
                 _, x_idx = find_nearest(state_table, discrete_vecs[i][j-1])
                 _, y_idx = find_nearest(state_table, discrete_vecs[i][j])                
 
-                trans_mat[x_idx,y_idx] += 1.0                
+                # NOTE: really need?
+                if x_idx <= y_idx:
+                    trans_mat[x_idx,y_idx] += 1.0                
 
     # Set transition probability matrix
     for i in xrange(trans_size):
         total = np.sum(trans_mat[i,:])
         if total == 0: 
-            trans_prob_mat[i,:] = 1.0 / float(trans_size)
+            ## trans_prob_mat[i,:] = 1.0 / float(trans_size)                    
+            trans_prob_mat[i,i:] = 1.0 / float(trans_size-(i))                    
             ## trans_prob_mat[i,i] += 0.5
             ## if i!=0: trans_prob_mat[i,i-1] += 0.25
             ## if i!=trans_size: trans_prob_mat[i,i+1] += 0.25

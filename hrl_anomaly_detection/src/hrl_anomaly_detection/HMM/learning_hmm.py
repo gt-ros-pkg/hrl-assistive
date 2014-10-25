@@ -61,7 +61,7 @@ class learning_hmm(learning_base):
     def fit(self, X_train, verbose=False):
         
         # Transition probability matrix (Initial transition probability, TODO?)
-        A, _ = mad.get_trans_mat(X_train, self.nState)
+        A = self.get_trans_mat(X_train, self.nState)
                                 
         # We should think about multivariate Gaussian pdf.        
         self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
@@ -117,7 +117,32 @@ class learning_hmm(learning_base):
             print "----------------------------------------------"
             for i in xrange(n):
                 print self.ml.getEmission(i)
+
+
+    #----------------------------------------------------------------------        
+    #                
+    def get_trans_mat(self, vecs, nState):
+        # vecs = number_of_data x profile_length
+
+        # Reset transition probability matrix
+        trans_prob_mat = np.zeros((nState, nState))
         
+        for i in xrange(nState):
+
+            # Exponential function                
+            # From y = a*e^(-bx)
+            a = 0.1
+            b = np.log(0.005/a)/(-(nState-i))
+            f = lambda x: a*np.exp(-b*x)
+
+            for j in np.array(range(nState-i))+i:
+                trans_prob_mat[i,j] = f(j)
+
+            trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
+                
+        return trans_prob_mat
+
+
     #----------------------------------------------------------------------        
     #
     def vectors_to_mean_vars(self, vecs, optimize=False):
@@ -510,7 +535,7 @@ if __name__ == '__main__':
     nFutureStep = 4
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 15
+    nCurrentStep = 10
 
     if nState == 28:
         step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
@@ -568,24 +593,26 @@ if __name__ == '__main__':
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'+str(t[3])+str(t[4])+'.pkl')
 
         #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+        tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
+        ## tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
+        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
         ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
 
 
-        step_size_list_set = []
-        for i in xrange(10):
-            step_size_list = [1] * lh.nState
-            while sum(step_size_list)!=lh.nMaxStep:
-                idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
-                if idx < 0 or idx >= lh.nState: 
-                    continue
-                else:
-                    step_size_list[idx] += 1                
-            step_size_list_set.append(step_size_list)                    
+        ## step_size_list_set = []
+        ## for i in xrange(10):
+        ##     step_size_list = [1] * lh.nState
+        ##     while sum(step_size_list)!=lh.nMaxStep:
+        ##         idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
+        ##         if idx < 0 or idx >= lh.nState: 
+        ##             continue
+        ##         else:
+        ##             step_size_list[idx] += 1                
+        ##     step_size_list_set.append(step_size_list)                    
         
-        tuned_parameters = [{'nState': [28], 'nFutureStep': [1], 'fObsrvResol': [0.1], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
+        ## tuned_parameters = [{'nState': [28], 'nFutureStep': [1], 'fObsrvResol': [0.1], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
         
         lh.param_estimation(tuned_parameters, 20, save_file=save_file)
 
@@ -603,7 +630,7 @@ if __name__ == '__main__':
         ## print np.array(h_config)*180.0/3.14
         ## print len(h_ftan)
 
-        for i in xrange(8,29,2):
+        for i in xrange(1,22,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
