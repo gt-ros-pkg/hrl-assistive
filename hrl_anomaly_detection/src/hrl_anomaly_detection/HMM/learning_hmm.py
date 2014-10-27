@@ -629,7 +629,7 @@ if __name__ == '__main__':
         tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
         tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
         tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
         ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
 
         ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
