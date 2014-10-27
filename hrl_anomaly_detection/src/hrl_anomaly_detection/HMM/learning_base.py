@@ -263,6 +263,7 @@ class learning_base():
             for j in np.array(range(nState-i))+i:
                 trans_prob_mat[i,j] = f(j)
 
+            # Normalization 
             trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
                 
         return trans_prob_mat

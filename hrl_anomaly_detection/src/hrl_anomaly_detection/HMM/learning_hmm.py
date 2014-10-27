@@ -61,16 +61,18 @@ class learning_hmm(learning_base):
     def fit(self, X_train, verbose=False):
         
         # Transition probability matrix (Initial transition probability, TODO?)
-        A = self.init_trans_mat(self.nState)
+        A = self.init_trans_mat(self.nState).tolist()
                                 
         # We should think about multivariate Gaussian pdf.        
         self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
 
         # Emission probability matrix
-        B = np.hstack([self.mu, self.sigma]) # Must be [i,:] = [mu, sigma]
+        B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
         
         # pi - initial probabilities per state 
-        pi = [1.0/float(self.nState)] * self.nState
+        ## pi = [1.0/float(self.nState)] * self.nState
+        pi = [0.] * self.nState
+        pi[0] = 1.0
 
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
@@ -81,6 +83,7 @@ class learning_hmm(learning_base):
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
         self.ml.baumWelch(final_seq)
 
+        
         ## self.mean_path_plot(mu[:,0], sigma[:,0])        
         ## print "Completed to fitting", np.array(final_seq).shape
 
@@ -115,8 +118,8 @@ class learning_hmm(learning_base):
             print "B: ", B.shape
             print B
             print "----------------------------------------------"
-            for i in xrange(n):
-                print self.ml.getEmission(i)
+            ## for i in xrange(n):
+            ##     print self.ml.getEmission(i)
 
 
     #----------------------------------------------------------------------        
@@ -130,7 +133,7 @@ class learning_hmm(learning_base):
         if optimize==False:
             
             if self.step_size_list == None or len(self.step_size_list) != self.nState:
-                ## print "Use new step size list!!"
+                print "Use new step size list!!"
                 # Initial 
                 self.step_size_list = [1] * self.nState
                 while sum(self.step_size_list)!=self.nMaxStep:
@@ -140,7 +143,7 @@ class learning_hmm(learning_base):
                     else:
                         self.step_size_list[idx] += 1                
             else:
-                print "Use new step size list!!"                            
+                print "Use previous step size list!!"                            
                 print self.step_size_list
             
             index = 0
@@ -255,38 +258,45 @@ class learning_hmm(learning_base):
                 X_test = X[i][:-1]
                 X_pred = X[i][-1]
 
-            # Past profile
-            final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+                
+            # profile
+            final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
 
-            ## print "\nForward"
-            ## logp1 = self.ml.loglikelihood(final_ts_obj)
-            ## print "logp = " + str(logp1) + "\n"
+            prob[i] = self.ml.loglikelihood(final_ts_obj)
+            ## continue
 
-            # alpha: X_test length y #latent States at the moment t when state i is ended
-            #        test_profile_length x number_of_hidden_state
-            (alpha,scale) = self.ml.forward(final_ts_obj)
-            ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
-            ## print "scale = " + str(scale) + "\n"
-            ## print np.array(X_test).shape, np.array(alpha).shape
+            ## # Past profile
+            ## final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+            
+            ## ## print "\nForward"
+            ## ## logp1 = self.ml.loglikelihood(final_ts_obj)
+            ## ## print "logp = " + str(logp1) + "\n"
 
-            # beta
-            beta = self.ml.backward(final_ts_obj,scale)
-            ## print "beta", np.array(beta).shape, " = \n " + str(beta) + "\n"
+            ## # alpha: X_test length y #latent States at the moment t when state i is ended
+            ## #        test_profile_length x number_of_hidden_state
+            ## (alpha,scale) = self.ml.forward(final_ts_obj)
+            ## ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
+            ## ## print "scale = " + str(scale) + "\n"
+            ## ## print np.array(X_test).shape, np.array(alpha).shape
 
-            pred_numerator = 0.0
-            pred_denominator = 0.0
-            for j in xrange(self.nState): # N+1
+            ## # beta
+            ## beta = self.ml.backward(final_ts_obj,scale)
+            ## ## print "beta", np.array(beta).shape, " = \n " + str(beta) + "\n"
 
-                total = 0.0        
-                for k in xrange(self.nState): # N                  
-                    total += self.ml.getTransition(k,j) * alpha[-1][k]
+            ## pred_numerator = 0.0
+            ## pred_denominator = 0.0
+            ## for j in xrange(self.nState): # N+1
 
-                (mu, sigma) = self.ml.getEmission(j)
+            ##     total = 0.0        
+            ##     for k in xrange(self.nState): # N                  
+            ##         total += self.ml.getTransition(k,j) * alpha[-1][k]
 
-                pred_numerator += norm(loc=mu,scale=sigma).pdf(X_pred) * total
-                pred_denominator += alpha[-1][j]*beta[-1][j]
+            ##     (mu, sigma) = self.ml.getEmission(j)
 
-            prob[i] = pred_numerator / pred_denominator
+            ##     pred_numerator += norm(loc=mu,scale=sigma).pdf(X_pred) * total
+            ##     pred_denominator += alpha[-1][j]*beta[-1][j]
+
+            ## prob[i] = pred_numerator / pred_denominator
 
         return prob
 
@@ -308,8 +318,8 @@ class learning_hmm(learning_base):
         # Get all probability
         for i, obsrv in enumerate(self.obsrv_range):           
             if abs(X[-1]-obsrv) > 4.0: continue
-            X_pred_prob[i] += self.predict([X+[obsrv]])        #???? normalized??     
-            
+            X_pred_prob[i] += np.exp(self.predict([X+[obsrv]]))        #???? normalized??     
+
         # Select observation with maximum probability
         idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
             
@@ -561,13 +571,13 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 28
+    nState    = 34
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 1
+    nFutureStep = 6
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 100
+    nCurrentStep = 28
 
     if nState == 28:
         step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
@@ -626,11 +636,11 @@ if __name__ == '__main__':
 
         #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
         tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
 
         ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
 
