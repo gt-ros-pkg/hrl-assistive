@@ -62,6 +62,7 @@ class learning_hmm(learning_base):
         
         # Transition probability matrix (Initial transition probability, TODO?)
         A = self.init_trans_mat(self.nState).tolist()
+        #A,_ = mad.get_trans_mat(X_train, self.nState)
                                 
         # We should think about multivariate Gaussian pdf.        
         self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
@@ -93,6 +94,7 @@ class learning_hmm(learning_base):
 
 
         if verbose:
+            A = np.array(A)
             print "A: ", A.shape
             n,m = A.shape
             for i in xrange(n):
@@ -571,13 +573,13 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 34
+    nState    = 28
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 28
+    nCurrentStep = 10
 
     if nState == 28:
         step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
@@ -604,6 +606,13 @@ if __name__ == '__main__':
         data['data_chunks'] = data_chunks
         ut.save_pickle(data,pkl_file)
 
+
+    from collections import OrderedDict
+    print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
+    print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
+    print len(data_mech), data_vecs.shape
+    sys.exit()
+        
     # Filtering
     idxs = np.where(['Office Cabinet' in i for i in data_mech])[0].tolist()
 
