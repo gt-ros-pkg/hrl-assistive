@@ -244,6 +244,29 @@ class learning_base():
 
         return normal_X
 
+
+    #----------------------------------------------------------------------        
+    #                
+    def init_trans_mat(self, nState):
+
+        # Reset transition probability matrix
+        trans_prob_mat = np.zeros((nState, nState))
+        
+        for i in xrange(nState):
+
+            # Exponential function                
+            # From y = a*e^(-bx)
+            a = 0.1
+            b = np.log(0.005/a)/(-(nState-i))
+            f = lambda x: a*np.exp(-b*x)
+
+            for j in np.array(range(nState-i))+i:
+                trans_prob_mat[i,j] = f(j)
+
+            trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
+                
+        return trans_prob_mat
+    
     
     ## #----------------------------------------------------------------------
     ## #

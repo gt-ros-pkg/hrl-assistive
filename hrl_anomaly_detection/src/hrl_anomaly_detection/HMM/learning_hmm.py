@@ -61,7 +61,7 @@ class learning_hmm(learning_base):
     def fit(self, X_train, verbose=False):
         
         # Transition probability matrix (Initial transition probability, TODO?)
-        A = self.get_trans_mat(X_train, self.nState)
+        A = self.init_trans_mat(self.nState)
                                 
         # We should think about multivariate Gaussian pdf.        
         self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
@@ -117,30 +117,6 @@ class learning_hmm(learning_base):
             print "----------------------------------------------"
             for i in xrange(n):
                 print self.ml.getEmission(i)
-
-
-    #----------------------------------------------------------------------        
-    #                
-    def get_trans_mat(self, vecs, nState):
-        # vecs = number_of_data x profile_length
-
-        # Reset transition probability matrix
-        trans_prob_mat = np.zeros((nState, nState))
-        
-        for i in xrange(nState):
-
-            # Exponential function                
-            # From y = a*e^(-bx)
-            a = 0.1
-            b = np.log(0.005/a)/(-(nState-i))
-            f = lambda x: a*np.exp(-b*x)
-
-            for j in np.array(range(nState-i))+i:
-                trans_prob_mat[i,j] = f(j)
-
-            trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
-                
-        return trans_prob_mat
 
 
     #----------------------------------------------------------------------        
@@ -249,67 +225,8 @@ class learning_hmm(learning_base):
             if x < 1: return 1.0 
             if np.isnan(x)==True: return 1.0
         return 0.0
-        
-        
-    #----------------------------------------------------------------------        
-    # Compute the estimated probability (0.0~1.0)
-    def multi_step_predict(self, X_test, verbose=False):
-        # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
-        # Output:  P(X_{N+M} | X)
+               
 
-        # Initialization            
-        X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
-        X = copy.copy(X_test)
-        X_pred = [0.0]*self.nFutureStep
-
-        # Recursive prediction
-        for i in xrange(self.nFutureStep):
-
-            X_pred[i], X_pred_prob[:,i] = self.one_step_predict(X)
-
-            # Udate 
-            X.append(X_pred[i])
-
-            if False: #verbose:
-                print "-----------------"
-                print X_pred_prob[:,i].shape
-                a = None
-                for p in X_pred_prob[:,i]:
-                    if a==None:
-                        a = "%0.3f" % p
-                    else:
-                        a += "  "
-                        a += "%0.3f" % p
-                print a
-                        
-        return X_pred, X_pred_prob
-
-
-    #----------------------------------------------------------------------        
-    #
-    def one_step_predict(self, X):
-        # Input
-        # @ X_test: 1 x known steps #samples x known steps
-        # Output
-        # @ X_pred: 1
-        # @ X_pred_prob: samples x 1
-
-        # Initialization            
-        X_pred_prob = np.zeros((len(self.obsrv_range)))
-        if type(X) == np.ndarray:
-            X = X.tolist()
-
-        # Get all probability
-        for i, obsrv in enumerate(self.obsrv_range):           
-            if abs(X[-1]-obsrv) > 4.0: continue
-            X_pred_prob[i] += self.predict([X+[obsrv]])        #???? normalized??     
-            
-        # Select observation with maximum probability
-        idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
-
-        return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
-
-        
     #----------------------------------------------------------------------        
     #
     def predict(self, X):
@@ -319,6 +236,10 @@ class learning_hmm(learning_base):
         # Output
         # @ probability: samples x 1 [list]
 
+        if self.nCurrentStep > self.nMaxStep:
+            print "ERROR: Current step over the max step"
+            sys.exit()
+        
         if type(X) == np.ndarray:
             X = X.tolist()
 
@@ -369,7 +290,112 @@ class learning_hmm(learning_base):
 
         return prob
 
+
+    #----------------------------------------------------------------------        
+    #
+    def one_step_predict(self, X):
+        # Input
+        # @ X_test: 1 x known steps #samples x known steps
+        # Output
+        # @ X_pred: 1
+        # @ X_pred_prob: samples x 1
+
+        # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range)))
+        if type(X) == np.ndarray:
+            X = X.tolist()
+
+        # Get all probability
+        for i, obsrv in enumerate(self.obsrv_range):           
+            if abs(X[-1]-obsrv) > 4.0: continue
+            X_pred_prob[i] += self.predict([X+[obsrv]])        #???? normalized??     
+            
+        # Select observation with maximum probability
+        idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
+            
+        return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
+
         
+    #----------------------------------------------------------------------        
+    # Compute the estimated probability (0.0~1.0)
+    def multi_step_predict(self, X_test, verbose=False):
+        # Input: X, X_{N+M-1}, P(X_{N+M-1} | X)
+        # Output:  P(X_{N+M} | X)
+
+        # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
+        X = copy.copy(X_test)
+        X_pred = [0.0]*self.nFutureStep
+
+        # Recursive prediction
+        for i in xrange(self.nFutureStep):
+
+            X_pred[i], X_pred_prob[:,i] = self.one_step_predict(X)
+
+            # Udate 
+            X.append(X_pred[i])
+
+            if False: #verbose:
+                print "-----------------"
+                print X_pred_prob[:,i].shape
+                a = None
+                for p in X_pred_prob[:,i]:
+                    if a==None:
+                        a = "%0.3f" % p
+                    else:
+                        a += "  "
+                        a += "%0.3f" % p
+                print a
+                        
+        return X_pred, X_pred_prob
+
+
+    #----------------------------------------------------------------------        
+    # Compute the estimated probability (0.0~1.0)
+    def multi_step_approximated_predict(self, X_test, verbose=False):
+
+
+
+        return X_pred, X_pred_prob
+        
+        
+    #----------------------------------------------------------------------
+    # Returns the mean accuracy on the given test data and labels.
+    ## def score(self, X_test, **kwargs):
+    ##     # Neccessary package
+    ##     from sklearn.metrics import r2_score
+
+    ##     # Get input
+    ##     if type(X_test) == np.ndarray:
+    ##         X=X_test.tolist()
+
+    ##     sample_weight=None # TODO: future input
+
+    ##     #
+    ##     n = len(X)
+    ##     score  = np.zeros((n))
+    ##     X_next = np.zeros((n))
+    ##     X_pred = np.zeros((n))
+
+    ##     for i in xrange(n):
+
+    ##         if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
+    ##             X_past = X[i][:self.nCurrentStep]
+    ##             X_next[i] = X[i][self.nCurrentStep]
+    ##         else:
+    ##             X_past = X[i][:-1]
+    ##             X_next[i] = X[i][-1]
+
+    ##         X_pred[i], _ = self.one_step_predict(X_past)
+
+    ##     return r2_score(X_next, X_pred, sample_weight=sample_weight)
+            
+    ##     ## from sklearn.metrics import accuracy_score
+    ##     ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
+        
+    ##     ## return np.sum(score)/float(n)
+
+
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
     def score(self, X_test, **kwargs):
@@ -384,28 +410,34 @@ class learning_hmm(learning_base):
 
         #
         n = len(X)
-        score  = np.zeros((n))
-        X_next = np.zeros((n))
-        X_pred = np.zeros((n))
+        nCurrentStep = [5,10,15,20,25]
+        nFutureStep = 1
 
-        for i in xrange(n):
+        total_score = np.zeros((len(nCurrentStep)))
+        for j, nStep in enumerate(nCurrentStep):
 
-            if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
-                X_past = X[i][:self.nCurrentStep]
-                X_next[i] = X[i][self.nCurrentStep]
-            else:
-                X_past = X[i][:-1]
-                X_next[i] = X[i][-1]
-
-            X_pred[i], _ = self.one_step_predict(X_past)
-
-        return r2_score(X_next, X_pred, sample_weight=sample_weight)
+            self.nCurrentStep = nStep
+            X_next = np.zeros((n))
+            X_pred = np.zeros((n))
             
-        ## from sklearn.metrics import accuracy_score
-        ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
-        
-        ## return np.sum(score)/float(n)
+            for i in xrange(n):
+                if len(X[i]) > nStep+nFutureStep: #Full data                
+                    X_past = X[i][:nStep]
+                    X_next[i] = X[i][nStep]
+                else:
+                    print "Error: input should be full length data!!"
+                    sys.exit()
 
+                X_pred[i], _ = self.one_step_predict(X_past)
+
+            total_score[j] = r2_score(X_next, X_pred, sample_weight=sample_weight)
+
+        print "---------------------------------------------"
+        print "Total Score"
+        print total_score
+        print "---------------------------------------------"
+        return sum(total_score) / float(len(nCurrentStep))
+        
 
     #----------------------------------------------------------------------        
     #
@@ -532,16 +564,16 @@ if __name__ == '__main__':
     nState    = 28
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 4
+    nFutureStep = 1
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 10
+    nCurrentStep = 100
 
     if nState == 28:
         step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
             #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
-    elif nState == 30:
-        step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    ## elif nState == 30:
+    ##     step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     else:
         step_size_list = None
         
@@ -593,19 +625,16 @@ if __name__ == '__main__':
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'+str(t[3])+str(t[4])+'.pkl')
 
         #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25]}]
-        ## tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
-        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
-        ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+        tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
 
+        ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
 
+        
         ## step_size_list_set = []
         ## for i in xrange(10):
         ##     step_size_list = [1] * lh.nState
