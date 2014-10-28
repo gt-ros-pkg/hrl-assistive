@@ -366,8 +366,20 @@ class learning_hmm(learning_base):
     # Compute the estimated probability (0.0~1.0)
     def multi_step_approximated_predict(self, X_test, verbose=False):
 
+        # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
+        X = copy.copy(X_test)
+        X_pred = [0.0]*self.nFutureStep
 
+        # Get mu, sigma from X such that u_{N+1}, sigma_{N+1}
+        _, X_pred_prob[:,i] = self.one_step_predict(X)
+        
+            
+        # Recursive prediction
+        for i in xrange(self.nFutureStep):
 
+            
+            
         return X_pred, X_pred_prob
         
         
@@ -573,13 +585,13 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 28
+    nState    = 34
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
     ## data_column_idx = 1
-    fObsrvResol = 0.1
-    nCurrentStep = 10
+    fObsrvResol = 0.2
+    nCurrentStep = 20
 
     ## if nState == 28:
     ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
