@@ -248,9 +248,11 @@ class learning_hmm(learning_base):
         if type(X) == np.ndarray:
             X = X.tolist()
 
+        bloglikelihood=False
+            
         n = len(X)
-        prob = [0.0] * n
-
+        prob = [0.0] * n            
+            
         for i in xrange(n):
 
             if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
@@ -260,45 +262,48 @@ class learning_hmm(learning_base):
                 X_test = X[i][:-1]
                 X_pred = X[i][-1]
 
+            if bloglikelihood:
                 
-            # profile
-            final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
+                # profile
+                final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
 
-            prob[i] = self.ml.loglikelihood(final_ts_obj)
-            ## continue
+                # log( P(O|param) )
+                prob[i] = self.ml.loglikelihood(final_ts_obj)
 
-            ## # Past profile
-            ## final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+            else:
+
+                # Past profile
+                final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
             
-            ## ## print "\nForward"
-            ## ## logp1 = self.ml.loglikelihood(final_ts_obj)
-            ## ## print "logp = " + str(logp1) + "\n"
+                # alpha: X_test length y #latent States at the moment t when state i is ended
+                #        test_profile_length x number_of_hidden_state
+                (alpha,scale) = self.ml.forward(final_ts_obj)
+                print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
+                ## print "scale = " + str(scale) + "\n"
+                ## print np.array(X_test).shape, np.array(alpha).shape
 
-            ## # alpha: X_test length y #latent States at the moment t when state i is ended
-            ## #        test_profile_length x number_of_hidden_state
-            ## (alpha,scale) = self.ml.forward(final_ts_obj)
-            ## ## print "alpha: ", np.array(alpha).shape,"\n" + str(alpha) + "\n"
-            ## ## print "scale = " + str(scale) + "\n"
-            ## ## print np.array(X_test).shape, np.array(alpha).shape
+                print final_ts_obj.shape
+                
+                # beta
+                beta = self.ml.backward(final_ts_obj,scale)
+                print "beta", np.array(beta).shape, " = \n " #+ str(beta) + "\n"
 
-            ## # beta
-            ## beta = self.ml.backward(final_ts_obj,scale)
-            ## ## print "beta", np.array(beta).shape, " = \n " + str(beta) + "\n"
+                sys.exit()
+                
+                pred_numerator = 0.0
+                pred_denominator = 0.0
+                for j in xrange(self.nState): # N+1
 
-            ## pred_numerator = 0.0
-            ## pred_denominator = 0.0
-            ## for j in xrange(self.nState): # N+1
+                    total = 0.0        
+                    for k in xrange(self.nState): # N                  
+                        total += self.ml.getTransition(k,j) * alpha[-1][k]
 
-            ##     total = 0.0        
-            ##     for k in xrange(self.nState): # N                  
-            ##         total += self.ml.getTransition(k,j) * alpha[-1][k]
+                    (mu, sigma) = self.ml.getEmission(j)
 
-            ##     (mu, sigma) = self.ml.getEmission(j)
+                    pred_numerator += norm(loc=mu,scale=sigma).pdf(X_pred) * total
+                    pred_denominator += alpha[-1][j]*beta[-1][j]
 
-            ##     pred_numerator += norm(loc=mu,scale=sigma).pdf(X_pred) * total
-            ##     pred_denominator += alpha[-1][j]*beta[-1][j]
-
-            ## prob[i] = pred_numerator / pred_denominator
+                prob[i] = pred_numerator / pred_denominator
 
         return prob
 
@@ -376,7 +381,7 @@ class learning_hmm(learning_base):
         
             
         # Recursive prediction
-        for i in xrange(self.nFutureStep):
+        ## for i in xrange(self.nFutureStep):
 
             
             
@@ -605,7 +610,7 @@ if __name__ == '__main__':
         
     ######################################################    
     # Get Training Data
-    if os.path.isfile(pkl_file) and False:
+    if os.path.isfile(pkl_file):
         print "Saved pickle found"
         data = ut.load_pickle(pkl_file)
         data_vecs = data['data_vecs']
