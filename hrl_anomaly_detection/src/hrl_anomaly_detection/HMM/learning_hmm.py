@@ -609,11 +609,11 @@ if __name__ == '__main__':
         ut.save_pickle(data,pkl_file)
 
 
-    from collections import OrderedDict
-    print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
-    print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
-    print len(data_mech), data_vecs.shape
-    sys.exit()
+    ## from collections import OrderedDict
+    ## print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
+    ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
+    ## print len(data_mech), data_vecs.shape
+    ## sys.exit()
         
     # Filtering
     idxs = np.where(['Office Cabinet' in i for i in data_mech])[0].tolist()
