@@ -344,7 +344,7 @@ class learning_hmm(learning_base):
                     pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
-                    prob[i] = pred_numerator / np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
+                prob[i] = pred_numerator #/ np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
 
                 
         return prob
@@ -374,7 +374,7 @@ class learning_hmm(learning_base):
         max_idx = X_pred_prob.argmax()
             
         ## return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
-        return self.obsrv_range[max_idx], X_pred_prob #/np.sum(X_pred_prob)
+        return self.obsrv_range[max_idx], X_pred_prob /np.sum(X_pred_prob)
 
         
     #----------------------------------------------------------------------        
@@ -634,7 +634,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 34
+    nState    = 5
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
@@ -642,8 +642,8 @@ if __name__ == '__main__':
     fObsrvResol = 0.2
     nCurrentStep = 14
 
-    if nState == 10:
-        step_size_list = [1,1,1,1,1, 1,1,1,1,1]
+    if nState == 34:
+        step_size_list =  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1] 
     ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
             #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
     ## elif nState == 30:
@@ -711,17 +711,6 @@ if __name__ == '__main__':
         t=time.gmtime()                
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'+str(t[3])+str(t[4])+'.pkl')
 
-        #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        ## tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        ## tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-
-        ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
-
-        
         step_size_list_set = []
         for i in xrange(300):
             step_size_list = [1] * lh.nState
@@ -734,9 +723,18 @@ if __name__ == '__main__':
                 else:
                     step_size_list[idx] += 1                
             step_size_list_set.append(step_size_list)                    
+
         
-        tuned_parameters = [{'step_size_list': step_size_list_set}]
-        
+        #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+        tuned_parameters = [{'nState': [lh.nState], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2], 'step_size_list': step_size_list_set}]        
+        ## tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+
+        ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
 
     elif opt.bOptMeanVar:
@@ -767,25 +765,25 @@ if __name__ == '__main__':
 
 
 
-    # Compute mean and std
-    mu    = np.zeros((nMaxStep,1))
-    sigma = np.zeros((nMaxStep,1))
-    index = 0
-    m_init = 0
-    while (index < nMaxStep):
-        temp_vec = lh.aXData[:,(m_init):(m_init + 1)] 
-        m_init = m_init + 1
+    ## # Compute mean and std
+    ## mu    = np.zeros((nMaxStep,1))
+    ## sigma = np.zeros((nMaxStep,1))
+    ## index = 0
+    ## m_init = 0
+    ## while (index < nMaxStep):
+    ##     temp_vec = lh.aXData[:,(m_init):(m_init + 1)] 
+    ##     m_init = m_init + 1
 
-        mu[index] = np.mean(temp_vec)
-        sigma[index] = np.std(temp_vec)
-        index = index+1
+    ##     mu[index] = np.mean(temp_vec)
+    ##     sigma[index] = np.std(temp_vec)
+    ##     index = index+1
 
-    for i in xrange(len(mu)):
-        print mu[i],sigma[i]
+    ## for i in xrange(len(mu)):
+    ##     print mu[i],sigma[i]
 
             
     ## print lh.A
-    print lh.B
+    ## print lh.B
     ## print lh.pi
             
     ## print lh.mean_path_plot(lh.mu, lh.sigma)
