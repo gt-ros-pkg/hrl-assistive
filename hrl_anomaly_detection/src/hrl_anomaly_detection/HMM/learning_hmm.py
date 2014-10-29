@@ -26,7 +26,7 @@ from scipy.stats import norm
 from sklearn.cross_validation import train_test_split
 
 from learning_base import learning_base
-
+import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class learning_hmm(learning_base):
     def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None):
@@ -96,6 +96,7 @@ class learning_hmm(learning_base):
         # Future observation range
         self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
+        self.state_range = int(np.arange(0, self.nState, 1))
 
 
         if verbose:
@@ -415,12 +416,33 @@ class learning_hmm(learning_base):
     # Compute the estimated probability (0.0~1.0)
     def multi_step_approximated_predict(self, X_test, verbose=False):
 
-        # Initialization            
+        ## Initialization            
         X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
         X = copy.copy(X_test)
         X_pred = [0.0]*self.nFutureStep
 
-        # Get mu, sigma from X such that u_{N+1}, sigma_{N+1}
+        ## Get mu, sigma from X such that u_{N+1}, sigma_{N+1}
+        # Past profile
+        final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+
+        # alpha: X_test length y #latent States at the moment t when state i is ended
+        #        test_profile_length x number_of_hidden_state
+        (alpha,scale) = self.ml.forward(final_ts_obj)
+        alpha         = np.array(alpha)
+
+        scaling_factor = 1.0
+        for i in xrange(len(scale)):
+            scaling_factor *= scale[i] 
+
+        p_z_x = np.zeros((self.nState))
+        for i in xrange(self.nState):
+            p_z_x[i] = np.sum(self.A[:,i]*alpha[-1,:]) * scaling_factor
+
+        (u_mu, u_var) = ldh.gaussian_param_estimation(self.state_range, p_z_x)
+
+        for i in xrange(self.nFutureStep-1):
+            some thing...
+        
         _, X_pred_prob[:,i] = self.one_step_predict(X)
         
             
@@ -430,6 +452,20 @@ class learning_hmm(learning_base):
             
             
         return X_pred, X_pred_prob
+
+    #----------------------------------------------------------------------        
+    # Compute the estimated probability (0.0~1.0)
+    def gaussian_approximation(self, nCurState, u_mu, u_var):
+
+        u_sigma = np.sqrt(u_var)
+
+        mu = 0.0
+        for i in xrange(self.nState):
+            mu += norm.pdf(nCurState,loc=u_mu,scale=u_sigma) * np.sum(self.A[nCurState,:]*self.state_range)
+
+            
+        return mu, var
+
         
         
     #----------------------------------------------------------------------
@@ -551,7 +587,7 @@ class learning_hmm(learning_base):
         self.ax.plot(X_test, 'k-o')    
         ## self.ax.plot(X_test, '-o', ms=10, lw=1, alpha=0.5, mfc='orange')    
 
-        # 2) Next predictive & true observation
+        # 2) Next true & predictive observation
         y_array = np.hstack([X_test[-1], X_test_next])                        
         x_array = np.arange(0, len(X_test_next)+0.0001,1.0) + len(X_test) -1        
         self.ax.plot(x_array, y_array, 'k-', linewidth=1.0)    
@@ -562,19 +598,27 @@ class learning_hmm(learning_base):
         # 3) Prediction        
         n,m = X_pred_prob.shape
         x_last = X_test[-1]
+        mu = np.zeros((m))
+        var = np.zeros((m))
         for i in xrange(m):
             
-            x_pred_max = 0.0
-            x_best     = 0.0            
-            for x, prob in zip(self.obsrv_range, X_pred_prob[:,i]):
-                y_array = np.array([x_last, x])
+            ## x_pred_max = 0.0
+            ## x_best     = 0.0            
+            ## for x, prob in zip(self.obsrv_range, X_pred_prob[:,i]):
+            ##     y_array = np.array([x_last, x])
                 
-                alpha   = 1.0 - np.exp(-prob*50.0)
-                if alpha > 1.0: alpha = 1.0
-                self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=alpha, linewidth=1.0)    
+            ##     alpha   = 1.0 - np.exp(-prob*50.0)
+            ##     if alpha > 1.0: alpha = 1.0
+            ##     self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=alpha, linewidth=1.0)    
 
-            x_last = X_pred[i]
-                
+            ## x_last = X_pred[i]
+            (mu[i], var[i]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,i])
+
+        # 4) mean var plot
+        mu  = np.hstack([X_test,mu])
+        var = np.hstack([np.zeros((len(X_test))),var])
+        X   = np.arange(0, len(mu),1.0)
+        self.ax.fill_between(X, mu-4.*var**2, mu+4.*var**2, facecolor='yellow', alpha=0.5)
 
         ## Side distribution
         self.ax1 = self.fig.add_subplot(gs[1])

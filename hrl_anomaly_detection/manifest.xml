@@ -14,6 +14,7 @@
     <depend package="hrl_lib"/>
 
     <depend package="modeling_forces"/>
+    <depend package="sandbox_dpark_darpa_m3"/>
 
 
     <!--depend package="hrl_lib"/>
