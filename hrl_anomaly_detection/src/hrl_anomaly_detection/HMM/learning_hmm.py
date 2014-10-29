@@ -296,7 +296,7 @@ class learning_hmm(learning_base):
                 X_test = X[i][:-1]
                 X_pred = X[i][-1]
 
-            bloglikelihood=False                
+            bloglikelihood=False
             if bloglikelihood:
                 
                 # profile
@@ -344,7 +344,7 @@ class learning_hmm(learning_base):
                     pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
-                    prob[i] = pred_numerator #/np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
+                    prob[i] = pred_numerator / np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
 
                 
         return prob
@@ -640,10 +640,10 @@ if __name__ == '__main__':
     nFutureStep = 6
     ## data_column_idx = 1
     fObsrvResol = 0.2
-    nCurrentStep = 20
+    nCurrentStep = 14
 
-    if nState == 34:
-        step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0]
+    if nState == 10:
+        step_size_list = [1,1,1,1,1, 1,1,1,1,1]
     ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
             #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
     ## elif nState == 30:
@@ -651,6 +651,12 @@ if __name__ == '__main__':
     else:
         step_size_list = None
 
+    ## step_size_list = [5,5,5,5,5,5,5,1]
+    ## nState = len(step_size_list)
+    ## if sum(step_size_list) != nMaxStep:
+    ##     print "Wrong number !!"
+    ##     sys.exit()
+        
     ######################################################    
     # Get Training Data
     if os.path.isfile(pkl_file):
@@ -747,7 +753,7 @@ if __name__ == '__main__':
         ## print np.array(h_config)*180.0/3.14
         ## print len(h_ftan)
 
-        for i in xrange(1,2,2):
+        for i in xrange(1,22,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
@@ -760,9 +766,27 @@ if __name__ == '__main__':
             lh.final_plot()
 
 
-    print lh.A
+
+    # Compute mean and std
+    mu    = np.zeros((nMaxStep,1))
+    sigma = np.zeros((nMaxStep,1))
+    index = 0
+    m_init = 0
+    while (index < nMaxStep):
+        temp_vec = lh.aXData[:,(m_init):(m_init + 1)] 
+        m_init = m_init + 1
+
+        mu[index] = np.mean(temp_vec)
+        sigma[index] = np.std(temp_vec)
+        index = index+1
+
+    for i in xrange(len(mu)):
+        print mu[i],sigma[i]
+
+            
+    ## print lh.A
     print lh.B
-    print lh.pi
+    ## print lh.pi
             
     ## print lh.mean_path_plot(lh.mu, lh.sigma)
         
