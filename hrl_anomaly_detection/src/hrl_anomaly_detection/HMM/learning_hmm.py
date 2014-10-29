@@ -23,6 +23,7 @@ from matplotlib import gridspec
 import ghmm
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from scipy.stats import norm
+from sklearn.cross_validation import train_test_split
 
 from learning_base import learning_base
 
@@ -42,6 +43,7 @@ class learning_hmm(learning_base):
         ## Un-tunable parameters
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
+        self.A = None # transition matrix
         
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -58,17 +60,18 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, verbose=False):
+    def fit(self, X_train, B=None, verbose=False):
         
         # Transition probability matrix (Initial transition probability, TODO?)
         #A = self.init_trans_mat(self.nState).tolist()
         A,_ = mad.get_trans_mat(X_train, self.nState)
-                                
-        # We should think about multivariate Gaussian pdf.        
-        self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
 
-        # Emission probability matrix
-        B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
+        if B==None:
+            # We should think about multivariate Gaussian pdf.        
+            self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
+
+            # Emission probability matrix
+            B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
         
         # pi - initial probabilities per state 
         ## pi = [1.0/float(self.nState)] * self.nState
@@ -84,7 +87,9 @@ class learning_hmm(learning_base):
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
         self.ml.baumWelch(final_seq)
 
-        
+        [self.A,self.B,self.pi] = self.ml.asMatrices()
+        self.A = np.array(self.A)
+        self.B = np.array(self.B)
         ## self.mean_path_plot(mu[:,0], sigma[:,0])        
         ## print "Completed to fitting", np.array(final_seq).shape
 
@@ -147,7 +152,8 @@ class learning_hmm(learning_base):
             else:
                 print "Use previous step size list!!"                            
                 print self.step_size_list
-            
+
+            # Compute mean and std
             index = 0
             m_init = 0
             while (index < self.nState):
@@ -158,7 +164,7 @@ class learning_hmm(learning_base):
                 sigma[index] = np.std(temp_vec)
                 index = index+1
 
-        else:
+        elif False:
             from scipy import optimize
 
             # Initial 
@@ -197,6 +203,11 @@ class learning_hmm(learning_base):
                 sigma[index] = np.std(temp_vec)
                 index = index+1
 
+        else:
+
+            tuned_parameters = [{'step_size_list': step_size_list_set}]            
+            self.param_estimation(tuned_parameters,2)
+
         return mu,sigma
 
 
@@ -205,20 +216,45 @@ class learning_hmm(learning_base):
     ## def mean_vars_score(self, x0, *args):
     def mean_vars_score(self, x0):
 
-        vecs = self.aXData #args[0]        
-        ## mu    = np.zeros((self.nState,1))
+        print x0
+        mu    = np.zeros((self.nState,1))
         sigma = np.zeros((self.nState,1))
+        
+        index = 0
+        m_init = 0
+        while (index < self.nState):
+            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
+            m_init = m_init + int(self.step_size_list[index])
 
-        for i, nDivs in enumerate(x0):
-            m_init = i*nDivs
-            try:
-                temp_vec = vecs[:,int(m_init):int(m_init+nDivs)]
-            except:
-                return 0.0
+            mu[index] = np.mean(temp_vec)
+            sigma[index] = np.std(temp_vec)
+            index = index+1
 
-            ## mu[i] = np.mean(temp_vec)
-            sigma[i] = np.std(temp_vec)
-        return np.std(sigma)
+        B = np.hstack([mu, sigma]).tolist() # Must be [i,:] = [mu, sigma]
+
+        # Split the dataset in two equal parts
+        X_train, X_test = train_test_split(self.aXData, test_size=0.3, random_state=0)
+        
+        self.fit(X_train, B=B)    
+        res = -1.0*self.score(X_test)
+        print res
+        return res
+        
+        
+        ## vecs = self.aXData #args[0]        
+        ## ## mu    = np.zeros((self.nState,1))
+        ## sigma = np.zeros((self.nState,1))
+
+        ## for i, nDivs in enumerate(x0):
+        ##     m_init = i*nDivs
+        ##     try:
+        ##         temp_vec = vecs[:,int(m_init):int(m_init+nDivs)]
+        ##     except:
+        ##         return 0.0
+
+        ##     ## mu[i] = np.mean(temp_vec)
+        ##     sigma[i] = np.std(temp_vec)
+        ## return np.std(sigma)
 
     #----------------------------------------------------------------------        
     #
@@ -248,8 +284,6 @@ class learning_hmm(learning_base):
         if type(X) == np.ndarray:
             X = X.tolist()
 
-        bloglikelihood=False
-            
         n = len(X)
         prob = [0.0] * n            
             
@@ -262,49 +296,57 @@ class learning_hmm(learning_base):
                 X_test = X[i][:-1]
                 X_pred = X[i][-1]
 
+            bloglikelihood=False                
             if bloglikelihood:
                 
                 # profile
                 final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
 
                 # log( P(O|param) )
-                prob[i] = self.ml.loglikelihood(final_ts_obj)
+                prob[i] = np.exp(self.ml.loglikelihood(final_ts_obj))
 
             else:
 
                 # Past profile
                 final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+                #final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
             
                 # alpha: X_test length y #latent States at the moment t when state i is ended
                 #        test_profile_length x number_of_hidden_state
                 (alpha,scale) = self.ml.forward(final_ts_obj)
-                print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
+                alpha         = np.array(alpha)
+                scale         = np.array(scale)
+                ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
                 ## print "scale = " + str(scale) + "\n"
-                ## print np.array(X_test).shape, np.array(alpha).shape
-
-                print final_ts_obj.shape
                 
                 # beta
-                beta = self.ml.backward(final_ts_obj,scale)
-                print "beta", np.array(beta).shape, " = \n " #+ str(beta) + "\n"
+                ## beta = self.ml.backward(final_ts_obj,scale)
+                ## print "beta", np.array(beta).shape, " = \n " #+ str(beta) + "\n"
 
-                sys.exit()
+                ## scaling_factor = 1.0
+                ## for k in xrange(len(scale)):
+                ##     scaling_factor *= scale[k] 
                 
                 pred_numerator = 0.0
-                pred_denominator = 0.0
+                ## pred_denominator = 0.0
                 for j in xrange(self.nState): # N+1
 
-                    total = 0.0        
-                    for k in xrange(self.nState): # N                  
-                        total += self.ml.getTransition(k,j) * alpha[-1][k]
+                        
+                    total = np.sum(self.A[:,j]*alpha[-1,:]) #* scaling_factor
+                    [mu, sigma] = self.B[j]
+                    
+                    ## total = 0.0        
+                    ## for k in xrange(self.nState): # N                  
+                    ##     total += self.ml.getTransition(k,j) * alpha[self.nCurrentStep][k]
 
-                    (mu, sigma) = self.ml.getEmission(j)
+                    ## (mu, sigma) = self.ml.getEmission(j)
 
-                    pred_numerator += norm(loc=mu,scale=sigma).pdf(X_pred) * total
-                    pred_denominator += alpha[-1][j]*beta[-1][j]
+                    pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
+                    ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
-                prob[i] = pred_numerator / pred_denominator
+                    prob[i] = pred_numerator #/np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
 
+                
         return prob
 
 
@@ -325,12 +367,14 @@ class learning_hmm(learning_base):
         # Get all probability
         for i, obsrv in enumerate(self.obsrv_range):           
             if abs(X[-1]-obsrv) > 4.0: continue
-            X_pred_prob[i] += np.exp(self.predict([X+[obsrv]]))        #???? normalized??     
+            X_pred_prob[i] += self.predict([X+[obsrv]])        #???? normalized??     
 
         # Select observation with maximum probability
-        idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
+        ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
+        max_idx = X_pred_prob.argmax()
             
-        return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
+        ## return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
+        return self.obsrv_range[max_idx], X_pred_prob #/np.sum(X_pred_prob)
 
         
     #----------------------------------------------------------------------        
@@ -461,10 +505,10 @@ class learning_hmm(learning_base):
 
             total_score[j] = r2_score(X_next, X_pred, sample_weight=sample_weight)
 
-        print "---------------------------------------------"
-        print "Total Score"
-        print total_score
-        print "---------------------------------------------"
+        ## print "---------------------------------------------"
+        ## print "Total Score"
+        ## print total_score
+        ## print "---------------------------------------------"
         return sum(total_score) / float(len(nCurrentStep))
         
 
@@ -598,16 +642,15 @@ if __name__ == '__main__':
     fObsrvResol = 0.2
     nCurrentStep = 20
 
-    ## if nState == 28:
+    if nState == 34:
+        step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0]
     ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
             #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
     ## elif nState == 30:
     ##     step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    ## else:
-        ## step_size_list = None
+    else:
+        step_size_list = None
 
-    step_size_list = None
-        
     ######################################################    
     # Get Training Data
     if os.path.isfile(pkl_file):
@@ -663,30 +706,32 @@ if __name__ == '__main__':
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'+str(t[3])+str(t[4])+'.pkl')
 
         #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
-        tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [10,11,12,13,14], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [15,16,17,18,19], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [20,21,22,23,24], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [25,26,27,28,29], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [30,31,32,33,34], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
+        ## tuned_parameters = [{'nState': [35,36], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.2]}]
 
         ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
 
         
-        ## step_size_list_set = []
-        ## for i in xrange(10):
-        ##     step_size_list = [1] * lh.nState
-        ##     while sum(step_size_list)!=lh.nMaxStep:
-        ##         idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
-        ##         if idx < 0 or idx >= lh.nState: 
-        ##             continue
-        ##         else:
-        ##             step_size_list[idx] += 1                
-        ##     step_size_list_set.append(step_size_list)                    
+        step_size_list_set = []
+        for i in xrange(300):
+            step_size_list = [1] * lh.nState
+            while sum(step_size_list)!=lh.nMaxStep:
+                ## idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
+                idx = int(random.randrange(0, lh.nState, 1))
+                
+                if idx < 0 or idx >= lh.nState: 
+                    continue
+                else:
+                    step_size_list[idx] += 1                
+            step_size_list_set.append(step_size_list)                    
         
-        ## tuned_parameters = [{'nState': [28], 'nFutureStep': [1], 'fObsrvResol': [0.1], 'nCurrentStep': [5,10,15,20,25], 'step_size_list': step_size_list_set}]
+        tuned_parameters = [{'step_size_list': step_size_list_set}]
         
-        lh.param_estimation(tuned_parameters, 20, save_file=save_file)
+        lh.param_estimation(tuned_parameters, 10, save_file=save_file)
 
     elif opt.bOptMeanVar:
         print "Optimize B matrix"
@@ -702,7 +747,7 @@ if __name__ == '__main__':
         ## print np.array(h_config)*180.0/3.14
         ## print len(h_ftan)
 
-        for i in xrange(1,22,2):
+        for i in xrange(1,2,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
@@ -715,6 +760,10 @@ if __name__ == '__main__':
             lh.final_plot()
 
 
+    print lh.A
+    print lh.B
+    print lh.pi
+            
     ## print lh.mean_path_plot(lh.mu, lh.sigma)
         
     ## print x_test
