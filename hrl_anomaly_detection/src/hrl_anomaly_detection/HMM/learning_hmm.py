@@ -96,7 +96,7 @@ class learning_hmm(learning_base):
         # Future observation range
         self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
-        self.state_range = int(np.arange(0, self.nState, 1))
+        ## self.state_range = int(np.arange(0, self.nState, 1))
 
 
         if verbose:
