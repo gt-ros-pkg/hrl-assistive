@@ -440,10 +440,10 @@ class learning_hmm(learning_base):
 
         (u_mu, u_var) = ldh.gaussian_param_estimation(self.state_range, p_z_x)
 
-        for i in xrange(self.nFutureStep-1):
-            some thing...
+        ## for i in xrange(self.nFutureStep-1):
+        ##     some thing...
         
-        _, X_pred_prob[:,i] = self.one_step_predict(X)
+        ## _, X_pred_prob[:,i] = self.one_step_predict(X)
         
             
         # Recursive prediction
@@ -678,7 +678,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 15
+    nState    = 16
     nMaxStep     = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
