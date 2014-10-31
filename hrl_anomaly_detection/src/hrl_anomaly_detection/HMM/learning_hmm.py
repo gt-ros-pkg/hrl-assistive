@@ -688,7 +688,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 17
+    nState    = 5
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
@@ -782,7 +782,7 @@ if __name__ == '__main__':
 
         
         #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [5,6,7], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2], 'step_size_list': step_size_list_set}]        
+        tuned_parameters = [{'nState': [lh.nState], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2], 'step_size_list': step_size_list_set}]        
 
         ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
