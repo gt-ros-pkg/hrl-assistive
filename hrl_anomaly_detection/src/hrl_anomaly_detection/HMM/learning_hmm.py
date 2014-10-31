@@ -688,16 +688,18 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 34
+    nState    = 17
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
     ## data_column_idx = 1
-    fObsrvResol = 0.2
+    fObsrvResol = 0.15
     nCurrentStep = 14
 
     if nState == 34:
         step_size_list =  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1] 
+    if nState == 17:
+        step_size_list = [5, 2, 2, 3, 1, 1, 1, 1, 4, 2, 1, 2, 2, 1, 3, 3, 2] 
     ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
             #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
     ## elif nState == 30:
