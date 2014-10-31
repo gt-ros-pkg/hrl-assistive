@@ -60,11 +60,14 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, B=None, verbose=False):
-        
-        # Transition probability matrix (Initial transition probability, TODO?)
-        A = self.init_trans_mat(self.nState).tolist()
-        #A,_ = mad.get_trans_mat(X_train, self.nState)
+    def fit(self, X_train, A=None, B=None, verbose=False):
+
+        if A==None:        
+            # Transition probability matrix (Initial transition probability, TODO?)
+            A = self.init_trans_mat(self.nState).tolist()
+            #A,_ = mad.get_trans_mat(X_train, self.nState)
+        else:
+            print "Use existing A matrix"    
 
         if B==None:
             # We should think about multivariate Gaussian pdf.        
@@ -78,6 +81,8 @@ class learning_hmm(learning_base):
             B[13][1] = 1.1
             for i in xrange(self.nState):
                 print i,B[i]
+        else:
+            print "Use existing B matrix"    
                 
         
         # pi - initial probabilities per state 
@@ -120,7 +125,7 @@ class learning_hmm(learning_base):
                     if a==None:
                         a = "%0.3f" % A[i,j]
                     else:
-                        a += "  "
+                        a += ",  "
                         a += "%0.3f" % A[i,j]
                 print a
             print "----------------------------------------------"
@@ -128,11 +133,11 @@ class learning_hmm(learning_base):
                 a = None
                 for j in xrange(m):
                     if a==None:
-                        a = "%0.3f" % self.ml.getTransition(i,j)
+                        a = "[ %0.3f" % self.ml.getTransition(i,j)
                     else:
-                        a += "  "
+                        a += ",  "
                         a += "%0.3f" % self.ml.getTransition(i,j)
-                print a
+                print a + " ]"
                 
             print "B: ", B.shape
             print B
@@ -176,7 +181,7 @@ class learning_hmm(learning_base):
                 sigma[index] = np.std(temp_vec)
                 index = index+1
 
-        elif False:
+        elif optimize:
             from scipy import optimize
 
             # Initial 
@@ -192,8 +197,13 @@ class learning_hmm(learning_base):
             for i in xrange(self.nState):
                 bnds.append([0,self.nMaxStep])
                 
-            ## res = optimize.minimize(self.mean_vars_score,x0,args=(vecs), method='SLSQP', bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraints}), options={'maxiter': 50})
-            res = optimize.minimize(self.mean_vars_score,x0, method='SLSQP', bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraint1}, {'type':'eq','fun':self.mean_vars_constraint2}), options={'maxiter': 50})
+            ## res = optimize.minimize(self.mean_vars_score,x0,args=(vecs), method='SLSQP', 
+            ##                         bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraints}), 
+            ##                         options={'maxiter': 50})
+            res = optimize.minimize(self.mean_vars_score,x0, method='SLSQP', bounds=bnds, 
+                                    constraints=({'type':'eq','fun':self.mean_vars_constraint1}, 
+                                                 {'type':'eq','fun':self.mean_vars_constraint2}), 
+                                                 options={'maxiter': 50})
             self.step_size_list = res['x'] 
             print "Best step_size_list: "
             string = None
@@ -693,197 +703,6 @@ class learning_hmm(learning_base):
         ## self.fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
 
         
-if __name__ == '__main__':
-
-    import optparse
-    p = optparse.OptionParser()
-    p.add_option('--renew', action='store_true', dest='renew',
-                 default=False, help='Renew pickle files.')
-    p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=False, help='N-fold cross validation for parameter')
-    p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
-                 default=False, help='Optimize mean and vars for B matrix')
-    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
-                 default=False, help='Print out everything')
-    opt, args = p.parse_args()
-
-    ## Init variables    
-    data_path = os.getcwd()
-    nState    = 25
-    nMaxStep  = 36 # total step of data. It should be automatically assigned...
-    pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 10
-    ## data_column_idx = 1
-    fObsrvResol = 0.01
-    nCurrentStep = 14
-
-    if nState == 25:
-        step_size_list =  [1, 1, 1, 3, 3,   4, 3, 2, 2, 1,   1, 1, 1, 1, 1,    1, 1, 1, 1, 1,    1, 1, 1, 1, 1] 
-    elif nState == 17:
-        step_size_list = [2, 3, 3, 3, 3, 1, 1, 1, 3, 2, 1, 2, 2, 1, 3, 3, 2] 
-    elif nState == 8:
-        step_size_list = [2,1,5,5,9,7,5,6] 
-    ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
-            #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
-    ## elif nState == 30:
-    ##     step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    else:
-        step_size_list = None
-
-    if step_size_list != None and (len(step_size_list) !=nState or sum(step_size_list) != nMaxStep):
-        print len(step_size_list), " : ", sum(step_size_list)
-        sys.exit()
-        
-
-    ## step_size_list = [5,5,5,5,5,5,5,1]
-    ## nState = len(step_size_list)
-    ## if sum(step_size_list) != nMaxStep:
-    ##     print "Wrong number !!"
-    ##     sys.exit()
-        
-    ######################################################    
-    # Get Training Data
-    if os.path.isfile(pkl_file):
-        print "Saved pickle found"
-        data = ut.load_pickle(pkl_file)
-        data_vecs = data['data_vecs']
-        data_mech = data['data_mech']
-        data_chunks = data['data_chunks']
-    else:        
-        print "No saved pickle found"        
-        data_vecs, data_mech, data_chunks = mad.get_all_blocked_detection()
-        data = {}
-        data['data_vecs'] = data_vecs
-        data['data_mech'] = data_mech
-        data['data_chunks'] = data_chunks
-        ut.save_pickle(data,pkl_file)
-
-
-    ## from collections import OrderedDict
-    ## print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
-    ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
-    ## print len(data_mech), data_vecs.shape
-    ## sys.exit()
-        
-    # Filtering
-    idxs = np.where(['Office Cabinet' in i for i in data_mech])[0].tolist()
-
-    ## print data_mech
-    ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
-    data_vecs = data_vecs[:,idxs]
-    data_mech = [data_mech[i] for i in idxs]
-    data_chunks = [data_chunks[i] for i in idxs]
-    ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
-
-    ## X data
-    data_vecs = np.array([data_vecs.T]) # category x number_of_data x profile_length
-    data_vecs[0] = mad.approx_missing_value(data_vecs[0])    
-
-    ## ## time step data
-    ## m, n = data_vecs[0].shape
-    ## aXData = np.array([np.arange(0.0,float(n)-0.0001,1.0).tolist()] * m)
-
-    ######################################################    
-    # Training 
-    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, nMaxStep=nMaxStep, nFutureStep=nFutureStep, fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, step_size_list=step_size_list)    
-
-    if opt.bCrossVal:
-        print "Cross Validation"
-
-        import socket, time
-        host_name = socket.gethostname()
-        t=time.gmtime()                
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'+str(t[3])+str(t[4])+'.pkl')
-
-        step_size_list_set = []
-        for i in xrange(300):
-            step_size_list = [1] * lh.nState
-            while sum(step_size_list)!=lh.nMaxStep:
-                ## idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
-                idx = int(random.randrange(0, lh.nState, 1))
-                
-                if idx < 0 or idx >= lh.nState: 
-                    continue
-                else:
-                    step_size_list[idx] += 1                
-            step_size_list_set.append(step_size_list)                    
-
-        
-        #tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [lh.nState], 'nFutureStep': [1], 'fObsrvResol': [0.05,0.1,0.15,0.2], 'step_size_list': step_size_list_set}]        
-
-        ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
-        lh.param_estimation(tuned_parameters, 10, save_file=save_file)
-
-    elif opt.bOptMeanVar:
-        print "Optimize B matrix"
-        lh.vectors_to_mean_vars(lh.aXData, optimize=True)
-        
-    else:
-        lh.fit(lh.aXData, verbose=opt.bVerbose)    
-        ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
-
-        ######################################################    
-        # Test data
-        ## h_config, h_ftan = mad.get_a_blocked_detection()
-        ## print np.array(h_config)*180.0/3.14
-        ## print len(h_ftan)
-
-        for i in xrange(18,31,2):
-            print data_chunks[i]
-            
-            x_test      = data_vecs[0][i,:nCurrentStep].tolist()
-            x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
-            x_test_all  = data_vecs[0][i,:].tolist()
-            ## x_test = h_ftan[:15]
-            ## x_test_next = h_ftan[15:15+lh.nFutureStep]
-
-            x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
-            lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
-            lh.final_plot()
-
-
-
-    ## # Compute mean and std
-    ## mu    = np.zeros((nMaxStep,1))
-    ## sigma = np.zeros((nMaxStep,1))
-    ## index = 0
-    ## m_init = 0
-    ## while (index < nMaxStep):
-    ##     temp_vec = lh.aXData[:,(m_init):(m_init + 1)] 
-    ##     m_init = m_init + 1
-
-    ##     mu[index] = np.mean(temp_vec)
-    ##     sigma[index] = np.std(temp_vec)
-    ##     index = index+1
-
-    ## for i in xrange(len(mu)):
-    ##     print mu[i],sigma[i]
-
-            
-    ## print lh.A
-    ## print lh.B
-    ## print lh.pi
-            
-    ## print lh.mean_path_plot(lh.mu, lh.sigma)
-        
-    ## print x_test
-    ## print x_test[-4:]
-
-    ## fig = plt.figure(1)
-    ## ax = fig.add_subplot(111)
-
-    ## ax.plot(obsrv_range, future_prob)
-    ## plt.show()
-
-
-
-
-
-
-
-
-
 
 
 
