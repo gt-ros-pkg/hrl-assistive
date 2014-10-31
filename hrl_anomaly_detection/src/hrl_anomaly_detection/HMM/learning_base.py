@@ -256,8 +256,8 @@ class learning_base():
 
             # Exponential function                
             # From y = a*e^(-bx)
-            a = 0.1
-            b = np.log(0.005/a)/(-(nState-i))
+            a = 0.4
+            b = np.log(0.0001/a)/(-(nState-i))
             f = lambda x: a*np.exp(-b*x)
 
             for j in np.array(range(nState-i))+i:

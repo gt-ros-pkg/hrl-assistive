@@ -63,8 +63,8 @@ class learning_hmm(learning_base):
     def fit(self, X_train, B=None, verbose=False):
         
         # Transition probability matrix (Initial transition probability, TODO?)
-        #A = self.init_trans_mat(self.nState).tolist()
-        A,_ = mad.get_trans_mat(X_train, self.nState)
+        A = self.init_trans_mat(self.nState).tolist()
+        #A,_ = mad.get_trans_mat(X_train, self.nState)
 
         if B==None:
             # We should think about multivariate Gaussian pdf.        
@@ -72,6 +72,13 @@ class learning_hmm(learning_base):
 
             # Emission probability matrix
             B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
+
+            # TEMP
+            print "temp b fitting!!!!!!!!!!!!!!!!!!!!!"
+            B[13][1] = 1.1
+            for i in xrange(self.nState):
+                print i,B[i]
+                
         
         # pi - initial probabilities per state 
         ## pi = [1.0/float(self.nState)] * self.nState
@@ -98,6 +105,10 @@ class learning_hmm(learning_base):
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
         self.state_range = np.arange(0, self.nState, 1)
 
+        print "----------------------------------------------"        
+        for i in xrange(self.nState):
+            print i,self.B[i]
+        
 
         if verbose:
             A = np.array(A)
@@ -305,7 +316,7 @@ class learning_hmm(learning_base):
 
                 # log( P(O|param) )
                 prob[i] = np.exp(self.ml.loglikelihood(final_ts_obj))
-
+                
             else:
 
                 # Past profile
@@ -368,7 +379,7 @@ class learning_hmm(learning_base):
         # Get all probability
         for i, obsrv in enumerate(self.obsrv_range):           
             if abs(X[-1]-obsrv) > 4.0: continue
-            X_pred_prob[i] += self.predict([X+[obsrv]])        #???? normalized??     
+            X_pred_prob[i] = self.predict([X+[obsrv]])[0]       
 
         # Select observation with maximum probability
         ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
@@ -408,7 +419,14 @@ class learning_hmm(learning_base):
                         a += "  "
                         a += "%0.3f" % p
                 print a
-                        
+
+
+        # TEMP
+        final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?                
+        (path,log)   = self.ml.viterbi(final_ts_obj)
+        print path,log
+
+                
         return X_pred, X_pred_prob
 
 
@@ -628,7 +646,8 @@ class learning_hmm(learning_base):
         mu  = np.hstack([X_test,mu])
         var = np.hstack([np.zeros((len(X_test))),var])
         X   = np.arange(0, len(mu),1.0)
-        self.ax.fill_between(X, mu-4.*var**2, mu+4.*var**2, facecolor='yellow', alpha=0.5)
+        self.ax.fill_between(X, mu-2.*var, mu+2.*var, facecolor='yellow', alpha=0.5)
+        self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
 
         ## Side distribution
         self.ax1 = self.fig.add_subplot(gs[1])
@@ -643,6 +662,8 @@ class learning_hmm(learning_base):
         ##                      labelleft='off',   # labels along the bottom edge are off                             
         ##                      labelbottom='off') # labels along the bottom edge are off
 
+        self.ax1.set_xlim([0.0, 1.0])
+        self.ax1.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
         self.ax1.set_xlabel("Probability of Next Obervation")
             
 
@@ -688,24 +709,31 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 6
+    nState    = 25
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 6
+    nFutureStep = 10
     ## data_column_idx = 1
-    fObsrvResol = 0.15
+    fObsrvResol = 0.01
     nCurrentStep = 14
 
-    if nState == 34:
-        step_size_list =  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1] 
-    if nState == 17:
-        step_size_list = [5, 2, 2, 3, 1, 1, 1, 1, 4, 2, 1, 2, 2, 1, 3, 3, 2] 
+    if nState == 25:
+        step_size_list =  [1, 1, 1, 3, 3,   4, 3, 2, 2, 1,   1, 1, 1, 1, 1,    1, 1, 1, 1, 1,    1, 1, 1, 1, 1] 
+    elif nState == 17:
+        step_size_list = [2, 3, 3, 3, 3, 1, 1, 1, 3, 2, 1, 2, 2, 1, 3, 3, 2] 
+    elif nState == 8:
+        step_size_list = [2,1,5,5,9,7,5,6] 
     ##     step_size_list = [1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
             #step_size_list = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1] 
     ## elif nState == 30:
     ##     step_size_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     else:
         step_size_list = None
+
+    if step_size_list != None and (len(step_size_list) !=nState or sum(step_size_list) != nMaxStep):
+        print len(step_size_list), " : ", sum(step_size_list)
+        sys.exit()
+        
 
     ## step_size_list = [5,5,5,5,5,5,5,1]
     ## nState = len(step_size_list)
@@ -801,7 +829,8 @@ if __name__ == '__main__':
         ## print np.array(h_config)*180.0/3.14
         ## print len(h_ftan)
 
-        for i in xrange(1,22,2):
+        for i in xrange(18,31,2):
+            print data_chunks[i]
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
