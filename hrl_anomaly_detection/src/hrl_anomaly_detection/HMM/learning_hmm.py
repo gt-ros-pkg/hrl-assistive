@@ -96,7 +96,7 @@ class learning_hmm(learning_base):
         # Future observation range
         self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
-        ## self.state_range = int(np.arange(0, self.nState, 1))
+        self.state_range = np.arange(0, self.nState, 1)
 
 
         if verbose:
@@ -455,18 +455,28 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
-    def gaussian_approximation(self, nCurState, u_mu, u_var):
+    def gaussian_approximation(self, u_mu, u_var):
 
         u_sigma = np.sqrt(u_var)
 
-        mu = 0.0
+        e_mu   = 0.0
+        e_mu2  = 0.0
+        e_sig2 = 0.0
         for i in xrange(self.nState):
-            mu += norm.pdf(nCurState,loc=u_mu,scale=u_sigma) * np.sum(self.A[nCurState,:]*self.state_range)
 
+            zp    = self.A[i,:]*self.state_range
+            mu_z  = np.sum(zp)
+            p_z   = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
             
-        return mu, var
+            e_mu   += p_z * mu_z
+            e_mu2  += p_z * mu_z**2
+            e_sig2 += p_z * ( np.sum(zp*self.state_range) - mu_z**2 )**2
 
-        
+        m = e_mu
+        v = e_sig2*e_mu2 - m**2
+            
+        return m, v
+       
         
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
@@ -678,8 +688,8 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 25
-    nMaxStep     = 36 # total step of data. It should be automatically assigned...
+    nState    = 22
+    nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 6
     ## data_column_idx = 1
