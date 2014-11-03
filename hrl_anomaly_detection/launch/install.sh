@@ -16,3 +16,7 @@ sudo make install
 
 cd ~/svn
 svn co https://code.ros.org/svn/ros-pkg/stacks/laser_drivers/trunk/hokuyo_node/
+
+# select java7
+sudo update-alternatives --config java
+sudo pip install pysmac

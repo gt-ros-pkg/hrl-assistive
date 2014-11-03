@@ -115,12 +115,12 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 25
+    nState    = 5
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 10
+    nFutureStep = 1
     ## data_column_idx = 1
-    fObsrvResol = 0.05
+    fObsrvResol = 0.1
     nCurrentStep = 14
 
     if nState == 25:
@@ -184,7 +184,16 @@ if __name__ == '__main__':
 
     elif opt.bOptMeanVar:
         print "------------- Optimize B matrix -------------"
-        lh.vectors_to_mean_vars(lh.aXData, optimize=True)
+
+        # Save file name
+        import socket, time
+        host_name = socket.gethostname()
+        t=time.gmtime()                
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',
+                                 host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
+                                 +str(t[3])+str(t[4])+'.pkl')
+        
+        lh.param_optimization(save_file=save_file)
         
     else:
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    

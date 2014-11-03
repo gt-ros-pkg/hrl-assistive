@@ -44,18 +44,22 @@ if __name__ == '__main__':
         nState_list = []            
         nCurrentStep_list = []            
         step_size_list_list = []            
+        B_list = []
+        
         for param in params_list:
+
             fObsrvResol_list.append(param['fObsrvResol'])
             nState_list.append(param['nState'])
+            B_list.append(param['B'])
             ## nCurrentStep_list.append(param['nCurrentStep'])
-            step_size_list_list.append(param['step_size_list'])
-
+            ## step_size_list_list.append(param['step_size_list'])
 
         for i in xrange(len(mean_list)):
-            string =  "%f; %f; %f; %f; %s \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], str(step_size_list_list[i]))
+            ## string =  "%f; %f; %f; %f; %s \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], str(step_size_list_list[i]))
             ## string =  "%f; %f; %f; %f; %f; \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], nCurrentStep_list[i])
             ## string =  "%f; %f; %f; %f; \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i])
             ## string =  "%f; %f; %s \n " % (mean_list[i], std_list[i], str(step_size_list_list[i]))
+            string =  "%f; %f; %f; %f; %s \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], str(B_list[i]))
 
             output_file.write("%s" % string)
     output_file.close()

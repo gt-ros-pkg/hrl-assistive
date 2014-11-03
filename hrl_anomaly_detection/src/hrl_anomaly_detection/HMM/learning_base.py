@@ -13,7 +13,6 @@ import hrl_lib.util as ut
 #from hrl_srvs.srv import FloatArray_FloatArray, FloatArray_FloatArrayResponse
 
 ## import scipy
-## from scipy import optimize
 from sklearn.cross_validation import train_test_split
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
@@ -195,33 +194,6 @@ class learning_base():
         ut.save_pickle(data, save_file)
         
         
-        ## scores = ['precision', 'recall']
-        ## for score in scores:
-        ##     print("# Tuning hyper-parameters for %s" % score)
-        ##     print()
-
-        ##     clf = GridSearchCV(self, tuned_parameters, cv=nFold, scoring=score)
-        ##     clf.fit(X_train) # [n_samples, n_features] 
-            
-        ##     print("Best parameters set found on development set:")
-        ##     print()
-        ##     print(clf.best_estimator_)
-        ##     print()
-        ##     print("Grid scores on development set:")
-        ##     print()
-        ##     for params, mean_score, scores in clf.grid_scores_:
-        ##         print("%0.3f (+/-%0.03f) for %r"
-        ##               % (mean_score, scores.std() / 2, params))
-        ##     print()
-            
-            ## print("Detailed classification report:")
-            ## print()
-            ## print("The model is trained on the full development set.")
-            ## print("The scores are computed on the full evaluation set.")
-            ## print()
-            ## y_true, y_pred = y_test, clf.predict(X_test)
-            ## print(classification_report(y_true, y_pred))
-            ## print()
                 
     #----------------------------------------------------------------------        
     # Normalize along with each feature, where X is sample X feature
@@ -257,7 +229,7 @@ class learning_base():
             # Exponential function                
             # From y = a*e^(-bx)
             a = 0.4
-            b = np.log(0.0001/a)/(-(nState-i))
+            b = np.log(0.00001/a)/(-(nState-i))
             f = lambda x: a*np.exp(-b*x)
 
             for j in np.array(range(nState-i))+i:

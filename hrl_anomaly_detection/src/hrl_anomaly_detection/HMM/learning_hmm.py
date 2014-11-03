@@ -24,9 +24,16 @@ import ghmm
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from scipy.stats import norm
 from sklearn.cross_validation import train_test_split
+from sklearn.metrics import r2_score
+from sklearn import cross_validation
+from scipy import optimize
+## from pysmac.optimize import fmin                
 
 from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
+
+
+
 
 class learning_hmm(learning_base):
     def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None):
@@ -43,7 +50,7 @@ class learning_hmm(learning_base):
         ## Un-tunable parameters
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
-        self.A = None # transition matrix
+        self.A = None # transition matrix        
         
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -63,26 +70,18 @@ class learning_hmm(learning_base):
     def fit(self, X_train, A=None, B=None, verbose=False):
 
         if A==None:        
+            if verbose: print "Generate new A matrix"                
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
             #A,_ = mad.get_trans_mat(X_train, self.nState)
-        else:
-            print "Use existing A matrix"    
 
         if B==None:
+            if verbose: print "Generate new B matrix"                            
             # We should think about multivariate Gaussian pdf.        
             self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
 
             # Emission probability matrix
             B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
-
-            # TEMP
-            print "temp b fitting!!!!!!!!!!!!!!!!!!!!!"
-            B[13][1] = 1.1
-            for i in xrange(self.nState):
-                print i,B[i]
-        else:
-            print "Use existing B matrix"    
                 
         
         # pi - initial probabilities per state 
@@ -109,11 +108,6 @@ class learning_hmm(learning_base):
         self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
         self.state_range = np.arange(0, self.nState, 1)
-
-        print "----------------------------------------------"        
-        for i in xrange(self.nState):
-            print i,self.B[i]
-        
 
         if verbose:
             A = np.array(A)
@@ -154,130 +148,214 @@ class learning_hmm(learning_base):
         mu    = np.zeros((self.nState,1))
         sigma = np.zeros((self.nState,1))
 
-        if optimize==False:
-            
-            if self.step_size_list == None or len(self.step_size_list) != self.nState:
-                print "Use new step size list!!"
-                # Initial 
-                self.step_size_list = [1] * self.nState
-                while sum(self.step_size_list)!=self.nMaxStep:
-                    idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
-                    if idx < 0 or idx >= self.nState: 
-                        continue
-                    else:
-                        self.step_size_list[idx] += 1                
-            else:
-                print "Use previous step size list!!"                            
-                print self.step_size_list
-
-            # Compute mean and std
-            index = 0
-            m_init = 0
-            while (index < self.nState):
-                temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
-                m_init = m_init + int(self.step_size_list[index])
-
-                mu[index] = np.mean(temp_vec)
-                sigma[index] = np.std(temp_vec)
-                index = index+1
-
-        elif optimize:
-            from scipy import optimize
-
+        if self.step_size_list == None or len(self.step_size_list) != self.nState:
+            print "Use new step size list!!"
             # Initial 
-            x0 = [1] * self.nState
-            while sum(x0)!=self.nMaxStep:
+            self.step_size_list = [1] * self.nState
+            while sum(self.step_size_list)!=self.nMaxStep:
                 idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
                 if idx < 0 or idx >= self.nState: 
                     continue
                 else:
-                    x0[idx] += 1
-                
-            bnds=[]
-            for i in xrange(self.nState):
-                bnds.append([0,self.nMaxStep])
-                
-            ## res = optimize.minimize(self.mean_vars_score,x0,args=(vecs), method='SLSQP', 
-            ##                         bounds=bnds, constraints=({'type':'eq','fun':self.mean_vars_constraints}), 
-            ##                         options={'maxiter': 50})
-            res = optimize.minimize(self.mean_vars_score,x0, method='SLSQP', bounds=bnds, 
-                                    constraints=({'type':'eq','fun':self.mean_vars_constraint1}, 
-                                                 {'type':'eq','fun':self.mean_vars_constraint2}), 
-                                                 options={'maxiter': 50})
-            self.step_size_list = res['x'] 
-            print "Best step_size_list: "
-            string = None
-            for x in self.step_size_list:
-                if string == None:
-                    string = str(x)+", " 
-                else:
-                    string += str(x)+", "
-            print string
-                
-            
-            index = 0
-            m_init = 0
-            while (index < self.nState):
-                temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
-                m_init = m_init + int(self.step_size_list[index])
-
-                mu[index] = np.mean(temp_vec)
-                sigma[index] = np.std(temp_vec)
-                index = index+1
-
+                    self.step_size_list[idx] += 1                
         else:
+            print "Use previous step size list!!"                            
+            print self.step_size_list
 
-            tuned_parameters = [{'step_size_list': step_size_list_set}]            
-            self.param_estimation(tuned_parameters,2)
-
-        return mu,sigma
-
-
-    #----------------------------------------------------------------------        
-    #
-    ## def mean_vars_score(self, x0, *args):
-    def mean_vars_score(self, x0):
-
-        print x0
-        mu    = np.zeros((self.nState,1))
-        sigma = np.zeros((self.nState,1))
-        
+        # Compute mean and std
         index = 0
         m_init = 0
         while (index < self.nState):
-            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
+            temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
             m_init = m_init + int(self.step_size_list[index])
 
             mu[index] = np.mean(temp_vec)
             sigma[index] = np.std(temp_vec)
             index = index+1
 
-        B = np.hstack([mu, sigma]).tolist() # Must be [i,:] = [mu, sigma]
+        return mu,sigma
+               
 
-        # Split the dataset in two equal parts
-        X_train, X_test = train_test_split(self.aXData, test_size=0.3, random_state=0)
+    #----------------------------------------------------------------------        
+    # B matrix optimization
+    def param_optimization(self, save_file):
+
+        _,n   = self.aXData.shape # samples, length
+        mu    = np.zeros((self.nState,1))
+        sigma = np.zeros((self.nState,1))
+
+
+        # Initial 
+        x0 = [1] * self.nState
+        while sum(x0)!=self.nMaxStep:
+            idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
+            if idx < 0 or idx >= self.nState: 
+                continue
+            else:
+                x0[idx] += 1
+
+        # Compute mean and std
+        index = 0
+        m_init = 0
+        while (index < self.nState):
+            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
+            m_init = m_init + int(x0[index])
+
+            mu[index] = np.mean(temp_vec)
+            sigma[index] = np.std(temp_vec)
+            index = index+1
+
+        B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
+
+        ## bnds=[]
+        ## for i in xrange(self.nState):
+        ##     bnds.append([0,20.0])
+        ##     bnds.append([0,4.0])
+
+        self.B_lower=[]
+        self.B_upper=[]
+        for i in xrange(self.nState):
+            self.B_lower.append([0.1])
+            self.B_lower.append([0.01])
+            self.B_upper.append([20.])
+            self.B_upper.append([4.])
+
+        self.B_upper =  np.array(self.B_upper).flatten()            
+        self.B_lower =  np.array(self.B_lower).flatten()            
+
+        class MyTakeStep(object):
+            def __init__(self, stepsize=0.5):
+                self.stepsize = stepsize
+            def __call__(self, x):
+                s = self.stepsize
+                n = len(x)
+
+                for i in xrange(n/2):
+                    x[i*2] += np.random.uniform(-2.*s, 2.*s)
+                    x[i*2+1] += np.random.uniform(-0.5, 0.5)
+                return x            
+
+        class MyBounds(object):
+            def __init__(self, xmax=self.B_upper, xmin=self.B_lower ):
+                self.xmax = xmax
+                self.xmin = xmin
+            def __call__(self, **kwargs):
+                x = kwargs["x_new"]
+                tmax = bool(np.all(x <= self.xmax))
+                tmin = bool(np.all(x >= self.xmin))
+                return tmax and tmin
+
+        def print_fun(x, f, accepted):
+            print("at minima %.4f accepted %d" % (f, int(accepted)))
+            
+            
+        ## res = optimize.minimize(self.mean_vars_score,B0.flatten(), method='SLSQP', bounds=tuple(bnds), 
+        ##                         options={'maxiter': 50})
+
+        mytakestep = MyTakeStep()
+        mybounds = MyBounds()
+        minimizer_kwargs = {"method":"L-BFGS-B"}
+        self.last_x = None
         
-        self.fit(X_train, B=B)    
-        res = -1.0*self.score(X_test)
-        print res
-        return res
+        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=1000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+        # , stepsize=2.0, interval=2
+
+        B = res['x'].reshape((self.nState,2))
+        fval = res['fun']
         
+        ## # Set range of params
+        ## xmin = [0.0]* self.nState
+        ## xmax = [self.nMaxStep-(self.nState-1)]*self.nState
+
+        ## x_opt, fval = fmin(self.mean_vars_score,x0_int=x0, xmin_int=xmin, 
+        ##                    xmax_int=xmax, max_evaluations=1000,
+        ##                    custom_args={"self": self})
+
+        ## print x_opt
+        ## print fval
+
+        ## self.step_size_list = x_opt['x_int'].tolist()
+        ## print "Best step_size_list: "
+        ## string = None
+        ## for x in self.step_size_list:
+        ##     if string == None:
+        ##         string = str(x)+", " 
+        ##     else:
+        ##         string += str(x)+", "
+        ## print string
+
+        ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'step_size_list': self.step_size_list}]
+        params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'B': B.flatten()}]
+
+        # Save data
+        data = {}
+        data['mean'] = [fval]
+        data['std'] = [0]            
+        data['params'] = params_list
+        if save_file == None:
+            save_file='tune_data.pkl'            
+        ut.save_pickle(data, save_file)
+
+        return 
+
+
+    #----------------------------------------------------------------------        
+    #
+    def mean_vars_score(self, x, *args):
+
+        # check limit
+        if self.last_x == None or np.linalg.norm(self.last_x-x) > 0.05:
+            tmax = bool(np.all(x <= self.B_upper))
+            tmin = bool(np.all(x >= self.B_lower))
+            if tmax and tmin == False: return 5            
+            self.last_x = x
+        else:
+            return self.last_score
+            
+        B=x.reshape((self.nState,2))
+
+        # K-fold CV: Split the dataset in two equal parts
+        nFold = 8
+        scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, fit_params={'B': B}, n_jobs=-1)
+        ## scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, fit_params={'B': B})
         
-        ## vecs = self.aXData #args[0]        
-        ## ## mu    = np.zeros((self.nState,1))
+        ## print x, " : ", -1.0 * sum(scores)/float(len(scores))
+        self.last_score = -1.0 * sum(scores)/float(len(scores))
+        return -1.0 * sum(scores)/float(len(scores))
+
+
+        ## # constraint check
+        ## if self.mean_vars_constraint1(x_int) != 0:
+        ##     return 100000000000000000
+        ## if self.mean_vars_constraint2(x_int) > 0:
+        ##     return 100000000000000000
+
+        ## # init
+        ## mu    = np.zeros((self.nState,1))
         ## sigma = np.zeros((self.nState,1))
 
-        ## for i, nDivs in enumerate(x0):
-        ##     m_init = i*nDivs
-        ##     try:
-        ##         temp_vec = vecs[:,int(m_init):int(m_init+nDivs)]
-        ##     except:
-        ##         return 0.0
+        ## index = 0
+        ## m_init = 0
+        ## while (index < self.nState):
+        ##     temp_vec = self.aXData[:,(m_init):(m_init + int(x_int[index]))] 
+        ##     m_init = m_init + int(x_int[index])
 
-        ##     ## mu[i] = np.mean(temp_vec)
-        ##     sigma[i] = np.std(temp_vec)
-        ## return np.std(sigma)
+        ##     mu[index] = np.mean(temp_vec)
+        ##     sigma[index] = np.std(temp_vec)
+        ##     index = index+1
 
+        ## print x
+        ## n,_ = x.shape
+        ## score_list = [0.0]*n
+
+        ## for i in xrange(n):
+        
+            ## B = np.hstack([mu, sigma]).tolist() # Must be [i,:] = [mu, sigma]
+        
+        ## print "loop ",i, "/",n," : ",-1.0 * sum(scores)/float(len(scores)), x
+        ## score_list[i] = -1.0 * sum(scores)/float(len(scores))
+
+        
     #----------------------------------------------------------------------        
     #
     def mean_vars_constraint1(self, x0):
@@ -288,8 +366,8 @@ class learning_hmm(learning_base):
             if x < 1: return 1.0 
             if np.isnan(x)==True: return 1.0
         return 0.0
-               
-
+        
+        
     #----------------------------------------------------------------------        
     #
     def predict(self, X):
@@ -379,7 +457,7 @@ class learning_hmm(learning_base):
         # @ X_test: 1 x known steps #samples x known steps
         # Output
         # @ X_pred: 1
-        # @ X_pred_prob: samples x 1
+        # @ X_pred_prob: obsrv_range
 
         # Initialization            
         X_pred_prob = np.zeros((len(self.obsrv_range)))
@@ -546,8 +624,6 @@ class learning_hmm(learning_base):
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
     def score(self, X_test, **kwargs):
-        # Neccessary package
-        from sklearn.metrics import r2_score
 
         # Get input
         if type(X_test) == np.ndarray:
