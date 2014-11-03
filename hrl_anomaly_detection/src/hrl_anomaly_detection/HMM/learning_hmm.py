@@ -96,8 +96,9 @@ class learning_hmm(learning_base):
             B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
         else:
             if bool(np.all(B.flatten() >= self.B_lower)) == False:
-                print B
-                sys.exit()
+                print "[Error]: negative component of B is not allowed"
+                ## sys.exit()
+                return
                 
         
         # pi - initial probabilities per state 
@@ -223,11 +224,6 @@ class learning_hmm(learning_base):
 
         B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
 
-        ## bnds=[]
-        ## for i in xrange(self.nState):
-        ##     bnds.append([0,20.0])
-        ##     bnds.append([0,4.0])
-
 
         class MyTakeStep(object):
             def __init__(self, stepsize=0.5):
@@ -253,6 +249,11 @@ class learning_hmm(learning_base):
 
         def print_fun(x, f, accepted):
             print("at minima %.4f accepted %d" % (f, int(accepted)))
+
+
+        bnds=[]
+        for i in xrange(len(self.B_lower)):
+            bnds.append([self.B_lower[i],self.B_upper[i]])
             
             
         ## res = optimize.minimize(self.mean_vars_score,B0.flatten(), method='SLSQP', bounds=tuple(bnds), 
@@ -260,10 +261,11 @@ class learning_hmm(learning_base):
 
         mytakestep = MyTakeStep()
         mybounds = MyBounds()
-        minimizer_kwargs = {"method":"L-BFGS-B"}
+        minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds}
         self.last_x = None
-        
-        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=100, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+
+        # T
+        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=100, take_step=mytakestep, accept_test=mybounds, callback=print_fun, niter_success=5)
         # , stepsize=2.0, interval=2
 
         B = res['x'].reshape((self.nState,2))
