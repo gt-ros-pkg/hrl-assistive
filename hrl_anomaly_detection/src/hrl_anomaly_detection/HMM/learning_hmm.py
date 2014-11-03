@@ -98,6 +98,7 @@ class learning_hmm(learning_base):
             if bool(np.all(B.flatten() >= self.B_lower)) == False:
                 print "[Error]: negative component of B is not allowed"
                 ## sys.exit()
+                self.ml = None
                 return
                 
         
@@ -254,11 +255,7 @@ class learning_hmm(learning_base):
         bnds=[]
         for i in xrange(len(self.B_lower)):
             bnds.append([self.B_lower[i],self.B_upper[i]])
-            
-            
-        ## res = optimize.minimize(self.mean_vars_score,B0.flatten(), method='SLSQP', bounds=tuple(bnds), 
-        ##                         options={'maxiter': 50})
-
+                        
         mytakestep = MyTakeStep()
         mybounds = MyBounds()
         minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds}
@@ -453,7 +450,6 @@ class learning_hmm(learning_base):
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
                 prob[i] = pred_numerator #/ np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
-
                 
         return prob
 
@@ -516,19 +512,17 @@ class learning_hmm(learning_base):
                         a += "%0.3f" % p
                 print a
 
-
-        # TEMP
-        final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?                
-        (path,log)   = self.ml.viterbi(final_ts_obj)
-        print path,log
-
+        ## # TEMP
+        ## final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?                
+        ## (path,log)   = self.ml.viterbi(final_ts_obj)
+        ## print path,log
                 
         return X_pred, X_pred_prob
 
 
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
-    def multi_step_approximated_predict(self, X_test, verbose=False):
+    def multi_step_approximated_predict(self, X_test, full_step=False, verbose=False):
 
         ## Initialization            
         X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
@@ -552,26 +546,52 @@ class learning_hmm(learning_base):
         for i in xrange(self.nState):
             p_z_x[i] = np.sum(self.A[:,i]*alpha[-1,:]) * scaling_factor
 
-        (u_mu, u_var) = ldh.gaussian_param_estimation(self.state_range, p_z_x)
-
-        ## for i in xrange(self.nFutureStep-1):
-        ##     some thing...
+        (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
         
-        ## _, X_pred_prob[:,i] = self.one_step_predict(X)
-        
+        u_mu_list  = [0.0]*self.nFutureStep
+        u_sigma_list = [0.0]*self.nFutureStep
+        u_mu_list[0]  = u_mu  # U_n+1 
+        u_sigma_list[0] = np.sqrt(u_var)
             
-        # Recursive prediction
-        ## for i in xrange(self.nFutureStep):
+        for i in xrange(self.nFutureStep-1):
+            u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
+            
+        # Compute all intermediate steps
+        if full_step:
 
-            
+            # Recursive prediction for each future step
+            for i in xrange(self.nFutureStep):
+
+                # Get all probability over observations
+                for j, obsrv in enumerate(self.obsrv_range):           
+
+                    # Get all probability over states
+                    for k in xrange(self.nState): 
+
+                        z_prob = norm.pdf(float(k),loc=u_mu_list[i],scale=u_sigma_list[i])
+                        (x_mu, x_sigma) = self.ml.getEmission(k)                        
+                        X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
+
+                        print i,j,k,z_prob
+                        if np.isnan(z_prob): sys.exit()
+                        
+                max_idx = X_pred_prob[:,i].argmax()                    
+                X_pred[i] = self.obsrv_range[max_idx]
+                X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
+                
+        else:
+            print "Error Not implemented"
+            # Get all probability over observations
+            for j, obsrv in enumerate(self.obsrv_range):                                                     
+                for i, nStep in enumerate(self.nState): # N+M        
+                    pred_numerator += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma) * z_prob
             
         return X_pred, X_pred_prob
+        
 
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
-    def gaussian_approximation(self, u_mu, u_var):
-
-        u_sigma = np.sqrt(u_var)
+    def gaussian_approximation(self, u_mu, u_sigma):
 
         e_mu   = 0.0
         e_mu2  = 0.0
@@ -589,7 +609,7 @@ class learning_hmm(learning_base):
         m = e_mu
         v = e_sig2*e_mu2 - m**2
             
-        return m, v
+        return m, np.sqrt(v)
        
         
     #----------------------------------------------------------------------
@@ -633,6 +653,10 @@ class learning_hmm(learning_base):
     # Returns the mean accuracy on the given test data and labels.
     def score(self, X_test, **kwargs):
 
+        if self.ml == None: 
+            print "No ml!!"
+            return -5.0        
+        
         # Get input
         if type(X_test) == np.ndarray:
             X=X_test.tolist()

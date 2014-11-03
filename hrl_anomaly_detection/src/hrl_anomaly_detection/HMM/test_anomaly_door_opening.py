@@ -109,6 +109,8 @@ if __name__ == '__main__':
                  default=False, help='N-fold cross validation for parameter')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
+    p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
+                 default=False, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
@@ -191,6 +193,23 @@ if __name__ == '__main__':
                                  +str(t[3])+str(t[4])+'.pkl')
         
         lh.param_optimization(save_file=save_file)
+
+    elif opt.bApproxObsrv:
+        if lh.nFutureStep <= 1: print "Error: nFutureStep should be over than 2."
+        
+        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+
+        for i in xrange(18,19,2):
+            
+            x_test      = data_vecs[0][i,:nCurrentStep].tolist()
+            x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
+            x_test_all  = data_vecs[0][i,:].tolist()
+            ## x_test = h_ftan[:15]
+            ## x_test_next = h_ftan[15:15+lh.nFutureStep]
+
+            x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test, full_step=True, verbose=opt.bVerbose)
+            lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
+            lh.final_plot()
         
     else:
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
