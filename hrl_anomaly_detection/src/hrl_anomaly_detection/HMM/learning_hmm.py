@@ -265,7 +265,7 @@ class learning_hmm(learning_base):
         self.last_x = None
 
         # T
-        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=100, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=1000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
         # , stepsize=2.0, interval=2
 
         B = res['x'].reshape((self.nState,2))
