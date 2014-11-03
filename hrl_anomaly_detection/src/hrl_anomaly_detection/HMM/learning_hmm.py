@@ -51,6 +51,18 @@ class learning_hmm(learning_base):
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
         self.A = None # transition matrix        
+
+        self.B_lower=[]
+        self.B_upper=[]
+        for i in xrange(self.nState):
+            self.B_lower.append([0.1])
+            self.B_lower.append([0.01])
+            self.B_upper.append([20.])
+            self.B_upper.append([4.])
+
+        self.B_upper =  np.array(self.B_upper).flatten()            
+        self.B_lower =  np.array(self.B_lower).flatten()            
+        
         
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -82,6 +94,10 @@ class learning_hmm(learning_base):
 
             # Emission probability matrix
             B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
+        else:
+            if bool(np.all(B.flatten() >= self.B_lower)) == False:
+                print B
+                sys.exit()
                 
         
         # pi - initial probabilities per state 
@@ -212,16 +228,6 @@ class learning_hmm(learning_base):
         ##     bnds.append([0,20.0])
         ##     bnds.append([0,4.0])
 
-        self.B_lower=[]
-        self.B_upper=[]
-        for i in xrange(self.nState):
-            self.B_lower.append([0.1])
-            self.B_lower.append([0.01])
-            self.B_upper.append([20.])
-            self.B_upper.append([4.])
-
-        self.B_upper =  np.array(self.B_upper).flatten()            
-        self.B_lower =  np.array(self.B_lower).flatten()            
 
         class MyTakeStep(object):
             def __init__(self, stepsize=0.5):
@@ -257,7 +263,7 @@ class learning_hmm(learning_base):
         minimizer_kwargs = {"method":"L-BFGS-B"}
         self.last_x = None
         
-        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=1000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=100, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
         # , stepsize=2.0, interval=2
 
         B = res['x'].reshape((self.nState,2))
@@ -313,7 +319,7 @@ class learning_hmm(learning_base):
             return self.last_score
             
         B=x.reshape((self.nState,2))
-
+        
         # K-fold CV: Split the dataset in two equal parts
         nFold = 8
         scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, fit_params={'B': B}, n_jobs=-1)

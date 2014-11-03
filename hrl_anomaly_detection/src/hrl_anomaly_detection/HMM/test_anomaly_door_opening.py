@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 7
+    nState    = 8
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 1
@@ -123,15 +123,7 @@ if __name__ == '__main__':
     fObsrvResol = 0.1
     nCurrentStep = 14
 
-    if nState == 25:
-        step_size_list =  [1, 1, 1, 3, 3,   4, 3, 2, 2, 1,   1, 1, 1, 1, 1,    
-                           1, 1, 1, 1, 1,    1, 1, 1, 1, 1] 
-    elif nState == 17:
-        step_size_list = [2, 3, 3, 3, 3, 1, 1, 1, 3, 2, 1, 2, 2, 1, 3, 3, 2] 
-    elif nState == 8:
-        step_size_list = [2,1,5,5,9,7,5,6] 
-    else:
-        step_size_list = None
+    step_size_list = None
 
     if step_size_list != None and (len(step_size_list) !=nState 
                                    or sum(step_size_list) != nMaxStep):
@@ -141,6 +133,11 @@ if __name__ == '__main__':
     data_vecs, _, _ = get_data(pkl_file)        
     A, B, pi = get_init_param(nState)        
 
+
+    # TEMP
+    data_vecs = data_vecs[:][:40,:]
+
+    
     ######################################################    
     # Training 
     lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, 
