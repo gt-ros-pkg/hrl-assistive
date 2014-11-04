@@ -456,8 +456,8 @@ class learning_hmm(learning_base):
                     print alpha
                     print scale
                     print "step: ", self.nCurrentStep
-                    print "X_test: "X_test
-                    print "X_pred: "X_pred                
+                    print "X_test: ",X_test
+                    print "X_pred: ",X_pred                
                     
                 # beta
                 ## beta = self.ml.backward(final_ts_obj,scale)
