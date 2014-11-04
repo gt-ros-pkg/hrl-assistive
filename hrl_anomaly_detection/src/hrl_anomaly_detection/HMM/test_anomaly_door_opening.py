@@ -98,6 +98,16 @@ def get_init_param(nState):
     return A, B, pi
 
 
+
+def init():
+    line.set_data([],[])
+    return line
+
+def animate(i):
+
+    line.set_data(x,y)
+    return line, 
+    
     
 if __name__ == '__main__':
 
@@ -122,10 +132,10 @@ if __name__ == '__main__':
     nState    = 11
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 1
+    nFutureStep = 3
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 14
+    nCurrentStep = 12  #14
 
     step_size_list = None
 
@@ -196,6 +206,31 @@ if __name__ == '__main__':
         
         lh.param_optimization(save_file=save_file)
 
+    elif opt.bUseBlockData:
+        
+        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+
+        ######################################################    
+        # Test data
+        h_config, h_ftan = mad.get_a_blocked_detection()
+        print np.array(h_config)*180.0/3.14
+        print len(h_ftan)
+
+        x_test = h_ftan[:nCurrentStep]
+        x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
+        x_test_all  = h_ftan
+
+        if opt.bApproxObsrv:
+            x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test,
+                                                                     full_step=True, 
+                                                                     verbose=opt.bVerbose)
+        else:               
+            x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
+        lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next), X_test_all=x_test_all)
+        lh.final_plot()
+        
+            
+        
     elif opt.bApproxObsrv:
         if lh.nFutureStep <= 1: print "Error: nFutureStep should be over than 2."
         
@@ -206,10 +241,10 @@ if __name__ == '__main__':
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
             x_test_all  = data_vecs[0][i,:].tolist()
-            ## x_test = h_ftan[:15]
-            ## x_test_next = h_ftan[15:15+lh.nFutureStep]
 
-            x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test, full_step=True, verbose=opt.bVerbose)
+            x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test, 
+                                                                     full_step=True, 
+                                                                     verbose=opt.bVerbose)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
         
@@ -217,23 +252,13 @@ if __name__ == '__main__':
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
         ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
 
-        ######################################################    
-        # Test data
-        if opt.bUseBlockData:
-            h_config, h_ftan = mad.get_a_blocked_detection()
-            print np.array(h_config)*180.0/3.14
-            print len(h_ftan)
 
         for i in xrange(18,31,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
             x_test_all  = data_vecs[0][i,:].tolist()
-
-            if opt.bUseBlockData:            
-                x_test = h_ftan[:15]
-                x_test_next = h_ftan[15:15+lh.nFutureStep]
-
+                
             x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()

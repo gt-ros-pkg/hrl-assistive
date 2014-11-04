@@ -760,7 +760,7 @@ class learning_hmm(learning_base):
             
     #----------------------------------------------------------------------        
     #
-    def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next):
+    def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next, X_test_all=None):
         print "Start to print out"
         
         self.fig = plt.figure(1)
@@ -768,9 +768,11 @@ class learning_hmm(learning_base):
 
         ## Main predictive distribution
         self.ax = self.fig.add_subplot(gs[0])
-
+                
         # 1) Observation        
         self.ax.plot(X_test, 'k-o')    
+        if X_test_all is not None:
+            self.ax.plot(X_test_all, 'k-')    
         ## self.ax.plot(X_test, '-o', ms=10, lw=1, alpha=0.5, mfc='orange')    
 
         # 2) Next true & predictive observation
@@ -804,7 +806,7 @@ class learning_hmm(learning_base):
         mu  = np.hstack([X_test,mu])
         sig = np.hstack([np.zeros((len(X_test))),np.sqrt(var)])
         X   = np.arange(0, len(mu),1.0)
-        self.ax.fill_between(X, mu-2.*sig, mu+2.*sig, facecolor='yellow', alpha=0.5)
+        self.ax.fill_between(X, mu-1.*sig, mu+1.*sig, facecolor='yellow', alpha=0.5)
         self.ax.plot(X[len(X_test)-1:], mu[len(X_test)-1:], 'm-', linewidth=2.0)    
         self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
 
