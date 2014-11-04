@@ -111,6 +111,8 @@ if __name__ == '__main__':
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
                  default=False, help='Approximately compute the distribution of multi-step observations')
+    p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
+                 default=False, help='Use blocked data')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
@@ -217,17 +219,20 @@ if __name__ == '__main__':
 
         ######################################################    
         # Test data
-        ## h_config, h_ftan = mad.get_a_blocked_detection()
-        ## print np.array(h_config)*180.0/3.14
-        ## print len(h_ftan)
+        if opt.bUseBlockData:
+            h_config, h_ftan = mad.get_a_blocked_detection()
+            print np.array(h_config)*180.0/3.14
+            print len(h_ftan)
 
         for i in xrange(18,31,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
             x_test_all  = data_vecs[0][i,:].tolist()
-            ## x_test = h_ftan[:15]
-            ## x_test_next = h_ftan[15:15+lh.nFutureStep]
+
+            if opt.bUseBlockData:            
+                x_test = h_ftan[:15]
+                x_test_next = h_ftan[15:15+lh.nFutureStep]
 
             x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
