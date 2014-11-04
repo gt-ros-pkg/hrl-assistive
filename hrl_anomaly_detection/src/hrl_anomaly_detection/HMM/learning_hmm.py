@@ -630,6 +630,8 @@ class learning_hmm(learning_base):
         m = e_mu/sum(p_z)
         v = (e_var/sum(p_z)) + (e_mu2/sum(p_z)) - m**2
 
+        ## print v, " = ", (e_var/sum(p_z)), (e_mu2/sum(p_z)), m**2
+
         if v < 0.0: print "Negative variance error: ", v            
         return m, np.sqrt(v)
        
@@ -786,8 +788,8 @@ class learning_hmm(learning_base):
         mu  = np.hstack([X_test,mu])
         sig = np.hstack([np.zeros((len(X_test))),np.sqrt(var)])
         X   = np.arange(0, len(mu),1.0)
-        self.ax.fill_between(X, mu-1.*sig, mu+1.*sig, facecolor='yellow', alpha=0.5)
-        self.ax.plot(X, mu, 'm-', linewidth=2.0)    
+        self.ax.fill_between(X, mu-2.*sig, mu+2.*sig, facecolor='yellow', alpha=0.5)
+        self.ax.plot(X[len(X_test)-1:], mu[len(X_test)-1:], 'm-', linewidth=2.0)    
         self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
 
         ## Side distribution
