@@ -56,7 +56,7 @@ class learning_hmm(learning_base):
         self.B_upper=[]
         for i in xrange(self.nState):
             self.B_lower.append([0.1])
-            self.B_lower.append([0.01])
+            self.B_lower.append([0.1])
             self.B_upper.append([20.])
             self.B_upper.append([4.])
 
@@ -452,12 +452,13 @@ class learning_hmm(learning_base):
                     ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
                     ## print "scale = " + str(scale) + "\n"
                 except:
-                    print final_ts_obj
+                    print "B: ", self.B
                     print alpha
                     print scale
                     print "step: ", self.nCurrentStep
                     print "X_test: ",X_test
                     print "X_pred: ",X_pred                
+                    sys.exit()
                     
                 # beta
                 ## beta = self.ml.backward(final_ts_obj,scale)
