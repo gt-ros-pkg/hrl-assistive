@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 7
+    nState    = 5
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 1
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
 
-        for i in xrange(18,19,2):
+        for i in xrange(18,31,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()

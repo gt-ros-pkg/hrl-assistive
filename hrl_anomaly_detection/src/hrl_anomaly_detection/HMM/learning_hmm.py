@@ -225,17 +225,37 @@ class learning_hmm(learning_base):
 
         B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
 
+        ## hopping_step_size = np.zeros((self.nState*2))
+        ## for i in xrange(self.nState):
+        ##     hopping_step_size[i*2] = 2.0
+        ##     hopping_step_size[i*2+1] = 0.5             
 
         class MyTakeStep(object):
-            def __init__(self, stepsize=0.5):
+            def __init__(self, stepsize=0.5, xmax=self.B_upper, xmin=self.B_lower):
                 self.stepsize = stepsize
+                self.xmax = xmax
+                self.xmin = xmin
             def __call__(self, x):
                 s = self.stepsize
                 n = len(x)
 
-                for i in xrange(n/2):
-                    x[i*2] += np.random.uniform(-2.*s, 2.*s)
-                    x[i*2+1] += np.random.uniform(-0.5, 0.5)
+                for i in xrange(n):
+                    while True:
+
+                        if i%2==0:                        
+                            next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
+                        else:
+                            next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
+
+                        if next_x > self.xmax[i] or next_x < self.xmin[i]:
+                            continue
+                        else:
+                            x[i] = next_x
+                            break
+                                                                        
+                ## for i in xrange(n/2):
+                ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
+                ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
                 return x            
 
         class MyBounds(object):
@@ -538,13 +558,13 @@ class learning_hmm(learning_base):
         (alpha,scale) = self.ml.forward(final_ts_obj)
         alpha         = np.array(alpha)
 
-        scaling_factor = 1.0
-        for i in xrange(len(scale)):
-            scaling_factor *= scale[i] 
+        ## scaling_factor = 1.0
+        ## for i in xrange(len(scale)):
+        ##     scaling_factor *= scale[i] 
 
         p_z_x = np.zeros((self.nState))
         for i in xrange(self.nState):
-            p_z_x[i] = np.sum(self.A[:,i]*alpha[-1,:]) * scaling_factor
+            p_z_x[i] = np.sum(self.A[:,i]*alpha[-1,:]) #* scaling_factor
 
         (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
         
@@ -552,10 +572,10 @@ class learning_hmm(learning_base):
         u_sigma_list = [0.0]*self.nFutureStep
         u_mu_list[0]  = u_mu  # U_n+1 
         u_sigma_list[0] = np.sqrt(u_var)
-            
+        
         for i in xrange(self.nFutureStep-1):
             u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
-            
+
         # Compute all intermediate steps
         if full_step:
 
@@ -572,7 +592,6 @@ class learning_hmm(learning_base):
                         (x_mu, x_sigma) = self.ml.getEmission(k)                        
                         X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
 
-                        print i,j,k,z_prob
                         if np.isnan(z_prob): sys.exit()
                         
                 max_idx = X_pred_prob[:,i].argmax()                    
@@ -595,20 +614,23 @@ class learning_hmm(learning_base):
 
         e_mu   = 0.0
         e_mu2  = 0.0
-        e_sig2 = 0.0
+        e_var  = 0.0
+        p_z    = np.zeros((self.nState))
+        
         for i in xrange(self.nState):
 
-            zp    = self.A[i,:]*self.state_range
-            mu_z  = np.sum(zp)
-            p_z   = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
+            zp     = self.A[i,:]*self.state_range
+            mu_z   = np.sum(zp)
+            p_z[i] = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
             
-            e_mu   += p_z * mu_z
-            e_mu2  += p_z * mu_z**2
-            e_sig2 += p_z * ( np.sum(zp*self.state_range) - mu_z**2 )**2
+            e_mu   += p_z[i] * mu_z
+            e_mu2  += p_z[i] * mu_z**2
+            e_var  += p_z[i] * ( np.sum(zp*self.state_range) - mu_z**2 )**2
 
-        m = e_mu
-        v = e_sig2*e_mu2 - m**2
-            
+        m = e_mu/sum(p_z)
+        v = (e_var/sum(p_z)) + (e_mu2/sum(p_z)) - m**2
+
+        if v < 0.0: print "Negative variance error: ", v            
         return m, np.sqrt(v)
        
         
@@ -762,9 +784,10 @@ class learning_hmm(learning_base):
 
         # 4) mean var plot
         mu  = np.hstack([X_test,mu])
-        var = np.hstack([np.zeros((len(X_test))),var])
+        sig = np.hstack([np.zeros((len(X_test))),np.sqrt(var)])
         X   = np.arange(0, len(mu),1.0)
-        self.ax.fill_between(X, mu-2.*var, mu+2.*var, facecolor='yellow', alpha=0.5)
+        self.ax.fill_between(X, mu-1.*sig, mu+1.*sig, facecolor='yellow', alpha=0.5)
+        self.ax.plot(X, mu, 'm-', linewidth=2.0)    
         self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
 
         ## Side distribution
