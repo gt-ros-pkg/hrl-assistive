@@ -414,12 +414,19 @@ class learning_hmm(learning_base):
             
         for i in xrange(n):
 
-            if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
-                X_test = X[i][:self.nCurrentStep]
-                X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
-            else:
-                X_test = X[i][:-1]
-                X_pred = X[i][-1]
+            ## if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
+            ##     X_test = X[i][:self.nCurrentStep]
+            ##     X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
+            ## else:
+            ##     X_test = X[i][:-1]
+            ##     X_pred = X[i][-1]
+
+            if len(X[i]) < self.nCurrentStep+1: 
+                print "Why X is short??"
+                sys.exit()
+            X_test = X[i][:self.nCurrentStep]
+            X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
+                
 
             bloglikelihood=False
             if bloglikelihood:
@@ -435,15 +442,23 @@ class learning_hmm(learning_base):
                 # Past profile
                 final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
                 #final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
-            
-                # alpha: X_test length y #latent States at the moment t when state i is ended
-                #        test_profile_length x number_of_hidden_state
-                (alpha,scale) = self.ml.forward(final_ts_obj)
-                alpha         = np.array(alpha)
-                scale         = np.array(scale)
-                ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
-                ## print "scale = " + str(scale) + "\n"
-                
+
+                try:
+                    # alpha: X_test length y #latent States at the moment t when state i is ended
+                    #        test_profile_length x number_of_hidden_state
+                    (alpha,scale) = self.ml.forward(final_ts_obj)
+                    alpha         = np.array(alpha)
+                    scale         = np.array(scale)
+                    ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
+                    ## print "scale = " + str(scale) + "\n"
+                except:
+                    print final_ts_obj
+                    print alpha
+                    print scale
+                    print "step: ", self.nCurrentStep
+                    print "X_test: "X_test
+                    print "X_pred: "X_pred                
+                    
                 # beta
                 ## beta = self.ml.backward(final_ts_obj,scale)
                 ## print "beta", np.array(beta).shape, " = \n " #+ str(beta) + "\n"
