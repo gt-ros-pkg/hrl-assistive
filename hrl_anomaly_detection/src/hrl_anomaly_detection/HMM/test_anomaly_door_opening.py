@@ -123,7 +123,7 @@ if __name__ == '__main__':
     nState    = 30
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 8
+    nFutureStep = 2
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 14  #14
