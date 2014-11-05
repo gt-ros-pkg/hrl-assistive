@@ -111,19 +111,19 @@ if __name__ == '__main__':
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
                  default=False, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
-                 default=False, help='Use blocked data')
+                 default=True, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
-                 default=False, help='Plot by time using animation')
+                 default=True, help='Plot by time using animation')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 27
+    nState    = 30
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 1
+    nFutureStep = 8
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 14  #14
@@ -142,7 +142,6 @@ if __name__ == '__main__':
     ## # TEMP
     ## data_vecs = data_vecs[:][:40,:]
 
-    
     ######################################################    
     # Training 
     lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, 

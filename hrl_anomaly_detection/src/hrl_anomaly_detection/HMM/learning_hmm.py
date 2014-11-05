@@ -18,6 +18,7 @@ import hrl_lib.util as ut
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from matplotlib import animation
 
 ## import door_open_data as dod
 import ghmm
@@ -573,7 +574,7 @@ class learning_hmm(learning_base):
         #        test_profile_length x number_of_hidden_state
         (alpha,scale) = self.ml.forward(final_ts_obj)
         alpha         = np.array(alpha)
-
+        
         ## scaling_factor = 1.0
         ## for i in xrange(len(scale)):
         ##     scaling_factor *= scale[i] 
@@ -588,7 +589,7 @@ class learning_hmm(learning_base):
         u_sigma_list = [0.0]*self.nFutureStep
         u_mu_list[0]  = u_mu  # U_n+1 
         u_sigma_list[0] = np.sqrt(u_var)
-        
+
         for i in xrange(self.nFutureStep-1):
             u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
 
@@ -819,7 +820,7 @@ class learning_hmm(learning_base):
         self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
 
         ## Side distribution
-        self.ax1 = self.fig.add_subplot(gs[1])
+        self.ax1 = self.fig.add_subplot(self.gs[1])
         self.ax1.plot(X_pred_prob[:,-1], self.obsrv_range, 'r-')
 
         ## self.ax1.tick_params(\
@@ -857,10 +858,10 @@ class learning_hmm(learning_base):
         print "Start to print out"
         
         self.fig = plt.figure(1)
-        gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
+        self.gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
 
         ## Main predictive distribution
-        self.ax = self.fig.add_subplot(gs[0])
+        self.ax = self.fig.add_subplot(self.gs[0])
         self.ax.set_xlim([0, self.nMaxStep])
         self.ax.set_ylim([0, max(self.obsrv_range)*1.5])
         
@@ -879,34 +880,53 @@ class learning_hmm(learning_base):
     #
     def animated_path_plot(self, X_test):
 
-        from matplotlib import animation
 
+        n = len(X_test)
+        mu = np.zeros((n, self.nFutureStep))
+        var = np.zeros((n, self.nFutureStep))
+
+        for i in range(5,n-self.nFutureStep,1):
+            X_pred, X_pred_prob = self.multi_step_approximated_predict(X_test[:i],full_step=True)
+            for j in range(self.nFutureStep):
+                print i,j, X_pred_prob.shape
+                (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,j])
+
+        print "---------------------------"
+
+        
         ## fig = plt.figure()
         ## ax = plt.axes(xlim=(0, len(X_test)), ylim=(0, 20))
         line, = self.ax.plot([], [], lw=2)
+        mean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
+        ## var,  = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
+
         
         def init():
             line.set_data([],[])
-            return line,
+            mean.set_data([],[])
+            ## var.set_data([],[])
+            return line, mean, #var,
 
         def animate(i):
             x = np.arange(0.0, len(X_test[:i]), 1.0)
             y = X_test[:i]
             line.set_data(x, y)
 
-            x_pred, x_pred_prob = self.multi_step_approximated_predict(X_test[:i],full_step=False)
-            
-            return line, 
+            if i >= 5 and i < len(X_test)-self.nFutureStep:
+                a_mu = np.hstack([y[-1], mu[i]])
+                a_X  = np.arange(len(x)-1, len(x)+self.nFutureStep, 1.0)
+                mean.set_data( a_X, a_mu)
+            else:
+                mean.set_data([],[])
+           
+            return line, mean, #var,
 
+    
+
+        
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(X_test), interval=800, blit=True)
-
 
         plt.show()
 
 
-
-
-
-
-    
