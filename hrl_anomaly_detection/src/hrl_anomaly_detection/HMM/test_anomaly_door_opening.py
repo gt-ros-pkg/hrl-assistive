@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 9
+    nState    = 11
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
     nFutureStep = 1
