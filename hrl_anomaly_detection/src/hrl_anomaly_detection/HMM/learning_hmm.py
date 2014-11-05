@@ -452,13 +452,9 @@ class learning_hmm(learning_base):
                     ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
                     ## print "scale = " + str(scale) + "\n"
                 except:
-                    print "B: ", self.B
-                    print alpha
-                    print scale
-                    print "step: ", self.nCurrentStep
-                    print "X_test: ",X_test
-                    print "X_pred: ",X_pred                
-                    sys.exit()
+                    print "No alpha is available !!"
+                    prob[i] = 0.0
+                    continue
                     
                 # beta
                 ## beta = self.ml.backward(final_ts_obj,scale)
@@ -512,9 +508,13 @@ class learning_hmm(learning_base):
         # Select observation with maximum probability
         ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
         max_idx = X_pred_prob.argmax()
-            
-        ## return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
-        return self.obsrv_range[max_idx], X_pred_prob /np.sum(X_pred_prob)
+
+        sum_x_p = np.sum(X_pred_prob*X_pred_prob)
+        if sum_x_p < 0.00001:
+            return self.obsrv_range[max_idx], X_pred_prob*0.0
+        else:
+            ## return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
+            return self.obsrv_range[max_idx], X_pred_prob /np.sum(X_pred_prob)
 
         
     #----------------------------------------------------------------------        
@@ -559,10 +559,10 @@ class learning_hmm(learning_base):
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
     def multi_step_approximated_predict(self, X_test, full_step=False, verbose=False):
-
+        print "Start to predict multistep approximated observations"
+        
         ## Initialization            
         X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
-        X = copy.copy(X_test)
         X_pred = [0.0]*self.nFutureStep
 
         ## Get mu, sigma from X such that u_{N+1}, sigma_{N+1}
@@ -615,12 +615,27 @@ class learning_hmm(learning_base):
                 X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
                 
         else:
-            print "Error Not implemented"
-            # Get all probability over observations
-            for j, obsrv in enumerate(self.obsrv_range):                                                     
-                for i, nStep in enumerate(self.nState): # N+M        
-                    pred_numerator += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma) * z_prob
+            print "Predict on last part!!"
             
+            # Recursive prediction for each future step
+            i = self.nFutureStep - 1
+
+            # Get all probability over observations
+            for j, obsrv in enumerate(self.obsrv_range):           
+
+                # Get all probability over states
+                for k in xrange(self.nState): 
+
+                    z_prob = norm.pdf(float(k),loc=u_mu_list[i],scale=u_sigma_list[i])
+                    (x_mu, x_sigma) = self.ml.getEmission(k)                        
+                    X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
+
+                    if np.isnan(z_prob): sys.exit()
+
+            max_idx = X_pred_prob[:,i].argmax()                    
+            X_pred[i] = self.obsrv_range[max_idx]
+            X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
+                        
         return X_pred, X_pred_prob
         
 
@@ -761,13 +776,6 @@ class learning_hmm(learning_base):
     #----------------------------------------------------------------------        
     #
     def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next, X_test_all=None):
-        print "Start to print out"
-        
-        self.fig = plt.figure(1)
-        gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
-
-        ## Main predictive distribution
-        self.ax = self.fig.add_subplot(gs[0])
                 
         # 1) Observation        
         self.ax.plot(X_test, 'k-o')    
@@ -842,7 +850,20 @@ class learning_hmm(learning_base):
         ## print x_axis.shape, mu.shape, var.shape
         
         self.ax.fill_between(x_axis, mu[:,0]-var[:,0]**2, mu[:,0]+var[:,0]**2, facecolor='green', alpha=0.5)
-                    
+
+    #----------------------------------------------------------------------        
+    #
+    def init_plot(self):
+        print "Start to print out"
+        
+        self.fig = plt.figure(1)
+        gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
+
+        ## Main predictive distribution
+        self.ax = self.fig.add_subplot(gs[0])
+        self.ax.set_xlim([0, self.nMaxStep])
+        self.ax.set_ylim([0, max(self.obsrv_range)*1.5])
+        
 
     #----------------------------------------------------------------------        
     #
@@ -854,11 +875,34 @@ class learning_hmm(learning_base):
         ## self.fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
 
         
+    #----------------------------------------------------------------------        
+    #
+    def animated_path_plot(self, X_test):
+
+        from matplotlib import animation
+
+        ## fig = plt.figure()
+        ## ax = plt.axes(xlim=(0, len(X_test)), ylim=(0, 20))
+        line, = self.ax.plot([], [], lw=2)
+        
+        def init():
+            line.set_data([],[])
+            return line,
+
+        def animate(i):
+            x = np.arange(0.0, len(X_test[:i]), 1.0)
+            y = X_test[:i]
+            line.set_data(x, y)
+
+            x_pred, x_pred_prob = self.multi_step_approximated_predict(X_test[:i],full_step=False)
+            
+            return line, 
+
+        anim = animation.FuncAnimation(self.fig, animate, init_func=init,
+                                       frames=len(X_test), interval=800, blit=True)
 
 
-
-
-
+        plt.show()
 
 
 

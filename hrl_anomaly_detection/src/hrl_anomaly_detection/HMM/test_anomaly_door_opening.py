@@ -96,17 +96,6 @@ def get_init_param(nState):
     pi=None    
 
     return A, B, pi
-
-
-
-def init():
-    line.set_data([],[])
-    return line
-
-def animate(i):
-
-    line.set_data(x,y)
-    return line, 
     
     
 if __name__ == '__main__':
@@ -123,19 +112,21 @@ if __name__ == '__main__':
                  default=False, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
                  default=False, help='Use blocked data')
+    p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
+                 default=False, help='Plot by time using animation')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 11
+    nState    = 9
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 3
+    nFutureStep = 1
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 12  #14
+    nCurrentStep = 14  #14
 
     step_size_list = None
 
@@ -205,7 +196,7 @@ if __name__ == '__main__':
                                  +str(t[3])+str(t[4])+'.pkl')
         
         lh.param_optimization(save_file=save_file)
-
+        
     elif opt.bUseBlockData:
         
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
@@ -220,14 +211,25 @@ if __name__ == '__main__':
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
         x_test_all  = h_ftan
 
-        if opt.bApproxObsrv:
+        lh.init_plot()            
+                
+        if opt.bAnimation:
+            lh.animated_path_plot(x_test_all)
+        
+        elif opt.bApproxObsrv:
             x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test,
                                                                      full_step=True, 
                                                                      verbose=opt.bVerbose)
+            lh.predictive_path_plot(np.array(x_test), np.array(x_pred), 
+                                    x_pred_prob, np.array(x_test_next), 
+                                    X_test_all=x_test_all)
+            lh.final_plot()
         else:               
             x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
-        lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next), X_test_all=x_test_all)
-        lh.final_plot()
+            lh.predictive_path_plot(np.array(x_test), np.array(x_pred), 
+                                    x_pred_prob, np.array(x_test_next), 
+                                    X_test_all=x_test_all)
+            lh.final_plot()
         
             
         
