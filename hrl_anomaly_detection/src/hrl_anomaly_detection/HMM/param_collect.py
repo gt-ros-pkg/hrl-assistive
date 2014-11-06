@@ -54,6 +54,11 @@ if __name__ == '__main__':
             ## nCurrentStep_list.append(param['nCurrentStep'])
             ## step_size_list_list.append(param['step_size_list'])
 
+        min_idx = np.array(mean_list).argmin()
+        print  "%f; %f; %f; %f; %s \n " % (mean_list[min_idx], std_list[min_idx], fObsrvResol_list[min_idx], nState_list[min_idx], str(np.array(B_list).reshape((nState_list[min_idx],2))))
+        
+
+            
         for i in xrange(len(mean_list)):
             ## string =  "%f; %f; %f; %f; %s \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], str(step_size_list_list[i]))
             ## string =  "%f; %f; %f; %f; %f; \n " % (mean_list[i], std_list[i], fObsrvResol_list[i], nState_list[i], nCurrentStep_list[i])

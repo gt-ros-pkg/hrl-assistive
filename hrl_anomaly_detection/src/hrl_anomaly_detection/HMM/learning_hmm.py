@@ -854,14 +854,17 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def init_plot(self):
+    def init_plot(self, bAni=False):
         print "Start to print out"
         
         self.fig = plt.figure(1)
         self.gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
 
         ## Main predictive distribution
-        self.ax = self.fig.add_subplot(self.gs[0])
+        if bAni:
+            self.ax = self.fig.add_subplot(111)
+        else:            
+            self.ax = self.fig.add_subplot(self.gs[0])
         self.ax.set_xlim([0, self.nMaxStep])
         self.ax.set_ylim([0, max(self.obsrv_range)*1.5])
         
@@ -878,59 +881,87 @@ class learning_hmm(learning_base):
         
     #----------------------------------------------------------------------        
     #
-    def animated_path_plot(self, X_test):
+    def animated_path_plot(self, X_test, bReload=False):
 
 
         n = len(X_test)
         mu = np.zeros((n, self.nFutureStep))
         var = np.zeros((n, self.nFutureStep))
 
-        for i in range(5,n-self.nFutureStep,1):
-            X_pred, X_pred_prob = self.multi_step_approximated_predict(X_test[:i],full_step=True)
-            for j in range(self.nFutureStep):
-                print i,j, X_pred_prob.shape
-                (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,j])
+        pkl_file = 'animation_data.pkl'
+        if os.path.isfile(pkl_file) and bReload==False:
+            print "Load saved pickle"
+            data = ut.load_pickle(pkl_file)        
+            X_pred      = data['X_pred']
+            X_pred_prob = data['X_pred_prob']
+            mu          = data['mu']
+            var         = data['var']
+        else:        
+            for i in range(1,n,1):
+                X_pred, X_pred_prob = self.multi_step_approximated_predict(X_test[:i],full_step=True)
+                for j in range(self.nFutureStep):
+                    print i,j, X_pred_prob.shape
+                    (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,j])
 
+            print "Save pickle"                    
+            data={}
+            data['X_pred']=X_pred
+            data['X_pred_prob']=X_pred_prob
+            data['mu']=mu
+            data['var']=var
+            ut.save_pickle(data, pkl_file)
+                
         print "---------------------------"
 
         
         ## fig = plt.figure()
         ## ax = plt.axes(xlim=(0, len(X_test)), ylim=(0, 20))
+        lAll, = self.ax.plot([], [], color='#66FFFF', lw=2)
         line, = self.ax.plot([], [], lw=2)
         lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
-        lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
+        lvar1, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        lvar2, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        ## lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
 
         
         def init():
+            lAll.set_data([],[])
             line.set_data([],[])
             lmean.set_data([],[])
-            lvar.set_data([],[], [])
-            return line, lmean, lvar,
+            lvar1.set_data([],[])
+            lvar2.set_data([],[])
+            ## lvar.set_data([],[], [])
+            return lAll, line, lmean, lvar1, lvar2,
 
         def animate(i):
+            x = np.arange(0.0, len(X_test), 1.0)
+            y = X_test
+            lAll.set_data(x, y)            
+            
             x = np.arange(0.0, len(X_test[:i]), 1.0)
             y = X_test[:i]
             line.set_data(x, y)
 
-            if i >= 5 and i < len(X_test)-self.nFutureStep:
+            if i >= 1 and i < len(X_test):# -self.nFutureStep:
                 a_mu = np.hstack([y[-1], mu[i]])
                 a_X  = np.arange(len(x)-1, len(x)+self.nFutureStep, 1.0)
                 lmean.set_data( a_X, a_mu)
                 
                 a_sig = np.hstack([0, np.sqrt(var[i])])
-                lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
+                ## lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
+                lvar1.set_data( a_X, a_mu-1.*a_sig)
+                lvar2.set_data( a_X, a_mu+1.*a_sig)
             else:
                 lmean.set_data([],[])
-                lvar.set_data([],[],[])
+                lvar1.set_data([],[])
+                lvar2.set_data([],[])
+                ## lvar.set_data([],[],[])
            
-            return line, lmean, lvar,
+            return lAll, line, lmean, lvar1, lvar2,
 
-    
-
-        
+           
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(X_test), interval=800, blit=True)
-
         plt.show()
 
 
