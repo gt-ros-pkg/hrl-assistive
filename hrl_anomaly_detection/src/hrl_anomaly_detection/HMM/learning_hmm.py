@@ -897,15 +897,15 @@ class learning_hmm(learning_base):
         ## fig = plt.figure()
         ## ax = plt.axes(xlim=(0, len(X_test)), ylim=(0, 20))
         line, = self.ax.plot([], [], lw=2)
-        mean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
-        var,  = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
+        lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
+        lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
 
         
         def init():
             line.set_data([],[])
-            mean.set_data([],[])
-            var.set_data([],[])
-            return line, mean, var,
+            lmean.set_data([],[])
+            lvar.set_data([],[], [])
+            return line, lmean, lvar,
 
         def animate(i):
             x = np.arange(0.0, len(X_test[:i]), 1.0)
@@ -915,14 +915,15 @@ class learning_hmm(learning_base):
             if i >= 5 and i < len(X_test)-self.nFutureStep:
                 a_mu = np.hstack([y[-1], mu[i]])
                 a_X  = np.arange(len(x)-1, len(x)+self.nFutureStep, 1.0)
-                mean.set_data( a_X, a_mu)
-
-                a_sig = np.hstack([0, ])
-                var.set_data( a_X, mu-1.*sig, mu+1.*sig)
+                lmean.set_data( a_X, a_mu)
+                
+                a_sig = np.hstack([0, np.sqrt(var[i])])
+                lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
             else:
-                mean.set_data([],[])
+                lmean.set_data([],[])
+                lvar.set_data([],[],[])
            
-            return line, mean, var,
+            return line, lmean, lvar,
 
     
 
