@@ -50,7 +50,7 @@ class anomaly_checker():
         
     def update_buffer(self, X_test, Y_test):
 
-        x          = X_test[-1]                
+        x          = X_test[-1]
         x_sup, idx = hdl.find_nearest(self.aXRange, x, sup=True)
         x_buf      = self.x_buf.get_array()
 
@@ -148,19 +148,17 @@ class anomaly_checker():
 
             if i >= 1 and i < len(Y_test):# -self.nFutureStep:
 
-                print x[-1]
                 x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)
-                a_X  = np.arange(self.aXRange[idx], self.aXRange[idx]+self.nFutureStep+self.fXInterval, self.fXInterval)
-                a_mu = np.hstack([y[-1], mu[idx]])
+                a_X  = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
+                if x[-1]-x_sup >= x[-1]-x[-2]:
+                    a_mu = np.hstack([y[-2], mu[idx]])
+                else:
+                    a_mu = np.hstack([y[-1], mu[idx]])
                 lmean.set_data( a_X, a_mu)
 
-                lvar1.set_data([],[])
-                lvar2.set_data([],[])
-                
-                ## a_sig = np.hstack([0, np.sqrt(var[i])])
-                ## ## lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
-                ## lvar1.set_data( a_X, a_mu-1.*a_sig)
-                ## lvar2.set_data( a_X, a_mu+1.*a_sig)
+                a_sig = np.hstack([0, np.sqrt(var[idx])])
+                lvar1.set_data( a_X, a_mu-1.*a_sig)
+                lvar2.set_data( a_X, a_mu+1.*a_sig)
             else:
                 lmean.set_data([],[])
                 lvar1.set_data([],[])

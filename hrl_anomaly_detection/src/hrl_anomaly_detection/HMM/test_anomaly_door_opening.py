@@ -67,7 +67,7 @@ def get_interp_data(x,y):
     # Cubic-spline interpolation
     from scipy import interpolate
     tck = interpolate.splrep(x, y, s=0)
-    xnew = np.arange(x[0], x[-1], 0.5)
+    xnew = np.arange(x[0], x[-1], 0.25)
     ynew = interpolate.splev(xnew, tck, der=0)
     return xnew, ynew
 
