@@ -11,6 +11,7 @@ import hrl_lib.util as ut
 
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from learning_hmm import learning_hmm
+from anomaly_checker import anomaly_checker
 
 def get_data(pkl_file, verbose=False):
 
@@ -59,7 +60,18 @@ def get_data(pkl_file, verbose=False):
         print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
     
     return data_vecs, data_mech, data_chunks
+
     
+def get_interp_data(x,y):
+
+    # Cubic-spline interpolation
+    from scipy import interpolate
+    tck = interpolate.splrep(x, y, s=0)
+    xnew = np.arange(x[0], x[-1], 0.5)
+    ynew = interpolate.splev(xnew, tck, der=0)
+    return xnew, ynew
+
+
 def get_init_param(nState):
 
     if nState == 27:
@@ -207,8 +219,7 @@ if __name__ == '__main__':
         ######################################################    
         # Test data
         h_config, h_ftan = mad.get_a_blocked_detection()
-        print np.array(h_config)*180.0/3.14
-        print len(h_ftan)
+        h_config =  np.array(h_config)*180.0/3.14
 
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
@@ -217,7 +228,12 @@ if __name__ == '__main__':
         lh.init_plot(bAni=opt.bAnimation)            
                 
         if opt.bAnimation:
-            lh.animated_path_plot(x_test_all, opt.bAniReload)
+            
+            x,y = get_interp_data(h_config, h_ftan)
+            ac = anomaly_checker(lh)
+            ac.simulation(x,y, opt.bAniReload)
+            
+            ## lh.animated_path_plot(x_test_all, opt.bAniReload)
         
         elif opt.bApproxObsrv:
             x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test,

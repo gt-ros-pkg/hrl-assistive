@@ -12,6 +12,7 @@ import glob
 import roslib; roslib.load_manifest('hrl_anomaly_detection') 
 import hrl_lib.util as ut
 import matplotlib.pyplot as plt
+from matplotlib import animation
 
 #
 import hrl_lib.circular_buffer as cb
@@ -20,20 +21,25 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, nMaxBuf, nDim=1, fXInterval=1.0, fXMax=90.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0):
+
+        # Object
+        self.ml = ml
 
         # Variables
-        self.nMaxBuf    = nMaxBuf
-        self.nDim       = nDim        
-        self.fXInterval = fXInterval
-        self.fXMax      = fXMax
-        self.aXRange    = np.arange(0.0,fXMax,self.fXInterval)
-        self.fXTOL      = 10e-1
+        self.nFutureStep = self.ml.nFutureStep
+        self.nMaxBuf     = self.ml.nFutureStep
+        self.nDim        = nDim        
+        self.fXInterval  = fXInterval
+        self.fXMax       = fXMax
+        self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
+        self.fXTOL       = 10e-1
         
         # N-buffers
         self.buf_dict = {}
         for i in xrange(self.nMaxBuf):
-            self.buf_dict['buf_'+str(i)] = cb.CircularBuffer(self.nMaxBuf, (nDim,))       
+            self.buf_dict['mu_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
+            self.buf_dict['var_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
 
         # x buffer
         self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
@@ -42,23 +48,131 @@ class anomaly_checker():
         pass
 
         
-    def update_buffer(self, x, y)
+    def update_buffer(self, X_test, Y_test):
 
-        x_c = hdl.find_nearest(self.aXRange, x, sup=True)
+        x          = X_test[-1]                
+        x_sup, idx = hdl.find_nearest(self.aXRange, x, sup=True)
+        x_buf      = self.x_buf.get_array()
 
-        if x - x_c < self.fXTOL:
+        mu_list  = [0.0]*self.nFutureStep
+        var_list = [0.0]*self.nFutureStep
         
-        x_buf = self.x_buf.get_array()
+        if x - x_sup < self.fXTOL and x - x_buf[-1] >= 1.0:
 
-
-
-        
-        # Skip: assumption that x is an increasing variable
-        if x-self.x_buf[-1] < self.fXInterval:
-            return
-        elif x-self.x_buf[-1]
+            # obsrv_range X nFutureStep
+            _, Y_pred_prob = self.ml.multi_step_approximated_predict(Y_test.tolist(),full_step=True)
+            
+            for j in xrange(self.nFutureStep):
+                (mu_list[j], var_list[j]) = hdl.gaussian_param_estimation(self.ml.obsrv_range, Y_pred_prob[:,j])
+                self.buf_dict['mu_'+str(j)].append(mu_list[j])
+                self.buf_dict['var_'+str(j)].append(var_list[j])
                 
-        return
+            return mu_list, var_list, idx
+
+        else:
+            return None, None, idx
 
         
-    def find_sup(self, x):
+    def simulation(self, X_test, Y_test, bReload):
+
+        # Load data
+        pkl_file = 'animation_data.pkl'
+        if os.path.isfile(pkl_file) and bReload==False:
+            print "Load saved pickle"
+            data = ut.load_pickle(pkl_file)        
+            X_test      = data['X_test']
+            Y_test      = data['Y_test']
+            ## Y_pred      = data['Y_pred']
+            ## Y_pred_prob = data['Y_pred_prob']
+            mu          = data['mu']
+            var         = data['var']
+        else:        
+
+            n = len(X_test)
+            mu = np.zeros((len(self.aXRange), self.nFutureStep))
+            var = np.zeros((len(self.aXRange), self.nFutureStep))
+
+            for i in range(1,n,1):
+                mu_list, var_list, idx = self.update_buffer(X_test[:i], Y_test[:i])
+
+                if mu_list != None and var_list != None:
+                    mu[idx,:] = mu_list
+                    var[idx,:]= var_list
+                    
+            print "Save pickle"                    
+            data={}
+            data['X_test'] = X_test
+            data['Y_test'] = Y_test                
+            ## data['Y_pred'] = Y_pred
+            ## data['Y_pred_prob'] = Y_pred_prob
+            data['mu']          = mu
+            data['var']         = var
+            ut.save_pickle(data, pkl_file)                
+        print "---------------------------"
+            
+
+
+        ## fig = plt.figure()
+        ## ax = plt.axes(xlim=(0, len(Y_test)), ylim=(0, 20))
+
+        self.fig = plt.figure(1)
+        self.ax = self.fig.add_subplot(111)
+        self.ax.set_xlim([0, X_test[-1].max()*1.2])
+        self.ax.set_ylim([0, max(self.ml.obsrv_range)*1.5])
+        self.ax.set_xlabel("Angle")
+        self.ax.set_ylabel("Force")
+
+        lAll, = self.ax.plot([], [], color='#66FFFF', lw=2)
+        line, = self.ax.plot([], [], lw=2)
+        lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
+        lvar1, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        lvar2, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        ## lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
+
+        
+        def init():
+            lAll.set_data([],[])
+            line.set_data([],[])
+            lmean.set_data([],[])
+            lvar1.set_data([],[])
+            lvar2.set_data([],[])
+            ## lvar.set_data([],[], [])
+            return lAll, line, lmean, lvar1, lvar2,
+
+        def animate(i):
+            lAll.set_data(X_test, Y_test)            
+            
+            x = X_test[:i]
+            y = Y_test[:i]
+            line.set_data(x, y)
+
+            if i >= 1 and i < len(Y_test):# -self.nFutureStep:
+
+                print x[-1]
+                x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)
+                a_X  = np.arange(self.aXRange[idx], self.aXRange[idx]+self.nFutureStep+self.fXInterval, self.fXInterval)
+                a_mu = np.hstack([y[-1], mu[idx]])
+                lmean.set_data( a_X, a_mu)
+
+                lvar1.set_data([],[])
+                lvar2.set_data([],[])
+                
+                ## a_sig = np.hstack([0, np.sqrt(var[i])])
+                ## ## lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
+                ## lvar1.set_data( a_X, a_mu-1.*a_sig)
+                ## lvar2.set_data( a_X, a_mu+1.*a_sig)
+            else:
+                lmean.set_data([],[])
+                lvar1.set_data([],[])
+                lvar2.set_data([],[])
+                ## lvar.set_data([],[],[])
+           
+            return lAll, line, lmean, lvar1, lvar2,
+
+           
+        anim = animation.FuncAnimation(self.fig, animate, init_func=init,
+                                       frames=len(Y_test), interval=300, blit=True)
+        
+        plt.show()
+
+        

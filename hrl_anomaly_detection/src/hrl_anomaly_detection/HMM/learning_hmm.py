@@ -881,41 +881,46 @@ class learning_hmm(learning_base):
         
     #----------------------------------------------------------------------        
     #
-    def animated_path_plot(self, X_test, bReload=False):
+    def animated_path_plot(self, X_test, Y_test, bReload=False):
 
-
-        n = len(X_test)
-        mu = np.zeros((n, self.nFutureStep))
-        var = np.zeros((n, self.nFutureStep))
-
+        # Load data
         pkl_file = 'animation_data.pkl'
         if os.path.isfile(pkl_file) and bReload==False:
             print "Load saved pickle"
             data = ut.load_pickle(pkl_file)        
-            X_pred      = data['X_pred']
-            X_pred_prob = data['X_pred_prob']
+            X_test      = data['X_test']
+            Y_test      = data['X_test']
+            Y_pred      = data['Y_pred']
+            Y_pred_prob = data['Y_pred_prob']
             mu          = data['mu']
             var         = data['var']
         else:        
+
+            n = len(X_test)
+            mu = np.zeros((n, self.nFutureStep))
+            var = np.zeros((n, self.nFutureStep))
+            
             for i in range(1,n,1):
-                X_pred, X_pred_prob = self.multi_step_approximated_predict(X_test[:i],full_step=True)
+                Y_pred, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
                 for j in range(self.nFutureStep):
-                    print i,j, X_pred_prob.shape
-                    (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,j])
+                    print i,j, Y_pred_prob.shape
+                    (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, Y_pred_prob[:,j])
 
             print "Save pickle"                    
             data={}
-            data['X_pred']=X_pred
-            data['X_pred_prob']=X_pred_prob
+            data['X_test'] = X_test
+            data['X_test'] = Y_test                
+            data['Y_pred'] =Y_pred
+            data['Y_pred_prob']=Y_pred_prob
             data['mu']=mu
             data['var']=var
-            ut.save_pickle(data, pkl_file)
-                
+            ut.save_pickle(data, pkl_file)                
         print "---------------------------"
 
         
+        
         ## fig = plt.figure()
-        ## ax = plt.axes(xlim=(0, len(X_test)), ylim=(0, 20))
+        ## ax = plt.axes(xlim=(0, len(Y_test)), ylim=(0, 20))
         lAll, = self.ax.plot([], [], color='#66FFFF', lw=2)
         line, = self.ax.plot([], [], lw=2)
         lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
@@ -934,15 +939,15 @@ class learning_hmm(learning_base):
             return lAll, line, lmean, lvar1, lvar2,
 
         def animate(i):
-            x = np.arange(0.0, len(X_test), 1.0)
-            y = X_test
+            x = np.arange(0.0, len(Y_test), 1.0)
+            y = Y_test
             lAll.set_data(x, y)            
             
-            x = np.arange(0.0, len(X_test[:i]), 1.0)
-            y = X_test[:i]
+            x = np.arange(0.0, len(Y_test[:i]), 1.0)
+            y = Y_test[:i]
             line.set_data(x, y)
 
-            if i >= 1 and i < len(X_test):# -self.nFutureStep:
+            if i >= 1 and i < len(Y_test):# -self.nFutureStep:
                 a_mu = np.hstack([y[-1], mu[i]])
                 a_X  = np.arange(len(x)-1, len(x)+self.nFutureStep, 1.0)
                 lmean.set_data( a_X, a_mu)
@@ -961,7 +966,7 @@ class learning_hmm(learning_base):
 
            
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
-                                       frames=len(X_test), interval=800, blit=True)
+                                       frames=len(Y_test), interval=800, blit=True)
         plt.show()
 
 
