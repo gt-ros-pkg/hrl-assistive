@@ -7,6 +7,7 @@ import time
 import math
 import numpy as np
 import glob
+import time
 
 # ROS library
 import roslib; roslib.load_manifest('hrl_anomaly_detection') 
@@ -33,7 +34,7 @@ class anomaly_checker():
         self.fXInterval  = fXInterval
         self.fXMax       = fXMax
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
-        self.fXTOL       = 10e-1
+        self.fXTOL       = 1.0e-1
         
         # N-buffers
         self.buf_dict = {}
@@ -60,7 +61,7 @@ class anomaly_checker():
         if x - x_sup < self.fXTOL and x - x_buf[-1] >= 1.0:
 
             # obsrv_range X nFutureStep
-            _, Y_pred_prob = self.ml.multi_step_approximated_predict(Y_test.tolist(),full_step=True)
+            _, Y_pred_prob = self.ml.multi_step_approximated_predict(Y_test.tolist(),n_jobs=-1,full_step=True)
             
             for j in xrange(self.nFutureStep):
                 (mu_list[j], var_list[j]) = hdl.gaussian_param_estimation(self.ml.obsrv_range, Y_pred_prob[:,j])
@@ -75,45 +76,43 @@ class anomaly_checker():
         
     def simulation(self, X_test, Y_test, bReload):
 
-        # Load data
-        pkl_file = 'animation_data.pkl'
-        if os.path.isfile(pkl_file) and bReload==False:
-            print "Load saved pickle"
-            data = ut.load_pickle(pkl_file)        
-            X_test      = data['X_test']
-            Y_test      = data['Y_test']
-            ## Y_pred      = data['Y_pred']
-            ## Y_pred_prob = data['Y_pred_prob']
-            mu          = data['mu']
-            var         = data['var']
-        else:        
+        ## # Load data
+        ## pkl_file = 'animation_data.pkl'
+        ## if os.path.isfile(pkl_file) and bReload==False:
+        ##     print "Load saved pickle"
+        ##     data = ut.load_pickle(pkl_file)        
+        ##     X_test      = data['X_test']
+        ##     Y_test      = data['Y_test']
+        ##     ## Y_pred      = data['Y_pred']
+        ##     ## Y_pred_prob = data['Y_pred_prob']
+        ##     mu          = data['mu']
+        ##     var         = data['var']
+        ## else:        
 
-            n = len(X_test)
-            mu = np.zeros((len(self.aXRange), self.nFutureStep))
-            var = np.zeros((len(self.aXRange), self.nFutureStep))
+        ##     n = len(X_test)
+        ##     mu = np.zeros((len(self.aXRange), self.nFutureStep))
+        ##     var = np.zeros((len(self.aXRange), self.nFutureStep))
 
-            for i in range(1,n,1):
-                mu_list, var_list, idx = self.update_buffer(X_test[:i], Y_test[:i])
+        ##     for i in range(1,n,1):
+        ##         mu_list, var_list, idx = self.update_buffer(X_test[:i], Y_test[:i])
 
-                if mu_list != None and var_list != None:
-                    mu[idx,:] = mu_list
-                    var[idx,:]= var_list
+        ##         if mu_list != None and var_list != None:
+        ##             mu[idx,:] = mu_list
+        ##             var[idx,:]= var_list
                     
-            print "Save pickle"                    
-            data={}
-            data['X_test'] = X_test
-            data['Y_test'] = Y_test                
-            ## data['Y_pred'] = Y_pred
-            ## data['Y_pred_prob'] = Y_pred_prob
-            data['mu']          = mu
-            data['var']         = var
-            ut.save_pickle(data, pkl_file)                
-        print "---------------------------"
+        ##     print "Save pickle"                    
+        ##     data={}
+        ##     data['X_test'] = X_test
+        ##     data['Y_test'] = Y_test                
+        ##     ## data['Y_pred'] = Y_pred
+        ##     ## data['Y_pred_prob'] = Y_pred_prob
+        ##     data['mu']          = mu
+        ##     data['var']         = var
+        ##     ut.save_pickle(data, pkl_file)                
+        ## print "---------------------------"
             
-
-
-        ## fig = plt.figure()
-        ## ax = plt.axes(xlim=(0, len(Y_test)), ylim=(0, 20))
+        mu = np.zeros((len(self.aXRange), self.nFutureStep))
+        var = np.zeros((len(self.aXRange), self.nFutureStep))
 
         self.fig = plt.figure(1)
         self.ax = self.fig.add_subplot(111)
@@ -136,7 +135,6 @@ class anomaly_checker():
             lmean.set_data([],[])
             lvar1.set_data([],[])
             lvar2.set_data([],[])
-            ## lvar.set_data([],[], [])
             return lAll, line, lmean, lvar1, lvar2,
 
         def animate(i):
@@ -146,17 +144,25 @@ class anomaly_checker():
             y = Y_test[:i]
             line.set_data(x, y)
 
-            if i >= 1 and i < len(Y_test):# -self.nFutureStep:
+            if i > 0:
+                mu_list, var_list, idx = self.update_buffer(x,y)            
+                if mu_list != None and var_list != None:
+                    mu[idx,:]  = mu_list
+                    var[idx,:] = var_list
+            
+            if i >= 2 and i < len(Y_test):# -self.nFutureStep:
 
-                x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)
+                x_sup = self.aXRange[idx]
                 a_X  = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
-                if x[-1]-x_sup >= x[-1]-x[-2]:
-                    a_mu = np.hstack([y[-2], mu[idx]])
+                
+                if x[-1]-x_sup < x[-1]-x[-2]:                    
+                    y_idx = 1
                 else:
-                    a_mu = np.hstack([y[-1], mu[idx]])
-                lmean.set_data( a_X, a_mu)
-
+                    y_idx = int((x[-1]-x_sup)/(x[-1]-x[-2]))+1
+                a_mu = np.hstack([y[-y_idx], mu[idx]])
                 a_sig = np.hstack([0, np.sqrt(var[idx])])
+
+                lmean.set_data( a_X, a_mu)
                 lvar1.set_data( a_X, a_mu-1.*a_sig)
                 lvar2.set_data( a_X, a_mu+1.*a_sig)
             else:

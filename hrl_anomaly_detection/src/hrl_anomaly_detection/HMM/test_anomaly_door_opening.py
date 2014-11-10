@@ -236,12 +236,23 @@ if __name__ == '__main__':
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
         
         elif opt.bApproxObsrv:
+            import time
+            start_time = time.clock()
+
             x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test,
                                                                      full_step=True, 
                                                                      verbose=opt.bVerbose)
+
+            elapsed = []
+            elapsed.append(time.clock() - start_time)
+            
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), 
                                     x_pred_prob, np.array(x_test_next), 
                                     X_test_all=x_test_all)
+
+            elapsed.append(time.clock() - start_time)        
+            print elapsed
+            
             lh.final_plot()
         else:               
             x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)

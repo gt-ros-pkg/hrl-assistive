@@ -26,6 +26,9 @@ class learning_base():
         self.aXData = aXData
         ## self.aYData = aYData
 
+        # etc 
+        self.ml = None
+        
         # Tunable parameters        
         pass
 

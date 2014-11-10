@@ -26,9 +26,11 @@ import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from scipy.stats import norm
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import r2_score
+from sklearn.base import clone
 from sklearn import cross_validation
 from scipy import optimize
 ## from pysmac.optimize import fmin                
+from joblib import Parallel, delayed
 
 from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
@@ -63,14 +65,13 @@ class learning_hmm(learning_base):
 
         self.B_upper =  np.array(self.B_upper).flatten()            
         self.B_lower =  np.array(self.B_lower).flatten()            
-        
-        
+                
         # emission domain of this model        
         self.F = ghmm.Float()  
-        
+               
         # Confusion Matrix NOTE ???
         ## cmat = np.zeros((4,4))
-
+        
         # Assign local functions
         learning_base.__dict__['fit'] = self.fit        
         learning_base.__dict__['predict'] = self.predict
@@ -559,9 +560,9 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
-    def multi_step_approximated_predict(self, X_test, full_step=False, verbose=False):
+    def multi_step_approximated_predict(self, X_test, full_step=False, n_jobs=-1, verbose=False):
         print "Start to predict multistep approximated observations"
-        
+
         ## Initialization            
         X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
         X_pred = [0.0]*self.nFutureStep
@@ -592,28 +593,41 @@ class learning_hmm(learning_base):
 
         for i in xrange(self.nFutureStep-1):
             u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
-
+            
         # Compute all intermediate steps
         if full_step:
 
+            r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.nState, u_mu_list[i], u_sigma_list[i], \
+                                              self.B, self.obsrv_range) \
+                                              for i in xrange(self.nFutureStep) )
+            res, i = zip(*r)
+            X_pred_prob = np.array(res).T 
+            
             # Recursive prediction for each future step
             for i in xrange(self.nFutureStep):
-
-                # Get all probability over observations
-                for j, obsrv in enumerate(self.obsrv_range):           
-
-                    # Get all probability over states
-                    for k in xrange(self.nState): 
-
-                        z_prob = norm.pdf(float(k),loc=u_mu_list[i],scale=u_sigma_list[i])
-                        (x_mu, x_sigma) = self.ml.getEmission(k)                        
-                        X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
-
-                        if np.isnan(z_prob): sys.exit()
                         
                 max_idx = X_pred_prob[:,i].argmax()                    
                 X_pred[i] = self.obsrv_range[max_idx]
                 X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
+                
+            ## # Recursive prediction for each future step
+            ## for i in xrange(self.nFutureStep):
+
+            ##     # Get all probability over observations
+            ##     for j, obsrv in enumerate(self.obsrv_range):           
+
+            ##         # Get all probability over states
+            ##         for k in xrange(self.nState): 
+
+            ##             z_prob = norm.pdf(float(k),loc=u_mu_list[i],scale=u_sigma_list[i])
+            ##             (x_mu, x_sigma) = self.ml.getEmission(k)                        
+            ##             X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
+
+            ##             if np.isnan(z_prob): sys.exit()
+                        
+            ##     max_idx = X_pred_prob[:,i].argmax()                    
+            ##     X_pred[i] = self.obsrv_range[max_idx]
+            ##     X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
                 
         else:
             print "Predict on last part!!"
@@ -636,7 +650,7 @@ class learning_hmm(learning_base):
             max_idx = X_pred_prob[:,i].argmax()                    
             X_pred[i] = self.obsrv_range[max_idx]
             X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
-                        
+
         return X_pred, X_pred_prob
         
 
@@ -749,7 +763,7 @@ class learning_hmm(learning_base):
         ## print "---------------------------------------------"
         return sum(total_score) / float(len(nCurrentStep))
         
-
+        
     #----------------------------------------------------------------------        
     #
     def save_obs(self, obs_name):
@@ -969,4 +983,21 @@ class learning_hmm(learning_base):
                                        frames=len(Y_test), interval=800, blit=True)
         plt.show()
 
+
+def f(i, nState, u_mu, u_sigma, B, obsrv_range):
+
+    X_pred_prob = np.zeros((len(obsrv_range)))
+
+    # Get all probability over observations
+    for j in xrange(len(obsrv_range)):
+    
+        # Get all probability over states
+        for k in xrange(nState): 
+
+            z_prob = norm.pdf(float(k),loc=u_mu,scale=u_sigma)
+            (x_mu, x_sigma) = B[k] #hmm.ml.getEmission(k)                        
+            X_pred_prob[j] += norm.pdf(obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
+
+    return X_pred_prob, i
+                                              
 
