@@ -35,7 +35,7 @@ class anomaly_checker():
         self.fXMax       = fXMax
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
-        self.fAnomaly    = 4.0
+        self.fAnomaly    = 8.0
         
         # N-buffers
         self.buf_dict = {}
@@ -75,7 +75,7 @@ class anomaly_checker():
             return None, None, idx
 
         
-    def check_anomaly(self, x):
+    def check_anomaly(self, y):
 
         var_coff = 1.0
         a_coff = np.zeros((self.nFutureStep))
@@ -84,13 +84,13 @@ class anomaly_checker():
 
             mu  = self.buf_dict['mu_'+str(i)][0]
             sig = self.buf_dict['sig_'+str(i)][0]
-            if mu-var_coff*sig > x or mu+var_coff*sig < x:
+            if mu-var_coff*sig > y or mu+var_coff*sig < y:
                 a_coff[i] = 1.0
             else:
                 a_coff[i] = 0.0
 
         score= sum(a_coff)
-        print a_coff, score
+        ## print y, a_coff, score
         
         if score > self.fAnomaly:
             return True, score
@@ -150,6 +150,7 @@ class anomaly_checker():
         lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
         lvar1, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
         lvar2, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        lbar,  = self.ax.bar(30.0, 0.0, width=1.0, color='b')
         ## lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
 
         
@@ -159,9 +160,8 @@ class anomaly_checker():
             lmean.set_data([],[])
             lvar1.set_data([],[])
             lvar2.set_data([],[])
-            self.ax.bar(30.0,[0.0], width=1.0, color='r')
-            
-            return lAll, line, lmean, lvar1, lvar2, 
+            lbar.set_height(0.0)            
+            return lAll, line, lmean, lvar1, lvar2, lbar,
 
         def animate(i):
             lAll.set_data(X_test, Y_test)            
@@ -177,7 +177,7 @@ class anomaly_checker():
                     var[idx,:] = var_list
 
                 ## # check anomaly score
-                bFlag, fScore = self.check_anomaly(x[-1])
+                bFlag, fScore = self.check_anomaly(y[-1])
             
             if i >= 2 and i < len(Y_test):# -self.nFutureStep:
 
@@ -194,17 +194,20 @@ class anomaly_checker():
                 lmean.set_data( a_X, a_mu)
                 lvar1.set_data( a_X, a_mu-1.*a_sig)
                 lvar2.set_data( a_X, a_mu+1.*a_sig) 
-                if bFlag:               
-                    self.ax.bar(30.0,[fScore], width=1.0, color='r')
+                lbar.set_height(fScore)
+                if fScore>=self.fAnomaly:
+                    lbar.set_color('r')
+                elif fScore>=self.fAnomaly*0.7:          
+                    lbar.set_color('orange')
                 else:
-                    self.ax.bar(30.0,[fScore], width=1.0, color='b')
+                    lbar.set_color('b')
+                    
             else:
                 lmean.set_data([],[])
                 lvar1.set_data([],[])
                 lvar2.set_data([],[])
-                self.ax.bar(30.0,[0.0], width=1.0, color='r')
-           
-            return lAll, line, lmean, lvar1, lvar2, 
+                lbar.set_height(0.0)           
+            return lAll, line, lmean, lvar1, lvar2, lbar,
 
            
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
