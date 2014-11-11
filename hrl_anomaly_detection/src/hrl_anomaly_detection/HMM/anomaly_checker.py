@@ -35,16 +35,17 @@ class anomaly_checker():
         self.fXMax       = fXMax
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
+        self.fAnomaly    = 4.0
         
         # N-buffers
         self.buf_dict = {}
         for i in xrange(self.nMaxBuf):
             self.buf_dict['mu_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
-            self.buf_dict['var_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
+            self.buf_dict['sig_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
 
         # x buffer
-        self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
-        self.x_buf.append(-1.0)
+        ## self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
+        ## self.x_buf.append(-1.0)
         
         pass
 
@@ -53,25 +54,48 @@ class anomaly_checker():
 
         x          = X_test[-1]
         x_sup, idx = hdl.find_nearest(self.aXRange, x, sup=True)
-        x_buf      = self.x_buf.get_array()
+        ## x_buf      = self.x_buf.get_array()
 
         mu_list  = [0.0]*self.nFutureStep
         var_list = [0.0]*self.nFutureStep
-        
-        if x - x_sup < self.fXTOL and x - x_buf[-1] >= 1.0:
+
+        # fXTOL should be sufficiently small.    
+        if x - x_sup < self.fXTOL: # and x - x_buf[-1] >= 1.0:
 
             # obsrv_range X nFutureStep
             _, Y_pred_prob = self.ml.multi_step_approximated_predict(Y_test.tolist(),n_jobs=-1,full_step=True)
-            
+
             for j in xrange(self.nFutureStep):
                 (mu_list[j], var_list[j]) = hdl.gaussian_param_estimation(self.ml.obsrv_range, Y_pred_prob[:,j])
                 self.buf_dict['mu_'+str(j)].append(mu_list[j])
-                self.buf_dict['var_'+str(j)].append(var_list[j])
-                
-            return mu_list, var_list, idx
+                self.buf_dict['sig_'+str(j)].append(np.sqrt(var_list[j]))
 
+            return mu_list, var_list, idx
         else:
             return None, None, idx
+
+        
+    def check_anomaly(self, x):
+
+        var_coff = 1.0
+        a_coff = np.zeros((self.nFutureStep))
+        
+        for i in xrange(self.nFutureStep):
+
+            mu  = self.buf_dict['mu_'+str(i)][0]
+            sig = self.buf_dict['sig_'+str(i)][0]
+            if mu-var_coff*sig > x or mu+var_coff*sig < x:
+                a_coff[i] = 1.0
+            else:
+                a_coff[i] = 0.0
+
+        score= sum(a_coff)
+        print a_coff, score
+        
+        if score > self.fAnomaly:
+            return True, score
+        else:
+            return False, score
 
         
     def simulation(self, X_test, Y_test, bReload):
@@ -135,7 +159,9 @@ class anomaly_checker():
             lmean.set_data([],[])
             lvar1.set_data([],[])
             lvar2.set_data([],[])
-            return lAll, line, lmean, lvar1, lvar2,
+            self.ax.bar(30.0,[0.0], width=1.0, color='r')
+            
+            return lAll, line, lmean, lvar1, lvar2, 
 
         def animate(i):
             lAll.set_data(X_test, Y_test)            
@@ -149,6 +175,9 @@ class anomaly_checker():
                 if mu_list != None and var_list != None:
                     mu[idx,:]  = mu_list
                     var[idx,:] = var_list
+
+                ## # check anomaly score
+                bFlag, fScore = self.check_anomaly(x[-1])
             
             if i >= 2 and i < len(Y_test):# -self.nFutureStep:
 
@@ -164,14 +193,18 @@ class anomaly_checker():
 
                 lmean.set_data( a_X, a_mu)
                 lvar1.set_data( a_X, a_mu-1.*a_sig)
-                lvar2.set_data( a_X, a_mu+1.*a_sig)
+                lvar2.set_data( a_X, a_mu+1.*a_sig) 
+                if bFlag:               
+                    self.ax.bar(30.0,[fScore], width=1.0, color='r')
+                else:
+                    self.ax.bar(30.0,[fScore], width=1.0, color='b')
             else:
                 lmean.set_data([],[])
                 lvar1.set_data([],[])
                 lvar2.set_data([],[])
-                ## lvar.set_data([],[],[])
+                self.ax.bar(30.0,[0.0], width=1.0, color='r')
            
-            return lAll, line, lmean, lvar1, lvar2,
+            return lAll, line, lmean, lvar1, lvar2, 
 
            
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,

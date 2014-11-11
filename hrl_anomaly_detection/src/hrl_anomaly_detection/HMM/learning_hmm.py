@@ -606,8 +606,8 @@ class learning_hmm(learning_base):
             # Recursive prediction for each future step
             for i in xrange(self.nFutureStep):
                         
-                max_idx = X_pred_prob[:,i].argmax()                    
-                X_pred[i] = self.obsrv_range[max_idx]
+                ## max_idx = X_pred_prob[:,i].argmax()                    
+                ## X_pred[i] = self.obsrv_range[max_idx]
                 X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
                 
             ## # Recursive prediction for each future step
@@ -651,7 +651,8 @@ class learning_hmm(learning_base):
             X_pred[i] = self.obsrv_range[max_idx]
             X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
 
-        return X_pred, X_pred_prob
+        ## return X_pred, X_pred_prob
+        return None, X_pred_prob
         
 
     #----------------------------------------------------------------------        
@@ -661,13 +662,14 @@ class learning_hmm(learning_base):
         e_mu   = 0.0
         e_mu2  = 0.0
         e_var  = 0.0
-        p_z    = np.zeros((self.nState))
-        
+        p_z    = norm.pdf(np.arange(0.0,float(self.nState),1.0),loc=u_mu,scale=u_sigma)
+
+        # Need to speed up!!
         for i in xrange(self.nState):
 
             zp     = self.A[i,:]*self.state_range
             mu_z   = np.sum(zp)
-            p_z[i] = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
+            ## p_z[i] = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
             
             e_mu   += p_z[i] * mu_z
             e_mu2  += p_z[i] * mu_z**2
@@ -904,7 +906,7 @@ class learning_hmm(learning_base):
             data = ut.load_pickle(pkl_file)        
             X_test      = data['X_test']
             Y_test      = data['X_test']
-            Y_pred      = data['Y_pred']
+            ## Y_pred      = data['Y_pred']
             Y_pred_prob = data['Y_pred_prob']
             mu          = data['mu']
             var         = data['var']
@@ -915,7 +917,8 @@ class learning_hmm(learning_base):
             var = np.zeros((n, self.nFutureStep))
             
             for i in range(1,n,1):
-                Y_pred, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
+                ## Y_pred, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
+                _, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
                 for j in range(self.nFutureStep):
                     print i,j, Y_pred_prob.shape
                     (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, Y_pred_prob[:,j])
@@ -924,7 +927,7 @@ class learning_hmm(learning_base):
             data={}
             data['X_test'] = X_test
             data['X_test'] = Y_test                
-            data['Y_pred'] =Y_pred
+            ## data['Y_pred'] =Y_pred
             data['Y_pred_prob']=Y_pred_prob
             data['mu']=mu
             data['var']=var
