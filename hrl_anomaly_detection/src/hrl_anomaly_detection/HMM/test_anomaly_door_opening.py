@@ -224,8 +224,6 @@ if __name__ == '__main__':
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
         x_test_all  = h_ftan
-
-        lh.init_plot(bAni=opt.bAnimation)            
                 
         if opt.bAnimation:
             
@@ -238,6 +236,7 @@ if __name__ == '__main__':
         elif opt.bApproxObsrv:
             import time
             start_time = time.clock()
+            lh.init_plot(bAni=opt.bAnimation)            
 
             x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test,
                                                                      full_step=True, 
@@ -255,6 +254,7 @@ if __name__ == '__main__':
             
             lh.final_plot()
         else:               
+            lh.init_plot(bAni=opt.bAnimation)            
             x_pred, x_pred_prob = lh.multi_step_predict(x_test, verbose=opt.bVerbose)
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), 
                                     x_pred_prob, np.array(x_test_next), 

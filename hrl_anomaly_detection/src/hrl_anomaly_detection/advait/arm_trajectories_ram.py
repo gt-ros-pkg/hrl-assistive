@@ -57,6 +57,7 @@ def force_trajectory_in_hindsight(pull_dict, mechanism_type, pr2_log):
     print '_________________________________________________'
 
     if not pr2_log:
+        print pull_dict.keys() # Note problem!!
         arm = pull_dict['arm']
         print 'arm:', arm
         act_tl = at.joint_to_cartesian(pull_dict['actual'], arm)

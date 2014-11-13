@@ -14,6 +14,7 @@ import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import hrl_lib.util as ut
 import matplotlib.pyplot as plt
 from matplotlib import animation
+from matplotlib import gridspec
 
 #
 import hrl_lib.circular_buffer as cb
@@ -79,9 +80,16 @@ class anomaly_checker():
 
         var_coff = 1.0
         a_coff = np.zeros((self.nFutureStep))
+        fAnomaly = self.fAnomaly
         
         for i in xrange(self.nFutureStep):
 
+            # check buff size
+            if len(self.buf_dict['mu_'+str(i)]) < i:
+                a_coff[i] = 0.0
+                fAnomaly -= 1.0
+                continue
+            
             mu  = self.buf_dict['mu_'+str(i)][0]
             sig = self.buf_dict['sig_'+str(i)][0]
             if mu-var_coff*sig > y or mu+var_coff*sig < y:
@@ -92,10 +100,10 @@ class anomaly_checker():
         score= sum(a_coff)
         ## print y, a_coff, score
         
-        if score > self.fAnomaly:
-            return True, score
+        if score > fAnomaly:
+            return True, score*(self.fAnomaly/fAnomaly)
         else:
-            return False, score
+            return False, score*(self.fAnomaly/fAnomaly)
 
         
     def simulation(self, X_test, Y_test, bReload):
@@ -139,19 +147,30 @@ class anomaly_checker():
         var = np.zeros((len(self.aXRange), self.nFutureStep))
 
         self.fig = plt.figure(1)
-        self.ax = self.fig.add_subplot(111)
-        self.ax.set_xlim([0, X_test[-1].max()*1.2])
-        self.ax.set_ylim([0, max(self.ml.obsrv_range)*1.5])
-        self.ax.set_xlabel("Angle")
-        self.ax.set_ylabel("Force")
+        self.gs = gridspec.GridSpec(1, 2, width_ratios=[6, 1]) 
+                
+        self.ax1 = self.fig.add_subplot(self.gs[0])
+        self.ax1.set_xlim([0, X_test[-1].max()*1.2])
+        self.ax1.set_ylim([0, max(self.ml.obsrv_range)*1.5])
+        self.ax1.set_xlabel("Angle")
+        self.ax1.set_ylabel("Force")
 
-        lAll, = self.ax.plot([], [], color='#66FFFF', lw=2)
-        line, = self.ax.plot([], [], lw=2)
-        lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
-        lvar1, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
-        lvar2, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
-        lbar,  = self.ax.bar(30.0, 0.0, width=1.0, color='b')
-        ## lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
+        lAll, = self.ax1.plot([], [], color='#66FFFF', lw=2)
+        line, = self.ax1.plot([], [], lw=2)
+        lmean, = self.ax1.plot([], [], 'm-', linewidth=2.0)    
+        lvar1, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0)    
+        lvar2, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0)    
+
+        self.ax2 = self.fig.add_subplot(self.gs[1])        
+        lbar,  = self.ax2.bar(0.0001, 0.0, width=1.0, color='b')
+        self.ax2.set_xlim([0.0, 1.0])
+        self.ax2.set_ylim([0, self.nMaxBuf])
+        self.ax2.set_xlabel("Anomaly Gauge")        
+        plt.setp(self.ax2.get_xticklabels(), visible=False)
+        plt.setp(self.ax2.get_yticklabels(), visible=False)
+        ## res_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
+        ## lbar2, = self.ax1.bar(30.0, 0.0, width=1.0, color='white', edgecolor='k')
+        ## lvar , = self.ax1.fill_between([], [], [], facecolor='yellow', alpha=0.5)
 
         
         def init():
@@ -212,6 +231,8 @@ class anomaly_checker():
            
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(Y_test), interval=300, blit=True)
+
+        anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         
         plt.show()
 

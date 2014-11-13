@@ -31,6 +31,7 @@ def get_a_blocked_detection():
     ## pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
     ## one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
     pkl_nm = '/home/dpark/Dropbox/HRL/pr2_pull_2010Dec10_071602_new.pkl'
+    ## pkl_nm = 'robot_trials/lab_fridge_collision_box/pull_trajectories_lab_refrigerator_2010Dec10_044022_new.pkl'
 
     max_ang = math.radians(30)
 

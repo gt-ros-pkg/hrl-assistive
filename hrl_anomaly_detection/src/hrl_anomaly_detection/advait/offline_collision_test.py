@@ -124,6 +124,9 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
     plot_trial(pkl_nm, math.radians(len(dt[0][0])), start_idx,
                mech_idx, class_idx, plt_st, plt_mech, plt_sem) 
 
+    print semantic.keys()
+    print cls
+    
     # Operating 1st time
     # semantic: human and robot data in where each category has (n_std, mn, std) <= force profile
     # 'RAM_db/*.pkl' 'RAM_db/robot_trials/perfect_perception/*.pkl' 'RAM_db/robot_trials/simulate_perception/*.pkl'
@@ -167,7 +170,7 @@ def fridge_box_collision():
 def fridge_chair_collision():
     cls = 'Fridge'
     mech = 'lab_fridge_cody'
-    pkl_nm = 'robot_trials/lab_fridge_collision_chair/pull_trajectories_lab_refrigerator_2010Dec10_042926_new.pkl'
+    pkl_nm = data_path+'robot_trials/lab_fridge_collision_chair/pull_trajectories_lab_refrigerator_2010Dec10_042926_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/lab_fridge_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 290, 295, 295)
 
@@ -191,21 +194,21 @@ def fridge_chair_collision():
 def ikea_cabinet_no_collision():
     cls = 'Office Cabinet'
     mech = 'ikea_cabinet_pr2'
-    pkl_nm = 'robot_trials/ikea_cabinet/pr2_pull_2010Dec08_204324_new.pkl'
+    pkl_nm = data_path+'robot_trials/ikea_cabinet/pr2_pull_2010Dec08_204324_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/ikea_cabinet_pr2_new.pkl'
     robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm)
 
 def kitchen_cabinet_chair_cody():
     cls = 'Office Cabinet'
     mech = 'kitchen_cabinet_cody'
-    pkl_nm = 'robot_trials/hsi_kitchen_collision_chair/pull_trajectories_kitchen_cabinet_2010Dec10_060852_new.pkl'
+    pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_chair/pull_trajectories_kitchen_cabinet_2010Dec10_060852_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
     robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 113, 115, 119)
 
 def kitchen_cabinet_box_cody():
     cls = 'Office Cabinet'
     mech = 'kitchen_cabinet_cody'
-    pkl_nm = 'robot_trials/hsi_kitchen_collision_box/pull_trajectories_kitchen_cabinet_2010Dec10_060454_new.pkl'
+    pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_box/pull_trajectories_kitchen_cabinet_2010Dec10_060454_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 68, 77, 104)
 
@@ -266,7 +269,7 @@ def kitchen_cabinet_box_pr2():
 def kitchen_cabinet_locked_cody():
     cls = 'Office Cabinet'
     mech = 'kitchen_cabinet_cody'
-    pkl_nm = 'robot_trials/kitchen_cabinet_locked/pull_trajectories_kitchen_cabinet_2010Dec11_233625_new.pkl'
+    pkl_nm = data_path+'robot_trials/kitchen_cabinet_locked/pull_trajectories_kitchen_cabinet_2010Dec11_233625_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 14, 24, 35)
 
@@ -291,7 +294,7 @@ def kitchen_cabinet_locked_pr2():
     cls = 'Office Cabinet'
     mech = 'kitchen_cabinet_pr2'
     #pkl_nm = 'robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec11_215502_new.pkl'
-    pkl_nm = 'robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec12_005340_new.pkl'
+    pkl_nm = data_path + 'robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec12_005340_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_pr2_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 49, 116, 330)
 
@@ -317,7 +320,7 @@ def kitchen_cabinet_locked_pr2():
 if __name__ == '__main__':
 
     pth       = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
-    ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
+    data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     
     blocked_thresh_dict = ut.load_pickle(pth+'blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
     #blocked_thresh_dict = ut.load_pickle('./blocked_thresh_dict.pkl') # ['mean_charlie', 'mean_known_mech']
@@ -325,14 +328,14 @@ if __name__ == '__main__':
     semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)  <= force profiles
     second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)
     
-#    ikea_cabinet_no_collision()
-#    fridge_chair_collision()
+    ## ikea_cabinet_no_collision()
+    ## fridge_chair_collision()
 #    fridge_box_collision()
 #    kitchen_cabinet_chair_cody()
-    kitchen_cabinet_box_pr2()
-#    kitchen_cabinet_box_cody()
-#    kitchen_cabinet_locked_cody()
-#    kitchen_cabinet_locked_pr2()
+    ## kitchen_cabinet_box_pr2()
+    kitchen_cabinet_box_cody()
+    ## kitchen_cabinet_locked_cody()
+    ## kitchen_cabinet_locked_pr2()
     pp.show()
 
 
