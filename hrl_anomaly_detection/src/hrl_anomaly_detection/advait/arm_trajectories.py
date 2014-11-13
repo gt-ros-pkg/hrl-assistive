@@ -15,7 +15,7 @@ import hrl_lib.util as ut
 ## #import cody_arms.arms as ca
 
 ## roslib.load_manifest('hrl_cody_arms')
-## import hrl_cody_arms.cody_arm_kinematics as cak
+import hrl_cody_arms.cody_arm_kinematics as cak
 
 import hrl_lib.matplotlib_util as mpu
 ## import hrl_lib.util as ut, hrl_lib.transforms as tr
@@ -59,39 +59,39 @@ class ForceTrajectory():
         self.time_list = [] # time in seconds
         self.f_list = [] #each element is a list of 3 coordinates
 
-## ##
-## # @param traj - JointTrajectory
-## # @return CartesianTajectory after performing FK on traj to compute
-## # cartesian position, velocity
-## def joint_to_cartesian(traj, arm):
-##     #firenze = ca.M3HrlRobot(end_effector_length = 0.17318)
-##     if arm == 'right_arm':
-##         arm = 'r'
-##     else:
-##         arm = 'l'
+##
+# @param traj - JointTrajectory
+# @return CartesianTajectory after performing FK on traj to compute
+# cartesian position, velocity
+def joint_to_cartesian(traj, arm):
+    #firenze = ca.M3HrlRobot(end_effector_length = 0.17318)
+    if arm == 'right_arm':
+        arm = 'r'
+    else:
+        arm = 'l'
 
-##     firenze = cak.CodyArmKinematics(arm)
-##     firenze.set_tooltip(np.matrix([0.,0.,-0.12]).T)
+    firenze = cak.CodyArmKinematics(arm)
+    firenze.set_tooltip(np.matrix([0.,0.,-0.12]).T)
 
-##     pts = []
-##     cart_vel = []
-##     for i in range(len(traj.q_list)):
-##         q = traj.q_list[i]
-##         p, _ = firenze.FK(q)
-##         pts.append(p.A1.tolist())
+    pts = []
+    cart_vel = []
+    for i in range(len(traj.q_list)):
+        q = traj.q_list[i]
+        p, _ = firenze.FK(q)
+        pts.append(p.A1.tolist())
 
-##         if traj.qdot_list != [] and traj.qdot_list[0] != None:
-##             qdot = traj.qdot_list[i]
-##             jac = firenze.Jacobian(q)
-##             vel = jac * np.matrix(qdot).T
-##             cart_vel.append(vel.A1[0:3].tolist())
+        if traj.qdot_list != [] and traj.qdot_list[0] != None:
+            qdot = traj.qdot_list[i]
+            jac = firenze.Jacobian(q)
+            vel = jac * np.matrix(qdot).T
+            cart_vel.append(vel.A1[0:3].tolist())
 
-##     ct = CartesianTajectory()
-##     ct.time_list = copy.copy(traj.time_list)
-##     ct.p_list = copy.copy(pts)
-##     ct.v_list = copy.copy(cart_vel)
-##     #return np.matrix(pts).T
-##     return ct
+    ct = CartesianTajectory()
+    ct.time_list = copy.copy(traj.time_list)
+    ct.p_list = copy.copy(pts)
+    ct.v_list = copy.copy(cart_vel)
+    #return np.matrix(pts).T
+    return ct
 
 ## def plot_forces_quiver(pos_traj,force_traj,color='k'):
 ##     import arm_trajectories as at
@@ -344,68 +344,68 @@ def fit_circle(rad_guess, x_guess, y_guess, pts, method, verbose=True,
 ##     ct.time_list = copy.copy(cart_traj.time_list)
 ##     return ct
 
-## ##
-## # remove the initial part of the trjectory in which the hook is not moving.
-## # @param ct - cartesian trajectory of the end effector in the world frame.
-## # @return 2xN np matrix, reject_idx
-## def filter_cartesian_trajectory(ct):
-##     pts_list = ct.p_list
-##     ee_start_pos = pts_list[0]
-##     l = [pts_list[0]]
+##
+# remove the initial part of the trjectory in which the hook is not moving.
+# @param ct - cartesian trajectory of the end effector in the world frame.
+# @return 2xN np matrix, reject_idx
+def filter_cartesian_trajectory(ct):
+    pts_list = ct.p_list
+    ee_start_pos = pts_list[0]
+    l = [pts_list[0]]
 
-##     for i, p in enumerate(pts_list[1:]):
-##         l.append(p)
-##         pts_2d = (np.matrix(l).T)[0:2,:]
-##         st_pt = pts_2d[:,0]
-##         end_pt = pts_2d[:,-1]
-##         dist_moved = np.linalg.norm(st_pt-end_pt)
-##         #if dist_moved < 0.1:
-##         if dist_moved < 0.03:
-##             reject_idx = i
+    for i, p in enumerate(pts_list[1:]):
+        l.append(p)
+        pts_2d = (np.matrix(l).T)[0:2,:]
+        st_pt = pts_2d[:,0]
+        end_pt = pts_2d[:,-1]
+        dist_moved = np.linalg.norm(st_pt-end_pt)
+        #if dist_moved < 0.1:
+        if dist_moved < 0.03:
+            reject_idx = i
 
-##     pts_2d = pts_2d[:,reject_idx:]
-##     return pts_2d, reject_idx
+    pts_2d = pts_2d[:,reject_idx:]
+    return pts_2d, reject_idx
 
-## ##
-## # remove the  last part of the trjectory in which the hook might have slipped off
-## # @param ct - cartesian trajectory of the end effector in the world frame.
-## # @param ft - force trajectory
-## # @return cartesian trajectory with the zero force end part removed, force trajectory
-## def filter_trajectory_force(ct, ft):
-##     vel_list = copy.copy(ct.v_list)
-##     pts_list = copy.copy(ct.p_list)
-##     time_list = copy.copy(ct.time_list)
-##     ft_list = copy.copy(ft.f_list)
-##     f_mag_list = ut.norm(np.matrix(ft.f_list).T).A1.tolist()
+##
+# remove the  last part of the trjectory in which the hook might have slipped off
+# @param ct - cartesian trajectory of the end effector in the world frame.
+# @param ft - force trajectory
+# @return cartesian trajectory with the zero force end part removed, force trajectory
+def filter_trajectory_force(ct, ft):
+    vel_list = copy.copy(ct.v_list)
+    pts_list = copy.copy(ct.p_list)
+    time_list = copy.copy(ct.time_list)
+    ft_list = copy.copy(ft.f_list)
+    f_mag_list = ut.norm(np.matrix(ft.f_list).T).A1.tolist()
 
-##     if len(pts_list) != len(f_mag_list):
-##         print 'arm_trajectories.filter_trajectory_force: force and end effector lists are not of the same length.'
-##         print 'Exiting ...'
-##         sys.exit()
+    if len(pts_list) != len(f_mag_list):
+        print 'arm_trajectories.filter_trajectory_force: force and end effector lists are not of the same length.'
+        print 'Exiting ...'
+        sys.exit()
 
-##     n_pts = len(pts_list)
-##     i = n_pts - 1
-##     hook_slip_off_threshold = 1.5 # from compliant_trajectories.py
-##     while i > 0:
-##         if f_mag_list[i] < hook_slip_off_threshold:
-##             pts_list.pop()
-##             time_list.pop()
-##             ft_list.pop()
-##             if vel_list != []:
-##                 vel_list.pop()
-##         else:
-##             break
-##         i -= 1
+    n_pts = len(pts_list)
+    i = n_pts - 1
+    hook_slip_off_threshold = 1.5 # from compliant_trajectories.py
+    while i > 0:
+        if f_mag_list[i] < hook_slip_off_threshold:
+            pts_list.pop()
+            time_list.pop()
+            ft_list.pop()
+            if vel_list != []:
+                vel_list.pop()
+        else:
+            break
+        i -= 1
 
-##     ct2 = CartesianTajectory()
-##     ct2.time_list = time_list
-##     ct2.p_list = pts_list
-##     ct2.v_list = vel_list
+    ct2 = CartesianTajectory()
+    ct2.time_list = time_list
+    ct2.p_list = pts_list
+    ct2.v_list = vel_list
 
-##     ft2 = ForceTrajectory()
-##     ft2.time_list = copy.copy(time_list)
-##     ft2.f_list = ft_list
-##     return ct2, ft2
+    ft2 = ForceTrajectory()
+    ft2.time_list = copy.copy(time_list)
+    ft2.f_list = ft_list
+    return ct2, ft2
 
 
 ## if __name__ == '__main__':

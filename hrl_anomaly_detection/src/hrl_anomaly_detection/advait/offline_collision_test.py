@@ -60,9 +60,8 @@ def plot_trial(pkl_nm, max_ang, start_idx=None, mech_idx=None,
     h_config, h_ftan = maa.bin(h_config, h_ftan, bin_size, np.mean, True) 
     pp.plot(np.degrees(h_config), h_ftan, 'yo-', mew=0, ms=0,
             label='applied force', linewidth=2)
-    pp.xlabel('Angle (degrees)')
-    pp.ylabel('Opening Force (N)')
-
+    ## pp.xlabel('Angle (degrees)')
+    ## pp.ylabel('Opening Force (N)')
 
     if start != None:
         x = start[0]
@@ -114,19 +113,16 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
 
     # pkl_nm    : collision pickle
     # one_pkl_nm: perfect_perception
-    
+
     one_d = ut.load_pickle(one_pkl_nm) 
     one_trial = np.array(one_d['vec_list'][0:1]) # ee force_profile ? 4xN
     #one_trial = one_trial.reshape(1,len(one_trial))
     dt = second_time[mech] 
-    
+
     # Applied force (collision)
     plot_trial(pkl_nm, math.radians(len(dt[0][0])), start_idx,
                mech_idx, class_idx, plt_st, plt_mech, plt_sem) 
 
-    print semantic.keys()
-    print cls
-    
     # Operating 1st time
     # semantic: human and robot data in where each category has (n_std, mn, std) <= force profile
     # 'RAM_db/*.pkl' 'RAM_db/robot_trials/perfect_perception/*.pkl' 'RAM_db/robot_trials/simulate_perception/*.pkl'
@@ -136,13 +132,13 @@ def robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, start_idx=None,
     # Expected force and operating 2nd time 
     test_known_mechanism(dt, one_trial)
 
-    pp.title(mech)
+    ## pp.title(mech)
     mpu.legend(display_mode='normal')
 
 def fridge_box_collision():
     cls = 'Fridge'
-    mech = 'lab_fridge_cody'
-    pkl_nm = 'robot_trials/lab_fridge_collision_box/pull_trajectories_lab_refrigerator_2010Dec10_044022_new.pkl'
+    cls = mech = 'lab_fridge_cody'
+    pkl_nm = data_path+'robot_trials/lab_fridge_collision_box/pull_trajectories_lab_refrigerator_2010Dec10_044022_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/lab_fridge_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 150, 177, 173)
 
@@ -169,7 +165,7 @@ def fridge_box_collision():
 
 def fridge_chair_collision():
     cls = 'Fridge'
-    mech = 'lab_fridge_cody'
+    cls = mech = 'lab_fridge_cody'
     pkl_nm = data_path+'robot_trials/lab_fridge_collision_chair/pull_trajectories_lab_refrigerator_2010Dec10_042926_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/lab_fridge_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 290, 295, 295)
@@ -193,21 +189,21 @@ def fridge_chair_collision():
 
 def ikea_cabinet_no_collision():
     cls = 'Office Cabinet'
-    mech = 'ikea_cabinet_pr2'
+    cls = mech = 'ikea_cabinet_pr2'
     pkl_nm = data_path+'robot_trials/ikea_cabinet/pr2_pull_2010Dec08_204324_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/ikea_cabinet_pr2_new.pkl'
     robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm)
 
 def kitchen_cabinet_chair_cody():
     cls = 'Office Cabinet'
-    mech = 'kitchen_cabinet_cody'
+    cls = mech = 'kitchen_cabinet_cody'
     pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_chair/pull_trajectories_kitchen_cabinet_2010Dec10_060852_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
     robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 113, 115, 119)
 
 def kitchen_cabinet_box_cody():
-    cls = 'Office Cabinet'
-    mech = 'kitchen_cabinet_cody'
+    ## cls = 'Office Cabinet'
+    cls = mech = 'kitchen_cabinet_cody'
     pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_box/pull_trajectories_kitchen_cabinet_2010Dec10_060454_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 68, 77, 104)
@@ -218,7 +214,7 @@ def kitchen_cabinet_box_cody():
     x1,y1 = 6, 10.35
     x2, y2 = 6.95, 12.39
     x3, y3 = 10.1314, 13.3785
-
+       
     robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, None, None, None,
                      (x1, y1), (x2, y2), (x3, y3))
     pp.text(x1-0., y1-1.5, '1', withdash=True)
@@ -228,7 +224,7 @@ def kitchen_cabinet_box_cody():
     pp.ylim(-0., 16.)
     pp.xlim(0., 34.)
     f.subplots_adjust(bottom=.15, top=.99, right=.99)
-#    mpu.legend(loc='lower left')
+    mpu.legend(loc='lower left')
     pp.savefig('collision_detection_hsi_kitchen_cody.pdf')
     pp.show()
 
@@ -268,7 +264,7 @@ def kitchen_cabinet_box_pr2():
 
 def kitchen_cabinet_locked_cody():
     cls = 'Office Cabinet'
-    mech = 'kitchen_cabinet_cody'
+    cls = mech = 'kitchen_cabinet_cody'
     pkl_nm = data_path+'robot_trials/kitchen_cabinet_locked/pull_trajectories_kitchen_cabinet_2010Dec11_233625_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
     #robot_trial_plot(cls, mech, pkl_nm, one_pkl_nm, 14, 24, 35)
@@ -292,7 +288,7 @@ def kitchen_cabinet_locked_cody():
 
 def kitchen_cabinet_locked_pr2():
     cls = 'Office Cabinet'
-    mech = 'kitchen_cabinet_pr2'
+    cls = mech = 'kitchen_cabinet_pr2'
     #pkl_nm = 'robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec11_215502_new.pkl'
     pkl_nm = data_path + 'robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec12_005340_new.pkl'
     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_pr2_new.pkl'
@@ -328,12 +324,12 @@ if __name__ == '__main__':
     semantic = blocked_thresh_dict['mean_charlie'] # each category has (n_std, mn, std)  <= force profiles
     second_time = blocked_thresh_dict['mean_known_mech'] # (Ms(mn_mn, var_mn, mn_std, var_std), n_std)=(tuple(4),float)
     
-    ## ikea_cabinet_no_collision()
+    ikea_cabinet_no_collision()
     ## fridge_chair_collision()
-#    fridge_box_collision()
-#    kitchen_cabinet_chair_cody()
+    ## fridge_box_collision()
+    ## kitchen_cabinet_chair_cody()
     ## kitchen_cabinet_box_pr2()
-    kitchen_cabinet_box_cody()
+    ## kitchen_cabinet_box_cody()
     ## kitchen_cabinet_locked_cody()
     ## kitchen_cabinet_locked_pr2()
     pp.show()

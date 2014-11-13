@@ -24,17 +24,61 @@ import advait.ram_db as rd
 import advait.mechanism_analyse_advait as maa
 import advait.arm_trajectories_ram as atr
 
+data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
 
-def get_a_blocked_detection():
 
-    cls = mech = 'kitchen_cabinet_pr2'
-    ## pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    ## one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
-    pkl_nm = '/home/dpark/Dropbox/HRL/pr2_pull_2010Dec10_071602_new.pkl'
-    ## pkl_nm = 'robot_trials/lab_fridge_collision_box/pull_trajectories_lab_refrigerator_2010Dec10_044022_new.pkl'
+def get_a_blocked_detection(mech, ang_interval=1.0):
 
+    cls = mech
+
+    # collision w/ box
+    if mech == 'lab_fridge_cody':
+        pkl_nm = data_path+'robot_trials/lab_fridge_collision_box/pull_trajectories_lab_refrigerator_2010Dec10_044022_new.pkl'
+        one_pkl_nm = data_path + 'robot_trials/perfect_perception/lab_fridge_cody_new.pkl'
+
+    # collision w/ chair
+    elif mech == 'lab_fridge_cody':
+        pkl_nm = data_path+'robot_trials/lab_fridge_collision_chair/pull_trajectories_lab_refrigerator_2010Dec10_042926_new.pkl'
+        one_pkl_nm = data_path + 'robot_trials/perfect_perception/lab_fridge_cody_new.pkl'
+
+    # No collision
+    elif mech == 'ikea_cabinet_pr2':
+        pkl_nm = data_path+'robot_trials/ikea_cabinet/pr2_pull_2010Dec08_204324_new.pkl'
+        one_pkl_nm = data_path + 'robot_trials/perfect_perception/ikea_cabinet_pr2_new.pkl'
+
+    ## # locked
+    ## elif mech == 'kitchen_cabinet_cody':
+    ##     pkl_nm = data_path+'robot_trials/kitchen_cabinet_locked/pull_trajectories_kitchen_cabinet_2010Dec11_233625_new.pkl'
+    ##     one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
+    ## elif mech == 'kitchen_cabinet_pr2':
+    ##     pkl_nm = data_path + 'robot_trials/kitchen_cabinet_locked/pr2_pull_2010Dec12_005340_new.pkl'
+    ##     one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2_new.pkl'
+
+        
+    ## # collision w/ chair
+    ## elif mech == 'kitchen_cabinet_cody':
+    ##     pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_chair/pull_trajectories_kitchen_cabinet_2010Dec10_060852_new.pkl'
+    ##     one_pkl_nm = pth + 'RAM_db/robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
+
+    ## # collision w/ box
+    ## elif mech == 'kitchen_cabinet_cody':
+    ##     pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_box/pull_trajectories_kitchen_cabinet_2010Dec10_060454_new.pkl'
+    ##     one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
+
+    ## # collision w/ box
+    ## elif mech == 'kitchen_cabinet_pr2':
+    ##     pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    ##     one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+    ##     ## pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+    ##     ## one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+    ##     ## pkl_nm = '/home/dpark/Dropbox/HRL/pr2_pull_2010Dec10_071602_new.pkl'
+
+    else:
+        print "No available data"
+        sys.exit()
+
+        
     max_ang = math.radians(30)
-
     
     pull_dict = ut.load_pickle(pkl_nm)
     typ = 'rotary'
@@ -46,12 +90,13 @@ def get_a_blocked_detection():
     h_ftan = np.array(h_ftan)
     h_ftan = h_ftan[h_config < max_ang]
     h_config = h_config[h_config < max_ang] # cut
-    bin_size = math.radians(1.)
+    bin_size = math.radians(ang_interval)
     h_config_degrees = np.degrees(h_config)
     ftan_raw = h_ftan
-
+    
     # resampling with specific interval
     h_config, h_ftan = maa.bin(h_config, h_ftan, bin_size, np.mean, True) 
+       
     return h_config, h_ftan
     
 

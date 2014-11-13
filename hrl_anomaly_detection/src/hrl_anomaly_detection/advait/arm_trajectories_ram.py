@@ -20,13 +20,26 @@ import hrl_lib.matplotlib_util as mpu
 # @return r, cx, cy
 def estimate_mechanism_kinematics(pull_dict, pr2_log):
     if not pr2_log:
-        act_tl = at.joint_to_cartesian(pull_dict['actual'], pull_dict['arm'])
-        force_tl = pull_dict['force']
+        ## act_tl = at.joint_to_cartesian(pull_dict['actual'], pull_dict['arm'])
+        traj = at.JointTrajectory()
+        traj.q_list = pull_dict['actual_JT_q_list']
+        traj.qdot_list = pull_dict['actual_JT_qdot_list']
+        traj.qdotdot_list = pull_dict['actual_JT_qdotdot_list']
+        traj.time_list = pull_dict['actual_JT_time_list']                       
+        act_tl = at.joint_to_cartesian(traj, pull_dict['arm'])
+        
+        ## force_tl = pull_dict['force']
+        force_tl = at.ForceTrajectory()
+        force_tl.time_list = pull_dict['force_FT_time_list']
+        force_tl.f_list = pull_dict['force_FT_f_list']
+        
         actual_cartesian, force_ts = act_tl, force_tl
         #actual_cartesian, force_ts = at.account_segway_motion(act_tl,
         #                                    force_tl, pull_dict['segway'])
+        ## cartesian_force_clean, _ = at.filter_trajectory_force(actual_cartesian,
+        ##                                                       pull_dict['force'])
         cartesian_force_clean, _ = at.filter_trajectory_force(actual_cartesian,
-                                                              pull_dict['force'])
+                                                              force_tl)
         pts_list = actual_cartesian.p_list
         pts_2d, reject_idx = at.filter_cartesian_trajectory(cartesian_force_clean)
     else:
@@ -57,11 +70,22 @@ def force_trajectory_in_hindsight(pull_dict, mechanism_type, pr2_log):
     print '_________________________________________________'
 
     if not pr2_log:
-        print pull_dict.keys() # Note problem!!
+        ## print pull_dict.keys() # Note problem!!
         arm = pull_dict['arm']
-        print 'arm:', arm
-        act_tl = at.joint_to_cartesian(pull_dict['actual'], arm)
-        force_tl = pull_dict['force']
+        ## print 'arm:', arm        
+        ## act_tl = at.joint_to_cartesian(pull_dict['actual'], arm)
+        traj = at.JointTrajectory()
+        traj.q_list = pull_dict['actual_JT_q_list']
+        traj.qdot_list = pull_dict['actual_JT_qdot_list']
+        traj.qdotdot_list = pull_dict['actual_JT_qdotdot_list']
+        traj.time_list = pull_dict['actual_JT_time_list']        
+        act_tl = at.joint_to_cartesian(traj, arm)        
+
+        ## force_tl = pull_dict['force']
+        force_tl = at.ForceTrajectory()
+        force_tl.time_list = pull_dict['force_FT_time_list']
+        force_tl.f_list = pull_dict['force_FT_f_list']
+
         actual_cartesian, force_ts = act_tl, force_tl
         #actual_cartesian, force_ts = at.account_segway_motion(act_tl,
         #                                    force_tl, pull_dict['segway'])

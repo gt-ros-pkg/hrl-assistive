@@ -13,7 +13,7 @@ import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
 
-def get_data(pkl_file, verbose=False):
+def get_data(pkl_file, mech='Office Cabinet', verbose=False):
 
     ######################################################    
     # Get Training Data
@@ -38,9 +38,11 @@ def get_data(pkl_file, verbose=False):
     ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
     ## print len(data_mech), data_vecs.shape
     ## sys.exit()
-        
+
+    ## print data_mech
+    
     # Filtering
-    idxs = np.where(['Office Cabinet' in i for i in data_mech])[0].tolist()
+    idxs = np.where([mech in i for i in data_mech])[0].tolist()
 
     ## print data_mech
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
@@ -128,8 +130,6 @@ if __name__ == '__main__':
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
-    p.add_option('--ani_reload', '--ar', action='store_true', dest='bAniReload',
-                 default=False, help='Plot by time using animation')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
@@ -144,6 +144,11 @@ if __name__ == '__main__':
     fObsrvResol = 0.1
     nCurrentStep = 5  #14
 
+    cls = 'Office Cabinet'
+    ## mech = 'kitchen_cabinet_pr2'
+    ## mech = 'kitchen_cabinet_cody'
+    mech = 'ikea_cabinet_pr2'
+    
     step_size_list = None
 
     if step_size_list != None and (len(step_size_list) !=nState 
@@ -151,7 +156,7 @@ if __name__ == '__main__':
         print len(step_size_list), " : ", sum(step_size_list)
         sys.exit()
         
-    data_vecs, _, _ = get_data(pkl_file)        
+    data_vecs, _, _ = get_data(pkl_file, cls)        
     A, B, pi = get_init_param(nState)        
 
 
@@ -218,7 +223,7 @@ if __name__ == '__main__':
 
         ######################################################    
         # Test data
-        h_config, h_ftan = mad.get_a_blocked_detection()
+        h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25)
         h_config =  np.array(h_config)*180.0/3.14
 
         x_test = h_ftan[:nCurrentStep]
@@ -226,10 +231,12 @@ if __name__ == '__main__':
         x_test_all  = h_ftan
                 
         if opt.bAnimation:
-            
-            x,y = get_interp_data(h_config, h_ftan)
+
+            print type(h_config), type(h_ftan)
+            ## x,y = get_interp_data(h_config, h_ftan)
+            x,y = h_config, h_ftan
             ac = anomaly_checker(lh)
-            ac.simulation(x,y, opt.bAniReload)
+            ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
         

@@ -64,7 +64,12 @@ class anomaly_checker():
         if x - x_sup < self.fXTOL: # and x - x_buf[-1] >= 1.0:
 
             # obsrv_range X nFutureStep
-            _, Y_pred_prob = self.ml.multi_step_approximated_predict(Y_test.tolist(),n_jobs=-1,full_step=True)
+            if type(Y_test) == list:
+                y = Y_test
+            else:
+                y = Y_test.tolist()
+                
+            _, Y_pred_prob = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
 
             for j in xrange(self.nFutureStep):
                 (mu_list[j], var_list[j]) = hdl.gaussian_param_estimation(self.ml.obsrv_range, Y_pred_prob[:,j])
@@ -106,7 +111,7 @@ class anomaly_checker():
             return False, score*(self.fAnomaly/fAnomaly)
 
         
-    def simulation(self, X_test, Y_test, bReload):
+    def simulation(self, X_test, Y_test):
 
         ## # Load data
         ## pkl_file = 'animation_data.pkl'
@@ -232,7 +237,7 @@ class anomaly_checker():
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(Y_test), interval=300, blit=True)
 
-        anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
+        ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         
         plt.show()
 
