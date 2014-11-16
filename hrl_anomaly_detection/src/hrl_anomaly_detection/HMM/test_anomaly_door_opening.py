@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 15
+    nState    = 35
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 1
     ## data_column_idx = 1
@@ -142,9 +142,11 @@ if __name__ == '__main__':
     nCurrentStep = 5  #14
 
     class_list = ['Freezer','Fridge','Kitchen Cabinet','Office Cabinet']
+    class_dir_list = ['Freezer','Fridge','Kitchen_Cabinet','Office_Cabinet']
 
     # for block test
-    cls = class_list[3]
+    nClass = 2
+    cls = class_list[nClass]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
     mech = 'ikea_cabinet_pr2'
@@ -208,7 +210,7 @@ if __name__ == '__main__':
         import socket, time
         host_name = socket.gethostname()
         t=time.gmtime()                
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass],
                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
                                  +str(t[3])+str(t[4])+'.pkl')
         
