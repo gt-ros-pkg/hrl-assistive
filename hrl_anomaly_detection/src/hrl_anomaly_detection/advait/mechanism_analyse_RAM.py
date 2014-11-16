@@ -48,7 +48,7 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
         for v in d['vec_list']:
             l = min(l, len(v))
         if l < reject_len:
-            print 'mechanism:', d['name'], 'len:', l
+            ## print 'mechanism:', d['name'], 'len:', l
             continue
         len_list.append(l)
         d_list.append(d)
@@ -255,7 +255,7 @@ def create_mvpa_dataset(proj_mat, mech_vec_list, mech_nm_list):
         selected_vec_list.append(v_mat)
 
         if nm not in rd.tags_dict:
-            print nm + ' is not in tags_dict'
+            ## print nm + ' is not in tags_dict'
             #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
@@ -281,7 +281,7 @@ def create_mvpa_dataset_semantic_classes(proj_mat, mech_vec_list, mech_nm_list):
     for i, v_mat in enumerate(mech_vec_list):
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict:
-            print nm + ' is not in tags_dict'
+            ## print nm + ' is not in tags_dict'
             raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
@@ -444,7 +444,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
     for i, v_mat in enumerate(mech_vec_list):
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict: #name filtering
-            print nm + ' is not in tags_dict'
+            ## print nm + ' is not in tags_dict'
             #raw_input('Hit ENTER to continue')
             continue
         tags = rd.tags_dict[nm]
@@ -490,8 +490,8 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
             feat_list_test.append(v_mat)
         else:
             feat_list.append(v_mat)
-        print '-------------------------'
-        print 'nm:', nm
+        ## print '-------------------------'
+        ## print 'nm:', nm
         if nm == 'HSI_kitchen_cabinet_right':
             print '####################33'
             print '####################33'
@@ -505,9 +505,9 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
     data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels, chunks is name of sample
 
     if feat_list_test == []:
-        print '############################3'
-        print 'feat_list_test is empty'
-        print '############################3'
+        ## print '############################3'
+        ## print 'feat_list_test is empty'
+        ## print '############################3'
         data_test = data
     else:
         feats = np.column_stack(feat_list_test)
@@ -530,7 +530,7 @@ def blocked_detection_n_equals_1(mech_vec_list, mech_nm_list):
         Ms = compute_Ms(data, l_vdata.targets[0], plot=False)
 
         mechs = l_vdata.uniquechunks
-        for m in mechs:
+        for m in mechs:                            
             n_std = 0.
             all_trials = l_vdata.samples[np.where(l_vdata.chunks == m)]
             le = all_trials.shape[1]
@@ -538,11 +538,30 @@ def blocked_detection_n_equals_1(mech_vec_list, mech_nm_list):
                 one_trial = all_trials[i,:].reshape(1,le)
                 mn_list, std_list = estimate_theta(one_trial, Ms, plot=False)
                 mn_arr, std_arr = np.array(mn_list), np.array(std_list)
+
                 n_std = max(n_std, np.max(np.abs(all_trials - mn_arr) / std_arr))
+                
+                ## if np.isnan(np.max(std_arr)):
+                ##     for i,std in enumerate(std_arr):
+                ##         if np.isnan(std): continue
+                ##         new_n_std = np.max(np.abs(all_trials[:,i] - mn_arr[i]) / std_arr[i])
+                ##         if n_std < new_n_std:
+                ##             n_std = new_n_std
+                ## else:
+                ##     n_std = max(n_std, np.max(np.abs(all_trials - mn_arr) / std_arr))
+
 
             mean_thresh_known_mech_dict[m] = (Ms, n_std) # store on a per mechanism granularity
             print 'n_std for', m, ':', n_std
-            print 'max error force for', m, ':', np.max(n_std*std_arr[2:])
+            print 'max error force for', m, ':', np.max(n_std*std_arr[2:]) #, ' ', std_arr[2:]
+            
+
+            ## if m=='Jason_refrigerator':
+            ##     print Ms
+            ##     print n_std, np.max(np.abs(all_trials - mn_arr) / std_arr)
+            ##     print all_trials - mn_arr
+            ##     sys.exit()
+            
 
     d = ut.load_pickle('blocked_thresh_dict.pkl')
     d['mean_known_mech'] = mean_thresh_known_mech_dict
@@ -601,6 +620,7 @@ def blocked_detection(mech_vec_list, mech_nm_list):
 
         mean_force_profile = np.mean(train_trials, 0)
         std_force_profile = np.std(train_trials, 0)
+        
 #        print '#######################'
 #        print 'l_vdata.chunks[0]', l_vdata.chunks[0]
 #        mean_thresh_charlie_dict[l_vdata.labels[0]] = (mean_force_profile * 0.,
@@ -628,14 +648,15 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
     t_nm_list, t_mech_vec_list = [], []
     for i, nm in enumerate(mech_nm_list):
-        print 'nm:', nm
+        ## print 'nm:', nm
         if 'known' in nm:
             continue
         t_nm_list.append(nm)
         t_mech_vec_list.append(mech_vec_list[i])
 
     data, _ = create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
-    label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+    
+    ## label_splitter = NFoldSplitter(cvtype=1, attr='labels')
     thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
     mean_charlie_dict = thresh_dict['mean_charlie']
     mean_known_mech_dict = thresh_dict['mean_known_mech']
@@ -648,15 +669,25 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         mech_fp_l_l = []
         mech_mn_l_l = []
         mech_err_l_l = []
-        for l_wdata, l_vdata in label_splitter(data):
-            lab = l_vdata.labels[0]
+
+        nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+        label_splitter = splitters.Splitter(attr='partitions')            
+        splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+            
+        for l_wdata, l_vdata in splits: #label_splitter(data):
+
+            # Why zero??? who is really mean?  -> changed into 10
+            lab = l_vdata.targets[0]
             chunk = l_vdata.chunks[0]
-            trials = l_vdata.samples
+            trials = l_vdata.samples # all data
 
             if lab == 'Refrigerator':
                 lab = 'Fridge'
+
             #_, mean, std =  mean_charlie_dict[lab]
             _, mean, std =  mean_charlie_dict[chunk]
+
+            # cutting into the same length
             min_len = min(len(mean), trials.shape[1])
             trials = trials[:,:min_len]
             mean = mean[:min_len]
@@ -665,7 +696,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             mn_list = []
             fp_list, err_list = [], []
             for n in semantic_range:
-                err = (mean + n*std) - trials
+                err = (mean + n*std) - trials                    
                 #false_pos = np.sum(np.any(err<0, 1))
                 #tot = trials.shape[0]
                 false_pos = np.sum(err<0)
@@ -690,17 +721,20 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist()
         fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()
         #pp.errorbar(fp_list, mn_list, std_list)
+
+        ## mn_list = np.array(mn_l_l).flatten()
+        ## fp_list = np.array(fp_l_l).flatten()
+        
         pp.plot(fp_list, mn_list, '--'+sem_m+sem_c, label= semantic_label,
                 mec=sem_c, ms=8, mew=2)
         #pp.plot(fp_list, mn_list, '-ob', label='with prior')
 
     #---------------- mechanism knowledge prior -------------
     if plot_prev:
-        chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')
-
+        
         t_nm_list, t_mech_vec_list = [], []
         for i, nm in enumerate(mech_nm_list):
-            print 'nm:', nm
+            ## print 'nm:', nm
             if 'known' in nm:
                 t_nm_list.append(nm)
                 t_mech_vec_list.append(mech_vec_list[i])
@@ -710,6 +744,11 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
         data, _ = create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
 
+        ## chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')        
+        nfs = NFoldPartitioner(cvtype=1, attr='chunks') # 1-fold ?
+        chunk_splitter = splitters.Splitter(attr='partitions')            
+        splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+        
         err_mean_list = []
         err_std_list = []
         fp_list = []
@@ -717,8 +756,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             false_pos = 0
             n_trials = 0
             err_list = []
-            for _, l_vdata in chunk_splitter(data):
-                lab = l_vdata.labels[0]
+            for _, l_vdata in splits: #chunk_splitter(data):
+                lab = l_vdata.targets[0]
                 trials = l_vdata.samples
                 m = l_vdata.chunks[0]
                 #one_trial = trials[0].reshape(1, len(trials[0]))
@@ -763,7 +802,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 def generate_roc_curve_no_prior(mech_vec_list, mech_nm_list):
     #pp.figure()
     data, _ = create_blocked_dataset_semantic_classes(mech_vec_list, mech_nm_list, append_robot = False)
-    chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')
+    ## chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')
 
     err_mean_list = []
     err_std_list = []
@@ -802,11 +841,11 @@ def generate_roc_curve_no_prior(mech_vec_list, mech_nm_list):
 
 def compute_Ms(data, semantic_class, plot):
 
-    nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+    nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
     spl = splitters.Splitter(attr='targets',attr_values=[semantic_class])
     a   = [list(spl.generate(x)) for x in nfs.generate(data)]
     semantic_data = a[0][0]
-    
+
     ## label_splitter = NFoldSplitter(cvtype=1, attr='labels')
     ## a = label_splitter.splitDataset(data, [semantic_class])
     ## semantic_data = a[0]
@@ -968,7 +1007,7 @@ def plot_different_mechanisms(nm_l, lab_l, c_l, max_len, st_list = None,
         c, nm, lab = c_l[i], nm_l[i], lab_l[i]
         ls = linestyle_l[i]
         st = st_list[i]
-        print 'nm:', nm
+        ## print 'nm:', nm
         d = ut.load_pickle('RAM_db/'+nm+'.pkl')
         plot_reference_trajectory(d['config'][:max_len-st],
                 d['mean'][st:max_len], d['std'][st:max_len], d['typ'],
@@ -1218,9 +1257,8 @@ if __name__ == '__main__':
 
     root_path = os.environ['HRLBASEPATH']+'/'
 
-    
     if opt.fig_roc_human:
-        pkl_list = glob.glob('RAM_db/*.pkl')
+        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
         mpu.set_figure_size(10, 7.)
@@ -1352,9 +1390,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         #pkl_list = glob.glob('RAM_db/*.pkl')
 
         # human and robot data
-        ## pkl_list = glob.glob('RAM_db/*.pkl') + glob.glob('RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob('RAM_db/robot_trials/simulate_perception/*.pkl')
         pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
-        ## pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
         
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
@@ -1365,7 +1401,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         #test_blocked_detection(mech_vec_list, mech_nm_list)
         #test_blocked_detection_new(mech_vec_list, mech_nm_list)
 
-        #generate_roc_curve(mech_vec_list, mech_nm_list)
+        ## generate_roc_curve(mech_vec_list, mech_nm_list)
         #generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
         #pp.show()
 

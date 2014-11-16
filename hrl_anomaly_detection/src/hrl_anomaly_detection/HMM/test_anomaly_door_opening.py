@@ -13,11 +13,11 @@ import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
 
-def get_data(pkl_file, mech='Office Cabinet', verbose=False):
+def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
 
     ######################################################    
     # Get Training Data
-    if os.path.isfile(pkl_file):
+    if os.path.isfile(pkl_file) and renew==False:
         print "Saved pickle found"
         data = ut.load_pickle(pkl_file)
         data_vecs = data['data_vecs']
@@ -32,17 +32,15 @@ def get_data(pkl_file, mech='Office Cabinet', verbose=False):
         data['data_chunks'] = data_chunks
         ut.save_pickle(data,pkl_file)
 
-
     ## from collections import OrderedDict
     ## print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
     ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
     ## print len(data_mech), data_vecs.shape
     ## sys.exit()
-
     ## print data_mech
     
     # Filtering
-    idxs = np.where([mech in i for i in data_mech])[0].tolist()
+    idxs = np.where([mech_class in i for i in data_mech])[0].tolist()
 
     ## print data_mech
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
@@ -74,42 +72,42 @@ def get_interp_data(x,y):
     return xnew, ynew
 
 
-def get_init_param(nState):
+def get_init_param(nState, mech_class='Office Cabinet'):
 
-    if nState == 27:
-        A=None
-        B= np.array([[  0.65460858,  3.75559027],
-            [ 19.14088894,  3.00439256],
-            [ 16.67292067,  2.59510363],
-            [  9.30149164,  3.35532136],
-            [ 10.20360709,  0.82194885],
-            [ 11.57887639,  2.50314713],
-            [ 11.97284535,  1.83956526],
-            [ 10.54898096,  0.12454761],
-            [  3.85245744,  2.39909837],
-            [ 15.07665305,  3.68764635],
-            [  7.88338746,  2.09772464],
-            [  5.50403149,  0.34692303],
-            [ 15.99616779,  1.2888493 ],
-            [  8.889266,    3.65985848],
-            [ 14.66218247,  3.66735491],
-            [  7.37560428,  3.09516763],
-            [  6.67233779,  1.6771348 ],
-            [  7.21410401,  1.58022427],
-            [ 16.52255113,  3.90849502],
-            [ 15.64859841,  1.03275153],
-            [  5.43240626,  2.9589057 ],
-            [ 18.13599286,  2.89700896],
-            [  4.0560603,   0.49477993],
-            [ 12.90839232,  1.90842489],
-            [  4.39049378,  3.83603433],
-            [ 15.00135479,  0.55290679],
-            [ 10.97389832,  2.40767146]])
-    else:
-        A=None        
-        B=None
-        
+    A=None        
+    B=None
     pi=None    
+    
+    if mech_class=='Office Cabinet':
+        if nState == 27:
+            B= np.array([[  0.65460858,  3.75559027],
+                [ 19.14088894,  3.00439256],
+                [ 16.67292067,  2.59510363],
+                [  9.30149164,  3.35532136],
+                [ 10.20360709,  0.82194885],
+                [ 11.57887639,  2.50314713],
+                [ 11.97284535,  1.83956526],
+                [ 10.54898096,  0.12454761],
+                [  3.85245744,  2.39909837],
+                [ 15.07665305,  3.68764635],
+                [  7.88338746,  2.09772464],
+                [  5.50403149,  0.34692303],
+                [ 15.99616779,  1.2888493 ],
+                [  8.889266,    3.65985848],
+                [ 14.66218247,  3.66735491],
+                [  7.37560428,  3.09516763],
+                [  6.67233779,  1.6771348 ],
+                [  7.21410401,  1.58022427],
+                [ 16.52255113,  3.90849502],
+                [ 15.64859841,  1.03275153],
+                [  5.43240626,  2.9589057 ],
+                [ 18.13599286,  2.89700896],
+                [  4.0560603,   0.49477993],
+                [ 12.90839232,  1.90842489],
+                [  4.39049378,  3.83603433],
+                [ 15.00135479,  0.55290679],
+                [ 10.97389832,  2.40767146]])
+
 
     return A, B, pi
     
@@ -136,32 +134,31 @@ if __name__ == '__main__':
 
     ## Init variables    
     data_path = os.getcwd()
-    nState    = 27
+    nState    = 15
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
-    pkl_file  = "door_opening_data.pkl"    
-    nFutureStep = 8
+    nFutureStep = 1
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 5  #14
 
-    cls = 'Office Cabinet'
+    class_list = ['Freezer','Fridge','Kitchen Cabinet','Office Cabinet']
+
+    # for block test
+    cls = class_list[3]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
     mech = 'ikea_cabinet_pr2'
     
+    pkl_file  = "mech_class_"+cls+".pkl"    
     step_size_list = None
 
     if step_size_list != None and (len(step_size_list) !=nState 
                                    or sum(step_size_list) != nMaxStep):
         print len(step_size_list), " : ", sum(step_size_list)
         sys.exit()
-        
-    data_vecs, _, _ = get_data(pkl_file, cls)        
-    A, B, pi = get_init_param(nState)        
 
-
-    ## # TEMP
-    ## data_vecs = data_vecs[:][:40,:]
+    data_vecs, _, _ = get_data(pkl_file, mech_class=cls, renew=opt.renew)        
+    A, B, pi = get_init_param(nState, mech_class=cls)        
 
     ######################################################    
     # Training 
