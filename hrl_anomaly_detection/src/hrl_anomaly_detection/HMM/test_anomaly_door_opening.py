@@ -210,6 +210,7 @@ if __name__ == '__main__':
         import socket, time
         host_name = socket.gethostname()
         t=time.gmtime()                
+        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass])
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass],
                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
                                  +str(t[3])+str(t[4])+'.pkl')
