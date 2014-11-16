@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_coff=1.0):
 
         # Object
         self.ml = ml
@@ -37,6 +37,7 @@ class anomaly_checker():
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
         self.fAnomaly    = 8.0
+        self.sig_coff    = sig_coff
         
         # N-buffers
         self.buf_dict = {}
@@ -83,8 +84,8 @@ class anomaly_checker():
         
     def check_anomaly(self, y):
 
-        var_coff = 1.0
         a_coff = np.zeros((self.nFutureStep))
+        err    = np.zeros((self.nFutureStep))
         fAnomaly = self.fAnomaly
         
         for i in xrange(self.nFutureStep):
@@ -97,18 +98,20 @@ class anomaly_checker():
             
             mu  = self.buf_dict['mu_'+str(i)][0]
             sig = self.buf_dict['sig_'+str(i)][0]
-            if mu-var_coff*sig > y or mu+var_coff*sig < y:
+            ## if mu-sig_coff*sig > y or mu+sig_coff*sig < y:
+            if mu+self.sig_coff*sig < y:
                 a_coff[i] = 1.0
             else:
                 a_coff[i] = 0.0
+                err[i] = mu+self.sig_coff*sig - y
 
         score= sum(a_coff)
         ## print y, a_coff, score
         
         if score > fAnomaly:
-            return True, score*(self.fAnomaly/fAnomaly)
+            return True, score*(self.fAnomaly/fAnomaly), err
         else:
-            return False, score*(self.fAnomaly/fAnomaly)
+            return False, score*(self.fAnomaly/fAnomaly), err
 
         
     def simulation(self, X_test, Y_test):

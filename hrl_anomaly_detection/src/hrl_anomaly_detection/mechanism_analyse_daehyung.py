@@ -105,7 +105,7 @@ def get_a_blocked_detection(mech, ang_interval=1.0):
     return h_config, h_ftan
     
 
-def get_all_blocked_detection():
+def get_all_blocked_detection(): # human + robot
 
     pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl')
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')

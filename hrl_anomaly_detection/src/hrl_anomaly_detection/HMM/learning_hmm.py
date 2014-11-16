@@ -561,7 +561,7 @@ class learning_hmm(learning_base):
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
     def multi_step_approximated_predict(self, X_test, full_step=False, n_jobs=-1, verbose=False):
-        print "Start to predict multistep approximated observations"
+        ## print "Start to predict multistep approximated observations"
 
         ## Initialization            
         X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))

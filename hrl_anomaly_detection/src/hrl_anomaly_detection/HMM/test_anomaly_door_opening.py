@@ -2,16 +2,22 @@
 
 import sys, os, copy
 import numpy as np, math
+import glob
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
+
+from mvpa2.generators.partition import NFoldPartitioner
+from mvpa2.generators import splitters
 
 # Util
 import hrl_lib.util as ut
 
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
+import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
 from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
+
 
 def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
 
@@ -111,6 +117,87 @@ def get_init_param(nState, mech_class='Office Cabinet'):
 
     return A, B, pi
     
+
+def generate_roc_curve(mech_vec_list, mech_nm_list,                        
+                       nState, nFutureStep, fObsrvResol,
+                       semantic_range = np.arange(0.2, 2.7, 0.3)):
+
+    t_nm_list, t_mech_vec_list = [], []
+    for i, nm in enumerate(mech_nm_list):
+        ## print 'nm:', nm
+        if 'known' in nm:
+            continue
+        t_nm_list.append(nm)
+        t_mech_vec_list.append(mech_vec_list[i])
+
+    data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
+
+    thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
+    mean_charlie_dict = thresh_dict['mean_charlie']
+    mean_known_mech_dict = thresh_dict['mean_known_mech']
+
+    #---------------- semantic class prior -------------
+    # init containers
+    fp_l_l = []
+    mn_l_l = []
+    err_l_l = []
+    mech_fp_l_l = []
+    mech_mn_l_l = []
+    mech_err_l_l = []
+
+    # splitter
+    nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+    label_splitter = splitters.Splitter(attr='partitions')            
+    splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+
+    X_test = np.arange(0.0, 36.0, 1.0)
+
+    # Run by class
+    for l_wdata, l_vdata in splits: #label_splitter(data):
+
+        mech_class = l_vdata.targets[0]
+        trials = l_vdata.samples # all data
+
+        # cutting into the same length
+        trials = trials[:,:36]
+
+        data_vecs, _, _ = get_data(pkl_file, mech_class=mech_class, renew=opt.renew)        
+        A, B, pi = get_init_param(nState, mech_class=mech_class)        
+
+        print "-------------------------------"
+        print "Mech class: ", mech_class
+        print "Data size: ", np.array(data_vecs).shape
+        print "-------------------------------"
+                
+        # Training 
+        lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
+                          nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, 
+                          step_size_list=step_size_list)    
+
+        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)                
+        
+        mn_list = []
+        fp_list, err_list = [], []        
+        for n in semantic_range:
+
+            for i, trial in enumerate(trials):
+
+                ac = anomaly_checker(lh, sig_coff=n)
+                
+                # Simulation
+                for j in xrange(len(trial)):
+                    if j> 0:
+                        ac.update_buffer(X_test[:j], trial[:j])
+                    
+                        ## # check anomaly score
+                        bFlag, fScore, err = ac.check_anomaly(trial[j])
+            
+            
+            
+        
+    
+    
     
 if __name__ == '__main__':
 
@@ -128,15 +215,19 @@ if __name__ == '__main__':
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
+    p.add_option('--fig_roc_robot', '--roc', action='store_true', dest='bROCRobot',
+                 default=False, help='Plot roc curve wrt robot data')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
 
     ## Init variables    
-    data_path = os.getcwd()
-    nState    = 35
+    ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
+    data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
+    root_path = os.environ['HRLBASEPATH']+'/'
+    nState    = 30
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
-    nFutureStep = 1
+    nFutureStep = 8
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 5  #14
@@ -154,6 +245,8 @@ if __name__ == '__main__':
     pkl_file  = "mech_class_"+cls+".pkl"    
     step_size_list = None
 
+
+    
     if step_size_list != None and (len(step_size_list) !=nState 
                                    or sum(step_size_list) != nMaxStep):
         print len(step_size_list), " : ", sum(step_size_list)
@@ -164,7 +257,7 @@ if __name__ == '__main__':
 
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path=data_path, aXData=data_vecs[0], nState=nState, 
+    lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
                       nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
                       fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, 
                       step_size_list=step_size_list)    
@@ -287,7 +380,17 @@ if __name__ == '__main__':
             lh.init_plot()            
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
-        
+
+    elif opt.bROCRobot:
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*.pkl')
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+        generate_roc_curve(mech_vec_list, mech_nm_list, \
+                           nState=nState, nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
+                           semantic_range = np.arange(0.2, 2.7, 0.3))
+            
+            
     else:
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
         ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
