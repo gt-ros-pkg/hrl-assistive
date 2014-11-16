@@ -236,7 +236,7 @@ if __name__ == '__main__':
     class_dir_list = ['Freezer','Fridge','Kitchen_Cabinet','Office_Cabinet']
 
     # for block test
-    nClass = 0
+    nClass = 1
     cls = class_list[nClass]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
