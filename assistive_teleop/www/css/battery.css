@@ -1,0 +1,73 @@
+#battery-status{
+    display: inline-block;
+    float: right;
+    height: 100%;
+    width: 5%;
+    min-width: 20px;
+    background-color: rgba(0,0,0,0);
+    position: relative;
+}
+
+#battery-status .battery-contact{
+    height: 50%;
+    width: 15%;
+    position:absolute;
+    top: 25%;
+    left:0%;
+    background-color: yellow; /*Default to warning color. Should be overwritten when state is updated"*/
+/*    background:linear-gradient(to left,
+                                rgba(30,200,45,0.87) 0%,
+                                LightGray 0%)
+
+*/
+}
+
+#battery-status .battery-main{
+    height: 100%;
+    width: 85%;
+    position: absolute;
+    left:15%;
+    background-color: yellow; /* Default to warning color. Overwitten on state update."*/
+/*    background: linear-gradient(to left,
+    rgba(30,200,45,0.87) 40%,
+    LightGray 40%)
+*/
+}
+
+.charge-bolt{
+    display: none; /*Default to hidden. Update on state update.*/
+    height: 90%;
+    width: 20%;
+    position: absolute;
+    top:5%;
+    left:5%;
+}
+
+.charge-bolt .triangle{
+    position: absolute;
+    height: 60%;
+    width: 65%;
+}
+
+.charge-bolt .tri-up{
+    top: 0%;
+    left: 0%;
+    background: linear-gradient(to top left,
+    black 50%,
+    rgba(0,0,0,0) 50%)
+}
+
+.charge-bolt .tri-down{
+    bottom: 0%;
+    right:0%;
+    background: linear-gradient(to bottom right,
+    black 50%,
+    rgba(0,0,0,0) 50%)
+}
+
+#battery-status span{
+    position: absolute;
+    top: 7%;
+    left: 28%;
+    font-size: 28px;
+}

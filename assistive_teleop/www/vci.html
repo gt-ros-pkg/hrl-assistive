@@ -35,6 +35,7 @@
   <link type="text/css" href="css/notifications.css" rel="stylesheet" />
   <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
   <link type="text/css" href="css/look.css" rel="stylesheet" />
+  <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
   
 </head>
@@ -43,7 +44,16 @@
  <div id="status-bar">
      <div id="notifications"></div>
      <div id="network-status"></div>
-     <div id="battery-status"></div>  
+     <div id='battery-status'>
+         <div class='battery-contact'></div>
+         <div class='battery-main'>
+             <span class="time">?</SPan>
+             <div class="charge-bolt">
+                 <div class="triangle tri-up"></div>
+                 <div class="triangle tri-down"></div>
+             </div>
+         </div>
+     </div>
  </div>
  <div id="left-col">
      <div id="main-menu">
