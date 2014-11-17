@@ -13,9 +13,9 @@ import hrl_lib.util as ut
 
 if __name__ == '__main__':
 
-
-    data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune'
-    output_file = open('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune/'+'performance.txt', "w")
+    target_name = 'door_tune_Freezer'
+    data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/'+target_name
+    output_file = open('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/'+target_name+'/'+'performance.txt', "w")
 
     
     file_list = glob.glob(data_path+'/*.pkl')

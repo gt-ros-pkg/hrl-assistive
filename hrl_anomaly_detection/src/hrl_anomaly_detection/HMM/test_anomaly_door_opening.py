@@ -225,7 +225,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     root_path = os.environ['HRLBASEPATH']+'/'
-    nState    = 23
+    nState    = 24
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
     ## data_column_idx = 1
@@ -306,7 +306,7 @@ if __name__ == '__main__':
         os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass])
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass],
                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
-                                 +str(t[3])+str(t[4])+'.pkl')
+                                 +str(t[3])+str(t[4])+str(t[5])+'.pkl')
         
         lh.param_optimization(save_file=save_file)
         
