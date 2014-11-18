@@ -6,6 +6,7 @@
 
 #notifications {
     display: inline-block;
+    font-size: 22px;
     max-width: 87%;
     color:rgba(255,255,255,0.87);
     margin: 0.1em 1em;

@@ -37,7 +37,7 @@ RFH.BatteryMonitor = function (options) {
             txt = "Full"
         } else {
             var hrs = Math.floor(duration/3600);
-            var mins = Math.ceil((duration - 3600*hrs)/60);
+            var mins = Math.floor((duration - 3600*hrs)/60);
             if (mins < 10) { mins = '0'+mins.toString() };
             txt = hrs + ":" + mins;
         }
