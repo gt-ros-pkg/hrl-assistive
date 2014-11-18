@@ -18,7 +18,7 @@ RFH.BatteryMonitor = function (options) {
 
 
     self.updateDisplay = function (chargePct, AC, duration) {
-        var grad_pct;
+        var grad_pct, txt;
         var disp = AC ? 'block' : 'none';
         $(self.divId + ' .charge-bolt').css('display', disp);
 
@@ -33,9 +33,15 @@ RFH.BatteryMonitor = function (options) {
             $(self.divId + ' .battery-main').css('background', "linear-gradient(to left, rgba(30,200,45,0.87)"+
                                                                grad_pct + "%, LightGray " + grad_pct + "%)");
         }
-        var hrs = Math.floor(duration/3600);
-        var mins = Math.ceil((duration - 3600*hrs)/60);
-        $(self.divId + ' span').html(hrs+":"+mins);
+        if (duration <= 0) {
+            txt = "Full"
+        } else {
+            var hrs = Math.floor(duration/3600);
+            var mins = Math.ceil((duration - 3600*hrs)/60);
+            if (mins < 10) { mins = '0'+mins.toString() };
+            txt = hrs + ":" + mins;
+        }
+        $(self.divId + ' span').html(txt);
     }
 
     self.batterySubCB = function (msg) {

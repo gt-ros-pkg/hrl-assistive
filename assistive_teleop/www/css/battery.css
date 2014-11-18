@@ -1,9 +1,9 @@
 #battery-status{
     display: inline-block;
     float: right;
+    margin-right: 8px;
     height: 100%;
-    width: 5%;
-    min-width: 20px;
+    width: 100px;
     background-color: rgba(0,0,0,0);
     position: relative;
 }
@@ -69,5 +69,5 @@
     position: absolute;
     top: 7%;
     left: 28%;
-    font-size: 28px;
+    font-size: 24px;
 }
