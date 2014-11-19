@@ -1,3 +1,32 @@
+RFH.LaserSled = function (options) {
+    "use strict";
+    var self = this;
+    var options = options || {};
+    self.ros = options.ros;
+    self.tfClient = options.tfClient;
+    self.ros.getMsgDetails('pr2_msgs/PeriodicCmd');
+    self.state = null;
+    
+    self.updateAngle = function (transform) { self.state = Math.asin(transform.rotation.y); }
+    self.tfClient.subscribe('laser_tilt_mount_link', self.updateAngle);
+
+    self.CmdPub = new ROSLIB.Topic({
+        ros: self.ros,
+        name: '/laser_tilt_controller/set_periodic_cmd',
+        messageType: 'pr2_msgs/PeriodicCmd'})
+    self.CmdPub.advertise();
+
+    self.sendCmd = function (ang) {
+        // Limits: -0.73 (pointing up) -- 1.43 (pointing down)
+        var msg = self.ros.composeMsg('pr2_msgs/PeriodicCmd');
+        msg.profile = "linear";
+        msg.period = 1.0;
+        msg.amplitude = 0.0;
+        msg.offset = ang;
+        self.CmdPub.publish(msg);
+    }
+}
+
 RFH.Drive = function (options) {
     "use strict";
     var self = this;
@@ -7,6 +36,7 @@ RFH.Drive = function (options) {
     self.tfClient = options.tfClient;
     self.camera = options.camera;
     self.base = options.base;
+    self.laserSled = new RFH.LaserSled({ros:self.ros, tfClient: self.tfClient});
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
     self.headTF = new ROSLIB.Transform();
@@ -17,7 +47,9 @@ RFH.Drive = function (options) {
     self.sign = function (x) { 
         return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
     }
-    
+    $('#controls .drive.up').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(-0.2)});
+    $('#controls .drive.down').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(0.8)});
+
     self.updateHead = function (transform) { self.headTF = transform; }
     self.tryTFSubscribe = function () {
         if (self.camera.frame_id !== '') {
@@ -38,12 +70,15 @@ RFH.Drive = function (options) {
         $('#'+self.div+' canvas').on('mousedown.rfh', self.driveGo);
         $('#'+self.div+' canvas').on('mouseup.rfh', self.driveStop);
         $('#'+self.div+' canvas').on('blur.rfh', self.driveStop);
+        $('#controls > *').hide();
+        $('#controls .drive').show();
     }
 
     self.stop = function () {
         $(document).off("mouseleave.rfh mouseout.rfh");
         $('#'+self.div+' canvas').removeClass('drive-safe');
         $('#'+self.div+' canvas').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover')
+        $('#controls .drive').hide();
     }
 
     self.driveGo = function (event) {
