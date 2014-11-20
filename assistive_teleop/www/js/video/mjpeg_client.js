@@ -41,8 +41,8 @@ RFH.MjpegClient = function (options) {
                          'topic': options.imageTopic}
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
-                                                            infoTopic: options.infoTopic,
-                                                            rotated: options.rotated || false});
+                                               infoTopic: options.infoTopic,
+                                               rotated: options.rotated || false});
 
     self.imageId = self.divId + "Image";
     $("#"+self.divId).append("<img id="+self.imageId+"></img>");
@@ -154,8 +154,8 @@ RFH.ROSCameraModel = function (options) {
 var initMjpegCanvas = function (divId) {
     // Initialize the mjpeg client
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
-    var width = 0.8 * window.innerWidth;
-    var height = 0.95 * window.innerHeight;
+    var width = Math.round(0.8 * window.innerWidth);
+    var height = Math.round(0.95 * window.innerHeight);
     $('#'+divId).css({'height':height, 'width':width});
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
                                      imageTopic: '/head_mount_kinect/rgb/image_color',
