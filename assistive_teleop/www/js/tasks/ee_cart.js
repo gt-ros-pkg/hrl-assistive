@@ -3,6 +3,7 @@ RFH.CartesianEEControl = function (options) {
     var self = this;
     self.div = options.div || 'markers';
     self.arm = options.arm;
+    self.gripper = options.gripper;
     self.smooth = self.arm instanceof PR2ArmJTTask;
     self.tfClient = options.tfClient;
     self.camera = options.camera;
@@ -13,43 +14,41 @@ RFH.CartesianEEControl = function (options) {
                                                  parentId: self.div,
                                                  arm: self.arm,
                                                  smooth: self.smooth});
-    $('#'+self.posCtrlId).css(self.arm.side.toString(), "60px").hide();
-    self.clickToggleId = self.arm.side[0]+'ClickPointToggle';
-    self.clickToggleLabel = self.arm.side[0]+'ClickPointToggleLabel';
-
-    self.clickPointToggle = document.createElement('input');
-    self.clickPointToggle.type = "checkbox";
-    self.clickPointToggle.id = self.clickToggleId;
-    var label = document.createElement('label');
-    label.htmlFor = self.clickToggleId;
-    label.id = self.clickToggleLabel;
-    label.appendChild(document.createTextNode("Touch Spot"));
-    $('#controls').append(self.clickPointToggle, label)
-    $('#'+self.clickToggleId).button().hide();
-    $('#'+self.clickToggleLabel).hide();
+    var handCtrlCSS = {bottom:"6%"};
+    handCtrlCSS[self.arm.side] = "7%";
+    $('#'+self.posCtrlId).css(handCtrlCSS).hide();
+    $('#touchspot-toggle').button().hide();
 //    self.rotCtrlId = self.arm.side[0]+'rotCtrlIcon';
 //    self.rotIcon = new RFH.EERotControlIcon({divId: self.posCtrlId,
 //                                                 parentId: self.div,
 //                                                 arm: self.arm,
 //                                                 smooth: self.smooth});
 
+    self.gripperDisplayDiv = self.arm.side[0]+'GripperDisplay';
+    self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
+                                                   parentId: self.div,
+                                                   divId: self.gripperDisplayDiv});
+    var gripperCSS = {position: "absolute",
+                      height: "3%",
+                      width: "25%",
+                      bottom: "2%"};
+    gripperCSS[self.arm.side] = "3%";
+    $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
+
     self.start = function () {
-        $('#'+self.posCtrlId).show();
-        $('#'+self.clickToggleId).show();
-        $('#'+self.clickToggleLabel).show();
+        $('#'+self.posCtrlId + ', #touchspot-toggle-label').show();
         clearInterval(RFH.pr2.head.pubInterval);
         RFH.pr2.head.pubInterval = setInterval(function () {
             RFH.pr2.head.pointHead(0, 0, 0, self.arm.side[0]+'_gripper_tool_frame');
         }, 100);
+        $('#'+self.gripperDisplayDiv).show();
     }
     
     self.stop = function () {
-        $('#'+self.posCtrlId).hide();
-        $('#'+self.clickToggleId).hide();
-        $('#'+self.clickToggleLabel).hide();
+        $('#'+self.posCtrlId + ', #touchspot-toggle-label').hide();
         clearInterval(RFH.pr2.head.pubInterval);
+        $('#'+self.gripperDisplayDiv).hide();
     };
-
 }
 
 RFH.EECartControlIcon = function (options) {

@@ -1,44 +1,3 @@
-RFH.Grippers = function (options) {
-    'use strict';
-    var self = this;
-    self.div = options.div || 'markers';
-    self.r_gripper = options.r_gripper; 
-    self.l_gripper = options.l_gripper; 
-    self.buttonText = "Grippers";
-    self.buttonClass = 'gripper-button';
-    self.rDisplayDiv = 'rGripperDisplay';
-    self.lDisplayDiv = 'lGripperDisplay';
-    self.rGripperDisplay = new RFH.GripperDisplay({gripper: self.r_gripper,
-                                                   parentId: self.div,
-                                                   divId: self.rDisplayDiv});
-    $('#rGripperDisplay').css({"position":"absolute",
-                               "height":"3%",
-                               "width":"40%",
-                               "bottom":"3%",
-                               "right":"3%"}).hide();
-
-    self.rGripperDisplay = new RFH.GripperDisplay({gripper: self.l_gripper,
-                                                   parentId: self.div,
-                                                   divId: self.lDisplayDiv});
-    $('#lGripperDisplay').css({"position":"absolute",
-                               "bottom":"3%",
-                               "height":"3%",
-                               "width":"40%",
-                               "left":"3%"}).hide();
-
-    self.start = function () {
-        $('#'+self.rDisplayDiv).show();
-        $('#'+self.lDisplayDiv).show();
-    }
-    
-    self.stop = function () {
-        $('#'+self.rDisplayDiv).hide();
-        $('#'+self.lDisplayDiv).hide();
-    };
-
-}
-
-
 RFH.GripperDisplay = function (options) {
     "use strict";
     var self = this;
@@ -52,7 +11,16 @@ RFH.GripperDisplay = function (options) {
         max: 0.085,
         step: 0.001,
         orientation: 'horizontal'});
-
+    
+    $('#'+self.divId+' .ui-slider-range').css({"background":"rgba(152,152,152,0.4)",
+                                               "text-align":"center"}).html("Gripper");
+    $('#'+self.divId+'.ui-slider').css({"background":"rgba(50,50,50,0.12)" });
+    $('#'+self.divId+' .ui-slider-handle').css({"height":"160%",
+                                                "top":"-30%",
+                                                "width":"7%",
+                                                "margin-left":"-3.5%",
+                                                "background":"rgba(42,42,42,1)",
+                                                "border":"2px solid rgba(82,82,82,0.87)"});
     self.mid = 0.5 * ($('#'+self.divId).slider("option", "max") - 
                       $('#'+self.divId).slider("option", "min")) + 
                       $('#'+self.divId).slider("option", "min");

@@ -68,15 +68,13 @@ RFH.initTaskMenu = function (divId) {
                                        base: RFH.pr2.base}));
     RFH.taskMenu.addTask(new RFH.Torso({div: 'markers',
                                         torso: RFH.pr2.torso}));
-    RFH.taskMenu.addTask(new RFH.Grippers({div: 'markers',
-                                           l_gripper: RFH.pr2.l_gripper,
-                                           r_gripper: RFH.pr2.r_gripper,
-                                           }));
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
+                                                     gripper: RFH.pr2.l_gripper,
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
 
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
+                                                     gripper: RFH.pr2.r_gripper,
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
 }
