@@ -1,0 +1,31 @@
+<package>
+  <description brief="hrl_head_tracking">
+
+     hrl_head_tracking
+
+  </description>
+  <author>Ari Kapusta</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_head_tracking</url>
+    <!-- System Dependencies-->
+    <rosdep name="python"/>
+
+    <!-- General ROS dependencies -->
+    <depend package="rospy"/>
+    <depend package="roslib"/>
+
+    <depend package="std_msgs"/>
+    <depend package="geometry_msgs"/>
+
+    <depend package="hrl_lib"/>
+    <depend package="tf"/>
+
+    <depend package="sensor_msgs"/>
+    <depend package="opencv2"/>
+    <depend package="cv_bridge"/>
+
+
+</package>
+
+
