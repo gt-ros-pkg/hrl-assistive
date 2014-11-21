@@ -70,7 +70,6 @@ RFH.Drive = function (options) {
         $('#'+self.div+' canvas').on('mousedown.rfh', self.driveGo);
         $('#'+self.div+' canvas').on('mouseup.rfh', self.driveStop);
         $('#'+self.div+' canvas').on('blur.rfh', self.driveStop);
-        $('#controls > *').hide();
         $('#controls .drive').show();
     }
 
