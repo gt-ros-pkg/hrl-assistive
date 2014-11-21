@@ -17,12 +17,30 @@ RFH.CartesianEEControl = function (options) {
     var handCtrlCSS = {bottom:"6%"};
     handCtrlCSS[self.arm.side] = "7%";
     $('#'+self.posCtrlId).css(handCtrlCSS).hide();
-    $('#touchspot-toggle').button().hide();
+    $('#touchspot-toggle').button()
+    $('#touchspot-toggle-label').hide();
 //    self.rotCtrlId = self.arm.side[0]+'rotCtrlIcon';
 //    self.rotIcon = new RFH.EERotControlIcon({divId: self.posCtrlId,
 //                                                 parentId: self.div,
 //                                                 arm: self.arm,
 //                                                 smooth: self.smooth});
+
+    self.updateTrackHand = function (event) {
+        if ( $("#"+self.arm.side[0]+"-track-hand-toggle").is(":checked") ){
+            self.trackHand();
+        } else {
+            clearInterval(RFH.pr2.head.pubInterval);
+        }
+    }
+
+    self.trackHand = function () {
+        clearInterval(RFH.pr2.head.pubInterval);
+        RFH.pr2.head.pubInterval = setInterval(function () {
+            RFH.pr2.head.pointHead(0, 0, 0, self.arm.side[0]+'_gripper_tool_frame');
+        }, 100);
+    }
+    $("#"+self.arm.side[0]+"-track-hand-toggle").button().on('change.rfh', self.updateTrackHand);
+    $("#"+self.arm.side[0]+"-track-hand-toggle-label").hide();
 
     self.gripperDisplayDiv = self.arm.side[0]+'GripperDisplay';
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
@@ -36,16 +54,13 @@ RFH.CartesianEEControl = function (options) {
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
     self.start = function () {
-        $('#'+self.posCtrlId + ', #touchspot-toggle-label').show();
-        clearInterval(RFH.pr2.head.pubInterval);
-        RFH.pr2.head.pubInterval = setInterval(function () {
-            RFH.pr2.head.pointHead(0, 0, 0, self.arm.side[0]+'_gripper_tool_frame');
-        }, 100);
-        $('#'+self.gripperDisplayDiv).show();
+        $("#"+self.posCtrlId + ", #touchspot-toggle-label, #"+self.arm.side[0]+"-track-hand-toggle-label").show();
+        $("#"+self.gripperDisplayDiv).show();
+        self.updateTrackHand();
     }
     
     self.stop = function () {
-        $('#'+self.posCtrlId + ', #touchspot-toggle-label').hide();
+        $('#'+self.posCtrlId + ', #touchspot-toggle-label, #'+self.arm.side[0]+'-track-hand-toggle-label').hide();
         clearInterval(RFH.pr2.head.pubInterval);
         $('#'+self.gripperDisplayDiv).hide();
     };
