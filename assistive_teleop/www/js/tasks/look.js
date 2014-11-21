@@ -7,110 +7,70 @@ RFH.Look = function (options) {
     self.head = options.head || new Pr2Head(self.ros);
     self.buttonText = 'Look';
     self.buttonClass = 'look-button';
-    self.thresholds = options.thresholds || {top:0.15,
-                                             bottom: 0.85,
-                                             right: 0.85,
-                                             left: 0.15};
-    self.cursorClasses = {1: 'cursor-eyes-down-left',
-                          2: 'cursor-eyes-down',
-                          3: 'cursor-eyes-down-right',
-                          4: 'cursor-eyes-left',
-                          5: 'cursor-eyes',
-                          6: 'cursor-eyes-right',
-                          7: 'cursor-eyes-up-left',
-                          8: 'cursor-eyes-up',
-                          9: 'cursor-eyes-up-right'}
+    self.thresholds = options.thresholds || {top:0.15, bottom: 0.15,
+                                             right: 0.15, left: 0.15};
 
     self.start = function () {
-        $('#'+self.div+' canvas').on('mousemove.rfh', self.setCursor).on('click.rfh', self.onClick);
+        self.refreshAreas();
+        $('#'+self.div).addClass("cursor-eyes").on("click.rfh", self.pointHead);
+        $('.map-look').css("display","block");
     }
     
     self.stop = function () {
-        $('#'+self.div+' canvas').off('mousemove.rfh click.rfh');
-        for ( var idx in self.cursorClasses ) {
-            $('#'+self.div+' canvas').removeClass( self.cursorClasses[ idx ] );
-        }
+        $('#'+self.div).removeClass("cursor-eyes").off("click.rfh");
+        $('.map-look').css("display","none").off('click.rfh');
     };
 
-    self.setCursor = function (e) {
-        for ( var idx in self.cursorClasses ) {
-            $('#'+self.div+' canvas').removeClass( self.cursorClasses[ idx ] );
-        }
-        $('#'+self.div+' canvas').addClass(self.cursorClasses[self.getRegion(e)]);
-    };
-
-    self.getRegion = function (e) {
-        var pt = RFH.positionInElement(e) 
-        console.log("Target Element Size: (x="+e.target.clientWidth+", y="+e.target.clientHeight+")");
-        var pct_x = pt[0]/e.target.clientWidth;
-        var pct_y = pt[1]/e.target.clientHeight;
-        var l = false, r = false, t = false, b = false;
-        if (pct_x < self.thresholds.left) {l = true};
-        if (pct_x > self.thresholds.right) {r = true};
-        if (pct_y > self.thresholds.bottom) {b = true};
-        if (pct_y < self.thresholds.top) {t = true};
-        //Divide rectangular region into top/bottom/left/right/center combos
-        //Numbers correspond to layout on keyboard numpad;
-        if (!(b || t || l || r)) return 5; //largest area -> most common -> check first
-        if (b) {
-            if (l) return 1;
-            else if (r) return 3;
-            else return 2;
-            }
-        if (t) {
-            if (l) return 7;
-            else if (r) return 9;
-            else return 8;
-            }
-        if (l) return 4;
-        else return 6;
-    }
-
-    self.onClick = function (e) {
-        var dx = 0, dy = 0, point = false;
+    self.refreshAreas = function () {
+        var width = $('#'+self.div).width();
+        var height = $('#'+self.div).height();
+        var dx = 0, dy = 0;
         var hfov = 1, vfov = 0.75; //FOV of kinect is ~1 radians wide, 0.75 radians tall
         var SCALE = 0.8; //Scale large motions so we don't over shoot
-        switch (self.getRegion(e)) {
-            case 1: 
-                var dx = SCALE * hfov;
-                var dy = SCALE * vfov;
-                break;
-            case 2: 
-                var dy = SCALE * vfov;
-                break;
-            case 3: 
-                var dx = -SCALE * hfov;
-                var dy = SCALE * vfov;
-                break;
-            case 4: 
-                var dx = SCALE * hfov;
-                break;
-            case 5: 
-                point = true;
-                break;
-            case 6: 
-                var dx = -SCALE * hfov;
-                break;
-            case 7: 
-                var dx = SCALE * hfov;
-                var dy = -SCALE * vfov;
-                break;
-            case 8: 
-                var dy = -SCALE * vfov;
-                break;
-            case 9: 
-                var dx = -SCALE * hfov;
-                var dy = -SCALE * vfov;
-                break;
+        var lookAreas = $('.map-look');
+
+        for (var i = 0; i < lookAreas.length; i += 1) {
+            var newCSS = {};
+            if (lookAreas[i].classList.contains("top")) {
+                newCSS["top"] = "0px";
+                newCSS["height"] = (self.thresholds.top * height) + "px";
+                dy = -SCALE  * vfov;
+            } else if (lookAreas[i].classList.contains("bottom")) {
+                newCSS["bottom"] = "0px";
+                newCSS["height"] = (self.thresholds.bottom * height) + "px";
+                dy = SCALE  * vfov;
+            } else {
+                newCSS["top"] = (self.thresholds.top * height) + "px";
+                newCSS["height"] = height - ((self.thresholds.bottom + self.thresholds.top) * height) + "px";
+                dy = 0;
+            }
+
+            if (lookAreas[i].classList.contains("left")) {
+                newCSS["left"] = "0px";
+                newCSS["width"] = (self.thresholds.left * width) + "px";
+                dx = SCALE * hfov;
+            } else if (lookAreas[i].classList.contains("right")) {
+                newCSS["right"] = "0px";
+                newCSS["width"] = (self.thresholds.right * width) + "px";
+                dx = -SCALE * hfov;
+            } else {
+                newCSS["left"] = (self.thresholds.left * width) + "px";
+                newCSS["width"] = width - ((self.thresholds.left + self.thresholds.right) * width) + "px";
+                dx = 0;
+            }
+
+            $(lookAreas[i]).css(newCSS).on('click.rfh', {dx: dx, dy: dy}, function (event) {
+                    self.head.delPosition(event.data.dx, event.data.dy); 
+                    event.stopPropagation();
+                    } );
         }
-        if (point) {
-            var pt = RFH.positionInElement(e); 
-            var px = (pt[0]/e.target.clientWidth) * self.camera.width;
-            var py = (pt[1]/e.target.clientHeight) * self.camera.height;
-            var xyz =  self.camera.projectPixel(px, py);
-            self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
-        } else {
-            self.head.delPosition(dx,dy);
-        }
+    }
+
+    self.pointHead = function (e) {
+        var pt = RFH.positionInElement(e); 
+        var px = (pt[0]/e.target.clientWidth) * self.camera.width;
+        var py = (pt[1]/e.target.clientHeight) * self.camera.height;
+        var xyz =  self.camera.projectPixel(px, py);
+        self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
     }
 }

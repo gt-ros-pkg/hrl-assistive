@@ -38,3 +38,7 @@
 .cursor-eyes-down-right {
     cursor: url(cursors/eyes/eyes-down-right.png), auto;
 }
+
+.map-look {
+    position: absolute;
+}

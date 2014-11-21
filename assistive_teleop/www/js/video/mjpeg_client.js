@@ -44,8 +44,7 @@ RFH.MjpegClient = function (options) {
                                                infoTopic: options.infoTopic,
                                                rotated: options.rotated || false});
 
-    self.imageId = self.divId + "Image";
-    $("#"+self.divId).append("<img id="+self.imageId+"></img>");
+    self.imageId = $("#" + self.divId + " img").attr('id');
 
     self.update = function () {
         var srcStr = self.server+ "/stream"
@@ -160,7 +159,7 @@ var initMjpegCanvas = function (divId) {
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
                                      imageTopic: '/head_mount_kinect/rgb/image_color',
                                      infoTopic: '/head_mount_kinect/rgb/camera_info',
-                                     divId: 'mjpegDiv',
+                                     divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
                                      width: width,
