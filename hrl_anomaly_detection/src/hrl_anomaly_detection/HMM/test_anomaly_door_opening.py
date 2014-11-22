@@ -3,6 +3,7 @@
 import sys, os, copy
 import numpy as np, math
 import glob
+import socket
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -12,12 +13,15 @@ from mvpa2.generators import splitters
 
 # Util
 import hrl_lib.util as ut
+import matplotlib.pyplot as pp
 
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
 from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
+import door_open_common as doc
 
+roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_roc_data'
 
 def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
 
@@ -178,8 +182,12 @@ def get_init_param(nState, mech_class='Office Cabinet'):
 
 def generate_roc_curve(mech_vec_list, mech_nm_list,                        
                        nState, nFutureStep, fObsrvResol,
-                       semantic_range = np.arange(0.2, 2.7, 0.3)):
+                       semantic_range = np.arange(0.2, 2.7, 0.3),
+                       target_class=['Freezer','Fridge','Kitchen Cabinet','Office Cabinet'],
+                       bPlot=False):
 
+    start_step = 2
+    
     t_nm_list, t_mech_vec_list = [], []
     for i, nm in enumerate(mech_nm_list):
         ## print 'nm:', nm
@@ -190,10 +198,10 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
     data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
 
-    thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
-    mean_charlie_dict = thresh_dict['mean_charlie']
-    mean_known_mech_dict = thresh_dict['mean_known_mech']
-
+    ## thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
+    ## mean_charlie_dict = thresh_dict['mean_charlie']
+    ## mean_known_mech_dict = thresh_dict['mean_known_mech']
+ 
     #---------------- semantic class prior -------------
     # init containers
     fp_l_l = []
@@ -216,9 +224,17 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         mech_class = l_vdata.targets[0]
         trials = l_vdata.samples # all data
 
+        # check existence of computed result
+        idx = doc.class_list.index(mech_class)        
+        if mech_class not in target_class: continue
+        ## elif os.path.isfile('roc_'+doc.class_dir_list[idx]+'.pkl'): continue
+        ## elif os.path.isfile('roc_'+doc.class_dir_list[idx]+'_complete'): continue
+        
         # cutting into the same length
         trials = trials[:,:36]
+        trials = trials[0:1,:36]
 
+        pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
         data_vecs, _, _ = get_data(pkl_file, mech_class=mech_class, renew=opt.renew)        
         A, B, pi = get_init_param(nState, mech_class=mech_class)        
 
@@ -237,24 +253,90 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         
         mn_list = []
         fp_list, err_list = [], []        
-        for n in semantic_range:
-
-            for i, trial in enumerate(trials):
-
-                ac = anomaly_checker(lh, sig_coff=n)
-                
-                # Simulation
-                for j in xrange(len(trial)):
-                    if j> 0:
-                        ac.update_buffer(X_test[:j], trial[:j])
-                    
-                        ## # check anomaly score
-                        bFlag, fScore, err = ac.check_anomaly(trial[j])
-            
-            
-            
         
-    
+        for n in semantic_range:
+            print "n: ", n
+
+            # check saved file
+            target_pkl = roc_data_path+'/'+'fp_'+doc.class_dir_list[idx]+'_n_'+str(n)+'.pkl'
+
+            # mutex file
+            host_name = socket.gethostname()
+            mutex_file = roc_data_path+'/'+host_name+'_mutex_'+doc.class_dir_list[idx]+'_'+str(n)
+            
+            if os.path.isfile(target_pkl) == False and os.path.isfile(mutex_file) == False: 
+            
+                os.system('touch '+mutex_file)
+
+                # Init variables
+                false_pos = np.zeros((len(trials), len(trials[0])-start_step))
+                tot = trials.shape[0] * trials.shape[1]
+                err_l = []
+
+                # Gives all profiles
+                for i, trial in enumerate(trials):
+
+                    # Init checker
+                    ac = anomaly_checker(lh, sig_coff=n)
+
+                    # Simulate each profile
+                    for j in xrange(len(trial)):
+                        # Update buffer
+                        ac.update_buffer(X_test[:j+1], trial[:j+1])
+
+                        if j>= start_step:                    
+                            # check anomaly score
+                            bFlag, fScore, max_err = ac.check_anomaly(trial[j])
+                            if bFlag: 
+                                false_pos[i, j-start_step] = 1.0 
+                            else:
+                                err_l.append(max_err)
+
+                            print "(",i,j, ") : ", false_pos[i, j-start_step], max_err
+
+                # save data & remove mutex file
+                d = {}
+                d['false_pos'] = false_pos
+                d['tot'] = tot
+                d['err_l'] = err_l
+                d['n'] = n
+                ut.save_pickle(d, target_pkl)
+                os.system('rm '+mutex_file)
+
+            elif os.path.isfile(target_pkl) == True:
+                
+                d = ut.load_pickle(target_pkl)
+                false_pos = d['false_pos']
+                tot   = d['tot']  
+                err_l = d['err_l']  
+                n     = d['n']  
+                
+                fp_list.append(np.sum(false_pos)/(tot*0.01))
+                err_list.append(err_l)
+                mn_list.append(np.mean(np.array(err_l)))
+                
+            else:
+                print "Mutex exists"
+                continue
+                
+        fp_l_l.append(fp_list)
+        err_l_l.append(err_list)
+        mn_l_l.append(mn_list)
+                        
+    ## ll = [[] for i in err_l_l[0]]  # why 0?
+    ## for i,e in enumerate(err_l_l): # labels
+    ##     for j,l in enumerate(ll):  # multiplier range
+    ##         l.append(e[j])
+            
+    mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist() # means into a row
+    fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()
+
+    if bPlot:
+        sem_c = 'b'
+        sem_m = '+'
+        semantic_label='PHMM anomaly detection w/ known mechanisum class'
+        pp.plot(fp_list, mn_list, '--'+sem_m+sem_c, label= semantic_label,
+                mec=sem_c, ms=8, mew=2)
     
     
 if __name__ == '__main__':
@@ -275,6 +357,8 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--fig_roc_robot', '--roc', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
+    p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
+                 default=False, help='Plot roc curve wrt robot data')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
@@ -290,17 +374,15 @@ if __name__ == '__main__':
     fObsrvResol = 0.1
     nCurrentStep = 5  #14
 
-    class_list = ['Freezer','Fridge','Kitchen Cabinet','Office Cabinet']
-    class_dir_list = ['Freezer','Fridge','Kitchen_Cabinet','Office_Cabinet']
 
     # for block test
     nClass = 0
-    cls = class_list[nClass]
+    cls = doc.class_list[nClass]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
     mech = 'ikea_cabinet_pr2'
     
-    pkl_file  = "mech_class_"+cls+".pkl"    
+    pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"    
     step_size_list = None
 
 
@@ -361,8 +443,8 @@ if __name__ == '__main__':
         import socket, time
         host_name = socket.gethostname()
         t=time.gmtime()                
-        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass])
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+class_dir_list[nClass],
+        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+doc.class_dir_list[nClass])
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+doc.class_dir_list[nClass],
                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
                                  +str(t[3])+str(t[4])+str(t[5])+'.pkl')
         
@@ -444,9 +526,12 @@ if __name__ == '__main__':
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
 
+        if opt.bROCPlot: pp.figure()        
         generate_roc_curve(mech_vec_list, mech_nm_list, \
                            nState=nState, nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
-                           semantic_range = np.arange(0.2, 2.7, 0.3))
+                           semantic_range = np.arange(2.6, 2.7, 0.3), bPlot=opt.bROCPlot)
+        mad.generate_roc_curve()
+        if opt.bROCPlot: pp.show()
             
             
     else:

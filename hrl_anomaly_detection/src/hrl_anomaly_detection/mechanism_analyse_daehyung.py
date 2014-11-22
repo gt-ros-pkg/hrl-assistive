@@ -432,8 +432,6 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             chunk = l_vdata.chunks[10] # chunk should be independant!!
             trials = l_vdata.samples 
 
-            print lab
-            
             if lab == 'Refrigerator':
                 lab = 'Fridge'
 
