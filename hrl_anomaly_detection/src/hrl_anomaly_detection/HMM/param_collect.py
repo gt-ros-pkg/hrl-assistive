@@ -14,6 +14,9 @@ import hrl_lib.util as ut
 if __name__ == '__main__':
 
     target_name = 'door_tune_Freezer'
+    target_name = 'door_tune_Fridge'
+    target_name = 'door_tune_Kitchen_Cabinet'
+    target_name = 'door_tune_Office_Cabinet'
     data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/'+target_name
     output_file = open('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/'+target_name+'/'+'performance.txt', "w")
 
@@ -55,7 +58,7 @@ if __name__ == '__main__':
             ## step_size_list_list.append(param['step_size_list'])
 
         min_idx = np.array(mean_list).argmin()
-        print  "%f; %f; %f; %f; %s \n " % (mean_list[min_idx], std_list[min_idx], fObsrvResol_list[min_idx], nState_list[min_idx], str(np.array(B_list).reshape((nState_list[min_idx],2))))
+        ## print  "%f; %f; %f; %f; %s \n " % (mean_list[min_idx], std_list[min_idx], fObsrvResol_list[min_idx], nState_list[min_idx], str(np.array(B_list).reshape((nState_list[min_idx],2))))
         
 
             
