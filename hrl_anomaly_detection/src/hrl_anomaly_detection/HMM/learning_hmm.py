@@ -81,7 +81,7 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, A=None, B=None, verbose=False):
+    def fit(self, X_train, A=None, B=None, pi=None, verbose=False):
 
         if A is None:        
             if verbose: print "Generate new A matrix"                
@@ -103,11 +103,11 @@ class learning_hmm(learning_base):
                 self.ml = None
                 return
                 
-        
-        # pi - initial probabilities per state 
-        ## pi = [1.0/float(self.nState)] * self.nState
-        pi = [0.] * self.nState
-        pi[0] = 1.0
+        if pi is None:            
+            # pi - initial probabilities per state 
+            ## pi = [1.0/float(self.nState)] * self.nState
+            pi = [0.] * self.nState
+            pi[0] = 1.0
 
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
