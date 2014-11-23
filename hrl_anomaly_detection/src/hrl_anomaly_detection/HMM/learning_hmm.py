@@ -83,13 +83,13 @@ class learning_hmm(learning_base):
     #
     def fit(self, X_train, A=None, B=None, verbose=False):
 
-        if A==None:        
+        if A is None:        
             if verbose: print "Generate new A matrix"                
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
             #A,_ = mad.get_trans_mat(X_train, self.nState)
 
-        if B==None:
+        if B is None:
             if verbose: print "Generate new B matrix"                            
             # We should think about multivariate Gaussian pdf.        
             self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
@@ -136,7 +136,7 @@ class learning_hmm(learning_base):
             for i in xrange(n):
                 a = None
                 for j in xrange(m):
-                    if a==None:
+                    if a is None:
                         a = "%0.3f" % A[i,j]
                     else:
                         a += ",  "
@@ -146,7 +146,7 @@ class learning_hmm(learning_base):
             for i in xrange(n):
                 a = None
                 for j in xrange(m):
-                    if a==None:
+                    if a is None:
                         a = "[ %0.3f" % self.ml.getTransition(i,j)
                     else:
                         a += ",  "
@@ -168,7 +168,7 @@ class learning_hmm(learning_base):
         mu    = np.zeros((self.nState,1))
         sigma = np.zeros((self.nState,1))
 
-        if self.step_size_list == None or len(self.step_size_list) != self.nState:
+        if self.step_size_list is None or len(self.step_size_list) != self.nState:
             print "Use new step size list!!"
             # Initial 
             self.step_size_list = [1] * self.nState
@@ -319,7 +319,7 @@ class learning_hmm(learning_base):
         data['mean'] = [fval]
         data['std'] = [0]            
         data['params'] = params_list
-        if save_file == None:
+        if save_file is None:
             save_file='tune_data.pkl'            
         ut.save_pickle(data, save_file)
 
@@ -331,7 +331,7 @@ class learning_hmm(learning_base):
     def mean_vars_score(self, x, *args):
 
         # check limit
-        if self.last_x == None or np.linalg.norm(self.last_x-x) > 0.05:
+        if self.last_x is None or np.linalg.norm(self.last_x-x) > 0.05:
             tmax = bool(np.all(x <= self.B_upper))
             tmin = bool(np.all(x >= self.B_lower))
             if tmax and tmin == False: return 5            
@@ -543,7 +543,7 @@ class learning_hmm(learning_base):
                 print X_pred_prob[:,i].shape
                 a = None
                 for p in X_pred_prob[:,i]:
-                    if a==None:
+                    if a is None:
                         a = "%0.3f" % p
                     else:
                         a += "  "
@@ -737,7 +737,7 @@ class learning_hmm(learning_base):
     # Returns the mean accuracy on the given test data and labels.
     def score(self, X_test, **kwargs):
 
-        if self.ml == None: 
+        if self.ml is None: 
             print "No ml!!"
             return -5.0        
         

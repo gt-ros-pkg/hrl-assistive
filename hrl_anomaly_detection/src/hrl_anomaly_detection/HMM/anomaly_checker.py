@@ -199,7 +199,7 @@ class anomaly_checker():
 
             if i > 0:
                 mu_list, var_list, idx = self.update_buffer(x,y)            
-                if mu_list != None and var_list != None:
+                if mu_list is not None and var_list is not None:
                     mu[idx,:]  = mu_list
                     var[idx,:] = var_list
 

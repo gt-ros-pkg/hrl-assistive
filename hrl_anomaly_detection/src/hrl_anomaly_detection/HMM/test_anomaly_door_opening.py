@@ -377,11 +377,11 @@ if __name__ == '__main__':
     nFutureStep = 8
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 8  #14
+    nCurrentStep = 18  #14
 
 
     # for block test
-    nClass = 0
+    nClass = 2
     cls = doc.class_list[nClass]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
@@ -392,7 +392,7 @@ if __name__ == '__main__':
 
 
     
-    if step_size_list != None and (len(step_size_list) !=nState 
+    if step_size_list is not None and (len(step_size_list) !=nState 
                                    or sum(step_size_list) != nMaxStep):
         print len(step_size_list), " : ", sum(step_size_list)
         sys.exit()
@@ -513,7 +513,7 @@ if __name__ == '__main__':
         
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
         
-        for i in xrange(1,31,2):
+        for i in xrange(27,31,2):
             
             x_test      = data_vecs[0][i,:nCurrentStep].tolist()
             x_test_next = data_vecs[0][i,nCurrentStep:nCurrentStep+lh.nFutureStep].tolist()
