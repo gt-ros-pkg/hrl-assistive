@@ -51,7 +51,10 @@ def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
     
     # Filtering
     idxs = np.where([mech_class in i for i in data_mech])[0].tolist()
-
+    print "----------------"
+    print idxs
+    print "----------------"
+    
     ## print data_mech
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
     data_vecs = data_vecs[:,idxs]
@@ -350,7 +353,7 @@ if __name__ == '__main__':
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
-                 default=False, help='Approximately compute the distribution of multi-step observations')
+                 default=True, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
@@ -359,28 +362,30 @@ if __name__ == '__main__':
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
+    p.add_option('--all_path_plot', '--all', action='store_true', dest='bAllPlot',
+                 default=False, help='Plot all paths')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
     opt, args = p.parse_args()
 
-    ## Init variables    
+    ## Init variables
     ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     root_path = os.environ['HRLBASEPATH']+'/'
-    nState    = 33
+    nState    = 15
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 5  #14
+    nCurrentStep = 8  #14
 
 
     # for block test
-    nClass = 0
+    nClass = 3
     cls = doc.class_list[nClass]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
-    mech = 'ikea_cabinet_pr2'
+    ## mech = 'ikea_cabinet_pr2'
     
     pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"    
     step_size_list = None
@@ -484,7 +489,7 @@ if __name__ == '__main__':
 
             elapsed = []
             elapsed.append(time.clock() - start_time)
-            
+
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), 
                                     x_pred_prob, np.array(x_test_next), 
                                     X_test_all=x_test_all)
@@ -517,6 +522,7 @@ if __name__ == '__main__':
             x_pred, x_pred_prob = lh.multi_step_approximated_predict(x_test, 
                                                                      full_step=True, 
                                                                      verbose=opt.bVerbose)
+            
             lh.init_plot()            
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
@@ -533,7 +539,14 @@ if __name__ == '__main__':
         mad.generate_roc_curve()
         if opt.bROCPlot: pp.show()
             
-            
+
+    elif opt.bAllPlot:
+
+        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+        lh.init_plot()            
+        lh.all_path_plot(lh.aXData)
+        lh.final_plot()
+                
     else:
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
         ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
