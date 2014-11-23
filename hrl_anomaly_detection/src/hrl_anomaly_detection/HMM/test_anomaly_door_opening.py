@@ -351,8 +351,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
     fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()
 
     if bPlot:
-        sem_c = 'b'
-        sem_m = '+'
+        sem_c = 'r'
+        sem_m = 'o'
         semantic_label='PHMM anomaly detection w/ known mechanisum class'
         pp.plot(fp_list, mn_list, '--'+sem_m+sem_c, label= semantic_label,
                 mec=sem_c, ms=8, mew=2)
@@ -542,11 +542,11 @@ if __name__ == '__main__':
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
 
         ## mpu.set_figure_size(13, 7.)
-        pp.figure()
-        
-        mar.generate_roc_curve(mech_vec_list, mech_nm_list,
-                           s_range, m_range, sem_c='c', sem_m='^',
-                           semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
+        if opt.bROCPlot:        
+            pp.figure()        
+            mar.generate_roc_curve(mech_vec_list, mech_nm_list,
+                               s_range, m_range, sem_c='c', sem_m='^',
+                               semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
 
         #--------------------------------------------------------------------------------
         
@@ -558,10 +558,11 @@ if __name__ == '__main__':
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
 
         # advait
-        mar.generate_roc_curve(mech_vec_list, mech_nm_list,
-                                s_range, m_range, sem_c='b',
-                                semantic_label = 'operating 1st time with \n accurate state estimation',
-                                plot_prev=True)
+        if opt.bROCPlot:
+            mar.generate_roc_curve(mech_vec_list, mech_nm_list,
+                                    s_range, m_range, sem_c='b',
+                                    semantic_label = 'operating 1st time with \n accurate state estimation',
+                                    plot_prev=True)
 
         #--------------------------------------------------------------------------------
         
