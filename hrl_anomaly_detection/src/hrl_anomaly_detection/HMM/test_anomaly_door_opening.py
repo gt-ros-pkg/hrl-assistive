@@ -381,7 +381,7 @@ if __name__ == '__main__':
 
 
     # for block test
-    nClass = 3
+    nClass = 2
     cls = doc.class_list[nClass]
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
