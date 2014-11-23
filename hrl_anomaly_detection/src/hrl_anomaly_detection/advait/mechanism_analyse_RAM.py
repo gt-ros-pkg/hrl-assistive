@@ -1256,9 +1256,10 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
     root_path = os.environ['HRLBASEPATH']+'/'
+    data_path = root_path+'src/projects/modeling_forces/handheld_hook/'
 
     if opt.fig_roc_human:
-        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/*.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
         mpu.set_figure_size(10, 7.)
@@ -1280,7 +1281,7 @@ if __name__ == '__main__':
 
 
     if opt.robot_roc:
-        pkl_list = glob.glob('RAM_db/robot_trials/simulate_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*.pkl')
         s_range = np.arange(0.05, 3.0, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
 
@@ -1293,7 +1294,7 @@ if __name__ == '__main__':
                            s_range, m_range, sem_c='c', sem_m='^',
                            semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
 
-        pkl_list = glob.glob('RAM_db/robot_trials/perfect_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
         s_range = np.arange(0.05, 1.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
