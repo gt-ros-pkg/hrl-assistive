@@ -353,7 +353,7 @@ if __name__ == '__main__':
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
-                 default=True, help='Approximately compute the distribution of multi-step observations')
+                 default=False, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
@@ -372,7 +372,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     root_path = os.environ['HRLBASEPATH']+'/'
-    nState    = 15
+    nState    = 19
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
     ## data_column_idx = 1
