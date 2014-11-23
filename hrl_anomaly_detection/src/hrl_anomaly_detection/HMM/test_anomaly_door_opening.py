@@ -372,7 +372,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     root_path = os.environ['HRLBASEPATH']+'/'
-    nState    = 19
+    nState    = 23
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
     ## data_column_idx = 1
