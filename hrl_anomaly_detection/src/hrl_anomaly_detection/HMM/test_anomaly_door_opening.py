@@ -20,6 +20,7 @@ import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
 from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
 import door_open_common as doc
+import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 
 roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_roc_data'
 
@@ -282,8 +283,11 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             # mutex file
             host_name = socket.gethostname()
             mutex_file = roc_data_path+'/'+host_name+'_mutex_'+doc.class_dir_list[idx]+'_'+str(n)
+
             
-            if os.path.isfile(target_pkl) == False and os.path.isfile(mutex_file) == False: 
+            
+            if os.path.isfile(target_pkl) == False \
+                and hcu.is_file(roc_data_path, 'mutex_'+doc.class_dir_list[idx]+'_'+str(n)) == False: 
             
                 os.system('touch '+mutex_file)
 
