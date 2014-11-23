@@ -372,15 +372,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     root_path = os.environ['HRLBASEPATH']+'/'
-<<<<<<< HEAD
     nState    = 16
-=======
-<<<<<<< HEAD
-    nState    = 32
-=======
-    nState    = 19
->>>>>>> 535619b017cde84aa0596349c5e0dd86856376fa
->>>>>>> 9c1429c22e76f06b32a5fd10fbf3b9c19fd90a8e
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
     ## data_column_idx = 1
@@ -390,11 +382,7 @@ if __name__ == '__main__':
 
     # for block test
     nClass = 2
-<<<<<<< HEAD
-    cls = class_list[nClass]
-=======
     cls = doc.class_list[nClass]
->>>>>>> 9c1429c22e76f06b32a5fd10fbf3b9c19fd90a8e
     ## mech = 'kitchen_cabinet_pr2'
     ## mech = 'kitchen_cabinet_cody'
     ## mech = 'ikea_cabinet_pr2'
