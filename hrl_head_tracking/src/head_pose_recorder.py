@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import roslib
 import numpy as np
+import time
 import math as m
 roslib.load_manifest('hrl_head_tracking')
 import rospy
 import rospkg
 from threading import RLock
-from sensor_msgs.msg import PointCloud2, CompressedImage, Image
+from sensor_msgs.msg import PointCloud2, CompressedImage, Image, CameraInfo
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -22,10 +23,15 @@ from hrl_lib.util import save_pickle
 
 
 class HeadPoseRecorder(object):
-    def __init__(self, file_number, subject_number):
+    def __init__(self, file_number, subject_number, video=False):
+        self.video = video
+        self.count = 0
+        self.bridge = CvBridge()
         self.lock = RLock()
         self.head_pose = []
         self.depth_img = []
+        self.camera_depth_info = None
+        self.camera_rgb_info = None
         self.rgb_img = []
         self.file_number = file_number
         self.subject_number = subject_number
@@ -34,10 +40,10 @@ class HeadPoseRecorder(object):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_head_tracking')
         # self.pkg_path = '/home/ari/git/gt-ros-pkg.hrl_assistive/hrl_head_tracking/'
-        print 'Ready to record Ground Truth head pose!'
+
         # depth_img_path = '/head_mount_kinect/depth/points'
         # self.depth_img_sub = rospy.Subscriber(depth_img_path, PointCloud2, self.depth_img_cb)
-        depth_img_path = '/head_mount_kinect/depth/image'
+        depth_img_path = '/head_mount_kinect/depth_registered/image_rect'
         self.depth_img_sub = rospy.Subscriber(depth_img_path, Image, self.depth_img_cb)
         # depth_img_path = '/head_mount_kinect/depth_registered/image_raw'
         # self.depth_img_sub = rospy.Subscriber(depth_img_path, Image, self.depth_img_cb)
@@ -45,9 +51,22 @@ class HeadPoseRecorder(object):
         # self.depth_img_sub = rospy.Subscriber(depth_img_path, CompressedImage, self.depth_img_cb)
         # rgb_img_path = '/head_mount_kinect/rgb/image_color/compressed'
         # self.rgb_img_sub = rospy.Subscriber(rgb_img_path, CompressedImage, self.rgb_img_cb)
-        rgb_imgpath = '/head_mount_kinect/rgb/image_color'
+        rgb_imgpath = '/head_mount_kinect/rgb/image_rect_color'
         self.rgb_img_sub = rospy.Subscriber(rgb_imgpath, Image, self.rgb_img_cb)
-        self.bridge = CvBridge()
+        rgb_infopath = '/head_mount_kinect/rgb/camera_info'
+        self.camera_rgb_info_sub = rospy.Subscriber(rgb_infopath, CameraInfo, self.camera_rgb_info_cb)
+        depth_infopath = '/head_mount_kinect/depth/camera_info'
+        self.camera_depth_info_sub = rospy.Subscriber(depth_infopath, CameraInfo, self.camera_depth_info_cb)
+        rospy.sleep(3)
+        if self.camera_depth_info is not None:
+            save_pickle(self.camera_depth_info, ''.join([self.pkg_path, '/data/', 'camera_depth_info.pkl']))
+        else:
+            print 'Depth camera info was not ready yet. Should probably try to get it later'
+        if self.camera_rgb_info is not None:
+            save_pickle(self.camera_rgb_info, ''.join([self.pkg_path, '/data/', 'camera_rgb_info.pkl']))
+        else:
+            print 'RGB camera info was not ready yet. Should probably try to get it later'
+        print 'Ready to record Ground Truth head pose!'
 
     def head_pose_cb(self, msg):
         pos = [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
@@ -82,8 +101,67 @@ class HeadPoseRecorder(object):
             print 'Did all the tf things successfully'
             self.img_save()
             print 'Just saved file # ', self.file_number, 'for subject ', self.subject_number
+
+            if self.video:
+                print 'Starting to collect video!'
+                start_time = time.time()
+                while self.count < 400:
+                    # print time.time()-start_time
+                    if time.time()-start_time >= .15:
+                        self.file_number += 1
+                        self.vid_save()
+                        start_time = time.time()
+                print 'Done collecting video data!'
+
             self.file_number += 1
         self.head_pose = [pos, ori]
+
+    def vid_save(self):
+        with self.lock:
+            try:
+                path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
+                                str(self.file_number), '_depth', '.png'])
+                # The depth image is a single-channel float32 image
+                # the values is the distance in mm in z axis
+                depth_image = self.bridge.imgmsg_to_cv(self.depth_img, '32FC1')
+                # Convert the depth image to a Numpy array since most cv2 functions
+                # require Numpy arrays.
+                depth_array = np.array(depth_image, dtype=np.float32)
+                # Normalize the depth image to fall between 0 (black) and 1 (white)
+                cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+                # At this point you can display the result properly:
+                # cv2.imshow('Depth Image', depth_display_image)
+                # If you write it as it si, the result will be a image with only 0 to 1 values.
+                # To actually store in a this a image like the one we are showing its needed
+                # to reescale the otuput to 255 gray scale.
+                cv2.imwrite(path, np.uint16(depth_array*65535))
+
+                # cv2.imwrite(path, frame)
+            except CvBridgeError, e:
+                print e
+
+            try:
+                path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
+                                str(self.file_number), '_rgb', '.png'])
+                # The depth image is a single-channel float32 image
+                # the values is the distance in mm in z axis
+                rgb_image = self.bridge.imgmsg_to_cv(self.rgb_img, 'bgr8')
+                # Convert the depth image to a Numpy array since most cv2 functions
+                # require Numpy arrays.
+                rgb_array = np.array(rgb_image, dtype=np.uint8)
+                # Normalize the depth image to fall between 0 (black) and 1 (white)
+                # cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+                # At this point you can display the result properly:
+                # cv2.imshow('Depth Image', depth_display_image)
+                # If you write it as it si, the result will be a image with only 0 to 1 values.
+                # To actually store in a this a image like the one we are showing its needed
+                # to reescale the otuput to 255 gray scale.
+                cv2.imwrite(path, rgb_array)
+
+                # cv2.imwrite(path, frame)
+            except CvBridgeError, e:
+                print e
+            self.count += 1
 
     def img_save(self):
         # depth_img_file = open(''.join([self.pkg_path, '/data/', 'depth', '_subj_', str(self.subject_number), '_img_',
@@ -107,8 +185,8 @@ class HeadPoseRecorder(object):
                 # cv2.imshow('Depth Image', depth_display_image)
                 # If you write it as it si, the result will be a image with only 0 to 1 values.
                 # To actually store in a this a image like the one we are showing its needed
-                # to reescale the otuput to 255 gray scale.
-                cv2.imwrite(path, depth_array*255)
+                # to reescale the output to 255 gray scale.
+                cv2.imwrite(path, np.uint16(depth_array*65535))
 
                 # cv2.imwrite(path, frame)
             except CvBridgeError, e:
@@ -158,6 +236,12 @@ class HeadPoseRecorder(object):
         self.rgb_img = msg
         # print 'got a new rgb image'
 
+    def camera_rgb_info_cb(self, msg):
+        self.camera_rgb_info = msg
+
+    def camera_depth_info_cb(self, msg):
+        self.camera_depth_info = msg
+
     def depth_img_cb(self, msg):
         self.depth_img = msg
 
@@ -198,9 +282,9 @@ if __name__ == "__main__":
     rospy.init_node('head_pose_recorder')
 
     file_number = 0
-    subject_number = 1
-
-    recorder = HeadPoseRecorder(file_number, subject_number)
+    subject_number = 12
+    video = True
+    recorder = HeadPoseRecorder(file_number, subject_number, video)
     rospy.spin()
 
 
