@@ -81,15 +81,15 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, A=None, B=None, verbose=False):
+    def fit(self, X_train, A=None, B=None, pi=None, verbose=False):
 
-        if A==None:        
+        if A is None:        
             if verbose: print "Generate new A matrix"                
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
             #A,_ = mad.get_trans_mat(X_train, self.nState)
 
-        if B==None:
+        if B is None:
             if verbose: print "Generate new B matrix"                            
             # We should think about multivariate Gaussian pdf.        
             self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
@@ -103,11 +103,11 @@ class learning_hmm(learning_base):
                 self.ml = None
                 return
                 
-        
-        # pi - initial probabilities per state 
-        ## pi = [1.0/float(self.nState)] * self.nState
-        pi = [0.] * self.nState
-        pi[0] = 1.0
+        if pi is None:            
+            # pi - initial probabilities per state 
+            ## pi = [1.0/float(self.nState)] * self.nState
+            pi = [0.] * self.nState
+            pi[0] = 1.0
 
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
@@ -136,7 +136,7 @@ class learning_hmm(learning_base):
             for i in xrange(n):
                 a = None
                 for j in xrange(m):
-                    if a==None:
+                    if a is None:
                         a = "%0.3f" % A[i,j]
                     else:
                         a += ",  "
@@ -146,7 +146,7 @@ class learning_hmm(learning_base):
             for i in xrange(n):
                 a = None
                 for j in xrange(m):
-                    if a==None:
+                    if a is None:
                         a = "[ %0.3f" % self.ml.getTransition(i,j)
                     else:
                         a += ",  "
@@ -168,7 +168,7 @@ class learning_hmm(learning_base):
         mu    = np.zeros((self.nState,1))
         sigma = np.zeros((self.nState,1))
 
-        if self.step_size_list == None or len(self.step_size_list) != self.nState:
+        if self.step_size_list is None or len(self.step_size_list) != self.nState:
             print "Use new step size list!!"
             # Initial 
             self.step_size_list = [1] * self.nState
@@ -319,7 +319,7 @@ class learning_hmm(learning_base):
         data['mean'] = [fval]
         data['std'] = [0]            
         data['params'] = params_list
-        if save_file == None:
+        if save_file is None:
             save_file='tune_data.pkl'            
         ut.save_pickle(data, save_file)
 
@@ -331,7 +331,7 @@ class learning_hmm(learning_base):
     def mean_vars_score(self, x, *args):
 
         # check limit
-        if self.last_x == None or np.linalg.norm(self.last_x-x) > 0.05:
+        if self.last_x is None or np.linalg.norm(self.last_x-x) > 0.05:
             tmax = bool(np.all(x <= self.B_upper))
             tmin = bool(np.all(x >= self.B_lower))
             if tmax and tmin == False: return 5            
@@ -543,7 +543,7 @@ class learning_hmm(learning_base):
                 print X_pred_prob[:,i].shape
                 a = None
                 for p in X_pred_prob[:,i]:
-                    if a==None:
+                    if a is None:
                         a = "%0.3f" % p
                     else:
                         a += "  "
@@ -573,19 +573,27 @@ class learning_hmm(learning_base):
 
         # alpha: X_test length y #latent States at the moment t when state i is ended
         #        test_profile_length x number_of_hidden_state
+        #      : time step x nState (size)
+        #        The sum of a row is 1.0 which means it is scaled one. Thus, original one
+        #        must be divided by the scaling factor
         (alpha,scale) = self.ml.forward(final_ts_obj)
         alpha         = np.array(alpha)
-        
-        ## scaling_factor = 1.0
-        ## for i in xrange(len(scale)):
-        ##     scaling_factor *= scale[i] 
+
+        temp = alpha[-1,:]
+
+        #scaling_factor = 1.0
+        #for i in xrange(len(scale)):
+        #    scaling_factor *= scale[i]
 
         p_z_x = np.zeros((self.nState))
         for i in xrange(self.nState):
-            p_z_x[i] = np.sum(self.A[:,i]*alpha[-1,:]) #* scaling_factor
+            p_z_x[i] = np.sum(self.A[:,i]*alpha[-1,:]) #/ scaling_factor
+
+        # Normalization?
+        p_z_x /= np.sum(p_z_x)
 
         (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
-        
+
         u_mu_list  = [0.0]*self.nFutureStep
         u_sigma_list = [0.0]*self.nFutureStep
         u_mu_list[0]  = u_mu  # U_n+1 
@@ -593,7 +601,7 @@ class learning_hmm(learning_base):
 
         for i in xrange(self.nFutureStep-1):
             u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
-            
+
         # Compute all intermediate steps
         if full_step:
 
@@ -662,7 +670,10 @@ class learning_hmm(learning_base):
         e_mu   = 0.0
         e_mu2  = 0.0
         e_var  = 0.0
+
+        if u_sigma == 0.0: u_sigma = 0.00001
         p_z    = norm.pdf(np.arange(0.0,float(self.nState),1.0),loc=u_mu,scale=u_sigma)
+        p_z    = p_z/np.sum(p_z)
 
         # Need to speed up!!
         for i in xrange(self.nState):
@@ -680,7 +691,8 @@ class learning_hmm(learning_base):
 
         ## print v, " = ", (e_var/sum(p_z)), (e_mu2/sum(p_z)), m**2
 
-        if v < 0.0: print "Negative variance error: ", v            
+        if v < 0.0: print "Negative variance error: ", v
+        if v == 0.0: v = 1.0e-6
         return m, np.sqrt(v)
        
         
@@ -725,7 +737,7 @@ class learning_hmm(learning_base):
     # Returns the mean accuracy on the given test data and labels.
     def score(self, X_test, **kwargs):
 
-        if self.ml == None: 
+        if self.ml is None: 
             print "No ml!!"
             return -5.0        
         
@@ -779,7 +791,7 @@ class learning_hmm(learning_base):
 
         self.ml.write(obs_name)
 
-        
+
     #----------------------------------------------------------------------        
     #
     def all_path_plot(self, X_test):
@@ -805,8 +817,8 @@ class learning_hmm(learning_base):
         x_array = np.arange(0, len(X_test_next)+0.0001,1.0) + len(X_test) -1        
         self.ax.plot(x_array, y_array, 'k-', linewidth=1.0)    
 
-        y_array = np.hstack([X_test[-1], X_pred])                        
-        self.ax.plot(x_array, y_array, 'b-', linewidth=2.0)    
+        ## y_array = np.hstack([X_test[-1], X_pred])                        
+        ## self.ax.plot(x_array, y_array, 'b-', linewidth=2.0)    
         
         # 3) Prediction        
         n,m = X_pred_prob.shape
@@ -997,9 +1009,16 @@ def f(i, nState, u_mu, u_sigma, B, obsrv_range):
         # Get all probability over states
         for k in xrange(nState): 
 
-            z_prob = norm.pdf(float(k),loc=u_mu,scale=u_sigma)
-            (x_mu, x_sigma) = B[k] #hmm.ml.getEmission(k)                        
+            if u_sigma != 0.0:
+                z_prob = norm.pdf(float(k),loc=u_mu,scale=u_sigma)
+            else:
+                if float(k) == u_mu: z_prob = 1.0
+                else: z_prob = 0.0
+
+            (x_mu, x_sigma) = B[k] #hmm.ml.getEmission(k)
             X_pred_prob[j] += norm.pdf(obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
+
+    X_pred_prob /= sum(X_pred_prob)
 
     return X_pred_prob, i
                                               

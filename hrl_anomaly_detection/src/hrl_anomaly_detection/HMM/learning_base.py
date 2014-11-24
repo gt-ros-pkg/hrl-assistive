@@ -192,7 +192,7 @@ class learning_base():
         data['mean'] = mean_list
         data['std'] = std_list
         data['params'] = params_list
-        if save_file == None:
+        if save_file is None:
             save_file='tune_data.pkl'            
         ut.save_pickle(data, save_file)
         
@@ -231,9 +231,15 @@ class learning_base():
 
             # Exponential function                
             # From y = a*e^(-bx)
-            a = 0.4
-            b = np.log(0.00001/a)/(-(nState-i))
-            f = lambda x: a*np.exp(-b*x)
+            #a = 0.4
+            #b = np.log(0.00001/a)/(-(nState-i))
+            #f = lambda x: a*np.exp(-b*x)
+
+            # Exponential function
+            # From y = -a*x + b
+            b = 0.4
+            a = b/float(nState)
+            f = lambda x: -a*x+b
 
             for j in np.array(range(nState-i))+i:
                 trans_prob_mat[i,j] = f(j)

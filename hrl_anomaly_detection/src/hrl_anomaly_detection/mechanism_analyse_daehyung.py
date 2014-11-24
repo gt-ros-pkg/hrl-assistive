@@ -427,18 +427,36 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         # Grouping by labels
         for l_wdata, l_vdata in splits: #label_splitter(data):
 
+            print "Number of data: ", len(l_vdata.chunks)
+        
             # Why zero??? Do we want specific chunk?  -> changed into 10
             lab = l_vdata.targets[0] # all same label
-            chunk = l_vdata.chunks[10] # chunk should be independant!!
+            chunk = l_vdata.chunks[2] # chunk should be independant!!
             trials = l_vdata.samples 
 
-            print lab
-            
             if lab == 'Refrigerator':
                 lab = 'Fridge'
 
+            ## tot_mean = None
+            ## tot_std  = None
+            ## for chunk in l_vdata.chunks:
+            ##     _, mean, std =  mean_charlie_dict[chunk] # mean except the specified chunk in same class
+            ##     if tot_mean is None:
+            ##         tot_mean = mean
+            ##         tot_std  = std
+            ##     else:
+            ##         tot_mean += mean
+            ##         tot_std += std
+
+            ##     print chunk, mean[0], tot_mean[0]
+
+            ## mean = tot_mean/float(len(l_vdata.chunks))
+            ## std = tot_std/float(len(l_vdata.chunks))
+            ## print mean[0], tot_mean[0], float(len(l_vdata.chunks))
+            ## sys.exit()
+            
             # Select evaluation chunk for the ROC ? 
-            #_, mean, std =  mean_charlie_dict[lab]
+            ## _, mean, std =  mean_charlie_dict[lab]
             _, mean, std =  mean_charlie_dict[chunk]
 
             # cutting into the same length

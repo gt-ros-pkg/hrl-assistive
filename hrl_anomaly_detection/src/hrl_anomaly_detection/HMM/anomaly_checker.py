@@ -91,7 +91,7 @@ class anomaly_checker():
         for i in xrange(self.nFutureStep):
 
             # check buff size
-            if len(self.buf_dict['mu_'+str(i)]) < i:
+            if len(self.buf_dict['mu_'+str(i)]) < i+1:
                 a_coff[i] = 0.0
                 fAnomaly -= 1.0
                 continue
@@ -108,10 +108,10 @@ class anomaly_checker():
         score= sum(a_coff)
         ## print y, a_coff, score
         
-        if score > fAnomaly:
-            return True, score*(self.fAnomaly/fAnomaly), err
+        if score >= fAnomaly:
+            return True, score*(self.fAnomaly/fAnomaly), np.max(err)
         else:
-            return False, score*(self.fAnomaly/fAnomaly), err
+            return False, score*(self.fAnomaly/fAnomaly), np.max(err)
 
         
     def simulation(self, X_test, Y_test):
@@ -199,7 +199,7 @@ class anomaly_checker():
 
             if i > 0:
                 mu_list, var_list, idx = self.update_buffer(x,y)            
-                if mu_list != None and var_list != None:
+                if mu_list is not None and var_list is not None:
                     mu[idx,:]  = mu_list
                     var[idx,:] = var_list
 

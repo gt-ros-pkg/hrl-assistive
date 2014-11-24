@@ -631,6 +631,7 @@ def blocked_detection(mech_vec_list, mech_nm_list):
             key = l_vdata.chunks[0][0:-6]
         else:
             key = l_vdata.chunks[0]
+
         mean_thresh_charlie_dict[key] = (mean_force_profile * 0.,
                                          mean_force_profile, std_force_profile)
         
@@ -691,7 +692,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             min_len = min(len(mean), trials.shape[1])
             trials = trials[:,:min_len]
             mean = mean[:min_len]
-            std = mean[:min_len]
+            std = std[:min_len]
 
             mn_list = []
             fp_list, err_list = [], []
@@ -747,7 +748,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         ## chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')        
         nfs = NFoldPartitioner(cvtype=1, attr='chunks') # 1-fold ?
         chunk_splitter = splitters.Splitter(attr='partitions')            
-        splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+        ## splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+        splits = [list(chunk_splitter.generate(x)) for x in nfs.generate(data)]            
         
         err_mean_list = []
         err_std_list = []
@@ -1256,9 +1258,10 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
     root_path = os.environ['HRLBASEPATH']+'/'
+    data_path = root_path+'src/projects/modeling_forces/handheld_hook/'
 
     if opt.fig_roc_human:
-        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/*.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
         mpu.set_figure_size(10, 7.)
@@ -1280,7 +1283,7 @@ if __name__ == '__main__':
 
 
     if opt.robot_roc:
-        pkl_list = glob.glob('RAM_db/robot_trials/simulate_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*.pkl')
         s_range = np.arange(0.05, 3.0, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
 
@@ -1293,7 +1296,7 @@ if __name__ == '__main__':
                            s_range, m_range, sem_c='c', sem_m='^',
                            semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
 
-        pkl_list = glob.glob('RAM_db/robot_trials/perfect_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
         s_range = np.arange(0.05, 1.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
