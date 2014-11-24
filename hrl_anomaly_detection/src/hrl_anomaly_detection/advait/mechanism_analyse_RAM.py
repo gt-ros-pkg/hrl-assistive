@@ -631,6 +631,7 @@ def blocked_detection(mech_vec_list, mech_nm_list):
             key = l_vdata.chunks[0][0:-6]
         else:
             key = l_vdata.chunks[0]
+
         mean_thresh_charlie_dict[key] = (mean_force_profile * 0.,
                                          mean_force_profile, std_force_profile)
         
@@ -691,7 +692,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             min_len = min(len(mean), trials.shape[1])
             trials = trials[:,:min_len]
             mean = mean[:min_len]
-            std = mean[:min_len]
+            std = std[:min_len]
 
             mn_list = []
             fp_list, err_list = [], []
@@ -747,7 +748,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         ## chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')        
         nfs = NFoldPartitioner(cvtype=1, attr='chunks') # 1-fold ?
         chunk_splitter = splitters.Splitter(attr='partitions')            
-        splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+        ## splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+        splits = [list(chunk_splitter.generate(x)) for x in nfs.generate(data)]            
         
         err_mean_list = []
         err_std_list = []

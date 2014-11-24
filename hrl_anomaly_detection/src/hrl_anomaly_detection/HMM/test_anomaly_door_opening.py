@@ -21,6 +21,7 @@ from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
 import door_open_common as doc
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
+import hrl_lib.matplotlib_util as mpu
 
 roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_roc_data'
 
@@ -202,7 +203,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                        nFutureStep, fObsrvResol,
                        semantic_range = np.arange(0.2, 2.7, 0.3),
                        target_class=['Freezer','Fridge','Office Cabinet'],
-                       bPlot=False):
+                       bPlot=False, roc_root_path=roc_data_path,
+                       semantic_label='PHMM anomaly detection w/ known mechanisum class'):
 
     start_step = 2
     
@@ -274,20 +276,18 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         for n in semantic_range:
             print "n: ", n
 
-            if os.path.isdir(roc_data_path) == False:
-                os.system('mkdir -p '+roc_data_path)
+            if os.path.isdir(roc_root_path) == False:
+                os.system('mkdir -p '+roc_root_path)
             
             # check saved file
-            target_pkl = roc_data_path+'/'+'fp_'+doc.class_dir_list[idx]+'_n_'+str(n)+'.pkl'
+            target_pkl = roc_root_path+'/'+'fp_'+doc.class_dir_list[idx]+'_n_'+str(n)+'.pkl'
 
             # mutex file
             host_name = socket.gethostname()
-            mutex_file = roc_data_path+'/'+host_name+'_mutex_'+doc.class_dir_list[idx]+'_'+str(n)
-
-            
-            
+            mutex_file = roc_root_path+'/'+host_name+'_mutex_'+doc.class_dir_list[idx]+'_'+str(n)
+                        
             if os.path.isfile(target_pkl) == False \
-                and hcu.is_file(roc_data_path, 'mutex_'+doc.class_dir_list[idx]+'_'+str(n)) == False: 
+                and hcu.is_file(roc_root_path, 'mutex_'+doc.class_dir_list[idx]+'_'+str(n)) == False: 
             
                 os.system('touch '+mutex_file)
 
@@ -356,11 +356,12 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
     if bPlot:
         sem_c = 'r'
-        sem_m = 'o'
-        semantic_label='PHMM anomaly detection w/ known mechanisum class'
+        sem_m = '*'        
         pp.plot(fp_list, mn_list, '--'+sem_m+sem_c, label= semantic_label,
-                mec=sem_c, ms=8, mew=2)
-    
+                mec=sem_c, ms=6, mew=2)
+
+        mpu.legend()
+        
     
 if __name__ == '__main__':
 
@@ -563,16 +564,19 @@ if __name__ == '__main__':
 
         # advait
         if opt.bROCPlot:
-            mar.generate_roc_curve(mech_vec_list, mech_nm_list,
+            mad.generate_roc_curve(mech_vec_list, mech_nm_list,
                                     s_range, m_range, sem_c='b',
                                     semantic_label = 'operating 1st time with \n accurate state estimation',
                                     plot_prev=True)
 
         #--------------------------------------------------------------------------------
-        
-        generate_roc_curve(mech_vec_list, mech_nm_list, \
-                           nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
-                           semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot)
+
+        for i in xrange(1,8,1):
+            roc_root_path = roc_data_path+'_'+str(i)
+            generate_roc_curve(mech_vec_list, mech_nm_list, \
+                               nFutureStep=i,fObsrvResol=fObsrvResol,
+                               semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
+                               roc_root_path=roc_root_path, semantic_label=str(i)+' step PHMM')
         ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
         if opt.bROCPlot: pp.show()
