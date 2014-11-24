@@ -350,14 +350,10 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
     ##     for j,l in enumerate(ll):  # multiplier range
     ##         l.append(e[j])
 
-    try:
+    if bPlot:
         mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist() # means into a row
         fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()
-    except:
-        print np.array(mn_l_l).shape
-        print ">?>>>>>>>>>>>>>>>>>?????"
 
-    if bPlot:
         sem_c = 'r'
         sem_m = '*'        
         pp.plot(fp_list, mn_list, '--'+sem_m+sem_c, label= semantic_label,
