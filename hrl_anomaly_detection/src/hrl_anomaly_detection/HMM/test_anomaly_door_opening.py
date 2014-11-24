@@ -252,7 +252,6 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         
         # cutting into the same length
         trials = trials[:,:36]
-        trials = trials[0:1,:36]
 
         pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
         data_vecs, _, _ = get_data(pkl_file, mech_class=mech_class, renew=opt.renew)        
@@ -295,7 +294,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                 false_pos = np.zeros((len(trials), len(trials[0])-start_step))
                 tot = trials.shape[0] * trials.shape[1]
                 err_l = []
-
+                    
                 # Gives all profiles
                 for i, trial in enumerate(trials):
 
@@ -315,7 +314,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                             else:
                                 err_l.append(max_err)
 
-                            print "(",i,j, ") : ", false_pos[i, j-start_step], max_err
+                            print "(",i,"/",len(trials)," ",j, ") : ", false_pos[i, j-start_step], max_err
 
                 # save data & remove mutex file
                 d = {}
