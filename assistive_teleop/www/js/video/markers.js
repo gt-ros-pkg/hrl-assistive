@@ -1,4 +1,5 @@
 var initMarkerDisplay = function (divID) {
+    "use strict";
     // Create the main viewer.
     var width = 0.8 * window.innerWidth;
     var height = 0.95 * window.innerHeight;
@@ -20,7 +21,7 @@ var initMarkerDisplay = function (divID) {
                                                             transform.rotation.w);
         RFH.viewer.camera.updateMatrix();
         RFH.viewer.camera.updateMatrixWorld();
-        out = RFH.viewer.camera.localToWorld(new THREE.Vector3(1,0,0));
+        var out = RFH.viewer.camera.localToWorld(new THREE.Vector3(1,0,0));
         RFH.viewer.camera.lookAt(out);
     }
 

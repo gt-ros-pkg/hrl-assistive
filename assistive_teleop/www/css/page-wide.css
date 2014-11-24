@@ -7,15 +7,13 @@ body {
     -o-user-select: none;/*for opera*/
     user-select: none;/*base css ,but not work in all browsers*/
     margin: 0px;
+    overflow: hidden;
 }
 
 #left-col {
-    position: relative;
-    display:inline-block;
-    height: 95%;
-    width: 20%;
-    min-width: 128px;
-
+    float: left;
+    height: calc(100% - 36px);
+    width: 256px;
 }
 
 
@@ -23,30 +21,38 @@ body {
     display: block;
     height: 40%;
     width: 100%;
+    background-color: rgba(255,255,200,0.56);
 }
 
 #main-menu h3 {
     display: block;
+    font-size: 1.6em;;
     width: 100%;
     text-align: center;
+    margin: 0px;
+    padding: 0.4em 0em;
 }
 
 .menu-item {
-    display:inline-block;
+    display: inline-block;
     height: 40px;
     width: 48%;
+    margin: 2px 0.5%;
+}
+
+.menu-item span.ui-button-text{
+    padding: 0.4em 0.4em;
 }
 
 #video-main {
-    float: right;
     position: relative;
-    height:95%;
+    float:left;
+    width: calc(100% - 256px);
+    height: calc(100% - 36px);
 }
 
-#markers {
-    position: absolute;
-    left: 0px;
-    top: 0px
+#mjpeg {
+    position: relative;
 }
 
 #controls {
@@ -54,10 +60,12 @@ body {
     height: 60%;
     width: 100%;
     min-width: 128px;
+    background-color: rgba(200, 225, 245, 0.56);
 }
 
 #controls h3 {
     display: block;
+    font-size: 1.4em;
     width: 100%;
     text-align: center;
 }

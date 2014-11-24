@@ -90,7 +90,7 @@ var RFH = {
                                             fixedFrame : '/base_link' });
         RFH.pr2 = new PR2(RFH.ros);
         initMjpegCanvas('video-main');
-        initMarkerDisplay('markers');
+//        initMarkerDisplay('markers');
         RFH.initTaskMenu('main-menu');
 //        initClickableActions();
 //        initPr2(); 

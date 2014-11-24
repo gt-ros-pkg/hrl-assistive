@@ -32,7 +32,7 @@ RFH.Drive = function (options) {
     var self = this;
     var options = options || {};
     self.ros = options.ros;
-    self.div = options.div || 'markers';
+    self.div = options.targetDiv || 'markers';
     self.tfClient = options.tfClient;
     self.camera = options.camera;
     self.base = options.base;
@@ -47,8 +47,8 @@ RFH.Drive = function (options) {
     self.sign = function (x) { 
         return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
     }
-    $('#controls .drive.up').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(-0.2)});
-    $('#controls .drive.down').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(0.8)});
+    $('#controls .drive.up').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(-0.0)});
+    $('#controls .drive.down').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(0.9)});
 
     self.updateHead = function (transform) { self.headTF = transform; }
     self.tryTFSubscribe = function () {
@@ -66,38 +66,45 @@ RFH.Drive = function (options) {
         //TODO: set informative cursor
         // everything i can think of to not get stuck driving...
         $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
-        $('#'+self.div+' canvas').on('mouseleave.rfh mouseout.rfh', self.setUnsafe)
-        $('#'+self.div+' canvas').on('mousedown.rfh', self.driveGo);
-        $('#'+self.div+' canvas').on('mouseup.rfh', self.driveStop);
-        $('#'+self.div+' canvas').on('blur.rfh', self.driveStop);
-        $('#controls .drive').show();
+        $('#'+self.div).on('mouseleave.rfh mouseout.rfh', self.setUnsafe)
+        $('#'+self.div).on('mousedown.rfh', self.driveGo);
+        $('#'+self.div).on('mouseup.rfh', self.driveStop);
+        $('#'+self.div).on('blur.rfh', self.driveStop);
+        $('#controls .drive, #drive-image').show();
+        $('#'+self.div).hide();
     }
 
     self.stop = function () {
         $(document).off("mouseleave.rfh mouseout.rfh");
-        $('#'+self.div+' canvas').removeClass('drive-safe');
-        $('#'+self.div+' canvas').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover')
+        $('#'+self.div).removeClass('drive-safe');
+        $('#'+self.div).off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover')
         $('#controls .drive').hide();
+        $('#drive-image, #drive-image').attr('src', '').hide();
+        $('#'+self.div).show();
     }
 
     self.driveGo = function (event) {
-        self.setSafe();
-        $('#'+self.div+' canvas').on('mousemove.rfh', self.driveToGoal); 
+        if (event.which === 1) { //Only reach to left mouse button
+            self.setSafe();
+            $('#'+self.div).on('mousemove.rfh', self.driveToGoal); 
+        } else {
+            self.driveStop();
+        }
     }
 
     self.driveStop = function (event) {
         self.setUnsafe();
-        $('#'+self.div+' canvas').off('mousemove.rfh');
+        $('#'+self.div).off('mousemove.rfh');
    } 
 
     self.setSafe = function () {
-        $('#'+self.div+' canvas').addClass('drive-safe');
+        $('#'+self.div).addClass('drive-safe');
     }
 
     self.setUnsafe = function (event) {
         //alert("Unsafe: "+event.type);
         clearInterval(self.timer);
-        $('#'+self.div+' canvas').removeClass('drive-safe');
+        $('#'+self.div).removeClass('drive-safe');
     }
 
     self.driveToGoal = function (event) {
@@ -140,7 +147,7 @@ RFH.Drive = function (options) {
     }
 
     self.sendCmd = function (r, theta, x, y) {
-        if (!$('#'+self.div+' canvas').hasClass('drive-safe')) { //Check for safety
+        if (!$('#'+self.div).hasClass('drive-safe')) { //Check for safety
             return;
         }
         var cmd_y = 0, cmd_x = 0, cmd_theta = 0;

@@ -1,7 +1,7 @@
 RFH.CartesianEEControl = function (options) {
     'use strict';
     var self = this;
-    self.div = options.div || 'markers';
+    self.div = options.div || 'mjpeg';
     self.arm = options.arm;
     self.gripper = options.gripper;
     self.smooth = self.arm instanceof PR2ArmJTTask;
@@ -25,6 +25,8 @@ RFH.CartesianEEControl = function (options) {
 //                                                 arm: self.arm,
 //                                                 smooth: self.smooth});
 
+
+    /// TRACKING HAND WITH CAMERA ///
     self.updateTrackHand = function (event) {
         if ( $("#"+self.arm.side[0]+"-track-hand-toggle").is(":checked") ){
             self.trackHand();
@@ -42,6 +44,8 @@ RFH.CartesianEEControl = function (options) {
     $("#"+self.arm.side[0]+"-track-hand-toggle").button().on('change.rfh', self.updateTrackHand);
     $("#"+self.arm.side[0]+"-track-hand-toggle-label").hide();
 
+
+    /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplayDiv = self.arm.side[0]+'GripperDisplay';
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
                                                    parentId: self.div,
@@ -53,6 +57,8 @@ RFH.CartesianEEControl = function (options) {
     gripperCSS[self.arm.side] = "3%";
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
+
+    /// TASK START/STOP ROUTINES ///
     self.start = function () {
         $("#"+self.posCtrlId + ", #touchspot-toggle-label, #"+self.arm.side[0]+"-track-hand-toggle-label").show();
         $("#"+self.gripperDisplayDiv).show();
@@ -66,6 +72,7 @@ RFH.CartesianEEControl = function (options) {
     };
 }
 
+
 RFH.EECartControlIcon = function (options) {
     'use strict';
     var self = this;
@@ -76,9 +83,9 @@ RFH.EECartControlIcon = function (options) {
     self.container = $('<div/>', {id: self.divId,
                                   class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
     self.away = $('<div/>', {class: "away-button"}).appendTo('#'+self.divId).button();
-    self.target = $('<div/>', {class: "target"}).appendTo('#'+self.divId);
+    self.target = $('<div/>', {class: "target-trans"}).appendTo('#'+self.divId);
     self.toward = $('<div/>', {class: "toward-button"}).appendTo('#'+self.divId).button();
-    $('#'+self.divId+' .target').draggable({containment:"parent",
+    $('#'+self.divId+' .target-trans').draggable({containment:"parent",
                                  distance: 8,
                                  revertDuration: 100,
                                  revert: true});
@@ -140,7 +147,7 @@ RFH.EECartControlIcon = function (options) {
     self.dragStop = function (event, ui) {
         clearTimeout(self.dragTimer);
     }
-    $('#'+self.divId+' .target').on('drag', self.onDrag).on('dragstop', self.dragStop);
+    $('#'+self.divId+' .target-trans').on('drag', self.onDrag).on('dragstop', self.dragStop);
 
 
 }
@@ -157,7 +164,7 @@ RFH.EERotControlIcon = function (options) {
     self.cwRot = $('<div/>', {class: "cw-rot"}).appendTo('#'+self.divId).button();
     self.target = $('<div/>', {class: "target-rot"}).appendTo('#'+self.divId);
     self.ccwRot = $('<div/>', {class: "ccw-rot"}).appendTo('#'+self.divId).button();
-    $('#'+self.divId+' .target').draggable({containment:"parent",
+    $('#'+self.divId+' .target-rot').draggable({containment:"parent",
                                  distance: 8,
                                  revertDuration: 100,
                                  revert: true});
@@ -222,6 +229,6 @@ RFH.EERotControlIcon = function (options) {
     self.dragStop = function (event, ui) {
         clearTimeout(self.dragTimer);
     }
-    $('#'+self.divId+' .target').on('drag', self.onDrag).on('dragstop', self.dragStop);
+    $('#'+self.divId+' .target-rot').on('drag', self.onDrag).on('dragstop', self.dragStop);
 
 }

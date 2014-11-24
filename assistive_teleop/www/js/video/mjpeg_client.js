@@ -30,35 +30,61 @@
 //                        height:480}//1024}
 
 RFH.MjpegClient = function (options) {
+    "use strict";
     var self = this;
     var options = options || {};
     self.imageTopic = options.imageTopic;
+    self.containerId = options.containerId;
     self.divId = options.divId;
+    self.imageId = self.divId + '-image';
     self.server = "http://"+options.host+":"+options.port;
-    self.activeParams = {'width': options.width,
-                         'height': options.height,
-                         'quality': options.quality || 80,
+    self.maintainAspectRatio = options.maintainAspectRatio || false;
+    self.activeParams = {'quality': options.quality || 80,
                          'topic': options.imageTopic}
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
                                                infoTopic: options.infoTopic,
                                                rotated: options.rotated || false});
+    self.refreshSize = function (resizeEvent) {
+        if (!self.cameraModel.has_data || self.maintainAspectRatio) {
+            $('#'+self.divId).html("Waiting on camera information.");
+            return false;
+        }
+        var camRatio = self.cameraModel.width/RFH.mjpeg.cameraModel.height;
+        var contWidth = $('#'+self.containerId).width();
+        var contHeight = $('#'+self.containerId).height();
+        var contRatio = contWidth/contHeight;
+        if (contRatio > camRatio) {
+            var width  = contHeight * camRatio;
+            self.setParam('width', width);
+            self.setParam('height', contHeight);
+        } else if (contRatio < camRatio) {
+            var height  = contWidth / camRatio;
+            self.setParam('height', height);
+            self.setParam('width', contWidth);
+        }
+        return true;
+    };
+    $(window).on('resize', self.refreshSize);
 
-    self.imageId = $("#" + self.divId + " img").attr('id');
-
+    // Update the server and display to reflect the current properties
     self.update = function () {
         var srcStr = self.server+ "/stream"
-        for (param in self.activeParams)
+        for (var param in self.activeParams)
         {
             srcStr += "?" + param + '=' + self.activeParams[param]
         }
-        $("#"+self.imageId).attr("src", srcStr)
-                                  .width(self.activeParams['width'])
-                                  .height(self.activeParams['height']);
+        $("#"+self.imageId).attr("src", srcStr);
+        $("#"+self.divId).width(self.activeParams['width'])
+                         .height(self.activeParams['height']);
     };
 
+    self.int_params = ['height', 'width', 'quality'];
     // Set parameter value
     self.setParam = function (param, value) {
+      if (self.int_params.indexOf(param) >= 0) {
+          value = Math.round(value);
+      }
       self.activeParams[param] = value;
       self.update();
     };
@@ -67,10 +93,9 @@ RFH.MjpegClient = function (options) {
     self.getParam = function (param) {
       return self.activeParams[param];
     };
-
+    
+    self.cameraModel.infoSubCBList.push(self.refreshSize);
     self.cameraModel.updateCameraInfo();
-    self.update();
-
 };
 
 RFH.ROSCameraModel = function (options) {
@@ -98,8 +123,8 @@ RFH.ROSCameraModel = function (options) {
         name: self.infoTopic,
         messageType: 'sensor_msgs/CameraInfo'});
 
-    self.msgCB = function (infoMsg) {
-        console.log("Updating camera model from "+self.infoTopic)
+    self.infoMsgCB = function (infoMsg) {
+        console.log("Updating camera model from " + self.infoTopic)
         self.frame_id = infoMsg.header.frame_id;
         if (self.rotated) { self.frame_id += '_rotated'; }
         self.width = infoMsg.width;
@@ -125,9 +150,15 @@ RFH.ROSCameraModel = function (options) {
         self.cameraInfoSubscriber.unsubscribe(); // Close subscriber to save bandwidth
         }
     
+    self.infoSubCBList = [self.infoMsgCB];
+    self.infoSubCB = function (msg) {
+        for (var cb in self.infoSubCBList) {
+           self.infoSubCBList[cb](msg); 
+       }
+    }
     self.updateCameraInfo = function () {
         // Re-subscribe to get new parameters
-        self.cameraInfoSubscriber.subscribe(self.msgCB);
+        self.cameraInfoSubscriber.subscribe(self.infoSubCB);
     }
 
     // back-project a pixel some distance into the real world
@@ -151,18 +182,23 @@ RFH.ROSCameraModel = function (options) {
 };
 
 var initMjpegCanvas = function (divId) {
-    // Initialize the mjpeg client
+    "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
-    var width = Math.round(0.8 * window.innerWidth);
-    var height = Math.round(0.95 * window.innerHeight);
-    $('#'+divId).css({'height':height, 'width':width});
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
                                      imageTopic: '/head_mount_kinect/rgb/image_color',
                                      infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     containerId: 'video-main',
                                      divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
-                                     width: width,
-                                     height: height,
                                      quality: 85});
+
+    RFH.driveCam = new RFH.MjpegClient({ros: RFH.ros,
+                                        imageTopic: '/camera/image_raw',
+                                        infoTopic: '/camera/camera_info',
+                                        containerId: 'video-main',
+                                        divId: 'drive-image',
+                                        host: RFH.ROBOT,
+                                        port: 8080,
+                                        quality: 85});
 };

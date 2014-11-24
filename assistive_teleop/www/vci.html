@@ -36,12 +36,13 @@
   <link type="text/css" href="css/notifications.css" rel="stylesheet" />
   <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
   <link type="text/css" href="css/look.css" rel="stylesheet" />
+  <link type="text/css" href="css/torso.css" rel="stylesheet" />
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
   
 </head>
 
-<body onload="RFH.init()" ondrop="return false;">
+<body onload="RFH.init()" ondragstart="return false;" ondrop="return false;">
  <div id="status-bar">
      <div id="notifications"></div>
      <div id="network-status"></div>
@@ -76,9 +77,8 @@
  </div>
  <div id="video-main">
      <div id='mjpeg'>
-        <img id="mjpeg-image"></img>
-     </div>
-     <div id="markers">
+         <img id="mjpeg-image"></img>
+         <!-- Divs for selecting eyeballs for looking task -->
          <div class="map-look top left cursor-eyes-up-left"></div>
          <div class="map-look top center cursor-eyes-up"></div>
          <div class="map-look top right cursor-eyes-up-right"></div>
@@ -87,6 +87,12 @@
          <div class="map-look bottom left cursor-eyes-down-left"></div>
          <div class="map-look bottom center cursor-eyes-down"></div>
          <div class="map-look bottom right cursor-eyes-down-right"></div>
+         <!-- divs for torso controls -->
+         <img id="tallIcon" src="./css/icons/tall.png"></img>
+         <img id="shortIcon" src="./css/icons/short.png"></img>
+         <div id="torsoSlider"></div>
+         <!-- divs for driving additional video -->
+        <img id="drive-image"></img>
      </div>
  </div>
 
