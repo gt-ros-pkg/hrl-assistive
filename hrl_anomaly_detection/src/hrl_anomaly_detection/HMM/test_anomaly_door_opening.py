@@ -277,7 +277,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
             if os.path.isdir(roc_root_path) == False:
                 os.system('mkdir -p '+roc_root_path)
-            
+
             # check saved file
             target_pkl = roc_root_path+'/'+'fp_'+doc.class_dir_list[idx]+'_n_'+str(n)+'.pkl'
 
@@ -335,7 +335,19 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                 
                 fp_list.append(np.sum(false_pos)/(tot*0.01))
                 err_list.append(err_l)
-                mn_list.append(np.mean(np.array(err_l)))
+                ## mn_list.append(np.mean(np.array(err_l)))
+
+                tot_e = 0.0
+                tot_e_cnt = 0.0
+                for e in err_l:
+                    if np.isnan(e) == False:
+                        tot_e += e 
+                        tot_e_cnt += 1.0
+                mn_list.append(tot_e/tot_e_cnt)
+
+                for ff in false_pos.flatten():
+                    if ff > 0.0:
+                        print "---------------------------", ff
                 
             else:
                 print "Mutex exists"
@@ -344,7 +356,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         fp_l_l.append(fp_list)
         err_l_l.append(err_list)
         mn_l_l.append(mn_list)
-                        
+        
     ## ll = [[] for i in err_l_l[0]]  # why 0?
     ## for i,e in enumerate(err_l_l): # labels
     ##     for j,l in enumerate(ll):  # multiplier range
@@ -394,7 +406,7 @@ if __name__ == '__main__':
     root_path = os.environ['HRLBASEPATH']+'/'
     ## nState    = 19
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
-    nFutureStep = 8
+    nFutureStep = 3
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 4  #14
@@ -471,8 +483,12 @@ if __name__ == '__main__':
 
         ######################################################    
         # Test data
-        h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25)
-        h_config =  np.array(h_config)*180.0/3.14
+        ## h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25)
+        ## h_config =  np.array(h_config)*180.0/3.14
+
+        # Training data            
+        h_ftan   = data_vecs[0][5,:].tolist()
+        h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
@@ -483,7 +499,7 @@ if __name__ == '__main__':
             print type(h_config), type(h_ftan)
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh)
+            ac = anomaly_checker(lh, sig_coff=2.0)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
@@ -570,7 +586,7 @@ if __name__ == '__main__':
 
         #--------------------------------------------------------------------------------
 
-        for i in xrange(1,8,1):
+        for i in xrange(1,9,1):
             roc_root_path = roc_data_path+'_'+str(i)
             generate_roc_curve(mech_vec_list, mech_nm_list, \
                                nFutureStep=i,fObsrvResol=fObsrvResol,
@@ -578,7 +594,12 @@ if __name__ == '__main__':
                                roc_root_path=roc_root_path, semantic_label=str(i)+' step PHMM')
         ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
-        if opt.bROCPlot: pp.show()
+        if opt.bROCPlot: 
+            pp.ylim(0.,13)
+            pp.xlim(-0.5,45)
+            pp.savefig('robot_roc.pdf')
+            pp.show()
+                
             
 
     elif opt.bAllPlot:

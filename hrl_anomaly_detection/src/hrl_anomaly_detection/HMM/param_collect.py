@@ -14,9 +14,9 @@ import hrl_lib.util as ut
 if __name__ == '__main__':
 
     target_name = 'door_tune_Freezer'
-    target_name = 'door_tune_Fridge'
-    target_name = 'door_tune_Kitchen_Cabinet'
-    target_name = 'door_tune_Office_Cabinet'
+    #target_name = 'door_tune_Fridge'
+    #target_name = 'door_tune_Kitchen_Cabinet'
+    #target_name = 'door_tune_Office_Cabinet'
     data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/'+target_name
     output_file = open('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/'+target_name+'/'+'performance.txt', "w")
 

@@ -36,7 +36,7 @@ class anomaly_checker():
         self.fXMax       = fXMax
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
-        self.fAnomaly    = 8.0
+        self.fAnomaly    = self.ml.nFutureStep
         self.sig_coff    = sig_coff
         
         # N-buffers
@@ -109,9 +109,9 @@ class anomaly_checker():
         ## print y, a_coff, score
         
         if score >= fAnomaly:
-            return True, score*(self.fAnomaly/fAnomaly), np.max(err)
+            return True, score*(self.fAnomaly/fAnomaly), np.mean(err)
         else:
-            return False, score*(self.fAnomaly/fAnomaly), np.max(err)
+            return False, score*(self.fAnomaly/fAnomaly), np.mean(err)
 
         
     def simulation(self, X_test, Y_test):
@@ -204,7 +204,7 @@ class anomaly_checker():
                     var[idx,:] = var_list
 
                 ## # check anomaly score
-                bFlag, fScore = self.check_anomaly(y[-1])
+                bFlag, fScore, _ = self.check_anomaly(y[-1])
             
             if i >= 2 and i < len(Y_test):# -self.nFutureStep:
 
