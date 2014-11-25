@@ -14,6 +14,7 @@ from mvpa2.generators import splitters
 # Util
 import hrl_lib.util as ut
 import matplotlib.pyplot as pp
+import matplotlib as mpl
 
 import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
 import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
@@ -206,7 +207,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                        semantic_range = np.arange(0.2, 2.7, 0.3),
                        target_class=['Freezer','Fridge','Office Cabinet'],
                        bPlot=False, roc_root_path=roc_data_path,
-                       semantic_label='PHMM anomaly detection w/ known mechanisum class'):
+                       semantic_label='PHMM anomaly detection w/ known mechanisum class', 
+                       sem_c='r',sem_m='*'):
 
     start_step = 2
     
@@ -362,13 +364,11 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
     if bPlot:
         mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist() # means into a row
-        fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()
-
-        sem_c = 'r'
-        sem_m = '*'        
-        pp.plot(fp_list, mn_list, '--'+sem_m+sem_c, label= semantic_label,
+        fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()                
+        pp.plot(fp_list, mn_list, '-'+sem_m+sem_c, label= semantic_label,
                 mec=sem_c, ms=6, mew=2)
-
+        ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
+        ##         ms=6, mew=2)
         mpu.legend()
         
     
@@ -557,7 +557,7 @@ if __name__ == '__main__':
 
     elif opt.bROCRobot:
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*.pkl')
-        s_range = np.arange(0.05, 3.0, 0.2) 
+        s_range = np.arange(0.05, 5.0, 0.3) 
         m_range = np.arange(0.1, 3.8, 0.6)
 
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
@@ -573,7 +573,7 @@ if __name__ == '__main__':
         #--------------------------------------------------------------------------------
         
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
-        s_range = np.arange(0.05, 1.8, 0.2) 
+        s_range = np.arange(0.05, 3.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)        
         
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
@@ -587,18 +587,30 @@ if __name__ == '__main__':
                                     plot_prev=True)
 
         #--------------------------------------------------------------------------------
-
-        for i in xrange(1,9,1):
+        # Set the default color cycle
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+        ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
+        ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
+        
+        ## for i in xrange(1,9,3):
+        for i in [1,2,4,8]:
+            color = colors.next()
+            shape = shapes.next()
             roc_root_path = roc_data_path+'_'+str(i)
             generate_roc_curve(mech_vec_list, mech_nm_list, \
                                nFutureStep=i,fObsrvResol=fObsrvResol,
                                semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-                               roc_root_path=roc_root_path, semantic_label=str(i)+' step PHMM')
+                               roc_root_path=roc_root_path, semantic_label=str(i)+' step PHMM', 
+                               sem_c=color,sem_m=shape)
         ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
         if opt.bROCPlot: 
-            pp.ylim(0.,13)
-            pp.xlim(-0.5,45)
+            ## pp.ylim(0.,13)
+            ## pp.xlim(-0.5,45)
+            pp.xlim(-0.5,27)
+            pp.ylim(0.,5)
             pp.savefig('robot_roc.pdf')
             pp.show()
                 
