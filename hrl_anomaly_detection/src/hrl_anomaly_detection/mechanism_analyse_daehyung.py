@@ -70,13 +70,13 @@ def get_a_blocked_detection(mech, ang_interval=1.0):
     ##     pkl_nm = data_path+'robot_trials/hsi_kitchen_collision_box/pull_trajectories_kitchen_cabinet_2010Dec10_060454_new.pkl'
     ##     one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_cody_new.pkl'
 
-    ## # collision w/ box
-    ## elif mech == 'kitchen_cabinet_pr2':
-    ##     pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    ##     one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
-    ##     ## pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
-    ##     ## one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
-    ##     ## pkl_nm = '/home/dpark/Dropbox/HRL/pr2_pull_2010Dec10_071602_new.pkl'
+    # collision w/ box
+    elif mech == 'kitchen_cabinet_pr2':
+        pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+        one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+        ## pkl_nm = data_path + 'robot_trials/hsi_kitchen_collision_pr2/pr2_pull_2010Dec10_071602_new.pkl'
+        ## one_pkl_nm = data_path + 'robot_trials/perfect_perception/kitchen_cabinet_pr2.pkl'
+        ## pkl_nm = '/home/dpark/Dropbox/HRL/pr2_pull_2010Dec10_071602_new.pkl'
 
     else:
         print "No available data"
@@ -105,7 +105,7 @@ def get_a_blocked_detection(mech, ang_interval=1.0):
     return h_config, h_ftan
     
 
-def get_all_blocked_detection(): # human + robot
+def get_all_blocked_detection(): # human
 
     pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*_new.pkl')
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
@@ -407,7 +407,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
     data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
     
     ## label_splitter = NFoldSplitter(cvtype=1, attr='labels')
-    thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
+    thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl') # human + robot data
     mean_charlie_dict = thresh_dict['mean_charlie']
     mean_known_mech_dict = thresh_dict['mean_known_mech']
 

@@ -53,9 +53,7 @@ def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
     
     # Filtering
     idxs = np.where([mech_class in i for i in data_mech])[0].tolist()
-    print "----------------"
-    print idxs
-    print "----------------"
+    print "Load ", mech_class
     
     ## print data_mech
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
@@ -95,6 +93,7 @@ def get_init_param(mech_class='Office Cabinet'):
     nState=None
     
     if mech_class=='Office Cabinet':
+        print "load Office Cabinet"
         nState = 21
         B= np.array([[6.74608512, 3.35549131],  
                      [12.31993548,  2.38471423],   
@@ -118,27 +117,27 @@ def get_init_param(mech_class='Office Cabinet'):
                      [1.92725332,   1.45080684],
                      [19.14819314,  3.03628879]])
         
-    elif mech_class=='Kitchen Cabinet':
-        nState = 19
-        B= np.array([[18.58312854,   3.97148752],
-                     [8.02421244,   2.53093271],   
-                     [4.22877542,   2.43305639],   
-                     [3.06682069,   1.22338961],   
-                     [0.8969525,    0.90515595],
-                     [1.96895872,   0.40562971],   
-                     [0.7455034,    0.40224727],   
-                     [5.85727348,   0.14408786],   
-                     [1.38835362,   0.98968569],   
-                     [2.97388944,   0.56633029],
-                     [0.88473839,   1.07680861],   
-                     [0.72355969,   1.07902071],  
-                     [1.06439733,   1.55401679],   
-                     [0.31953582,   1.09563166],   
-                     [3.63555268,   0.42373409],
-                     [2.01966014,   0.71553896],   
-                     [0.78481239,   0.17447195],   
-                     [2.15617073,   0.78075969],   
-                     [2.97842764,   1.05199494]])
+    ## elif mech_class=='Kitchen Cabinet':
+    ##     nState = 19
+    ##     B= np.array([[18.58312854,   3.97148752],
+    ##                  [8.02421244,   2.53093271],   
+    ##                  [4.22877542,   2.43305639],   
+    ##                  [3.06682069,   1.22338961],   
+    ##                  [0.8969525,    0.90515595],
+    ##                  [1.96895872,   0.40562971],   
+    ##                  [0.7455034,    0.40224727],   
+    ##                  [5.85727348,   0.14408786],   
+    ##                  [1.38835362,   0.98968569],   
+    ##                  [2.97388944,   0.56633029],
+    ##                  [0.88473839,   1.07680861],   
+    ##                  [0.72355969,   1.07902071],  
+    ##                  [1.06439733,   1.55401679],   
+    ##                  [0.31953582,   1.09563166],   
+    ##                  [3.63555268,   0.42373409],
+    ##                  [2.01966014,   0.71553896],   
+    ##                  [0.78481239,   0.17447195],   
+    ##                  [2.15617073,   0.78075969],   
+    ##                  [2.97842764,   1.05199494]])
 
     elif mech_class=='Freezer':
         nState = 19
@@ -195,6 +194,9 @@ def get_init_param(mech_class='Office Cabinet'):
                      [1.63074714,  2.22753852], 
                      [1.83764532,  1.32454358],
                      [3.07627057,  1.64749328]])                        
+
+    else:
+        print "No initial parameters"
             
     return A, B, pi, nState
     
@@ -254,7 +256,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         trials = trials[:,:36]
 
         pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
-        data_vecs, _, _ = get_data(pkl_file, mech_class=mech_class, renew=opt.renew)        
+        data_vecs, _, _ = get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
         A, B, pi, nState = get_init_param(mech_class=mech_class)        
 
         print "-------------------------------"
@@ -299,7 +301,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                 for i, trial in enumerate(trials):
 
                     # Init checker
-                    ac = anomaly_checker(lh, sig_coff=n)
+                    ac = anomaly_checker(lh, sig_mult=n)
 
                     # Simulate each profile
                     for j in xrange(len(trial)):
@@ -344,10 +346,6 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                         tot_e += e 
                         tot_e_cnt += 1.0
                 mn_list.append(tot_e/tot_e_cnt)
-
-                for ff in false_pos.flatten():
-                    if ff > 0.0:
-                        print "---------------------------", ff
                 
             else:
                 print "Mutex exists"
@@ -406,21 +404,26 @@ if __name__ == '__main__':
     root_path = os.environ['HRLBASEPATH']+'/'
     ## nState    = 19
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
-    nFutureStep = 3
+    nFutureStep = 8
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 4  #14
 
 
     # for block test
-    nClass = 0
-    cls = doc.class_list[nClass]
-    ## mech = 'kitchen_cabinet_pr2'
-    ## mech = 'kitchen_cabinet_cody'
-    ## mech = 'ikea_cabinet_pr2'
+    if opt.bUseBlockData:    
+        nClass = 2
+        cls = doc.class_list[nClass]
+        mech = 'kitchen_cabinet_pr2'
+        ## mech = 'kitchen_cabinet_cody'
+        ## mech = 'ikea_cabinet_pr2'
+    else:
+        nClass = 2
+        cls = doc.class_list[nClass]
+
     
     pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
-    data_vecs, _, _ = get_data(pkl_file, mech_class=cls, renew=opt.renew)        
+    data_vecs, _, _ = get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
     A, B, pi, nState = get_init_param(mech_class=cls)        
 
     ######################################################    
@@ -483,11 +486,11 @@ if __name__ == '__main__':
 
         ######################################################    
         # Test data
-        ## h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25)
-        ## h_config =  np.array(h_config)*180.0/3.14
+        h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25) # robot blocked test data
+        h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][5,:].tolist()
+        h_ftan   = data_vecs[0][12,:].tolist()
         h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
@@ -496,10 +499,9 @@ if __name__ == '__main__':
                 
         if opt.bAnimation:
 
-            print type(h_config), type(h_ftan)
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, sig_coff=2.0)
+            ac = anomaly_checker(lh, sig_mult=1.0)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)

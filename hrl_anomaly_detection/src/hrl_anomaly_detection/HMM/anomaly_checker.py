@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_coff=1.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.3):
 
         # Object
         self.ml = ml
@@ -37,7 +37,8 @@ class anomaly_checker():
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
         self.fAnomaly    = self.ml.nFutureStep
-        self.sig_coff    = sig_coff
+        self.sig_mult    = sig_mult
+        self.sig_off     = sig_off
         
         # N-buffers
         self.buf_dict = {}
@@ -57,10 +58,10 @@ class anomaly_checker():
         x          = X_test[-1]
         x_sup, idx = hdl.find_nearest(self.aXRange, x, sup=True)
         ## x_buf      = self.x_buf.get_array()
-
+        
         mu_list  = [0.0]*self.nFutureStep
         var_list = [0.0]*self.nFutureStep
-
+            
         # fXTOL should be sufficiently small.    
         if x - x_sup < self.fXTOL: # and x - x_buf[-1] >= 1.0:
 
@@ -98,12 +99,12 @@ class anomaly_checker():
             
             mu  = self.buf_dict['mu_'+str(i)][0]
             sig = self.buf_dict['sig_'+str(i)][0]
-            ## if mu-sig_coff*sig > y or mu+sig_coff*sig < y:
-            if mu+self.sig_coff*sig < y:
+            ## if mu-sig_mult*sig > y or mu+sig_mult*sig < y:
+            if mu + self.sig_mult*sig + self.sig_off  < y:
                 a_coff[i] = 1.0
             else:
                 a_coff[i] = 0.0
-                err[i] = mu+self.sig_coff*sig - y
+                err[i] = mu+self.sig_mult*sig + self.sig_off - y
 
         score= sum(a_coff)
         ## print y, a_coff, score
@@ -199,6 +200,7 @@ class anomaly_checker():
 
             if i > 0:
                 mu_list, var_list, idx = self.update_buffer(x,y)            
+
                 if mu_list is not None and var_list is not None:
                     mu[idx,:]  = mu_list
                     var[idx,:] = var_list
@@ -219,8 +221,8 @@ class anomaly_checker():
                 a_sig = np.hstack([0, np.sqrt(var[idx])])
 
                 lmean.set_data( a_X, a_mu)
-                lvar1.set_data( a_X, a_mu-1.*a_sig)
-                lvar2.set_data( a_X, a_mu+1.*a_sig) 
+                lvar1.set_data( a_X, a_mu-1.*a_sig - self.sig_off)
+                lvar2.set_data( a_X, a_mu+1.*a_sig + self.sig_off) 
                 lbar.set_height(fScore)
                 if fScore>=self.fAnomaly:
                     lbar.set_color('r')
