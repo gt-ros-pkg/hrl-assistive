@@ -76,8 +76,8 @@ RFH.initTaskMenu = function (divId) {
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
     RFH.taskMenu.addTask(new RFH.Drive({ros: RFH.ros, 
-                                       targetDiv: 'mjpeg-image',
-                                       camera: RFH.mjpeg.cameraModel,
+                                       targetDiv: 'drive-image',
+                                       camera: RFH.driveCam.cameraModel,
                                        tfClient: RFH.tfClient,
                                        base: RFH.pr2.base}));
 }

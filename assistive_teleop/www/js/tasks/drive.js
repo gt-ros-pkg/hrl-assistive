@@ -47,8 +47,8 @@ RFH.Drive = function (options) {
     self.sign = function (x) { 
         return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
     }
-    $('#controls .drive.up').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(-0.0)});
-    $('#controls .drive.down').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(0.9)});
+    $('#controls .drive.up').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(0.2)});
+    $('#controls .drive.down').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(1.1)});
 
     self.updateHead = function (transform) { self.headTF = transform; }
     self.tryTFSubscribe = function () {
@@ -71,7 +71,8 @@ RFH.Drive = function (options) {
         $('#'+self.div).on('mouseup.rfh', self.driveStop);
         $('#'+self.div).on('blur.rfh', self.driveStop);
         $('#controls .drive, #drive-image').show();
-        $('#'+self.div).hide();
+        RFH.driveCam.refreshSize();
+        $('#mjpeg-image').hide();
     }
 
     self.stop = function () {
@@ -79,12 +80,12 @@ RFH.Drive = function (options) {
         $('#'+self.div).removeClass('drive-safe');
         $('#'+self.div).off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover')
         $('#controls .drive').hide();
-        $('#drive-image, #drive-image').attr('src', '').hide();
-        $('#'+self.div).show();
+        $('#drive-image').attr('src', '').hide();
+        $('#mjpeg-image').show();
     }
 
     self.driveGo = function (event) {
-        if (event.which === 1) { //Only reach to left mouse button
+        if (event.which === 1) { //Only react to left mouse button
             self.setSafe();
             $('#'+self.div).on('mousemove.rfh', self.driveToGoal); 
         } else {

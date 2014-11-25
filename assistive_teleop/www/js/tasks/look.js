@@ -10,6 +10,7 @@ RFH.Look = function (options) {
     $('.map-look').css("display","none");
 
     self.start = function () {
+        RFH.mjpeg.refreshSize();
         $('#'+self.div + ' img').addClass("cursor-eyes").on("click.rfh", self.pointHead);
         $('.map-look').css("display","block");
     }
@@ -31,7 +32,7 @@ RFH.Look = function (options) {
             if (classes.contains("bottom")) { dy = SCALE  * vfov };
             if (classes.contains("left")) { dx = SCALE * hfov };
             if (classes.contains("right")) { dx = -SCALE * hfov };
-            $(lookAreas[i]).on('click.rfh', {dx: dx, dy: dy}, function (event) {
+            $(lookAreas[i]).on('click.rfh-look', {dx: dx, dy: dy}, function (event) {
                 self.head.delPosition(event.data.dx, event.data.dy); 
                 event.stopPropagation();
             } );

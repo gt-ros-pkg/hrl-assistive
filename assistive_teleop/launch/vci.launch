@@ -1,5 +1,8 @@
 <launch>
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+  <!--<include file="$(find assistive_teleop)/launch/tilt_camera.launch"/>-->
+  <!--<include file="$(find assistive_teleop)/launch/base_camera.launch"/>-->
+  <include file="$(find assistive_teleop)/launch/head_wfov_camera.launch"/>
   <arg name="launch_kinect" default="true" />
   <arg name="kinect_ns" default="head_mount_kinect" />
   <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />

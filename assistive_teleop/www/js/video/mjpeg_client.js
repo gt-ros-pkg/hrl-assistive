@@ -36,9 +36,8 @@ RFH.MjpegClient = function (options) {
     self.imageTopic = options.imageTopic;
     self.containerId = options.containerId;
     self.divId = options.divId;
-    self.imageId = self.divId + '-image';
+    self.imageId = options.imageId || self.divId + '-image';
     self.server = "http://"+options.host+":"+options.port;
-    self.maintainAspectRatio = options.maintainAspectRatio || false;
     self.activeParams = {'quality': options.quality || 80,
                          'topic': options.imageTopic}
 
@@ -46,11 +45,11 @@ RFH.MjpegClient = function (options) {
                                                infoTopic: options.infoTopic,
                                                rotated: options.rotated || false});
     self.refreshSize = function (resizeEvent) {
-        if (!self.cameraModel.has_data || self.maintainAspectRatio) {
+        if (!self.cameraModel.has_data) {
             $('#'+self.divId).html("Waiting on camera information.");
             return false;
         }
-        var camRatio = self.cameraModel.width/RFH.mjpeg.cameraModel.height;
+        var camRatio = self.cameraModel.width/self.cameraModel.height;
         var contWidth = $('#'+self.containerId).width();
         var contHeight = $('#'+self.containerId).height();
         var contRatio = contWidth/contHeight;
@@ -94,8 +93,6 @@ RFH.MjpegClient = function (options) {
       return self.activeParams[param];
     };
     
-    self.cameraModel.infoSubCBList.push(self.refreshSize);
-    self.cameraModel.updateCameraInfo();
 };
 
 RFH.ROSCameraModel = function (options) {
@@ -185,20 +182,28 @@ var initMjpegCanvas = function (divId) {
     "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     imageTopic: '/head_mount_kinect/rgb/image_color',
-                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     //imageTopic: '/head_mount_kinect/rgb/image_color',
+                                     //infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     imageTopic: '/head_wfov_camera/image_rect_color',
+                                     infoTopic: '/head_wfov_camera/camera_info',
                                      containerId: 'video-main',
                                      divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
                                      quality: 85});
+    RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
+    RFH.mjpeg.cameraModel.updateCameraInfo();
 
     RFH.driveCam = new RFH.MjpegClient({ros: RFH.ros,
-                                        imageTopic: '/camera/image_raw',
-                                        infoTopic: '/camera/camera_info',
+                                        //imageTopic: '/tilt_camera/image_rect_color',
+                                        //infoTopic: '/tilt_camera/camera_info',
+                                        imageTopic: '/head_wfov_camera/image_rect_color',
+                                        infoTopic: '/head_wfov_camera/camera_info',
                                         containerId: 'video-main',
-                                        divId: 'drive-image',
+                                        divId: 'mjpeg',
+                                        imageId: 'drive-image',
                                         host: RFH.ROBOT,
                                         port: 8080,
                                         quality: 85});
+    RFH.driveCam.cameraModel.updateCameraInfo();
 };
