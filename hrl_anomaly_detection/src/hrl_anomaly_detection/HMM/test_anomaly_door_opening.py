@@ -24,7 +24,7 @@ import door_open_common as doc
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 import hrl_lib.matplotlib_util as mpu
 
-roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_roc_data'
+roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/roc_sig_0_0/door_roc_data'
 
 def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
 
@@ -208,7 +208,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                        target_class=['Freezer','Fridge','Office Cabinet'],
                        bPlot=False, roc_root_path=roc_data_path,
                        semantic_label='PHMM anomaly detection w/ known mechanisum class', 
-                       sem_c='r',sem_m='*'):
+                       sem_l='-',sem_c='r',sem_m='*'):
 
     start_step = 2
     
@@ -365,11 +365,12 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
     if bPlot:
         mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist() # means into a row
         fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()                
-        pp.plot(fp_list, mn_list, '-'+sem_m+sem_c, label= semantic_label,
+        pp.plot(fp_list, mn_list, sem_l+sem_m+sem_c, label= semantic_label,
                 mec=sem_c, ms=6, mew=2)
         ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
         ##         ms=6, mew=2)
-        mpu.legend()
+        pp.legend(loc='best',prop={'size':12})
+        #mpu.legend(prop={'size':6})
         
     
 if __name__ == '__main__':
@@ -392,6 +393,8 @@ if __name__ == '__main__':
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
+    p.add_option('--fig_roc_phmm_comp_plot', '--pc_plot', action='store_true', dest='bROCPHMMPlot',
+                 default=False, help='Plot phmm comparison roc curve wrt robot data')
     p.add_option('--all_path_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all paths')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
@@ -568,7 +571,8 @@ if __name__ == '__main__':
             pp.figure()        
             mar.generate_roc_curve(mech_vec_list, mech_nm_list,
                                s_range, m_range, sem_c='c', sem_m='^',
-                               semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
+                               ## semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
+                               semantic_label = 'probabilistic model with \n uncertainty in state estimation', plot_prev=False)
 
         #--------------------------------------------------------------------------------
         
@@ -583,8 +587,9 @@ if __name__ == '__main__':
         if opt.bROCPlot:
             mad.generate_roc_curve(mech_vec_list, mech_nm_list,
                                     s_range, m_range, sem_c='b',
-                                    semantic_label = 'operating 1st time with \n accurate state estimation',
-                                    plot_prev=True)
+                                    ## semantic_label = 'operating 1st time with \n accurate state estimation',
+                                    semantic_label = 'probabilistic model with \n accurate state estimation',
+                                    plot_prev=False)
 
         #--------------------------------------------------------------------------------
         # Set the default color cycle
@@ -595,14 +600,15 @@ if __name__ == '__main__':
         ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
         
         ## for i in xrange(1,9,3):
-        for i in [1,2,4,8]:
+        for i in [1,8]:
             color = colors.next()
             shape = shapes.next()
             roc_root_path = roc_data_path+'_'+str(i)
             generate_roc_curve(mech_vec_list, mech_nm_list, \
                                nFutureStep=i,fObsrvResol=fObsrvResol,
                                semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-                               roc_root_path=roc_root_path, semantic_label=str(i)+' step PHMM', 
+                               roc_root_path=roc_root_path, semantic_label=str(i)+ \
+                               ' step PHMM with \n accurate state estimation', 
                                sem_c=color,sem_m=shape)
         ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
@@ -611,9 +617,53 @@ if __name__ == '__main__':
             ## pp.xlim(-0.5,45)
             pp.xlim(-0.5,27)
             pp.ylim(0.,5)
-            pp.savefig('robot_roc.pdf')
+            pp.savefig('robot_roc_sig_0_3.pdf')
             pp.show()
                 
+
+    elif opt.bROCPHMMPlot:
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
+        s_range = np.arange(0.05, 3.8, 0.2) 
+        m_range = np.arange(0.1, 3.8, 0.6)        
+        
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+        ## mpu.set_figure_size(26, 14.)        
+        pp.figure()        
+
+        # Set the default color cycle
+        import itertools
+        colors = itertools.cycle(['r', 'g', 'b', 'y'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+        lines  = itertools.cycle(['--','-'])
+        ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
+        ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
+
+        sig_offs = [0, 3]
+        for sig_off in sig_offs:
+            roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/roc_sig_0_'+str(sig_off)+'/door_roc_data'
+            line = lines.next()
+
+            ## for i in xrange(1,9,3):
+            for i in [1,4,8]:
+                color = colors.next()
+                shape = shapes.next()
+                roc_root_path = roc_data_path+'_'+str(i)
+                generate_roc_curve(mech_vec_list, mech_nm_list, \
+                                   nFutureStep=i,fObsrvResol=fObsrvResol,
+                                   semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=True,
+                                   roc_root_path=roc_root_path, semantic_label=str(i)+ \
+                                   ' step PHMM with 0.'+str(sig_off)+' offset', 
+                                   sem_l=line,sem_c=color,sem_m=shape)
+            
+        pp.xlim(-0.5,27)
+        pp.ylim(0.,4)
+        pp.legend(loc='best',prop={'size':16})
+        pp.xlabel('False positive rate (percentage)', fontsize=22)
+        pp.ylabel('Mean excess force (Newtons)', fontsize=22)
+        pp.savefig('robot_roc_phmm_comp.pdf')
+        pp.show()
             
 
     elif opt.bAllPlot:

@@ -570,8 +570,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         #pp.plot(fp_list, err_mean_list, '-or', label='with prior')
 
 
-    pp.xlabel('False positive rate (percentage)')
-    pp.ylabel('Mean excess force (Newtons)')
+    pp.xlabel('False positive rate (percentage)', fontsize=22)
+    pp.ylabel('Mean excess force (Newtons)', fontsize=22)
     pp.xlim(-0.5,45)
     mpu.legend()
 
