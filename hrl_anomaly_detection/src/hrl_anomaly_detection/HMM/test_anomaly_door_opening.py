@@ -24,7 +24,7 @@ import door_open_common as doc
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 import hrl_lib.matplotlib_util as mpu
 
-roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/roc_sig_0_0/door_roc_data'
+roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/roc_sig_0_3/door_roc_data'
 
 def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
 
@@ -368,8 +368,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                 mec=sem_c, ms=6, mew=2)
         ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
         ##         ms=6, mew=2)
-        pp.legend(loc='best',prop={'size':12})
-        #mpu.legend(prop={'size':6})
+        ## pp.legend(loc='best',prop={'size':16})
+        pp.legend(loc=1,prop={'size':14})
         
     
 if __name__ == '__main__':
@@ -420,7 +420,7 @@ if __name__ == '__main__':
         ## mech = 'kitchen_cabinet_cody'
         ## mech = 'ikea_cabinet_pr2'
     else:
-        nClass = 1
+        nClass = 2
         cls = doc.class_list[nClass]
 
     
@@ -566,7 +566,7 @@ if __name__ == '__main__':
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)        
         
         ## mpu.set_figure_size(13, 7.)
-        if opt.bROCPlot:        
+        if opt.bROCPlot and False:        
             pp.figure()        
             mar.generate_roc_curve(mech_vec_list, mech_nm_list,
                                s_range, m_range, sem_c='c', sem_m='^',
@@ -612,9 +612,8 @@ if __name__ == '__main__':
         ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
         if opt.bROCPlot: 
-            ## pp.ylim(0.,13)
-            ## pp.xlim(-0.5,45)
-            pp.xlim(-0.5,27)
+            ## pp.xlim(-0.5,27)
+            pp.xlim(-0.5,5)
             pp.ylim(0.,5)
             pp.savefig('robot_roc_sig_0_3.pdf')
             pp.show()
@@ -633,8 +632,10 @@ if __name__ == '__main__':
 
         # Set the default color cycle
         import itertools
-        colors = itertools.cycle(['r', 'g', 'b', 'y'])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
+        colors = itertools.cycle(['r', 'g', 'b'])
+        shapes = itertools.cycle(['x','v', 'o'])
+        ## colors = itertools.cycle(['r', 'g', 'b', 'y'])
+        ## shapes = itertools.cycle(['x','v', 'o', '+'])
         lines  = itertools.cycle(['--','-'])
         ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
         ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
@@ -656,9 +657,10 @@ if __name__ == '__main__':
                                    ' step PHMM with 0.'+str(sig_off)+' offset', 
                                    sem_l=line,sem_c=color,sem_m=shape)
             
-        pp.xlim(-0.5,27)
-        pp.ylim(0.,4)
-        pp.legend(loc='best',prop={'size':16})
+        ## pp.xlim(-0.5,27)
+        pp.xlim(-0.5,5)
+        pp.ylim(0.,5)
+        pp.legend(loc='best',prop={'size':14})
         pp.xlabel('False positive rate (percentage)', fontsize=22)
         pp.ylabel('Mean excess force (Newtons)', fontsize=22)
         pp.savefig('robot_roc_phmm_comp.pdf')
@@ -668,7 +670,6 @@ if __name__ == '__main__':
     elif opt.bAllPlot:
 
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
-        lh.init_plot()            
         lh.all_path_plot(lh.aXData)
         lh.final_plot()
                 

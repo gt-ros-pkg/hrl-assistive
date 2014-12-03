@@ -893,15 +893,17 @@ class learning_hmm(learning_base):
             self.ax = self.fig.add_subplot(111)
         else:            
             self.ax = self.fig.add_subplot(self.gs[0])
-        self.ax.set_xlim([0, self.nMaxStep])
-        self.ax.set_ylim([0, max(self.obsrv_range)*1.5])
         
 
     #----------------------------------------------------------------------        
     #
     def final_plot(self):
-        self.ax.set_xlabel("Angle")
-        self.ax.set_ylabel("Force")
+        plt.rc('text', usetex=True)
+        
+        self.ax.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
+        self.ax.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
+        self.ax.set_xlim([0, self.nMaxStep])
+        self.ax.set_ylim([0, max(self.obsrv_range)])
         
         plt.show()
         ## self.fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')

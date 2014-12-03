@@ -431,7 +431,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         
             # Why zero??? Do we want specific chunk?  -> changed into 10
             lab = l_vdata.targets[0] # all same label
-            chunk = l_vdata.chunks[2] # chunk should be independant!!
+            chunk = l_vdata.chunks[0] # chunk should be independant!!
             trials = l_vdata.samples 
 
             if lab == 'Refrigerator':

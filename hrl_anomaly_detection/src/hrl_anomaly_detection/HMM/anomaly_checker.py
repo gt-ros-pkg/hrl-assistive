@@ -169,9 +169,9 @@ class anomaly_checker():
         lAll, = self.ax1.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
         line, = self.ax1.plot([], [], lw=2, label='Current force history')
         lmean, = self.ax1.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
-        lvar1, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0, label=r'Predicted bounds \mu \pm (a\sigma + b)')    
+        lvar1, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0, label=r'Predicted bounds \mu \pm ( d_1 \sigma + d_2 )')    
         lvar2, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0, )    
-        plt.legend(handles=[lAll, line, lmean, lvar1], loc=2,prop={'size':12})        
+        self.ax1.legend(loc=2,prop={'size':12})        
 
         self.ax2 = self.fig.add_subplot(self.gs[1])        
         lbar,    = self.ax2.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
@@ -202,6 +202,7 @@ class anomaly_checker():
             lvar1.set_data([],[])
             lvar2.set_data([],[])
             lbar.set_height(0.0)            
+
             return lAll, line, lmean, lvar1, lvar2, lbar,
 
         def animate(i):
@@ -265,7 +266,7 @@ class anomaly_checker():
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(Y_test), interval=300, blit=True)
 
-        ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
+        anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         plt.show()
 
         
