@@ -517,7 +517,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             t_nm_list = mech_nm_list
 
         data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
-
+        
         ## chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')        
         nfs = NFoldPartitioner(cvtype=1, attr='chunks') # 1-fold ?
         chunk_splitter = splitters.Splitter(attr='partitions')            
@@ -629,7 +629,7 @@ if __name__ == '__main__':
        
 
     if opt.fig_roc_human:
-        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl')
+        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*_new.pkl')
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
         mpu.set_figure_size(10, 7.)
@@ -644,7 +644,7 @@ if __name__ == '__main__':
 
     else:
             
-        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') #+ glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*_new.pkl') #+ glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*_new.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*_new.pkl')
 
         ## root_path = os.environ['HRLBASEPATH']    
         ## ## pkl_list = glob.glob(root_path+'_data/usr/advait/ram_www/RAM_db_of_different_kinds/RAM_db/*_new.pkl')

@@ -50,12 +50,11 @@ def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
     ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
     ## print len(data_mech), data_vecs.shape
     ## sys.exit()
-    ## print data_mech
     
     # Filtering
     idxs = np.where([mech_class in i for i in data_mech])[0].tolist()
     print "Load ", mech_class
-    
+
     ## print data_mech
     ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
     data_vecs = data_vecs[:,idxs]
@@ -247,7 +246,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
         mech_class = l_vdata.targets[0]
         trials = l_vdata.samples # all data
-
+    
         # check existence of computed result
         idx = doc.class_list.index(mech_class)        
         if mech_class not in target_class: continue
@@ -258,14 +257,14 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         trials = trials[:,:36]
 
         pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
-        data_vecs, _, _ = get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
+        data_vecs, data_mech, data_chunks = get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
         A, B, pi, nState = get_init_param(mech_class=mech_class)        
 
         print "-------------------------------"
         print "Mech class: ", mech_class
         print "Data size: ", np.array(data_vecs).shape
         print "-------------------------------"
-                
+        
         # Training 
         lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
@@ -421,14 +420,14 @@ if __name__ == '__main__':
         ## mech = 'kitchen_cabinet_cody'
         ## mech = 'ikea_cabinet_pr2'
     else:
-        nClass = 2
+        nClass = 1
         cls = doc.class_list[nClass]
 
     
     pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
     data_vecs, _, _ = get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
     A, B, pi, nState = get_init_param(mech_class=cls)        
-
+    
     ######################################################    
     # Training 
     lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
@@ -480,11 +479,11 @@ if __name__ == '__main__':
         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+doc.class_dir_list[nClass],
                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
                                  +str(t[3])+str(t[4])+str(t[5])+'.pkl')
-        
+
         lh.param_optimization(save_file=save_file)
         
     elif opt.bUseBlockData:
-        
+
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
 
         ######################################################    
@@ -493,8 +492,8 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][12,:].tolist()
-        h_config = np.arange(0,float(len(h_ftan)), 1.0)
+        ## h_ftan   = data_vecs[0][12,:].tolist() # ikea cabinet door openning data
+        ## h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
@@ -559,13 +558,13 @@ if __name__ == '__main__':
             lh.final_plot()
 
     elif opt.bROCRobot:
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
         s_range = np.arange(0.05, 5.0, 0.3) 
         m_range = np.arange(0.1, 3.8, 0.6)
 
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)        
+        
         ## mpu.set_figure_size(13, 7.)
         if opt.bROCPlot:        
             pp.figure()        
@@ -576,13 +575,13 @@ if __name__ == '__main__':
 
         #--------------------------------------------------------------------------------
         
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
         s_range = np.arange(0.05, 3.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)        
         
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-
+        
         # advait
         if opt.bROCPlot:
             mad.generate_roc_curve(mech_vec_list, mech_nm_list,
@@ -622,7 +621,7 @@ if __name__ == '__main__':
                 
 
     elif opt.bROCPHMMPlot:
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
         s_range = np.arange(0.05, 3.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)        
         

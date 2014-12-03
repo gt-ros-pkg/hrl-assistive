@@ -82,7 +82,6 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
 #    print 'mean ang vel:', math.degrees(np.mean(ang_vel_list))
 #    print 'median ang vel:', math.degrees(np.median(ang_vel_list))
 
-
     return mech_vec_list, mech_nm_list
 
 def dimen_reduction_mechanisms(pkl_list, dimen):
@@ -681,7 +680,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             lab = l_vdata.targets[0]
             chunk = l_vdata.chunks[0]
             trials = l_vdata.samples # all data
-
+            
             if lab == 'Refrigerator':
                 lab = 'Fridge'
 
@@ -744,7 +743,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             t_nm_list = mech_nm_list
 
         data, _ = create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
-
+        
         ## chunk_splitter = NFoldSplitter(cvtype=1, attr='chunks')        
         nfs = NFoldPartitioner(cvtype=1, attr='chunks') # 1-fold ?
         chunk_splitter = splitters.Splitter(attr='partitions')            
@@ -1393,14 +1392,14 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         #pkl_list = glob.glob('RAM_db/*.pkl')
 
         # human and robot data
-        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*.pkl')
+        pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*_new.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*_new.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*_new.pkl')
         
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
         blocked_detection(mech_vec_list, mech_nm_list)
         blocked_detection_n_equals_1(mech_vec_list, mech_nm_list)
-        
+
         #test_blocked_detection(mech_vec_list, mech_nm_list)
         #test_blocked_detection_new(mech_vec_list, mech_nm_list)
 

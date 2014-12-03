@@ -155,32 +155,45 @@ class anomaly_checker():
         mu = np.zeros((len(self.aXRange), self.nFutureStep))
         var = np.zeros((len(self.aXRange), self.nFutureStep))
 
+        plt.rc('text', usetex=True)
+        
         self.fig = plt.figure(1)
         self.gs = gridspec.GridSpec(1, 2, width_ratios=[6, 1]) 
-                
+        
         self.ax1 = self.fig.add_subplot(self.gs[0])
-        self.ax1.set_xlim([0, X_test[-1].max()*1.2])
-        self.ax1.set_ylim([0, max(self.ml.obsrv_range)*1.5])
-        self.ax1.set_xlabel("Angle")
-        self.ax1.set_ylabel("Force")
+        self.ax1.set_xlim([0, X_test[-1].max()*1.05])
+        self.ax1.set_ylim([0, max(self.ml.obsrv_range)*1.4])
+        self.ax1.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
+        self.ax1.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
 
-        lAll, = self.ax1.plot([], [], color='#66FFFF', lw=2)
-        line, = self.ax1.plot([], [], lw=2)
-        lmean, = self.ax1.plot([], [], 'm-', linewidth=2.0)    
-        lvar1, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0)    
-        lvar2, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0)    
+        lAll, = self.ax1.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
+        line, = self.ax1.plot([], [], lw=2, label='Current force history')
+        lmean, = self.ax1.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
+        lvar1, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0, label=r'Predicted bounds \mu \pm (a\sigma + b)')    
+        lvar2, = self.ax1.plot([], [], '--', color='0.75', linewidth=2.0, )    
+        plt.legend(handles=[lAll, line, lmean, lvar1], loc=2,prop={'size':12})        
 
         self.ax2 = self.fig.add_subplot(self.gs[1])        
-        lbar,  = self.ax2.bar(0.0001, 0.0, width=1.0, color='b')
+        lbar,    = self.ax2.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
+        self.ax2.text(0.13, 0.2, 'Normal', fontsize='14', zorder=-1)            
+        self.ax2.text(0.05, 7.6, 'Abnormal', fontsize='14', zorder=0)            
         self.ax2.set_xlim([0.0, 1.0])
-        self.ax2.set_ylim([0, self.nMaxBuf])
-        self.ax2.set_xlabel("Anomaly Gauge")        
+        self.ax2.set_ylim([0, self.nMaxBuf])        
+        self.ax2.set_xlabel("Anomaly \n Gauge", fontsize=18)        
+        ## self.ax2.yaxis.tick_right()
+        ## labels = [item.get_text() for item in self.ax2.get_yticklabels()]
+        ## for i in xrange(len(labels)): labels[i]=''
+        ## labels[0] = 'Normal'
+        ## labels[-1] = 'Abnormal'
+        ## self.ax2.set_yticklabels(labels)
         plt.setp(self.ax2.get_xticklabels(), visible=False)
         plt.setp(self.ax2.get_yticklabels(), visible=False)
+        
         ## res_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
         ## lbar2, = self.ax1.bar(30.0, 0.0, width=1.0, color='white', edgecolor='k')
         ## lvar , = self.ax1.fill_between([], [], [], facecolor='yellow', alpha=0.5)
 
+        self.fig.subplots_adjust(wspace=0.02)        
         
         def init():
             lAll.set_data([],[])
@@ -236,6 +249,16 @@ class anomaly_checker():
                 lvar1.set_data([],[])
                 lvar2.set_data([],[])
                 lbar.set_height(0.0)           
+
+            ## if i>=0 or i<4 : 
+            ##     self.ax1.legend(handles=[lAll, line, lmean, lvar1], loc=2,prop={'size':12})        
+            ## else:
+            ##     self.ax1.legend.set_visible(False)
+                                
+            if i%3 == 0 and i >0:
+                plt.savefig('roc_ani_'+str(i)+'.pdf')
+                
+                
             return lAll, line, lmean, lvar1, lvar2, lbar,
 
            
@@ -243,7 +266,6 @@ class anomaly_checker():
                                        frames=len(Y_test), interval=300, blit=True)
 
         ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
-        
         plt.show()
 
         
