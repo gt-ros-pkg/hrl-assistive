@@ -1,0 +1,21 @@
+<launch>
+
+  <arg name="arm" default="l"/>
+  <arg name="verbose" default="True" />
+
+  <arg name="robot_config" default="$(find RYDS)/params/pr2_config_params_l.yaml" />
+  <rosparam command="load" file="$(arg robot_config)" />
+  <rosparam command="load" file="$(find RYDS)/params/mpc_params_pr2_yogurt.yaml" />
+
+
+  <node name="mpc_teleop" pkg="hrl_haptic_mpc" type="mpc_teleop_rviz.py" args="-r pr2 -a $(arg arm) --orientation" output="screen"/>
+  <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
+   <param name="tip_name" value="l_wrist_roll_link" />
+   <param name="root_name" value="torso_lift_link" />
+  </node>
+  <node name="waypoint_generator" pkg="hrl_haptic_mpc" type="waypoint_generator.py" args="-r pr2 -s fabric -a $(arg arm)" output="screen"/>
+  <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node.py" args="-r pr2 -s fabric -a $(arg arm)" output="screen"/>
+  <node name="haptic_mpc" pkg="hrl_haptic_mpc" type="haptic_mpc.py" args="-r pr2 -a $(arg arm) -v $(arg verbose)" output="screen"/>
+
+
+</launch>

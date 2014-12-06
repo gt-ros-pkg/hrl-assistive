@@ -1,0 +1,28 @@
+haptic_mpc:
+  pr2:
+    # Skin topic lists. Each should be publishing a TaxelArray message
+    skin_list:
+      none: []
+      fabric: ['/pr2_fabric_forearm_sensor/taxels/forces', '/pr2_fabric_upperarm_sensor/taxels/forces', '/pr2_pps_right_sensor/taxels/forces', '/pr2_pps_left_sensor/taxels/forces', '/pr2_fabric_gripper_left_link_sensor/taxels/forces', '/pr2_fabric_gripper_right_link_sensor/taxels/forces', '/pr2_fabric_gripper_palm_sensor/taxels/forces']    
+
+      pps: ['/pr2_pps_right_sensor/taxels/forces']
+      bosch: ['/skin/bosch/forearm_taxel_array', '/skin/bosch/upperarm_taxel_array']
+
+    # Frames used for TF. torso_frame is the one the arm is attached to, inertial frame is to get the torso position in the world
+    torso_frame: '/torso_lift_link'
+    inertial_frame: '/base_link'
+    end_effector_frame: '/r_gripper_tool_frame'
+
+    # Joint limits.
+    # Should be equal in number and in the same order as the number of links in the arm (eg 7 for the PR2, starting at the shoulder). 
+    # Should be specified in DEGREES.
+    joint_limits:
+      left:
+        max: [109.0, 68.0, 220.0, 0.01, 270.0, 0.01, 180.0]
+        min: [-26.0, -24.0, -41.0, -132.0, -270.0, -120.0, -180.0]
+      right:
+        max: [26.0, 68.0, 41.0, 0.010, 180.0, 0.01, 180.0]
+        min: [-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0]
+
+
+
