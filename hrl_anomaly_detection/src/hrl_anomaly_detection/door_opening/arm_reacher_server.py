@@ -17,7 +17,7 @@ class armReachAction(mpcBaseAction):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
         
         # service request
-        self.reach_service = rospy.Service('/base_selection/arm_reach_enable', None_Bool, self.start_cb)
+        self.reach_service = rospy.Service('/door_opening/arm_reach_enable', None_Bool, self.start_cb)
 
         
     def start_cb(self, req):
