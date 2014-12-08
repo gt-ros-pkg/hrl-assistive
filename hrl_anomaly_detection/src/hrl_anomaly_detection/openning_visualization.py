@@ -11,7 +11,23 @@ import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import hrl_lib.util as ut
 import matplotlib.pyplot as plt
 ## import pkl_converter as pk
-import common as co
+
+def getAllFiles(dirName):
+
+    lFile = []
+    for root, dirs, files in os.walk(dirName):
+
+        if root.find('.svn') >= 0: continue
+                
+        for sub_dir in dirs:
+            if sub_dir.find('.svn') >= 0: continue
+            lFile = lFile + getAllFiles(sub_dir)
+
+        for sub_file in files:
+            lFile.append(os.path.join(root,sub_file))
+
+    return lFile
+
 
 # Plot all opening and closing data
 def plot_all_angle_force(dirName, human=True):
@@ -24,7 +40,7 @@ def plot_all_angle_force(dirName, human=True):
     plt.xlabel("$x_1$")
     plt.ylabel("$x_2$")
 
-    lFile = co.getAllFiles(dirName)
+    lFile = getAllFiles(dirName)
     for f in lFile:
         strPath, strFile = os.path.split(f)
         if strFile.find('_new.pkl')>=0:

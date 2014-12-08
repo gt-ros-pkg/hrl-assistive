@@ -9,6 +9,9 @@ roslib.load_manifest('hrl_anomaly_detection')
 import rospy
 import tf
 
+# HRL
+from hrl_srvs.srv import None_Bool, None_BoolResponse
+
 # Private
 import hrl_anomaly_detection.door_opening.door_open_common as doc
 from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker

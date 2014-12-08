@@ -12,7 +12,6 @@ import glob
 import roslib; roslib.load_manifest('hrl_anomaly_detection') 
 import hrl_lib.util as ut
 import matplotlib.pyplot as plt
-import common as co
 
 # Machine learning
 from mvpa2.generators.partition import NFoldPartitioner
@@ -23,10 +22,11 @@ import matplotlib.pyplot as pp
 import hrl_lib.matplotlib_util as mpu
 
 
-import advait.mechanism_analyse_RAM as mar
-import advait.ram_db as rd
-import advait.mechanism_analyse_advait as maa
-import advait.arm_trajectories_ram as atr
+import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
+import hrl_anomaly_detection.advait.ram_db as rd
+import hrl_anomaly_detection.advait.mechanism_analyse_advait as maa
+import hrl_anomaly_detection.advait.arm_trajectories_ram as atr
+import hrl_anomaly_detection.advait.arm_trajectories as at
 
 data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
 root_path = os.environ['HRLBASEPATH']+'/'
@@ -275,14 +275,6 @@ def approx_missing_value(vecs):
 def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
     return array[idx], idx
-
-
-
-
-
-
-
-
     
 
 # Get mean force profile by chunks
@@ -665,6 +657,56 @@ def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
     
     return data_vecs, data_mech, data_chunks
 
+
+def online_force_estimation(p_list, f_list, radius_err = 0.,
+        with_prior = True, radius = 1.1):
+    
+    p_list = p_list[::2] #fix?
+    f_list = f_list[::2] #fix?
+    radius += radius_err
+    
+    print '_________________________________________________'
+    print 'using radius:', radius
+    print '_________________________________________________'
+
+    pts_list = []
+    ftan_list = []
+    config_list = []
+    for f,p in zip(f_list, p_list):
+        pts_list.append(p)
+        pts_2d = (np.matrix(pts_list).T)[0:2,:]
+
+        x_guess = pts_list[0][0]
+        y_guess = pts_list[0][1] - radius
+        rad_guess = radius
+        if with_prior:
+            rad, cx, cy = at.fit_circle_priors(rad_guess, x_guess,
+                    y_guess, pts_2d, sigma_r = 0.2, sigma_xy = 0.2,
+                    sigma_pts = 0.01, verbose=False)
+        else:
+            rad, cx, cy = at.fit_circle(rad_guess,x_guess,y_guess,pts_2d,
+                                        method='fmin_bfgs',verbose=False,
+                                        rad_fix=True)
+        print 'rad, cx, cy:', rad, cx, cy
+
+        p0 = p_list[0]
+        rad_vec_init = np.matrix((p0[0]-cx, p0[1]-cy)).T
+        rad_vec_init = rad_vec_init / np.linalg.norm(rad_vec_init)
+
+        rad_vec = np.array([p[0]-cx,p[1]-cy])
+        rad_vec = rad_vec/np.linalg.norm(rad_vec)
+
+        ang = np.arccos((rad_vec.T*rad_vec_init)[0,0])
+        config_list.append(ang)
+
+        tan_vec = (np.matrix([[0,-1],[1,0]]) * np.matrix(rad_vec).T).A1
+        f_vec = np.array([f[0],f[1]])
+
+        f_tan_mag = abs(np.dot(f_vec, tan_vec))
+        ftan_list.append(f_tan_mag)
+
+    return config_list, ftan_list
+    
     
 if __name__ == '__main__':
 
