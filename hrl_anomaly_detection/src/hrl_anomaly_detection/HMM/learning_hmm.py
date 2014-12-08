@@ -22,7 +22,7 @@ from matplotlib import animation
 
 ## import door_open_data as dod
 import ghmm
-import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
+import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
 from scipy.stats import norm
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import r2_score

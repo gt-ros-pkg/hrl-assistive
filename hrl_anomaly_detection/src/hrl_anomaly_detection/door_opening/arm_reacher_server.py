@@ -37,14 +37,14 @@ class armReachAction(mpcBaseAction):
         quat = Quaternion()
 
         #going to home with arm curled high near left shoulder:
-        (pos.x, pos.y, pos.z) = (0.301033944729, 0.461276517595, 0.196885866571)
-        (quat.x, quat.y, quat.z, quat.w) = (0.553557277528, 0.336724229346, -0.075691681684, 0.757932650828)
+        (pos.x, pos.y, pos.z) = (0.801033944729, -0.101276517595, 0.196885866571)
+        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
         timeout = 20.0
         self.setOrientGoal(pos, quat, timeout)
 
         #moving to high in front of chest, pointing down:
-        (pos.x, pos.y, pos.z) = (0.377839595079, 0.11569018662, 0.0419789999723)
-        (quat.x, quat.y, quat.z, quat.w) = (0.66106069088, 0.337429642677, -0.519856214523, 0.422953367233)
+        (pos.x, pos.y, pos.z) = (0.677839595079, -0.1569018662, 0.1919789999723)
+        (quat.x, quat.y, quat.z, quat.w) = (0.13867505,  0.13867505,  0.13867505,  0.97072534)
         timeout = 20.0
         self.setOrientGoal(pos, quat, timeout)
         

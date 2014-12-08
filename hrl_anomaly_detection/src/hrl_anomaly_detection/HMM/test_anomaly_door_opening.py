@@ -16,64 +16,15 @@ import hrl_lib.util as ut
 import matplotlib.pyplot as pp
 import matplotlib as mpl
 
-import hrl_anomaly_detection.mechanism_analyse_daehyung as mad
+import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
 import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
 from learning_hmm import learning_hmm
 from anomaly_checker import anomaly_checker
-import door_open_common as doc
+import hrl_anomaly_detection.door_opening.door_open_common as doc
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 import hrl_lib.matplotlib_util as mpu
 
 roc_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/roc_sig_0_3/door_roc_data'
-
-def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
-
-    ######################################################    
-    # Get Training Data
-    if os.path.isfile(pkl_file) and renew==False:
-        print "Saved pickle found"
-        data = ut.load_pickle(pkl_file)
-        data_vecs = data['data_vecs']
-        data_mech = data['data_mech']
-        data_chunks = data['data_chunks']
-    else:        
-        print "No saved pickle found"        
-        data_vecs, data_mech, data_chunks = mad.get_all_blocked_detection()
-        data = {}
-        data['data_vecs'] = data_vecs
-        data['data_mech'] = data_mech
-        data['data_chunks'] = data_chunks
-        ut.save_pickle(data,pkl_file)
-
-    ## from collections import OrderedDict
-    ## print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
-    ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
-    ## print len(data_mech), data_vecs.shape
-    ## sys.exit()
-    
-    # Filtering
-    idxs = np.where([mech_class in i for i in data_mech])[0].tolist()
-    print "Load ", mech_class
-
-    ## print data_mech
-    ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
-    data_vecs = data_vecs[:,idxs]
-    data_mech = [data_mech[i] for i in idxs]
-    data_chunks = [data_chunks[i] for i in idxs]
-
-    ## X data
-    data_vecs = np.array([data_vecs.T]) # category x number_of_data x profile_length
-    data_vecs[0] = mad.approx_missing_value(data_vecs[0])    
-
-    ## ## time step data
-    ## m, n = data_vecs[0].shape
-    ## aXData = np.array([np.arange(0.0,float(n)-0.0001,1.0).tolist()] * m)
-
-    if verbose==True:
-        print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
-    
-    return data_vecs, data_mech, data_chunks
-
     
 def get_interp_data(x,y):
 
@@ -82,124 +33,7 @@ def get_interp_data(x,y):
     tck = interpolate.splrep(x, y, s=0)
     xnew = np.arange(x[0], x[-1], 0.25)
     ynew = interpolate.splev(xnew, tck, der=0)
-    return xnew, ynew
-
-
-def get_init_param(mech_class='Office Cabinet'):
-
-    A=None        
-    B=None
-    pi=None    
-    nState=None
-    
-    if mech_class=='Office Cabinet':
-        print "load Office Cabinet"
-        nState = 21
-        B= np.array([[6.74608512, 3.35549131],  
-                     [12.31993548,  2.38471423],   
-                     [5.88693723,   2.46635188],  
-                     [12.14891174,  2.93535919],   
-                     [9.26237564,   0.822744],
-                     [9.75125194,   3.97297654],   
-                     [5.77729007,   0.7507263], 
-                     [11.43058112,  2.87005899],  
-                     [18.06107565,  2.39662467],   
-                     [6.19268309,   2.26957599],
-                     [15.82898597,  2.63266457],  
-                     [12.31750394,  1.7914311],    
-                     [5.16760403,   3.05843564],  
-                     [15.19103332,  2.0700275],   
-                     [14.46836571,  2.45861045],
-                     [16.9665216,   2.26536577],   
-                     [4.53682151,   2.34544588],   
-                     [3.72332427,   3.42523012],   
-                     [2.49712096,   2.04864712],   
-                     [1.92725332,   1.45080684],
-                     [19.14819314,  3.03628879]])
-        
-    ## elif mech_class=='Kitchen Cabinet':
-    ##     nState = 19
-    ##     B= np.array([[18.58312854,   3.97148752],
-    ##                  [8.02421244,   2.53093271],   
-    ##                  [4.22877542,   2.43305639],   
-    ##                  [3.06682069,   1.22338961],   
-    ##                  [0.8969525,    0.90515595],
-    ##                  [1.96895872,   0.40562971],   
-    ##                  [0.7455034,    0.40224727],   
-    ##                  [5.85727348,   0.14408786],   
-    ##                  [1.38835362,   0.98968569],   
-    ##                  [2.97388944,   0.56633029],
-    ##                  [0.88473839,   1.07680861],   
-    ##                  [0.72355969,   1.07902071],  
-    ##                  [1.06439733,   1.55401679],   
-    ##                  [0.31953582,   1.09563166],   
-    ##                  [3.63555268,   0.42373409],
-    ##                  [2.01966014,   0.71553896],   
-    ##                  [0.78481239,   0.17447195],   
-    ##                  [2.15617073,   0.78075969],   
-    ##                  [2.97842764,   1.05199494]])
-
-    elif mech_class=='Freezer':
-        nState = 19
-        B= np.array([[18.58312854,   3.97148752],   
-                     [8.02421244,   2.53093271],   
-                     [4.22877542,   2.43305639],   
-                     [3.06682069,   1.22338961],   
-                     [0.8969525,    0.90515595],
-                     [1.96895872,   0.40562971],   
-                     [0.7455034,    0.40224727],   
-                     [5.85727348,   0.14408786],   
-                     [1.38835362,   0.98968569],   
-                     [2.97388944,   0.56633029],
-                     [0.88473839,   1.07680861],   
-                     [0.72355969,   1.07902071],   
-                     [1.06439733,   1.55401679],  
-                     [0.31953582,   1.09563166],   
-                     [3.63555268,   0.42373409],
-                     [2.01966014,   0.71553896],   
-                     [0.78481239,   0.17447195],   
-                     [2.15617073,   0.78075969],   
-                     [2.97842764,   1.05199494]])
-
-    elif mech_class=='Fridge':
-        nState = 31
-        B= np.array([[17.55486023,  3.65713984],
-                     [18.22998446,  3.64747577],
-                     [15.86584935,  3.98602125],
-                     [10.07188122,  3.25049983], 
-                     [8.0921412,   3.40126467],    
-                     [4.96405642,  3.46917105], 
-                     [3.61047634,  3.24121805], 
-                     [1.74283831,   2.75573126], 
-                     [2.55587326,  2.80451476], 
-                     [0.25480083,  2.3808652],
-                     [4.04989768,  1.18629104], 
-                     [2.48367472,  1.90527102], 
-                     [0.37727605,  1.40430661], 
-                     [2.66604068,  0.61319149], 
-                     [0.76780143,  1.74494431],
-                     [2.17628331,  2.22347328], 
-                     [1.76746579,  1.66254031], 
-                     [1.68953164,  1.14549621], 
-                     [1.648831,    1.36946679], 
-                     [3.8295474,   1.23186153],
-                     [3.85246291,  1.3042204],  
-                     [0.38940239,  1.62819136], 
-                     [1.87882352,  1.06820492], 
-                     [0.89935806,  1.03536701], 
-                     [2.7160048,   1.96402042],
-                     [1.31125561,  1.03713852], 
-                     [1.36717773,  1.46653763], 
-                     [1.95822406,  1.99598714], 
-                     [1.63074714,  2.22753852], 
-                     [1.83764532,  1.32454358],
-                     [3.07627057,  1.64749328]])                        
-
-    else:
-        print "No initial parameters"
-            
-    return A, B, pi, nState
-    
+    return xnew, ynew   
 
 def generate_roc_curve(mech_vec_list, mech_nm_list,                        
                        nFutureStep, fObsrvResol,
@@ -257,8 +91,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         trials = trials[:,:36]
 
         pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
-        data_vecs, data_mech, data_chunks = get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
-        A, B, pi, nState = get_init_param(mech_class=mech_class)        
+        data_vecs, data_mech, data_chunks = mad.get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
+        A, B, pi, nState = doc.get_hmm_init_param(mech_class=mech_class)        
 
         print "-------------------------------"
         print "Mech class: ", mech_class
@@ -425,8 +259,8 @@ if __name__ == '__main__':
 
     
     pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
-    data_vecs, _, _ = get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
-    A, B, pi, nState = get_init_param(mech_class=cls)        
+    data_vecs, _, _ = mad.get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
+    A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls)        
     
     ######################################################    
     # Training 

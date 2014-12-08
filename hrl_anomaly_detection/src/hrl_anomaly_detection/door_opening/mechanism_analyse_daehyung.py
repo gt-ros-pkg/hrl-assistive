@@ -617,6 +617,55 @@ def generate_roc_curve_no_prior(mech_vec_list, mech_nm_list):
     pp.xlim(-0.5,45)
     
 
+def get_data(pkl_file, mech_class='Office Cabinet', verbose=False, renew=False):
+
+    ######################################################    
+    # Get Training Data
+    if os.path.isfile(pkl_file) and renew==False:
+        print "Saved pickle found"
+        data = ut.load_pickle(pkl_file)
+        data_vecs = data['data_vecs']
+        data_mech = data['data_mech']
+        data_chunks = data['data_chunks']
+    else:        
+        print "No saved pickle found"        
+        data_vecs, data_mech, data_chunks = get_all_blocked_detection()
+        data = {}
+        data['data_vecs'] = data_vecs
+        data['data_mech'] = data_mech
+        data['data_chunks'] = data_chunks
+        ut.save_pickle(data,pkl_file)
+
+    ## from collections import OrderedDict
+    ## print list(OrderedDict.fromkeys(data_mech)), len(list(OrderedDict.fromkeys(data_mech)))
+    ## print list(OrderedDict.fromkeys(data_chunks)), len(list(OrderedDict.fromkeys(data_chunks)))
+    ## print len(data_mech), data_vecs.shape
+    ## sys.exit()
+    
+    # Filtering
+    idxs = np.where([mech_class in i for i in data_mech])[0].tolist()
+    print "Load ", mech_class
+
+    ## print data_mech
+    ## print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
+    data_vecs = data_vecs[:,idxs]
+    data_mech = [data_mech[i] for i in idxs]
+    data_chunks = [data_chunks[i] for i in idxs]
+
+    ## X data
+    data_vecs = np.array([data_vecs.T]) # category x number_of_data x profile_length
+    data_vecs[0] = approx_missing_value(data_vecs[0])    
+
+    ## ## time step data
+    ## m, n = data_vecs[0].shape
+    ## aXData = np.array([np.arange(0.0,float(n)-0.0001,1.0).tolist()] * m)
+
+    if verbose==True:
+        print data_vecs.shape, np.array(data_mech).shape, np.array(data_chunks).shape
+    
+    return data_vecs, data_mech, data_chunks
+
+    
 if __name__ == '__main__':
 
     import optparse
