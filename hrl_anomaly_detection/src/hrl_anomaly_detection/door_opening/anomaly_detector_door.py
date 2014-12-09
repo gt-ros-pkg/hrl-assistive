@@ -3,6 +3,7 @@
 # System
 import numpy as np, math
 import time
+import threading
 
 # ROS
 roslib.load_manifest('hrl_anomaly_detection')
@@ -35,8 +36,10 @@ class anomaly_checker_door(anomaly_checker):
     nClass = 2
     mech_class = doc.class_list[nClass]
     
-    def __init__(self, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.3):
+    def __init__(self, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.3, bManual=False):
 
+        self.bManual = bManual 
+        
         # Load parameters
         pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
         data_vecs, _, _ = mad.get_data(pkl_file, mech_class=self.mech_class, renew=False) # human data       
@@ -51,10 +54,20 @@ class anomaly_checker_door(anomaly_checker):
         # Checker
         anomaly_checker.__init__(self, self.lh, nDim, fXInterval, fXMax, sig_mult, sig_off)
 
+        # define lock
+        self.mech_data_lock = threading.RLock() ## mechanism data lock
+        
         #
+        self.init_vars()
         self.getParams()        
         self.initComms()
 
+        
+    def init_vars(self):
+        self.f_list  = []
+        self.a_list  = []
+
+        
     def getParams(self):
 
         self.torso_frame = rospy.get_param('haptic_mpc'+self.robot_path+'/torso_frame' )
@@ -65,42 +78,55 @@ class anomaly_checker_door(anomaly_checker):
         rospy.init_node()
         
         # service
-        rospy.Service('/door_opening/anomaly_detector_enable', None_Bool, self.detector_en_cb)
+        rospy.Service('/door_opening/anomaly_detector_enable', Bool_None, self.detector_en_cb)
 
+        # Publisher
+        self.anomaly_pub = rospy.Publisher("door_opening/anomaly", Bool)        
+        
         # Subscriber
-        rospy.Subscriber('haptic_mpc/ft_sensor', PoseArray, self.ft_cb)                    
-
-        try:
-            self.tf_lstnr = tf.TransformListener()
-        except rospy.ServiceException, e:
-            rospy.loginfo("ServiceException caught while instantiating a TF listener. Seems to be normal")
-            pass                  
+        rospy.Subscriber('door_opening/mech_data', FloatArray, self.mech_data_cb)                    
         
         
     def detector_en_cb(self, req):
 
         # Run manipulation tasks
-        self.run():
-        return None_BoolResponse(True)
-
-    # Pose
-    def getEndeffectorPose(self):
-
-        self.tf_lstnr.waitForTransform(self.torso_frame, self.ee_frame, rospy.Time(0), rospy.Duration(5.0))
-        [self.end_effector_pos, self.end_effector_orient_quat] = self.tf_lstnr.lookupTransform(self.torso_frame, self.ee_frame, rospy.Time(0))
-        self.end_effector_pos = np.matrix(self.end_effector_pos).T
-            
-        return [self.end_effector_pos, self.end_effector_orient_quat]
-
-    # Force
-    def ft_cb(self, msg):
+        if req.data is True:
+            self.anomaly_detector_en = True
+        else:
+            self.anomaly_detector_en = False
+                        
+        return Bool_NoneResponse()
         
-
     
-    def run(self):
+    def mech_data_cb(self, msg):
+        with self.mech_data_lock:        
+            [f_tan_mag, ang] = msg.data # must be series data
 
-        # Estimate door angle and tangential force.
+            self.f_list.append(f_tan_mag)
+            self.a_list.append(ang)
+           
+
+            if self.anomaly_detector_en or self.bManual:
+                # anomaly detection
+
+                mu_list, var_list, idx = self.update_buffer(self.f_list,self.a_list)            
+
+                
+                
+            
+                self.anomaly_pub.publish(False)
+
+
+    ## def start(self, bManual=False):
+    ##     rospy.loginfo("Mech Analyse Online start")
         
+    ##     rate = rospy.Rate(2) # 25Hz, nominally.
+    ##     rospy.loginfo("Beginning publishing waypoints")
+    ##     while not rospy.is_shutdown():         
+    ##         self.generateMechData()
+    ##         #print rospy.Time()
+    ##         rate.sleep()        
+                
 
 if __name__ == '__main__':
 
@@ -109,11 +135,12 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
     
     acd = anomaly_checker_door(sig_mult=1.0)
-
-    rate = rospy.Rate(25) # 25Hz, nominally.
-    rospy.loginfo("Beginning publishing waypoints")
-    while not rospy.is_shutdown():         
-        ## self.generateWaypoint()
-        #print rospy.Time()
-        rate.sleep()        
+    rospy.spin()
+    
+    ## rate = rospy.Rate(25) # 25Hz, nominally.
+    ## rospy.loginfo("Beginning publishing waypoints")
+    ## while not rospy.is_shutdown():         
+    ##     ## self.generateWaypoint()
+    ##     #print rospy.Time()
+    ##     rate.sleep()        
     

@@ -3,6 +3,8 @@
 # System
 import numpy as np, math
 import time
+import sys
+import threading
 
 # ROS
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
@@ -15,6 +17,7 @@ from hrl_msgs.msg import FloatArray
 
 # Private
 import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
+import hrl_anomaly_detection.advait.arm_trajectories as at
 
 
 class mech_analyse():
@@ -23,7 +26,15 @@ class mech_analyse():
         self.robot_path = '/pr2'
         self.mech_anal_flag = False
         self.radius = 1.1
-                
+
+        self.aPts = None
+        self.ftan_list = []
+        self.config_list = []        
+        self.ft_data = [1.0,1.0,1.0]
+
+        # define lock
+        self.ft_lock = threading.RLock() ## ft sensing lock
+        
         #
         rospy.init_node("mech_online")        
         self.getParams()        
@@ -65,11 +76,13 @@ class mech_analyse():
         return None_BoolResponse(True)
 
 
+    # TODO
     def ft_sensor_cb(self, req):
 
-        return
-        
+        with self.ft_lock:
+            self.ft_data = [1.0,1.0,1.0]
 
+        
     # Pose
     def getEndeffectorPose(self):
 
@@ -81,25 +94,50 @@ class mech_analyse():
         
         
     def generateMechData(self):
+        # Estimate door angle and tangential force.
 
         mech_data         = None ## add something
         [ee_pos, ee_quat] = self.getEndeffectorPose()
 
-        p_list = None
-        f_list = None
+        if self.aPts == None:
+            self.aPts = ee_pos
+            pts_2d = self.aPts[:2,:]
+        else:
+            self.aPts = np.hstack([self.aPts, ee_pos])
+            pts_2d = self.aPts[:2,:]
 
-        config_list, ftan_list = mad.online_force_estimation(p_list, f_list, radius=self.radius)
+        x_guess = self.aPts[0,0]
+        y_guess = self.aPts[1,0] - self.radius
+        rad_guess = self.radius
+
+        rad, cx, cy = at.fit_circle(rad_guess,x_guess,y_guess,pts_2d,
+                                    method='fmin_bfgs',verbose=False,
+                                    rad_fix=True)
         
+        ## print 'rad, cx, cy:', rad, cx, cy
+
+        p0 = self.aPts[:,0] # 3x1
+        rad_vec_init = np.matrix((p0[0,0]-cx, p0[1,0]-cy)).T
+        rad_vec_init = rad_vec_init / np.linalg.norm(rad_vec_init)
+
+        rad_vec = np.array([ee_pos[0,0]-cx,ee_pos[1,0]-cy])
+        rad_vec = rad_vec/np.linalg.norm(rad_vec)
+        
+        ang = np.arccos((rad_vec.T*rad_vec_init)[0,0])
+        tan_vec = (np.matrix([[0,-1],[1,0]]) * np.matrix(rad_vec).T).A1
+        f_vec = np.array([self.ft_data[0],self.ft_data[1]])
+
+        f_tan_mag = abs(np.dot(f_vec, tan_vec))
+
         msg = FloatArray()
-        ## msg.data = mech_data.tolist()         
-        msg.data = [1.0,1.0]
+        msg.data = [f_tan_mag, ang]
         self.mech_data_pub.publish(msg)
         
 
     def start(self, bManual=False):
         rospy.loginfo("Mech Analyse Online start")
         
-        rate = rospy.Rate(25) # 25Hz, nominally.
+        rate = rospy.Rate(2) # 25Hz, nominally.
         rospy.loginfo("Beginning publishing waypoints")
         while not rospy.is_shutdown():         
             self.generateMechData()
