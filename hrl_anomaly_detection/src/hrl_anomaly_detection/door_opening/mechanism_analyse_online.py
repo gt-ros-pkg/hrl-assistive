@@ -99,7 +99,7 @@ class mech_analyse():
         mech_data         = None ## add something
         [ee_pos, ee_quat] = self.getEndeffectorPose()
 
-        if self.aPts == None:
+        if self.aPts is None:
             self.aPts = ee_pos
             pts_2d = self.aPts[:2,:]
         else:

@@ -4,14 +4,17 @@
 import numpy as np, math
 import time
 import threading
+import os, sys
 
 # ROS
-roslib.load_manifest('hrl_anomaly_detection')
+import roslib;roslib.load_manifest('hrl_anomaly_detection')
 import rospy
 import tf
 
 # HRL
-from hrl_srvs.srv import None_Bool, None_BoolResponse
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse
+from std_msgs.msg import Bool
+from hrl_msgs.msg import FloatArray
 
 # Private
 import hrl_anomaly_detection.door_opening.door_open_common as doc
@@ -39,31 +42,40 @@ class anomaly_checker_door(anomaly_checker):
     def __init__(self, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.3, bManual=False):
 
         self.bManual = bManual 
+        self.nDim    = nDim
+        self.fXInterval = fXInterval
+        self.fXMax   = fXMax
+        self.sig_mult = sig_mult
+        self.sig_off  = sig_off
+        self.bManual  = bManual
+
+        self.robot_path = '/pr2'
+        self.anomaly_detector_en = False
         
         # Load parameters
-        pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
+        pkl_file  = "mech_class_"+doc.class_dir_list[self.nClass]+".pkl"      
         data_vecs, _, _ = mad.get_data(pkl_file, mech_class=self.mech_class, renew=False) # human data       
         A, B, pi, nState = doc.get_hmm_init_param(mech_class=self.mech_class)        
 
         # Training 
         self.lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
-                          nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep)    
-        self.lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
-
-        # Checker
-        anomaly_checker.__init__(self, self.lh, nDim, fXInterval, fXMax, sig_mult, sig_off)
+                          nMaxStep=self.nMaxStep, nFutureStep=self.nFutureStep, 
+                          fObsrvResol=self.fObsrvResol, nCurrentStep=self.nCurrentStep)    
+        self.lh.fit(self.lh.aXData, A=A, B=B, verbose=False)    
 
         # define lock
         self.mech_data_lock = threading.RLock() ## mechanism data lock
         
         #
+        rospy.init_node("detector_online")        
         self.init_vars()
         self.getParams()        
         self.initComms()
 
         
     def init_vars(self):
+        # Checker
+        anomaly_checker.__init__(self, self.lh, self.nDim, self.fXInterval, self.fXMax, self.sig_mult, self.sig_off)        
         self.f_list  = []
         self.a_list  = []
 
@@ -75,7 +87,6 @@ class anomaly_checker_door(anomaly_checker):
 
         
     def initComms(self):
-        rospy.init_node()
         
         # service
         rospy.Service('/door_opening/anomaly_detector_enable', Bool_None, self.detector_en_cb)
@@ -91,7 +102,7 @@ class anomaly_checker_door(anomaly_checker):
 
         # Run manipulation tasks
         if req.data is True:
-            self.anomaly_detector_en = True
+            self.anomaly_detector_en = True            
         else:
             self.anomaly_detector_en = False
                         
@@ -100,21 +111,25 @@ class anomaly_checker_door(anomaly_checker):
     
     def mech_data_cb(self, msg):
         with self.mech_data_lock:        
-            [f_tan_mag, ang] = msg.data # must be series data
-
-            self.f_list.append(f_tan_mag)
-            self.a_list.append(ang)
-           
+            [f_tan_mag, ang] = msg.data # must be series data           
 
             if self.anomaly_detector_en or self.bManual:
                 # anomaly detection
+                self.f_list.append(f_tan_mag)
+                self.a_list.append(ang)                
 
                 mu_list, var_list, idx = self.update_buffer(self.f_list,self.a_list)            
 
+                ## # check anomaly score
+                bFlag, fScore, _ = self.check_anomaly(y[-1])
                 
-                
-            
-                self.anomaly_pub.publish(False)
+                if fScore>=self.fAnomaly and ang>0.0:
+                    self.anomaly_pub.publish(True)
+                else:
+                    self.anomaly_pub.publish(False)
+            else:
+                self.init_vars()
+                ## self.anomaly_pub.publish(False)
 
 
     ## def start(self, bManual=False):
