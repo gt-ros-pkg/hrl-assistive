@@ -10,6 +10,7 @@ import threading
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
 import tf
+from geometry_msgs.msg import Wrench
 
 # HRL
 from hrl_srvs.srv import None_Bool, None_BoolResponse
@@ -56,7 +57,7 @@ class mech_analyse():
         self.mech_data_pub = rospy.Publisher("door_opening/mech_data", FloatArray)        
         
         # Subscriber
-        ## rospy.Subscriber('haptic_mpc/ft_sensor', PoseArray, self.ft_cb)                    
+        rospy.Subscriber('/netft_rdt', Wrench, self.ft_sensor_cb)                    
 
         try:
             self.tf_lstnr = tf.TransformListener()
@@ -77,10 +78,12 @@ class mech_analyse():
 
 
     # TODO
-    def ft_sensor_cb(self, req):
+    def ft_sensor_cb(self, msg):
 
         with self.ft_lock:
-            self.ft_data = [1.0,1.0,1.0]
+            self.ft_data = [msg.force.x, msg.force.y, msg.force.z] # tool frame
+
+            # need to convert into torso frame?
 
         
     # Pose
