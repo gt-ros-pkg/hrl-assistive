@@ -18,8 +18,8 @@ import matplotlib as mpl
 
 import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
 import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
-from learning_hmm import learning_hmm
-from anomaly_checker import anomaly_checker
+from hrl_anomaly_detection.hmm.learning_hmm import learning_hmm
+from hrl_anomaly_detection.hmm.anomaly_checker import anomaly_checker
 import hrl_anomaly_detection.door_opening.door_open_common as doc
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 import hrl_lib.matplotlib_util as mpu
@@ -55,9 +55,6 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
     data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
 
-    ## thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
-    ## mean_charlie_dict = thresh_dict['mean_charlie']
-    ## mean_known_mech_dict = thresh_dict['mean_known_mech']
  
     #---------------- semantic class prior -------------
     # init containers
@@ -222,7 +219,9 @@ if __name__ == '__main__':
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
-    p.add_option('--fig_roc_robot', '--roc', action='store_true', dest='bROCRobot',
+    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman',
+                 help='generate ROC like curve from the BIOROB dataset.')
+    p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
@@ -391,6 +390,34 @@ if __name__ == '__main__':
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
 
+    elif opt.bROCHuman:
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
+        s_range = np.arange(0.05, 5.0, 0.3) 
+        m_range = np.arange(0.1, 3.8, 0.6)
+        
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+        ## mpu.set_figure_size(10, 7.)
+        nFutureStep = 8
+        cross_val_roc_curve
+        generate_roc_curve(mech_vec_list, mech_nm_list, \
+                           nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
+                           semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
+                           roc_root_path=roc_root_path, semantic_label=str(nFutureStep)+ \
+                           ' step PHMM with \n accurate state estimation', 
+                           sem_c=color,sem_m=shape)
+
+        
+        ## pp.figure()
+        ## generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
+        ## generate_roc_curve(mech_vec_list, mech_nm_list)
+        ## f = pp.gcf()
+        ## f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
+        ## pp.savefig('roc_compare.pdf')
+        ## pp.show()
+                
+            
     elif opt.bROCRobot:
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
         s_range = np.arange(0.05, 5.0, 0.3) 

@@ -237,12 +237,16 @@ class learning_base():
 
             # Exponential function
             # From y = -a*x + b
-            b = 0.4
-            a = b/float(nState)
-            f = lambda x: -a*x+b
+            ## b = 0.4
+            ## a = b/float(nState)
+            ## f = lambda x: -a*x+b
 
-            for j in np.array(range(nState-i))+i:
-                trans_prob_mat[i,j] = f(j)
+            ## for j in np.array(range(nState-i))+i:
+            ##     trans_prob_mat[i,j] = f(j)
+
+            # Gaussian transition probability
+            z_prob = norm.pdf(float(i),loc=u_mu_list[i],scale=u_sigma_list[i])
+            
 
             # Normalization 
             trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])

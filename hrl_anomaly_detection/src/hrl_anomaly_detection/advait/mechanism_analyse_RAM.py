@@ -601,11 +601,17 @@ def blocked_detection(mech_vec_list, mech_nm_list):
     spl = splitters.Splitter(attr='partitions')
     splits = [list(spl.generate(x)) for x in nfs.generate(data)]
 
+    # 1) Split by a chunk
+    # 2) Select a chunk
+    # 3) Find non-robot data in the same class() with the chunk
     # Pick each chunk once in l_vdata, where the set of chunks are unique
     # NOTE: l_wdata does not include the sample of l_vdata. See autonomous robots paper
     mean_thresh_charlie_dict = {}
     #for l_wdata, l_vdata in label_splitter(data):
     for l_wdata, l_vdata in splits:
+        print l_vdata.chunks
+        sys.exit()
+        
         non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
         idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] # find same target samples in non_robot target samples
         train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
@@ -640,7 +646,7 @@ def blocked_detection(mech_vec_list, mech_nm_list):
     
 
 def generate_roc_curve(mech_vec_list, mech_nm_list,
-                       semantic_range = np.arange(0.2, 2.7, 0.3),
+                       semantic_range = np.arange(0.2, 6.4, 0.3),
                        mech_range = np.arange(0.2, 6.5, 0.7),
                        n_prev_trials = 1, prev_c = 'r',
                        plot_prev=True, sem_c = 'b', sem_m = '+',
@@ -654,8 +660,10 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         t_nm_list.append(nm)
         t_mech_vec_list.append(mech_vec_list[i])
 
+    # test data
     data, _ = create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
-    
+
+    # To decide mean and var
     ## label_splitter = NFoldSplitter(cvtype=1, attr='labels')
     thresh_dict = ut.load_pickle('blocked_thresh_dict.pkl')
     mean_charlie_dict = thresh_dict['mean_charlie']
@@ -670,7 +678,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         mech_mn_l_l = []
         mech_err_l_l = []
 
-        nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+        ## nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+        nfs = NFoldPartitioner(cvtype=1, attr='chunks') # 1-fold ?
         label_splitter = splitters.Splitter(attr='partitions')            
         splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
             
@@ -684,6 +693,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
             if lab == 'Refrigerator':
                 lab = 'Fridge'
 
+            # mean and std of data except chunk
             #_, mean, std =  mean_charlie_dict[lab]
             _, mean, std =  mean_charlie_dict[chunk]
 
