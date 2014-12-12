@@ -51,6 +51,7 @@ class learning_hmm(learning_base):
         self.step_size_list = step_size_list
         
         ## Un-tunable parameters
+        self.hmm_type = "full"
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
         self.A = None # transition matrix        
@@ -128,6 +129,16 @@ class learning_hmm(learning_base):
         self.max_obsrv = X_train.max()
         self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
         self.state_range = np.arange(0, self.nState, 1)
+
+        # Pre-computation for PHMM variables
+        self.mu_z  = np.zeros((self.nState))
+        self.mu_z2 = np.zeros((self.nState))
+        self.var_z = np.zeros((self.nState))
+        for i in xrange(self.nState):
+            zp            = self.A[i,:]*self.state_range
+            self.mu_z[i]  = np.sum(zp)
+            self.mu_z2[i] = self.mu_z[i]**2
+            self.var_z    = np.sum(zp*self.state_range) - self.mu_z[i]**2
 
         if verbose:
             A = np.array(A)
@@ -579,7 +590,7 @@ class learning_hmm(learning_base):
         (alpha,scale) = self.ml.forward(final_ts_obj)
         alpha         = np.array(alpha)
 
-        temp = alpha[-1,:]
+        ## temp = alpha[-1,:]
 
         #scaling_factor = 1.0
         #for i in xrange(len(scale)):
@@ -592,22 +603,53 @@ class learning_hmm(learning_base):
         # Normalization?
         p_z_x /= np.sum(p_z_x)
 
-        (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
+        # (hidden space)
+        if self.hmm_type == "left_right":
+            (u_xi, u_omega, u_alpha) = hdl.skew_normal_param_estimation(self.state_range, p_z_x)
+            
+            u_xi_list = [0.0]*self.nFutureStep
+            u_omega_list = [0.0]*self.nFutureStep
+            u_alpha_list = [0.0]*self.nFutureStep
+            u_xi_list[0] = u_xi  # U_n+1 
+            u_omega_list[0] = u_omega
+            u_alpha_list[0] = u_alpha
 
-        u_mu_list  = [0.0]*self.nFutureStep
-        u_sigma_list = [0.0]*self.nFutureStep
-        u_mu_list[0]  = u_mu  # U_n+1 
-        u_sigma_list[0] = np.sqrt(u_var)
+            for i in xrange(self.nFutureStep-1):
+                u_xi_list[i+1], u_omega_list[i+1], u_alpha_list[i+1] = self.skew_normal_approximation(u_xi_list[i], u_omega_list[i], u_alpha_list[i])
+        else:
+            (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
 
-        for i in xrange(self.nFutureStep-1):
-            u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
+            u_mu_list  = [0.0]*self.nFutureStep
+            u_sigma_list = [0.0]*self.nFutureStep
+            u_mu_list[0]  = u_mu  # U_n+1 
+            u_sigma_list[0] = np.sqrt(u_var)
 
-        # Compute all intermediate steps
+            for i in xrange(self.nFutureStep-1):
+                u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
+                
+                              
+                
+        # Compute all intermediate steps (observation space)
         if full_step:
 
-            r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.nState, u_mu_list[i], u_sigma_list[i], \
-                                              self.B, self.obsrv_range) \
-                                              for i in xrange(self.nFutureStep) )
+            if self.hmm_type == "left_right":
+                r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.nState, self.B, \
+                                                       self.obsrv_range, \
+                                                       u_xi_list[i], \
+                                                       u_omega_list[i], \
+                                                       u_alpha_list[i], \
+                                                       self.hmm_type) \
+                                                       for i in xrange(self.nFutureStep) )
+            else:
+                r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.nState, self.B, \
+                                                       self.obsrv_range, \
+                                                       u_mu_list[i], \
+                                                       u_sigma_list[i], \
+                                                       0, \
+                                                       self.hmm_type) \
+                                                       for i in xrange(self.nFutureStep) )
+                
+                                              
             res, i = zip(*r)
             X_pred_prob = np.array(res).T 
             
@@ -617,26 +659,7 @@ class learning_hmm(learning_base):
                 ## max_idx = X_pred_prob[:,i].argmax()                    
                 ## X_pred[i] = self.obsrv_range[max_idx]
                 X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
-                
-            ## # Recursive prediction for each future step
-            ## for i in xrange(self.nFutureStep):
-
-            ##     # Get all probability over observations
-            ##     for j, obsrv in enumerate(self.obsrv_range):           
-
-            ##         # Get all probability over states
-            ##         for k in xrange(self.nState): 
-
-            ##             z_prob = norm.pdf(float(k),loc=u_mu_list[i],scale=u_sigma_list[i])
-            ##             (x_mu, x_sigma) = self.ml.getEmission(k)                        
-            ##             X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
-
-            ##             if np.isnan(z_prob): sys.exit()
-                        
-            ##     max_idx = X_pred_prob[:,i].argmax()                    
-            ##     X_pred[i] = self.obsrv_range[max_idx]
-            ##     X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
-                
+                                
         else:
             print "Predict on last part!!"
             
@@ -675,26 +698,56 @@ class learning_hmm(learning_base):
         p_z    = norm.pdf(np.arange(0.0,float(self.nState),1.0),loc=u_mu,scale=u_sigma)
         p_z    = p_z/np.sum(p_z)
 
-        # Need to speed up!!
-        for i in xrange(self.nState):
+        #
+        e_mu  = np.sum(p_z*self.mu_z)
+        e_mu2 = np.sum(p_z*self.mu_z2)
+        e_var = np.sum(p_z*self.var_z)
 
-            zp     = self.A[i,:]*self.state_range
-            mu_z   = np.sum(zp)
-            ## p_z[i] = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
-            
-            e_mu   += p_z[i] * mu_z
-            e_mu2  += p_z[i] * mu_z**2
-            e_var  += p_z[i] * ( np.sum(zp*self.state_range) - mu_z**2 )**2
-
-        m = e_mu/sum(p_z)
-        v = (e_var/sum(p_z)) + (e_mu2/sum(p_z)) - m**2
+        m = e_mu
+        v = (e_var) + (e_mu2) - m**2
 
         ## print v, " = ", (e_var/sum(p_z)), (e_mu2/sum(p_z)), m**2
 
         if v < 0.0: print "Negative variance error: ", v
         if v == 0.0: v = 1.0e-6
         return m, np.sqrt(v)
-       
+
+        
+    #----------------------------------------------------------------------        
+    # Compute the estimated probability (0.0~1.0)
+    def skew_normal_approximation(self, u_xi, u_omega, u_alpha=0.0):
+
+        e_mu   = 0.0
+        e_mu2  = 0.0
+        e_var  = 0.0
+
+        if u_omega == 0.0: u_omega = 0.00001
+        p_z    = hdl.skew_normal_distribution(np.arange(0.0,float(self.nState),1.0),loc=u_xi,scale=u_omega,skewness=u_alpha)
+        p_z    = p_z/np.sum(p_z)
+
+        # Need to speed up!!
+        e_mu  = np.sum(p_z*self.mu_z)
+        e_mu2 = np.sum(p_z*self.mu_z2)
+        e_var = np.sum(p_z*self.var_z)
+        ## for i in xrange(self.nState):
+            ## zp     = self.A[i,:]*self.state_range
+            ## mu_z   = np.sum(zp)
+            ## ## p_z[i] = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
+            
+            ## e_mu   += p_z[i] * self.mu_z[i]
+            ## e_mu2  += p_z[i] * mu_z**2
+            ## e_var  += p_z[i] * ( np.sum(zp*self.state_range) - mu_z**2 )
+
+        d = u_alpha / np.sqrt(1.0 + u_alpha**2)
+        v = (e_var+e_mu2-e_mu**2) / (1. - 2.*d*d/np.pi)
+        m = e_mu - np.sqrt(2.0 * v / np.pi) * d
+        s = (4.0-np.pi)/2.0 * (e_mu)/(e_mu2-e_mu**2)
+
+        ## print v, " = ", (e_var/sum(p_z)), (e_mu2/sum(p_z)), m**2
+
+        ## if v < 0.0: print "Negative scale error: ", v
+        if v == 0.0: v = 1.0e-6
+        return m, np.sqrt(v), s
         
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
@@ -1001,7 +1054,11 @@ class learning_hmm(learning_base):
         plt.show()
 
 
-def f(i, nState, u_mu, u_sigma, B, obsrv_range):
+def f(i, nState, B, obsrv_range, u_mu, u_sigma, u_alpha, hmm_type="full"):
+
+    if hmm_type == "left_right":        
+        u_xi = u_mu
+        u_omega = u_sigma
 
     X_pred_prob = np.zeros((len(obsrv_range)))
 

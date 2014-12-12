@@ -18,8 +18,8 @@ import matplotlib as mpl
 
 import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
 import hrl_anomaly_detection.advait.mechanism_analyse_RAM as mar
-from hrl_anomaly_detection.hmm.learning_hmm import learning_hmm
-from hrl_anomaly_detection.hmm.anomaly_checker import anomaly_checker
+from hrl_anomaly_detection.HMM.learning_hmm import learning_hmm
+from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker
 import hrl_anomaly_detection.door_opening.door_open_common as doc
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 import hrl_lib.matplotlib_util as mpu
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
-                 default=False, help='Approximately compute the distribution of multi-step observations')
+                 default=True, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     nFutureStep = 8
     ## data_column_idx = 1
     fObsrvResol = 0.1
-    nCurrentStep = 4  #14
+    nCurrentStep = 14  #14
 
 
     # for block test
@@ -357,7 +357,7 @@ if __name__ == '__main__':
                                     x_pred_prob, np.array(x_test_next), 
                                     X_test_all=x_test_all)
 
-            elapsed.append(time.clock() - start_time)        
+            elapsed.append(time.clock() - elapsed[-1])        
             print elapsed
             
             lh.final_plot()

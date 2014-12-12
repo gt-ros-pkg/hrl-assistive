@@ -256,8 +256,8 @@ class anomaly_checker():
             ## else:
             ##     self.ax1.legend.set_visible(False)
                                 
-            if i%3 == 0 and i >0:
-                plt.savefig('roc_ani_'+str(i)+'.pdf')
+            ## if i%3 == 0 and i >0:
+            ##     plt.savefig('roc_ani_'+str(i)+'.pdf')
                 
                 
             return lAll, line, lmean, lvar1, lvar2, lbar,
@@ -266,7 +266,7 @@ class anomaly_checker():
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(Y_test), interval=300, blit=True)
 
-        anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
+        ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         plt.show()
 
         
