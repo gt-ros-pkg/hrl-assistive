@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.3):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.0):
 
         # Object
         self.ml = ml

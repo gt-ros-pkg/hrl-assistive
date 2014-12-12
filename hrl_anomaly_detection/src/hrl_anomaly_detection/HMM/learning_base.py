@@ -19,12 +19,13 @@ from sklearn.metrics import classification_report
 from sklearn.externals import six
 
 class learning_base():
-    def __init__(self, data_path, aXData):
+    def __init__(self, data_path, aXData, trans_type="left_right"):
 
         # Common parameters
         self.data_path = data_path
         self.aXData = aXData
         ## self.aYData = aYData
+        self.trans_type=trans_type
 
         # etc 
         self.ml = None

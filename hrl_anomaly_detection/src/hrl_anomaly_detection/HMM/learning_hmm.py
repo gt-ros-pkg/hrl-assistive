@@ -39,9 +39,9 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 
 class learning_hmm(learning_base):
-    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None):
+    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None, trans_type="left_right"):
 
-        learning_base.__init__(self, data_path, aXData)
+        learning_base.__init__(self, data_path, aXData, trans_type)
         
         ## Tunable parameters                
         self.nState= nState # the number of hidden states
@@ -51,7 +51,7 @@ class learning_hmm(learning_base):
         self.step_size_list = step_size_list
         
         ## Un-tunable parameters
-        self.hmm_type = "left_right" #"full"
+        ## self.trans_type = trans_type #"left_right" #"full"
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
         self.A = None # transition matrix        
@@ -611,7 +611,7 @@ class learning_hmm(learning_base):
         p_z_x /= np.sum(p_z_x)
 
         # (hidden space)
-        if self.hmm_type == "left_right":
+        if self.trans_type == "left_right":
             (u_xi, u_omega, u_alpha) = hdl.skew_normal_param_estimation(self.state_range, p_z_x)
             
             u_xi_list = [0.0]*self.nFutureStep
@@ -639,14 +639,14 @@ class learning_hmm(learning_base):
         # Compute all intermediate steps (observation space)
         if full_step:
 
-            if self.hmm_type == "left_right":
+            if self.trans_type == "left_right":
                 r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.state_range, \
                                                        self.obsrv_range, \
                                                        self.obs_prob, \
                                                        u_xi_list[i], \
                                                        u_omega_list[i], \
                                                        u_alpha_list[i], \
-                                                       self.hmm_type) \
+                                                       self.trans_type) \
                                                        for i in xrange(self.nFutureStep) )
             else:
                 r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.state_range, \
@@ -655,7 +655,7 @@ class learning_hmm(learning_base):
                                                        u_mu_list[i], \
                                                        u_sigma_list[i], \
                                                        0, \
-                                                       self.hmm_type) \
+                                                       self.trans_type) \
                                                        for i in xrange(self.nFutureStep) )
                 
                                               
@@ -1063,10 +1063,10 @@ class learning_hmm(learning_base):
         plt.show()
 
 
-## def f(i, nState, B, obsrv_range, u_mu, u_sigma, u_alpha, hmm_type="full"):
-def f(i, state_range, obsrv_range, obs_prob, u_mu, u_sigma, u_alpha, hmm_type="full"):
+## def f(i, nState, B, obsrv_range, u_mu, u_sigma, u_alpha, trans_type="full"):
+def f(i, state_range, obsrv_range, obs_prob, u_mu, u_sigma, u_alpha, trans_type="full"):
 
-    if hmm_type == "left_right":        
+    if trans_type == "left_right":        
         u_xi = u_mu
         u_omega = u_sigma
 

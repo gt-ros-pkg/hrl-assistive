@@ -609,8 +609,6 @@ def blocked_detection(mech_vec_list, mech_nm_list):
     mean_thresh_charlie_dict = {}
     #for l_wdata, l_vdata in label_splitter(data):
     for l_wdata, l_vdata in splits:
-        print l_vdata.chunks
-        sys.exit()
         
         non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
         idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] # find same target samples in non_robot target samples

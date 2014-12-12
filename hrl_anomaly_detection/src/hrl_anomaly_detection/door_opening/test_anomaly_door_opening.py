@@ -41,7 +41,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                        target_class=['Freezer','Fridge','Office Cabinet'],
                        bPlot=False, roc_root_path=roc_data_path,
                        semantic_label='PHMM anomaly detection w/ known mechanisum class', 
-                       sem_l='-',sem_c='r',sem_m='*'):
+                       sem_l='-',sem_c='r',sem_m='*', trans_type="left_right"):
 
     start_step = 2
     
@@ -99,7 +99,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         # Training 
         lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep)    
+                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
         lh.fit(lh.aXData, A=A, B=B, pi=pi, verbose=opt.bVerbose)                
         
@@ -201,7 +201,54 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         ##         ms=6, mew=2)
         ## pp.legend(loc='best',prop={'size':16})
         pp.legend(loc=1,prop={'size':14})
-        
+
+def genCrossValData(data_path, cross_data_path):
+
+    # human and robot data
+    pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+
+    r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+    mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
+
+    # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
+    data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
+                                                      mech_nm_list, append_robot = True)    
+
+    # create the generator
+    #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+    nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
+    spl = splitters.Splitter(attr='partitions')
+    splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
+
+    cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+    os.system('mkdir -p '+cross_data_path)        
+    d = {}
+    count = 0
+    for l_wdata, l_vdata in splits:
+
+        if 'robot' in l_vdata.chunks[0]: 
+            print "Pass a robot chunk"
+            continue
+
+        count += 1
+        non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
+        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] # find same target samples in non_robot target samples
+
+        train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
+        test_trials  = l_vdata.samples
+        chunk = l_vdata.chunks[0]
+        target = l_vdata.targets[0]
+
+        #SAVE!!
+        d['train_trils'] = train_trials
+        d['test_trils'] = test_trials
+        d['chunk'] = chunk
+        d['target'] = target
+        save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
+        ut.save_pickle(d, save_file)
+
+
+    
     
 if __name__ == '__main__':
 
@@ -243,6 +290,7 @@ if __name__ == '__main__':
     ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 14  #14
+    trans_type = "left_right"
 
 
     # for block test
@@ -265,9 +313,10 @@ if __name__ == '__main__':
     # Training 
     lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
                       nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                      fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep)    
+                      fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
-    if opt.bCrossVal:
+
+    if opt.bCrossVal and False:
         print "------------- Cross Validation -------------"
 
         # Save file name
@@ -301,6 +350,37 @@ if __name__ == '__main__':
         ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
 
+    elif opt.bCrossVal:
+        print "------------- Cross Validation -------------"
+        # 1) Get data (Human)
+        # 2) Split by class
+        # 3) k-fold
+        # 4) Find a set of parameters (B,n) for HMM about training set
+        # 5) Find a d1 for AD about training set
+        # 6) AD Test about test data
+
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+        save_file = os.path.join(cross_data_path, 'data_1.pkl')        
+        if os.path.isfile(save_file) is False:
+            genCrossValData(data_path, cross_data_path)
+
+        # Get pkl list
+        # Make folder and mutex
+        
+            
+
+            ## for nState in xrange(10,35,1):
+
+            ##     lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
+            ##                       nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+            ##                       fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
+
+                
+            ##     lh.param_optimization(save_file=save_file)
+                
+            
+        
+        
     elif opt.bOptMeanVar:
         print "------------- Optimize B matrix -------------"
 
@@ -325,8 +405,8 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        ## h_ftan   = data_vecs[0][12,:].tolist() # ikea cabinet door openning data
-        ## h_config = np.arange(0,float(len(h_ftan)), 1.0)
+        h_ftan   = data_vecs[0][12,:].tolist() # ikea cabinet door openning data
+        h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
