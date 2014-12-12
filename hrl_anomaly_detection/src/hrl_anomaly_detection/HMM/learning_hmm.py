@@ -51,7 +51,7 @@ class learning_hmm(learning_base):
         self.step_size_list = step_size_list
         
         ## Un-tunable parameters
-        self.hmm_type = "full"
+        self.hmm_type = "left_right" #"full"
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
         self.A = None # transition matrix        
@@ -139,6 +139,13 @@ class learning_hmm(learning_base):
             self.mu_z[i]  = np.sum(zp)
             self.mu_z2[i] = self.mu_z[i]**2
             self.var_z    = np.sum(zp*self.state_range) - self.mu_z[i]**2
+
+        self.obs_prob = np.zeros((self.nState, len(self.obsrv_range)))
+        # Get all probability over states
+        for i in xrange(self.nState): 
+            (x_mu, x_sigma) = self.B[i]
+            self.obs_prob[i,:] = norm.pdf(self.obsrv_range,loc=x_mu,scale=x_sigma)
+        
 
         if verbose:
             A = np.array(A)
@@ -633,16 +640,18 @@ class learning_hmm(learning_base):
         if full_step:
 
             if self.hmm_type == "left_right":
-                r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.nState, self.B, \
+                r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.state_range, \
                                                        self.obsrv_range, \
+                                                       self.obs_prob, \
                                                        u_xi_list[i], \
                                                        u_omega_list[i], \
                                                        u_alpha_list[i], \
                                                        self.hmm_type) \
                                                        for i in xrange(self.nFutureStep) )
             else:
-                r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.nState, self.B, \
+                r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.state_range, \
                                                        self.obsrv_range, \
+                                                       self.obs_prob, \
                                                        u_mu_list[i], \
                                                        u_sigma_list[i], \
                                                        0, \
@@ -658,7 +667,7 @@ class learning_hmm(learning_base):
                         
                 ## max_idx = X_pred_prob[:,i].argmax()                    
                 ## X_pred[i] = self.obsrv_range[max_idx]
-                X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
+                X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i] + 0.000001)
                                 
         else:
             print "Predict on last part!!"
@@ -1054,30 +1063,39 @@ class learning_hmm(learning_base):
         plt.show()
 
 
-def f(i, nState, B, obsrv_range, u_mu, u_sigma, u_alpha, hmm_type="full"):
+## def f(i, nState, B, obsrv_range, u_mu, u_sigma, u_alpha, hmm_type="full"):
+def f(i, state_range, obsrv_range, obs_prob, u_mu, u_sigma, u_alpha, hmm_type="full"):
 
     if hmm_type == "left_right":        
         u_xi = u_mu
         u_omega = u_sigma
 
-    X_pred_prob = np.zeros((len(obsrv_range)))
-
+        # hidden state distribution
+        z_prob = hdl.skew_normal_distribution(state_range, loc=u_xi, scale=u_omega, skewness=u_alpha)        
+    else:
+        # hidden state distribution
+        z_prob = norm.pdf(state_range,loc=u_mu,scale=u_sigma)
+        
     # Get all probability over observations
+    X_pred_prob = np.zeros((len(obsrv_range)))    
     for j in xrange(len(obsrv_range)):
+        X_pred_prob[j] = np.sum(obs_prob[:,j]*z_prob)
     
-        # Get all probability over states
-        for k in xrange(nState): 
+    
+    ## # Get all probability over observations
+    ## for j in xrange(len(obsrv_range)):
+    
+    ##     # Get all probability over states
+    ##     for k in xrange(nState): 
 
-            if u_sigma != 0.0:
-                z_prob = norm.pdf(float(k),loc=u_mu,scale=u_sigma)
-            else:
-                if float(k) == u_mu: z_prob = 1.0
-                else: z_prob = 0.0
+    ##         if u_sigma != 0.0:
+    ##             z_prob = norm.pdf(float(k),loc=u_mu,scale=u_sigma)
+    ##         else:
+    ##             if float(k) == u_mu: z_prob = 1.0
+    ##             else: z_prob = 0.0
 
-            (x_mu, x_sigma) = B[k] #hmm.ml.getEmission(k)
-            X_pred_prob[j] += norm.pdf(obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
-
-    X_pred_prob /= sum(X_pred_prob)
+    ##         (x_mu, x_sigma) = B[k] #hmm.ml.getEmission(k)
+    ##         X_pred_prob[j] += norm.pdf(obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
 
     return X_pred_prob, i
                                               
