@@ -259,8 +259,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         time.sleep(0.5)
 
     mutex_file = cross_test_path+'/'+str(nState)+'/running_'+strMachine+'.txt'         
-    if hcu.is_file(cross_test_path+'/'+str(nState), 'running') and \
-        os.path.isfile(mutex_file) is False: 
+    if hcu.is_file(cross_test_path+'/'+str(nState), 'running'): 
         print "#############################################################################"
         print "Another machine Is Running already, ignore this : " , nState
         print "#############################################################################"
