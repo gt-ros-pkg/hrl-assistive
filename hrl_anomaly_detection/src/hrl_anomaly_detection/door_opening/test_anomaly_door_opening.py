@@ -257,15 +257,11 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
     if not(os.path.isdir(cross_test_path+'/'+str(nState))):
         os.system('mkdir -p '+cross_test_path+'/'+str(nState)) 
         time.sleep(0.5)
-
-    mutex_file = cross_test_path+'/'+str(nState)+'/running_'+strMachine+'.txt'         
-    if hcu.is_file(cross_test_path+'/'+str(nState), 'running'): 
+    elif hcu.is_file(cross_test_path+'/'+str(nState), 'complete'):
         print "#############################################################################"
-        print "Another machine Is Running already, ignore this : " , nState
-        print "#############################################################################"
+        print "All file exist "
+        print "#############################################################################"        
         return
-    else:
-        os.system('touch '+mutex_file)
 
     ## Load data pickle
     train_data = []
@@ -289,88 +285,41 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
             
     ####################################################################
 
+    count = 0
     for i in xrange(len(train_data)):
 
         B_tune_pkl = cross_test_path+'/'+str(nState)+'/B_tune_data_'+str(test_idx_list[i])+'.pkl'
+        mutex_file = cross_test_path+'/'+str(nState)+'/running_'+str(test_idx_list[i])+'_'+strMachine+'.txt'                 
+        if os.path.isfile(B_tune_pkl): 
+            count += 1
+            continue
+        elif hcu.is_file(cross_test_path+'/'+str(nState), 'running_'+str(test_idx_list[i])): 
+            print "#############################################################################"
+            print "Another machine Is Running already, ignore this : " , nState
+            print "#############################################################################"
+            continue
+        else:
+            os.system('touch '+mutex_file)
         
         lh = learning_hmm(data_path=os.getcwd(), aXData=train_data[i], nState=nState, 
                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type)            
         lh.param_optimization(save_file=B_tune_pkl)
 
-            
+        os.system('rm '+mutex_file)
 
-    os.system('rm '+mutex_file)
-    sys.exit()
+    if count == len(train_data):
+        print "#############################################################################"
+        print "All file exist "
+        print "#############################################################################"        
+        os.system('touch complete.txt')
         
 
+def get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type):
 
-##     # B range
-##     B_lower=[]
-##     B_upper=[]
-##     for i in xrange(nState):
-##         B_lower.append([0.1])
-##         B_lower.append([0.1])
-##         B_upper.append([20.])
-##         B_upper.append([4.])
 
-##     B_upper =  np.array(B_upper).flatten()            
-##     B_lower =  np.array(B_lower).flatten()            
+    return [idx_l, a_l, b_l]
 
-##     # minimizer param?
-##     class MyTakeStep(object):
-##         def __init__(self, stepsize=0.5, xmax=B_upper, xmin=B_lower):
-##             self.stepsize = stepsize
-##             self.xmax = xmax
-##             self.xmin = xmin
-##         def __call__(self, x):
-##             s = self.stepsize
-##             n = len(x)
-
-##             for i in xrange(n):
-##                 while True:
-
-##                     if i%2==0:                        
-##                         next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
-##                     else:
-##                         next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
-
-##                     if next_x > self.xmax[i] or next_x < self.xmin[i]:
-##                         continue
-##                     else:
-##                         x[i] = next_x
-##                         break
-
-##             ## for i in xrange(n/2):
-##             ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
-##             ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
-##             return x            
-
-##     class MyBounds(object):
-##         def __init__(self, xmax=B_upper, xmin=B_lower ):
-##             self.xmax = xmax
-##             self.xmin = xmin
-##         def __call__(self, **kwargs):
-##             x = kwargs["x_new"]
-##             tmax = bool(np.all(x <= self.xmax))
-##             tmin = bool(np.all(x >= self.xmin))
-##             return tmax and tmin
-
-##     def print_fun(x, f, accepted):
-##         print("at minima %.4f accepted %d" % (f, int(accepted)))
-
-##     bnds=[]
-##     for i in xrange(len(B_lower)):
-##         bnds.append([B_lower[i],B_upper[i]])
-
-##     mytakestep = MyTakeStep()
-##     mybounds = MyBounds()
-##     minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds, "args":(train_data, test_data, nState, nMaxStep, B_upper, B_lower)}
-##     ## self.last_x = None
-            
-##     # Tuning B parameter
-##     res = optimize.basinhopping(cross_val_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=1000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
-
-    
+        
 ## last_x = 0    
 ## last_score = 0
 ## def cross_val_score(self, x, *args):
@@ -537,50 +486,27 @@ if __name__ == '__main__':
         # optimization                
         for nState in xrange(10,35,1):        
             tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
-        
 
+        # Search best a and b + Get ROC data
+        alphas = np.arange(0.0, 0.6+0.00001, 0.2)
+        betas = np.arange(0.2, 0.6+0.00001, 0.2)
+
+        ## fp_list = []
+        ## mn_list = []
+        ## err_list = []
+        ## for alpha in alphas:
+        ##     for beta in betas:
+
+        ##         [idx_l, a_l, b_l] = get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type)
+                               
+        ##         [err, fp] = generate_roc_data_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
                 
+        ##         fp_list.append(fp)
+        ##         err_list.append(err)
+        ##         ## mn_list.append(mn_list)
+
+        ## # save data?
             
-        ## ## Load data pickle
-        ## for f in os.listdir(cross_data_path):
-        ##     if f.endswith(".pkl"):
-
-        ##         test_num = f.split('_')[-1].split('.')[0]
-
-        ##         if not(os.path.isdir(cross_test_path+'/'+str(test_num))):
-        ##             os.system('mkdir '+cross_test_path+'/'+str(test_num)) 
-        ##             time.sleep(0.5)
-                    
-        ##         mutex_file = cross_test_path+'/'+str(test_num)+'/running_'+strMachine+'.txt'
-        ##         if os.path.isfile(mutex_file): 
-        ##             print "#############################################################################"
-        ##             print "Another machine Is Running already, ignore this : " , test_num 
-        ##             print "#############################################################################"
-        ##             continue
-        ##         else:
-        ##             os.system('touch '+mutex_file)
-
-        ##         # Load data
-        ##         d = ut.load_pickle( os.path.join(cross_data_path,f) )
-        ##         train_trials = d['train_trials']
-        ##         test_trials  = d['test_trials']
-        ##         chunk        = d['chunk'] 
-        ##         target       = d['target']
-                
-        ##         # optimization                
-        ##         for nState in xrange(10,35,1):
-        ##             print "Start learn with nState: ", nState
-                    
-        ##             lh = learning_hmm(data_path=os.getcwd(), aXData=train_trials, nState=nState, 
-        ##                               nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-        ##                               fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
-
-        ##             B_tune_pkl = cross_test_path+'/'+str(test_num)+'/B_tune_nState_'+str(nState)+'.pkl'
-        ##             lh.param_optimization(save_file=B_tune_pkl)
-
-                    
-        ##         os.system('rm '+mutex_file)
-        ##         sys.exit()           
                 
             
         
