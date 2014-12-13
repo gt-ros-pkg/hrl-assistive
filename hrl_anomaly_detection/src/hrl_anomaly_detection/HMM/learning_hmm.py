@@ -330,13 +330,15 @@ class learning_hmm(learning_base):
         ## print string
 
         ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'step_size_list': self.step_size_list}]
-        params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'B': B.flatten()}]
+        ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'B': B.flatten()}]
 
         # Save data
         data = {}
-        data['mean'] = [fval]
-        data['std'] = [0]            
-        data['params'] = params_list
+        data['score'] = [fval]
+        data['nState'] = self.nState
+        data['fObsrvResol'] = self.fObsrvResol
+        data['B'] = B
+
         if save_file is None:
             save_file='tune_data.pkl'            
         ut.save_pickle(data, save_file)
