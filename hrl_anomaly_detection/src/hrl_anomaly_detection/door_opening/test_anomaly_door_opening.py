@@ -4,6 +4,7 @@ import sys, os, copy
 import numpy as np, math
 import glob
 import socket
+import time
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -204,6 +205,9 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
 def genCrossValData(data_path, cross_data_path):
 
+    save_file = os.path.join(cross_data_path, 'data_1.pkl')        
+    if os.path.isfile(save_file) is True: return
+    
     # human and robot data
     pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
 
@@ -240,13 +244,164 @@ def genCrossValData(data_path, cross_data_path):
         target = l_vdata.targets[0]
 
         #SAVE!!
-        d['train_trils'] = train_trials
-        d['test_trils'] = test_trials
+        d['train_trials'] = train_trials
+        d['test_trials'] = test_trials
         d['chunk'] = chunk
         d['target'] = target
         save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
         ut.save_pickle(d, save_file)
 
+        
+def runCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol=0.1, trans_type="left_right"):
+
+    if not(os.path.isdir(cross_test_path+'/'+str(nState))):
+        os.system('mkdir -p '+cross_test_path+'/'+str(nState)) 
+        time.sleep(0.5)
+
+    mutex_file = cross_test_path+'/'+str(nState)+'/running_'+strMachine+'.txt'
+    if os.path.isfile(mutex_file): 
+        print "#############################################################################"
+        print "Another machine Is Running already, ignore this : " , nState
+        print "#############################################################################"
+        return
+    else:
+        os.system('touch '+mutex_file)
+
+    ## Load data pickle
+    train_data = []
+    test_data = []
+    for f in os.listdir(cross_data_path):
+        if f.endswith(".pkl"):
+
+            # Load data
+            d = ut.load_pickle( os.path.join(cross_data_path,f) )
+            train_trials = d['train_trials']
+            test_trials  = d['test_trials']
+            chunk        = d['chunk'] 
+            target       = d['target']
+
+            train_data.append(train_trials)
+            test_data.append(test_trials)
+
+            
+    ####################################################################
+    # B range
+    B_lower=[]
+    B_upper=[]
+    for i in xrange(nState):
+        B_lower.append([0.1])
+        B_lower.append([0.1])
+        B_upper.append([20.])
+        B_upper.append([4.])
+
+    B_upper =  np.array(B_upper).flatten()            
+    B_lower =  np.array(B_lower).flatten()            
+
+    # minimizer param?
+    class MyTakeStep(object):
+        def __init__(self, stepsize=0.5, xmax=B_upper, xmin=B_lower):
+            self.stepsize = stepsize
+            self.xmax = xmax
+            self.xmin = xmin
+        def __call__(self, x):
+            s = self.stepsize
+            n = len(x)
+
+            for i in xrange(n):
+                while True:
+
+                    if i%2==0:                        
+                        next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
+                    else:
+                        next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
+
+                    if next_x > self.xmax[i] or next_x < self.xmin[i]:
+                        continue
+                    else:
+                        x[i] = next_x
+                        break
+
+            ## for i in xrange(n/2):
+            ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
+            ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
+            return x            
+
+    class MyBounds(object):
+        def __init__(self, xmax=B_upper, xmin=B_lower ):
+            self.xmax = xmax
+            self.xmin = xmin
+        def __call__(self, **kwargs):
+            x = kwargs["x_new"]
+            tmax = bool(np.all(x <= self.xmax))
+            tmin = bool(np.all(x >= self.xmin))
+            return tmax and tmin
+
+    def print_fun(x, f, accepted):
+        print("at minima %.4f accepted %d" % (f, int(accepted)))
+
+    bnds=[]
+    for i in xrange(len(B_lower)):
+        bnds.append([B_lower[i],B_upper[i]])
+
+    mytakestep = MyTakeStep()
+    mybounds = MyBounds()
+    minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds, "args":(train_data, test_data, nState, nMaxStep, B_upper, B_lower)}
+    ## self.last_x = None
+            
+    # Tuning B parameter
+    res = optimize.basinhopping(cross_val_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=1000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+
+            
+
+    os.system('rm '+mutex_file)
+    sys.exit()
+        
+
+last_x = 0    
+last_score = 0
+def cross_val_score(self, x, *args):
+
+    train_data = args[0]
+    test_data  = args[1]
+    nState     = args[2]
+    nMaxStep   = args[3]
+    fObsrvResol= args[4]
+    trans_type = args[5]
+    B_upper    = args[6]
+    B_lower    = args[7]
+
+    global last_x
+    global last_score
+    
+    # check limit
+    if last_x is None or np.linalg.norm(last_x-x) > 0.05:
+        tmax = bool(np.all(x <= B_upper))
+        tmin = bool(np.all(x >= B_lower))
+        if tmax and tmin == False: return 5            
+        last_x = x
+    else:
+        return last_score
+            
+    B=x.reshape((nState,2))
+
+    
+    total_score = 0.0
+    for i in xrange(len(train_data)):
+        
+        # Training 
+        lh = learning_hmm(data_path=os.getcwd(), aXData=train_data[i], nState=nState, 
+                          nMaxStep=nMaxStep, 
+                          fObsrvResol=fObsrvResol, trans_type=trans_type)    
+
+        A, _, pi, _ = doc.get_hmm_init_param(mech_class=cls)               
+        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+
+        
+        total_score += lh.score(test_data[i])
+    
+
+    return total_score
+    
 
     
     
@@ -358,25 +513,60 @@ if __name__ == '__main__':
         # 4) Find a set of parameters (B,n) for HMM about training set
         # 5) Find a d1 for AD about training set
         # 6) AD Test about test data
-
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-        save_file = os.path.join(cross_data_path, 'data_1.pkl')        
-        if os.path.isfile(save_file) is False:
-            genCrossValData(data_path, cross_data_path)
-
-        # Get pkl list
-        # Make folder and mutex
         
-            
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+        cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
+        strMachine = socket.gethostname()
+        
+        genCrossValData(data_path, cross_data_path)
 
-            ## for nState in xrange(10,35,1):
-
-            ##     lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
-            ##                       nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-            ##                       fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
+        # optimization                
+        for nState in xrange(10,35,1):        
+            runCrossValHMM(cross_data_path, cross_test_path, nState)
+        
 
                 
-            ##     lh.param_optimization(save_file=save_file)
+            
+        ## ## Load data pickle
+        ## for f in os.listdir(cross_data_path):
+        ##     if f.endswith(".pkl"):
+
+        ##         test_num = f.split('_')[-1].split('.')[0]
+
+        ##         if not(os.path.isdir(cross_test_path+'/'+str(test_num))):
+        ##             os.system('mkdir '+cross_test_path+'/'+str(test_num)) 
+        ##             time.sleep(0.5)
+                    
+        ##         mutex_file = cross_test_path+'/'+str(test_num)+'/running_'+strMachine+'.txt'
+        ##         if os.path.isfile(mutex_file): 
+        ##             print "#############################################################################"
+        ##             print "Another machine Is Running already, ignore this : " , test_num 
+        ##             print "#############################################################################"
+        ##             continue
+        ##         else:
+        ##             os.system('touch '+mutex_file)
+
+        ##         # Load data
+        ##         d = ut.load_pickle( os.path.join(cross_data_path,f) )
+        ##         train_trials = d['train_trials']
+        ##         test_trials  = d['test_trials']
+        ##         chunk        = d['chunk'] 
+        ##         target       = d['target']
+                
+        ##         # optimization                
+        ##         for nState in xrange(10,35,1):
+        ##             print "Start learn with nState: ", nState
+                    
+        ##             lh = learning_hmm(data_path=os.getcwd(), aXData=train_trials, nState=nState, 
+        ##                               nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+        ##                               fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
+
+        ##             B_tune_pkl = cross_test_path+'/'+str(test_num)+'/B_tune_nState_'+str(nState)+'.pkl'
+        ##             lh.param_optimization(save_file=B_tune_pkl)
+
+                    
+        ##         os.system('rm '+mutex_file)
+        ##         sys.exit()           
                 
             
         

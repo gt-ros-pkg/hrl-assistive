@@ -368,38 +368,6 @@ class learning_hmm(learning_base):
         self.last_score = -1.0 * sum(scores)/float(len(scores))
         return -1.0 * sum(scores)/float(len(scores))
 
-
-        ## # constraint check
-        ## if self.mean_vars_constraint1(x_int) != 0:
-        ##     return 100000000000000000
-        ## if self.mean_vars_constraint2(x_int) > 0:
-        ##     return 100000000000000000
-
-        ## # init
-        ## mu    = np.zeros((self.nState,1))
-        ## sigma = np.zeros((self.nState,1))
-
-        ## index = 0
-        ## m_init = 0
-        ## while (index < self.nState):
-        ##     temp_vec = self.aXData[:,(m_init):(m_init + int(x_int[index]))] 
-        ##     m_init = m_init + int(x_int[index])
-
-        ##     mu[index] = np.mean(temp_vec)
-        ##     sigma[index] = np.std(temp_vec)
-        ##     index = index+1
-
-        ## print x
-        ## n,_ = x.shape
-        ## score_list = [0.0]*n
-
-        ## for i in xrange(n):
-        
-            ## B = np.hstack([mu, sigma]).tolist() # Must be [i,:] = [mu, sigma]
-        
-        ## print "loop ",i, "/",n," : ",-1.0 * sum(scores)/float(len(scores)), x
-        ## score_list[i] = -1.0 * sum(scores)/float(len(scores))
-
         
     #----------------------------------------------------------------------        
     #
