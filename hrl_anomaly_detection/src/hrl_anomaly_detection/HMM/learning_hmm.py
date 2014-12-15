@@ -473,6 +473,8 @@ class learning_hmm(learning_base):
                 
                 pred_numerator = 0.0
                 ## pred_denominator = 0.0
+                t_mu = 0.0
+                t_var = 0.0
                 for j in xrange(self.nState): # N+1
 
                         
@@ -485,12 +487,19 @@ class learning_hmm(learning_base):
 
                     ## (mu, sigma) = self.ml.getEmission(j)
 
-                    pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
+                    t_mu += mu*total
+                    t_var += (sigma**2)*(total**2)
+                    ## pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
+                pred_numerator = norm.pdf(X_pred,loc=t_mu,scale=np.sqrt(t_var))
                 prob[i] = pred_numerator #/ np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
-                
-        return prob/np.sum(prob)
+
+        sum_prob = np.sum(prob)
+        if sum_prob == 0.0 or np.isnan(sum_prob):
+            return 0.0
+        else:
+            return prob/sum_prob
 
 
     #----------------------------------------------------------------------        
