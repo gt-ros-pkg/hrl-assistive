@@ -92,7 +92,7 @@ class learning_hmm(learning_base):
             #A,_ = mad.get_trans_mat(X_train, self.nState)
 
         if B is None:
-            if verbose: print "Generate new B matrix"                            
+            if verbose: print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.        
             self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
 
@@ -104,11 +104,11 @@ class learning_hmm(learning_base):
                     print "[Error]: negative component of B is not allowed"
                     ## sys.exit()
                     self.ml = None
-                    sys.exit()
+                    return
             except:
                 print "nState: ", self.nState
                 print "B_lower: ", len(self.B_lower)
-                print "B: ", len(B)
+                print "B: ", len(B.flatten())
                 sys.exit()
                 
         if pi is None:            
@@ -147,16 +147,21 @@ class learning_hmm(learning_base):
             zp             = self.A[i,:]*self.state_range
             self.mu_z[i]   = np.sum(zp)
             self.mu_z2[i]  = self.mu_z[i]**2
-            self.mu_z3[i]  = self.mu_z[i]**3
+            #self.mu_z3[i]  = self.mu_z[i]**3
             self.var_z[i]  = np.sum(zp*self.state_range) - self.mu_z[i]**2
-            self.sig_z3[i] = self.var_z[i]**(1.5)            
+            #self.sig_z3[i] = self.var_z[i]**(1.5)
 
         self.obs_prob = np.zeros((self.nState, len(self.obsrv_range)))
         # Get all probability over states
         for i in xrange(self.nState): 
             (x_mu, x_sigma) = self.B[i]
+            if x_sigma < self.B_lower[1]: x_sigma = self.B_lower[1]
+
             self.obs_prob[i,:] = norm.pdf(self.obsrv_range,loc=x_mu,scale=x_sigma)
             self.obs_prob[i,:] /= np.sum(self.obs_prob[i,:])
+            if np.isnan(np.sum(self.obs_prob[i,:])):
+                print "Wrong B!!"
+                sys.exit()
 
         if verbose:
             A = np.array(A)
@@ -220,6 +225,7 @@ class learning_hmm(learning_base):
 
             mu[index] = np.mean(temp_vec)
             sigma[index] = np.std(temp_vec)
+            if sigma[index] < 0.4: sigma[index] = 0.4
             index = index+1
 
         return mu,sigma
@@ -306,7 +312,7 @@ class learning_hmm(learning_base):
         bnds=[]
         for i in xrange(len(self.B_lower)):
             bnds.append([self.B_lower[i],self.B_upper[i]])
-                        
+
         mytakestep = MyTakeStep()
         mybounds = MyBounds()
         minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds}
@@ -371,7 +377,7 @@ class learning_hmm(learning_base):
             return self.last_score
             
         B=x.reshape((self.nState,2))              
-        
+
         # K-fold CV: Split the dataset in two equal parts
         nFold = 8
         scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, fit_params={'B': B}, n_jobs=-1)
