@@ -568,8 +568,8 @@ if __name__ == '__main__':
         genCrossValData(data_path, cross_data_path)
 
         # optimization                
-        ## for nState in xrange(10,35,1):        
-        for nState in xrange(10,11,1):        
+        for nState in xrange(10,35,1):        
+        ## for nState in xrange(10,11,1):        
             tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
 
         # Search best a and b + Get ROC data

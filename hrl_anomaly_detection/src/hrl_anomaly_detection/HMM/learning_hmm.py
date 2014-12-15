@@ -99,11 +99,17 @@ class learning_hmm(learning_base):
             # Emission probability matrix
             B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
         else:
-            if bool(np.all(B.flatten() >= self.B_lower)) == False:
-                print "[Error]: negative component of B is not allowed"
-                ## sys.exit()
-                self.ml = None
-                return
+            try:                
+                if bool(np.all(B.flatten() >= self.B_lower)) == False:
+                    print "[Error]: negative component of B is not allowed"
+                    ## sys.exit()
+                    self.ml = None
+                    sys.exit()
+            except:
+                print "nState: ", self.nState
+                print "B_lower: ", len(self.B_lower)
+                print "B: ", len(B)
+                sys.exit()
                 
         if pi is None:            
             # pi - initial probabilities per state 
