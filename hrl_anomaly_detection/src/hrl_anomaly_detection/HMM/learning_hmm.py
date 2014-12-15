@@ -56,6 +56,7 @@ class learning_hmm(learning_base):
         self.nMaxStep = nMaxStep  # the length of profile
         self.future_obsrv = None  # Future observation range
         self.A = None # transition matrix        
+        self.B = None # emission matrix        
 
         self.B_lower=[]
         self.B_upper=[]
@@ -83,7 +84,7 @@ class learning_hmm(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, A=None, B=None, pi=None, verbose=False):
+    def fit(self, X_train, A=None, B=None, pi=None, B_dict=None, verbose=False):
 
         if A is None:        
             if verbose: print "Generate new A matrix"                
@@ -91,14 +92,17 @@ class learning_hmm(learning_base):
             A = self.init_trans_mat(self.nState).tolist()
             #A,_ = mad.get_trans_mat(X_train, self.nState)
 
-        if B is None:
-            if verbose: print "Generate new B matrix"                                            
+        if B is None and B_dict is None:
+            print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.        
             self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
 
             # Emission probability matrix
             B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
         else:
+            if B_dict is not None:
+                B = B_dict['B']
+            
             try:                
                 if bool(np.all(B.flatten() >= self.B_lower)) == False:
                     print "[Error]: negative component of B is not allowed"
@@ -106,6 +110,7 @@ class learning_hmm(learning_base):
                     self.ml = None
                     return
             except:
+                print B
                 print "nState: ", self.nState
                 print "B_lower: ", len(self.B_lower)
                 print "B: ", len(B.flatten())
@@ -261,7 +266,7 @@ class learning_hmm(learning_base):
             index = index+1
 
         B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
-
+        
         ## hopping_step_size = np.zeros((self.nState*2))
         ## for i in xrange(self.nState):
         ##     hopping_step_size[i*2] = 2.0
@@ -377,11 +382,13 @@ class learning_hmm(learning_base):
             return self.last_score
             
         B=x.reshape((self.nState,2))              
-
+        B_dict = {}
+        B_dict['B'] = B # trick to avoid fit_params' bug
+        
         # K-fold CV: Split the dataset in two equal parts
         nFold = 8
-        scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, fit_params={'B': B}, n_jobs=-1)
-        ## scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, fit_params={'B': B})
+        scores = cross_validation.cross_val_score(self, self.aXData, fit_params={'B_dict': B_dict}, cv=nFold, n_jobs=-1)
+        ## scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold)
         
         ## print x, " : ", -1.0 * sum(scores)/float(len(scores))
         self.last_score = -1.0 * sum(scores)/float(len(scores))
@@ -519,7 +526,8 @@ class learning_hmm(learning_base):
         # Get all probability
         for i, obsrv in enumerate(self.obsrv_range):           
             if abs(X[-1]-obsrv) > 4.0: continue
-            X_pred_prob[i] = self.predict([X+[obsrv]])[0]       
+            prediction = self.predict([X+[obsrv]])
+            X_pred_prob[i] = np.squeeze(prediction)       
 
         # Select observation with maximum probability
         ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]

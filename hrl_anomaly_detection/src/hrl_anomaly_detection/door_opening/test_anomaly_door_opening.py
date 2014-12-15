@@ -304,7 +304,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         lh = learning_hmm(aXData=train_data[i], nState=nState, 
                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type)            
 
-        lh.fit(lh.aXData, verbose=False)    
+        ## lh.fit(lh.aXData, verbose=False)    
         
         lh.param_optimization(save_file=B_tune_pkl)
 
