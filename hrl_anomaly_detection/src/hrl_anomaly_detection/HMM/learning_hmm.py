@@ -633,6 +633,7 @@ class learning_hmm(learning_base):
                 
         else:
             (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
+            if u_var < 0.01: u_var = 0.4 #trick
 
             u_mu_list       = [0.0]*self.nFutureStep
             u_sigma_list    = [0.0]*self.nFutureStep
@@ -1091,20 +1092,17 @@ def f(i, state_range, obsrv_range, obs_prob, u_mu, u_sigma, u_alpha, trans_type=
         # hidden state distribution
         z_prob = norm.pdf(state_range,loc=u_mu,scale=u_sigma)
 
+    if np.sum(z_prob) < 0.0001:
+        print np.sum(z_prob), u_sigma
     z_prob /= np.sum(z_prob)         
     
     # Get all probability over observations
     X_pred_prob = np.zeros((len(obsrv_range)))    
     for j in xrange(len(obsrv_range)):
-
-        for z in obs_prob[:,j]:
-            if np.isnan(z):
-                print "-=----------------", j
-                print obs_prob[:,j]
-                sys.exit()
-
         X_pred_prob[j] = np.sum(obs_prob[:,j]*z_prob)
 
+    if np.sum(X_pred_prob) < 0.0001:
+        print np.sum(X_pred_prob), u_sigma
     X_pred_prob /= np.sum(X_pred_prob)        
     
     ## # Get all probability over observations

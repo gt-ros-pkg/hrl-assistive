@@ -317,7 +317,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         os.system('touch complete.txt')
         
 
-def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type):
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
 
     # Get the best param for training set
     test_idx_list = []
@@ -325,6 +325,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     test_data     = []
     B_list        = []
     nState_list   = []
+    score_list    = []
     
     for f in os.listdir(cross_data_path):
         if f.endswith(".pkl"):
@@ -347,14 +348,20 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
             dir_list = os.listdir(cross_test_path)
             for d in dir_list:
                 if os.path.isdir(cross_test_path+'/'+d) is not True: continue
-                f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
-                if os.path.isfile(f_pkl) is not True:
-                    print "#################################"
-                    print "There is no target file: ", f_pkl
-                    print "#################################"
+                ## if not(str(10) in d): continue
+
+                while True:
+                    f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
+                    if os.path.isfile(f_pkl) is not True:
+                        print "#################################"
+                        print "WAIT!! There is no target file: ", f_pkl
+                        print "#################################"
+                    else:
+                        break
+                    time.sleep(5.0)
                                                             
                 param_dict = ut.load_pickle(f_pkl)
-                
+
                 if min_nState == None:
                     min_nState = param_dict['nState']
                     min_score  = param_dict['score']
@@ -366,15 +373,19 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                                                             
             B_list.append(min_B)
             nState_list.append(min_nState)
+            score_list.append(min_score)
 
     ## print test_idx_list
     ## print nState_list
     ## print B_list
+    ## print score_list
+    
 
     print "------------------------------------------------------"
     print "Loaded all best params B and nState"
     print "------------------------------------------------------"
-    
+
+    strMachine = socket.gethostname()    
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
@@ -384,6 +395,13 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
     for i, test_idx in enumerate(test_idx_list):
 
+        tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
+        tune_res_file = os.path.join(cross_test_path, tune_res_file)
+        mutex_file = cross_test_path+'/running_'+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+"_"+strMachine+'.txt'                 
+        if os.path.isfile(tune_res_file): continue
+        elif os.path.isfile(mutex_file): continue
+        os.system('touch '+mutex_file)
+        
         print "Get train data ", test_idx
         nState = nState_list[i]
         B      = B_list[i]
@@ -398,7 +416,6 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
                           fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
         lh.fit(lh.aXData, B=B, verbose=False)    
-
         
         for a in np.arange(0.0, 0.6+0.00001, 0.2):
             for b in np.arange(0.5, 3.0+0.00001, 0.5):
@@ -421,7 +438,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                         if k>= start_step:                    
                             # check anomaly score
                             bAnomaly, _, mean_err = ac.check_anomaly(trial[k])
-                            print i,j,k, " -- ", bAnomaly, mean_err 
+                            ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
                             if bAnomaly: 
                                 false_pos[j, k-start_step] = 1.0 
                             else:
@@ -430,26 +447,24 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                             ## print "(",j,"/",len(trials)," ",k, ") : ", false_pos[j, k-start_step], max_err
 
                             #print "Test: ", j, false_pos[j, k-start_step], err_l[-1]
-                            
 
                 fp  = np.mean(false_pos.flatten())
                 err = np.mean(err_l)
-
+                
                 cost = a*fp + b*err
-                print a, b, " = ", fp, err, " : ", cost
+                print "a=",a, " b=",b, " ; ", "fp=", fp, " err=", err, " ; cost=", cost
                 
                 if min_cost > cost:
                     min_cost = cost
                     min_a    = a
                     min_b    = b
-                    
-        idx_l.append(test_idx)
-        a_l.append(min_a)
-        b_l.append(min_b)
-                                        
-    return [idx_l, a_l, b_l]
-    
 
+        tune_res_dict = {}
+        tune_res_dict['test_idx'] = test_idx
+        tune_res_dict['min_a'] = min_a
+        tune_res_dict['min_b'] = min_b
+        ut.save_pickle(tune_res_dict, tune_res_file)
+        os.system('rm '+mutex_file)
     
     
 if __name__ == '__main__':
@@ -571,6 +586,7 @@ if __name__ == '__main__':
         for nState in xrange(10,35,1):        
         ## for nState in xrange(10,11,1):        
             tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
+        # check complete or wait
 
         # Search best a and b + Get ROC data
         alphas = np.arange(0.0, 0.6+0.00001, 0.2)
@@ -585,7 +601,7 @@ if __name__ == '__main__':
                 print "alpha - beta: ", alpha, beta
                 
                 # Evaluate threshold in terms of training set
-                [idx_l, a_l, b_l] = get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type)
+                get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
                 ## [err, fp] = generate_roc_data_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
                 
