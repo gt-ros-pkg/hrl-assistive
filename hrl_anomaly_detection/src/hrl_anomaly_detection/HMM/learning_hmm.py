@@ -31,6 +31,7 @@ from sklearn import cross_validation
 from scipy import optimize
 ## from pysmac.optimize import fmin                
 from joblib import Parallel, delayed
+from scipy.optimize import fsolve
 
 from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
@@ -39,9 +40,9 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 
 class learning_hmm(learning_base):
-    def __init__(self, data_path, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None, trans_type="left_right"):
+    def __init__(self, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None, trans_type="left_right"):
 
-        learning_base.__init__(self, data_path, aXData, trans_type)
+        learning_base.__init__(self, aXData, trans_type)
         
         ## Tunable parameters                
         self.nState= nState # the number of hidden states
@@ -127,25 +128,29 @@ class learning_hmm(learning_base):
 
         # Future observation range
         self.max_obsrv = X_train.max()
-        self.obsrv_range = np.arange(0.0, self.max_obsrv*1.2, self.fObsrvResol)
+        self.obsrv_range = np.arange(-2.0, self.max_obsrv*1.0, self.fObsrvResol)
         self.state_range = np.arange(0, self.nState, 1)
 
         # Pre-computation for PHMM variables
-        self.mu_z  = np.zeros((self.nState))
-        self.mu_z2 = np.zeros((self.nState))
-        self.var_z = np.zeros((self.nState))
+        self.mu_z   = np.zeros((self.nState))
+        self.mu_z2  = np.zeros((self.nState))
+        self.mu_z3  = np.zeros((self.nState))
+        self.var_z  = np.zeros((self.nState))
+        self.sig_z3 = np.zeros((self.nState))
         for i in xrange(self.nState):
-            zp            = self.A[i,:]*self.state_range
-            self.mu_z[i]  = np.sum(zp)
-            self.mu_z2[i] = self.mu_z[i]**2
-            self.var_z    = np.sum(zp*self.state_range) - self.mu_z[i]**2
+            zp             = self.A[i,:]*self.state_range
+            self.mu_z[i]   = np.sum(zp)
+            self.mu_z2[i]  = self.mu_z[i]**2
+            self.mu_z3[i]  = self.mu_z[i]**3
+            self.var_z[i]  = np.sum(zp*self.state_range) - self.mu_z[i]**2
+            self.sig_z3[i] = self.var_z[i]**(1.5)            
 
         self.obs_prob = np.zeros((self.nState, len(self.obsrv_range)))
         # Get all probability over states
         for i in xrange(self.nState): 
             (x_mu, x_sigma) = self.B[i]
             self.obs_prob[i,:] = norm.pdf(self.obsrv_range,loc=x_mu,scale=x_sigma)
-        
+            self.obs_prob[i,:] /= np.sum(self.obs_prob[i,:])
 
         if verbose:
             A = np.array(A)
@@ -359,7 +364,7 @@ class learning_hmm(learning_base):
         else:
             return self.last_score
             
-        B=x.reshape((self.nState,2))
+        B=x.reshape((self.nState,2))              
         
         # K-fold CV: Split the dataset in two equal parts
         nFold = 8
@@ -473,7 +478,7 @@ class learning_hmm(learning_base):
 
                 prob[i] = pred_numerator #/ np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
                 
-        return prob
+        return prob/np.sum(prob)
 
 
     #----------------------------------------------------------------------        
@@ -591,20 +596,24 @@ class learning_hmm(learning_base):
             u_omega_list[0] = u_omega
             u_alpha_list[0] = u_alpha
 
+            print "-=-------------------------"            
             for i in xrange(self.nFutureStep-1):
+                print u_xi_list[i], u_omega_list[i], u_alpha_list[i]
                 u_xi_list[i+1], u_omega_list[i+1], u_alpha_list[i+1] = self.skew_normal_approximation(u_xi_list[i], u_omega_list[i], u_alpha_list[i])
+            print "-=-------------------------"
+                
         else:
             (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
 
-            u_mu_list  = [0.0]*self.nFutureStep
-            u_sigma_list = [0.0]*self.nFutureStep
-            u_mu_list[0]  = u_mu  # U_n+1 
+            u_mu_list       = [0.0]*self.nFutureStep
+            u_sigma_list    = [0.0]*self.nFutureStep
+            u_mu_list[0]    = u_mu  # U_n+1 
             u_sigma_list[0] = np.sqrt(u_var)
 
             for i in xrange(self.nFutureStep-1):
                 u_mu_list[i+1], u_sigma_list[i+1] = self.gaussian_approximation(u_mu_list[i], u_sigma_list[i])
-                
-                              
+            ## print X_test[-1], u_sigma_list
+
                 
         # Compute all intermediate steps (observation space)
         if full_step:
@@ -628,39 +637,38 @@ class learning_hmm(learning_base):
                                                        self.trans_type) \
                                                        for i in xrange(self.nFutureStep) )
                 
-                                              
+                                                       
             res, i = zip(*r)
             X_pred_prob = np.array(res).T 
-            
+
             # Recursive prediction for each future step
-            for i in xrange(self.nFutureStep):
-                        
+            ## for i in xrange(self.nFutureStep):                        
                 ## max_idx = X_pred_prob[:,i].argmax()                    
                 ## X_pred[i] = self.obsrv_range[max_idx]
-                X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i] + 0.000001)
-                                
+                ## X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
+                
         else:
             print "Predict on last part!!"
             
             # Recursive prediction for each future step
             i = self.nFutureStep - 1
 
+            z_prob = norm.pdf(range(self.nState),loc=u_mu_list[i],scale=u_sigma_list[i])
+            z_prob /= np.sum(z_prob)
+            
             # Get all probability over observations
             for j, obsrv in enumerate(self.obsrv_range):           
 
                 # Get all probability over states
                 for k in xrange(self.nState): 
 
-                    z_prob = norm.pdf(float(k),loc=u_mu_list[i],scale=u_sigma_list[i])
                     (x_mu, x_sigma) = self.ml.getEmission(k)                        
-                    X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
-
-                    if np.isnan(z_prob): sys.exit()
+                    X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob[k]
 
             max_idx = X_pred_prob[:,i].argmax()                    
             X_pred[i] = self.obsrv_range[max_idx]
             X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
-
+            
         ## return X_pred, X_pred_prob
         return None, X_pred_prob
         
@@ -673,9 +681,9 @@ class learning_hmm(learning_base):
         e_mu2  = 0.0
         e_var  = 0.0
 
-        if u_sigma == 0.0: u_sigma = 0.00001
+        if u_sigma <= 0.1: u_sigma = 0.1
         p_z    = norm.pdf(np.arange(0.0,float(self.nState),1.0),loc=u_mu,scale=u_sigma)
-        p_z    = p_z/np.sum(p_z)
+        p_z    /= np.sum(p_z)
 
         #
         e_mu  = np.sum(p_z*self.mu_z)
@@ -688,7 +696,7 @@ class learning_hmm(learning_base):
         ## print v, " = ", (e_var/sum(p_z)), (e_mu2/sum(p_z)), m**2
 
         if v < 0.0: print "Negative variance error: ", v
-        if v == 0.0: v = 1.0e-6
+        if v < 1.0e-2: v = 1.0e-2
         return m, np.sqrt(v)
 
         
@@ -700,31 +708,39 @@ class learning_hmm(learning_base):
         e_mu2  = 0.0
         e_var  = 0.0
 
-        if u_omega == 0.0: u_omega = 0.00001
+        if u_omega == 0.0: 
+            print "too small omega", u_omega, " =>", 0.00001            
+            u_omega = 0.00001
+            
         p_z    = hdl.skew_normal_distribution(np.arange(0.0,float(self.nState),1.0),loc=u_xi,scale=u_omega,skewness=u_alpha)
+        if np.sum(p_z) < 0.001: 
+            print "too small p_z", np.sum(p_z)
+            sys.exit()
         p_z    = p_z/np.sum(p_z)
 
-        # Need to speed up!!
+
+        # 
         e_mu  = np.sum(p_z*self.mu_z)
         e_mu2 = np.sum(p_z*self.mu_z2)
+        e_mu3 = np.sum(p_z*self.mu_z3)
         e_var = np.sum(p_z*self.var_z)
-        ## for i in xrange(self.nState):
-            ## zp     = self.A[i,:]*self.state_range
-            ## mu_z   = np.sum(zp)
-            ## ## p_z[i] = norm.pdf(float(i),loc=u_mu,scale=u_sigma)
-            
-            ## e_mu   += p_z[i] * self.mu_z[i]
-            ## e_mu2  += p_z[i] * mu_z**2
-            ## e_var  += p_z[i] * ( np.sum(zp*self.state_range) - mu_z**2 )
+        e_sig3= np.sum(p_z*self.sig_z3)
 
-        d = u_alpha / np.sqrt(1.0 + u_alpha**2)
+        # Given next distributino, compute skewness. How? 
+        gamma = (e_mu3 - 3.0*e_mu*e_sig3 - e_mu**3)/e_sig3
+        if gamma < 0.0:
+            print "Wrong skew value: ", gamma
+            gamma = 0.0
+            
+        s = alpha = fsolve(hdl.skew_normal_alpha_est, 4.0, args=(gamma))        
+
+        
+            
+        d = alpha / np.sqrt(1.0 + alpha**2)
         v = (e_var+e_mu2-e_mu**2) / (1. - 2.*d*d/np.pi)
         m = e_mu - np.sqrt(2.0 * v / np.pi) * d
-        s = (4.0-np.pi)/2.0 * (e_mu)/(e_mu2-e_mu**2)
+        ## s = (4.0-np.pi)/2.0 * (e_mu)/(e_mu2-e_mu**2)
 
-        ## print v, " = ", (e_var/sum(p_z)), (e_mu2/sum(p_z)), m**2
-
-        ## if v < 0.0: print "Negative scale error: ", v
         if v == 0.0: v = 1.0e-6
         return m, np.sqrt(v), s
         
@@ -966,9 +982,9 @@ class learning_hmm(learning_base):
                 ## Y_pred, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
                 _, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
                 for j in range(self.nFutureStep):
-                    print i,j, Y_pred_prob.shape
                     (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, Y_pred_prob[:,j])
-
+            
+                    
             print "Save pickle"                    
             data={}
             data['X_test'] = X_test
@@ -1045,12 +1061,22 @@ def f(i, state_range, obsrv_range, obs_prob, u_mu, u_sigma, u_alpha, trans_type=
     else:
         # hidden state distribution
         z_prob = norm.pdf(state_range,loc=u_mu,scale=u_sigma)
-        
+
+    z_prob /= np.sum(z_prob)         
+    
     # Get all probability over observations
     X_pred_prob = np.zeros((len(obsrv_range)))    
     for j in xrange(len(obsrv_range)):
+
+        for z in obs_prob[:,j]:
+            if np.isnan(z):
+                print "-=----------------", j
+                print obs_prob[:,j]
+                sys.exit()
+
         X_pred_prob[j] = np.sum(obs_prob[:,j]*z_prob)
-    
+
+    X_pred_prob /= np.sum(X_pred_prob)        
     
     ## # Get all probability over observations
     ## for j in xrange(len(obsrv_range)):

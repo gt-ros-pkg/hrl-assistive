@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_off=0.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, cost_alpha=1.0, cost_beta=0.0):
 
         # Object
         self.ml = ml
@@ -37,8 +37,8 @@ class anomaly_checker():
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
         self.fAnomaly    = self.ml.nFutureStep
-        self.sig_mult    = sig_mult
-        self.sig_off     = sig_off
+        self.cost_alpha    = cost_alpha
+        self.cost_beta     = cost_beta
         
         # N-buffers
         self.buf_dict = {}
@@ -70,7 +70,7 @@ class anomaly_checker():
                 y = Y_test
             else:
                 y = Y_test.tolist()
-                
+
             _, Y_pred_prob = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
 
             for j in xrange(self.nFutureStep):
@@ -85,35 +85,45 @@ class anomaly_checker():
         
     def check_anomaly(self, y):
 
-        a_coff = np.zeros((self.nFutureStep))
-        err    = np.zeros((self.nFutureStep))
-        fAnomaly = self.fAnomaly
-        
+        a_score  = np.zeros((self.nFutureStep))
+        err      = np.zeros((self.nFutureStep))
+
+        count = 0.
         for i in xrange(self.nFutureStep):
 
             # check buff size
-            if len(self.buf_dict['mu_'+str(i)]) < i+1:
-                a_coff[i] = 0.0
-                fAnomaly -= 1.0
-                continue
+            if len(self.buf_dict['mu_'+str(i)]) < i+1: continue
+            else: count += 1.
             
             mu  = self.buf_dict['mu_'+str(i)][0]
             sig = self.buf_dict['sig_'+str(i)][0]
-            ## if mu-sig_mult*sig > y or mu+sig_mult*sig < y:
-            if mu + self.sig_mult*sig + self.sig_off  < y:
-                a_coff[i] = 1.0
-            else:
-                a_coff[i] = 0.0
-                err[i] = mu+self.sig_mult*sig + self.sig_off - y
 
-        score= sum(a_coff)
-        ## print y, a_coff, score
+            a_score[i], err[i] = self.cost(y, i, mu, sig)
+
+        score= sum(a_score)
+
+        if score>0: bAnomaly = 1.0
+        else: bAnomaly = 0.0
+                
+        return bAnomaly, score, np.sum(err)/count
         
-        if score >= fAnomaly:
-            return True, score*(self.fAnomaly/fAnomaly), np.mean(err)
-        else:
-            return False, score*(self.fAnomaly/fAnomaly), np.mean(err)
+        ## ## if score >= fAnomaly:
+        ## if score > 0:
+        ##     return True, score*(self.fAnomaly/fAnomaly), np.mean(err)
+        ## else:
+        ##     return False, score*(self.fAnomaly/fAnomaly), np.mean(err)
 
+
+    def cost(self, val, buff_idx, mu, sig):
+
+        sig_mult = self.cost_alpha*float(buff_idx) + self.cost_beta
+        
+        if val > mu + sig_mult * sig:
+            return 1.0, 0.0
+        else:
+            err = mu + sig_mult * sig - val
+            return 0.0, err
+        
         
     def simulation(self, X_test, Y_test):
 
@@ -235,8 +245,8 @@ class anomaly_checker():
                 a_sig = np.hstack([0, np.sqrt(var[idx])])
 
                 lmean.set_data( a_X, a_mu)
-                lvar1.set_data( a_X, a_mu-1.*a_sig - self.sig_off)
-                lvar2.set_data( a_X, a_mu+1.*a_sig + self.sig_off) 
+                lvar1.set_data( a_X, a_mu-1.*a_sig - self.cost_beta)
+                lvar2.set_data( a_X, a_mu+1.*a_sig + self.cost_beta) 
                 lbar.set_height(fScore)
                 if fScore>=self.fAnomaly:
                     lbar.set_color('r')

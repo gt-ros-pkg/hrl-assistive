@@ -98,7 +98,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         print "-------------------------------"
         
         # Training 
-        lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
+        lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
                           fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
@@ -301,8 +301,11 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         else:
             os.system('touch '+mutex_file)
         
-        lh = learning_hmm(data_path=os.getcwd(), aXData=train_data[i], nState=nState, 
+        lh = learning_hmm(aXData=train_data[i], nState=nState, 
                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type)            
+
+        lh.fit(lh.aXData, verbose=False)    
+        
         lh.param_optimization(save_file=B_tune_pkl)
 
         os.system('rm '+mutex_file)
@@ -314,56 +317,137 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         os.system('touch complete.txt')
         
 
-def get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type):
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type):
 
+    # Get the best param for training set
+    test_idx_list = []
+    train_data    = []
+    test_data     = []
+    B_list        = []
+    nState_list   = []
+    
+    for f in os.listdir(cross_data_path):
+        if f.endswith(".pkl"):
+            test_num = f.split('_')[-1].split('.')[0]
 
+            # Load data
+            d = ut.load_pickle( os.path.join(cross_data_path,f) )
+            train_trials = d['train_trials']
+            test_trials  = d['test_trials']
+            chunk        = d['chunk'] 
+            target       = d['target']
+
+            test_idx_list.append(test_num)
+            train_data.append(train_trials)
+            test_data.append(test_trials)            
+
+            # find parameters with a minimum score
+            min_score  = 10000.0
+            min_nState = None
+            dir_list = os.listdir(cross_test_path)
+            for d in dir_list:
+                if os.path.isdir(cross_test_path+'/'+d) is not True: continue
+                f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
+                if os.path.isfile(f_pkl) is not True:
+                    print "#################################"
+                    print "There is no target file: ", f_pkl
+                    print "#################################"
+                                                            
+                param_dict = ut.load_pickle(f_pkl)
+                
+                if min_nState == None:
+                    min_nState = param_dict['nState']
+                    min_score  = param_dict['score']
+                    min_B      = param_dict['B']
+                elif min_score > param_dict['score']:
+                    min_nState = param_dict['nState']
+                    min_score  = param_dict['score']
+                    min_B      = param_dict['B']
+                                                            
+            B_list.append(min_B)
+            nState_list.append(min_nState)
+
+    ## print test_idx_list
+    ## print nState_list
+    ## print B_list
+
+    print "------------------------------------------------------"
+    print "Loaded all best params B and nState"
+    print "------------------------------------------------------"
+    
+    X_test = np.arange(0.0, 36.0, 1.0)
+    start_step = 2
+
+    idx_l = []
+    a_l = [] 
+    b_l = []   
+
+    for i, test_idx in enumerate(test_idx_list):
+
+        print "Get train data ", test_idx
+        nState = nState_list[i]
+        B      = B_list[i]
+        
+        min_cost = 10000
+        min_a    = None
+        min_b    = None
+
+        # Set a learning object
+        lh = None
+        lh = learning_hmm(aXData=train_data[i], nState=nState, 
+                          nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
+        lh.fit(lh.aXData, B=B, verbose=False)    
+
+        
+        for a in np.arange(0.0, 0.6+0.00001, 0.2):
+            for b in np.arange(0.5, 3.0+0.00001, 0.5):
+
+                # Init variables
+                false_pos = np.zeros((len(train_data[i]), len(train_data[i][0])-start_step))
+                ## tot = train_data[i].shape[0] * train_data[i].shape[1]
+                err_l = []
+
+                for j, trial in enumerate(train_data[i]):
+
+                    # Init checker
+                    ac = anomaly_checker(lh, cost_alpha=cost_alpha, cost_beta=cost_beta)
+
+                    # Simulate each profile
+                    for k in xrange(len(trial)):
+                        # Update buffer
+                        ac.update_buffer(X_test[:k+1], trial[:k+1])
+
+                        if k>= start_step:                    
+                            # check anomaly score
+                            bAnomaly, _, mean_err = ac.check_anomaly(trial[k])
+                            print i,j,k, " -- ", bAnomaly, mean_err 
+                            if bAnomaly: 
+                                false_pos[j, k-start_step] = 1.0 
+                            else:
+                                err_l.append(mean_err)
+
+                            ## print "(",j,"/",len(trials)," ",k, ") : ", false_pos[j, k-start_step], max_err
+
+                            #print "Test: ", j, false_pos[j, k-start_step], err_l[-1]
+                            
+
+                fp  = np.mean(false_pos.flatten())
+                err = np.mean(err_l)
+
+                cost = a*fp + b*err
+                print a, b, " = ", fp, err, " : ", cost
+                
+                if min_cost > cost:
+                    min_cost = cost
+                    min_a    = a
+                    min_b    = b
+                    
+        idx_l.append(test_idx)
+        a_l.append(min_a)
+        b_l.append(min_b)
+                                        
     return [idx_l, a_l, b_l]
-
-        
-## last_x = 0    
-## last_score = 0
-## def cross_val_score(self, x, *args):
-
-##     train_data = args[0]
-##     test_data  = args[1]
-##     nState     = args[2]
-##     nMaxStep   = args[3]
-##     fObsrvResol= args[4]
-##     trans_type = args[5]
-##     B_upper    = args[6]
-##     B_lower    = args[7]
-
-##     global last_x
-##     global last_score
-    
-##     # check limit
-##     if last_x is None or np.linalg.norm(last_x-x) > 0.05:
-##         tmax = bool(np.all(x <= B_upper))
-##         tmin = bool(np.all(x >= B_lower))
-##         if tmax and tmin == False: return 5            
-##         last_x = x
-##     else:
-##         return last_score
-            
-##     B=x.reshape((nState,2))
-
-    
-##     total_score = 0.0
-##     for i in xrange(len(train_data)):
-        
-##         # Training 
-##         lh = learning_hmm(data_path=os.getcwd(), aXData=train_data[i], nState=nState, 
-##                           nMaxStep=nMaxStep, 
-##                           fObsrvResol=fObsrvResol, trans_type=trans_type)    
-
-##         A, _, pi, _ = doc.get_hmm_init_param(mech_class=cls)               
-##         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
-
-        
-##         total_score += lh.score(test_data[i])
-    
-
-##     return total_score
     
 
     
@@ -375,7 +459,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=False, help='N-fold cross validation for parameter')
+                 default=True, help='N-fold cross validation for parameter')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
@@ -402,13 +486,12 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'_data/usr/advait/ram_www/data_from_robot_trials/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/modeling_forces/handheld_hook/'
     root_path = os.environ['HRLBASEPATH']+'/'
-    ## nState    = 19
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
-    ## data_column_idx = 1
     fObsrvResol = 0.1
     nCurrentStep = 14  #14
-    trans_type = "left_right"
+    ## trans_type = "left_right"
+    trans_type = "full"
 
 
     # for block test
@@ -429,7 +512,7 @@ if __name__ == '__main__':
     
     ######################################################    
     # Training 
-    lh = learning_hmm(data_path=os.getcwd(), aXData=data_vecs[0], nState=nState, 
+    lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
                       nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
                       fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
@@ -478,13 +561,15 @@ if __name__ == '__main__':
         # 6) AD Test about test data
         
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-        cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
+        cross_test_path = os.path.join(cross_data_path,'human_left_right')        
+        ## cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
         strMachine = socket.gethostname()
         
         genCrossValData(data_path, cross_data_path)
 
         # optimization                
-        for nState in xrange(10,35,1):        
+        ## for nState in xrange(10,35,1):        
+        for nState in xrange(10,11,1):        
             tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
 
         # Search best a and b + Get ROC data
@@ -494,12 +579,15 @@ if __name__ == '__main__':
         ## fp_list = []
         ## mn_list = []
         ## err_list = []
-        ## for alpha in alphas:
-        ##     for beta in betas:
+        for alpha in alphas:
+            for beta in betas:
 
-        ##         [idx_l, a_l, b_l] = get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type)
+                print "alpha - beta: ", alpha, beta
+                
+                # Evaluate threshold in terms of training set
+                [idx_l, a_l, b_l] = get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type)
                                
-        ##         [err, fp] = generate_roc_data_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
+                ## [err, fp] = generate_roc_data_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
                 
         ##         fp_list.append(fp)
         ##         err_list.append(err)
@@ -546,7 +634,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, sig_mult=1.0)
+            ac = anomaly_checker(lh, cost_alpha=1.0, cost_beta=0.0)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
