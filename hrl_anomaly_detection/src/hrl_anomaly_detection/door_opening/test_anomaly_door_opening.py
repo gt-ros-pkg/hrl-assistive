@@ -576,8 +576,8 @@ if __name__ == '__main__':
         # 6) AD Test about test data
         
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-        cross_test_path = os.path.join(cross_data_path,'human_left_right')        
-        ## cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
+        ## cross_test_path = os.path.join(cross_data_path,'human_left_right')        
+        cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
         strMachine = socket.gethostname()
         
         genCrossValData(data_path, cross_data_path)
