@@ -437,7 +437,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                 for j, trial in enumerate(train_data[i]):
 
                     # Init checker
-                    ac = anomaly_checker(lh, cost_alpha=a, cost_beta=b)
+                    ac = anomaly_checker(lh, score_a=a, score_b=b)
 
                     # Simulate each profile
                     for k in xrange(len(trial)):
