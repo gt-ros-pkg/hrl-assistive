@@ -616,7 +616,7 @@ if __name__ == '__main__':
                 # Evaluate threshold in terms of training set
                 get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
-                [err, fp] = gen_roc_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
+                ## [err, fp] = gen_roc_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
                 
         ##         fp_list.append(fp)
         ##         err_list.append(err)
