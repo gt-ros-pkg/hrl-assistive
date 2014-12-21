@@ -317,7 +317,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         os.system('touch complete.txt')
         
 
-def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
+def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type):
 
     # Get the best param for training set
     test_idx_list = []
@@ -326,7 +326,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     B_list        = []
     nState_list   = []
     score_list    = []
-    
+
+    #-----------------------------------------------------------------        
     for f in os.listdir(cross_data_path):
         if f.endswith(".pkl"):
             test_num = f.split('_')[-1].split('.')[0]
@@ -374,13 +375,19 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
             B_list.append(min_B)
             nState_list.append(min_nState)
             score_list.append(min_score)
-
-    ## print test_idx_list
-    ## print nState_list
-    ## print B_list
-    ## print score_list
+    
+    return test_idx_list, train_data, test_data, B_list, nState_list
     
 
+    
+    
+        
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
+
+    # Get the best param for training set
+    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)
+        
+    #-----------------------------------------------------------------            
     print "------------------------------------------------------"
     print "Loaded all best params B and nState"
     print "------------------------------------------------------"
@@ -393,6 +400,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     a_l = [] 
     b_l = []   
 
+        
+    #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
 
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
@@ -413,12 +422,12 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         # Set a learning object
         lh = None
         lh = learning_hmm(aXData=train_data[i], nState=nState, 
-                          nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+                          nMaxStep=nMaxStep,
                           fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
         lh.fit(lh.aXData, B=B, verbose=False)    
         
-        for a in np.arange(0.0, 0.6+0.00001, 0.2):
-            for b in np.arange(0.5, 3.0+0.00001, 0.5):
+        for a in np.arange(0.0, 0.25+0.00001, 0.05):
+            for b in np.arange(0.2, 1.4+0.00001, 0.3):
 
                 # Init variables
                 false_pos = np.zeros((len(train_data[i]), len(train_data[i][0])-start_step))
@@ -428,7 +437,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                 for j, trial in enumerate(train_data[i]):
 
                     # Init checker
-                    ac = anomaly_checker(lh, cost_alpha=cost_alpha, cost_beta=cost_beta)
+                    ac = anomaly_checker(lh, cost_alpha=a, cost_beta=b)
 
                     # Simulate each profile
                     for k in xrange(len(trial)):
@@ -451,7 +460,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                 fp  = np.mean(false_pos.flatten())
                 err = np.mean(err_l)
                 
-                cost = a*fp + b*err
+                cost = cost_alpha*fp + cost_beta*err
                 print "a=",a, " b=",b, " ; ", "fp=", fp, " err=", err, " ; cost=", cost
                 
                 if min_cost > cost:
@@ -463,9 +472,47 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         tune_res_dict['test_idx'] = test_idx
         tune_res_dict['min_a'] = min_a
         tune_res_dict['min_b'] = min_b
+        tune_res_dict['cost_alpha'] = cost_alpha
+        tune_res_dict['cost_beta'] = cost_beta        
         ut.save_pickle(tune_res_dict, tune_res_file)
         os.system('rm '+mutex_file)
-    
+
+
+def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
+
+    # Get the best param for training set
+    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)
+            
+    #-----------------------------------------------------------------
+    for i, test_idx in enumerate(test_idx_list):
+
+        tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
+        tune_res_file = os.path.join(cross_test_path, tune_res_file)
+
+        param_dict = ut.load_pickle(tune_res_file)
+        test_idx   = param_dict['test_idx']
+        min_a      = param_dict['min_a']
+        min_b      = param_dict['min_b']
+
+        nState = nState_list[i]
+        B      = B_list[i]
+        
+
+        lh = learning_hmm(aXData=train_data[i], nState=nState, \
+                          nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, \
+                          trans_type=trans_type)
+        lh.fit(lh.aXData, B=B, verbose=False)    
+        
+        
+        for j, trial in enumerate(train_data[i]):
+
+            # Init checker
+            ac = anomaly_checker(lh, cost_alpha=cost_alpha, cost_beta=cost_beta)
+        
+
+
+            
+        
     
 if __name__ == '__main__':
 
@@ -474,7 +521,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=True, help='N-fold cross validation for parameter')
+                 default=False, help='N-fold cross validation for parameter')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
@@ -532,41 +579,7 @@ if __name__ == '__main__':
                       fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
 
-    if opt.bCrossVal and False:
-        print "------------- Cross Validation -------------"
-
-        # Save file name
-        import socket, time
-        host_name = socket.gethostname()
-        t=time.gmtime()                
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',
-                                 host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
-                                 +str(t[3])+str(t[4])+'.pkl')
-
-        # Random step size
-        step_size_list_set = []
-        for i in xrange(300):
-            step_size_list = [1] * lh.nState
-            while sum(step_size_list)!=lh.nMaxStep:
-                ## idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
-                idx = int(random.randrange(0, lh.nState, 1))
-                
-                if idx < 0 or idx >= lh.nState: 
-                    continue
-                else:
-                    step_size_list[idx] += 1                
-            step_size_list_set.append(step_size_list)                    
-
-        
-        ## tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 
-        ##                      'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
-        tuned_parameters = [{'nState': [lh.nState], 'nFutureStep': [1], 
-                             'fObsrvResol': [0.05,0.1,0.15,0.2], 'step_size_list': step_size_list_set}]        
-
-        ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
-        lh.param_estimation(tuned_parameters, 10, save_file=save_file)
-
-    elif opt.bCrossVal:
+    if opt.bCrossVal: 
         print "------------- Cross Validation -------------"
         # 1) Get data (Human)
         # 2) Split by class
@@ -603,7 +616,7 @@ if __name__ == '__main__':
                 # Evaluate threshold in terms of training set
                 get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
-                ## [err, fp] = generate_roc_data_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
+                [err, fp] = gen_roc_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
                 
         ##         fp_list.append(fp)
         ##         err_list.append(err)
@@ -650,7 +663,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, cost_alpha=1.0, cost_beta=0.0)
+            ac = anomaly_checker(lh, score_a=0.05, score_b=0.5)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
@@ -902,7 +915,41 @@ if __name__ == '__main__':
 
 
 
+## and False:
+##         print "------------- Cross Validation -------------"
 
+##         # Save file name
+##         import socket, time
+##         host_name = socket.gethostname()
+##         t=time.gmtime()                
+##         save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune',
+##                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
+##                                  +str(t[3])+str(t[4])+'.pkl')
+
+##         # Random step size
+##         step_size_list_set = []
+##         for i in xrange(300):
+##             step_size_list = [1] * lh.nState
+##             while sum(step_size_list)!=lh.nMaxStep:
+##                 ## idx = int(random.gauss(float(lh.nState)/2.0,float(lh.nState)/2.0/2.0))
+##                 idx = int(random.randrange(0, lh.nState, 1))
+                
+##                 if idx < 0 or idx >= lh.nState: 
+##                     continue
+##                 else:
+##                     step_size_list[idx] += 1                
+##             step_size_list_set.append(step_size_list)                    
+
+        
+##         ## tuned_parameters = [{'nState': [20,25,30,35], 'nFutureStep': [1], 
+##         ##                      'fObsrvResol': [0.05,0.1,0.15,0.2,0.25], 'nCurrentStep': [5,10,15,20,25]}]
+##         tuned_parameters = [{'nState': [lh.nState], 'nFutureStep': [1], 
+##                              'fObsrvResol': [0.05,0.1,0.15,0.2], 'step_size_list': step_size_list_set}]        
+
+##         ## tuned_parameters = [{'nState': [20,30], 'nFutureStep': [1], 'fObsrvResol': [0.1]}]
+##         lh.param_estimation(tuned_parameters, 10, save_file=save_file)
+
+##     elif opt.bCrossVal:
 
 
 

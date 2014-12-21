@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, cost_alpha=1.0, cost_beta=0.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, score_a=1.0, score_b=0.0):
 
         # Object
         self.ml = ml
@@ -37,8 +37,8 @@ class anomaly_checker():
         self.aXRange     = np.arange(0.0,fXMax,self.fXInterval)
         self.fXTOL       = 1.0e-1
         self.fAnomaly    = self.ml.nFutureStep
-        self.cost_alpha    = cost_alpha
-        self.cost_beta     = cost_beta
+        self.score_a    = score_a
+        self.score_b     = score_b
         
         # N-buffers
         self.buf_dict = {}
@@ -116,7 +116,7 @@ class anomaly_checker():
 
     def cost(self, val, buff_idx, mu, sig):
 
-        sig_mult = self.cost_alpha*float(buff_idx) + self.cost_beta
+        sig_mult = self.score_a*float(buff_idx) + self.score_b
         
         if val > mu + sig_mult * sig:
             return 1.0, 0.0
@@ -245,8 +245,12 @@ class anomaly_checker():
                 a_sig = np.hstack([0, np.sqrt(var[idx])])
 
                 lmean.set_data( a_X, a_mu)
-                lvar1.set_data( a_X, a_mu-1.*a_sig - self.cost_beta)
-                lvar2.set_data( a_X, a_mu+1.*a_sig + self.cost_beta) 
+
+                sig_mult = self.score_a*np.arange(self.nFutureStep) + self.score_b
+                sig_mult = np.hstack([0, sig_mult])
+                
+                lvar1.set_data( a_X, a_mu - sig_mult*a_sig)
+                lvar2.set_data( a_X, a_mu + sig_mult*a_sig) 
                 lbar.set_height(fScore)
                 if fScore>=self.fAnomaly:
                     lbar.set_color('r')
