@@ -661,9 +661,9 @@ if __name__ == '__main__':
         test = True
 
         if opt.aws:
-            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-        else:
             cross_data_path = '\\54.148.167.161\/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+        else:
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
             
         ## cross_test_path = os.path.join(cross_data_path,'human_left_right')        
         cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
