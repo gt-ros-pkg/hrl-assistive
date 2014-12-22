@@ -658,7 +658,7 @@ if __name__ == '__main__':
         # 4) Find a set of parameters (B,n) for HMM about training set
         # 5) Find a d1 for AD about training set
         # 6) AD Test about test data
-        test = True
+        test = False
 
         if opt.aws:
             cross_data_path = '\\54.148.167.161\/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
