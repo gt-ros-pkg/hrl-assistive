@@ -317,7 +317,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         os.system('touch complete.txt')
         
 
-def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type):
+def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
 
     # Get the best param for training set
     test_idx_list = []
@@ -349,18 +349,10 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
             dir_list = os.listdir(cross_test_path)
             for d in dir_list:
                 if os.path.isdir(cross_test_path+'/'+d) is not True: continue
-                ## if not(str(10) in d): continue
+                if not(str(10) in d) and test==True: continue
 
-                while True:
-                    f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
-                    if os.path.isfile(f_pkl) is not True:
-                        print "#################################"
-                        print "WAIT!! There is no target file: ", f_pkl
-                        print "#################################"
-                    else:
-                        break
-                    time.sleep(5.0)
-                                                            
+                f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
+                hcu.wait_file(f_pkl)                                                            
                 param_dict = ut.load_pickle(f_pkl)
 
                 if min_nState == None:
@@ -399,7 +391,6 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     idx_l = []
     a_l = [] 
     b_l = []   
-
         
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
@@ -478,40 +469,118 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         os.system('rm '+mutex_file)
 
 
-def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
+def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, \
+                    fObsrvResol, trans_type, test=False):
 
+
+    roc_result_path = cross_test_path+'/roc_result'
+    if not(os.path.isdir(roc_result_path)):
+        os.system('mkdir -p '+roc_result_path) 
+        time.sleep(0.5)
+    
     # Get the best param for training set
-    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)
-            
+    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param( \
+        cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)   
+
     #-----------------------------------------------------------------
+
+    strMachine   = socket.gethostname()        
+    t_false_pos  = np.zeros((len(test_data), (len(test_data[i]), len(test_data[i][0])-start_step))        
+    t_err_l      = []        
+    bComplete    = True
+    
     for i, test_idx in enumerate(test_idx_list):
 
+        # Check saved or mutex files
+        roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
+                                    "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
+        mutex_file = os.path.join(roc_result_path, "running_"+str(test_idx)+ \
+                                       "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'_'+strMachine+'.txt')
+
+        if os.path.isfile(roc_res_file): continue
+        elif os.path.isfile(mutex_file): 
+            bComplete = False
+            continue
+        os.system('touch '+mutex_file)
+
+    
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, tune_res_file)
 
+        hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
-        test_idx   = param_dict['test_idx']
         min_a      = param_dict['min_a']
         min_b      = param_dict['min_b']
 
+        if test_idx is not param_dict['test_idx']:
+            print "------------------------------------------------------"
+            print "Test index is not same: ", test_idx, param_dict['test_idx']
+            print "------------------------------------------------------"
+
         nState = nState_list[i]
         B      = B_list[i]
-        
 
+        ## print train_data[i].shape
+        ## print nState
+        ## print nMaxStep
+        ## print fObsrvResol
+        ## print trans_type
+        ## print B
+        
         lh = learning_hmm(aXData=train_data[i], nState=nState, \
                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, \
                           trans_type=trans_type)
         lh.fit(lh.aXData, B=B, verbose=False)    
+
+        # Init variables
+        start_step = 2       
+        false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
+        err_l      = []        
         
         
-        for j, trial in enumerate(train_data[i]):
+        for j, trial in enumerate(test_data[i]):
 
             # Init checker
-            ac = anomaly_checker(lh, cost_alpha=cost_alpha, cost_beta=cost_beta)
+            ac = anomaly_checker(lh, score_a=min_a, score_b=min_b)
         
+            # Simulate each profile
+            for k in xrange(len(trial)):
+                # Update buffer
+                ac.update_buffer(X_test[:k+1], trial[:k+1])
 
+                if k>= start_step:                    
+                    # check anomaly score
+                    bAnomaly, _, mean_err = ac.check_anomaly(trial[k])
+                    ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
+                    if bAnomaly: 
+                        false_pos[j, k-start_step] = 1.0 
+                    else:
+                        err_l.append(mean_err)
 
-            
+                    ## print "(",j,"/",len(trials)," ",k, ") : ", false_pos[j, k-start_step], max_err
+
+        roc_res_dict = {}
+        roc_res_dict['test_idx'] = test_idx
+        roc_res_dict['min_a'] = min_a
+        roc_res_dict['min_b'] = min_b
+        roc_res_dict['cost_alpha'] = cost_alpha
+        roc_res_dict['cost_beta'] = cost_beta        
+        roc_res_dict['false_positive'] = false_pos
+        roc_res_dict['force_error'] = err_l
+        ut.save_pickle(roc_res_dict, roc_res_file)
+        os.system('rm '+mutex_file)
+
+    ## if bComplete:
+    ##     for i, test_idx in enumerate(test_idx_list):
+    ##         # Check saved or mutex files
+    ##         roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
+    ##                                     "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
+    
+    ## fp  = np.mean(false_pos.flatten())
+    ## err = np.mean(err_l)
+
+    ## return fp, err
+    return 0,0    
         
     
 if __name__ == '__main__':
@@ -542,6 +611,8 @@ if __name__ == '__main__':
                  default=False, help='Plot all paths')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
+    p.add_option('--aws', action='store_true', dest='aws',
+                 default=False, help='Use amazon cloud e2.')                 
     opt, args = p.parse_args()
 
     ## Init variables
@@ -587,8 +658,13 @@ if __name__ == '__main__':
         # 4) Find a set of parameters (B,n) for HMM about training set
         # 5) Find a d1 for AD about training set
         # 6) AD Test about test data
-        
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+        test = True
+
+        if opt.aws:
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+        else:
+            cross_data_path = '\\54.148.167.161\/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+            
         ## cross_test_path = os.path.join(cross_data_path,'human_left_right')        
         cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
         strMachine = socket.gethostname()
@@ -596,31 +672,33 @@ if __name__ == '__main__':
         genCrossValData(data_path, cross_data_path)
 
         # optimization                
-        for nState in xrange(10,35,1):        
-        ## for nState in xrange(10,11,1):        
-            tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
-        # check complete or wait
+        if test:
+            for nState in xrange(10,11,1):        
+                tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
+        else:
+            for nState in xrange(10,35,1):        
+                tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
 
         # Search best a and b + Get ROC data
         alphas = np.arange(0.0, 0.6+0.00001, 0.2)
         betas = np.arange(0.2, 0.6+0.00001, 0.2)
 
-        ## fp_list = []
+        fp_list = []
         ## mn_list = []
-        ## err_list = []
+        err_list = []
         for alpha in alphas:
             for beta in betas:
 
                 print "alpha - beta: ", alpha, beta
                 
                 # Evaluate threshold in terms of training set
-                get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
+                #get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
-                ## [err, fp] = gen_roc_by_cost(cross_data_path, cross_test_path, idx_l, a_l, b_l, nMaxStep, fObsrvResol, trans_type)
+                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=test)
                 
-        ##         fp_list.append(fp)
-        ##         err_list.append(err)
-        ##         ## mn_list.append(mn_list)
+                fp_list.append(fp)
+                err_list.append(err)
+                ## mn_list.append(mn_list)
 
         ## # save data?
             
