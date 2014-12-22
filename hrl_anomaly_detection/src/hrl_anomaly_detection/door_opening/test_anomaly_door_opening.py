@@ -485,8 +485,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
     #-----------------------------------------------------------------
 
     strMachine   = socket.gethostname()        
-    t_false_pos  = np.zeros((len(test_data), (len(test_data[i]), len(test_data[i][0])-start_step))        
-    t_err_l      = []        
+    ## t_false_pos  = np.zeros((len(test_data), (len(test_data[i]), len(test_data[i][0])-start_step))        
+    ## t_err_l      = []        
     bComplete    = True
     
     for i, test_idx in enumerate(test_idx_list):
