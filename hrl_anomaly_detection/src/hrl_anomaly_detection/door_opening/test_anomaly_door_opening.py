@@ -692,13 +692,13 @@ if __name__ == '__main__':
                 print "alpha - beta: ", alpha, beta
                 
                 # Evaluate threshold in terms of training set
-                #get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
+                get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
-                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=test)
+                ## [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=test)
                 
-                fp_list.append(fp)
-                err_list.append(err)
-                ## mn_list.append(mn_list)
+                ## fp_list.append(fp)
+                ## err_list.append(err)
+                ## ## mn_list.append(mn_list)
 
         ## # save data?
             
