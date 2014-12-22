@@ -367,7 +367,8 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
             B_list.append(min_B)
             nState_list.append(min_nState)
             score_list.append(min_score)
-    
+
+    print "Load cross validation params complete"
     return test_idx_list, train_data, test_data, B_list, nState_list
     
 
