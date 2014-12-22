@@ -350,6 +350,7 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
             for d in dir_list:
                 if os.path.isdir(cross_test_path+'/'+d) is not True: continue
                 if not(str(10) in d) and test==True: continue
+                if "roc" in d: continue
 
                 f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
                 hcu.wait_file(f_pkl)                                                            
