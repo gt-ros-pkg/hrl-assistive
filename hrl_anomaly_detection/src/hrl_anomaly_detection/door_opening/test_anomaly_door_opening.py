@@ -399,10 +399,19 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, tune_res_file)
-        mutex_file = cross_test_path+'/running_'+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+"_"+strMachine+'.txt'                 
+
+        mutex_file_part = 'running_'+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)
+        mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'        
+        mutex_file = cross_test_path+'/'+mutex_file_full
+        
         if os.path.isfile(tune_res_file): continue
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
+
+        # For AWS
+        if hcu.is_file_w_time(cross_test_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+            os.system('rm '+mutex_file)
+            continue
         
         print "Get train data ", test_idx
         nState = nState_list[i]
