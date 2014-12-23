@@ -519,9 +519,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         os.system('touch '+mutex_file)
 
         # For AWS
-        ## if hcu.is_file_w_time(roc_result_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
-        ##     os.system('rm '+mutex_file)
-        ##     continue
+        if hcu.is_file_w_time(roc_result_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+            os.system('rm '+mutex_file)
+            continue
         
     
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
