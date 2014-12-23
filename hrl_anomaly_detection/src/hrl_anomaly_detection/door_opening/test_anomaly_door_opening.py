@@ -314,7 +314,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         print "#############################################################################"
         print "All file exist "
         print "#############################################################################"        
-        os.system('touch complete.txt')
+        os.system('touch '+os.path.join(cross_test_path,str(nState),'complete.txt'))
         
 
 def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
