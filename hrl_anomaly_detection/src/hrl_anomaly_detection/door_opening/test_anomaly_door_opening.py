@@ -506,15 +506,23 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         # Check saved or mutex files
         roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
                                     "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
-        mutex_file = os.path.join(roc_result_path, "running_"+str(test_idx)+ \
-                                       "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'_'+strMachine+'.txt')
+
+        mutex_file_part = "running_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)  
+        mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
+        mutex_file = os.path.join(roc_result_path, mutex_file_full)
 
         if os.path.isfile(roc_res_file): continue
+        elif hcu.is_file(roc_result_path, mutex_file_part): continue        
         elif os.path.isfile(mutex_file): 
             bComplete = False
             continue
         os.system('touch '+mutex_file)
 
+        # For AWS
+        if hcu.is_file_w_time(roc_result_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+            os.system('rm '+mutex_file)
+            continue
+        
     
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, tune_res_file)
@@ -708,7 +716,14 @@ if __name__ == '__main__':
                 # Evaluate threshold in terms of training set
                 get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
-                ## [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=test)
+        # ##################
+        for alpha in alphas:
+            for beta in betas:
+
+                print "alpha - beta: ", alpha, beta
+                
+                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=test)
+
                 
                 ## fp_list.append(fp)
                 ## err_list.append(err)
