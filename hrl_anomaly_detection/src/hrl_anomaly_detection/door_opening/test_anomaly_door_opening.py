@@ -519,20 +519,20 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(roc_result_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
-            os.system('rm '+mutex_file)
-            continue
+        ## if hcu.is_file_w_time(roc_result_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        ##     os.system('rm '+mutex_file)
+        ##     continue
         
     
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, tune_res_file)
 
-        hcu.wait_file(tune_res_file)
+        ## hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
         min_a      = param_dict['min_a']
         min_b      = param_dict['min_b']
 
-        if test_idx is not param_dict['test_idx']:
+        if test_idx != param_dict['test_idx']:
             print "------------------------------------------------------"
             print "Test index is not same: ", test_idx, param_dict['test_idx']
             print "------------------------------------------------------"
@@ -556,6 +556,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         start_step = 2       
         false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
         err_l      = []        
+        X_test = np.arange(0.0, 36.0, 1.0)
         
         
         for j, trial in enumerate(test_data[i]):
@@ -579,6 +580,12 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
                     ## print "(",j,"/",len(trials)," ",k, ") : ", false_pos[j, k-start_step], max_err
 
+        print "--------------------"
+        print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos)
+        print "--------------------"
+        
+
+                    
         roc_res_dict = {}
         roc_res_dict['test_idx'] = test_idx
         roc_res_dict['min_a'] = min_a
@@ -717,6 +724,9 @@ if __name__ == '__main__':
                 get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
         # ##################
+        print "---------------------------------------------------"
+        print "Get ROC data using test set."
+        print "---------------------------------------------------"
         for alpha in alphas:
             for beta in betas:
 
