@@ -475,7 +475,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
                     fObsrvResol, trans_type, test=False):
 
 
-    print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     roc_result_path = cross_test_path+'/roc_result'
     if not(os.path.isdir(roc_result_path)):
         os.system('mkdir -p '+roc_result_path) 
