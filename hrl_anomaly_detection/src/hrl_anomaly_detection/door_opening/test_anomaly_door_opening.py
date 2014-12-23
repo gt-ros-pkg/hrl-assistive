@@ -405,6 +405,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         mutex_file = cross_test_path+'/'+mutex_file_full
         
         if os.path.isfile(tune_res_file): continue
+        elif hcu.is_file(cross_test_path, mutex_file_part): continue
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
 
