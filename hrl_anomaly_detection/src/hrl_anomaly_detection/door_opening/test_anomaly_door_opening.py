@@ -641,16 +641,18 @@ if __name__ == '__main__':
         nClass = 2
         cls = doc.class_list[nClass]
 
-    
-    pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
-    data_vecs, _, _ = mad.get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
-    A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls)        
-    
-    ######################################################    
-    # Training 
-    lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
-                      nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                      fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
+
+    if opt.bCrossVal is False: 
+        
+        pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
+        data_vecs, _, _ = mad.get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
+        A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls)        
+
+        ######################################################    
+        # Training 
+        lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
+                          nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
 
     if opt.bCrossVal: 
