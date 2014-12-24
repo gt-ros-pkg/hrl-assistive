@@ -351,6 +351,7 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
                 if os.path.isdir(cross_test_path+'/'+d) is not True: continue
                 if not(str(10) in d) and test==True: continue
                 if "roc" in d: continue
+                if "ab" in d: continue
 
                 f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
                 hcu.wait_file(f_pkl)                                                            
@@ -394,28 +395,33 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     a_l = [] 
     b_l = []   
 
-    cross_mutex_path = os.path.join(cross_test_path, 'mutex')
-    if not(os.path.isdir(cross_mutex_path)):
-        os.system('mkdir -p '+cross_mutex_path) 
-        time.sleep(0.5)
+    ## cross_mutex_path = os.path.join(cross_test_path, 'mutex')
+    ## if not(os.path.isdir(cross_mutex_path)):
+    ##     os.system('mkdir -p '+cross_mutex_path) 
+    ##     time.sleep(0.5)
         
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
 
+        tune_res_path = os.path.join(cross_test_path, "ab_for_d_"+str(test_idx))
+        if not(os.path.isdir(tune_res_path)):
+            os.system('mkdir -p '+tune_res_path) 
+            time.sleep(0.5)
+        
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
-        tune_res_file = os.path.join(cross_test_path, tune_res_file)
+        tune_res_file = os.path.join(tune_res_path, tune_res_file)
 
         mutex_file_part = 'running_'+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'        
-        mutex_file = cross_mutex_path+'/'+mutex_file_full
+        mutex_file = os.path.join(tune_res_path,mutex_file_full)
         
         if os.path.isfile(tune_res_file): continue
-        elif hcu.is_file(cross_mutex_path, mutex_file_part): continue
+        elif hcu.is_file(tune_res_path, mutex_file_part): continue
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(cross_mutex_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        if hcu.is_file_w_time(tune_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
         
@@ -490,10 +496,10 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
                     fObsrvResol, trans_type, test=False):
 
 
-    roc_result_path = cross_test_path+'/roc_result'
-    if not(os.path.isdir(roc_result_path)):
-        os.system('mkdir -p '+roc_result_path) 
-        time.sleep(0.5)
+    ## roc_result_path = cross_test_path+'/roc_result'
+    ## if not(os.path.isdir(roc_result_path)):
+    ##     os.system('mkdir -p '+roc_result_path) 
+    ##     time.sleep(0.5)
     
     # Get the best param for training set
     test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param( \
@@ -505,37 +511,37 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
     bComplete    = True
     start_step = 2       
 
-    roc_mutex_path = os.path.join(roc_result_path, 'mutex')
-    if not(os.path.isdir(roc_mutex_path)):
-        os.system('mkdir -p '+roc_mutex_path) 
-        time.sleep(0.5)
-    
     
     for i, test_idx in enumerate(test_idx_list):
 
+        roc_res_path = os.path.join(cross_test_path, "roc_for_d_"+str(test_idx))
+        if not(os.path.isdir(roc_res_path)):
+            os.system('mkdir -p '+roc_res_path) 
+            time.sleep(0.5)
+        
         # Check saved or mutex files
-        roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
+        roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                     "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
 
         mutex_file_part = "running_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)  
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
-        mutex_file = os.path.join(roc_mutex_path, mutex_file_full)
+        mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
         if os.path.isfile(roc_res_file): continue
-        elif hcu.is_file(roc_mutex_path, mutex_file_part): continue        
+        elif hcu.is_file(roc_res_path, mutex_file_part): continue        
         elif os.path.isfile(mutex_file): 
             bComplete = False
             continue
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(roc_mutex_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        if hcu.is_file_w_time(roc_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
         
     
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
-        tune_res_file = os.path.join(cross_test_path, tune_res_file)
+        tune_res_file = os.path.join(cross_test_path, "ab_for_d_"+str(test_idx), tune_res_file)
 
         ## hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
@@ -550,12 +556,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         nState = nState_list[i]
         B      = B_list[i]
 
-        ## print train_data[i].shape
-        ## print nState
-        ## print nMaxStep
-        ## print fObsrvResol
-        ## print trans_type
-        ## print B
         
         lh = learning_hmm(aXData=train_data[i], nState=nState, \
                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, \
@@ -612,7 +612,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         
         for i, test_idx in enumerate(test_idx_list):
             # Check saved or mutex files
-            roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
+            roc_res_path = os.path.join(cross_test_path, "roc_for_d_"+str(test_idx))            
+            roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                         "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
             roc_dict = ut.load_pickle(roc_res_file)
 
