@@ -720,8 +720,8 @@ if __name__ == '__main__':
 
         # --------------------------------------------------------            
         # Search best a and b + Get ROC data
-        alphas = np.arange(0.0, 2.0+0.00001, 0.4)
-        betas = np.arange(0.0, 0.6+0.00001, 0.2)
+        alphas = np.arange(0.0, 8.0+0.00001, 0.8)
+        betas = np.arange(0.0, 0.4+0.00001, 0.4)
 
         for alpha in alphas:
             for beta in betas:
