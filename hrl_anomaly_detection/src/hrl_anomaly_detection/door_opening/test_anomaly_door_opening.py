@@ -528,7 +528,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
         if os.path.isfile(roc_res_file): continue
-        elif hcu.is_file(roc_res_path, mutex_file_part): continue        
+        elif hcu.is_file(roc_res_path, mutex_file_part):
+            bComplete = False
+            continue
         elif os.path.isfile(mutex_file): 
             bComplete = False
             continue
@@ -620,6 +622,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
             if t_false_pos is None:                
                 t_false_pos = np.array(roc_dict['false_positive'])
             else:
+                if roc_dict['false_positive'] is None:
+                    print "aaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 t_false_pos = np.vstack([t_false_pos, np.array(roc_dict['false_positive'])])
                 
             t_err_l += roc_dict['force_error']
@@ -640,7 +644,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=False, help='N-fold cross validation for parameter')
+                 default=True, help='N-fold cross validation for parameter')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
