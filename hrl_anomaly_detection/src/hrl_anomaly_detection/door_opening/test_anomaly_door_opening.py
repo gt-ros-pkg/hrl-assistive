@@ -393,6 +393,11 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     idx_l = []
     a_l = [] 
     b_l = []   
+
+    cross_mutex_path = os.path.join(cross_test_path, 'mutex')
+    if not(os.path.isdir(cross_mutex_path)):
+        os.system('mkdir -p '+cross_mutex_path) 
+        time.sleep(0.5)
         
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
@@ -402,15 +407,15 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
         mutex_file_part = 'running_'+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'        
-        mutex_file = cross_test_path+'/'+mutex_file_full
+        mutex_file = cross_mutex_path+'/'+mutex_file_full
         
         if os.path.isfile(tune_res_file): continue
-        elif hcu.is_file(cross_test_path, mutex_file_part): continue
+        elif hcu.is_file(cross_mutex_path, mutex_file_part): continue
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(cross_test_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        if hcu.is_file_w_time(cross_mutex_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
         
@@ -499,6 +504,11 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
     strMachine   = socket.gethostname()        
     bComplete    = True
     start_step = 2       
+
+    roc_mutex_path = os.path.join(roc_result_path, 'mutex')
+    if not(os.path.isdir(roc_mutex_path)):
+        os.system('mkdir -p '+roc_mutex_path) 
+        time.sleep(0.5)
     
     
     for i, test_idx in enumerate(test_idx_list):
@@ -509,17 +519,17 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
         mutex_file_part = "running_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)  
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
-        mutex_file = os.path.join(roc_result_path, mutex_file_full)
+        mutex_file = os.path.join(roc_mutex_path, mutex_file_full)
 
         if os.path.isfile(roc_res_file): continue
-        elif hcu.is_file(roc_result_path, mutex_file_part): continue        
+        elif hcu.is_file(roc_mutex_path, mutex_file_part): continue        
         elif os.path.isfile(mutex_file): 
             bComplete = False
             continue
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(roc_result_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        if hcu.is_file_w_time(roc_mutex_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
         
