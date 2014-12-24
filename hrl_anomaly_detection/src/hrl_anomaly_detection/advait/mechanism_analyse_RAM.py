@@ -234,7 +234,7 @@ def compute_mean_std_force_traj(dir_name, plot = False):
     d2['typ'] = typ
     d2['rad'] = d['rad']
 
-    ut.save_pickle(d2, nm+'.pkl')
+    ut.save_pickle(d2, nm+'_new.pkl')
 
     if plot:
         maa.plot_tangential_force(dir_name, 'aloha')
@@ -711,6 +711,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
                 tot = trials.shape[0] * trials.shape[1]
                 fp_list.append(false_pos/(tot*0.01))
                 err = err[np.where(err>0)]
+                if len(err)==0: err = np.array([0])
                 err_list.append(err.flatten())
                 mn_list.append(np.mean(err))
             err_l_l.append(err_list)
@@ -1017,7 +1018,7 @@ def plot_different_mechanisms(nm_l, lab_l, c_l, max_len, st_list = None,
         ls = linestyle_l[i]
         st = st_list[i]
         ## print 'nm:', nm
-        d = ut.load_pickle('RAM_db/'+nm+'.pkl')
+        d = ut.load_pickle('RAM_db/'+nm+'_new.pkl')
         plot_reference_trajectory(d['config'][:max_len-st],
                 d['mean'][st:max_len], d['std'][st:max_len], d['typ'],
                 d['name'], c, c, lab, ls)
@@ -1051,15 +1052,15 @@ def pr2_cody_error_histogram():
     max_len = 40
 
     cody_pkl = 'ikea_cabinet_cody_5cm_cody'
-    d = ut.load_pickle('RAM_db/'+cody_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+cody_pkl+'_new.pkl')
     cody_mn = d['mean'][:max_len]
 
     pr2_pkl = 'ikea_cabinet_pr2'
-    d = ut.load_pickle('RAM_db/'+pr2_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+pr2_pkl+'_new.pkl')
     pr2_mn = d['mean'][:max_len]
 
     cody_pkl = 'ikea_cabinet_cody_10cm_cody'
-    d = ut.load_pickle('RAM_db/'+cody_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+cody_pkl+'_new.pkl')
     cody_fast_mn = d['mean'][:max_len]
 
     bins = np.arange(-0.75, 1.5, 0.5)
@@ -1119,11 +1120,11 @@ def human_pr2_error_histogram():
     max_len = 45
 
     one_pkl = 'HSI_kitchen_cabinet_right'
-    d = ut.load_pickle('RAM_db/'+one_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+one_pkl+'_new.pkl')
     one_mn = d['mean'][:max_len]
 
     two_pkl = 'kitchen_cabinet_dec7_10hz_separate_ft_pr2'
-    d = ut.load_pickle('RAM_db/'+two_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+two_pkl+'_new.pkl')
     two_mn = d['mean'][:max_len]
 
     bins = np.arange(-0.75, 2.0, 0.5)
@@ -1140,11 +1141,11 @@ def human_error_histogram():
     max_len = 40
 
     one_pkl = 'HSI_kitchen_cabinet_right_tiffany'
-    d = ut.load_pickle('RAM_db/'+one_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+one_pkl+'_new.pkl')
     one_mn = d['mean'][:max_len]
 
     two_pkl = 'HSI_kitchen_cabinet_right_advait'
-    d = ut.load_pickle('RAM_db/'+two_pkl+'.pkl')
+    d = ut.load_pickle('RAM_db/'+two_pkl+'_new.pkl')
     two_mn = d['mean'][:max_len]
 
     bins = np.arange(-0.75, 1.5, 0.5)
@@ -1268,7 +1269,7 @@ if __name__ == '__main__':
     data_path = root_path+'src/projects/modeling_forces/handheld_hook/'
 
     if opt.fig_roc_human:
-        pkl_list = glob.glob(data_path+'RAM_db/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
         mpu.set_figure_size(10, 7.)
@@ -1290,7 +1291,7 @@ if __name__ == '__main__':
 
 
     if opt.robot_roc:
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
         s_range = np.arange(0.05, 3.0, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
 
@@ -1303,7 +1304,7 @@ if __name__ == '__main__':
                            s_range, m_range, sem_c='c', sem_m='^',
                            semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
 
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*.pkl')
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
         s_range = np.arange(0.05, 1.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
@@ -1344,7 +1345,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         pp.show()
 
     if opt.pca:
-        pkl_list = glob.glob('RAM_db_r6100/*.pkl')
+        pkl_list = glob.glob('RAM_db_r6100/*_new.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         #proj_mat, s, mech_vec_list, mech_nm_list = dimen_reduction_mechanisms(r_pkls, dimen=2)
         #viz_pca(proj_mat, s, mech_vec_list)
@@ -1358,7 +1359,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         pp.show()
 
     if opt.robot_haptic_id:
-        pkl_list = glob.glob('RAM_db/*.pkl')
+        pkl_list = glob.glob('RAM_db/*_new.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         proj_mat, s, mech_vec_list, mech_nm_list = dimen_reduction_mechanisms(r_pkls, dimen=5)
         data = create_mvpa_dataset(proj_mat, mech_vec_list, mech_nm_list)
@@ -1382,14 +1383,14 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
                 'HSI_Executive_Board_Room_Cabinet_Right']
         for i in range(len(c_l)):
             c, nm, lab = c_l[i], nm_l[i], lab_l[i]
-            d = ut.load_pickle('RAM_db/'+nm+'.pkl')
+            d = ut.load_pickle('RAM_db/'+nm+'_new.pkl')
             plot_reference_trajectory(d['config'], d['mean'], d['std'],
                                       d['typ'], d['name'], c, c, lab)
         mpu.legend()
         pp.show()
 
     if opt.locked:
-        pkl_list = glob.glob('RAM_db/*.pkl')
+        pkl_list = glob.glob('RAM_db/*_new.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
         #proj_mat, s, mech_vec_list, mech_nm_list = dimen_reduction_mechanisms(r_pkls, dimen=5)
@@ -1397,7 +1398,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
 
     if opt.blocked:
         ## human data only
-        #pkl_list = glob.glob('RAM_db/*.pkl')
+        #pkl_list = glob.glob('RAM_db/*_new.pkl')
 
         # human and robot data
         pkl_list = glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/*_new.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/perfect_perception/*_new.pkl') + glob.glob(root_path+'src/projects/modeling_forces/handheld_hook/RAM_db/robot_trials/simulate_perception/*_new.pkl')
@@ -1416,7 +1417,7 @@ semantic_label = 'operating 1st time with \n accurate state estimation',
         #pp.show()
 
     if opt.bayes:
-        pkl_list = glob.glob('RAM_db/*.pkl')
+        pkl_list = glob.glob('RAM_db/*_new.pkl')
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
         test_bayesian(mech_vec_list, mech_nm_list)

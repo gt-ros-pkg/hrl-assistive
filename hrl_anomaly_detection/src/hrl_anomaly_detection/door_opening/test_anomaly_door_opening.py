@@ -497,9 +497,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
     #-----------------------------------------------------------------
 
     strMachine   = socket.gethostname()        
-    ## t_false_pos  = np.zeros((len(test_data), (len(test_data[i]), len(test_data[i][0])-start_step))        
-    ## t_err_l      = []        
     bComplete    = True
+    start_step = 2       
+    
     
     for i, test_idx in enumerate(test_idx_list):
 
@@ -553,7 +553,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         lh.fit(lh.aXData, B=B, verbose=False)    
 
         # Init variables
-        start_step = 2       
         false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
         err_l      = []        
         X_test = np.arange(0.0, 36.0, 1.0)
@@ -597,14 +596,27 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         ut.save_pickle(roc_res_dict, roc_res_file)
         os.system('rm '+mutex_file)
 
-    ## if bComplete:
-    ##     for i, test_idx in enumerate(test_idx_list):
-    ##         # Check saved or mutex files
-    ##         roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
-    ##                                     "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
-    
-    ## fp  = np.mean(false_pos.flatten())
-    ## err = np.mean(err_l)
+    if bComplete:
+        t_false_pos  = None
+        t_err_l      = []        
+        
+        for i, test_idx in enumerate(test_idx_list):
+            # Check saved or mutex files
+            roc_res_file = os.path.join(roc_result_path, "roc_"+str(test_idx)+ \
+                                        "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
+            roc_dict = ut.load_pickle(roc_res_file)
+
+            if t_false_pos is None:                
+                t_false_pos = np.array(roc_dict['false_positive'])
+            else:
+                t_false_pos = np.vstack([t_false_pos, np.array(roc_dict['false_positive'])])
+                
+            t_err_l += roc_dict['force_error']
+
+        fp  = np.mean(t_false_pos.flatten()) * 100.0
+        err = np.mean(np.array(t_err_l).flatten())
+        
+        return [fp, err]
 
     ## return fp, err
     return 0,0    
@@ -621,12 +633,12 @@ if __name__ == '__main__':
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
-                 default=True, help='Approximately compute the distribution of multi-step observations')
+                 default=False, help='Approximately compute the distribution of multi-step observations')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
-    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman',
+    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
                  help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
@@ -638,8 +650,6 @@ if __name__ == '__main__':
                  default=False, help='Plot all paths')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out everything')
-    p.add_option('--aws', action='store_true', dest='aws',
-                 default=False, help='Use amazon cloud e2.')                 
     opt, args = p.parse_args()
 
     ## Init variables
@@ -672,27 +682,16 @@ if __name__ == '__main__':
         data_vecs, _, _ = mad.get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
         A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls)        
 
-        ######################################################    
         # Training 
         lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
                           fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
 
-    if opt.bCrossVal: 
+    ###################################################################################            
+    if opt.bROCHuman or opt.bCrossVal: 
         print "------------- Cross Validation -------------"
-        # 1) Get data (Human)
-        # 2) Split by class
-        # 3) k-fold
-        # 4) Find a set of parameters (B,n) for HMM about training set
-        # 5) Find a d1 for AD about training set
-        # 6) AD Test about test data
-        test = False
-
-        if opt.aws:
-            cross_data_path = '\\54.148.167.161\/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-        else:
-            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
             
         ## cross_test_path = os.path.join(cross_data_path,'human_left_right')        
         cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
@@ -700,51 +699,101 @@ if __name__ == '__main__':
         
         genCrossValData(data_path, cross_data_path)
 
-        # optimization                
-        if test:
-            for nState in xrange(10,11,1):        
-                tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
-        else:
-            for nState in xrange(10,35,1):        
-                tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
+        # 1) HMM param optimization                
+        for nState in xrange(10,35,1):        
+            tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
 
+        # --------------------------------------------------------            
         # Search best a and b + Get ROC data
-        alphas = np.arange(0.0, 0.6+0.00001, 0.2)
-        betas = np.arange(0.2, 0.6+0.00001, 0.2)
+        alphas = np.arange(0.0, 2.0+0.00001, 0.4)
+        betas = np.arange(0.0, 0.6+0.00001, 0.2)
 
-        fp_list = []
-        ## mn_list = []
-        err_list = []
         for alpha in alphas:
             for beta in betas:
-
-                print "alpha - beta: ", alpha, beta
-                
+                if alpha == 0.0 and beta == 0.0: continue
                 # Evaluate threshold in terms of training set
                 get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
                                
-        # ##################
-        print "---------------------------------------------------"
-        print "Get ROC data using test set."
-        print "---------------------------------------------------"
+        # --------------------------------------------------------
+        fp_list = []
+        ## mn_list = []
+        err_list = []
+        
         for alpha in alphas:
             for beta in betas:
-
-                print "alpha - beta: ", alpha, beta
+                if alpha == 0.0 and beta == 0.0: continue
                 
-                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=test)
-
+                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type)
                 
-                ## fp_list.append(fp)
-                ## err_list.append(err)
-                ## ## mn_list.append(mn_list)
+                fp_list.append(fp)
+                err_list.append(err)
+                ## mn_list.append(mn_list)
 
-        ## # save data?
+        # --------------------------------------------------------
+        if opt.bROCPlot:
+
+            pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
+            s_range = np.arange(0.05, 5.0, 0.3) 
+            m_range = np.arange(0.1, 3.8, 0.6)
+
+            r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+            mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+            ## mpu.set_figure_size(10, 7.)
             
-                
+            pp.figure()                    
+            ## mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
+            mar.generate_roc_curve(mech_vec_list, mech_nm_list)
+            f = pp.gcf()
+            f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
+
+            #---------------------------------------
+            semantic_label='PHMM anomaly detection w/ known mechanisum class', 
+            sem_l=''; sem_c='r'; sem_m='*'                        
+            pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
+                    mec=sem_c, ms=6, mew=2)
+            #---------------------------------------
             
+            ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
+            ##         ms=6, mew=2)
+            ## pp.legend(loc='best',prop={'size':16})
+            pp.legend(loc=1,prop={'size':14})
+            pp.show()
+
+
+    ###################################################################################            
+    elif opt.bROCHuman:
+        # Need to copy block data from ../advait
         
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
+        s_range = np.arange(0.05, 5.0, 0.3) 
+        m_range = np.arange(0.1, 3.8, 0.6)
         
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+        mpu.set_figure_size(10, 7.)
+        nFutureStep = 8
+
+        
+        ## generate_roc_curve(mech_vec_list, mech_nm_list, \
+        ##                    nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
+        ##                    semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
+        ##                    roc_root_path=roc_root_path, semantic_label=str(nFutureStep)+ \
+        ##                    ' step PHMM with \n accurate state estimation', 
+        ##                    sem_c=color,sem_m=shape)
+
+        
+        pp.figure()
+        mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
+        mar.generate_roc_curve(mech_vec_list, mech_nm_list)
+        f = pp.gcf()
+        f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
+        ## pp.savefig('roc_compare.pdf')
+        pp.show()
+
+        
+    ###################################################################################                    
     elif opt.bOptMeanVar:
         print "------------- Optimize B matrix -------------"
 
@@ -758,7 +807,9 @@ if __name__ == '__main__':
                                  +str(t[3])+str(t[4])+str(t[5])+'.pkl')
 
         lh.param_optimization(save_file=save_file)
+
         
+    ###################################################################################                    
     elif opt.bUseBlockData:
 
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
@@ -815,6 +866,7 @@ if __name__ == '__main__':
         
             
         
+    ###################################################################################            
     elif opt.bApproxObsrv:
         if lh.nFutureStep <= 1: print "Error: nFutureStep should be over than 2."
         
@@ -833,35 +885,9 @@ if __name__ == '__main__':
             lh.init_plot()            
             lh.predictive_path_plot(np.array(x_test), np.array(x_pred), x_pred_prob, np.array(x_test_next))
             lh.final_plot()
-
-    elif opt.bROCHuman:
-        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
-        s_range = np.arange(0.05, 5.0, 0.3) 
-        m_range = np.arange(0.1, 3.8, 0.6)
-        
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-
-        ## mpu.set_figure_size(10, 7.)
-        nFutureStep = 8
-        cross_val_roc_curve
-        generate_roc_curve(mech_vec_list, mech_nm_list, \
-                           nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
-                           semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-                           roc_root_path=roc_root_path, semantic_label=str(nFutureStep)+ \
-                           ' step PHMM with \n accurate state estimation', 
-                           sem_c=color,sem_m=shape)
-
-        
-        ## pp.figure()
-        ## generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
-        ## generate_roc_curve(mech_vec_list, mech_nm_list)
-        ## f = pp.gcf()
-        ## f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
-        ## pp.savefig('roc_compare.pdf')
-        ## pp.show()
-                
+                            
             
+    ###################################################################################            
     elif opt.bROCRobot:
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
         s_range = np.arange(0.05, 5.0, 0.3) 
@@ -924,6 +950,7 @@ if __name__ == '__main__':
             pp.show()
                 
 
+    ###################################################################################            
     elif opt.bROCPHMMPlot:
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
         s_range = np.arange(0.05, 3.8, 0.2) 
@@ -972,6 +999,7 @@ if __name__ == '__main__':
         pp.show()
             
 
+    ###################################################################################            
     elif opt.bAllPlot:
 
         lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
