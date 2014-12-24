@@ -353,7 +353,6 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
                 if "roc" in d: continue
                 if "ab" in d: continue
 
-                print "------> ", d
                 f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
                 hcu.wait_file(f_pkl)                                                            
                 param_dict = ut.load_pickle(f_pkl)
