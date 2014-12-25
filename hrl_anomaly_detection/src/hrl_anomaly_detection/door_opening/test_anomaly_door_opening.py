@@ -547,7 +547,11 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "ab_for_d_"+str(test_idx), tune_res_file)
 
-        ## hcu.wait_file(tune_res_file)
+        ## if os.path.isfile(tune_res_file) is False: 
+        ##     bComplete = False
+        ##     continue
+        
+        hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
         min_a      = param_dict['min_a']
         min_b      = param_dict['min_b']
