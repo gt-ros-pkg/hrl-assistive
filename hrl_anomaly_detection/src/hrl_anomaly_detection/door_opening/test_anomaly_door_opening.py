@@ -724,7 +724,7 @@ if __name__ == '__main__':
 
         # --------------------------------------------------------            
         # Search best a and b + Get ROC data
-        future_steps = range(5,6,1)
+        future_steps = [1,2,4,8] #range(1,9,1)
         alphas = np.arange(0.0, 8.0+0.00001, 0.8)
         betas = np.arange(0.0, 0.4+0.00001, 0.4)
 
