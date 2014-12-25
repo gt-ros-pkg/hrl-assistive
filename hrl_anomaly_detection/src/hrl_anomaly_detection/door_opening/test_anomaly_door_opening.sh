@@ -13,3 +13,9 @@
 #su dpark -c 'source ~/.profile ; touch ~/hrl_file_server/dpark_data/anomaly/RSS2015/test.txt'     
                
 su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv' &
+
+su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv' &
+
+su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv' &
+
+su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv' &
