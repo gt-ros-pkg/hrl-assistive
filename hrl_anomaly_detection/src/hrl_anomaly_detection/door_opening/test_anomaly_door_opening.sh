@@ -12,15 +12,11 @@
                             
 #su dpark -c 'source ~/.profile ; touch ~/hrl_file_server/dpark_data/anomaly/RSS2015/test.txt'     
                
-sleep 5
+su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv &'
 
-su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv' 
+sleep 10.0
+su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly_door_opening.py --fig_roc_human &' 
 
-sleep 5.0
-
-su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --fig_roc_human' 
-
-sleep 5.0
 
 #su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv &' 
 #sleep 5.0
