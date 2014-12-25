@@ -14,11 +14,11 @@
                
 sleep 5
 su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv &' 
-sleep 5
+sleep 10.0
 su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv &' 
-sleep 5
+sleep 10.0
 su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv &' 
-sleep 5
+sleep 10.0
 su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv' 
-sleep 5
+sleep 10.0
 
