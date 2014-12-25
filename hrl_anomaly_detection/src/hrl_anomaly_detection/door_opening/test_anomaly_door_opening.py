@@ -352,6 +352,7 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
                 if not(str(10) in d) and test==True: continue
                 if "roc" in d: continue
                 if "ab" in d: continue
+                if "nFuture" in d: continue
 
                 f_pkl = os.path.join(cross_test_path, d, 'B_tune_data_'+str(test_num)+'.pkl')
                 hcu.wait_file(f_pkl)                                                            
@@ -377,7 +378,7 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
     
     
         
-def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, nFutureStep, test=False):
 
     # Get the best param for training set
     test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)
@@ -403,7 +404,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
 
-        tune_res_path = os.path.join(cross_test_path, "ab_for_d_"+str(test_idx))
+        tune_res_path = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "ab_for_d_"+str(test_idx))
         if not(os.path.isdir(tune_res_path)):
             os.system('mkdir -p '+tune_res_path) 
             time.sleep(0.5)
@@ -435,8 +436,9 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
         # Set a learning object
         lh = None
-        lh = learning_hmm(aXData=train_data[i], nState=nState, 
-                          nMaxStep=nMaxStep,
+        lh = learning_hmm(aXData=train_data[i], nState=nState, \
+                          nMaxStep=nMaxStep,\
+                          nFutureStep=nFutureStep,\
                           fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
         lh.fit(lh.aXData, B=B, verbose=False)    
         
@@ -513,8 +515,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
     
     for i, test_idx in enumerate(test_idx_list):
-
-        roc_res_path = os.path.join(cross_test_path, "roc_for_d_"+str(test_idx))
+        
+        roc_res_path = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "roc_for_d_"+str(test_idx))
         if not(os.path.isdir(roc_res_path)):
             os.system('mkdir -p '+roc_res_path) 
             time.sleep(0.5)
@@ -543,7 +545,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         
     
         tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
-        tune_res_file = os.path.join(cross_test_path, "ab_for_d_"+str(test_idx), tune_res_file)
+        tune_res_file = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "ab_for_d_"+str(test_idx), tune_res_file)
 
         ## hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
@@ -560,7 +562,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
         
         lh = learning_hmm(aXData=train_data[i], nState=nState, \
-                          nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, \
+                          nMaxStep=nMaxStep, \
+                          nFutureStep=nFutureStep, \
+                          fObsrvResol=fObsrvResol, \
                           trans_type=trans_type)
         lh.fit(lh.aXData, B=B, verbose=False)    
 
@@ -614,7 +618,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         
         for i, test_idx in enumerate(test_idx_list):
             # Check saved or mutex files
-            roc_res_path = os.path.join(cross_test_path, "roc_for_d_"+str(test_idx))            
+            roc_res_path = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "roc_for_d_"+str(test_idx))            
             roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                         "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
             roc_dict = ut.load_pickle(roc_res_file)
@@ -720,29 +724,31 @@ if __name__ == '__main__':
 
         # --------------------------------------------------------            
         # Search best a and b + Get ROC data
+        future_steps = range(5,6,1)
         alphas = np.arange(0.0, 8.0+0.00001, 0.8)
         betas = np.arange(0.0, 0.4+0.00001, 0.4)
 
-        for alpha in alphas:
-            for beta in betas:
-                if alpha == 0.0 and beta == 0.0: continue
-                # Evaluate threshold in terms of training set
-                get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, test=False)
-                               
-        # --------------------------------------------------------
-        fp_list = []
-        ## mn_list = []
-        err_list = []
-        
-        for alpha in alphas:
-            for beta in betas:
-                if alpha == 0.0 and beta == 0.0: continue
-                
-                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type)
-                
-                fp_list.append(fp)
-                err_list.append(err)
-                ## mn_list.append(mn_list)
+        for future_step in future_steps:
+            for alpha in alphas:
+                for beta in betas:
+                    if alpha == 0.0 and beta == 0.0: continue
+                    # Evaluate threshold in terms of training set
+                    get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep, test=False)
+
+            # --------------------------------------------------------
+            fp_list = []
+            ## mn_list = []
+            err_list = []
+
+            for alpha in alphas:
+                for beta in betas:
+                    if alpha == 0.0 and beta == 0.0: continue
+
+                    [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep)
+
+                    fp_list.append(fp)
+                    err_list.append(err)
+                    ## mn_list.append(mn_list)
 
         # --------------------------------------------------------
         if opt.bROCPlot:
