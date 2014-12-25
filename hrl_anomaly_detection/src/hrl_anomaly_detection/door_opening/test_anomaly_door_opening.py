@@ -388,7 +388,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     print "Loaded all best params B and nState"
     print "------------------------------------------------------"
 
-    strMachine = socket.gethostname()+"-"+str(os.getpid())    
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
@@ -422,9 +422,6 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         os.system('touch '+mutex_file)
 
         # For AWS
-        print "aaaaaaaaaaaaaaaaaaaaaaAA"
-        print mutex_file_full
-        print "aaaaaaaaaaaaaaaaaaaaaaAA"
         if hcu.is_file_w_time(tune_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=10.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
@@ -512,7 +509,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
     #-----------------------------------------------------------------
 
-    strMachine   = socket.gethostname()+"-"+str(os.getpid())
+    strMachine   = socket.gethostname()+"_"+str(os.getpid())
     bComplete    = True
     start_step = 2       
 
