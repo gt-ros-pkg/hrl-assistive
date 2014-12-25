@@ -495,7 +495,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
 
 def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, \
-                    fObsrvResol, trans_type, test=False):
+                    fObsrvResol, trans_type, nFutureStep=5, test=False):
 
 
     ## roc_result_path = cross_test_path+'/roc_result'
