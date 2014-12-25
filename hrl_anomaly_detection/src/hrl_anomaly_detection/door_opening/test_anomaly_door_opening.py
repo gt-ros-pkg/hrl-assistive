@@ -549,6 +549,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
         if os.path.isfile(tune_res_file) is False: 
             bComplete = False
+            os.system('rm '+mutex_file)            
             continue
         
         ## hcu.wait_file(tune_res_file)
