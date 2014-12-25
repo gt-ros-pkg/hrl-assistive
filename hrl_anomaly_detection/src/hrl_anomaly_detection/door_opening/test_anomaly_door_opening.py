@@ -388,7 +388,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     print "Loaded all best params B and nState"
     print "------------------------------------------------------"
 
-    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+    strMachine = socket.gethostname()+"-"+str(os.getpid())    
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
@@ -512,7 +512,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
 
     #-----------------------------------------------------------------
 
-    strMachine   = socket.gethostname()+"_"+str(os.getpid())
+    strMachine   = socket.gethostname()+"-"+str(os.getpid())
     bComplete    = True
     start_step = 2       
 
