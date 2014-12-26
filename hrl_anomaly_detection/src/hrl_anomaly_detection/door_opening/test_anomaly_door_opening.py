@@ -422,7 +422,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(tune_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        if hcu.is_file_w_time(tune_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=15.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
         
@@ -539,7 +539,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(roc_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=20.0, priority_check=True):
+        if hcu.is_file_w_time(roc_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=15.0, priority_check=True):
             os.system('rm '+mutex_file)
             continue
         
@@ -732,9 +732,10 @@ if __name__ == '__main__':
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [8, 1, 2, 4] 
+        ## future_steps = [8] 
         
-        alphas = np.arange(0.0, 8.0+0.00001, 0.8)
-        betas = np.arange(0.0, 0.4+0.00001, 0.4)
+        alphas = np.arange(0.0, 8.0+0.00001, 1.6)
+        betas = np.arange(0.0, 0.4+0.00001, 0.2)
 
         for nFutureStep in future_steps:
             for alpha in alphas:
