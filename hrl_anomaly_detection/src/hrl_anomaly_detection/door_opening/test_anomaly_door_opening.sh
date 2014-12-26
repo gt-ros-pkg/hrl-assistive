@@ -17,6 +17,15 @@ su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly
 sleep 5.0
 su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly_door_opening.py --fig_roc_human &' 
 
+sleep 5.0
+su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly_door_opening.py --fig_roc_human &' 
+
+sleep 5.0
+su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly_door_opening.py --fig_roc_human &' 
+
+sleep 5.0
+su dpark -c 'source ~/.profile ; nohup rosrun hrl_anomaly_detection test_anomaly_door_opening.py --fig_roc_human &' 
+
 
 #su dpark -c 'source ~/.profile ; rosrun hrl_anomaly_detection test_anomaly_door_opening.py --cv &' 
 #sleep 5.0
