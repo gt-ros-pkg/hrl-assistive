@@ -443,7 +443,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         lh.fit(lh.aXData, B=B, verbose=False)    
         
         for a in np.arange(0.0, 0.25+0.00001, 0.05):
-            for b in np.arange(0.2, 1.4+0.00001, 0.3):
+            for b in np.arange(0.2, 5.0+0.00001, 0.5):
 
                 # Init variables
                 false_pos = np.zeros((len(train_data[i]), len(train_data[i][0])-start_step))
@@ -730,7 +730,8 @@ if __name__ == '__main__':
         # --------------------------------------------------------            
         # Search best a and b + Get ROC data
         ## future_steps = [1,2,4,8] #range(1,9,1)
-        future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
+        ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
+        future_steps = [5] 
         
         alphas = np.arange(0.0, 8.0+0.00001, 0.8)
         betas = np.arange(0.0, 0.4+0.00001, 0.4)
@@ -739,6 +740,9 @@ if __name__ == '__main__':
             for alpha in alphas:
                 for beta in betas:
                     if alpha == 0.0 and beta == 0.0: continue
+                    if alpha == 0.0 and beta != betas[1]: continue
+                    if alpha != alphas[1] and beta == 0.0: continue
+                    
                     # Evaluate threshold in terms of training set
                     get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep, test=False)
 
@@ -750,12 +754,16 @@ if __name__ == '__main__':
             for alpha in alphas:
                 for beta in betas:
                     if alpha == 0.0 and beta == 0.0: continue
+                    if alpha == 0.0 and beta != betas[1]: continue
+                    if alpha != alphas[1] and beta == 0.0: continue
 
                     [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep)
 
                     fp_list.append(fp)
                     err_list.append(err)
                     ## mn_list.append(mn_list)
+
+            print fp_list
 
         # --------------------------------------------------------
         if opt.bROCPlot:

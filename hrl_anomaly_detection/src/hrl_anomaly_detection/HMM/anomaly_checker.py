@@ -116,7 +116,7 @@ class anomaly_checker():
 
     def cost(self, val, buff_idx, mu, sig):
 
-        sig_mult = self.score_a*float(buff_idx) + self.score_b
+        sig_mult = self.score_a*(float(buff_idx)-1.0) + self.score_b
         
         if val > mu + sig_mult * sig:
             return 1.0, 0.0
