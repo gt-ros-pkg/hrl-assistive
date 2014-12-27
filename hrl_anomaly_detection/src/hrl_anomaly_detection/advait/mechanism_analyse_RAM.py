@@ -1302,7 +1302,8 @@ if __name__ == '__main__':
         pp.figure()
         generate_roc_curve(mech_vec_list, mech_nm_list,
                            s_range, m_range, sem_c='c', sem_m='^',
-                           semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
+                           semantic_label = 'operating 1st time with \n uncertainty in state estimation', \
+                           plot_prev=False)
 
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
         s_range = np.arange(0.05, 1.8, 0.2) 

@@ -209,7 +209,9 @@ def genCrossValData(data_path, cross_data_path):
     if os.path.isfile(save_file) is True: return
     
     # human and robot data
-    pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+    pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
+      glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
+      glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
 
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
     mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
@@ -236,7 +238,8 @@ def genCrossValData(data_path, cross_data_path):
 
         count += 1
         non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
-        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] # find same target samples in non_robot target samples
+        # find same target samples in non_robot target samples        
+        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
 
         train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
         test_trials  = l_vdata.samples
@@ -662,6 +665,12 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
                  default=True, help='N-fold cross validation for parameter')
+    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
+                 help='generate ROC like curve from the BIOROB dataset.')
+    p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
+                 default=False, help='Plot roc curve wrt robot data')
+    p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
+                 default=False, help='Plot roc curve wrt robot data')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
@@ -670,12 +679,6 @@ if __name__ == '__main__':
                  default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
-    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
-                 help='generate ROC like curve from the BIOROB dataset.')
-    p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
-                 default=False, help='Plot roc curve wrt robot data')
-    p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
-                 default=False, help='Plot roc curve wrt robot data')
     p.add_option('--fig_roc_phmm_comp_plot', '--pc_plot', action='store_true', dest='bROCPHMMPlot',
                  default=False, help='Plot phmm comparison roc curve wrt robot data')
     p.add_option('--all_path_plot', '--all', action='store_true', dest='bAllPlot',
@@ -722,7 +725,7 @@ if __name__ == '__main__':
 
     ###################################################################################            
     if opt.bROCHuman or opt.bCrossVal: 
-        print "------------- Cross Validation -------------"
+        print "------------- ROC HUMAN -------------"
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
             
         ## cross_test_path = os.path.join(cross_data_path,'human_left_right')        
@@ -814,37 +817,69 @@ if __name__ == '__main__':
 
 
     ###################################################################################            
-    elif opt.bROCHuman:
-        # Need to copy block data from ../advait
-        
-        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
+    elif opt.bROCRobot:
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
         s_range = np.arange(0.05, 5.0, 0.3) 
         m_range = np.arange(0.1, 3.8, 0.6)
+
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)        
+        
+        ## mpu.set_figure_size(13, 7.)
+        if opt.bROCPlot and False:
+            pp.figure()        
+            mar.generate_roc_curve(mech_vec_list, mech_nm_list,
+                               s_range, m_range, sem_c='c', sem_m='^',
+                               ## semantic_label = 'operating 1st time with \n uncertainty in state estimation', \
+                               ## plot_prev=False)
+                               semantic_label = 'probabilistic model with \n uncertainty in state estimation', \
+                               plot_prev=False)
+
+        #--------------------------------------------------------------------------------
+        
+        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
+        s_range = np.arange(0.05, 3.8, 0.2) 
+        m_range = np.arange(0.1, 3.8, 0.6)        
         
         r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-
-        mpu.set_figure_size(10, 7.)
-        nFutureStep = 8
-
         
-        ## generate_roc_curve(mech_vec_list, mech_nm_list, \
-        ##                    nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
-        ##                    semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-        ##                    roc_root_path=roc_root_path, semantic_label=str(nFutureStep)+ \
-        ##                    ' step PHMM with \n accurate state estimation', 
-        ##                    sem_c=color,sem_m=shape)
+        # advait
+        if opt.bROCPlot:
+            mad.generate_roc_curve(mech_vec_list, mech_nm_list,
+                                    s_range, m_range, sem_c='b',
+                                    ## semantic_label = 'operating 1st time with \n accurate state estimation',
+                                    semantic_label = 'probabilistic model with \n accurate state estimation',
+                                    plot_prev=False)
 
+        #--------------------------------------------------------------------------------
+        # Set the default color cycle
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+        ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
+        ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
         
-        pp.figure()
-        mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
-        mar.generate_roc_curve(mech_vec_list, mech_nm_list)
-        f = pp.gcf()
-        f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
-        ## pp.savefig('roc_compare.pdf')
-        pp.show()
-
+        ## for i in xrange(1,9,3):
+        for i in [1,8]:
+            color = colors.next()
+            shape = shapes.next()
+            roc_root_path = roc_data_path+'_'+str(i)
+            generate_roc_curve(mech_vec_list, mech_nm_list, \
+                               nFutureStep=i,fObsrvResol=fObsrvResol,
+                               semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
+                               roc_root_path=roc_root_path, semantic_label=str(i)+ \
+                               ' step PHMM with \n accurate state estimation', 
+                               sem_c=color,sem_m=shape)
+        ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
+        if opt.bROCPlot: 
+            ## pp.xlim(-0.5,27)
+            pp.xlim(-0.5,5)
+            pp.ylim(0.,5)
+            pp.savefig('robot_roc_sig_0_3.pdf')
+            pp.show()
+    
     ###################################################################################                    
     elif opt.bOptMeanVar:
         print "------------- Optimize B matrix -------------"
@@ -939,66 +974,6 @@ if __name__ == '__main__':
                             
             
     ###################################################################################            
-    elif opt.bROCRobot:
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
-        s_range = np.arange(0.05, 5.0, 0.3) 
-        m_range = np.arange(0.1, 3.8, 0.6)
-
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)        
-        
-        ## mpu.set_figure_size(13, 7.)
-        if opt.bROCPlot and False:        
-            pp.figure()        
-            mar.generate_roc_curve(mech_vec_list, mech_nm_list,
-                               s_range, m_range, sem_c='c', sem_m='^',
-                               ## semantic_label = 'operating 1st time with \n uncertainty in state estimation', plot_prev=False)
-                               semantic_label = 'probabilistic model with \n uncertainty in state estimation', plot_prev=False)
-
-        #--------------------------------------------------------------------------------
-        
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
-        s_range = np.arange(0.05, 3.8, 0.2) 
-        m_range = np.arange(0.1, 3.8, 0.6)        
-        
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-        
-        # advait
-        if opt.bROCPlot:
-            mad.generate_roc_curve(mech_vec_list, mech_nm_list,
-                                    s_range, m_range, sem_c='b',
-                                    ## semantic_label = 'operating 1st time with \n accurate state estimation',
-                                    semantic_label = 'probabilistic model with \n accurate state estimation',
-                                    plot_prev=False)
-
-        #--------------------------------------------------------------------------------
-        # Set the default color cycle
-        import itertools
-        colors = itertools.cycle(['g', 'm', 'c', 'k'])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
-        ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
-        ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
-        
-        ## for i in xrange(1,9,3):
-        for i in [1,8]:
-            color = colors.next()
-            shape = shapes.next()
-            roc_root_path = roc_data_path+'_'+str(i)
-            generate_roc_curve(mech_vec_list, mech_nm_list, \
-                               nFutureStep=i,fObsrvResol=fObsrvResol,
-                               semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-                               roc_root_path=roc_root_path, semantic_label=str(i)+ \
-                               ' step PHMM with \n accurate state estimation', 
-                               sem_c=color,sem_m=shape)
-        ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
-        
-        if opt.bROCPlot: 
-            ## pp.xlim(-0.5,27)
-            pp.xlim(-0.5,5)
-            pp.ylim(0.,5)
-            pp.savefig('robot_roc_sig_0_3.pdf')
-            pp.show()
                 
 
     ###################################################################################            
@@ -1149,3 +1124,34 @@ if __name__ == '__main__':
 
 
 
+    ## elif opt.bROCHuman:
+    ##     # Need to copy block data from ../advait
+        
+    ##     pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
+    ##     s_range = np.arange(0.05, 5.0, 0.3) 
+    ##     m_range = np.arange(0.1, 3.8, 0.6)
+        
+    ##     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+    ##     mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+    ##     mpu.set_figure_size(10, 7.)
+    ##     nFutureStep = 8
+
+        
+    ##     ## generate_roc_curve(mech_vec_list, mech_nm_list, \
+    ##     ##                    nFutureStep=nFutureStep,fObsrvResol=fObsrvResol,
+    ##     ##                    semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
+    ##     ##                    roc_root_path=roc_root_path, semantic_label=str(nFutureStep)+ \
+    ##     ##                    ' step PHMM with \n accurate state estimation', 
+    ##     ##                    sem_c=color,sem_m=shape)
+
+        
+    ##     pp.figure()
+    ##     mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
+    ##     mar.generate_roc_curve(mech_vec_list, mech_nm_list)
+    ##     f = pp.gcf()
+    ##     f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
+    ##     ## pp.savefig('roc_compare.pdf')
+    ##     pp.show()
+
+        
