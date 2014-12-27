@@ -797,13 +797,15 @@ if __name__ == '__main__':
                     ## mn_list.append(mn_list)
 
             #---------------------------------------
-            color = colors.next()
-            shape = shapes.next()
+            if opt.bROCPlot:
             
-            semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
-            sem_l=''; sem_c=color; sem_m=shape                        
-            pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
-                    mec=sem_c, ms=6, mew=2)
+                color = colors.next()
+                shape = shapes.next()
+
+                semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
+                sem_l=''; sem_c=color; sem_m=shape                        
+                pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
+                        mec=sem_c, ms=6, mew=2)
 
             
         #---------------------------------------            
