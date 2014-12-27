@@ -284,6 +284,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
 
             
     ####################################################################
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
 
     count = 0
     for i in xrange(len(train_data)):
