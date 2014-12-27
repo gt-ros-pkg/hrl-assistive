@@ -100,7 +100,7 @@ class anomaly_checker():
 
             a_score[i], err[i] = self.cost(y, i, mu, sig)
 
-        score= sum(a_score)
+        score = sum(a_score)
 
         if score>0: bAnomaly = 1.0
         else: bAnomaly = 0.0
@@ -116,12 +116,14 @@ class anomaly_checker():
 
     def cost(self, val, buff_idx, mu, sig):
 
-        sig_mult = self.score_a*(float(buff_idx)-1.0) + self.score_b
+        sig_mult = self.score_a*float(buff_idx) + self.score_b
+
+
+        err = mu + sig_mult * sig - val
         
-        if val > mu + sig_mult * sig:
-            return 1.0, 0.0
+        if err < 0.0:
+            return 1.0, err
         else:
-            err = mu + sig_mult * sig - val
             return 0.0, err
         
         

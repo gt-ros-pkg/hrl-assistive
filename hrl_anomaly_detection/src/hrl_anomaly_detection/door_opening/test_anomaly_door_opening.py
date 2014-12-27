@@ -450,8 +450,12 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
                 ## tot = train_data[i].shape[0] * train_data[i].shape[1]
                 err_l = []
 
+
                 for j, trial in enumerate(train_data[i]):
 
+                    # temp
+                    start_time = time.clock()            
+                    
                     # Init checker
                     ac = anomaly_checker(lh, score_a=a, score_b=b)
 
@@ -473,6 +477,9 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
                             #print "Test: ", j, false_pos[j, k-start_step], err_l[-1]
 
+                    # temp
+                    print time.clock() - start_time
+                            
                 fp  = np.mean(false_pos.flatten())
                 err = np.mean(err_l)
                 
@@ -728,11 +735,32 @@ if __name__ == '__main__':
             tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
 
         # --------------------------------------------------------            
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+        
+        if opt.bROCPlot:
+            pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
+            s_range = np.arange(0.05, 5.0, 0.3) 
+            m_range = np.arange(0.1, 3.8, 0.6)
+
+            r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+            mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
+
+            ## mpu.set_figure_size(10, 7.)
+            
+            pp.figure()                    
+            ## mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
+            ##mar.generate_roc_curve(mech_vec_list, mech_nm_list)
+            f = pp.gcf()
+            f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
+
+
+        # --------------------------------------------------------
         # Search best a and b + Get ROC data
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
-        future_steps = [8, 1, 2, 4] 
-        ## future_steps = [8] 
+        future_steps = [4, 1, 8, 2] 
         
         alphas = np.arange(0.0, 8.0+0.00001, 1.6)
         betas = np.arange(0.0, 0.4+0.00001, 0.2)
@@ -764,32 +792,18 @@ if __name__ == '__main__':
                     err_list.append(err)
                     ## mn_list.append(mn_list)
 
-            print fp_list
-
-        # --------------------------------------------------------
-        if opt.bROCPlot:
-
-            pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
-            s_range = np.arange(0.05, 5.0, 0.3) 
-            m_range = np.arange(0.1, 3.8, 0.6)
-
-            r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-            mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-
-            ## mpu.set_figure_size(10, 7.)
-            
-            pp.figure()                    
-            ## mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
-            mar.generate_roc_curve(mech_vec_list, mech_nm_list)
-            f = pp.gcf()
-            f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
-
             #---------------------------------------
-            semantic_label='PHMM anomaly detection w/ known mechanisum class', 
-            sem_l=''; sem_c='r'; sem_m='*'                        
+            color = colors.next()
+            shape = shapes.next()
+            
+            semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
+            sem_l=''; sem_c=color; sem_m=shape                        
             pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
                     mec=sem_c, ms=6, mew=2)
-            #---------------------------------------
+
+            
+        #---------------------------------------            
+        if opt.bROCPlot:
             
             ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
             ##         ms=6, mew=2)
@@ -874,7 +888,6 @@ if __name__ == '__main__':
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
         
         elif opt.bApproxObsrv:
-            import time
             start_time = time.clock()
             lh.init_plot(bAni=opt.bAnimation)            
 
