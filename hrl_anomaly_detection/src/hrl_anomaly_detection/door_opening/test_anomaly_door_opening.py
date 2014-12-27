@@ -454,8 +454,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
                 for j, trial in enumerate(train_data[i]):
 
-                    # temp
-                    start_time = time.clock()            
+                    ## # temp
+                    ## start_time = time.clock()            
                     
                     # Init checker
                     ac = anomaly_checker(lh, score_a=a, score_b=b)
@@ -478,8 +478,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
                             #print "Test: ", j, false_pos[j, k-start_step], err_l[-1]
 
-                    # temp
-                    print time.clock() - start_time
+                    ## # temp
+                    ## print time.clock() - start_time
                             
                 fp  = np.mean(false_pos.flatten())
                 err = np.mean(err_l)
