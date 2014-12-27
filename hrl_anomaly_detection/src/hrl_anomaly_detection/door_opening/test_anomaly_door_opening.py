@@ -206,7 +206,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 def genCrossValData(data_path, cross_data_path, human_only=True):
 
     if os.path.isdir(cross_data_path) == False:
-        os.system('mkdir -p '+roc_root_path)
+        os.system('mkdir -p '+cross_data_path)
     
     if human_only:
         save_file = os.path.join(cross_data_path, 'data_11.pkl')        
