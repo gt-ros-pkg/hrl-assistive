@@ -203,57 +203,108 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         ## pp.legend(loc='best',prop={'size':16})
         pp.legend(loc=1,prop={'size':14})
 
-def genCrossValData(data_path, cross_data_path):
+def genCrossValData(data_path, cross_data_path, human_only=True):
 
-    save_file = os.path.join(cross_data_path, 'data_1.pkl')        
-    if os.path.isfile(save_file) is True: return
+    if os.path.isdir(cross_data_path) == False:
+        os.system('mkdir -p '+roc_root_path)
     
-    # human and robot data
-    pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
-      glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
-      glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+    if human_only:
+        save_file = os.path.join(cross_data_path, 'data_11.pkl')        
+        if os.path.isfile(save_file) is True: return
 
-    r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-    mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
+        # human and robot data
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
+          glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
+          glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
 
-    # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
-    data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
-                                                      mech_nm_list, append_robot = True)    
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
-    # create the generator
-    #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
-    nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
-    spl = splitters.Splitter(attr='partitions')
-    splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
+        # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
+        data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
+                                                          mech_nm_list, append_robot = True)    
 
-    cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-    os.system('mkdir -p '+cross_data_path)        
-    d = {}
-    count = 0
-    for l_wdata, l_vdata in splits:
+        # create the generator
+        #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+        nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
+        spl = splitters.Splitter(attr='partitions')
+        splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
 
-        if 'robot' in l_vdata.chunks[0]: 
-            print "Pass a robot chunk"
-            continue
+        d = {}
+        count = 0
+        for l_wdata, l_vdata in splits:
 
-        count += 1
-        non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
-        # find same target samples in non_robot target samples        
-        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
+            if 'robot' in l_vdata.chunks[0]: 
+                print "Pass a robot chunk"
+                continue
 
-        train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
-        test_trials  = l_vdata.samples
-        chunk = l_vdata.chunks[0]
-        target = l_vdata.targets[0]
+            count += 1
+            non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
+            # find same target samples in non_robot target samples        
+            idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
 
-        #SAVE!!
-        d['train_trials'] = train_trials
-        d['test_trials'] = test_trials
-        d['chunk'] = chunk
-        d['target'] = target
-        save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
-        ut.save_pickle(d, save_file)
+            train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
+            test_trials  = l_vdata.samples #non-robot chunk
+            chunk = l_vdata.chunks[0]
+            target = l_vdata.targets[0]
 
+            #SAVE!!
+            d['train_trials'] = train_trials
+            d['test_trials'] = test_trials
+            d['chunk'] = chunk
+            d['target'] = target
+            save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
+            ut.save_pickle(d, save_file)
+
+    else:
+        save_file = os.path.join(cross_data_path, 'data_11.pkl')        
+        if os.path.isfile(save_file) is True: return
+
+        # human and robot data
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
+          glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') # + \
+          ## glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+
+        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
+
+        # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
+        data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
+                                                          mech_nm_list, append_robot = True)    
+
+        # create the generator
+        #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+        nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
+        spl = splitters.Splitter(attr='partitions')
+        splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
+
+        ## cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_robot_cross_data'
+        d = {}
+        count = 0
+        for l_wdata, l_vdata in splits:
+
+            if 'robot' not in l_vdata.chunks[0]: 
+                print "Pass a non-robot chunk"
+                continue
+
+            count += 1
+            non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
+            # find same target samples in non-robot target samples        
+            idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
+
+            train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
+            test_trials  = l_vdata.samples #robot chunk
+            chunk = l_vdata.chunks[0]
+            target = l_vdata.targets[0]
+
+            #SAVE!!
+            d['train_trials'] = train_trials
+            d['test_trials'] = test_trials
+            d['chunk'] = chunk
+            d['target'] = target
+            save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
+            ut.save_pickle(d, save_file)
+            
         
 def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol=0.1, trans_type="left_right"):
 
@@ -664,7 +715,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=True, help='N-fold cross validation for parameter')
+                 default=False, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
                  help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
@@ -755,7 +806,7 @@ if __name__ == '__main__':
             
             pp.figure()                    
             ## mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
-            ##mar.generate_roc_curve(mech_vec_list, mech_nm_list)
+            mar.generate_roc_curve(mech_vec_list, mech_nm_list)
             f = pp.gcf()
             f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
 
@@ -820,60 +871,113 @@ if __name__ == '__main__':
 
     ###################################################################################            
     elif opt.bROCRobot:
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
-        s_range = np.arange(0.05, 5.0, 0.3) 
-        m_range = np.arange(0.1, 3.8, 0.6)
+        print "------------- ROC HUMAN -------------"
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_robot_cross_data'
+        cross_test_path = os.path.join(cross_data_path,'robot_'+trans_type)        
+        genCrossValData(data_path, cross_data_path, human_only=False)
 
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)        
+        # 1) HMM param optimization                
+        for nState in xrange(10,35,1):        
+            tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
         
+        #--------------------------------------------------------------------------------        
         ## mpu.set_figure_size(13, 7.)
-        if opt.bROCPlot and False:
-            pp.figure()        
-            mar.generate_roc_curve(mech_vec_list, mech_nm_list,
-                               s_range, m_range, sem_c='c', sem_m='^',
-                               ## semantic_label = 'operating 1st time with \n uncertainty in state estimation', \
-                               ## plot_prev=False)
-                               semantic_label = 'probabilistic model with \n uncertainty in state estimation', \
-                               plot_prev=False)
-
-        #--------------------------------------------------------------------------------
-        
-        pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
-        s_range = np.arange(0.05, 3.8, 0.2) 
-        m_range = np.arange(0.1, 3.8, 0.6)        
-        
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
-        
-        # advait
         if opt.bROCPlot:
+
+            s_range = np.arange(0.05, 5.0, 0.3) 
+            m_range = np.arange(0.1, 3.8, 0.6)
+            
+            pp.figure()
+
+            if False:
+                pkl_list = glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+                r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+                mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)        
+                
+                mar.generate_roc_curve(mech_vec_list, mech_nm_list,
+                                   s_range, m_range, sem_c='c', sem_m='^',
+                                   ## semantic_label = 'operating 1st time with \n uncertainty in state estimation', \
+                                   ## plot_prev=False)
+                                   semantic_label = 'probabilistic model with \n uncertainty in state estimation', \
+                                   plot_prev=False)
+
+            # advait
+            pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
+            r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+            mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
             mad.generate_roc_curve(mech_vec_list, mech_nm_list,
                                     s_range, m_range, sem_c='b',
                                     ## semantic_label = 'operating 1st time with \n accurate state estimation',
                                     semantic_label = 'probabilistic model with \n accurate state estimation',
-                                    plot_prev=False)
+                                    plot_prev=False)                                                   
+        
 
         #--------------------------------------------------------------------------------
-        # Set the default color cycle
-        import itertools
-        colors = itertools.cycle(['g', 'm', 'c', 'k'])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
-        ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
-        ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
+        # Search best a and b + Get ROC data
+        ## future_steps = [1,2,4,8] #range(1,9,1)
+        ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
+        future_steps = [4, 1, 8, 2] 
         
-        ## for i in xrange(1,9,3):
-        for i in [1,8]:
-            color = colors.next()
-            shape = shapes.next()
-            roc_root_path = roc_data_path+'_'+str(i)
-            generate_roc_curve(mech_vec_list, mech_nm_list, \
-                               nFutureStep=i,fObsrvResol=fObsrvResol,
-                               semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-                               roc_root_path=roc_root_path, semantic_label=str(i)+ \
-                               ' step PHMM with \n accurate state estimation', 
-                               sem_c=color,sem_m=shape)
-        ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
+        alphas = np.arange(0.0, 8.0+0.00001, 1.6)
+        betas = np.arange(0.0, 0.4+0.00001, 0.2)
+
+        for nFutureStep in future_steps:
+            for alpha in alphas:
+                for beta in betas:
+                    if alpha == 0.0 and beta == 0.0: continue
+                    if alpha == 0.0 and beta != betas[1]: continue
+                    if alpha != alphas[1] and beta == 0.0: continue
+                    
+                    # Evaluate threshold in terms of training set
+                    get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep, test=False)
+
+            # --------------------------------------------------------
+            fp_list = []
+            ## mn_list = []
+            err_list = []
+
+            for alpha in alphas:
+                for beta in betas:
+                    if alpha == 0.0 and beta == 0.0: continue
+                    if alpha == 0.0 and beta != betas[1]: continue
+                    if alpha != alphas[1] and beta == 0.0: continue
+
+                    [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep)
+
+                    fp_list.append(fp)
+                    err_list.append(err)
+                    ## mn_list.append(mn_list)
+
+            #---------------------------------------
+            if opt.bROCPlot:
+            
+                color = colors.next()
+                shape = shapes.next()
+
+                semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
+                sem_l=''; sem_c=color; sem_m=shape                        
+                pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
+                        mec=sem_c, ms=6, mew=2)
+
+        ## # Set the default color cycle
+        ## import itertools
+        ## colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        ## shapes = itertools.cycle(['x','v', 'o', '+'])
+        ## ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
+        ## ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
+        
+        ## ## for i in xrange(1,9,3):
+        ## for i in [1,8]:
+        ##     color = colors.next()
+        ##     shape = shapes.next()
+        ##     roc_root_path = roc_data_path+'_'+str(i)
+        ##     generate_roc_curve(mech_vec_list, mech_nm_list, \
+        ##                        nFutureStep=i,fObsrvResol=fObsrvResol,
+        ##                        semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
+        ##                        roc_root_path=roc_root_path, semantic_label=str(i)+ \
+        ##                        ' step PHMM with \n accurate state estimation', 
+        ##                        sem_c=color,sem_m=shape)
+        ## ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
         if opt.bROCPlot: 
             ## pp.xlim(-0.5,27)
