@@ -148,7 +148,11 @@ class anomaly_checker():
                         t_err += err
                         t_count += 1.0
 
-                err_l[i] = t_err/t_count                        
+                try:
+                    err_l[i] = t_err/t_count                        
+                except:
+                    print a_score, n, count
+                    
                 ## err_l[i] = np.sum(m_err)/count                               
 
             ## print i, nParam, " = ", n, sig_mult, sig_offset, " : ", np.sum(a_score), n*count, " - ", bAnomaly_l[i], err_l[i]                
