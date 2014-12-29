@@ -822,7 +822,7 @@ if __name__ == '__main__':
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [4, 1, 8, 2]             
         future_steps = [4]             
-        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.0]
+        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.0]
 
         for nFutureStep in future_steps:
                     
