@@ -142,6 +142,7 @@ class anomaly_checker():
             if np.sum(a_score) > n*count: bAnomaly_l[i] = 1.0
             else: 
                 t_count = 0.0
+                t_err = 0.0
                 for err in m_err:
                     if err > 0.0:                        
                         t_err += err
