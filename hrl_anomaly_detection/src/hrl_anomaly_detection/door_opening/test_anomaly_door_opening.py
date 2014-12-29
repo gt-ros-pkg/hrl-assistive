@@ -143,7 +143,7 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
 
                         if j>= start_step:                    
                             # check anomaly score
-                            bFlag, fScore, max_err = ac.check_anomaly(trial[j])
+                            bFlag, max_err, fScore = ac.check_anomaly(trial[j])
                             if bFlag: 
                                 false_pos[i, j-start_step] = 1.0 
                             else:
@@ -566,7 +566,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
 
 
 def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
-                    fObsrvResol, trans_type, nFutureStep=5, test=False):
+                    fObsrvResol, trans_type, nFutureStep=5, aws=False, test=False):
 
 
     # Get the best param for training set
@@ -606,10 +606,10 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         os.system('touch '+mutex_file)
 
         # For AWS
-        if hcu.is_file_w_time(roc_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=15.0, priority_check=True):
-            os.system('rm '+mutex_file)
-            continue
-        
+        if aws:
+            if hcu.is_file_w_time(roc_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=15.0, priority_check=True):
+                os.system('rm '+mutex_file)
+                continue       
     
         tune_res_file = "ab_for_d_"+str(test_idx)+"_cratio_"+str(cost_ratio)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "ab_for_d_"+str(test_idx), tune_res_file)
@@ -621,8 +621,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         
         ## hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
-        min_a      = param_dict['min_a']
-        min_b      = param_dict['min_b']
+        min_n           = param_dict['min_n']
+        min_sig_mult    = param_dict['min_sig_mult']
+        min_sig_offset  = param_dict['min_sig_offset']
 
         if test_idx != param_dict['test_idx']:
             print "------------------------------------------------------"
@@ -649,7 +650,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         for j, trial in enumerate(test_data[i]):
 
             # Init checker
-            ac = anomaly_checker(lh, score_a=min_a, score_b=min_b)
+            ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
         
             # Simulate each profile
             for k in xrange(len(trial)):
@@ -658,7 +659,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
                 if k>= start_step:                    
                     # check anomaly score
-                    bAnomaly, _, mean_err = ac.check_anomaly(trial[k])
+                    bAnomaly, mean_err, _ = ac.check_anomaly(trial[k])
                     ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
                     if bAnomaly: 
                         false_pos[j, k-start_step] = 1.0 
@@ -726,6 +727,8 @@ if __name__ == '__main__':
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
+    p.add_option('--aws', action='store_true', dest='bAWS',
+                 default=False, help='Use amazon cloud computing service')
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
@@ -820,6 +823,7 @@ if __name__ == '__main__':
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [4, 1, 8, 2]             
+        future_steps = [4]             
         cost_ratios = [1.0, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.5, 0.0]
 
         for nFutureStep in future_steps:
@@ -827,18 +831,16 @@ if __name__ == '__main__':
             # Evaluate threshold in terms of training set
             get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, \
                                   nMaxStep, fObsrvResol, trans_type, \
-                                  nFutureStep=nFutureStep, test=False)
+                                  nFutureStep=nFutureStep, aws=opt.bAWS, test=False)
 
-            sys.exit()
             # --------------------------------------------------------
             fp_list = []
-            ## mn_list = []
             err_list = []
 
             for cost_ratio in cost_ratios:
                 [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, \
                                             cost_ratio, nMaxStep, fObsrvResol, \
-                                            trans_type, nFutureStep=nFutureStep)
+                                            trans_type, nFutureStep=nFutureStep, aws=opt.bAWS)
 
                 fp_list.append(fp)
                 err_list.append(err)
@@ -850,9 +852,6 @@ if __name__ == '__main__':
                 color = colors.next()
                 shape = shapes.next()
 
-                print fp_list
-                print err_list
-                
                 semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
                 sem_l=''; sem_c=color; sem_m=shape                        
                 pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
@@ -917,37 +916,26 @@ if __name__ == '__main__':
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [4, 1, 8, 2] 
-        
-        alphas = np.arange(0.0, 8.0+0.00001, 1.6)
-        betas = np.arange(0.0, 0.4+0.00001, 0.2)
+        cost_ratios = [1.0, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.5, 0.0]
 
         for nFutureStep in future_steps:
-            for alpha in alphas:
-                for beta in betas:
-                    if alpha == 0.0 and beta == 0.0: continue
-                    if alpha == 0.0 and beta != betas[1]: continue
-                    if alpha != alphas[1] and beta == 0.0: continue
                     
-                    # Evaluate threshold in terms of training set
-                    get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, \
-                                          trans_type, nFutureStep=nFutureStep, test=False)
+            # Evaluate threshold in terms of training set
+            get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, fObsrvResol, \
+                                          trans_type, nFutureStep=nFutureStep, aws=opt.bAWS, test=False)
 
             # --------------------------------------------------------
             fp_list = []
-            ## mn_list = []
             err_list = []
 
-            for alpha in alphas:
-                for beta in betas:
-                    if alpha == 0.0 and beta == 0.0: continue
-                    if alpha == 0.0 and beta != betas[1]: continue
-                    if alpha != alphas[1] and beta == 0.0: continue
+            for cost_ratio in cost_ratios:
+                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, \
+                                            nMaxStep, fObsrvResol, trans_type, \
+                                            nFutureStep=nFutureStep, aws=opt.bAWS)
 
-                    [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep)
-
-                    fp_list.append(fp)
-                    err_list.append(err)
-                    ## mn_list.append(mn_list)
+                fp_list.append(fp)
+                err_list.append(err)
+                ## mn_list.append(mn_list)
 
             #---------------------------------------
             if opt.bROCPlot:

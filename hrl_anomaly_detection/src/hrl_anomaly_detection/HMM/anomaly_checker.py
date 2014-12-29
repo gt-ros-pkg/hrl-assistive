@@ -90,7 +90,7 @@ class anomaly_checker():
     def check_anomaly(self, y):
 
         a_score  = np.zeros((self.nFutureStep))
-        err      = np.zeros((self.nFutureStep))
+        m_err    = np.zeros((self.nFutureStep))
 
         count = 0.
         for i in xrange(self.nFutureStep):
@@ -102,22 +102,15 @@ class anomaly_checker():
             mu  = self.buf_dict['mu_'+str(i)][0]
             sig = self.buf_dict['sig_'+str(i)][0]
 
-            a_score[i], err[i] = self.cost(y, i, mu, sig, sig_mult=self.sig_mult, \
+            a_score[i], m_err[i] = self.cost(y, i, mu, sig, sig_mult=self.sig_mult, \
                                            sig_offset=self.sig_offset)
 
-        score = sum(a_score)
-
-        if score>0: bAnomaly = 1.0
-        else: bAnomaly = 0.0
+        score = np.sum(a_score)
+        if score>n*count: 
+            return 1.0, 0.0, score*(float(self.nFutureStep)/count)
+        else: 
+            return 0.0, np.sum(m_err)/count, score*(float(self.nFutureStep)/count)
                 
-        return bAnomaly, score, np.sum(err)/count
-        
-        ## ## if score >= fAnomaly:
-        ## if score > 0:
-        ##     return True, score*(self.fAnomaly/fAnomaly), np.mean(err)
-        ## else:
-        ##     return False, score*(self.fAnomaly/fAnomaly), np.mean(err)
-
         
     def check_anomaly_batch(self, y, param_list):
 
