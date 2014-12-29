@@ -152,6 +152,7 @@ class anomaly_checker():
                     err_l[i] = t_err/t_count                        
                 except:
                     print a_score, n, count
+                    sys.exit()
                     
                 ## err_l[i] = np.sum(m_err)/count                               
 
