@@ -447,9 +447,9 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
-    score_n    = np.arange(0.5,1.01,0.1)
-    sig_mult   = np.arange(0.5, 5.0+0.00001, 0.5)
-    sig_offset = np.arange(0.0, 0.6+0.00001, 0.2)
+    score_n    = np.arange(0.3,1.01,0.1)
+    sig_mult   = np.arange(0.5, 6.0+0.00001, 0.5)
+    sig_offset = np.arange(0.0, 0.5+0.00001, 0.1)
     
     param_list = []
     for n in score_n:
@@ -811,7 +811,7 @@ if __name__ == '__main__':
             
             pp.figure()                    
             ## mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
-            mar.generate_roc_curve(mech_vec_list, mech_nm_list)
+            mar.generate_roc_curve(mech_vec_list, mech_nm_list, plot_prev=False)
             f = pp.gcf()
             f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
 
@@ -820,8 +820,9 @@ if __name__ == '__main__':
         # Search best a and b + Get ROC data
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
-        future_steps = [4, 1, 8, 2]             
-        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
+        ## future_steps = [4, 1, 8, 2]             
+        future_steps = [1, 8]             
+        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         for nFutureStep in future_steps:
                     
@@ -849,9 +850,13 @@ if __name__ == '__main__':
                 color = colors.next()
                 shape = shapes.next()
 
+                idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
+                sorted_fp_list  = [fp_list[i] for i in idx_list]
+                sorted_err_list = [err_list[i] for i in idx_list]
+
                 semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
-                sem_l=''; sem_c=color; sem_m=shape                        
-                pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
+                sem_l='-'; sem_c=color; sem_m=shape                        
+                pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
 
             
@@ -862,6 +867,8 @@ if __name__ == '__main__':
             ##         ms=6, mew=2)
             ## pp.legend(loc='best',prop={'size':16})
             pp.legend(loc=1,prop={'size':14})
+            pp.xlim(-0.5,5)
+            pp.ylim(0.,5)            
             pp.show()
 
 
@@ -877,7 +884,11 @@ if __name__ == '__main__':
             tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
         
         #--------------------------------------------------------------------------------        
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
         ## mpu.set_figure_size(13, 7.)
+
         if opt.bROCPlot:
 
             s_range = np.arange(0.05, 5.0, 0.3) 
@@ -966,10 +977,11 @@ if __name__ == '__main__':
         ## ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
         
         if opt.bROCPlot: 
+            pp.legend(loc=1,prop={'size':14})
             ## pp.xlim(-0.5,27)
             pp.xlim(-0.5,5)
             pp.ylim(0.,5)
-            pp.savefig('robot_roc_sig_0_3.pdf')
+            ## pp.savefig('robot_roc_sig_0_3.pdf')
             pp.show()
     
     ###################################################################################                    
