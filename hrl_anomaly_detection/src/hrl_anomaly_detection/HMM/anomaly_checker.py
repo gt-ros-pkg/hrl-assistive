@@ -139,7 +139,8 @@ class anomaly_checker():
                 a_score[j], m_err[j] = self.cost(y, j, mu, sig, sig_mult=sig_mult, \
                                                      sig_offset=sig_offset)
 
-            if np.sum(a_score) >= n*count: bAnomaly_l[i] = 1.0
+            if np.sum(a_score) >= n*count: 
+                bAnomaly_l[i] = 1.0
             else: 
                 t_count = 0.0
                 t_err = 0.0
@@ -151,7 +152,7 @@ class anomaly_checker():
                 try:
                     err_l[i] = t_err/t_count                        
                 except:
-                    print a_score, n, count
+                    print a_score, n, count, m_err
                     sys.exit()
                     
                 ## err_l[i] = np.sum(m_err)/count                               
