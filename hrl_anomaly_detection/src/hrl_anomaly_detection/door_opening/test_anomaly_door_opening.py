@@ -718,7 +718,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=True, help='N-fold cross validation for parameter')
+                 default=False, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
                  help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
@@ -821,7 +821,7 @@ if __name__ == '__main__':
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [4, 1, 8, 2]             
-        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.0]
+        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         for nFutureStep in future_steps:
                     
@@ -913,7 +913,7 @@ if __name__ == '__main__':
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [4, 1, 8, 2] 
-        cost_ratios = [1.0, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.5, 0.0]
+        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         for nFutureStep in future_steps:
                     
