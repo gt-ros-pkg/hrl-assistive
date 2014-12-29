@@ -107,7 +107,7 @@ class anomaly_checker():
 
         score = np.sum(a_score)
         
-        if score>self.score_n*count: 
+        if score >= self.score_n*count: 
             return 1.0, 0.0, score*(float(self.nFutureStep)/count)
         else: 
             return 0.0, np.sum(m_err)/count, score*(float(self.nFutureStep)/count)
