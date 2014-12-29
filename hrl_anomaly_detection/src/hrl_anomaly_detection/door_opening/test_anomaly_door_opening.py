@@ -450,10 +450,6 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     score_n    = np.arange(0.5,1.01,0.1)
     sig_mult   = np.arange(0.5, 5.0+0.00001, 0.5)
     sig_offset = np.arange(0.0, 0.6+0.00001, 0.2)
-
-    score_n    = np.arange(0.5,0.51,0.1)
-    sig_mult   = np.arange(0.5, 0.5+0.00001, 0.5)
-    sig_offset = np.arange(0.0, 0.4+0.00001, 0.2)
     
     param_list = []
     for n in score_n:
@@ -826,7 +822,7 @@ if __name__ == '__main__':
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
         future_steps = [4, 1, 8, 2]             
         future_steps = [4]             
-        cost_ratios = [1.0, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.5, 0.0]
+        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.0]
 
         for nFutureStep in future_steps:
                     
