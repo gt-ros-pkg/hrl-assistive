@@ -106,7 +106,7 @@ class anomaly_checker():
                                            sig_offset=self.sig_offset)
 
         score = np.sum(a_score)
-        print score_n
+        print self.score_n
         
         if score>self.score_n*count: 
             return 1.0, 0.0, score*(float(self.nFutureStep)/count)
