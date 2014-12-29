@@ -372,7 +372,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         os.system('touch '+os.path.join(cross_test_path,str(nState),'complete.txt'))
         
 
-def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, test=False):
+def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type, test=False):
 
     # Get the best param for training set
     test_idx_list = []
@@ -433,10 +433,10 @@ def load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nM
     
     
         
-def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type, nFutureStep, test=False):
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, fObsrvResol, trans_type, nFutureStep, aws=False, test=False):
 
     # Get the best param for training set
-    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)
+    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)
         
     #-----------------------------------------------------------------            
     print "------------------------------------------------------"
@@ -447,15 +447,20 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
-    idx_l = []
-    a_l = [] 
-    b_l = []   
+    score_n    = np.arange(0.5,1.01,0.1)
+    sig_mult   = np.arange(0.5, 5.0+0.00001, 0.5)
+    sig_offset = np.arange(0.0, 0.6+0.00001, 0.2)
 
-    ## cross_mutex_path = os.path.join(cross_test_path, 'mutex')
-    ## if not(os.path.isdir(cross_mutex_path)):
-    ##     os.system('mkdir -p '+cross_mutex_path) 
-    ##     time.sleep(0.5)
-        
+    score_n    = np.arange(0.5,0.51,0.1)
+    sig_mult   = np.arange(0.5, 0.5+0.00001, 0.5)
+    sig_offset = np.arange(0.0, 0.4+0.00001, 0.2)
+    
+    param_list = []
+    for n in score_n:
+        for a in sig_mult:
+            for b in sig_offset:
+                param_list.append([n,a,b])
+    
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
 
@@ -463,56 +468,61 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
         if not(os.path.isdir(tune_res_path)):
             os.system('mkdir -p '+tune_res_path) 
             time.sleep(0.5)
-        
-        tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
-        tune_res_file = os.path.join(tune_res_path, tune_res_file)
 
-        mutex_file_part = 'running_'+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)
-        mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'        
-        mutex_file = os.path.join(tune_res_path,mutex_file_full)
+        # init anomaly checked list
+        ac_res = False
+        ## false_pos = np.zeros((len(param_list), len(train_data[i]), len(train_data[i][0])-start_step))
+        fp_l_l  = None
+        err_l_l = None
+        bAnomaly_l_l = []                       
+        fp_param = None
+        err_param = None
         
-        if os.path.isfile(tune_res_file): continue
-        elif hcu.is_file(tune_res_path, mutex_file_part): continue
-        elif os.path.isfile(mutex_file): continue
-        os.system('touch '+mutex_file)
+        for c_idx, cost_ratio in enumerate(cost_ratios):
+            
+            tune_res_file = "ab_for_d_"+str(test_idx)+"_cratio_"+str(cost_ratio)+'.pkl'
+            tune_res_file = os.path.join(tune_res_path, tune_res_file)
 
-        # For AWS
-        if hcu.is_file_w_time(tune_res_path, mutex_file_part, exStrName=mutex_file_full, loop_time=1.0, wait_time=15.0, priority_check=True):
-            os.system('rm '+mutex_file)
-            continue
-        
-        print "Get train data ", test_idx
-        nState = nState_list[i]
-        B      = B_list[i]
-        
-        min_cost = 10000
-        min_a    = None
-        min_b    = None
+            mutex_file_part = 'running_'+str(test_idx)+"_cratio_"+str(cost_ratio)
+            mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'        
+            mutex_file = os.path.join(tune_res_path,mutex_file_full)
 
-        # Set a learning object
-        lh = None
-        lh = learning_hmm(aXData=train_data[i], nState=nState, \
-                          nMaxStep=nMaxStep,\
-                          nFutureStep=nFutureStep,\
-                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
-        lh.fit(lh.aXData, B=B, verbose=False)    
-        
-        for a in np.arange(0.0, 0.25+0.00001, 0.05):
-            for b in np.arange(0.2, 5.0+0.00001, 0.5):
+            if os.path.isfile(tune_res_file): continue
+            elif hcu.is_file(tune_res_path, mutex_file_part): continue
+            elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
 
-                # Init variables
-                false_pos = np.zeros((len(train_data[i]), len(train_data[i][0])-start_step))
-                ## tot = train_data[i].shape[0] * train_data[i].shape[1]
-                err_l = []
+            # For AWS
+            if aws:
+                if hcu.is_file_w_time(tune_res_path, mutex_file_part, exStrName=mutex_file_full, \
+                                      loop_time=1.0, wait_time=15.0, priority_check=True):
+                    os.system('rm '+mutex_file)
+                    continue
 
+            # --------------------------------------------------------                
+            if ac_res == False:
+
+                ac_res = True
+                print "Get train data ", test_idx
+                nState = nState_list[i]
+                B      = B_list[i]
+
+                ## min_cost = 10000
+                ## min_fp   = None
+                ## min_err  = None
+
+                # Set a learning object
+                lh = None
+                lh = learning_hmm(aXData=train_data[i], nState=nState, \
+                                  nMaxStep=nMaxStep,\
+                                  nFutureStep=nFutureStep,\
+                                  fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
+                lh.fit(lh.aXData, B=B, verbose=False)    
 
                 for j, trial in enumerate(train_data[i]):
 
-                    ## # temp
-                    ## start_time = time.clock()            
-                    
                     # Init checker
-                    ac = anomaly_checker(lh, score_a=a, score_b=b)
+                    ac = anomaly_checker(lh)
 
                     # Simulate each profile
                     for k in xrange(len(trial)):
@@ -521,53 +531,47 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_bet
 
                         if k>= start_step:                    
                             # check anomaly score
-                            bAnomaly, _, mean_err = ac.check_anomaly(trial[k])
-                            ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
-                            if bAnomaly: 
-                                false_pos[j, k-start_step] = 1.0 
+                            bAnomaly_l, err_l = ac.check_anomaly_batch(trial[k], param_list)
+
+                            if fp_l_l == None:
+                                fp_l_l = bAnomaly_l
+                                err_l_l = err_l
                             else:
-                                err_l.append(mean_err)
+                                fp_l_l = np.vstack([fp_l_l, bAnomaly_l])
+                                err_l_l = np.vstack([err_l_l, err_l])
+                            ## if bAnomaly: 
+                            ##     false_pos[j, k-start_step] = 1.0 
+                            ## else:
+                            ##     err_l.append(mean_err)
 
-                            ## print "(",j,"/",len(trials)," ",k, ") : ", false_pos[j, k-start_step], max_err
+                fp_param = np.mean(fp_l_l, axis=0)
+                err_param = np.sum(np.array(err_l_l), axis=0) / (len(fp_l_l)-np.sum(fp_l_l, axis=0))
+                                                        
+            # --------------------------------------------------------
 
-                            #print "Test: ", j, false_pos[j, k-start_step], err_l[-1]
+            cost_param = cost_ratio*fp_param + (1.0-cost_ratio)*err_param
+            min_idx  = np.where(cost_param == cost_param.min())[0][0]
 
-                    ## # temp
-                    ## print time.clock() - start_time
-                            
-                fp  = np.mean(false_pos.flatten())
-                err = np.mean(err_l)
-                
-                cost = cost_alpha*fp + cost_beta*err
-                print "a=",a, " b=",b, " ; ", "fp=", fp, " err=", err, " ; cost=", cost
-                
-                if min_cost > cost:
-                    min_cost = cost
-                    min_a    = a
-                    min_b    = b
+            tune_res_dict = {}
+            tune_res_dict['test_idx'] = test_idx
+            tune_res_dict['min_cost'] = cost_param[min_idx]
+            tune_res_dict['min_n'] = param_list[min_idx][0]
+            tune_res_dict['min_sig_mult'] = param_list[min_idx][1]
+            tune_res_dict['min_sig_offset'] = param_list[min_idx][2]
+            tune_res_dict['min_fp'] = fp_param[min_idx]
+            tune_res_dict['min_err'] = err_param[min_idx]
 
-        tune_res_dict = {}
-        tune_res_dict['test_idx'] = test_idx
-        tune_res_dict['min_a'] = min_a
-        tune_res_dict['min_b'] = min_b
-        tune_res_dict['cost_alpha'] = cost_alpha
-        tune_res_dict['cost_beta'] = cost_beta        
-        ut.save_pickle(tune_res_dict, tune_res_file)
-        os.system('rm '+mutex_file)
+            ut.save_pickle(tune_res_dict, tune_res_file)
+            os.system('rm '+mutex_file)
 
 
-def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, \
+def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     fObsrvResol, trans_type, nFutureStep=5, test=False):
 
 
-    ## roc_result_path = cross_test_path+'/roc_result'
-    ## if not(os.path.isdir(roc_result_path)):
-    ##     os.system('mkdir -p '+roc_result_path) 
-    ##     time.sleep(0.5)
-    
     # Get the best param for training set
     test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param( \
-        cross_data_path, cross_test_path, cost_alpha, cost_beta, nMaxStep, fObsrvResol, trans_type)   
+        cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)   
 
     #-----------------------------------------------------------------
 
@@ -585,12 +589,13 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         
         # Check saved or mutex files
         roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
-                                    "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
+                                    "_cratio_"+str(cost_ratio)+'.pkl')
 
-        mutex_file_part = "running_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)  
+        mutex_file_part = "running_"+str(test_idx)+"_cratio_"+str(cost_ratio)  
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
         mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
+        
         if os.path.isfile(roc_res_file): continue
         elif hcu.is_file(roc_res_path, mutex_file_part):
             bComplete = False
@@ -606,7 +611,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
             continue
         
     
-        tune_res_file = "ab_for_d_"+str(test_idx)+"_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl'
+        tune_res_file = "ab_for_d_"+str(test_idx)+"_cratio_"+str(cost_ratio)+'.pkl'
         tune_res_file = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "ab_for_d_"+str(test_idx), tune_res_file)
 
         if os.path.isfile(tune_res_file) is False: 
@@ -672,8 +677,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
         roc_res_dict['test_idx'] = test_idx
         roc_res_dict['min_a'] = min_a
         roc_res_dict['min_b'] = min_b
-        roc_res_dict['cost_alpha'] = cost_alpha
-        roc_res_dict['cost_beta'] = cost_beta        
+        roc_res_dict['cost_ratio'] = cost_ratio
         roc_res_dict['false_positive'] = false_pos
         roc_res_dict['force_error'] = err_l
         ut.save_pickle(roc_res_dict, roc_res_file)
@@ -687,7 +691,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_alpha, cost_beta, nMa
             # Check saved or mutex files
             roc_res_path = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "roc_for_d_"+str(test_idx))            
             roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
-                                        "_alpha_"+str(cost_alpha)+"_beta_"+str(cost_beta)+'.pkl')
+                                        "_cratio_"+str(cost_ratio)+'.pkl')
             roc_dict = ut.load_pickle(roc_res_file)
 
             if t_false_pos is None:                
@@ -715,7 +719,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=False, help='N-fold cross validation for parameter')
+                 default=True, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
                  help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
@@ -815,37 +819,30 @@ if __name__ == '__main__':
         # Search best a and b + Get ROC data
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
-        future_steps = [4, 1, 8, 2] 
-        
-        alphas = np.arange(0.0, 8.0+0.00001, 1.6)
-        betas = np.arange(0.0, 0.4+0.00001, 0.2)
+        future_steps = [4, 1, 8, 2]             
+        cost_ratios = [1.0, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.5, 0.0]
 
         for nFutureStep in future_steps:
-            for alpha in alphas:
-                for beta in betas:
-                    if alpha == 0.0 and beta == 0.0: continue
-                    if alpha == 0.0 and beta != betas[1]: continue
-                    if alpha != alphas[1] and beta == 0.0: continue
                     
-                    # Evaluate threshold in terms of training set
-                    get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep, test=False)
+            # Evaluate threshold in terms of training set
+            get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, \
+                                  nMaxStep, fObsrvResol, trans_type, \
+                                  nFutureStep=nFutureStep, test=False)
 
+            sys.exit()
             # --------------------------------------------------------
             fp_list = []
             ## mn_list = []
             err_list = []
 
-            for alpha in alphas:
-                for beta in betas:
-                    if alpha == 0.0 and beta == 0.0: continue
-                    if alpha == 0.0 and beta != betas[1]: continue
-                    if alpha != alphas[1] and beta == 0.0: continue
+            for cost_ratio in cost_ratios:
+                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, \
+                                            cost_ratio, nMaxStep, fObsrvResol, \
+                                            trans_type, nFutureStep=nFutureStep)
 
-                    [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep)
-
-                    fp_list.append(fp)
-                    err_list.append(err)
-                    ## mn_list.append(mn_list)
+                fp_list.append(fp)
+                err_list.append(err)
+                ## mn_list.append(mn_list)
 
             #---------------------------------------
             if opt.bROCPlot:
@@ -853,6 +850,9 @@ if __name__ == '__main__':
                 color = colors.next()
                 shape = shapes.next()
 
+                print fp_list
+                print err_list
+                
                 semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
                 sem_l=''; sem_c=color; sem_m=shape                        
                 pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
@@ -929,7 +929,8 @@ if __name__ == '__main__':
                     if alpha != alphas[1] and beta == 0.0: continue
                     
                     # Evaluate threshold in terms of training set
-                    get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, trans_type, nFutureStep=nFutureStep, test=False)
+                    get_threshold_by_cost(cross_data_path, cross_test_path, alpha, beta, nMaxStep, fObsrvResol, \
+                                          trans_type, nFutureStep=nFutureStep, test=False)
 
             # --------------------------------------------------------
             fp_list = []
