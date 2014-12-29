@@ -140,7 +140,15 @@ class anomaly_checker():
                                                      sig_offset=sig_offset)
 
             if np.sum(a_score) > n*count: bAnomaly_l[i] = 1.0
-            else: err_l[i] = np.sum(m_err)/count                               
+            else: 
+                t_count = 0.0
+                for err in m_err:
+                    if err > 0.0:                        
+                        t_err += err
+                        t_count += 1.0
+
+                err_l[i] = t_err/t_count                        
+                ## err_l[i] = np.sum(m_err)/count                               
 
             ## print i, nParam, " = ", n, sig_mult, sig_offset, " : ", np.sum(a_score), n*count, " - ", bAnomaly_l[i], err_l[i]                
 
