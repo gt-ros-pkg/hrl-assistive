@@ -676,9 +676,11 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     
         roc_res_dict = {}
         roc_res_dict['test_idx'] = test_idx
-        roc_res_dict['min_a'] = min_a
-        roc_res_dict['min_b'] = min_b
         roc_res_dict['cost_ratio'] = cost_ratio
+        roc_res_dict['min_n'] = min_n
+        roc_res_dict['min_sig_mult'] = min_sig_mult
+        roc_res_dict['min_sig_offset'] = min_sig_offset
+        
         roc_res_dict['false_positive'] = false_pos
         roc_res_dict['force_error'] = err_l
         ut.save_pickle(roc_res_dict, roc_res_file)
