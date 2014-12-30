@@ -448,8 +448,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     start_step = 2
 
     score_n    = np.arange(0.3,1.01,0.1)
-    sig_mult   = np.arange(0.5, 6.0+0.00001, 0.5)
-    sig_offset = np.arange(0.0, 0.5+0.00001, 0.1)
+    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.5)
+    sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
     
     param_list = []
     for n in score_n:
@@ -718,7 +718,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=True, help='N-fold cross validation for parameter')
+                 default=False, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
                  help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
@@ -867,8 +867,8 @@ if __name__ == '__main__':
             ##         ms=6, mew=2)
             ## pp.legend(loc='best',prop={'size':16})
             pp.legend(loc=1,prop={'size':14})
-            pp.xlim(-0.5,5)
-            pp.ylim(0.,5)            
+            pp.xlim(-0.1,10)
+            pp.ylim(0.,8)            
             pp.show()
 
 
