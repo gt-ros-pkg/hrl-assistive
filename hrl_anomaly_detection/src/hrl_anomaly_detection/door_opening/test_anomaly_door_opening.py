@@ -696,8 +696,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             if t_false_pos is None:                
                 t_false_pos = np.array(roc_dict['false_positive'])
             else:
-                if roc_dict['false_positive'] is None:
-                    print "aaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ## print roc_dict['min_sig_mult'], roc_dict['min_sig_offset'], np.mean(np.array(roc_dict['false_positive']))*100.0, " : ", roc_dict['cost_ratio'], test_idx
                 t_false_pos = np.vstack([t_false_pos, np.array(roc_dict['false_positive'])])
                 
             t_err_l += roc_dict['force_error']
