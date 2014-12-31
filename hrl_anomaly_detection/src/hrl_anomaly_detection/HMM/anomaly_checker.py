@@ -164,7 +164,7 @@ class anomaly_checker():
     def cost(self, val, buff_idx, mu, sig, sig_mult, sig_offset):
 
         err = mu + sig_mult * sig + sig_offset - val        
-        if err <= 0.0: return 1.0, 0.0 #err
+        if err <= 0.0: return 1.0, err
         else: return 0.0, err
         
         
