@@ -591,6 +591,11 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
         mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
+
+        #temp
+        d = ut.load_pickle(roc_res_file)
+        print test_idx, cost_ratio, " : ", d['min_n'], d['min_sig_mult'], d['min_sig_offset']
+        
         
         if os.path.isfile(roc_res_file): continue
         elif hcu.is_file(roc_res_path, mutex_file_part):
@@ -682,6 +687,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         ut.save_pickle(roc_res_dict, roc_res_file)
         os.system('rm '+mutex_file)
 
+
     if bComplete:
         t_false_pos  = None
         t_err_l      = []        
@@ -718,22 +724,23 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
                  default=False, help='N-fold cross validation for parameter')
-    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', default=False,
-                 help='generate ROC like curve from the BIOROB dataset.')
+    p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', 
+                 default=False, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
                  default=False, help='Use amazon cloud computing service')
+    p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
+                 default=True, help='Use blocked data')
+    p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
+                 default=True, help='Plot by time using animation')
+
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
     p.add_option('--approx_pred', '--ap', action='store_true', dest='bApproxObsrv',
                  default=False, help='Approximately compute the distribution of multi-step observations')
-    p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
-                 default=False, help='Use blocked data')
-    p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
-                 default=False, help='Plot by time using animation')
     p.add_option('--fig_roc_phmm_comp_plot', '--pc_plot', action='store_true', dest='bROCPHMMPlot',
                  default=False, help='Plot phmm comparison roc curve wrt robot data')
     p.add_option('--all_path_plot', '--all', action='store_true', dest='bAllPlot',
@@ -766,11 +773,19 @@ if __name__ == '__main__':
         cls = doc.class_list[nClass]
 
 
-    if opt.bCrossVal is False: 
+    if opt.bCrossVal is False and opt.bROCHuman is False and opt.bROCRobot is False: 
         
         pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
         data_vecs, _, _ = mad.get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
-        A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls)        
+        B_tune_pkl = "B_tune_"+doc.class_dir_list[nClass]+".pkl"        
+        
+        if os.path.isfile(B_tune_pkl) is False:
+            lh = learning_hmm(aXData=data_vecs[0], nState=30, 
+                              nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+                              fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
+            lh.param_optimization(save_file=B_tune_pkl)
+        else:                       
+            A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls, pkl_file=B_tune_pkl)        
 
         # Training 
         lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
@@ -1021,7 +1036,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, score_a=0.05, score_b=0.5)
+            ac = anomaly_checker(lh, score_n=0.9, sig_mult=0.5, sig_offset=0.4)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)

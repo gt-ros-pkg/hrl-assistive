@@ -14,14 +14,19 @@ class_list = ['Freezer','Fridge','Office Cabinet']
 class_dir_list = ['Freezer','Fridge','Office_Cabinet']
 
 
-def get_hmm_init_param(mech_class='Office Cabinet'):
+def get_hmm_init_param(mech_class='Office Cabinet', pkl_file=None):
 
     A=None        
     B=None
     pi=None    
     nState=None
-    
-    if mech_class=='Office Cabinet':
+
+    if pkl_file is not None:
+        d = ut.load_pickle(pkl_file)
+        nState = d['nState']
+        B = d['B']
+            
+    elif mech_class=='Office Cabinet':
         print "load Office Cabinet"
         nState = 21
         B= np.array([[6.74608512, 3.35549131],  

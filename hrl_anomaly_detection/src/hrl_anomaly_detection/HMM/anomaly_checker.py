@@ -53,7 +53,7 @@ class anomaly_checker():
         # x buffer
         ## self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
         ## self.x_buf.append(-1.0)
-        
+
         pass
 
         
@@ -170,41 +170,6 @@ class anomaly_checker():
         
     def simulation(self, X_test, Y_test):
 
-        ## # Load data
-        ## pkl_file = 'animation_data.pkl'
-        ## if os.path.isfile(pkl_file) and bReload==False:
-        ##     print "Load saved pickle"
-        ##     data = ut.load_pickle(pkl_file)        
-        ##     X_test      = data['X_test']
-        ##     Y_test      = data['Y_test']
-        ##     ## Y_pred      = data['Y_pred']
-        ##     ## Y_pred_prob = data['Y_pred_prob']
-        ##     mu          = data['mu']
-        ##     var         = data['var']
-        ## else:        
-
-        ##     n = len(X_test)
-        ##     mu = np.zeros((len(self.aXRange), self.nFutureStep))
-        ##     var = np.zeros((len(self.aXRange), self.nFutureStep))
-
-        ##     for i in range(1,n,1):
-        ##         mu_list, var_list, idx = self.update_buffer(X_test[:i], Y_test[:i])
-
-        ##         if mu_list != None and var_list != None:
-        ##             mu[idx,:] = mu_list
-        ##             var[idx,:]= var_list
-                    
-        ##     print "Save pickle"                    
-        ##     data={}
-        ##     data['X_test'] = X_test
-        ##     data['Y_test'] = Y_test                
-        ##     ## data['Y_pred'] = Y_pred
-        ##     ## data['Y_pred_prob'] = Y_pred_prob
-        ##     data['mu']          = mu
-        ##     data['var']         = var
-        ##     ut.save_pickle(data, pkl_file)                
-        ## print "---------------------------"
-            
         mu = np.zeros((len(self.aXRange), self.nFutureStep))
         var = np.zeros((len(self.aXRange), self.nFutureStep))
 
@@ -273,7 +238,7 @@ class anomaly_checker():
                     var[idx,:] = var_list
 
                 ## # check anomaly score
-                bFlag, fScore, _ = self.check_anomaly(y[-1])
+                bFlag, _, fScore = self.check_anomaly(y[-1])
             
             if i >= 2 and i < len(Y_test):# -self.nFutureStep:
 
@@ -289,11 +254,14 @@ class anomaly_checker():
 
                 lmean.set_data( a_X, a_mu)
 
-                sig_mult = self.sig_mult*np.arange(self.nFutureStep) + self.sig_offset
-                sig_mult = np.hstack([0, sig_mult])
-                
-                lvar1.set_data( a_X, a_mu - sig_mult*a_sig)
-                lvar2.set_data( a_X, a_mu + sig_mult*a_sig) 
+                ## sig_mult = self.sig_mult*np.arange(self.nFutureStep) + self.sig_offset
+                ## sig_mult = np.hstack([0, sig_mult])
+
+                min_val = a_mu - self.sig_mult*a_sig - self.sig_offset
+                max_val = a_mu + self.sig_mult*a_sig + self.sig_offset
+
+                lvar1.set_data( a_X, min_val)
+                lvar2.set_data( a_X, max_val)
                 lbar.set_height(fScore)
                 if fScore>=self.fAnomaly:
                     lbar.set_color('r')
