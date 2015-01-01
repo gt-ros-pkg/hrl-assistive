@@ -592,9 +592,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
 
-        #temp
-        d = ut.load_pickle(roc_res_file)
-        print test_idx, cost_ratio, " : ", d['min_n'], d['min_sig_mult'], d['min_sig_offset']
+        ## #temp
+        ## d = ut.load_pickle(roc_res_file)
+        ## print test_idx, cost_ratio, " : ", d['min_n'], d['min_sig_mult'], d['min_sig_offset']
         
         
         if os.path.isfile(roc_res_file): continue
