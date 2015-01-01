@@ -733,9 +733,9 @@ if __name__ == '__main__':
     p.add_option('--aws', action='store_true', dest='bAWS',
                  default=False, help='Use amazon cloud computing service')
     p.add_option('--block', '--b', action='store_true', dest='bUseBlockData',
-                 default=True, help='Use blocked data')
+                 default=False, help='Use blocked data')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
-                 default=True, help='Plot by time using animation')
+                 default=False, help='Plot by time using animation')
 
     p.add_option('--optimize_mv', '--mv', action='store_true', dest='bOptMeanVar',
                  default=False, help='Optimize mean and vars for B matrix')
@@ -834,8 +834,8 @@ if __name__ == '__main__':
         # Search best a and b + Get ROC data
         ## future_steps = [1,2,4,8] #range(1,9,1)
         ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
-        ## future_steps = [4, 1, 8, 2]             
-        future_steps = [1, 8]             
+        future_steps = [4, 1, 8, 2]             
+        ## future_steps = [1, 8]             
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         for nFutureStep in future_steps:
