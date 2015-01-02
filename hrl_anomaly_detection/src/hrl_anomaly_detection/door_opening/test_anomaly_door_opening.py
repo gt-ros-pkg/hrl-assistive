@@ -166,7 +166,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, nRandom=5):
                 rnd_slope_l.append(blocked_slope)
                 break
 
-    new_trial = None
+    new_trials = None
     new_anomaly_pts = []
     for trial in trials:
         for n,s in zip(rnd_block_l,rnd_slope_l):
@@ -177,14 +177,19 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, nRandom=5):
             x = np.arange(0.0, nRemLength, 1.0)+1.0
             b_trial = x*s + f_trial[-1]
 
-            if new_trial is None:
-                new_trial = np.hstack([f_trial, b_trial])
+            # Restrict max
+            for i, sample in enumerate(b_trial):
+                if sample > 12.0: b_trial[i] = 12.0
+
+            if new_trials is None:
+                new_trials = np.hstack([f_trial, b_trial])
             else:
-                new_trial = np.vstack([new_trial, np.hstack([f_trial, b_trial])])
+                new_trials = np.vstack([new_trials, np.hstack([f_trial, b_trial])])
 
             new_anomaly_pts.append(n)
-                    
-    return new_trial, new_anomaly_pts            
+
+    return new_trials, new_anomaly_pts
+    #return trials, new_anomaly_pts
 
     
 def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol=0.1, trans_type="left_right"):
@@ -537,7 +542,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             # Init checker
             ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
             fp_l = np.zeros((test_anomaly_idx[j]-start_step))
-            tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]-start_step))
+            tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]))
 
             # Simulate each profile
             for k in xrange(len(trial)):
@@ -552,15 +557,18 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     if bAnomaly and k < test_anomaly_idx[j]: 
                         fp_l[k-start_step] = 1.0 
                     elif bAnomaly is False and k >= test_anomaly_idx[j]:
-                        tn_l[k-test_anomaly_idx[j]-start_step] = 1.0 
+                        tn_l[k-test_anomaly_idx[j]] = 1.0 
                         
                     if bAnomaly is False: err_l.append(mean_err)
                             
 
             if false_pos is None:
+                false_pos = fp_l
+                true_neg  = tn_l
+            else:
                 false_pos = np.hstack([false_pos, fp_l])
                 true_neg  = np.hstack([true_neg, tn_l])
-
+                
         print "--------------------"
         print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos)
         print "--------------------"
@@ -693,13 +701,13 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=False, help='N-fold cross validation for parameter')
+                 default=True, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', 
                  default=False, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
-                 default=False, help='Add simulated & blocked data')
+                 default=True, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
@@ -850,7 +858,7 @@ if __name__ == '__main__':
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
         future_steps = [4, 1, 8, 2]             
-        future_steps = [1]             
+        future_steps = [4]             
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \

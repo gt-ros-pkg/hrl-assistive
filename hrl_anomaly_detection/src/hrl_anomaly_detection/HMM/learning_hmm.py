@@ -598,7 +598,13 @@ class learning_hmm(learning_base):
         #      : time step x nState (size)
         #        The sum of a row is 1.0 which means it is scaled one. Thus, original one
         #        must be divided by the scaling factor
-        (alpha,scale) = self.ml.forward(final_ts_obj)
+        try:
+            (alpha,scale) = self.ml.forward(final_ts_obj)
+        except:
+            print "ERROR"
+            (alpha,scale) = self.ml.forward(final_ts_obj)
+            print final_ts_obj
+            sys.exit()
         alpha         = np.array(alpha)
 
         ## temp = alpha[-1,:]
