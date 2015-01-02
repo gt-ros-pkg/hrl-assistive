@@ -160,7 +160,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, nRandom=5):
                 break
 
         while True:
-            blocked_slope = random.uniform(1.0, 5.0)
+            blocked_slope = random.uniform(0.5, 1.5)
             if blocked_slope in rnd_slope_l: continue
             else:
                 rnd_slope_l.append(blocked_slope)
@@ -615,10 +615,11 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         fp  = np.mean(t_false_pos.flatten()) * 100.0
         tn  = np.mean(t_true_neg.flatten()) * 100.0
         err = np.mean(np.array(t_err_l).flatten())
-        return [fp, tn, err]
+
+        return fp, tn, err
 
     ## return fp, err
-    return 0,0    
+    return 0., 0., 0.    
 
     
 def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, nMaxStep=36, fObsrvResol=0.1, trans_type='full', bSimBlock=False, bPlot=False, bAWS=False):
@@ -655,13 +656,13 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         err_list = []
 
         for cost_ratio in cost_ratios:
-            [fp, tn, err] = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                            cost_ratio, nMaxStep, fObsrvResol, \
-                                            trans_type, nFutureStep=nFutureStep, \
-                                            aws=bAWS, bSimBlock=bSimBlock)
+            fp, tn, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+                                          cost_ratio, nMaxStep, fObsrvResol, \
+                                          trans_type, nFutureStep=nFutureStep, \
+                                          aws=bAWS, bSimBlock=bSimBlock)
             fp_list.append(fp)
             tn_list.append(tn)
-            err_list.append(tn)
+            err_list.append(err)
 
         #---------------------------------------
         if bPlot:
@@ -858,7 +859,6 @@ if __name__ == '__main__':
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
         future_steps = [4, 1, 8, 2]             
-        future_steps = [4]             
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
