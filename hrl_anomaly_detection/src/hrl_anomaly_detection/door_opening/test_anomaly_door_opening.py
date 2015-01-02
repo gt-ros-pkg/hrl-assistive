@@ -5,6 +5,7 @@ import numpy as np, math
 import glob
 import socket
 import time
+import random 
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -36,174 +37,8 @@ def get_interp_data(x,y):
     ynew = interpolate.splev(xnew, tck, der=0)
     return xnew, ynew   
 
-def generate_roc_curve(mech_vec_list, mech_nm_list,                        
-                       nFutureStep, fObsrvResol,
-                       semantic_range = np.arange(0.2, 2.7, 0.3),
-                       target_class=['Freezer','Fridge','Office Cabinet'],
-                       bPlot=False, roc_root_path=roc_data_path,
-                       semantic_label='PHMM anomaly detection w/ known mechanisum class', 
-                       sem_l='-',sem_c='r',sem_m='*', trans_type="left_right"):
 
-    start_step = 2
-    
-    t_nm_list, t_mech_vec_list = [], []
-    for i, nm in enumerate(mech_nm_list):
-        ## print 'nm:', nm
-        if 'known' in nm:
-            continue
-        t_nm_list.append(nm)
-        t_mech_vec_list.append(mech_vec_list[i])
-
-    data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
-
- 
-    #---------------- semantic class prior -------------
-    # init containers
-    fp_l_l = []
-    mn_l_l = []
-    err_l_l = []
-    mech_fp_l_l = []
-    mech_mn_l_l = []
-    mech_err_l_l = []
-
-    # splitter
-    nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
-    label_splitter = splitters.Splitter(attr='partitions')            
-    splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
-
-    X_test = np.arange(0.0, 36.0, 1.0)
-
-    # Run by class
-    for l_wdata, l_vdata in splits: #label_splitter(data):
-
-        mech_class = l_vdata.targets[0]
-        trials = l_vdata.samples # all data
-    
-        # check existence of computed result
-        idx = doc.class_list.index(mech_class)        
-        if mech_class not in target_class: continue
-        ## elif os.path.isfile('roc_'+doc.class_dir_list[idx]+'.pkl'): continue
-        ## elif os.path.isfile('roc_'+doc.class_dir_list[idx]+'_complete'): continue
-        
-        # cutting into the same length
-        trials = trials[:,:36]
-
-        pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
-        data_vecs, data_mech, data_chunks = mad.get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
-        A, B, pi, nState = doc.get_hmm_init_param(mech_class=mech_class)        
-
-        print "-------------------------------"
-        print "Mech class: ", mech_class
-        print "Data size: ", np.array(data_vecs).shape
-        print "-------------------------------"
-        
-        # Training 
-        lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
-                          nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
-
-        lh.fit(lh.aXData, A=A, B=B, pi=pi, verbose=opt.bVerbose)                
-        
-        mn_list = []
-        fp_list, err_list = [], []        
-        
-        for n in semantic_range:
-            print "n: ", n
-
-            if os.path.isdir(roc_root_path) == False:
-                os.system('mkdir -p '+roc_root_path)
-
-            # check saved file
-            target_pkl = roc_root_path+'/'+'fp_'+doc.class_dir_list[idx]+'_n_'+str(n)+'.pkl'
-
-            # mutex file
-            host_name = socket.gethostname()
-            mutex_file = roc_root_path+'/'+host_name+'_mutex_'+doc.class_dir_list[idx]+'_'+str(n)
-                        
-            if os.path.isfile(target_pkl) == False \
-                and hcu.is_file(roc_root_path, 'mutex_'+doc.class_dir_list[idx]+'_'+str(n)) == False: 
-            
-                os.system('touch '+mutex_file)
-
-                # Init variables
-                false_pos = np.zeros((len(trials), len(trials[0])-start_step))
-                tot = trials.shape[0] * trials.shape[1]
-                err_l = []
-                    
-                # Gives all profiles
-                for i, trial in enumerate(trials):
-
-                    # Init checker
-                    ac = anomaly_checker(lh, sig_mult=n)
-
-                    # Simulate each profile
-                    for j in xrange(len(trial)):
-                        # Update buffer
-                        ac.update_buffer(X_test[:j+1], trial[:j+1])
-
-                        if j>= start_step:                    
-                            # check anomaly score
-                            bFlag, max_err, fScore = ac.check_anomaly(trial[j])
-                            if bFlag: 
-                                false_pos[i, j-start_step] = 1.0 
-                            else:
-                                err_l.append(max_err)
-
-                            print "(",i,"/",len(trials)," ",j, ") : ", false_pos[i, j-start_step], max_err
-
-                # save data & remove mutex file
-                d = {}
-                d['false_pos'] = false_pos
-                d['tot'] = tot
-                d['err_l'] = err_l
-                d['n'] = n
-                ut.save_pickle(d, target_pkl)
-                os.system('rm '+mutex_file)
-
-            elif os.path.isfile(target_pkl) == True:
-                
-                d = ut.load_pickle(target_pkl)
-                false_pos = d['false_pos']
-                tot   = d['tot']  
-                err_l = d['err_l']  
-                n     = d['n']  
-                
-                fp_list.append(np.sum(false_pos)/(tot*0.01))
-                err_list.append(err_l)
-                ## mn_list.append(np.mean(np.array(err_l)))
-
-                tot_e = 0.0
-                tot_e_cnt = 0.0
-                for e in err_l:
-                    if np.isnan(e) == False:
-                        tot_e += e 
-                        tot_e_cnt += 1.0
-                mn_list.append(tot_e/tot_e_cnt)
-                
-            else:
-                print "Mutex exists"
-                continue
-                
-        fp_l_l.append(fp_list)
-        err_l_l.append(err_list)
-        mn_l_l.append(mn_list)
-        
-    ## ll = [[] for i in err_l_l[0]]  # why 0?
-    ## for i,e in enumerate(err_l_l): # labels
-    ##     for j,l in enumerate(ll):  # multiplier range
-    ##         l.append(e[j])
-
-    if bPlot:
-        mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist() # means into a row
-        fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()                
-        pp.plot(fp_list, mn_list, sem_l+sem_m+sem_c, label= semantic_label,
-                mec=sem_c, ms=6, mew=2)
-        ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
-        ##         ms=6, mew=2)
-        ## pp.legend(loc='best',prop={'size':16})
-        pp.legend(loc=1,prop={'size':14})
-
-def genCrossValData(data_path, cross_data_path, human_only=True):
+def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False):
 
     if os.path.isdir(cross_data_path) == False:
         os.system('mkdir -p '+cross_data_path)
@@ -244,13 +79,18 @@ def genCrossValData(data_path, cross_data_path, human_only=True):
             idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
 
             train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
-            test_trials  = l_vdata.samples #non-robot chunk
+            if bSimBlock:                
+                test_trials, test_anomaly_idx = simulated_block_conv(l_vdata.samples, 2, 30, nRandom=5) 
+            else:
+                test_trials  = l_vdata.samples #non-robot chunk                    
+                test_anomaly_idx = []
             chunk = l_vdata.chunks[0]
             target = l_vdata.targets[0]
 
             #SAVE!!
-            d['train_trials'] = train_trials
-            d['test_trials'] = test_trials
+            d['train_trials']     = train_trials
+            d['test_trials']      = test_trials
+            d['test_anomaly_idx'] = test_anomaly_idx
             d['chunk'] = chunk
             d['target'] = target
             save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
@@ -304,8 +144,49 @@ def genCrossValData(data_path, cross_data_path, human_only=True):
             d['target'] = target
             save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
             ut.save_pickle(d, save_file)
+
             
-        
+def simulated_block_conv(trials, nMinStep, nMaxStep, nRandom=5):
+    print "Convert into simulated block data"
+
+    rnd_block_l = []
+    rnd_slope_l = []
+    for n in xrange(nRandom):
+        while True:
+            blocked_step = random.randint(nMinStep, nMaxStep)
+            if blocked_step in rnd_block_l: continue
+            else: 
+                rnd_block_l.append(blocked_step)
+                break
+
+        while True:
+            blocked_slope = random.uniform(1.0, 5.0)
+            if blocked_slope in rnd_slope_l: continue
+            else:
+                rnd_slope_l.append(blocked_slope)
+                break
+
+    new_trial = None
+    new_anomaly_pts = []
+    for trial in trials:
+        for n,s in zip(rnd_block_l,rnd_slope_l):
+
+            f_trial = trial[:n]
+
+            nRemLength = len(trial) - n
+            x = np.arange(0.0, nRemLength, 1.0)+1.0
+            b_trial = x*s + f_trial[-1]
+
+            if new_trial is None:
+                new_trial = np.hstack([f_trial, b_trial])
+            else:
+                new_trial = np.vstack([new_trial, np.hstack([f_trial, b_trial])])
+
+            new_anomaly_pts.append(n)
+                    
+    return new_trial, new_anomaly_pts            
+
+    
 def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol=0.1, trans_type="left_right"):
 
     if not(os.path.isdir(cross_test_path+'/'+str(nState))):
@@ -375,9 +256,10 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
 def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type, test=False):
 
     # Get the best param for training set
-    test_idx_list = []
-    train_data    = []
-    test_data     = []
+    test_idx_list         = []
+    train_data            = []
+    test_data             = []
+    test_anomaly_idx_data = []
     B_list        = []
     nState_list   = []
     score_list    = []
@@ -389,14 +271,16 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
 
             # Load data
             d = ut.load_pickle( os.path.join(cross_data_path,f) )
-            train_trials = d['train_trials']
-            test_trials  = d['test_trials']
-            chunk        = d['chunk'] 
-            target       = d['target']
+            train_trials     = d['train_trials']
+            test_trials      = d['test_trials']
+            test_anomaly_idx = d.get('test_anomaly_idx', [[nMaxStep]]*len(test_trials))            
+            chunk            = d['chunk'] 
+            target           = d['target']
 
             test_idx_list.append(test_num)
             train_data.append(train_trials)
             test_data.append(test_trials)            
+            test_anomaly_idx_data.append(test_anomaly_idx)
 
             # find parameters with a minimum score
             min_score  = 10000.0
@@ -426,17 +310,23 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
             nState_list.append(min_nState)
             score_list.append(min_score)
 
+
     print "Load cross validation params complete"
-    return test_idx_list, train_data, test_data, B_list, nState_list
+    return test_idx_list, train_data, test_data, test_anomaly_idx_data, B_list, nState_list
     
 
     
     
         
-def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, fObsrvResol, trans_type, nFutureStep, aws=False, test=False):
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, fObsrvResol, \
+                          trans_type, nFutureStep, aws=False, test=False):
 
     # Get the best param for training set
-    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)
+    test_idx_list, train_data, _, _, B_list, nState_list = load_cross_param(cross_data_path, \
+                                                                                 cross_test_path, \
+                                                                                 nMaxStep, \
+                                                                                 fObsrvResol, \
+                                                                                 trans_type)
         
     #-----------------------------------------------------------------            
     print "------------------------------------------------------"
@@ -562,19 +452,16 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
 
 
 def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
-                    fObsrvResol, trans_type, nFutureStep=5, aws=False, test=False):
-
+                    fObsrvResol, trans_type, nFutureStep=5, aws=False, bSimBlock=False):
 
     # Get the best param for training set
-    test_idx_list, train_data, test_data, B_list, nState_list = load_cross_param( \
-        cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)   
+    test_idx_list, train_data, test_data, test_anomaly_idx_data, B_list, nState_list = \
+      load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)   
 
     #-----------------------------------------------------------------
-
-    strMachine   = socket.gethostname()+"_"+str(os.getpid())
-    bComplete    = True
+    strMachine = socket.gethostname()+"_"+str(os.getpid())
+    bComplete  = True
     start_step = 2       
-
     
     for i, test_idx in enumerate(test_idx_list):
         
@@ -591,12 +478,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
         mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
-
-        ## #temp
-        ## d = ut.load_pickle(roc_res_file)
-        ## print test_idx, cost_ratio, " : ", d['min_n'], d['min_sig_mult'], d['min_sig_offset']
-        
-        
         if os.path.isfile(roc_res_file): continue
         elif hcu.is_file(roc_res_path, mutex_file_part):
             bComplete = False
@@ -643,16 +524,21 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         lh.fit(lh.aXData, B=B, verbose=False)    
 
         # Init variables
-        false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
+        ## false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
+        ## true_neg   = []
+        false_pos  = None
+        true_neg   = None
         err_l      = []        
         X_test = np.arange(0.0, 36.0, 1.0)
-        
+        test_anomaly_idx = test_anomaly_idx_data[i]
         
         for j, trial in enumerate(test_data[i]):
 
             # Init checker
             ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
-        
+            fp_l = np.zeros((test_anomaly_idx[j]-start_step))
+            tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]-start_step))
+
             # Simulate each profile
             for k in xrange(len(trial)):
                 # Update buffer
@@ -662,12 +548,18 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     # check anomaly score
                     bAnomaly, mean_err, _ = ac.check_anomaly(trial[k])
                     ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
-                    if bAnomaly: 
-                        false_pos[j, k-start_step] = 1.0 
-                    else:
-                        err_l.append(mean_err)
 
-                    ## print "(",j,"/",len(trials)," ",k, ") : ", false_pos[j, k-start_step], max_err
+                    if bAnomaly and k < test_anomaly_idx[j]: 
+                        fp_l[k-start_step] = 1.0 
+                    elif bAnomaly is False and k >= test_anomaly_idx[j]:
+                        tn_l[k-test_anomaly_idx[j]-start_step] = 1.0 
+                        
+                    if bAnomaly is False: err_l.append(mean_err)
+                            
+
+            if false_pos is None:
+                false_pos = np.hstack([false_pos, fp_l])
+                true_neg  = np.hstack([true_neg, tn_l])
 
         print "--------------------"
         print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos)
@@ -683,6 +575,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         roc_res_dict['min_sig_offset'] = min_sig_offset
         
         roc_res_dict['false_positive'] = false_pos
+        roc_res_dict['true_negative'] = true_neg
         roc_res_dict['force_error'] = err_l
         ut.save_pickle(roc_res_dict, roc_res_file)
         os.system('rm '+mutex_file)
@@ -690,6 +583,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
     if bComplete:
         t_false_pos  = None
+        t_true_neg   = None
         t_err_l      = []        
         
         for i, test_idx in enumerate(test_idx_list):
@@ -701,20 +595,96 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
             if t_false_pos is None:                
                 t_false_pos = np.array(roc_dict['false_positive'])
+                t_true_neg = np.array(roc_dict.get('true_negative',[0]))
             else:
                 ## print roc_dict['min_sig_mult'], roc_dict['min_sig_offset'], np.mean(np.array(roc_dict['false_positive']))*100.0, " : ", roc_dict['cost_ratio'], test_idx
                 t_false_pos = np.vstack([t_false_pos, np.array(roc_dict['false_positive'])])
+                t_true_neg  = np.vstack([t_true_neg, np.array(roc_dict.get('true_negative',[0]))])
                 
             t_err_l += roc_dict['force_error']
+            ## print test_idx, np.mean(roc_dict['force_error'])
 
         fp  = np.mean(t_false_pos.flatten()) * 100.0
+        tn  = np.mean(t_true_neg.flatten()) * 100.0
         err = np.mean(np.array(t_err_l).flatten())
-        
-        return [fp, err]
+        return [fp, tn, err]
 
     ## return fp, err
     return 0,0    
-        
+
+    
+def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, nMaxStep=36, fObsrvResol=0.1, trans_type='full', bSimBlock=False, bPlot=False, bAWS=False):
+
+    if "human" in ROC_target:
+        genCrossValData(data_path, cross_data_path, bSimBlock=bSimBlock)
+    elif "robot" in ROC_target:
+        genCrossValData(data_path, cross_data_path, human_only=False, bSimBlock=bSimBlock)
+    else:
+        print "No task defined: ", ROC_target
+        sys.exit()
+            
+    
+    # 1) HMM param optimization                
+    for nState in xrange(10,35,1):        
+        tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
+    
+    # --------------------------------------------------------            
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+
+    for nFutureStep in future_steps:
+
+        # Evaluate threshold in terms of training set
+        get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, \
+                              nMaxStep, fObsrvResol, trans_type, \
+                              nFutureStep=nFutureStep, aws=bAWS)
+
+        # --------------------------------------------------------
+        fp_list = []
+        tn_list = []
+        err_list = []
+
+        for cost_ratio in cost_ratios:
+            [fp, tn, err] = get_roc_by_cost(cross_data_path, cross_test_path, \
+                                            cost_ratio, nMaxStep, fObsrvResol, \
+                                            trans_type, nFutureStep=nFutureStep, \
+                                            aws=bAWS, bSimBlock=bSimBlock)
+            fp_list.append(fp)
+            tn_list.append(tn)
+            err_list.append(tn)
+
+        #---------------------------------------
+        if bPlot:
+
+            color = colors.next()
+            shape = shapes.next()
+
+            idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
+            sorted_fp_list  = [fp_list[i] for i in idx_list]
+            sorted_err_list = [err_list[i] for i in idx_list]
+
+            semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
+            sem_l='-'; sem_c=color; sem_m=shape                        
+            pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
+                    mec=sem_c, ms=6, mew=2)
+
+    #---------------------------------------            
+    if bPlot:
+        ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
+        ##         ms=6, mew=2)
+        ## pp.legend(loc='best',prop={'size':16})
+        pp.legend(loc=1,prop={'size':14})
+        pp.xlim(-0.1,10)
+        pp.ylim(0.,8)            
+        pp.show()
+        ## pp.savefig('robot_roc_sig_0_3.pdf')
+
+            
+
+    
+    
     
 if __name__ == '__main__':
 
@@ -728,6 +698,8 @@ if __name__ == '__main__':
                  default=False, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
+    p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
+                 default=False, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
@@ -794,24 +766,16 @@ if __name__ == '__main__':
 
 
     ###################################################################################            
-    if opt.bROCHuman or opt.bCrossVal: 
+    if (opt.bROCHuman or opt.bCrossVal) and opt.bSimBlock is False: 
         print "------------- ROC HUMAN -------------"
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_human_cross_data'
-            
-        ## cross_test_path = os.path.join(cross_data_path,'human_left_right')        
-        cross_test_path = os.path.join(cross_data_path,'human_'+trans_type)        
-        ## strMachine = socket.gethostname()
+        ROC_target = "human"
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
+        cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
+
+        future_steps = [4, 1, 8, 2]             
+        ## future_steps = [1]             
+        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         
-        genCrossValData(data_path, cross_data_path)
-
-        # 1) HMM param optimization                
-        for nState in xrange(10,35,1):        
-            tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
-
-        # --------------------------------------------------------            
-        import itertools
-        colors = itertools.cycle(['g', 'm', 'c', 'k'])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
         
         if opt.bROCPlot:
             pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl')
@@ -829,82 +793,22 @@ if __name__ == '__main__':
             f = pp.gcf()
             f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
 
-
-        # --------------------------------------------------------
-        # Search best a and b + Get ROC data
-        ## future_steps = [1,2,4,8] #range(1,9,1)
-        ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
-        future_steps = [4, 1, 8, 2]             
-        ## future_steps = [1, 8]             
-        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
-
-        for nFutureStep in future_steps:
-                    
-            # Evaluate threshold in terms of training set
-            get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, \
-                                  nMaxStep, fObsrvResol, trans_type, \
-                                  nFutureStep=nFutureStep, aws=opt.bAWS, test=False)
-
-            # --------------------------------------------------------
-            fp_list = []
-            err_list = []
-
-            for cost_ratio in cost_ratios:
-                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                            cost_ratio, nMaxStep, fObsrvResol, \
-                                            trans_type, nFutureStep=nFutureStep, aws=opt.bAWS)
-
-                fp_list.append(fp)
-                err_list.append(err)
-                ## mn_list.append(mn_list)
-
-            #---------------------------------------
-            if opt.bROCPlot:
+        generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
+                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot)
             
-                color = colors.next()
-                shape = shapes.next()
-
-                idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
-                sorted_fp_list  = [fp_list[i] for i in idx_list]
-                sorted_err_list = [err_list[i] for i in idx_list]
-
-                semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
-                sem_l='-'; sem_c=color; sem_m=shape                        
-                pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
-                        mec=sem_c, ms=6, mew=2)
-
-            
-        #---------------------------------------            
-        if opt.bROCPlot:
-            
-            ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
-            ##         ms=6, mew=2)
-            ## pp.legend(loc='best',prop={'size':16})
-            pp.legend(loc=1,prop={'size':14})
-            pp.xlim(-0.1,10)
-            pp.ylim(0.,8)            
-            pp.show()
-
 
     ###################################################################################            
-    elif opt.bROCRobot:
+    elif opt.bROCRobot and opt.bSimBlock is False:
         print "------------- ROC HUMAN -------------"
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_robot_cross_data'
-        cross_test_path = os.path.join(cross_data_path,'robot_'+trans_type)        
-        genCrossValData(data_path, cross_data_path, human_only=False)
-
-        # 1) HMM param optimization                
-        for nState in xrange(10,35,1):        
-            tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
+        ROC_target = "robot"        
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
+        cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
+        future_steps = [4, 1, 8, 2] 
+        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         
-        #--------------------------------------------------------------------------------        
-        import itertools
-        colors = itertools.cycle(['g', 'm', 'c', 'k'])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
-        ## mpu.set_figure_size(13, 7.)
-
+        #--------------------------------------------------------------------------------
         if opt.bROCPlot:
-
             s_range = np.arange(0.05, 5.0, 0.3) 
             m_range = np.arange(0.1, 3.8, 0.6)
             
@@ -917,7 +821,8 @@ if __name__ == '__main__':
                 
                 mar.generate_roc_curve(mech_vec_list, mech_nm_list,
                                    s_range, m_range, sem_c='c', sem_m='^',
-                                   ## semantic_label = 'operating 1st time with \n uncertainty in state estimation', \
+                                   ## semantic_label = 'operating 1st time with \n 
+                                   ## uncertainty in state estimation', \
                                    ## plot_prev=False)
                                    semantic_label = 'probabilistic model with \n uncertainty in state estimation', \
                                    plot_prev=False)
@@ -932,71 +837,26 @@ if __name__ == '__main__':
                                     semantic_label = 'probabilistic model with \n accurate state estimation',
                                     plot_prev=False)                                                   
         
+        generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
+                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot)
 
-        #--------------------------------------------------------------------------------
-        # Search best a and b + Get ROC data
-        ## future_steps = [1,2,4,8] #range(1,9,1)
-        ## future_steps = [5, 1, 2, 4, 8] #range(1,9,1)
-        future_steps = [4, 1, 8, 2] 
-        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
-
-        for nFutureStep in future_steps:
-                    
-            # Evaluate threshold in terms of training set
-            get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, fObsrvResol, \
-                                          trans_type, nFutureStep=nFutureStep, aws=opt.bAWS, test=False)
-
-            # --------------------------------------------------------
-            fp_list = []
-            err_list = []
-
-            for cost_ratio in cost_ratios:
-                [fp, err] = get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, \
-                                            nMaxStep, fObsrvResol, trans_type, \
-                                            nFutureStep=nFutureStep, aws=opt.bAWS)
-
-                fp_list.append(fp)
-                err_list.append(err)
-                ## mn_list.append(mn_list)
-
-            #---------------------------------------
-            if opt.bROCPlot:
             
-                color = colors.next()
-                shape = shapes.next()
+    ###################################################################################                    
+    elif (opt.bROCHuman or opt.bCrossVal) and opt.bSimBlock:
+        print "------------- ROC HUMAN with simulated block data-------------"
+        ROC_target = "human_block"        
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
+        cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
-                semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
-                sem_l=''; sem_c=color; sem_m=shape                        
-                pp.plot(fp_list, err_list, sem_l+sem_m+sem_c, label= semantic_label,
-                        mec=sem_c, ms=6, mew=2)
+        future_steps = [4, 1, 8, 2]             
+        future_steps = [1]             
+        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
-        ## # Set the default color cycle
-        ## import itertools
-        ## colors = itertools.cycle(['g', 'm', 'c', 'k'])
-        ## shapes = itertools.cycle(['x','v', 'o', '+'])
-        ## ## mpl.rcParams['axes.color_cycle'] = ['r', 'g', 'b', 'y', 'm', 'c', 'k']
-        ## ## pp.gca().set_color_cycle(['r', 'g', 'b', 'y', 'm', 'c', 'k'])
-        
-        ## ## for i in xrange(1,9,3):
-        ## for i in [1,8]:
-        ##     color = colors.next()
-        ##     shape = shapes.next()
-        ##     roc_root_path = roc_data_path+'_'+str(i)
-        ##     generate_roc_curve(mech_vec_list, mech_nm_list, \
-        ##                        nFutureStep=i,fObsrvResol=fObsrvResol,
-        ##                        semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=opt.bROCPlot,
-        ##                        roc_root_path=roc_root_path, semantic_label=str(i)+ \
-        ##                        ' step PHMM with \n accurate state estimation', 
-        ##                        sem_c=color,sem_m=shape)
-        ## ## mad.generate_roc_curve(mech_vec_list, mech_nm_list)
-        
-        if opt.bROCPlot: 
-            pp.legend(loc=1,prop={'size':14})
-            ## pp.xlim(-0.5,27)
-            pp.xlim(-0.5,5)
-            pp.ylim(0.,5)
-            ## pp.savefig('robot_roc_sig_0_3.pdf')
-            pp.show()
+        generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
+                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot)
+            
     
     ###################################################################################                    
     elif opt.bOptMeanVar:
@@ -1006,8 +866,10 @@ if __name__ == '__main__':
         import socket, time
         host_name = socket.gethostname()
         t=time.gmtime()                
-        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+doc.class_dir_list[nClass])
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+doc.class_dir_list[nClass],
+        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+ \
+                  doc.class_dir_list[nClass])
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+ \
+                                 doc.class_dir_list[nClass],
                                  host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
                                  +str(t[3])+str(t[4])+str(t[5])+'.pkl')
 
@@ -1273,3 +1135,170 @@ if __name__ == '__main__':
     ##     pp.show()
 
         
+
+## def generate_roc_curve(mech_vec_list, mech_nm_list,                        
+##                        nFutureStep, fObsrvResol,
+##                        semantic_range = np.arange(0.2, 2.7, 0.3),
+##                        target_class=['Freezer','Fridge','Office Cabinet'],
+##                        bPlot=False, roc_root_path=roc_data_path,
+##                        semantic_label='PHMM anomaly detection w/ known mechanisum class', 
+##                        sem_l='-',sem_c='r',sem_m='*', trans_type="left_right"):
+
+##     start_step = 2
+    
+##     t_nm_list, t_mech_vec_list = [], []
+##     for i, nm in enumerate(mech_nm_list):
+##         ## print 'nm:', nm
+##         if 'known' in nm:
+##             continue
+##         t_nm_list.append(nm)
+##         t_mech_vec_list.append(mech_vec_list[i])
+
+##     data, _ = mar.create_blocked_dataset_semantic_classes(t_mech_vec_list, t_nm_list, append_robot = False)
+
+ 
+##     #---------------- semantic class prior -------------
+##     # init containers
+##     fp_l_l = []
+##     mn_l_l = []
+##     err_l_l = []
+##     mech_fp_l_l = []
+##     mech_mn_l_l = []
+##     mech_err_l_l = []
+
+##     # splitter
+##     nfs = NFoldPartitioner(cvtype=1, attr='targets') # 1-fold ?
+##     label_splitter = splitters.Splitter(attr='partitions')            
+##     splits = [list(label_splitter.generate(x)) for x in nfs.generate(data)]            
+
+##     X_test = np.arange(0.0, 36.0, 1.0)
+
+##     # Run by class
+##     for l_wdata, l_vdata in splits: #label_splitter(data):
+
+##         mech_class = l_vdata.targets[0]
+##         trials = l_vdata.samples # all data
+    
+##         # check existence of computed result
+##         idx = doc.class_list.index(mech_class)        
+##         if mech_class not in target_class: continue
+##         ## elif os.path.isfile('roc_'+doc.class_dir_list[idx]+'.pkl'): continue
+##         ## elif os.path.isfile('roc_'+doc.class_dir_list[idx]+'_complete'): continue
+        
+##         # cutting into the same length
+##         trials = trials[:,:36]
+
+##         pkl_file  = "mech_class_"+doc.class_dir_list[idx]+".pkl"        
+##         data_vecs, data_mech, data_chunks = mad.get_data(pkl_file, mech_class=mech_class, renew=opt.renew) # human data
+##         A, B, pi, nState = doc.get_hmm_init_param(mech_class=mech_class)        
+
+##         print "-------------------------------"
+##         print "Mech class: ", mech_class
+##         print "Data size: ", np.array(data_vecs).shape
+##         print "-------------------------------"
+        
+##         # Training 
+##         lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
+##                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+##                           fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
+
+##         lh.fit(lh.aXData, A=A, B=B, pi=pi, verbose=opt.bVerbose)                
+        
+##         mn_list = []
+##         fp_list, err_list = [], []        
+        
+##         for n in semantic_range:
+##             print "n: ", n
+
+##             if os.path.isdir(roc_root_path) == False:
+##                 os.system('mkdir -p '+roc_root_path)
+
+##             # check saved file
+##             target_pkl = roc_root_path+'/'+'fp_'+doc.class_dir_list[idx]+'_n_'+str(n)+'.pkl'
+
+##             # mutex file
+##             host_name = socket.gethostname()
+##             mutex_file = roc_root_path+'/'+host_name+'_mutex_'+doc.class_dir_list[idx]+'_'+str(n)
+                        
+##             if os.path.isfile(target_pkl) == False \
+##                 and hcu.is_file(roc_root_path, 'mutex_'+doc.class_dir_list[idx]+'_'+str(n)) == False: 
+            
+##                 os.system('touch '+mutex_file)
+
+##                 # Init variables
+##                 false_pos = np.zeros((len(trials), len(trials[0])-start_step))
+##                 tot = trials.shape[0] * trials.shape[1]
+##                 err_l = []
+                    
+##                 # Gives all profiles
+##                 for i, trial in enumerate(trials):
+
+##                     # Init checker
+##                     ac = anomaly_checker(lh, sig_mult=n)
+
+##                     # Simulate each profile
+##                     for j in xrange(len(trial)):
+##                         # Update buffer
+##                         ac.update_buffer(X_test[:j+1], trial[:j+1])
+
+##                         if j>= start_step:                    
+##                             # check anomaly score
+##                             bFlag, max_err, fScore = ac.check_anomaly(trial[j])
+##                             if bFlag: 
+##                                 false_pos[i, j-start_step] = 1.0 
+##                             else:
+##                                 err_l.append(max_err)
+
+##                             print "(",i,"/",len(trials)," ",j, ") : ", false_pos[i, j-start_step], max_err
+
+##                 # save data & remove mutex file
+##                 d = {}
+##                 d['false_pos'] = false_pos
+##                 d['tot'] = tot
+##                 d['err_l'] = err_l
+##                 d['n'] = n
+##                 ut.save_pickle(d, target_pkl)
+##                 os.system('rm '+mutex_file)
+
+##             elif os.path.isfile(target_pkl) == True:
+                
+##                 d = ut.load_pickle(target_pkl)
+##                 false_pos = d['false_pos']
+##                 tot   = d['tot']  
+##                 err_l = d['err_l']  
+##                 n     = d['n']  
+                
+##                 fp_list.append(np.sum(false_pos)/(tot*0.01))
+##                 err_list.append(err_l)
+##                 ## mn_list.append(np.mean(np.array(err_l)))
+
+##                 tot_e = 0.0
+##                 tot_e_cnt = 0.0
+##                 for e in err_l:
+##                     if np.isnan(e) == False:
+##                         tot_e += e 
+##                         tot_e_cnt += 1.0
+##                 mn_list.append(tot_e/tot_e_cnt)
+                
+##             else:
+##                 print "Mutex exists"
+##                 continue
+                
+##         fp_l_l.append(fp_list)
+##         err_l_l.append(err_list)
+##         mn_l_l.append(mn_list)
+        
+##     ## ll = [[] for i in err_l_l[0]]  # why 0?
+##     ## for i,e in enumerate(err_l_l): # labels
+##     ##     for j,l in enumerate(ll):  # multiplier range
+##     ##         l.append(e[j])
+
+##     if bPlot:
+##         mn_list = np.mean(np.row_stack(mn_l_l), 0).tolist() # means into a row
+##         fp_list = np.mean(np.row_stack(fp_l_l), 0).tolist()                
+##         pp.plot(fp_list, mn_list, sem_l+sem_m+sem_c, label= semantic_label,
+##                 mec=sem_c, ms=6, mew=2)
+##         ## pp.plot(fp_list, mn_list, '--'+sem_m, label= semantic_label,
+##         ##         ms=6, mew=2)
+##         ## pp.legend(loc='best',prop={'size':16})
+##         pp.legend(loc=1,prop={'size':14})
