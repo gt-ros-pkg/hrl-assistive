@@ -181,6 +181,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, nRandom=5):
             for i, sample in enumerate(b_trial):
                 if sample > 12.0: b_trial[i] = 12.0
 
+            temp = np.hstack([f_trial, b_trial])
             if new_trials is None:
                 new_trials = np.hstack([f_trial, b_trial])
             else:
@@ -532,7 +533,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         ## false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
         ## true_neg   = []
         false_pos  = None
-        true_neg   = None
+        sef_l      = [] # simulated excess force
         err_l      = []        
         X_test = np.arange(0.0, 36.0, 1.0)
         test_anomaly_idx = test_anomaly_idx_data[i]
@@ -542,7 +543,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             # Init checker
             ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
             fp_l = np.zeros((test_anomaly_idx[j]-start_step))
-            tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]))
+            ## tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]))
 
             # Simulate each profile
             for k in xrange(len(trial)):
@@ -554,23 +555,25 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     bAnomaly, mean_err, _ = ac.check_anomaly(trial[k])
                     ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
 
+                    if bAnomaly is False: err_l.append(mean_err)
+                    
                     if bAnomaly and k < test_anomaly_idx[j]: 
                         fp_l[k-start_step] = 1.0 
-                    elif bAnomaly is False and k >= test_anomaly_idx[j]:
-                        tn_l[k-test_anomaly_idx[j]] = 1.0 
-                        
-                    if bAnomaly is False: err_l.append(mean_err)
-                            
+                    elif bAnomaly and k >= test_anomaly_idx[j]:
+                        sef_l.append(trial[k]-trial[test_anomaly_idx[j]-1])
+                        break                                                                        
+                    ## elif bAnomaly is False and k >= test_anomaly_idx[j]:
+                        ## tn_l[k-test_anomaly_idx[j]] = 1.0 
 
             if false_pos is None:
                 false_pos = fp_l
-                true_neg  = tn_l
+                ## true_neg  = tn_l
             else:
                 false_pos = np.hstack([false_pos, fp_l])
-                true_neg  = np.hstack([true_neg, tn_l])
+                ## true_neg  = np.hstack([true_neg, tn_l])
                 
         print "--------------------"
-        print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos)
+        print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos), " mean_sim_force: ", np.mean(np.array(sef_l))
         print "--------------------"
         
 
@@ -583,7 +586,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         roc_res_dict['min_sig_offset'] = min_sig_offset
         
         roc_res_dict['false_positive'] = false_pos
-        roc_res_dict['true_negative'] = true_neg
+        roc_res_dict['sim_mean_force'] = sef_l
         roc_res_dict['force_error'] = err_l
         ut.save_pickle(roc_res_dict, roc_res_file)
         os.system('rm '+mutex_file)
@@ -591,7 +594,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
     if bComplete:
         t_false_pos  = None
-        t_true_neg   = None
+        ## t_true_neg   = None
+        t_sef_l      = []        
         t_err_l      = []        
         
         for i, test_idx in enumerate(test_idx_list):
@@ -603,20 +607,22 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
             if t_false_pos is None:                
                 t_false_pos = np.array(roc_dict['false_positive'])
-                t_true_neg = np.array(roc_dict.get('true_negative',[0]))
+                ## t_true_neg = np.array(roc_dict.get('true_negative',[0]))
             else:
                 ## print roc_dict['min_sig_mult'], roc_dict['min_sig_offset'], np.mean(np.array(roc_dict['false_positive']))*100.0, " : ", roc_dict['cost_ratio'], test_idx
                 t_false_pos = np.vstack([t_false_pos, np.array(roc_dict['false_positive'])])
-                t_true_neg  = np.vstack([t_true_neg, np.array(roc_dict.get('true_negative',[0]))])
-                
+                ## t_true_neg  = np.vstack([t_true_neg, np.array(roc_dict.get('true_negative',[0]))])
+
+            t_sef_l += roc_dict['sim_mean_force']                
             t_err_l += roc_dict['force_error']
             ## print test_idx, np.mean(roc_dict['force_error'])
 
         fp  = np.mean(t_false_pos.flatten()) * 100.0
-        tn  = np.mean(t_true_neg.flatten()) * 100.0
+        ## tn  = np.mean(t_true_neg.flatten()) * 100.0
+        sef = np.mean(np.array(t_sef_l).flatten())
         err = np.mean(np.array(t_err_l).flatten())
 
-        return fp, tn, err
+        return fp, sef, err
 
     ## return fp, err
     return 0., 0., 0.    
@@ -652,16 +658,18 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
 
         # --------------------------------------------------------
         fp_list = []
-        tn_list = []
+        ## tn_list = []
+        sef_list = []
         err_list = []
 
         for cost_ratio in cost_ratios:
-            fp, tn, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+            fp, sef, err = get_roc_by_cost(cross_data_path, cross_test_path, \
                                           cost_ratio, nMaxStep, fObsrvResol, \
                                           trans_type, nFutureStep=nFutureStep, \
                                           aws=bAWS, bSimBlock=bSimBlock)
             fp_list.append(fp)
-            tn_list.append(tn)
+            ## tn_list.append(tn)
+            sef_list.append(sef)
             err_list.append(err)
 
         #---------------------------------------
