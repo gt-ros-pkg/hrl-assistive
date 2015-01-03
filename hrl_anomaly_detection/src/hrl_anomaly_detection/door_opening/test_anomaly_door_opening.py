@@ -160,7 +160,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, nRandom=5):
                 break
 
         while True:
-            blocked_slope = random.uniform(0.5, 1.5)
+            blocked_slope = random.uniform(0.5, 1.0)
             if blocked_slope in rnd_slope_l: continue
             else:
                 rnd_slope_l.append(blocked_slope)
