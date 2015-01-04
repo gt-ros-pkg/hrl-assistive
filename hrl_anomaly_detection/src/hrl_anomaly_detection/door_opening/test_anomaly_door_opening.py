@@ -99,10 +99,10 @@ def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False
 
             if bSimBlock:                
                 new_test_trials, test_anomaly_idx = simulated_block_conv(new_test_trials, \
-                                                                     int(len(new_test_trials[0])*0.1), \
-                                                                     int(len(new_test_trials[0])*0.9), \
+                                                                     int(len(new_test_trials[0])*0.2), \
+                                                                     int(len(new_test_trials[0])*0.8), \
                                                                      ang_interval, \
-                                                                     nRandom=5) 
+                                                                     nRandom=20) 
             else:
                 test_anomaly_idx = []
 
