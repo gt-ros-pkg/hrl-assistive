@@ -364,7 +364,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     start_step = 2
 
     score_n    = np.arange(0.3,1.01,0.1)
-    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.5)
+    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
     ## sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
     sig_offset = [0.0]
     
@@ -736,7 +736,7 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='renew',
                  default=False, help='Renew pickle files.')
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
-                 default=True, help='N-fold cross validation for parameter')
+                 default=False, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', 
                  default=False, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
@@ -893,7 +893,7 @@ if __name__ == '__main__':
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
-        future_steps = [4, 1, 8, 2]             
+        future_steps = [1, 2, 4, 8]             
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
 
         if opt.bROCPlot:
@@ -904,25 +904,7 @@ if __name__ == '__main__':
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
                            nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
                            bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=0.25)
-            
-    
-    ###################################################################################                    
-    elif opt.bOptMeanVar:
-        print "------------- Optimize B matrix -------------"
-
-        # Save file name
-        import socket, time
-        host_name = socket.gethostname()
-        t=time.gmtime()                
-        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+ \
-                  doc.class_dir_list[nClass])
-        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+ \
-                                 doc.class_dir_list[nClass],
-                                 host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
-                                 +str(t[3])+str(t[4])+str(t[5])+'.pkl')
-
-        lh.param_optimization(save_file=save_file)
-
+                
         
     ###################################################################################                    
     elif opt.bUseBlockData:
@@ -934,9 +916,9 @@ if __name__ == '__main__':
         h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25) # robot blocked test data
         h_config =  np.array(h_config)*180.0/3.14
 
-        # Training data            
-        h_ftan   = data_vecs[0][12,:].tolist() # ikea cabinet door openning data
-        h_config = np.arange(0,float(len(h_ftan)), 1.0)
+        ## # Training data            
+        ## h_ftan   = data_vecs[0][12,:].tolist() # ikea cabinet door openning data
+        ## h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
@@ -946,7 +928,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, score_n=0.9, sig_mult=0.5, sig_offset=0.4)
+            ac = anomaly_checker(lh, score_n=1.0, sig_mult=1.4, sig_offset=0.0)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
@@ -1002,6 +984,22 @@ if __name__ == '__main__':
                             
             
     ###################################################################################            
+    ###################################################################################                    
+    elif opt.bOptMeanVar:
+        print "------------- Optimize B matrix -------------"
+
+        # Save file name
+        import socket, time
+        host_name = socket.gethostname()
+        t=time.gmtime()                
+        os.system('mkdir -p /home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+ \
+                  doc.class_dir_list[nClass])
+        save_file = os.path.join('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_tune_'+ \
+                                 doc.class_dir_list[nClass],
+                                 host_name+'_'+str(t[0])+str(t[1])+str(t[2])+'_'
+                                 +str(t[3])+str(t[4])+str(t[5])+'.pkl')
+
+        lh.param_optimization(save_file=save_file)
                 
 
     ###################################################################################            

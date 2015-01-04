@@ -40,7 +40,7 @@ class anomaly_checker():
         self.sig_mult    = sig_mult
         self.sig_offset  = sig_offset
 
-        if score_n == None: self.score_n = float(self.ml.nFutureStep)
+        if score_n is None: self.score_n = 1.0 
         else: self.score_n = float(score_n)
 
         
@@ -107,10 +107,10 @@ class anomaly_checker():
 
         score = np.sum(a_score)
         
-        if score >= self.score_n*count: 
-            return 1.0, 0.0, score*(float(self.nFutureStep)/count)
+        if round(score,2) >= round(self.score_n*count, 2): 
+            return 1.0, 0.0, score/float(count)
         else: 
-            return 0.0, np.sum(m_err)/count, score*(float(self.nFutureStep)/count)
+            return 0.0, np.sum(m_err)/count, score/float(count)
                 
         
     def check_anomaly_batch(self, y, param_list):
@@ -193,10 +193,10 @@ class anomaly_checker():
 
         self.ax2 = self.fig.add_subplot(self.gs[1])        
         lbar,    = self.ax2.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
-        self.ax2.text(0.13, 0.2, 'Normal', fontsize='14', zorder=-1)            
-        self.ax2.text(0.05, 7.6, 'Abnormal', fontsize='14', zorder=0)            
+        self.ax2.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
+        self.ax2.text(0.05, 0.95, 'Abnormal', fontsize='14', zorder=0)            
         self.ax2.set_xlim([0.0, 1.0])
-        self.ax2.set_ylim([0, self.nMaxBuf])        
+        self.ax2.set_ylim([0, 1.0])        
         self.ax2.set_xlabel("Anomaly \n Gauge", fontsize=18)        
         ## self.ax2.yaxis.tick_right()
         ## labels = [item.get_text() for item in self.ax2.get_yticklabels()]
@@ -263,9 +263,9 @@ class anomaly_checker():
                 lvar1.set_data( a_X, min_val)
                 lvar2.set_data( a_X, max_val)
                 lbar.set_height(fScore)
-                if fScore>=self.fAnomaly:
+                if fScore>=self.score_n:
                     lbar.set_color('r')
-                elif fScore>=self.fAnomaly*0.7:          
+                elif fScore>=self.score_n*0.7:          
                     lbar.set_color('orange')
                 else:
                     lbar.set_color('b')
