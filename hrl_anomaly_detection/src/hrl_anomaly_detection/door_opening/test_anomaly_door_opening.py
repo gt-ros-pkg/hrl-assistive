@@ -365,7 +365,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
 
     score_n    = np.arange(0.3,1.01,0.1)
     sig_mult   = np.arange(0.5, 10.0+0.00001, 0.5)
-    sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
+    ## sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
+    sig_offset = [0.0]
     
     param_list = []
     for n in score_n:
@@ -743,7 +744,7 @@ if __name__ == '__main__':
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
-                 default=True, help='Add simulated & blocked data')
+                 default=False, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
