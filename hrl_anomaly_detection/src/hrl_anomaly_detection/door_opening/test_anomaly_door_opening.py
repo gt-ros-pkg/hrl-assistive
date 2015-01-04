@@ -574,9 +574,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                 if k>= start_step:                    
                     # check anomaly score
                     bAnomaly, mean_err, _ = ac.check_anomaly(trial[k])
-                    ## print "data=",i, " train_data=",j,k, " -- ", bAnomaly, mean_err 
 
-                    if bAnomaly is False: err_l.append(mean_err)
+                    if bAnomaly == 0.0: err_l.append(mean_err)
                     
                     if bAnomaly and k < test_anomaly_idx[j]: 
                         fp_l[k-start_step] = 1.0 
@@ -592,12 +591,12 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             else:
                 false_pos = np.hstack([false_pos, fp_l])
                 ## true_neg  = np.hstack([true_neg, tn_l])
-                
+
         print "--------------------"
-        print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos), " mean_sim_force: ", np.mean(np.array(sef_l))
+        print "Test done: ", test_idx, " mean_fp: ", np.mean(false_pos), \
+          "err: ", np.mean(np.array(err_l)), " mean_sim_force: ", np.mean(np.array(sef_l))
         print "--------------------"
         
-
                     
         roc_res_dict = {}
         roc_res_dict['test_idx'] = test_idx
@@ -636,7 +635,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
             t_sef_l += roc_dict['sim_mean_force']                
             t_err_l += roc_dict['force_error']
-            ## print test_idx, np.mean(roc_dict['force_error'])
 
         fp  = np.mean(t_false_pos.flatten()) * 100.0
         ## tn  = np.mean(t_true_neg.flatten()) * 100.0
