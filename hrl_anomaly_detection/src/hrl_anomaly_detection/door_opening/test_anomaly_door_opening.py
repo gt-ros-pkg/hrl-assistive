@@ -662,11 +662,11 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
             if sig_mult != None:
                 roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
-                                            "_cratio_"+str(cost_ratio)+'.pkl')
+                                            "_sig_mult_"+str(sig_mult)+'.pkl')
             else:
                 roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
-                                            "_sig_mult_"+str(sig_mult)+'.pkl')
-                
+                                            "_cratio_"+str(cost_ratio)+'.pkl')
+
             roc_dict = ut.load_pickle(roc_res_file)
 
             if t_false_pos is None:                
@@ -750,7 +750,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             fp_list.append(fp)
             ## tn_list.append(tn)
             sef_list.append(sef)
-            err_list.append(err)
+            err_list.append(err)        
 
         #---------------------------------------
         if bPlot:
@@ -876,7 +876,7 @@ if __name__ == '__main__':
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
         future_steps = [1, 2, 4, 8]             
-        ## future_steps = [1]             
+        future_steps = [8]             
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 0.25
         
