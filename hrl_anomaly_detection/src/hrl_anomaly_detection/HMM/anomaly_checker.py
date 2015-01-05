@@ -111,7 +111,8 @@ class anomaly_checker():
             return 1.0, 0.0, score/count
         else: 
             ## print m_err[0], np.sum(m_err[:2])/2., m_err[:2], round(score,2), round(self.score_n*count, 2)
-            return 0.0, np.sum(m_err)/count, score/count
+            new_m_err = [e for e in m_err if e>0.0]            
+            return 0.0, np.mean(new_m_err), score/count
                 
         
     def check_anomaly_batch(self, y, param_list):
