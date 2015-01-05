@@ -525,10 +525,15 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             time.sleep(0.5)
         
         # Check saved or mutex files
-        roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
-                                    "_cratio_"+str(cost_ratio)+'.pkl')
-
-        mutex_file_part = "running_"+str(test_idx)+"_cratio_"+str(cost_ratio)  
+        if sig_mult != None:
+            roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
+                                        "_sig_mult_"+str(sig_mult)+'.pkl')
+            mutex_file_part = "running_"+str(test_idx)+"_sig_mult_"+str(sig_mult)
+        else:
+            roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
+                                        "_cratio_"+str(cost_ratio)+'.pkl')
+            mutex_file_part = "running_"+str(test_idx)+"_cratio_"+str(cost_ratio)  
+            
         mutex_file_full = mutex_file_part+"_"+strMachine+'.txt'                     
         mutex_file = os.path.join(roc_res_path, mutex_file_full)
 
@@ -653,9 +658,15 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         
         for i, test_idx in enumerate(test_idx_list):
             # Check saved or mutex files
-            roc_res_path = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "roc_for_d_"+str(test_idx))            
-            roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
-                                        "_cratio_"+str(cost_ratio)+'.pkl')
+            roc_res_path = os.path.join(cross_test_path, 'nFuture_'+str(nFutureStep), "roc_for_d_"+str(test_idx))
+
+            if sig_mult != None:
+                roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
+                                            "_cratio_"+str(cost_ratio)+'.pkl')
+            else:
+                roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
+                                            "_sig_mult_"+str(sig_mult)+'.pkl')
+                
             roc_dict = ut.load_pickle(roc_res_file)
 
             if t_false_pos is None:                
@@ -740,7 +751,6 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             ## tn_list.append(tn)
             sef_list.append(sef)
             err_list.append(err)
-            
 
         #---------------------------------------
         if bPlot:
