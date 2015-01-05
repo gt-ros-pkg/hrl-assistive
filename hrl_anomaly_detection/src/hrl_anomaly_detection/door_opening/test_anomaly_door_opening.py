@@ -157,9 +157,33 @@ def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False
             chunk = l_vdata.chunks[0]
             target = l_vdata.targets[0]
 
+            if ang_interval < 1.0:
+                # resampling with specific interval
+                bin_size = ang_interval
+                h_config = np.arange(0.0, nMaxStep, 1.0)
+                new_test_trials = []
+                
+                for i in xrange(len(test_trials)):
+                    new_h_config, new_test_trial = get_interp_data(h_config, test_trials[i]) 
+                    new_test_trials.append(new_test_trial)
+            else:
+                new_test_trials = test_trials
+
+            if bSimBlock:                
+                new_test_trials, test_anomaly_idx = simulated_block_conv(new_test_trials, \
+                                                                     int(len(new_test_trials[0])*0.2), \
+                                                                     int(len(new_test_trials[0])*0.8), \
+                                                                     ang_interval, \
+                                                                     nRandom=20) 
+            else:
+                test_anomaly_idx = []
+
+            
+            
             #SAVE!!
             d['train_trials'] = train_trials
             d['test_trials'] = test_trials
+            d['test_anomaly_idx'] = test_anomaly_idx            
             d['chunk'] = chunk
             d['target'] = target
             save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
@@ -649,12 +673,15 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
     return 0., 0., 0.    
 
     
-def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, nMaxStep=36, fObsrvResol=0.1, trans_type='full', bSimBlock=False, bPlot=False, bAWS=False, ang_interval=1.0):
+def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, nMaxStep=36, \
+                       fObsrvResol=0.1, trans_type='full', bSimBlock=False, bPlot=False, bAWS=False, \
+                       ang_interval=1.0):
 
     if "human" in ROC_target:
         genCrossValData(data_path, cross_data_path, bSimBlock=bSimBlock, ang_interval=ang_interval)
     elif "robot" in ROC_target:
-        genCrossValData(data_path, cross_data_path, human_only=False, bSimBlock=bSimBlock, ang_interval=ang_interval)
+        genCrossValData(data_path, cross_data_path, human_only=False, bSimBlock=bSimBlock, \
+                        ang_interval=ang_interval)
     else:
         print "No task defined: ", ROC_target
         sys.exit()
@@ -850,8 +877,9 @@ if __name__ == '__main__':
         ROC_target = "robot"        
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
-        future_steps = [4, 1, 8, 2] 
+        future_steps = [1, 2, 4, 8] 
         cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
+        ang_interval = 0.25
         
         #--------------------------------------------------------------------------------
         if opt.bROCPlot:
@@ -885,7 +913,7 @@ if __name__ == '__main__':
         
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
                            nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
-                           bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot)
+                           bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
 
             
     ###################################################################################                    
