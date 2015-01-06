@@ -760,7 +760,8 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             color = colors.next()
             shape = shapes.next()
 
-            idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
+            idx_list = sorted(range(len(err_list)), key=lambda k: err_list[k])
+            ## idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
             sorted_fp_list  = [fp_list[i] for i in idx_list]
             sorted_sef_list = [sef_list[i] for i in idx_list]
             sorted_err_list = [err_list[i] for i in idx_list]
@@ -912,7 +913,7 @@ if __name__ == '__main__':
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
         future_steps = [1, 2, 4, 8] 
         cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
-        ang_interval = 1.0 #0.25
+        ang_interval = 0.25
         
         #--------------------------------------------------------------------------------
         if opt.bROCPlot:
