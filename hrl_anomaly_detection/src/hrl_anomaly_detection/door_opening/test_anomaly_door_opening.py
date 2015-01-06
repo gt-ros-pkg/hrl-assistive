@@ -805,11 +805,11 @@ if __name__ == '__main__':
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
                  default=False, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', 
-                 default=False, help='generate ROC like curve from the BIOROB dataset.')
+                 default=True, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
-                 default=False, help='Add simulated & blocked data')
+                 default=True, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
