@@ -639,7 +639,7 @@ class learning_hmm(learning_base):
                 
         else:
             (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
-            #if u_var < 0.01: u_var = 0.1 #0.4 #trick
+            if u_var < 0.05: u_var = 0.05 #0.4 #trick
 
             u_mu_list       = [0.0]*self.nFutureStep
             u_sigma_list    = [0.0]*self.nFutureStep
