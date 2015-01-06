@@ -327,6 +327,8 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
             chunk            = d['chunk'] 
             target           = d['target']
 
+            if test_anomaly_idx == []: test_anomaly_idx = [nMaxStep]*len(test_trials)            
+            
             test_idx_list.append(test_num)
             train_data.append(train_trials)
             test_data.append(test_trials)            
