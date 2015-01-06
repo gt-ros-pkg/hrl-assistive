@@ -320,7 +320,11 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
             test_num = f.split('_')[-1].split('.')[0]
 
             # Load data
-            d = ut.load_pickle( os.path.join(cross_data_path,f) )
+            try:
+                d = ut.load_pickle( os.path.join(cross_data_path,f) )
+            except:
+                d = ut.load_pickle( os.path.join(cross_data_path,f) )
+                
             train_trials     = d['train_trials']
             test_trials      = d['test_trials']
             test_anomaly_idx = d.get('test_anomaly_idx', [nMaxStep]*len(test_trials))            
