@@ -730,29 +730,29 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         sef_list = []
         err_list = []
 
-        for cost_ratio in cost_ratios:
-            fp, sef, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                          cost_ratio, nMaxStep, fObsrvResol, \
-                                          trans_type, nFutureStep=nFutureStep, \
-                                          aws=bAWS, bSimBlock=bSimBlock, \
-                                          ang_interval=ang_interval)
-            fp_list.append(fp)
-            ## tn_list.append(tn)
-            sef_list.append(sef)
-            err_list.append(err)
-
-        ## sig_mults   = np.arange(0.5, 10.0+0.00001, 0.5)    
-        ## cost_ratio = 1.0
-        ## for sig_mult in sig_mults:
+        ## for cost_ratio in cost_ratios:
         ##     fp, sef, err = get_roc_by_cost(cross_data_path, cross_test_path, \
         ##                                   cost_ratio, nMaxStep, fObsrvResol, \
         ##                                   trans_type, nFutureStep=nFutureStep, \
         ##                                   aws=bAWS, bSimBlock=bSimBlock, \
-        ##                                   ang_interval=ang_interval, sig_mult=sig_mult)
+        ##                                   ang_interval=ang_interval)
         ##     fp_list.append(fp)
         ##     ## tn_list.append(tn)
         ##     sef_list.append(sef)
-        ##     err_list.append(err)        
+        ##     err_list.append(err)
+
+        sig_mults   = np.arange(0.5, 10.0+0.00001, 0.5)    
+        cost_ratio = 1.0
+        for sig_mult in sig_mults:
+            fp, sef, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+                                          cost_ratio, nMaxStep, fObsrvResol, \
+                                          trans_type, nFutureStep=nFutureStep, \
+                                          aws=bAWS, bSimBlock=bSimBlock, \
+                                          ang_interval=ang_interval, sig_mult=sig_mult)
+            fp_list.append(fp)
+            ## tn_list.append(tn)
+            sef_list.append(sef)
+            err_list.append(err)        
 
         #---------------------------------------
         if bPlot:
