@@ -394,10 +394,10 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     start_step = 2
 
     ## score_n    = np.arange(0.3,1.01,0.1)
+    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
+    sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
     score_n    = [1.0]
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
-    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.5)
-    sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
     ## sig_offset = [0.0]
     
     param_list = []
