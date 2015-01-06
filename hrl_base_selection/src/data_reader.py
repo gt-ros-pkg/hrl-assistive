@@ -41,11 +41,12 @@ import hrl_lib.util as ut
 
 class DataReader(object):
     
-    def __init__(self,input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1):
+    def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1):
         self.score_sheet = []
         self.tf_listener = tf.TransformListener()
 
         self.subject = subject
+        self.sub_num = int(list(subject)[3])
         self.data_start = data_start
         self.data_finish = data_finish
 
@@ -175,7 +176,7 @@ class DataReader(object):
             #self.clustered_goal_data[num,0,3] = goal_values[num,0]
             #self.clustered_goal_data[num,1,3] = goal_values[num,1]
             #self.clustered_goal_data[num,2,3] = goal_values[num,2]
-# + np.matrix(tft.translation_matrix(goal_values[num,0:3]))))
+            # + np.matrix(tft.translation_matrix(goal_values[num,0:3]))))
             #    self.distance.append(np.linalg.norm(temp[0:3,3]))
         self.raw_goal_data = np.array(self.raw_goal_data)
         print 'Minimum distance between center of head and goal location from raw data = ', np.min(np.array(self.distance))
@@ -280,8 +281,6 @@ class DataReader(object):
         print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible ' \
               'distance of head center (0.2m)' % (self.length, len(self.raw_goal_data), len(self.goal_unique))
         
-
-
         return self.goal_unique
 
 
@@ -387,6 +386,9 @@ class DataReader(object):
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
         save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
+        if self.task == 'shaving':
+            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', self.sub_num,
+                                              '_score_data.pkl']))
         print 'There was no existing score data for this task. I therefore created a new file.'
 #        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
 #            data1 = load_pickle(''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))

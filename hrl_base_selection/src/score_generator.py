@@ -34,8 +34,8 @@ import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle
 from random import gauss
-#import hrl_haptic_mpc.haptic_mpc_util
-#from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
+# import hrl_haptic_mpc.haptic_mpc_util
+# from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
 import hrl_lib.util as ut
 
 class ScoreGenerator(object):
@@ -292,8 +292,6 @@ class ScoreGenerator(object):
                     this_reachable = []
                     this_manipulable = []
 
-                    best_score = []
-                    #print 'bz: ',bz
                     temp_scores = []
                     del_index = []
                     s_len = copy.copy(len(score_stuff))
@@ -306,7 +304,7 @@ class ScoreGenerator(object):
                     for item in temp_scores:
                         reachable_line = []
                         manipulable_line = []
-                        this_score.append(best_score[0:11])
+                        this_score.append(item[0:11])
                         for number in xrange(int((len(item)-11)/2.)):
                             reachable_line.append(item[11+2*number])
                             manipulable_line.append(item[12+2*number])
@@ -664,7 +662,7 @@ class ScoreGenerator(object):
         self.env.Load('robots/pr2-beta-static.zae')
         self.robot = self.env.GetRobots()[0]
         v = self.robot.GetActiveDOFValues()
-        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]= 3.14/2
+        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()] = 3.14/2
         v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
         v[self.robot.GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
         v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
@@ -676,6 +674,8 @@ class ScoreGenerator(object):
         self.robot.SetTransform(np.array(robot_start))
 
         ## Set robot manipulators, ik, planner
+        # IT IS PROBLEMATIC THAT I ONLY EVALUATE AT ONE SHOULDER POSITION. THIS NEEDS TO BE LOOKED AT AND REMEDIATED!!!
+        # I think fixable by changing to 'leftarm_torso', but I am not certain.
         self.robot.SetActiveManipulator('leftarm')
         self.manip = self.robot.GetActiveManipulator()
         ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)

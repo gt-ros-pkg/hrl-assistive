@@ -26,7 +26,7 @@ class ReachAction(object):
         self.mpc_goal_pub = rospy.Publisher("/haptic_mpc/goal_pose", PoseStamped)
         self.haptic_weights = rospy.Publisher("haptic_mpc/weights", HapticMpcWeights)
         self.fdbk_pub = rospy.Publisher("wt_log_out", String)
-        self.goal_posture = rospy.Publisher("haptic_mpc/joint_trajectory", JointTrajectory,latch=True)
+        self.goal_posture = rospy.Publisher("haptic_mpc/joint_trajectory", JointTrajectory, latch=True)
 
         self.ee_pose_sub = rospy.Subscriber("/haptic_mpc/gripper_pose", PoseStamped, self.ee_pose_cb)
         self.joint_state_sub = rospy.Subscriber('/l_arm_controller/state', JointTrajectoryControllerState, self.joint_state_cb)

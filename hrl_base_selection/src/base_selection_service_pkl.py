@@ -52,7 +52,7 @@ class BaseSelector(object):
         else:
             self.listener = transform_listener
 
-        # self.model = model
+        self.model = model
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, latch=True)
 
         self.bed_state_z = 0.
@@ -89,6 +89,7 @@ class BaseSelector(object):
         print 'Loading data, please wait.'
         self.chair_scores = self.load_task('yogurt', 'chair')
         self.autobed_scores = self.load_task('yogurt', 'autobed')
+        self.shaving_scores = self.load_task('shaving', 'chair')
         print 'Time to receive load data: %fs' % (time.time()-start_time)
         # Service
         self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
@@ -276,6 +277,8 @@ class BaseSelector(object):
         #             req.head.pose.orientation.w]
         # self.pr2_B_head = createBMatrix(pos_temp, ori_temp)
         # #print 'head from input: \n', head
+        if self.task == 'shaving_test':
+            self.testing = True
         if not self.testing:
             try:
                 now = rospy.Time.now()
