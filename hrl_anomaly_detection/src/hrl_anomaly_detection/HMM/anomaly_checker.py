@@ -111,8 +111,8 @@ class anomaly_checker():
             return 1.0, 0.0, score/count
         else: 
             ## print m_err[0], np.sum(m_err[:2])/2., m_err[:2], round(score,2), round(self.score_n*count, 2)
-            new_m_err = [e for e in m_err if e>0.0]            
-            return 0.0, np.mean(new_m_err), score/count
+            ## new_m_err = [e for e in m_err if e>0.0]            
+            return 0.0, np.mean(m_err), score/count
                 
         
     def check_anomaly_batch(self, y, param_list):
@@ -146,8 +146,8 @@ class anomaly_checker():
             if float(score) >= threshold:
                 bAnomaly_l[i] = 1.0
             else: 
-                new_m_err = [e for e in m_err if e>0.0]
-                err_l[i] = np.mean(new_m_err)
+                ## new_m_err = [e for e in m_err if e>0.0]
+                err_l[i] = np.mean(m_err)
 
             ## print i, nParam, " = ", n, sig_mult, sig_offset, " : ", np.sum(a_score), n*count, " - ", bAnomaly_l[i], err_l[i]                
 
@@ -158,7 +158,7 @@ class anomaly_checker():
     def cost(self, val, buff_idx, mu, sig, sig_mult, sig_offset):
 
         err = mu + sig_mult * sig + sig_offset - val        
-        if err <= 0.0: return 1.0, 0.0 #err
+        if err <= 0.0: return 1.0, err
         else: return 0.0, err
         
         

@@ -320,7 +320,6 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
             test_num = f.split('_')[-1].split('.')[0]
 
             # Load data
-            print f
             d = ut.load_pickle( os.path.join(cross_data_path,f) )
             train_trials     = d['train_trials']
             test_trials      = d['test_trials']
@@ -913,7 +912,7 @@ if __name__ == '__main__':
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
         future_steps = [1, 2, 4, 8] 
         cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
-        ang_interval = 0.25
+        ang_interval = 1.0 #0.25
         
         #--------------------------------------------------------------------------------
         if opt.bROCPlot:
