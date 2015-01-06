@@ -474,7 +474,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                             # check anomaly score
                             bAnomaly_l, err_l = ac.check_anomaly_batch(trial[k], param_list)
 
-                            if fp_l_l == None:
+                            if fp_l_l is None:
                                 fp_l_l = bAnomaly_l
                                 err_l_l = err_l
                             else:
