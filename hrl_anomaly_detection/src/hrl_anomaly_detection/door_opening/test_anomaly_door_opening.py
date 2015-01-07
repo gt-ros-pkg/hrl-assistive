@@ -102,7 +102,7 @@ def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False
                                                                      int(len(new_test_trials[0])*0.2), \
                                                                      int(len(new_test_trials[0])*0.8), \
                                                                      ang_interval, \
-                                                                     nRandom=20) 
+                                                                     nRandom=5) 
             else:
                 test_anomaly_idx = []
 
@@ -219,19 +219,31 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
 
             nRemLength = len(trial) - n
             x = (np.arange(0.0, nRemLength, 1.0)+1.0) * ang_interval
-            b_trial = x*s + f_trial[-1]
+            ## b_trial = x*s + f_trial[-1]
+            ## b_trial = 0.1*(np.exp(x)-1.0) + trial[n:]
+            b_trial = x*0.1 + trial[n:]
 
             ## # Restrict max
             ## for i, sample in enumerate(b_trial):
             ##     if sample > 15.0: b_trial[i] = 15.0
 
-            temp = np.hstack([f_trial, b_trial])
+            new_trial = np.hstack([f_trial, b_trial])
             if new_trials is None:
-                new_trials = np.hstack([f_trial, b_trial])
+                new_trials = new_trial
             else:
-                new_trials = np.vstack([new_trials, np.hstack([f_trial, b_trial])])
+                new_trials = np.vstack([new_trials, new_trial])
 
             new_anomaly_pts.append(n)
+
+            ## pp.figure()                    
+            ## x = np.arange(0.0, len(trial), 1.0)*ang_interval
+            ## print x.shape, new_trial.shape, n
+            ## pp.plot(x, new_trial,'r')
+            ## pp.plot(x, trial,'b')
+            ## pp.plot([n-1,n-1],[0,10.0])
+            ## pp.show()
+
+            
 
     return new_trials, new_anomaly_pts
     #return trials, new_anomaly_pts
@@ -593,6 +605,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         ## true_neg   = []
         false_pos  = None
         sef_l      = [] # simulated excess force
+        sat_l      = [] # simulated anomaly time
         err_l      = []        
         X_test = np.arange(0.0, len(test_data[i][0]), 1.0) * ang_interval
         test_anomaly_idx = test_anomaly_idx_data[i]        
@@ -625,6 +638,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                         fp_l[k-start_step] = 1.0 
                     elif bAnomaly and k >= test_anomaly_idx[j]:
                         sef_l.append(trial[k]-trial[test_anomaly_idx[j]-1])
+                        sat_l.append((k-(test_anomaly_idx[j]-1))*ang_interval)
                         break                                                                        
                     ## elif bAnomaly is False and k >= test_anomaly_idx[j]:
                         ## tn_l[k-test_anomaly_idx[j]] = 1.0 
@@ -651,6 +665,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         
         roc_res_dict['false_positive'] = false_pos
         roc_res_dict['sim_mean_force'] = sef_l
+        roc_res_dict['sim_anomaly_time'] = sat_l
         roc_res_dict['force_error'] = err_l
         ut.save_pickle(roc_res_dict, roc_res_file)
         os.system('rm '+mutex_file)
@@ -660,6 +675,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         t_false_pos  = None
         ## t_true_neg   = None
         t_sef_l      = []        
+        t_sat_l      = []        
         t_err_l      = []        
         
         for i, test_idx in enumerate(test_idx_list):
@@ -684,14 +700,16 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                 ## t_true_neg  = np.vstack([t_true_neg, np.array(roc_dict.get('true_negative',[0]))])
 
             t_sef_l += roc_dict['sim_mean_force']                
+            t_sat_l += roc_dict['sim_anomaly_time']                
             t_err_l += roc_dict['force_error']
 
         fp  = np.mean(t_false_pos.flatten()) * 100.0
         ## tn  = np.mean(t_true_neg.flatten()) * 100.0
         sef = np.mean(np.array(t_sef_l).flatten())
+        sat = np.mean(np.array(t_sat_l).flatten())
         err = np.mean(np.array(t_err_l).flatten())
 
-        return fp, sef, err
+        return fp, sef, sat, err
 
     ## return fp, err
     return 0., 0., 0.    
@@ -732,10 +750,11 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         fp_list = []
         ## tn_list = []
         sef_list = []
+        sat_list = []
         err_list = []
 
         for cost_ratio in cost_ratios:
-            fp, sef, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+            fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
                                           cost_ratio, nMaxStep, fObsrvResol, \
                                           trans_type, nFutureStep=nFutureStep, \
                                           aws=bAWS, bSimBlock=bSimBlock, \
@@ -743,6 +762,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             fp_list.append(fp)
             ## tn_list.append(tn)
             sef_list.append(sef)
+            sat_list.append(sat)
             err_list.append(err)
 
         ## sig_mults   = np.arange(0.5, 10.0+0.00001, 0.5)    
@@ -768,14 +788,17 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             ## idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
             sorted_fp_list  = [fp_list[i] for i in idx_list]
             sorted_sef_list = [sef_list[i] for i in idx_list]
+            sorted_sat_list = [sat_list[i] for i in idx_list]
             sorted_err_list = [err_list[i] for i in idx_list]
 
             semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
             sem_l='-'; sem_c=color; sem_m=shape                        
 
             if bSimBlock:
-                pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
+                pp.plot(sorted_fp_list, sorted_sat_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
+                ## pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
+                ##         mec=sem_c, ms=6, mew=2)
             else:
                 pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
