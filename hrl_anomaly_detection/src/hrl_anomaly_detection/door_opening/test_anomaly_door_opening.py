@@ -712,7 +712,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         return fp, sef, sat, err
 
     ## return fp, err
-    return 0., 0., 0.    
+    return 0., 0., 0., 0.
 
     
 def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, nMaxStep=36, \
@@ -755,10 +755,10 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
 
         for cost_ratio in cost_ratios:
             fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                          cost_ratio, nMaxStep, fObsrvResol, \
-                                          trans_type, nFutureStep=nFutureStep, \
-                                          aws=bAWS, bSimBlock=bSimBlock, \
-                                          ang_interval=ang_interval)
+                                                cost_ratio, nMaxStep, fObsrvResol, \
+                                                trans_type, nFutureStep=nFutureStep, \
+                                                aws=bAWS, bSimBlock=bSimBlock, \
+                                                ang_interval=ang_interval)
             fp_list.append(fp)
             ## tn_list.append(tn)
             sef_list.append(sef)
