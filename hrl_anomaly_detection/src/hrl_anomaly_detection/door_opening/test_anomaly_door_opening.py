@@ -44,13 +44,17 @@ def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False
     if os.path.isdir(cross_data_path) == False:
         os.system('mkdir -p '+cross_data_path)
 
-    save_file = os.path.join(cross_data_path, 'data_11.pkl')        
+    save_file = os.path.join(cross_data_path, 'data_1.pkl')        
     if os.path.isfile(save_file) is True: return
-
+    
     # human and robot data
-    pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
-      glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
-      glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+    if human_only:
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
+          glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
+          glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+    else:
+        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
+          glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
 
     r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
     mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
@@ -110,7 +114,7 @@ def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False
                                    nRandom=5) 
         else:
             test_anomaly_idx = []
-
+            org_test_trials = test_trials
 
         #SAVE!!
         d['train_trials']     = train_trials
@@ -642,8 +646,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                 t_false_pos = np.hstack([t_false_pos, roc_dict['false_positive']])
                 ## t_true_neg  = np.vstack([t_true_neg, np.array(roc_dict.get('true_negative',[0]))])
 
-            t_sef_l += roc_dict['sim_mean_force']                
-            t_sat_l += roc_dict['sim_anomaly_time']                
+            t_sef_l += roc_dict.get('sim_mean_force', [0.0])                
+            t_sat_l += roc_dict.get('sim_anomaly_time', [0.0])                
             t_err_l += roc_dict['force_error']
 
         fp  = np.mean(t_false_pos.flatten()) * 100.0
@@ -732,18 +736,19 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             sorted_fp_list  = [fp_list[i] for i in idx_list]
             sorted_sef_list = [sef_list[i] for i in idx_list]
             sorted_sat_list = [sat_list[i] for i in idx_list]
-            sorted_err_list = [err_list[i] for i in idx_list]
+            sorted_err_list = [err_list[i] for i in idx_list]            
 
             semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
             sem_l='-'; sem_c=color; sem_m=shape                        
 
             if bSimBlock:
-                pp.plot(sorted_sef_list, sorted_sat_list, sem_l+sem_m+sem_c, label= semantic_label,
+                
+                ## pp.plot(cost_ratios, sef_list, sem_l+sem_m+sem_c, label= semantic_label,
+                ##         mec=sem_c, ms=6, mew=2)                
+                pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
-                ## pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
-                ##         mec=sem_c, ms=6, mew=2)
             else:
-                pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
+                pp.plot(sorted_fp_list[:-1], sorted_err_list[:-1], sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
                 
     #---------------------------------------            
@@ -753,7 +758,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ## pp.legend(loc='best',prop={'size':16})
         pp.legend(loc=1,prop={'size':14})
         pp.xlim(-0.1,5)
-        ## pp.ylim(0.,8)            
+        pp.ylim(0.,4)            
         pp.show()
         ## pp.savefig('robot_roc_sig_0_3.pdf')
 
@@ -771,11 +776,11 @@ if __name__ == '__main__':
     p.add_option('--cross_val', '--cv', action='store_true', dest='bCrossVal',
                  default=False, help='N-fold cross validation for parameter')
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', 
-                 default=True, help='generate ROC like curve from the BIOROB dataset.')
+                 default=False, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
-                 default=False, help='Plot roc curve wrt robot data')
+                 default=True, help='Plot roc curve wrt robot data')
     p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
-                 default=True, help='Add simulated & blocked data')
+                 default=False, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
@@ -938,7 +943,29 @@ if __name__ == '__main__':
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
                            nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
                            bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
+
+                           
+    ###################################################################################                    
+    elif opt.bROCRobot and opt.bSimBlock:
+        print "------------- ROC HUMAN with simulated block data-------------"
+        ROC_target = "robot_block"        
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
+        cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
+
+        future_steps = [1, 2, 4, 8]             
+        cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
+        ang_interval = 1.0
+
+        if opt.bROCPlot:
+            pp.figure()
+            f = pp.gcf()
+            f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
+            
+        generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
+                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
                 
+                           
         
     ###################################################################################                    
     elif opt.bUseBlockData:
