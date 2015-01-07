@@ -809,7 +809,7 @@ if __name__ == '__main__':
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
-                 default=True, help='Add simulated & blocked data')
+                 default=False, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
                  default=False, help='Plot roc curve wrt robot data')
     p.add_option('--aws', action='store_true', dest='bAWS',
