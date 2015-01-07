@@ -43,151 +43,85 @@ def genCrossValData(data_path, cross_data_path, human_only=True, bSimBlock=False
 
     if os.path.isdir(cross_data_path) == False:
         os.system('mkdir -p '+cross_data_path)
-    
-    if human_only:
-        save_file = os.path.join(cross_data_path, 'data_11.pkl')        
-        if os.path.isfile(save_file) is True: return
 
-        # human and robot data
-        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
-          glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
-          glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
+    save_file = os.path.join(cross_data_path, 'data_11.pkl')        
+    if os.path.isfile(save_file) is True: return
 
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
+    # human and robot data
+    pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
+      glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') + \
+      glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
 
-        # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
-        data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
-                                                          mech_nm_list, append_robot = True)    
+    r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
+    mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
 
-        # create the generator
-        #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
-        nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
-        spl = splitters.Splitter(attr='partitions')
-        splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
+    # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
+    data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
+                                                      mech_nm_list, append_robot = True)    
 
-        d = {}
-        count = 0
-        for l_wdata, l_vdata in splits:
+    # create the generator
+    #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
+    nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
+    spl = splitters.Splitter(attr='partitions')
+    splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
+        
+    d = {}
+    count = 0
+    for l_wdata, l_vdata in splits:
 
+        if human_only:       
             if 'robot' in l_vdata.chunks[0]: 
                 print "Pass a robot chunk"
                 continue
-
-            count += 1
-            non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
-            # find same target samples in non_robot target samples        
-            idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
-
-            train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
-            test_trials  = l_vdata.samples #non-robot chunk                                        
-            chunk = l_vdata.chunks[0]
-            target = l_vdata.targets[0]
-
-
-            if ang_interval < 1.0:
-                # resampling with specific interval
-                bin_size = ang_interval
-                h_config = np.arange(0.0, nMaxStep, 1.0)
-                new_test_trials = []
-                
-                for i in xrange(len(test_trials)):
-                    new_h_config, new_test_trial = get_interp_data(h_config, test_trials[i]) 
-                    new_test_trials.append(new_test_trial)
-            else:
-                new_test_trials = test_trials
-
-            if bSimBlock:                
-                new_test_trials, test_anomaly_idx = simulated_block_conv(new_test_trials, \
-                                                                     int(len(new_test_trials[0])*0.2), \
-                                                                     int(len(new_test_trials[0])*0.8), \
-                                                                     ang_interval, \
-                                                                     nRandom=5) 
-            else:
-                test_anomaly_idx = []
-
-                
-            #SAVE!!
-            d['train_trials']     = train_trials
-            d['test_trials']      = new_test_trials
-            d['test_anomaly_idx'] = test_anomaly_idx
-            d['chunk'] = chunk
-            d['target'] = target
-            save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
-            ut.save_pickle(d, save_file)
-
-    else:
-        save_file = os.path.join(cross_data_path, 'data_11.pkl')        
-        if os.path.isfile(save_file) is True: return
-
-        # human and robot data
-        pkl_list = glob.glob(data_path+'RAM_db/*_new.pkl') + \
-          glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl') # + \
-          ## glob.glob(data_path+'RAM_db/robot_trials/simulate_perception/*_new.pkl')
-
-        r_pkls = mar.filter_pkl_list(pkl_list, typ = 'rotary')
-        mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36) #get vec_list, name_list
-
-        # data consists of (mech_vec_matrix?, label_string(Freezer...), mech_name)
-        data, _ = mar.create_blocked_dataset_semantic_classes(mech_vec_list,
-                                                          mech_nm_list, append_robot = True)    
-
-        # create the generator
-        #label_splitter = NFoldSplitter(cvtype=1, attr='labels')
-        nfs = NFoldPartitioner(cvtype=1) # 1-fold ?
-        spl = splitters.Splitter(attr='partitions')
-        splits = [list(spl.generate(x)) for x in nfs.generate(data)] # split by chunk
-
-        ## cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_robot_cross_data'
-        d = {}
-        count = 0
-        for l_wdata, l_vdata in splits:
-
+        else:
             if 'robot' not in l_vdata.chunks[0]: 
                 print "Pass a non-robot chunk"
                 continue
-
-            count += 1
-            non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
-            # find same target samples in non-robot target samples        
-            idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
-
-            train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
-            test_trials  = l_vdata.samples #robot chunk
-            chunk = l_vdata.chunks[0]
-            target = l_vdata.targets[0]
-
-            if ang_interval < 1.0:
-                # resampling with specific interval
-                bin_size = ang_interval
-                h_config = np.arange(0.0, nMaxStep, 1.0)
-                new_test_trials = []
-                
-                for i in xrange(len(test_trials)):
-                    new_h_config, new_test_trial = get_interp_data(h_config, test_trials[i]) 
-                    new_test_trials.append(new_test_trial)
-            else:
-                new_test_trials = test_trials
-
-            if bSimBlock:                
-                new_test_trials, test_anomaly_idx = simulated_block_conv(new_test_trials, \
-                                                                     int(len(new_test_trials[0])*0.2), \
-                                                                     int(len(new_test_trials[0])*0.8), \
-                                                                     ang_interval, \
-                                                                     nRandom=20) 
-            else:
-                test_anomaly_idx = []
-
             
-            
-            #SAVE!!
-            d['train_trials'] = train_trials
-            d['test_trials'] = test_trials
-            d['test_anomaly_idx'] = test_anomaly_idx            
-            d['chunk'] = chunk
-            d['target'] = target
-            save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
-            ut.save_pickle(d, save_file)
+        count += 1
+        non_robot_idxs = np.where(['robot' not in i for i in l_wdata.chunks])[0] # if there is no robot, true 
+        # find same target samples in non_robot target samples        
+        idxs = np.where(l_wdata.targets[non_robot_idxs] == l_vdata.targets[0])[0] 
+
+        train_trials = (l_wdata.samples[non_robot_idxs])[idxs]
+        test_trials  = l_vdata.samples # chunk                                       
+        chunk = l_vdata.chunks[0]
+        target = l_vdata.targets[0]
+
+
+        if ang_interval < 1.0:
+            # resampling with specific interval
+            bin_size = ang_interval
+            h_config = np.arange(0.0, nMaxStep, 1.0)
+            new_test_trials = []
+
+            for i in xrange(len(test_trials)):
+                new_h_config, new_test_trial = get_interp_data(h_config, test_trials[i]) 
+                new_test_trials.append(new_test_trial)
+        else:
+            new_test_trials = test_trials
+
+        if bSimBlock:                
+            new_test_trials, test_anomaly_idx, org_test_trials = \
+              simulated_block_conv(new_test_trials, \
+                                   int(len(new_test_trials[0])*0.2), \
+                                   int(len(new_test_trials[0])*0.8), \
+                                   ang_interval, \
+                                   nRandom=5) 
+        else:
+            test_anomaly_idx = []
+
+
+        #SAVE!!
+        d['train_trials']     = train_trials
+        d['test_trials']      = new_test_trials
+        d['test_anomaly_idx'] = test_anomaly_idx
+        d['test_trials_no_simblock']  = org_test_trials            
+        d['chunk'] = chunk
+        d['target'] = target
+        save_file = os.path.join(cross_data_path, 'data_'+str(count)+'.pkl')
+        ut.save_pickle(d, save_file)
+
 
             
 def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
@@ -212,6 +146,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
 
     new_trials = None
     new_anomaly_pts = []
+    org_trials = None
     for trial in trials:
         for n,s in zip(rnd_block_l,rnd_slope_l):
 
@@ -230,8 +165,10 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
             new_trial = np.hstack([f_trial, b_trial])
             if new_trials is None:
                 new_trials = new_trial
+                org_trials = trial
             else:
                 new_trials = np.vstack([new_trials, new_trial])
+                org_trials = np.vstack([org_trials, trial])
 
             new_anomaly_pts.append(n)
 
@@ -245,7 +182,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
 
             
 
-    return new_trials, new_anomaly_pts
+    return new_trials, new_anomaly_pts, org_trials
     #return trials, new_anomaly_pts
 
     
@@ -322,6 +259,7 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
     train_data            = []
     test_data             = []
     test_anomaly_idx_data = []
+    org_test_data         = []
     B_list        = []
     nState_list   = []
     score_list    = []
@@ -340,6 +278,7 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
             train_trials     = d['train_trials']
             test_trials      = d['test_trials']
             test_anomaly_idx = d.get('test_anomaly_idx', [nMaxStep]*len(test_trials))            
+            org_test_trials  = d['test_trials_no_simblock']            
             chunk            = d['chunk'] 
             target           = d['target']
 
@@ -349,6 +288,7 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
             train_data.append(train_trials)
             test_data.append(test_trials)            
             test_anomaly_idx_data.append(test_anomaly_idx)
+            org_test_data.append(org_test_trials)            
 
             # find parameters with a minimum score
             min_score  = 10000.0
@@ -380,7 +320,7 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
 
 
     print "Load cross validation params complete"
-    return test_idx_list, train_data, test_data, test_anomaly_idx_data, B_list, nState_list
+    return test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, B_list, nState_list
     
 
     
@@ -390,7 +330,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                           trans_type, nFutureStep, aws=False, test=False):
 
     # Get the best param for training set
-    test_idx_list, train_data, _, _, B_list, nState_list = load_cross_param(cross_data_path, \
+    test_idx_list, train_data, _, _, _, B_list, nState_list = load_cross_param(cross_data_path, \
                                                                                  cross_test_path, \
                                                                                  nMaxStep, \
                                                                                  fObsrvResol, \
@@ -527,7 +467,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     sig_mult=None):
 
     # Get the best param for training set
-    test_idx_list, train_data, test_data, test_anomaly_idx_data, B_list, nState_list = \
+    test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, B_list, nState_list = \
       load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)   
 
     #-----------------------------------------------------------------
@@ -617,6 +557,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                 min_n = 1.0
                 min_sig_mult = sig_mult
                 min_sig_offset = 0.0
+
+            org_trial = org_test_data[i][j]
             
             # Init checker
             ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
@@ -637,7 +579,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     if bAnomaly and k < test_anomaly_idx[j]: 
                         fp_l[k-start_step] = 1.0 
                     elif bAnomaly and k >= test_anomaly_idx[j]:
-                        sef_l.append(trial[k]-trial[test_anomaly_idx[j]-1])
+                        
+                        sef_l.append(trial[k]-org_trial[k])
                         sat_l.append((k-(test_anomaly_idx[j]-1))*ang_interval)
                         break                                                                        
                     ## elif bAnomaly is False and k >= test_anomaly_idx[j]:
@@ -795,7 +738,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             sem_l='-'; sem_c=color; sem_m=shape                        
 
             if bSimBlock:
-                pp.plot(sorted_fp_list, sorted_sat_list, sem_l+sem_m+sem_c, label= semantic_label,
+                pp.plot(sorted_sef_list, sorted_sat_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
                 ## pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
                 ##         mec=sem_c, ms=6, mew=2)
@@ -810,7 +753,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ## pp.legend(loc='best',prop={'size':16})
         pp.legend(loc=1,prop={'size':14})
         pp.xlim(-0.1,5)
-        pp.ylim(0.,8)            
+        ## pp.ylim(0.,8)            
         pp.show()
         ## pp.savefig('robot_roc_sig_0_3.pdf')
 
