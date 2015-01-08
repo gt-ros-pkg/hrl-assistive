@@ -43,8 +43,11 @@ class anomaly_checker():
         if score_n is None: self.score_n = 1.0 
         else: self.score_n = float(score_n)
 
-        self.buff_coff = np.arange(float(self.nFutureStep), 0.99, 1.0)
-        self.buff_coff /= np.sum(self.buff_coff) 
+        if nFutureStep == 1:
+            self.buff_coff = [1.0]
+        else:                
+            self.buff_coff = np.arange(float(self.nFutureStep), 0.99, 1.0)
+            self.buff_coff /= np.sum(self.buff_coff) 
         
         # N-buffers
         self.buf_dict = {}
