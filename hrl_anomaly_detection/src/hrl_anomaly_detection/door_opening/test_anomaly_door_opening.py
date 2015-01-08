@@ -356,7 +356,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     if nFutureStep == 1:
         buff_coff_ratio = [1.0]
     else:
-        buff_coff_ratio = np.arange(0.1,3.01,0.5)    
+        buff_coff_ratio = np.arange(0.05,0.61,0.1)    
     ## score_n    = [1.0]
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
     ## sig_offset = [0.0]

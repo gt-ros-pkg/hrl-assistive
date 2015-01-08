@@ -42,15 +42,6 @@ class anomaly_checker():
 
         if score_n is None: self.score_n = 1.0 
         else: self.score_n = float(score_n)
-
-        if self.nFutureStep == 1:
-            self.buff_coff = [1.0]
-        else:
-            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
-            self.buff_coff = buff_coff_ratio*np.exp(-x)
-
-            ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
-            self.buff_coff /= np.sum(self.buff_coff) 
         
         # N-buffers
         self.buf_dict = {}
@@ -62,8 +53,22 @@ class anomaly_checker():
         ## self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
         ## self.x_buf.append(-1.0)
 
+        self.init_buff_coff(buff_coff_ratio)
+        
         pass
 
+    def init_buff_coff(self, buff_coff_ratio):
+
+        if self.nFutureStep == 1:
+            self.buff_coff = [1.0]
+        else:
+            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
+            ## self.buff_coff = buff_coff_ratio*np.exp(-x)
+            self.buff_coff = np.exp((-buff_coff_ratio*x))
+
+            ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
+            self.buff_coff /= np.sum(self.buff_coff) 
+        
         
     def update_buffer(self, X_test, Y_test):
 
@@ -142,16 +147,8 @@ class anomaly_checker():
             sig_offset = param[2]
             buff_coff_ratio = param[3]
 
-            if self.nFutureStep == 1:
-                self.buff_coff = [1.0]
-            else:
-                x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
-                self.buff_coff = buff_coff_ratio*np.exp(-x)
-
-                ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
-                self.buff_coff /= np.sum(self.buff_coff) 
-            
-
+            self.init_buff_coff(buff_coff_ratio)           
+                        
             a_score = np.zeros((self.nFutureStep))
             m_err   = np.zeros((self.nFutureStep))
             
