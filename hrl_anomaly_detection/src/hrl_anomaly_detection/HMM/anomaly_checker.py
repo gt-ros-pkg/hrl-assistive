@@ -43,6 +43,8 @@ class anomaly_checker():
         if score_n is None: self.score_n = 1.0 
         else: self.score_n = float(score_n)
 
+        self.buff_coff = np.arange(float(self.nFutureStep), 0.99, 1.0)
+        self.buff_coff /= np.sum(self.buff_coff) 
         
         # N-buffers
         self.buf_dict = {}
@@ -93,6 +95,7 @@ class anomaly_checker():
         m_err    = np.zeros((self.nFutureStep))
 
         count = 0.
+        scale = 0.
         for i in xrange(self.nFutureStep):
 
             # check buff size
@@ -105,14 +108,20 @@ class anomaly_checker():
             a_score[i], m_err[i] = self.cost(y, i, mu, sig, sig_mult=self.sig_mult, \
                                            sig_offset=self.sig_offset)
 
-        score = np.sum(a_score)
-        
-        if round(score,2) >= round(self.score_n*count, 2): 
-            return 1.0, 0.0, score/count
+            scale += self.buff_coff[j]
+                                           
+
+        a_score *= self.buff_coff
+        m_err *= self.buff_coff
+                                           
+        score = round(np.sum(a_score)/scale, 2)            
+        threshold = round(self.score_n, 2)        
+        if score >= threshold: 
+            return 1.0, 0.0, score
         else: 
             ## print m_err[0], np.sum(m_err[:2])/2., m_err[:2], round(score,2), round(self.score_n*count, 2)
             ## new_m_err = [e for e in m_err if e>0.0]            
-            return 0.0, np.mean(m_err), score/count
+            return 0.0, np.sum(m_err)/scale, score
                 
         
     def check_anomaly_batch(self, y, param_list):
@@ -130,6 +139,7 @@ class anomaly_checker():
             m_err   = np.zeros((self.nFutureStep))
             
             count = 0.        
+            scale = 0.
             for j in xrange(self.nFutureStep):
                 # check buff size
                 if len(self.buf_dict['mu_'+str(j)]) < j+1: continue
@@ -141,13 +151,18 @@ class anomaly_checker():
                 a_score[j], m_err[j] = self.cost(y, j, mu, sig, sig_mult=sig_mult, \
                                                      sig_offset=sig_offset)
 
-            score = round(np.sum(a_score), 2)
-            threshold = round(n*count, 2)
-            if float(score) >= threshold:
+                scale += self.buff_coff[j]
+
+            a_score *= self.buff_coff
+            m_err *= self.buff_coff
+
+            score = round(np.sum(a_score)/scale, 2)            
+            threshold = round(n, 2)
+            if score >= threshold:
                 bAnomaly_l[i] = 1.0
             else: 
                 ## new_m_err = [e for e in m_err if e>0.0]
-                err_l[i] = np.mean(m_err)
+                err_l[i] = np.sum(m_err)/scale
 
             ## print i, nParam, " = ", n, sig_mult, sig_offset, " : ", np.sum(a_score), n*count, " - ", bAnomaly_l[i], err_l[i]                
 

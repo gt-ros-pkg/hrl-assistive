@@ -350,7 +350,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     start_step = 2
 
     score_n    = np.arange(0.3,1.01,0.1)
-    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
+    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.5)
     sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
     ## score_n    = [1.0]
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
@@ -778,7 +778,7 @@ if __name__ == '__main__':
     p.add_option('--fig_roc_human', action='store_true', dest='bROCHuman', 
                  default=False, help='generate ROC like curve from the BIOROB dataset.')
     p.add_option('--fig_roc_robot', action='store_true', dest='bROCRobot',
-                 default=True, help='Plot roc curve wrt robot data')
+                 default=False, help='Plot roc curve wrt robot data')
     p.add_option('--simulated_block', '--sb', action='store_true', dest='bSimBlock',
                  default=False, help='Add simulated & blocked data')
     p.add_option('--fig_roc_plot', '--plot', action='store_true', dest='bROCPlot',
