@@ -349,9 +349,14 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
-    score_n    = np.arange(0.3,1.01,0.1)
-    sig_mult   = np.arange(0.5, 10.0+0.00001, 0.5)
-    sig_offset = np.arange(0.0, 1.5+0.00001, 0.1)
+    score_n         = np.arange(0.3,1.01,0.1)
+    sig_mult        = np.arange(0.5, 10.0+0.00001, 0.5)
+    sig_offset      = np.arange(0.0, 1.5+0.00001, 0.1)
+
+    if nFutureStep == 1:
+        buff_coff_ratio = [1.0]
+    else:
+        buff_coff_ratio = np.arange(0.1,3.01,0.5)    
     ## score_n    = [1.0]
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
     ## sig_offset = [0.0]
@@ -360,7 +365,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     for n in score_n:
         for a in sig_mult:
             for b in sig_offset:
-                param_list.append([n,a,b])
+                for r in buff_coff_ratio:
+                    param_list.append([n,a,b,r])
     
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
@@ -459,6 +465,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
             tune_res_dict['min_n'] = param_list[min_idx][0]
             tune_res_dict['min_sig_mult'] = param_list[min_idx][1]
             tune_res_dict['min_sig_offset'] = param_list[min_idx][2]
+            tune_res_dict['min_buff_coff_r'] = param_list[min_idx][3]
             tune_res_dict['min_fp'] = fp_param[min_idx]
             tune_res_dict['min_err'] = err_param[min_idx]
 
@@ -527,6 +534,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         min_n           = param_dict['min_n']
         min_sig_mult    = param_dict['min_sig_mult']
         min_sig_offset  = param_dict['min_sig_offset']
+        min_buff_coff_r = param_dict['min_buff_coff_r']
 
         if test_idx != param_dict['test_idx']:
             print "------------------------------------------------------"
@@ -565,7 +573,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             org_trial = org_test_data[i][j]
             
             # Init checker
-            ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
+            ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset, buff_coff_ratio=min_buff_coff_r)
             fp_l = np.zeros((test_anomaly_idx[j]-start_step))
             ## tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]))
 
@@ -748,7 +756,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
                 pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
             else:
-                pp.plot(sorted_fp_list[:-1], sorted_err_list[:-1], sem_l+sem_m+sem_c, label= semantic_label,
+                pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
                 
     #---------------------------------------            
@@ -758,7 +766,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ## pp.legend(loc='best',prop={'size':16})
         pp.legend(loc=1,prop={'size':14})
         pp.xlim(-0.1,5)
-        pp.ylim(0.,4)            
+        ## pp.ylim(0.,4)            
         pp.show()
         ## pp.savefig('robot_roc_sig_0_3.pdf')
 

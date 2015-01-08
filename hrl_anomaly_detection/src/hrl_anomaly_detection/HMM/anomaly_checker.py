@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, score_n=None, sig_mult=1.0, sig_offset=0.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, score_n=None, sig_mult=1.0, sig_offset=0.0, buff_coff_ratio=1.0):
 
         # Object
         self.ml = ml
@@ -45,8 +45,11 @@ class anomaly_checker():
 
         if self.nFutureStep == 1:
             self.buff_coff = [1.0]
-        else:                
-            self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
+        else:
+            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
+            self.buff_coff = buff_coff_ratio*np.exp(-x)
+
+            ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
             self.buff_coff /= np.sum(self.buff_coff) 
         
         # N-buffers
@@ -137,6 +140,17 @@ class anomaly_checker():
             n = param[0]
             sig_mult = param[1]
             sig_offset = param[2]
+            buff_coff_ratio = param[3]
+
+            if self.nFutureStep == 1:
+                self.buff_coff = [1.0]
+            else:
+                x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
+                self.buff_coff = buff_coff_ratio*np.exp(-x)
+
+                ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
+                self.buff_coff /= np.sum(self.buff_coff) 
+            
 
             a_score = np.zeros((self.nFutureStep))
             m_err   = np.zeros((self.nFutureStep))
