@@ -45,7 +45,7 @@ class ScoreGenerator(object):
         if tf_listener is None:
             self.tf_listener = tf.TransformListener()
         else:
-            self.tf_listener=tf_listener
+            self.tf_listener = tf_listener
         self.visualize = visualize
         self.model = model
         self.goals = goals
@@ -654,7 +654,7 @@ class ScoreGenerator(object):
 
     def eval_init_config(self, init_config):
         reached = 0.
-        for i in xrange(len(init_config[0]):
+        for i in xrange(len(init_config[0])):
             delete_index = []
             x = init_config[0][i]
             y = init_config[1][i]
@@ -702,11 +702,11 @@ class ScoreGenerator(object):
                         if sol is not None:
                             reached += 1
                             delete_index.append(num)
-            self.Tgrasp = np.delete(self.Tgrasp, delete_index, 0)
+            self.goals = np.delete(self.goals, delete_index, 0)
         score = reached/len(self.goals)
+        print 'Score is (% of reached goals): ', score
         return score
 
-            
             
 
 

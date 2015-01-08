@@ -22,6 +22,8 @@ from visualization_msgs.msg import Marker
 import time
 from hrl_msgs.msg import FloatArrayBare
 from helper_functions import createBMatrix
+from data_reader import DataReader
+from score_generator import ScoreGenerator
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
@@ -36,30 +38,29 @@ class Manipulability_Testing(object):
         self.subj = subj
         self.model = 'chair'
         self.visualize = False
+        data_start = 0
+        data_finish = 4000  # 4000 #'end'
+        pos_clust = 50
+        ori_clust = 2
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         print 'Loading scores.'
         self.loaded_scores = self.load_task('shaving', 'chair', subj)
         if self.loaded_scores is None:
             print 'The scores do not exist. Must generate scores! This may take a long time...'
-            self.generate_scores()
+            self.generate_scores(data_start, data_finish, pos_clust, ori_clust)
             print 'Scores generated. I will now continue.'
             print 'Now loading the scores I just generated'
             self.loaded_scores = self.load_task('shaving', 'chair', subj)
         if self.loaded_scores is None:
             print 'The scores still do not exist. This is bad. Fixes needed in code.'
-            break
             return
         headx = 0
         heady = 0
         self.scores = self.loaded_scores[headx, heady]
-        data_start = 0
-        data_finish = 10  # 4000 #'end'
         model = 'chair'  # options are: 'chair', 'bed', 'autobed'
         task = 'shaving'
-        subject = ''.join(['sub', string(self.subj), '_shaver'])
-        pos_clust = 50
-        ori_clust = 2
+        subject = ''.join(['sub', str(self.subj), '_shaver'])
         print 'Reading in raw data from the task.'
         read_data = DataReader(subject=subject, data_start=data_start, data_finish=data_finish, model=model, task=task,
                              pos_clust=pos_clust, ori_clust=ori_clust)
@@ -85,33 +86,33 @@ class Manipulability_Testing(object):
         for item in comparison_bases:
             print item
         print 'I may now proceed with comparison evaluation of the base locations with differing manipulability score'
-        self.evaluate_base_locations(best_base, comparison_bases, raw_data)
+        self.evaluate_base_locations(best_base, comparison_bases, goal_data)
 
-
-
-
-
-
-    def evaluate_base_locations(self, best_base, comparison_bases, raw_data):
+    def evaluate_base_locations(self, best_base, comparison_bases, goal_data):
         visualize = False
         mytargets = 'all_goals'
         reference_options = []
         reference_options.append('head')
         myReferenceNames = reference_options
+        myGoals = goal_data
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model, tf_listener=self.tf_listener)
-        return best_base_score, comparison_scores
+                                  goals=myGoals, model=self.model)
+        selector.receive_new_goals(goal_data)
+        best_base_score = selector.eval_init_config(best_base)
+        print 'The score for the best base was: ', best_base_score
+        comparison_base_scores = []
+        for item in comparison_bases:
+            comparison_base_scores.append(selector.eval_init_config(item))
+        for i in xrange(len(comparison_base_scores)):
+            print 'A comparison base score for base: ', comparison_bases[i]
+            print 'The score was: ', comparison_base_scores[i]
+        return best_base_score, comparison_base_scores
 
-    def generate_scores(self):
-        data_start = 0
-        data_finish = 10  # 4000 #'end'
+    def generate_scores(self, data_start, data_finish, pos_clust, ori_clust):
         model = 'chair'  # options are: 'chair', 'bed', 'autobed'
         task = 'shaving'
-        subject = ''.join(['sub', string(self.subj), '_shaver'])
-        pos_clust = 50
-        ori_clust = 2
-        rospy.init_node(''.join(['data_reader_', subject, '_', str(data_start), '_', str(data_finish), '_',
-                                 str(int(time.time()))]))
+        subject = ''.join(['sub', str(self.subj), '_shaver'])
+
         start_time = time.time()
         print 'Starting to convert data!'
         runData = DataReader(subject=subject, data_start=data_start, data_finish=data_finish, model=model, task=task,
@@ -296,14 +297,13 @@ class Manipulability_Testing(object):
             print "Service call failed: %s"%e
 
     def load_task(self, task, model, subj):
-        return load_pickle(''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', string(subj),
+        return load_pickle(''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj),
                                     '_score_data.pkl']))
 
 
 if __name__ == "__main__":
     rospy.init_node('manip_test')
-    myTest = manipulability_testing(subj=1)
-    myTest.
+    myTest = Manipulability_Testing(subj=1)
     # myTest.initialize_test_conditions()
     # myTest.evaluate_task()
 
