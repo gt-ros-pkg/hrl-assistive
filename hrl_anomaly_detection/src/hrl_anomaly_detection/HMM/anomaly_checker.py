@@ -61,11 +61,9 @@ class anomaly_checker():
         if self.nFutureStep == 1:
             self.buff_coff = [1.0]
         else:
-            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
+            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)*buff_coff_ratio
             ## self.buff_coff = buff_coff_ratio*np.exp(-x)
-            print buff_coff_ratio, x
-            print buff_coff_ratio*x
-            self.buff_coff = np.exp*(-1.*buff_coff_ratio*x)
+            self.buff_coff = np.exp*(-x)
 
             ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
             self.buff_coff /= np.sum(self.buff_coff) 
