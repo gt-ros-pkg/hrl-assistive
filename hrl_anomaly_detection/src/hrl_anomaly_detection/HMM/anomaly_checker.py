@@ -63,7 +63,7 @@ class anomaly_checker():
         else:
             x = np.arange(1.0, self.nFutureStep+0.1, 1.0)*buff_coff_ratio
             ## self.buff_coff = buff_coff_ratio*np.exp(-x)
-            self.buff_coff = np.exp*(-x)
+            self.buff_coff = np.exp*((-x))
 
             ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
             self.buff_coff /= np.sum(self.buff_coff) 
