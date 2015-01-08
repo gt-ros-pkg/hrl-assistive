@@ -46,7 +46,7 @@ class anomaly_checker():
         if self.nFutureStep == 1:
             self.buff_coff = [1.0]
         else:                
-            self.buff_coff = np.arange(float(self.nFutureStep), 0.99, 1.0)
+            self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
             self.buff_coff /= np.sum(self.buff_coff) 
         
         # N-buffers
@@ -154,11 +154,7 @@ class anomaly_checker():
                 a_score[j], m_err[j] = self.cost(y, j, mu, sig, sig_mult=sig_mult, \
                                                      sig_offset=sig_offset)
 
-                try:
-                    scale += self.buff_coff[j]
-                except:
-                    print self.buff_coff, j
-                    sys.exit()
+                scale += self.buff_coff[j]
 
             a_score *= self.buff_coff
             m_err *= self.buff_coff
