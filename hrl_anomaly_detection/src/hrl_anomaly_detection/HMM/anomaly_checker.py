@@ -53,16 +53,7 @@ class anomaly_checker():
         ## self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
         ## self.x_buf.append(-1.0)
 
-        ## self.init_buff_coff(buff_coff_ratio)
-        if self.nFutureStep == 1:
-            self.buff_coff = [1.0]
-        else:
-            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)*buff_coff_ratio
-            ## self.buff_coff = buff_coff_ratio*np.exp(-x)
-            self.buff_coff = np.exp*((-x))
-
-            ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
-            self.buff_coff /= np.sum(self.buff_coff) 
+        self.init_buff_coff(buff_coff_ratio)
         
         pass
 
@@ -71,9 +62,9 @@ class anomaly_checker():
         if self.nFutureStep == 1:
             self.buff_coff = [1.0]
         else:
-            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)*buff_coff_ratio
+            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
             ## self.buff_coff = buff_coff_ratio*np.exp(-x)
-            self.buff_coff = np.exp*((-x))
+            self.buff_coff = np.exp((-buff_coff_ratio*x))
 
             ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
             self.buff_coff /= np.sum(self.buff_coff) 
@@ -156,17 +147,7 @@ class anomaly_checker():
             sig_offset = param[2]
             buff_coff_ratio = param[3]
 
-            ## self.init_buff_coff(buff_coff_ratio)
-            if self.nFutureStep == 1:
-                self.buff_coff = [1.0]
-            else:
-                x = np.arange(1.0, self.nFutureStep+0.1, 1.0)*buff_coff_ratio
-                ## self.buff_coff = buff_coff_ratio*np.exp(-x)
-                self.buff_coff = np.exp*((-x))
-
-                ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
-                self.buff_coff /= np.sum(self.buff_coff) 
-            
+            self.init_buff_coff(buff_coff_ratio)           
                         
             a_score = np.zeros((self.nFutureStep))
             m_err   = np.zeros((self.nFutureStep))
