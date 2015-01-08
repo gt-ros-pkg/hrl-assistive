@@ -111,7 +111,7 @@ class anomaly_checker():
             a_score[i], m_err[i] = self.cost(y, i, mu, sig, sig_mult=self.sig_mult, \
                                            sig_offset=self.sig_offset)
 
-            scale += self.buff_coff[j]
+            scale += self.buff_coff[i]
                                            
 
         a_score *= self.buff_coff
