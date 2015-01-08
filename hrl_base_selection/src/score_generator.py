@@ -148,6 +148,21 @@ class ScoreGenerator(object):
 
         self.setup_openrave()
 
+    def receive_new_goals(self, goals):
+        print 'Score generator received a list of desired goal locations. It contains ', len(goals), ' goal ' \
+                                                                                                         'locations.'
+        self.selection_mat = np.zeros(len(self.goals))
+        self.goal_list = np.zeros([len(self.goals), 4, 4])
+        self.reference_mat = np.zeros(len(self.goals))
+        for i in xrange(len(self.goals)):
+            #self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
+            self.reference_mat[i] = int(self.goals[i, 2])
+            self.goal_list[i] = copy.copy(self.pr2_B_reference[int(self.reference_mat[i])] *
+                                          np.matrix(self.goals[i, 0]))
+            self.selection_mat[i] = self.goals[i, 1]
+
+        self.set_goals()
+
     def set_goals(self):
         self.Tgrasps = []
         self.weights = []
@@ -177,7 +192,7 @@ class ScoreGenerator(object):
             print 'Somehow I got a bogus task!? \n'
             return None
         self.set_goals()
-        print 'The task was just set. We are generating score data for the task: ',task
+        print 'The task was just set. The set of goals selected was: ',task
         return self.selection_mat
 
 
@@ -506,11 +521,6 @@ class ScoreGenerator(object):
             return None
         else:
             return [this_x, this_y, this_theta, this_z, this_bz, this_btheta]
-        
-
-
-
-    
 
     def generate_score(self, x, y, th, z, bz, bth, headx, heady):
         #print 'Calculating new score'
@@ -641,6 +651,64 @@ class ScoreGenerator(object):
         #print 'finished calculating a score'
         #print 'Time to calculate a score: %fs'%(time.time()-starttime)
         return space_score, reach_score, manip_score, goal_scores
+
+    def eval_init_config(self, init_config):
+        reached = 0.
+        for i in xrange(len(init_config[0]):
+            delete_index = []
+            x = init_config[0][i]
+            y = init_config[1][i]
+            th = init_config[2][i]
+            z = init_config[3][i]
+            bz = init_config[4][i]
+            bth = init_config[5][i]
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                      [ m.sin(th),  m.cos(th),     0.,         y],
+                                      [        0.,         0.,     1.,        0.],
+                                      [        0.,         0.,     0.,        1.]])
+            self.robot.SetTransform(np.array(origin_B_pr2))
+            v = self.robot.GetActiveDOFValues()
+            v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
+            self.robot.SetActiveDOFValues(v)
+            if self.model == 'chair':
+                origin_B_head = np.matrix([[1.,        0.,   0.,         0.0],
+                                           [0.,        1.,   0.,         0.0],
+                                           [0.,        0.,   1.,     1.33626],
+                                           [0.,        0.,   0.,         1.0]])
+                self.selection_mat = np.zeros(len(self.goals))
+                self.goal_list = np.zeros([len(self.goals), 4, 4])
+                for i in xrange(len(self.reference_names)):
+                    if self.reference_names[i] == 'head':
+                        self.pr2_B_reference[i] = origin_B_pr2.I*origin_B_head
+                    elif self.reference_names[i] == 'base_link':
+                        self.pr2_B_reference[i] = np.matrix(np.eye(4))
+                        # self.pr2_B_reference[i] = np.matrix(self.robot.GetTransform())
+    
+                for i in xrange(len(self.goals)):
+                    self.goal_list[i] = copy.copy(origin_B_pr2*self.pr2_B_reference[int(self.reference_mat[i])]*np.matrix(self.goals[i, 0]))
+                    self.selection_mat[i] = copy.copy(self.goals[i, 1])
+    #            for target in self.goals:
+    #                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
+    #                self.selection_mat.append(target[1])
+                self.set_goals()
+
+            with self.robot:
+                if not self.manip.CheckIndependentCollision(op.CollisionReport()):
+                    #print 'not colliding with environment'
+                    for num, Tgrasp in enumerate(self.Tgrasps):
+                        sol = None
+                        sol = self.manip.FindIKSolution(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+                        #sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.IgnoreSelfCollisions)
+                        if sol is not None:
+                            reached += 1
+                            delete_index.append(num)
+            self.Tgrasp = np.delete(self.Tgrasp, delete_index, 0)
+        score = reached/len(self.goals)
+        return score
+
+            
+            
+
 
     def setup_openrave(self):
         # Setup Openrave ENV

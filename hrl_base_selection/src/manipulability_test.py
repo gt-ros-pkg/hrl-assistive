@@ -65,6 +65,7 @@ class Manipulability_Testing(object):
                              pos_clust=pos_clust, ori_clust=ori_clust)
         raw_data = read_data.get_raw_data()
         print 'Raw data is ready!'
+        goal_data = read_data.generate_output_goals(test_goals=raw_data)
         print 'Setting up openrave'
         self.setup_openrave()
         print 'I will now pick base locations to evaluate. They will share the same reachability score, but will have' \
