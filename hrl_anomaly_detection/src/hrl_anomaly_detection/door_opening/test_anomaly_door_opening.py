@@ -190,7 +190,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
     #return trials, new_anomaly_pts
 
     
-def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol=0.1, trans_type="left_right"):
+def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, trans_type="left_right"):
 
     if not(os.path.isdir(cross_test_path+'/'+str(nState))):
         os.system('mkdir -p '+cross_test_path+'/'+str(nState)) 
@@ -241,7 +241,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
             os.system('touch '+mutex_file)
         
         lh = learning_hmm(aXData=train_data[i], nState=nState, 
-                          nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type)            
+                          nMaxStep=nMaxStep, trans_type=trans_type)            
 
         ## lh.fit(lh.aXData, verbose=False)    
         
@@ -256,7 +256,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvRe
         os.system('touch '+os.path.join(cross_test_path,str(nState),'complete.txt'))
         
 
-def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type, test=False):
+def load_cross_param(cross_data_path, cross_test_path, nMaxStep, trans_type, test=False):
 
     # Get the best param for training set
     test_idx_list         = []
@@ -330,14 +330,13 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, tr
     
     
         
-def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, fObsrvResol, \
+def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxStep, \
                           trans_type, nFutureStep, aws=False, test=False):
 
     # Get the best param for training set
     test_idx_list, train_data, _, _, _, B_list, nState_list = load_cross_param(cross_data_path, \
                                                                                  cross_test_path, \
                                                                                  nMaxStep, \
-                                                                                 fObsrvResol, \
                                                                                  trans_type)
         
     #-----------------------------------------------------------------            
@@ -423,7 +422,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                 lh = learning_hmm(aXData=train_data[i], nState=nState, \
                                   nMaxStep=nMaxStep,\
                                   nFutureStep=nFutureStep,\
-                                  fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)
+                                  nCurrentStep=nCurrentStep, trans_type=trans_type)
                 lh.fit(lh.aXData, B=B, verbose=False)    
 
                 for j, trial in enumerate(train_data[i]):
@@ -474,12 +473,12 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
 
 
 def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
-                    fObsrvResol, trans_type, nFutureStep=5, aws=False, bSimBlock=False, ang_interval=1.0, \
+                    trans_type, nFutureStep=5, aws=False, bSimBlock=False, ang_interval=1.0, \
                     sig_mult=None):
 
     # Get the best param for training set
     test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, B_list, nState_list = \
-      load_cross_param(cross_data_path, cross_test_path, nMaxStep, fObsrvResol, trans_type)   
+      load_cross_param(cross_data_path, cross_test_path, nMaxStep, trans_type)   
 
     #-----------------------------------------------------------------
     strMachine = socket.gethostname()+"_"+str(os.getpid())
@@ -548,7 +547,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         lh = learning_hmm(aXData=train_data[i], nState=nState, \
                           nMaxStep=nMaxStep, \
                           nFutureStep=nFutureStep, \
-                          fObsrvResol=fObsrvResol, \
                           trans_type=trans_type)
         lh.fit(lh.aXData, B=B, verbose=False)    
 
@@ -671,7 +669,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
     
 def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, nMaxStep=36, \
-                       fObsrvResol=0.1, trans_type='full', bSimBlock=False, bPlot=False, bAWS=False, \
+                       trans_type='full', bSimBlock=False, bPlot=False, bAWS=False, \
                        ang_interval=1.0):
 
     if "human" in ROC_target:
@@ -686,7 +684,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
     
     # 1) HMM param optimization                
     for nState in xrange(10,35,1):        
-        tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, fObsrvResol, trans_type)
+        tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, trans_type)
     
     # --------------------------------------------------------            
     import itertools
@@ -698,7 +696,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
 
         # Evaluate threshold in terms of training set
         get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, \
-                              nMaxStep, fObsrvResol, trans_type, \
+                              nMaxStep, trans_type, \
                               nFutureStep=nFutureStep, aws=bAWS)
 
         # --------------------------------------------------------
@@ -710,7 +708,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
 
         for cost_ratio in cost_ratios:
             fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                                cost_ratio, nMaxStep, fObsrvResol, \
+                                                cost_ratio, nMaxStep, \
                                                 trans_type, nFutureStep=nFutureStep, \
                                                 aws=bAWS, bSimBlock=bSimBlock, \
                                                 ang_interval=ang_interval)
@@ -753,7 +751,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
                 
                 ## pp.plot(cost_ratios, sef_list, sem_l+sem_m+sem_c, label= semantic_label,
                 ##         mec=sem_c, ms=6, mew=2)                
-                pp.plot(sorted_fp_list, sorted_sef_list, sem_l+sem_m+sem_c, label= semantic_label,
+                pp.plot(sorted_fp_list, sorted_sat_list, sem_l+sem_m+sem_c, label= semantic_label,
                         mec=sem_c, ms=6, mew=2)
             else:
                 pp.plot(sorted_fp_list, sorted_err_list, sem_l+sem_m+sem_c, label= semantic_label,
@@ -816,14 +814,13 @@ if __name__ == '__main__':
     root_path = os.environ['HRLBASEPATH']+'/'
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
     nFutureStep = 8
-    fObsrvResol = 0.1
     nCurrentStep = 14  #14
     ## trans_type = "left_right"
     trans_type = "full"
 
 
     # for block test
-    if opt.bUseBlockData:    
+    if opt.bUseBlockData or opt.bAllPlot:    
         nClass = 2
         cls = doc.class_list[nClass]
         mech = 'kitchen_cabinet_pr2'
@@ -843,16 +840,18 @@ if __name__ == '__main__':
         if os.path.isfile(B_tune_pkl) is False:
             lh = learning_hmm(aXData=data_vecs[0], nState=30, 
                               nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                              fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
+                              nCurrentStep=nCurrentStep, trans_type=trans_type)    
             lh.param_optimization(save_file=B_tune_pkl)
         else:                       
             A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls, pkl_file=B_tune_pkl)        
-
+            ## B = mad.get_trans_mat(data_vecs[0], nState)
+            ## print np.array(B).shape, nState
+            ## sys.exit()
+            
         # Training 
         lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
                           nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                          fObsrvResol=fObsrvResol, nCurrentStep=nCurrentStep, trans_type=trans_type)    
-
+                          nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
     ###################################################################################            
     if (opt.bROCHuman or opt.bCrossVal) and opt.bSimBlock is False: 
@@ -883,7 +882,7 @@ if __name__ == '__main__':
             f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
 
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
-                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           nMaxStep=nMaxStep, trans_type=trans_type, \
                            bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
             
 
@@ -928,7 +927,7 @@ if __name__ == '__main__':
                                     plot_prev=False)                                                   
         
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
-                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           nMaxStep=nMaxStep, trans_type=trans_type, \
                            bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
 
             
@@ -949,7 +948,7 @@ if __name__ == '__main__':
             f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
             
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
-                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           nMaxStep=nMaxStep, trans_type=trans_type, \
                            bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
 
                            
@@ -970,7 +969,7 @@ if __name__ == '__main__':
             f.subplots_adjust(bottom=.15, top=.96, right=.98, left=0.15)
             
         generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_ratios, ROC_target, \
-                           nMaxStep=nMaxStep, fObsrvResol=fObsrvResol, trans_type=trans_type, \
+                           nMaxStep=nMaxStep, trans_type=trans_type, \
                            bSimBlock=opt.bSimBlock, bPlot=opt.bROCPlot, ang_interval=ang_interval)
                 
                            
@@ -985,9 +984,9 @@ if __name__ == '__main__':
         h_config, h_ftan = mad.get_a_blocked_detection(mech, ang_interval=0.25) # robot blocked test data
         h_config =  np.array(h_config)*180.0/3.14
 
-        ## # Training data            
-        ## h_ftan   = data_vecs[0][12,:].tolist() # ikea cabinet door openning data
-        ## h_config = np.arange(0,float(len(h_ftan)), 1.0)
+        # Training data            
+        h_ftan   = data_vecs[0][22,:].tolist() # ikea cabinet door openning data
+        h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
         x_test_next = h_ftan[nCurrentStep:nCurrentStep+lh.nFutureStep]
@@ -997,7 +996,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, score_n=1.0, sig_mult=1.4, sig_offset=0.0)
+            ac = anomaly_checker(lh, score_n=1.0, sig_mult=20.0, sig_offset=0.0)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
@@ -1104,7 +1103,7 @@ if __name__ == '__main__':
                 shape = shapes.next()
                 roc_root_path = roc_data_path+'_'+str(i)
                 generate_roc_curve(mech_vec_list, mech_nm_list, \
-                                   nFutureStep=i,fObsrvResol=fObsrvResol,
+                                   nFutureStep=i,
                                    semantic_range = np.arange(0.2, 2.7, 0.3), bPlot=True,
                                    roc_root_path=roc_root_path, semantic_label=str(i)+ \
                                    ' step PHMM with 0.'+str(sig_off)+' offset', 

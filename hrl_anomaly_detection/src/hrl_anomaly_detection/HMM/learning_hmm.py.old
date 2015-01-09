@@ -40,20 +40,21 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 
 class learning_hmm(learning_base):
-    def __init__(self, aXData, nState, nMaxStep, nFutureStep=5, nCurrentStep=10, step_size_list=None, trans_type="left_right"):
+    def __init__(self, aXData, nState, nMaxStep, nFutureStep=5, fObsrvResol=0.2, nCurrentStep=10, step_size_list=None, trans_type="left_right"):
 
         learning_base.__init__(self, aXData, trans_type)
         
         ## Tunable parameters                
         self.nState= nState # the number of hidden states
         self.nFutureStep = nFutureStep
+        self.fObsrvResol = fObsrvResol
         self.nCurrentStep = nCurrentStep
         self.step_size_list = step_size_list
         
         ## Un-tunable parameters
         ## self.trans_type = trans_type #"left_right" #"full"
         self.nMaxStep = nMaxStep  # the length of profile
-        self.obsrv_range = [np.min(aXData), np.max(aXData)]
+        self.future_obsrv = None  # Future observation range
         self.A = None # transition matrix        
         self.B = None # emission matrix        
 
@@ -109,6 +110,7 @@ class learning_hmm(learning_base):
                     self.ml = None
                     return
             except:
+                print B
                 print "nState: ", self.nState
                 print "B_lower: ", len(self.B_lower)
                 print "B: ", len(B.flatten())
@@ -127,18 +129,17 @@ class learning_hmm(learning_base):
         ## print "Run Baum Welch method with (samples, length)", X_train.shape
         train_seq = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
-        self.ml.baumWelch(final_seq, 10000)
+        self.ml.baumWelch(final_seq)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
         self.B = np.array(self.B)
-
-        print self.B
-        
         ## self.mean_path_plot(mu[:,0], sigma[:,0])        
         ## print "Completed to fitting", np.array(final_seq).shape
-        
-        # state range
+
+        # Future observation range
+        self.max_obsrv = X_train.max()
+        self.obsrv_range = np.arange(-2.0, self.max_obsrv*1.0, self.fObsrvResol)
         self.state_range = np.arange(0, self.nState, 1)
 
         # Pre-computation for PHMM variables
@@ -154,6 +155,49 @@ class learning_hmm(learning_base):
             #self.mu_z3[i]  = self.mu_z[i]**3
             self.var_z[i]  = np.sum(zp*self.state_range) - self.mu_z[i]**2
             #self.sig_z3[i] = self.var_z[i]**(1.5)
+
+        self.obs_prob = np.zeros((self.nState, len(self.obsrv_range)))
+        # Get all probability over states
+        for i in xrange(self.nState): 
+            (x_mu, x_sigma) = self.B[i]
+            if x_sigma < self.B_lower[1]: x_sigma = self.B_lower[1]
+
+            self.obs_prob[i,:] = norm.pdf(self.obsrv_range,loc=x_mu,scale=x_sigma)
+            self.obs_prob[i,:] /= np.sum(self.obs_prob[i,:])
+            if np.isnan(np.sum(self.obs_prob[i,:])):
+                print "Wrong B!!"
+                sys.exit()
+
+        if verbose:
+            A = np.array(A)
+            print "A: ", A.shape
+            n,m = A.shape
+            for i in xrange(n):
+                a = None
+                for j in xrange(m):
+                    if a is None:
+                        a = "%0.3f" % A[i,j]
+                    else:
+                        a += ",  "
+                        a += "%0.3f" % A[i,j]
+                print a
+            print "----------------------------------------------"
+            for i in xrange(n):
+                a = None
+                for j in xrange(m):
+                    if a is None:
+                        a = "[ %0.3f" % self.ml.getTransition(i,j)
+                    else:
+                        a += ",  "
+                        a += "%0.3f" % self.ml.getTransition(i,j)
+                print a + " ]"
+                
+            print "B: ", B.shape
+            print B
+            print "----------------------------------------------"
+            ## for i in xrange(n):
+            ##     print self.ml.getEmission(i)
+
 
     #----------------------------------------------------------------------        
     #
@@ -314,6 +358,7 @@ class learning_hmm(learning_base):
         data = {}
         data['score'] = [fval]
         data['nState'] = self.nState
+        data['fObsrvResol'] = self.fObsrvResol
         data['B'] = B
 
         if save_file is None:
@@ -379,17 +424,23 @@ class learning_hmm(learning_base):
             X = X.tolist()
 
         n = len(X)
-        ## prob = [0.0] * n            
+        prob = [0.0] * n            
         mu_l = [0.0] * n            
-        var_l = [0.0] * n            
             
         for i in xrange(n):
+
+            ## if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
+            ##     X_test = X[i][:self.nCurrentStep]
+            ##     X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
+            ## else:
+            ##     X_test = X[i][:-1]
+            ##     X_pred = X[i][-1]
 
             if len(X[i]) < self.nCurrentStep+1: 
                 print "Why X is short??"
                 sys.exit()
-            ## X_test = X[i][:self.nCurrentStep]
-            ## X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
+            X_test = X[i][:self.nCurrentStep]
+            X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
                 
 
             bloglikelihood=False
@@ -399,12 +450,12 @@ class learning_hmm(learning_base):
                 final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
 
                 # log( P(O|param) )
-                ## prob[i] = np.exp(self.ml.loglikelihood(final_ts_obj))
+                prob[i] = np.exp(self.ml.loglikelihood(final_ts_obj))
                 
             else:
 
                 # Past profile
-                final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?
+                final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
                 #final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
 
                 try:
@@ -417,7 +468,7 @@ class learning_hmm(learning_base):
                     ## print "scale = " + str(scale) + "\n"
                 except:
                     print "No alpha is available !!"
-                    ## prob[i] = 0.0
+                    prob[i] = 0.0
                     continue
                     
                 # beta
@@ -449,13 +500,16 @@ class learning_hmm(learning_base):
                     ## pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
-                ## pred_numerator = norm.pdf(X_pred,loc=t_mu,scale=np.sqrt(t_var))
-                ## prob[i] = pred_numerator #/ np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
+                pred_numerator = norm.pdf(X_pred,loc=t_mu,scale=np.sqrt(t_var))
+                prob[i] = pred_numerator #/ np.exp(self.ml.loglikelihood(final_ts_obj)) #/ pred_denominator
                 mu_l[i] = t_mu
-                var_l[i] = t_var
 
-        return mu_l, var_l
-                
+        sum_prob = np.sum(prob)
+        if sum_prob == 0.0 or np.isnan(sum_prob):
+            return 0.0
+        else:
+            return prob #/sum_prob
+
 
     #----------------------------------------------------------------------        
     #
@@ -467,14 +521,30 @@ class learning_hmm(learning_base):
         # @ X_pred_prob: obsrv_range
 
         # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range)))
         if type(X) == np.ndarray:
             X = X.tolist()
 
         # Get all probability
-        mu, var = self.predict([X])
+        for i, obsrv in enumerate(self.obsrv_range):           
+            if abs(X[-1]-obsrv) > 4.0: continue
+            prediction = self.predict([X+[obsrv]])
+            X_pred_prob[i] = np.squeeze(prediction)       
 
-        return mu, var
-        
+        # x[i+1]' = x[i+1] + k( x - x[i] )
+            
+            
+        # Select observation with maximum probability
+        ## idx_list = [k[0] for k in sorted(enumerate(X_pred_prob), key=lambda x:x[1], reverse=True)]
+        max_idx = X_pred_prob.argmax()
+
+        sum_x_p = np.sum(X_pred_prob*X_pred_prob)
+        if sum_x_p < 0.00001:
+            return self.obsrv_range[max_idx], X_pred_prob*0.0
+        else:
+            ## return self.obsrv_range[idx_list[0]], X_pred_prob/np.sum(X_pred_prob)
+            return self.obsrv_range[max_idx], X_pred_prob /np.sum(X_pred_prob)
+
         
     #----------------------------------------------------------------------        
     # Compute the estimated probability (0.0~1.0)
@@ -483,26 +553,36 @@ class learning_hmm(learning_base):
         # Output:  P(X_{N+M} | X)
 
         # Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
         X = copy.copy(X_test)
-        mu_pred  = [0.0]*self.nFutureStep
-        var_pred = [0.0]*self.nFutureStep
+        X_pred = [0.0]*self.nFutureStep
 
         # Recursive prediction
         for i in xrange(self.nFutureStep):
 
-            ## X_pred[i], X_pred_prob[:,i] = self.one_step_predict(X)
-            mu_pred[i], var_pred[i] = self.one_step_predict(X)
+            X_pred[i], X_pred_prob[:,i] = self.one_step_predict(X)
 
             # Update 
-            ## X.append(X_pred[i])
-            X.append(mu_pred[i])
+            X.append(X_pred[i])
+
+            if False: #verbose:
+                print "-----------------"
+                print X_pred_prob[:,i].shape
+                a = None
+                for p in X_pred_prob[:,i]:
+                    if a is None:
+                        a = "%0.3f" % p
+                    else:
+                        a += "  "
+                        a += "%0.3f" % p
+                print a
 
         ## # TEMP
         ## final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?                
         ## (path,log)   = self.ml.viterbi(final_ts_obj)
         ## print path,log
                 
-        return mu_pred, var_pred
+        return X_pred, X_pred_prob
 
 
     #----------------------------------------------------------------------        
@@ -510,9 +590,14 @@ class learning_hmm(learning_base):
     def multi_step_approximated_predict(self, X_test, full_step=False, n_jobs=-1, verbose=False):
         ## print "Start to predict multistep approximated observations"
 
+        ## Initialization            
+        X_pred_prob = np.zeros((len(self.obsrv_range),self.nFutureStep))
+        X_pred = [0.0]*self.nFutureStep
+
         ## Get mu, sigma from X such that u_{N+1}, sigma_{N+1}
         # Past profile
         final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+
         # alpha: X_test length y #latent States at the moment t when state i is ended
         #        test_profile_length x number_of_hidden_state
         #      : time step x nState (size)
@@ -527,6 +612,8 @@ class learning_hmm(learning_base):
             sys.exit()
         alpha         = np.array(alpha)
 
+        ## temp = alpha[-1,:]
+
         #scaling_factor = 1.0
         #for i in xrange(len(scale)):
         #    scaling_factor *= scale[i]
@@ -540,24 +627,24 @@ class learning_hmm(learning_base):
 
         # (hidden space)
         if self.trans_type == "left_right":
-            ## (u_xi, u_omega, u_alpha) = hdl.skew_normal_param_estimation(self.state_range, p_z_x)
+            (u_xi, u_omega, u_alpha) = hdl.skew_normal_param_estimation(self.state_range, p_z_x)
             
-            ## u_xi_list = [0.0]*self.nFutureStep
-            ## u_omega_list = [0.0]*self.nFutureStep
-            ## u_alpha_list = [0.0]*self.nFutureStep
-            ## u_xi_list[0] = u_xi  # U_n+1 
-            ## u_omega_list[0] = u_omega
-            ## u_alpha_list[0] = u_alpha
+            u_xi_list = [0.0]*self.nFutureStep
+            u_omega_list = [0.0]*self.nFutureStep
+            u_alpha_list = [0.0]*self.nFutureStep
+            u_xi_list[0] = u_xi  # U_n+1 
+            u_omega_list[0] = u_omega
+            u_alpha_list[0] = u_alpha
 
-            ## print "-=-------------------------"            
-            ## for i in xrange(self.nFutureStep-1):
-            ##     print u_xi_list[i], u_omega_list[i], u_alpha_list[i]
-            ##     u_xi_list[i+1], u_omega_list[i+1], u_alpha_list[i+1] = self.skew_normal_approximation(u_xi_list[i], u_omega_list[i], u_alpha_list[i])
+            print "-=-------------------------"            
+            for i in xrange(self.nFutureStep-1):
+                print u_xi_list[i], u_omega_list[i], u_alpha_list[i]
+                u_xi_list[i+1], u_omega_list[i+1], u_alpha_list[i+1] = self.skew_normal_approximation(u_xi_list[i], u_omega_list[i], u_alpha_list[i])
             print "-=-------------------------"
                 
         else:
             (u_mu, u_var) = hdl.gaussian_param_estimation(self.state_range, p_z_x)
-            ## if u_var < 0.1: u_var = 0.1 #trick
+            if u_var < 0.1: u_var = 0.1 #trick
 
             u_mu_list       = [0.0]*self.nFutureStep
             u_sigma_list    = [0.0]*self.nFutureStep
@@ -574,7 +661,8 @@ class learning_hmm(learning_base):
 
             if self.trans_type == "left_right":
                 r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.state_range, \
-                                                       self.B, \
+                                                       self.obsrv_range, \
+                                                       self.obs_prob, \
                                                        u_xi_list[i], \
                                                        u_omega_list[i], \
                                                        u_alpha_list[i], \
@@ -582,7 +670,8 @@ class learning_hmm(learning_base):
                                                        for i in xrange(self.nFutureStep) )
             else:
                 r = Parallel(n_jobs=n_jobs)(delayed(f)(i, self.state_range, \
-                                                       self.B, \
+                                                       self.obsrv_range, \
+                                                       self.obs_prob, \
                                                        u_mu_list[i], \
                                                        u_sigma_list[i], \
                                                        0, \
@@ -590,31 +679,39 @@ class learning_hmm(learning_base):
                                                        for i in xrange(self.nFutureStep) )
                 
                                                        
-            mu_l, var_l, i = zip(*r)
+            res, i = zip(*r)
+            X_pred_prob = np.array(res).T 
+
+            # Recursive prediction for each future step
+            ## for i in xrange(self.nFutureStep):                        
+                ## max_idx = X_pred_prob[:,i].argmax()                    
+                ## X_pred[i] = self.obsrv_range[max_idx]
+                ## X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
                 
-        ## else:
-            ## print "Predict on last part!!"
+        else:
+            print "Predict on last part!!"
             
-            ## # Recursive prediction for each future step
-            ## i = self.nFutureStep - 1
+            # Recursive prediction for each future step
+            i = self.nFutureStep - 1
 
-            ## z_prob = norm.pdf(range(self.nState),loc=u_mu_list[i],scale=u_sigma_list[i])
-            ## z_prob /= np.sum(z_prob)
+            z_prob = norm.pdf(range(self.nState),loc=u_mu_list[i],scale=u_sigma_list[i])
+            z_prob /= np.sum(z_prob)
             
-            ## # Get all probability over observations
-            ## for j, obsrv in enumerate(self.obsrv_range):           
+            # Get all probability over observations
+            for j, obsrv in enumerate(self.obsrv_range):           
 
-            ##     # Get all probability over states
-            ##     for k in xrange(self.nState): 
+                # Get all probability over states
+                for k in xrange(self.nState): 
 
-            ##         (x_mu, x_sigma) = self.ml.getEmission(k)                        
-            ##         X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob[k]
+                    (x_mu, x_sigma) = self.ml.getEmission(k)                        
+                    X_pred_prob[j,i] += norm.pdf(self.obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob[k]
 
-            ## max_idx = X_pred_prob[:,i].argmax()                    
-            ## X_pred[i] = self.obsrv_range[max_idx]
-            ## X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
+            max_idx = X_pred_prob[:,i].argmax()                    
+            X_pred[i] = self.obsrv_range[max_idx]
+            X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
             
-        return mu_l, var_l
+        ## return X_pred, X_pred_prob
+        return None, X_pred_prob
         
 
     #----------------------------------------------------------------------        
@@ -796,65 +893,65 @@ class learning_hmm(learning_base):
             
     #----------------------------------------------------------------------        
     #
-    ## def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next, X_test_all=None):
+    def predictive_path_plot(self, X_test, X_pred, X_pred_prob, X_test_next, X_test_all=None):
                 
-    ##     # 1) Observation        
-    ##     self.ax.plot(X_test, 'k-o')    
-    ##     if X_test_all is not None:
-    ##         self.ax.plot(X_test_all, 'k-')    
-    ##     ## self.ax.plot(X_test, '-o', ms=10, lw=1, alpha=0.5, mfc='orange')    
+        # 1) Observation        
+        self.ax.plot(X_test, 'k-o')    
+        if X_test_all is not None:
+            self.ax.plot(X_test_all, 'k-')    
+        ## self.ax.plot(X_test, '-o', ms=10, lw=1, alpha=0.5, mfc='orange')    
 
-    ##     # 2) Next true & predictive observation
-    ##     y_array = np.hstack([X_test[-1], X_test_next])                        
-    ##     x_array = np.arange(0, len(X_test_next)+0.0001,1.0) + len(X_test) -1        
-    ##     self.ax.plot(x_array, y_array, 'k-', linewidth=1.0)    
+        # 2) Next true & predictive observation
+        y_array = np.hstack([X_test[-1], X_test_next])                        
+        x_array = np.arange(0, len(X_test_next)+0.0001,1.0) + len(X_test) -1        
+        self.ax.plot(x_array, y_array, 'k-', linewidth=1.0)    
 
-    ##     ## y_array = np.hstack([X_test[-1], X_pred])                        
-    ##     ## self.ax.plot(x_array, y_array, 'b-', linewidth=2.0)    
+        ## y_array = np.hstack([X_test[-1], X_pred])                        
+        ## self.ax.plot(x_array, y_array, 'b-', linewidth=2.0)    
         
-    ##     # 3) Prediction        
-    ##     n,m = X_pred_prob.shape
-    ##     x_last = X_test[-1]
-    ##     mu = np.zeros((m))
-    ##     var = np.zeros((m))
-    ##     for i in xrange(m):
+        # 3) Prediction        
+        n,m = X_pred_prob.shape
+        x_last = X_test[-1]
+        mu = np.zeros((m))
+        var = np.zeros((m))
+        for i in xrange(m):
             
-    ##         ## x_pred_max = 0.0
-    ##         ## x_best     = 0.0            
-    ##         ## for x, prob in zip(self.obsrv_range, X_pred_prob[:,i]):
-    ##         ##     y_array = np.array([x_last, x])
+            ## x_pred_max = 0.0
+            ## x_best     = 0.0            
+            ## for x, prob in zip(self.obsrv_range, X_pred_prob[:,i]):
+            ##     y_array = np.array([x_last, x])
                 
-    ##         ##     alpha   = 1.0 - np.exp(-prob*50.0)
-    ##         ##     if alpha > 1.0: alpha = 1.0
-    ##         ##     self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=alpha, linewidth=1.0)    
+            ##     alpha   = 1.0 - np.exp(-prob*50.0)
+            ##     if alpha > 1.0: alpha = 1.0
+            ##     self.ax.plot(x_array[i:i+2], y_array, 'r-', alpha=alpha, linewidth=1.0)    
 
-    ##         ## x_last = X_pred[i]
-    ##         (mu[i], var[i]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,i])
+            ## x_last = X_pred[i]
+            (mu[i], var[i]) = hdl.gaussian_param_estimation(self.obsrv_range, X_pred_prob[:,i])
 
-    ##     # 4) mean var plot
-    ##     mu  = np.hstack([X_test,mu])
-    ##     sig = np.hstack([np.zeros((len(X_test))),np.sqrt(var)])
-    ##     X   = np.arange(0, len(mu),1.0)
-    ##     self.ax.fill_between(X, mu-1.*sig, mu+1.*sig, facecolor='yellow', alpha=0.5)
-    ##     self.ax.plot(X[len(X_test)-1:], mu[len(X_test)-1:], 'm-', linewidth=2.0)    
-    ##     self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
+        # 4) mean var plot
+        mu  = np.hstack([X_test,mu])
+        sig = np.hstack([np.zeros((len(X_test))),np.sqrt(var)])
+        X   = np.arange(0, len(mu),1.0)
+        self.ax.fill_between(X, mu-1.*sig, mu+1.*sig, facecolor='yellow', alpha=0.5)
+        self.ax.plot(X[len(X_test)-1:], mu[len(X_test)-1:], 'm-', linewidth=2.0)    
+        self.ax.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
 
-    ##     ## Side distribution
-    ##     self.ax1 = self.fig.add_subplot(self.gs[1])
-    ##     self.ax1.plot(X_pred_prob[:,-1], self.obsrv_range, 'r-')
+        ## Side distribution
+        self.ax1 = self.fig.add_subplot(self.gs[1])
+        self.ax1.plot(X_pred_prob[:,-1], self.obsrv_range, 'r-')
 
-    ##     ## self.ax1.tick_params(\
-    ##     ##                      axis='y',          # changes apply to the x-axis
-    ##     ##                      which='both',      # both major and minor ticks are affected
-    ##     ##                      left='off',        # ticks along the bottom edge are off                             
-    ##     ##                      bottom='off',      # ticks along the bottom edge are off
-    ##     ##                      top='off',         # ticks along the top edge are off
-    ##     ##                      labelleft='off',   # labels along the bottom edge are off                             
-    ##     ##                      labelbottom='off') # labels along the bottom edge are off
+        ## self.ax1.tick_params(\
+        ##                      axis='y',          # changes apply to the x-axis
+        ##                      which='both',      # both major and minor ticks are affected
+        ##                      left='off',        # ticks along the bottom edge are off                             
+        ##                      bottom='off',      # ticks along the bottom edge are off
+        ##                      top='off',         # ticks along the top edge are off
+        ##                      labelleft='off',   # labels along the bottom edge are off                             
+        ##                      labelbottom='off') # labels along the bottom edge are off
 
-    ##     self.ax1.set_xlim([0.0, 1.0])
-    ##     self.ax1.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
-    ##     self.ax1.set_xlabel("Probability of Next Obervation")
+        self.ax1.set_xlim([0.0, 1.0])
+        self.ax1.set_ylim([0.0, 1.2*self.obsrv_range[-1]])
+        self.ax1.set_xlabel("Probability of Next Obervation")
             
 
     #----------------------------------------------------------------------        
@@ -895,7 +992,7 @@ class learning_hmm(learning_base):
         self.ax.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
         self.ax.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
         self.ax.set_xlim([0, self.nMaxStep])
-        self.ax.set_ylim(self.obsrv_range)
+        self.ax.set_ylim([0, max(self.obsrv_range)])
         
         plt.show()
         ## self.fig.savefig('/home/dpark/Dropbox/HRL/collision_detection_hsi_kitchen_pr2.pdf', format='pdf')
@@ -903,98 +1000,98 @@ class learning_hmm(learning_base):
         
     #----------------------------------------------------------------------        
     #
-    ## def animated_path_plot(self, X_test, Y_test, bReload=False):
+    def animated_path_plot(self, X_test, Y_test, bReload=False):
 
-    ##     # Load data
-    ##     pkl_file = 'animation_data.pkl'
-    ##     if os.path.isfile(pkl_file) and bReload==False:
-    ##         print "Load saved pickle"
-    ##         data = ut.load_pickle(pkl_file)        
-    ##         X_test      = data['X_test']
-    ##         Y_test      = data['X_test']
-    ##         ## Y_pred      = data['Y_pred']
-    ##         Y_pred_prob = data['Y_pred_prob']
-    ##         mu          = data['mu']
-    ##         var         = data['var']
-    ##     else:        
+        # Load data
+        pkl_file = 'animation_data.pkl'
+        if os.path.isfile(pkl_file) and bReload==False:
+            print "Load saved pickle"
+            data = ut.load_pickle(pkl_file)        
+            X_test      = data['X_test']
+            Y_test      = data['X_test']
+            ## Y_pred      = data['Y_pred']
+            Y_pred_prob = data['Y_pred_prob']
+            mu          = data['mu']
+            var         = data['var']
+        else:        
 
-    ##         n = len(X_test)
-    ##         mu = np.zeros((n, self.nFutureStep))
-    ##         var = np.zeros((n, self.nFutureStep))
+            n = len(X_test)
+            mu = np.zeros((n, self.nFutureStep))
+            var = np.zeros((n, self.nFutureStep))
             
-    ##         for i in range(1,n,1):
-    ##             ## Y_pred, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
-    ##             _, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
-    ##             for j in range(self.nFutureStep):
-    ##                 (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, Y_pred_prob[:,j])
+            for i in range(1,n,1):
+                ## Y_pred, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
+                _, Y_pred_prob = self.multi_step_approximated_predict(Y_test[:i],full_step=True)
+                for j in range(self.nFutureStep):
+                    (mu[i,j], var[i,j]) = hdl.gaussian_param_estimation(self.obsrv_range, Y_pred_prob[:,j])
             
                     
-    ##         print "Save pickle"                    
-    ##         data={}
-    ##         data['X_test'] = X_test
-    ##         data['X_test'] = Y_test                
-    ##         ## data['Y_pred'] =Y_pred
-    ##         data['Y_pred_prob']=Y_pred_prob
-    ##         data['mu']=mu
-    ##         data['var']=var
-    ##         ut.save_pickle(data, pkl_file)                
-    ##     print "---------------------------"
+            print "Save pickle"                    
+            data={}
+            data['X_test'] = X_test
+            data['X_test'] = Y_test                
+            ## data['Y_pred'] =Y_pred
+            data['Y_pred_prob']=Y_pred_prob
+            data['mu']=mu
+            data['var']=var
+            ut.save_pickle(data, pkl_file)                
+        print "---------------------------"
 
         
         
-    ##     ## fig = plt.figure()
-    ##     ## ax = plt.axes(xlim=(0, len(Y_test)), ylim=(0, 20))
-    ##     lAll, = self.ax.plot([], [], color='#66FFFF', lw=2)
-    ##     line, = self.ax.plot([], [], lw=2)
-    ##     lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
-    ##     lvar1, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
-    ##     lvar2, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
-    ##     ## lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
+        ## fig = plt.figure()
+        ## ax = plt.axes(xlim=(0, len(Y_test)), ylim=(0, 20))
+        lAll, = self.ax.plot([], [], color='#66FFFF', lw=2)
+        line, = self.ax.plot([], [], lw=2)
+        lmean, = self.ax.plot([], [], 'm-', linewidth=2.0)    
+        lvar1, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        lvar2, = self.ax.plot([], [], '--', color='0.75', linewidth=2.0)    
+        ## lvar , = self.ax.fill_between([], [], [], facecolor='yellow', alpha=0.5)
 
         
-    ##     def init():
-    ##         lAll.set_data([],[])
-    ##         line.set_data([],[])
-    ##         lmean.set_data([],[])
-    ##         lvar1.set_data([],[])
-    ##         lvar2.set_data([],[])
-    ##         ## lvar.set_data([],[], [])
-    ##         return lAll, line, lmean, lvar1, lvar2,
+        def init():
+            lAll.set_data([],[])
+            line.set_data([],[])
+            lmean.set_data([],[])
+            lvar1.set_data([],[])
+            lvar2.set_data([],[])
+            ## lvar.set_data([],[], [])
+            return lAll, line, lmean, lvar1, lvar2,
 
-    ##     def animate(i):
-    ##         x = np.arange(0.0, len(Y_test), 1.0)
-    ##         y = Y_test
-    ##         lAll.set_data(x, y)            
+        def animate(i):
+            x = np.arange(0.0, len(Y_test), 1.0)
+            y = Y_test
+            lAll.set_data(x, y)            
             
-    ##         x = np.arange(0.0, len(Y_test[:i]), 1.0)
-    ##         y = Y_test[:i]
-    ##         line.set_data(x, y)
+            x = np.arange(0.0, len(Y_test[:i]), 1.0)
+            y = Y_test[:i]
+            line.set_data(x, y)
 
-    ##         if i >= 1 and i < len(Y_test):# -self.nFutureStep:
-    ##             a_mu = np.hstack([y[-1], mu[i]])
-    ##             a_X  = np.arange(len(x)-1, len(x)+self.nFutureStep, 1.0)
-    ##             lmean.set_data( a_X, a_mu)
+            if i >= 1 and i < len(Y_test):# -self.nFutureStep:
+                a_mu = np.hstack([y[-1], mu[i]])
+                a_X  = np.arange(len(x)-1, len(x)+self.nFutureStep, 1.0)
+                lmean.set_data( a_X, a_mu)
                 
-    ##             a_sig = np.hstack([0, np.sqrt(var[i])])
-    ##             ## lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
-    ##             lvar1.set_data( a_X, a_mu-1.*a_sig)
-    ##             lvar2.set_data( a_X, a_mu+1.*a_sig)
-    ##         else:
-    ##             lmean.set_data([],[])
-    ##             lvar1.set_data([],[])
-    ##             lvar2.set_data([],[])
-    ##             ## lvar.set_data([],[],[])
+                a_sig = np.hstack([0, np.sqrt(var[i])])
+                ## lvar.set_data( a_X, a_mu-1.*a_sig, a_mu+1.*a_sig)
+                lvar1.set_data( a_X, a_mu-1.*a_sig)
+                lvar2.set_data( a_X, a_mu+1.*a_sig)
+            else:
+                lmean.set_data([],[])
+                lvar1.set_data([],[])
+                lvar2.set_data([],[])
+                ## lvar.set_data([],[],[])
            
-    ##         return lAll, line, lmean, lvar1, lvar2,
+            return lAll, line, lmean, lvar1, lvar2,
 
            
-    ##     anim = animation.FuncAnimation(self.fig, animate, init_func=init,
-    ##                                    frames=len(Y_test), interval=800, blit=True)
-    ##     plt.show()
+        anim = animation.FuncAnimation(self.fig, animate, init_func=init,
+                                       frames=len(Y_test), interval=800, blit=True)
+        plt.show()
 
 
 ## def f(i, nState, B, obsrv_range, u_mu, u_sigma, u_alpha, trans_type="full"):
-def f(i, state_range, B, u_mu, u_sigma, u_alpha, trans_type="full"):
+def f(i, state_range, obsrv_range, obs_prob, u_mu, u_sigma, u_alpha, trans_type="full"):
 
     if trans_type == "left_right":        
         u_xi = u_mu
@@ -1010,10 +1107,30 @@ def f(i, state_range, B, u_mu, u_sigma, u_alpha, trans_type="full"):
         print np.sum(z_prob), u_sigma
     z_prob /= np.sum(z_prob)         
     
-    # 
-    mu  = np.sum(z_prob*B[:,0])
-    var = np.sum((z_prob*B[:,1])**2)
+    # Get all probability over observations
+    X_pred_prob = np.zeros((len(obsrv_range)))    
+    for j in xrange(len(obsrv_range)):
+        X_pred_prob[j] = np.sum(obs_prob[:,j]*z_prob)
 
-    return mu, var, i
+    if np.sum(X_pred_prob) < 0.0001:
+        print np.sum(X_pred_prob), u_sigma
+    X_pred_prob /= np.sum(X_pred_prob)        
+    
+    ## # Get all probability over observations
+    ## for j in xrange(len(obsrv_range)):
+    
+    ##     # Get all probability over states
+    ##     for k in xrange(nState): 
+
+    ##         if u_sigma != 0.0:
+    ##             z_prob = norm.pdf(float(k),loc=u_mu,scale=u_sigma)
+    ##         else:
+    ##             if float(k) == u_mu: z_prob = 1.0
+    ##             else: z_prob = 0.0
+
+    ##         (x_mu, x_sigma) = B[k] #hmm.ml.getEmission(k)
+    ##         X_pred_prob[j] += norm.pdf(obsrv_range[j],loc=x_mu,scale=x_sigma)*z_prob
+
+    return X_pred_prob, i
                                               
 

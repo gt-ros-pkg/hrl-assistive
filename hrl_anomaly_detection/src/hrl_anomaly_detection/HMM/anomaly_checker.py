@@ -49,10 +49,6 @@ class anomaly_checker():
             self.buf_dict['mu_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
             self.buf_dict['sig_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
 
-        # x buffer
-        ## self.x_buf = cb.CircularBuffer(self.nMaxBuf, (1,))        
-        ## self.x_buf.append(-1.0)
-
         self.init_buff_coff(buff_coff_ratio)
         
         pass
@@ -88,10 +84,9 @@ class anomaly_checker():
             else:
                 y = Y_test.tolist()
 
-            _, Y_pred_prob = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
+            mu_list, var_list = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
 
             for j in xrange(self.nFutureStep):
-                (mu_list[j], var_list[j]) = hdl.gaussian_param_estimation(self.ml.obsrv_range, Y_pred_prob[:,j])
                 self.buf_dict['mu_'+str(j)].append(mu_list[j])
                 self.buf_dict['sig_'+str(j)].append(np.sqrt(var_list[j]))
 
@@ -203,7 +198,7 @@ class anomaly_checker():
         
         self.ax1 = self.fig.add_subplot(self.gs[0])
         self.ax1.set_xlim([0, X_test[-1].max()*1.05])
-        self.ax1.set_ylim([0, max(self.ml.obsrv_range)*1.4])
+        self.ax1.set_ylim([0, max(Y_test)*1.4])
         self.ax1.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
         self.ax1.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
 

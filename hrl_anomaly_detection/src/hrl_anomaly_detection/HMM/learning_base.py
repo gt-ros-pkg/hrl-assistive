@@ -246,13 +246,32 @@ class learning_base():
 
             # Gaussian transition probability
             ## z_prob = norm.pdf(float(i),loc=u_mu_list[i],scale=u_sigma_list[i])
-            
 
             # Normalization 
             trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
                 
         return trans_prob_mat
-    
+
+    #----------------------------------------------------------------------        
+    #                
+    def init_emission_mat(self, nState):
+
+        n,m = self.aXData.shape
+        
+
+        # Cal mean, var        
+        import lwr as LWR
+        self.lwr_model = LWR(activation=0.1, exponentially_spaced=True, n_rfs=nState)
+        g = mixture.GMM(n_components=nState)
+        g.fit(aXData)
+
+        print g
+
+        
+
+        return B
+
+        
     
     ## #----------------------------------------------------------------------
     ## #
