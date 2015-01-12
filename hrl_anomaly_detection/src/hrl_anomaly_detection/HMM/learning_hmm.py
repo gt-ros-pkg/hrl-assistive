@@ -59,11 +59,16 @@ class learning_hmm(learning_base):
 
         self.B_lower=[]
         self.B_upper=[]
+        self.x_min=[]
+        self.x_max=[]
         for i in xrange(self.nState):
-            self.B_lower.append([0.1])
-            self.B_lower.append([0.1])
+            self.B_lower.append([0.001])
+            self.B_lower.append([0.001])
             self.B_upper.append([20.])
             self.B_upper.append([4.])
+            self.x_min.append([1])
+            self.x_max.append([self.nMaxStep-self.nState+1])
+            
 
         self.B_upper =  np.array(self.B_upper).flatten()            
         self.B_lower =  np.array(self.B_lower).flatten()            
@@ -94,10 +99,10 @@ class learning_hmm(learning_base):
         if B is None and B_dict is None:
             print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.        
-            self.mu, self.sigma = self.vectors_to_mean_vars(X_train, optimize=False)
+            self.mu, self.var = self.vectors_to_mean_vars(X_train, optimize=False)
 
             # Emission probability matrix
-            B = np.hstack([self.mu, self.sigma]).tolist() # Must be [i,:] = [mu, sigma]
+            B = np.hstack([self.mu, self.var]).tolist() # Must be [i,:] = [mu, var]
         else:
             if B_dict is not None:
                 B = B_dict['B']
@@ -133,8 +138,6 @@ class learning_hmm(learning_base):
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
-        print self.B
-        
         ## self.mean_path_plot(mu[:,0], sigma[:,0])        
         ## print "Completed to fitting", np.array(final_seq).shape
         
@@ -189,7 +192,7 @@ class learning_hmm(learning_base):
             if sigma[index] < 0.4: sigma[index] = 0.4
             index = index+1
 
-        return mu,sigma
+        return mu,sigma*2
                
 
     #----------------------------------------------------------------------        
@@ -197,39 +200,14 @@ class learning_hmm(learning_base):
     def param_optimization(self, save_file):
 
         _,n   = self.aXData.shape # samples, length
-        mu    = np.zeros((self.nState,1))
-        sigma = np.zeros((self.nState,1))
-
 
         # Initial 
-        x0 = [1] * self.nState
-        while sum(x0)!=self.nMaxStep:
-            idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
-            if idx < 0 or idx >= self.nState: 
-                continue
-            else:
-                x0[idx] += 1
-
-        # Compute mean and std
-        index = 0
-        m_init = 0
-        while (index < self.nState):
-            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
-            m_init = m_init + int(x0[index])
-
-            mu[index] = np.mean(temp_vec)
-            sigma[index] = np.std(temp_vec)
-            index = index+1
-
-        B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
-        
-        ## hopping_step_size = np.zeros((self.nState*2))
-        ## for i in xrange(self.nState):
-        ##     hopping_step_size[i*2] = 2.0
-        ##     hopping_step_size[i*2+1] = 0.5             
-
+        x0 = self.x_min
+        for i in xrange(self.nMaxStep-len(x0)):
+            x0[random.randint(0,len(x0))] += 1
+            
         class MyTakeStep(object):
-            def __init__(self, stepsize=0.5, xmax=self.B_upper, xmin=self.B_lower):
+            def __init__(self, stepsize=0.5, xmax=self.x_max, xmin=self.x_min):
                 self.stepsize = stepsize
                 self.xmax = xmax
                 self.xmin = xmin
@@ -237,27 +215,14 @@ class learning_hmm(learning_base):
                 s = self.stepsize
                 n = len(x)
 
-                for i in xrange(n):
-                    while True:
-
-                        if i%2==0:                        
-                            next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
-                        else:
-                            next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
-
-                        if next_x > self.xmax[i] or next_x < self.xmin[i]:
-                            continue
-                        else:
-                            x[i] = next_x
-                            break
-                                                                        
-                ## for i in xrange(n/2):
-                ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
-                ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
+                x = self.xmin
+                for i in xrange(self.nMaxStep-len(x)):
+                    x[random.randint(0,len(x))] += 1
+                    
                 return x            
 
         class MyBounds(object):
-            def __init__(self, xmax=self.B_upper, xmin=self.B_lower ):
+            def __init__(self, xmax=self.x_max, xmin=self.x_min ):
                 self.xmax = xmax
                 self.xmin = xmin
             def __call__(self, **kwargs):
@@ -271,8 +236,8 @@ class learning_hmm(learning_base):
 
 
         bnds=[]
-        for i in xrange(len(self.B_lower)):
-            bnds.append([self.B_lower[i],self.B_upper[i]])
+        for i in xrange(len(self.x_min)):
+            bnds.append([self.x_min,self.x_max])
 
         mytakestep = MyTakeStep()
         mybounds = MyBounds()
@@ -280,7 +245,8 @@ class learning_hmm(learning_base):
         self.last_x = None
 
         # T
-        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=3000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+        res = optimize.basinhopping(self.mean_vars_score,x0, minimizer_kwargs=minimizer_kwargs, \
+                                    niter=3000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
         # , stepsize=2.0, interval=2
 
         B = res['x'].reshape((self.nState,2))
@@ -322,7 +288,22 @@ class learning_hmm(learning_base):
 
         return 
 
+    #----------------------------------------------------------------------        
+    #
+    def segment_scrore(self, x, *args):
 
+        # check limit
+        if self.last_x is None or np.linalg.norm(self.last_x-x) > 0.05:
+            tmax = bool(np.all(x <= self.x_max))
+            tmin = bool(np.all(x >= self.x_min))
+            if tmax and tmin == False: return 5            
+            self.last_x = x
+        else:
+            return self.last_score
+        
+
+
+        
     #----------------------------------------------------------------------        
     #
     def mean_vars_score(self, x, *args):
@@ -436,7 +417,7 @@ class learning_hmm(learning_base):
 
                         
                     total = np.sum(self.A[:,j]*alpha[-1,:]) #* scaling_factor
-                    [mu, sigma] = self.B[j]
+                    [mu, var] = self.B[j]
                     
                     ## total = 0.0        
                     ## for k in xrange(self.nState): # N                  
@@ -445,7 +426,7 @@ class learning_hmm(learning_base):
                     ## (mu, sigma) = self.ml.getEmission(j)
 
                     t_mu += mu*total
-                    t_var += (sigma**2)*(total**2)
+                    t_var += var*(total**2)
                     ## pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
@@ -1012,7 +993,7 @@ def f(i, state_range, B, u_mu, u_sigma, u_alpha, trans_type="full"):
     
     # 
     mu  = np.sum(z_prob*B[:,0])
-    var = np.sum((z_prob*B[:,1])**2)
+    var = np.sum((z_prob**2)*B[:,1])
 
     return mu, var, i
                                               

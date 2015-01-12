@@ -349,7 +349,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     start_step = 2
 
     score_n         = np.arange(0.3,1.01,0.1)
-    sig_mult        = np.arange(0.5, 10.0+0.00001, 0.5)
+    sig_mult        = np.arange(0.5, 8.0+0.00001, 0.5)
     sig_offset      = np.arange(0.0, 1.5+0.00001, 0.1)
 
     if nFutureStep == 1:
@@ -985,7 +985,7 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][22,:].tolist() # ikea cabinet door openning data
+        h_ftan   = data_vecs[0][2,:].tolist() # ikea cabinet door openning data
         h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
@@ -996,7 +996,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, score_n=1.0, sig_mult=20.0, sig_offset=0.0)
+            ac = anomaly_checker(lh, score_n=1.0, sig_mult=2.0, sig_offset=0.5)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)

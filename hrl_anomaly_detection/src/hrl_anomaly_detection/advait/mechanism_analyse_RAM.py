@@ -44,6 +44,7 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
     linear_vel_list = []
 
     for d in all_d_list:
+
         l = 100
         for v in d['vec_list']:
             l = min(l, len(v))
@@ -440,7 +441,9 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
     labels_test = []
     feat_list_test = []
     chunks_test = []
+
     for i, v_mat in enumerate(mech_vec_list):
+        
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict: #name filtering
             ## print nm + ' is not in tags_dict'
@@ -489,6 +492,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
             feat_list_test.append(v_mat)
         else:
             feat_list.append(v_mat)
+
         ## print '-------------------------'
         ## print 'nm:', nm
         if nm == 'HSI_kitchen_cabinet_right':
