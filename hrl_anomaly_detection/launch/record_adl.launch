@@ -2,9 +2,9 @@
     <node name="nano25_ft" 
 		pkg="netft_rdt_driver" 
 		type="netft_node" 
-		args="192.168.2.1 --rate 10" 
+		args="192.168.1.1 --rate 10" 
 		respawn="true">
-    <remap from="/netft_data" to="/tool_netft/wrench_raw"/>
+    <!--remap from="/netft_data" to="/tool_netft/wrench_raw"/-->
     </node>
 </launch>
 

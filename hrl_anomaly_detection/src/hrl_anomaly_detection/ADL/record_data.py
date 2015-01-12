@@ -20,276 +20,271 @@ from std_msgs.msg import Bool
 # HRL
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from hrl_msgs.msg import FloatArray
+import hrl_lib.util as ut
 
 # Private
 #import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
 #import hrl_anomaly_detection.advait.arm_trajectories as at
 
 def log_parse():
-	parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
+    parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
 
-	parser.add_option("-t", "--tracker", action="store", type="string",\
-		dest="tracker_name", default="adl2")
-	parser.add_option("-f", "--force" , action="store", type="string",\
-		dest="ft_sensor_name",default="/netft_data")
+    parser.add_option("-t", "--tracker", action="store", type="string",\
+    dest="tracker_name", default="adl2")
+    parser.add_option("-f", "--force" , action="store", type="string",\
+    dest="ft_sensor_name",default="/netft_data")
 
-	(options, args) = parser.parse_args()
+    (options, args) = parser.parse_args()
 
-	return options.tracker_name, options.ft_sensor_name 
+    return options.tracker_name, options.ft_sensor_name 
 
 
 class tool_ft():
-	def __init__(self,ft_sensor_node_name):
-		self.init_time = 0.
-		self.counter = 0
-		self.counter_prev = 0
-		self.force = np.matrix([0.,0.,0.]).T
-		self.force_raw = np.matrix([0.,0.,0.]).T
-		self.torque = np.matrix([0.,0.,0.]).T
-		self.torque_raw = np.matrix([0.,0.,0.]).T
-		self.torque_bias = np.matrix([0.,0.,0.]).T
+    def __init__(self,ft_sensor_node_name):
+        self.init_time = 0.
+        self.counter = 0
+        self.counter_prev = 0
+        self.force = np.matrix([0.,0.,0.]).T
+        self.force_raw = np.matrix([0.,0.,0.]).T
+        self.torque = np.matrix([0.,0.,0.]).T
+        self.torque_raw = np.matrix([0.,0.,0.]).T
+        self.torque_bias = np.matrix([0.,0.,0.]).T
 
-		self.time_data = []
-		self.force_data = []
-		self.force_raw_data = []
-		self.torque_data = []
-		self.torque_raw_data = []
+        self.time_data = []
+        self.force_data = []
+        self.force_raw_data = []
+        self.torque_data = []
+        self.torque_raw_data = []
 
-		#capture the force on the tool tip	
-		## self.force_sub = rospy.Subscriber(ft_sensor_node_name,\
-		## 	WrenchStamped, self.force_cb)
-		#raw ft values from the NetFT
-		self.force_raw_sub = rospy.Subscriber(ft_sensor_node_name,\
-			WrenchStamped, self.force_raw_cb)
-		## self.force_zero = rospy.Publisher('/tool_netft_zeroer/rezero_wrench', Bool)
-		rospy.logout('Done subscribing to '+ft_sensor_node_name+' topic')
-
-
-	def force_cb(self, msg):
-		self.time = msg.header.stamp.to_time()
-		self.force = np.matrix([msg.wrench.force.x, 
-					msg.wrench.force.y,
-					msg.wrench.force.z]).T
-		self.torque = np.matrix([msg.wrench.torque.x, 
-					msg.wrench.torque.y,
-					msg.wrench.torque.z]).T
-		self.counter += 1
+        #capture the force on the tool tip	
+        ## self.force_sub = rospy.Subscriber(ft_sensor_node_name,\
+        ## 	WrenchStamped, self.force_cb)
+        #raw ft values from the NetFT
+        self.force_raw_sub = rospy.Subscriber(ft_sensor_node_name,\
+        WrenchStamped, self.force_raw_cb)
+        ## self.force_zero = rospy.Publisher('/tool_netft_zeroer/rezero_wrench', Bool)
+        rospy.logout('Done subscribing to '+ft_sensor_node_name+' topic')
 
 
-	def force_raw_cb(self, msg):
-		self.force_raw = np.matrix([msg.wrench.force.x, 
-					msg.wrench.force.y,
-					msg.wrench.force.z]).T
-		self.torque_raw = np.matrix([msg.wrench.torque.x, 
-					msg.wrench.torque.y,
-					msg.wrench.torque.z]).T
+    def force_cb(self, msg):
+        self.force = np.matrix([msg.wrench.force.x, 
+        msg.wrench.force.y,
+        msg.wrench.force.z]).T
+        self.torque = np.matrix([msg.wrench.torque.x, 
+        msg.wrench.torque.y,
+        msg.wrench.torque.z]).T
 
 
-	def reset(self):
-		self.force_zero.publish(Bool(True))
+    def force_raw_cb(self, msg):
+        self.time = msg.header.stamp.to_time()
+        self.force_raw = np.matrix([msg.wrench.force.x, 
+        msg.wrench.force.y,
+        msg.wrench.force.z]).T
+        self.torque_raw = np.matrix([msg.wrench.torque.x, 
+        msg.wrench.torque.y,
+        msg.wrench.torque.z]).T
+        self.counter += 1
+
+
+    def reset(self):
+        self.force_zero.publish(Bool(True))
 	
 
-	def log(self, log_file):
-		if self.counter > self.counter_prev:
-			self.counter_prev = self.counter
-			time_int = self.time-self.init_time
-			print >> log_file, time_int, self.counter,\
-				## self.force[0,0],self.force[1,0],self.force[2,0],\
-				self.force_raw[0,0],self.force_raw[1,0],self.force_raw[2,0],\
-				## self.torque[0,0],self.torque[1,0],self.torque[2,0],\
-				self.torque_raw[0,0],self.torque_raw[1,0],self.torque_raw[2,0]
+    def log(self, log_file):
+        if self.counter > self.counter_prev:
+            self.counter_prev = self.counter
+            time_int = self.time-self.init_time
+            print >> log_file, time_int, self.counter,\
+            self.force_raw[0,0],self.force_raw[1,0],self.force_raw[2,0],\
+            self.torque_raw[0,0],self.torque_raw[1,0],self.torque_raw[2,0]
+            ## self.force[0,0],self.force[1,0],self.force[2,0],\
+            ## self.torque[0,0],self.torque[1,0],self.torque[2,0],\
 
-			## self.force_data.append(self.force)
-			self.force_raw_data.append(self.force_raw)
-			## self.torque_data.append(self.torque)
-			self.torque_raw_data.append(self.torque_raw)
-			self.time_data.append(self.time)
+            ## self.force_data.append(self.force)
+            self.force_raw_data.append(self.force_raw)
+            ## self.torque_data.append(self.torque)
+            self.torque_raw_data.append(self.torque_raw)
+            self.time_data.append(self.time)
 
 
-	def static_bias(self):
-		print '!!!!!!!!!!!!!!!!!!!!'
-		print 'BIASING FT'
-		print '!!!!!!!!!!!!!!!!!!!!'
-		f_list = []
-		t_list = []
-		for i in range(20):
-			f_list.append(self.force)
-			t_list.append(self.torque)
-			rospy.sleep(2/100.)
-		if f_list[0] != None and t_list[0] !=None:
-			self.force_bias = np.mean(np.column_stack(f_list),1)
-			self.torque_bias = np.mean(np.column_stack(t_list),1)
-			print self.gravity
-			print '!!!!!!!!!!!!!!!!!!!!'
-			print 'DONE Biasing ft'
-			print '!!!!!!!!!!!!!!!!!!!!'
-		else:
-			print 'Biasing Failed!'
+    def static_bias(self):
+        print '!!!!!!!!!!!!!!!!!!!!'
+        print 'BIASING FT'
+        print '!!!!!!!!!!!!!!!!!!!!'
+        f_list = []
+        t_list = []
+        for i in range(20):
+            f_list.append(self.force)
+            t_list.append(self.torque)
+            rospy.sleep(2/100.)
+        if f_list[0] != None and t_list[0] !=None:
+            self.force_bias = np.mean(np.column_stack(f_list),1)
+            self.torque_bias = np.mean(np.column_stack(t_list),1)
+            print self.gravity
+            print '!!!!!!!!!!!!!!!!!!!!'
+            print 'DONE Biasing ft'
+            print '!!!!!!!!!!!!!!!!!!!!'
+        else:
+            print 'Biasing Failed!'
 
 
 class ADL_log():
-	def __init__(self, robot=False):
-		self.init_time = 0.
-		rospy.init_node('ADLs_log', anonymous = True)
+    def __init__(self):
+        rospy.init_node('ADLs_log', anonymous = True)
 
-        if robot:
-            self.tflistener = tf.TransformListener()
-		tool_tracker_name, self.ft_sensor_node_name = log_parse()
-		rospy.logout('ADLs_log node subscribing..')
-
+        self.init_time = 0.
+        self.tool_tracker_name, self.ft_sensor_node_name = log_parse()        
+        rospy.logout('ADLs_log node subscribing..')
+        
         #subscribe to the rigid body nodes		
-        if robot:
-            self.tool_tracker = tracker_pose(tool_tracker_name)
-            self.head_tracker = tracker_pose('head')
+        ## self.tflistener = tf.TransformListener()
+        ## self.tool_tracker = tracker_pose(tool_tracker_name)
+        ## self.head_tracker = tracker_pose('head')
 
 
-	def task_cmd_input(self):
-		confirm = False
-		while not confirm:
-			valid = True
-			self.sub_name=raw_input("Enter subject's name: ")
-			num=raw_input("Enter the number for the choice of task:"+\
-					"\n1) cup \n2) door \n3) wipe"+\
-					"\n4) spoon\n5) tooth brush\n6) comb\n: ")
-			if num == '1':
-				self.task_name = 'cup'
-			elif num == '2':
-				self.task_name = 'door'
-			else:
-				print '\n!!!!!Invalid choice of task!!!!!\n'
-				valid = False
+    def task_cmd_input(self):
+        confirm = False
+        while not confirm:
+            valid = True
+            self.sub_name=raw_input("Enter subject's name: ")
+            num=raw_input("Enter the number for the choice of task:"+\
+            "\n1) cup \n2) door \n3) wipe"+\
+            "\n4) spoon\n5) tooth brush\n6) comb\n: ")
+            if num == '1':
+                self.task_name = 'cup'
+            elif num == '2':
+                self.task_name = 'door'
+            else:
+                print '\n!!!!!Invalid choice of task!!!!!\n'
+                valid = False
 
-			if valid:
-				num=raw_input("Select actor:\n1) human \n2) robot\n: ")
-				if num == '1':
-					self.actor = 'human'
-				elif num == '2':
-					self.actor = 'robot'
-				else:
-					print '\n!!!!!Invalid choice of actor!!!!!\n'
-					valid = False
-			if valid:
-				self.trial_name=raw_input("Enter trial's name (e.g. arm1, arm2): ")
-				self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
-				ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
-				if ans == 'y':
-					confirm = True
+            if valid:
+                num=raw_input("Select actor:\n1) human \n2) robot\n: ")
+                if num == '1':
+                    self.actor = 'human'
+                elif num == '2':
+                    self.actor = 'robot'
+                else:
+                    print '\n!!!!!Invalid choice of actor!!!!!\n'
+                    valid = False
+            if valid:
+                self.trial_name=raw_input("Enter trial's name (e.g. arm1, arm2): ")
+                self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
+                ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
+                if ans == 'y':
+                    confirm = True
+                    
+    def init_log_file(self):
+        self.task_cmd_input()
+        ## self.tool_tip = tool_pose(self.tool_name,self.tflistener)
+        self.ft = tool_ft(self.ft_sensor_node_name)
+        self.ft_log_file = open(self.file_name+'_ft.log','w')
+        ## self.tool_tracker_log_file = open(self.file_name+'_tool_tracker.log','w')
+        ## self.tooltip_log_file = open(self.file_name+'_tool_tip.log','w')
+        ## self.head_tracker_log_file = open(self.file_name+'_head.log','w')
+        ## self.gen_log_file = open(self.file_name+'_gen.log','w')
+        self.pkl = self.file_name+'.pkl'
 
+        ## raw_input('press Enter to set origin')
+        ## self.tool_tracker.set_origin()
+        ## self.tool_tip.set_origin()
+        ## self.head_tracker.set_origin()
+        ## self.ft.reset()
+        raw_input('press Enter to begin the test')
+        self.init_time = rospy.get_time()
+        ## self.head_tracker.init_time = self.init_time
+        ## self.tool_tracker.init_time = self.init_time
+        ## self.tool_tip.init_time = self.init_time
+        self.ft.init_time = self.init_time
 
-	def init_log_file(self):	
-		self.task_cmd_input()
-		## self.tool_tip = tool_pose(self.tool_name,self.tflistener)
-		self.ft = tool_ft(self.ft_sensor_node_name)
-		self.ft_log_file = open(self.file_name+'_ft.log','w')
-		## self.tool_tracker_log_file = open(self.file_name+'_tool_tracker.log','w')
-		## self.tooltip_log_file = open(self.file_name+'_tool_tip.log','w')
-		## self.head_tracker_log_file = open(self.file_name+'_head.log','w')
-		## self.gen_log_file = open(self.file_name+'_gen.log','w')
-		self.pkl = open(self.file_name+'.pkl','w')
+        ## print >> self.gen_log_file,'Begin_time',self.init_time,\
+        ## 	'\nTime X Y Z Rotx Roty Rotz',\
+        ## 	'\ntool_tracker_init_pos', self.tool_tracker.init_pos[0,0],\
+        ## 			self.tool_tracker.init_pos[1,0],\
+        ## 			self.tool_tracker.init_pos[2,0],\
+        ## 	'\ntool_tracker_init_rot', self.tool_tracker.init_rot[0,0],\
+        ## 			self.tool_tracker.init_rot[1,0],\
+        ## 			self.tool_tracker.init_rot[2,0],\
+        ## 	'\ntool_tip_init_pos', self.tool_tip.init_pos[0,0],\
+        ## 			self.tool_tip.init_pos[1,0],\
+        ## 			self.tool_tip.init_pos[2,0],\
+        ## 	'\ntool_tip_init_rot', self.tool_tip.init_rot[0,0],\
+        ## 			self.tool_tip.init_rot[1,0],\
+        ## 			self.tool_tip.init_rot[2,0],\
+        ## 	'\nhead_init_pos', self.head_tracker.init_pos[0,0],\
+        ## 			self.head_tracker.init_pos[1,0],\
+        ## 			self.head_tracker.init_pos[2,0],\
+        ## 	'\nhead_init_rot', self.head_tracker.init_rot[0,0],\
+        ## 			self.head_tracker.init_rot[1,0],\
+        ## 			self.head_tracker.init_rot[2,0],\
+        ## 	'\nTime Fx Fy Fz Fx_raw Fy_raw Fz_raw \
+        ## 		Tx Ty Tz Tx_raw Ty_raw Tz_raw'
+        
+    def log_state(self, bias=True):
+        ## self.head_tracker.log(self.head_tracker_log_file, log_delta_rot=True)
+        ## self.tool_tracker.log(self.tool_tracker_log_file)
+        ## self.tool_tip.log(self.tooltip_log_file)
+        self.ft.log(self.ft_log_file)
+        ## print '\nTool_Pos\t\tForce:\t\t\tHead_rot',\
+        ## 	'\nX: ', self.tool_tracker.delta_pos[0,0],'\t',\
+        ## 		self.ft.force[0,0],'\t',\
+        ## 		math.degrees(self.head_tracker.delta_rot[0,0]),\
+        ## 	'\nY: ', self.tool_tracker.delta_pos[1,0],'\t',\
+        ## 		self.ft.force[1,0],'\t',\
+        ## 		math.degrees(self.head_tracker.delta_rot[1,0]),\
+        ## 	'\nZ: ', self.tool_tracker.delta_pos[2,0],'\t',\
+        ## 		self.ft.force[2,0],'\t',\
+        ## 		math.degrees(self.head_tracker.delta_rot[2,0])
+        
+    def close_log_file(self):
+        d = {}
+        d['init_time'] = self.init_time
+        ## dict['init_pos'] = self.tool_tracker.init_pos
+        ## dict['pos'] = self.tool_tracker.pos_data
+        ## dict['quat'] = self.tool_tracker.quat_data
+        ## dict['rot_data'] = self.tool_tracker.rot_data
+        ## dict['ptime'] = self.tool_tracker.time_data
 
-		## raw_input('press Enter to set origin')
-		## self.tool_tracker.set_origin()
-		## self.tool_tip.set_origin()
-		## self.head_tracker.set_origin()
-		## self.ft.reset()
-			
-		raw_input('press Enter to begin the test')
-		self.init_time = rospy.get_time()
-		## self.head_tracker.init_time = self.init_time
-		## self.tool_tracker.init_time = self.init_time
-		## self.tool_tip.init_time = self.init_time
-		self.ft.init_time = self.init_time
+        ## dict['h_init_pos'] = self.head_tracker.init_pos
+        ## dict['h_init_rot'] = self.head_tracker.init_rot
+        ## dict['h_pos'] = self.head_tracker.pos_data
+        ## dict['h_quat'] = self.head_tracker.quat_data
+        ## dict['h_rot_data'] = self.head_tracker.rot_data
+        ## dict['htime'] = self.head_tracker.time_data
 
-		## print >> self.gen_log_file,'Begin_time',self.init_time,\
-		## 	'\nTime X Y Z Rotx Roty Rotz',\
-		## 	'\ntool_tracker_init_pos', self.tool_tracker.init_pos[0,0],\
-		## 			self.tool_tracker.init_pos[1,0],\
-		## 			self.tool_tracker.init_pos[2,0],\
-		## 	'\ntool_tracker_init_rot', self.tool_tracker.init_rot[0,0],\
-		## 			self.tool_tracker.init_rot[1,0],\
-		## 			self.tool_tracker.init_rot[2,0],\
-		## 	'\ntool_tip_init_pos', self.tool_tip.init_pos[0,0],\
-		## 			self.tool_tip.init_pos[1,0],\
-		## 			self.tool_tip.init_pos[2,0],\
-		## 	'\ntool_tip_init_rot', self.tool_tip.init_rot[0,0],\
-		## 			self.tool_tip.init_rot[1,0],\
-		## 			self.tool_tip.init_rot[2,0],\
-		## 	'\nhead_init_pos', self.head_tracker.init_pos[0,0],\
-		## 			self.head_tracker.init_pos[1,0],\
-		## 			self.head_tracker.init_pos[2,0],\
-		## 	'\nhead_init_rot', self.head_tracker.init_rot[0,0],\
-		## 			self.head_tracker.init_rot[1,0],\
-		## 			self.head_tracker.init_rot[2,0],\
-		## 	'\nTime Fx Fy Fz Fx_raw Fy_raw Fz_raw \
-		## 		Tx Ty Tz Tx_raw Ty_raw Tz_raw'
+        ## dict['tip_init_pos'] = self.tool_tip.init_pos
+        ## dict['tip_init_rot'] = self.tool_tip.init_rot
+        ## dict['tip_pos'] = self.tool_tip.pos_data
+        ## dict['tip_quat'] = self.tool_tip.quat_data
+        ## dict['tip_rot_data'] = self.tool_tip.rot_data
+        ## dict['ttime'] = self.tool_tip.time_data
 
+        ## dict['force'] = self.ft.force_data
+        d['force_raw'] = self.ft.force_raw_data
+        ## dict['torque'] = self.ft.torque_data
+        d['torque_raw'] = self.ft.torque_raw_data
+        d['ftime'] = self.ft.time_data
+        ut.save_pickle(d, self.pkl)
 
-	def log_state(self, bias=True):
-		## self.head_tracker.log(self.head_tracker_log_file, log_delta_rot=True)
-		## self.tool_tracker.log(self.tool_tracker_log_file)
-		## self.tool_tip.log(self.tooltip_log_file)
-		self.ft.log(self.ft_log_file)
-		## print '\nTool_Pos\t\tForce:\t\t\tHead_rot',\
-		## 	'\nX: ', self.tool_tracker.delta_pos[0,0],'\t',\
-		## 		self.ft.force[0,0],'\t',\
-		## 		math.degrees(self.head_tracker.delta_rot[0,0]),\
-		## 	'\nY: ', self.tool_tracker.delta_pos[1,0],'\t',\
-		## 		self.ft.force[1,0],'\t',\
-		## 		math.degrees(self.head_tracker.delta_rot[1,0]),\
-		## 	'\nZ: ', self.tool_tracker.delta_pos[2,0],'\t',\
-		## 		self.ft.force[2,0],'\t',\
-		## 		math.degrees(self.head_tracker.delta_rot[2,0])
-
-
-	def close_log_file(self):
-		dict = {}
-		dict['init_time'] = self.init_time
-		## dict['init_pos'] = self.tool_tracker.init_pos
-		## dict['pos'] = self.tool_tracker.pos_data
-		## dict['quat'] = self.tool_tracker.quat_data
-		## dict['rot_data'] = self.tool_tracker.rot_data
-		## dict['ptime'] = self.tool_tracker.time_data
-		
-		## dict['h_init_pos'] = self.head_tracker.init_pos
-		## dict['h_init_rot'] = self.head_tracker.init_rot
-		## dict['h_pos'] = self.head_tracker.pos_data
-		## dict['h_quat'] = self.head_tracker.quat_data
-		## dict['h_rot_data'] = self.head_tracker.rot_data
-		## dict['htime'] = self.head_tracker.time_data
-
-		## dict['tip_init_pos'] = self.tool_tip.init_pos
-		## dict['tip_init_rot'] = self.tool_tip.init_rot
-		## dict['tip_pos'] = self.tool_tip.pos_data
-		## dict['tip_quat'] = self.tool_tip.quat_data
-		## dict['tip_rot_data'] = self.tool_tip.rot_data
-		## dict['ttime'] = self.tool_tip.time_data
-
-		## dict['force'] = self.ft.force_data
-		dict['force_raw'] = self.ft.force_raw_data
-		## dict['torque'] = self.ft.torque_data
-		dict['torque_raw'] = self.ft.torque_raw_data
-		dict['ftime'] = self.ft.time_data
-		pkl.dump(dict, self.pkl)
-		self.pkl.close()
-
-		self.ft_log_file.close()
-		## self.tool_tracker_log_file.close()
-		## self.tooltip_log_file.close()
-		## self.head_tracker_log_file.close()
-		## self.gen_log_file.close()
-		print 'Closing..  log files have saved..'
+        self.ft_log_file.close()
+        ## self.tool_tracker_log_file.close()
+        ## self.tooltip_log_file.close()
+        ## self.head_tracker_log_file.close()
+        ## self.gen_log_file.close()
+        print 'Closing..  log files have saved..'
 
                 
 
 if __name__ == '__main__':
-	log = ADL_log()
-	log.init_log_file()
-	
-	while not rospy.is_shutdown():
-		log.log_state()
-		rospy.sleep(1/1000.)
+    
+    log = ADL_log()
+    log.init_log_file()
 
-	log.close_log_file()
+    while not rospy.is_shutdown():
+        log.log_state()
+        rospy.sleep(1/1000.)
+
+    log.close_log_file()
     
     ## ar = adl_recording()   
     ## ar.start()
