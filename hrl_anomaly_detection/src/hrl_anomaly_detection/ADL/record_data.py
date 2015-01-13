@@ -6,7 +6,9 @@ import time, sys, threading
 import cPickle as pkl
 from collections import deque
 import pyaudio
-
+import struct
+import scipy.signal as signal
+import operator
 
 # ROS
 import roslib
@@ -23,6 +25,8 @@ from std_msgs.msg import Bool, Float32
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from hrl_msgs.msg import FloatArray
 import hrl_lib.util as ut
+import matplotlib.pyplot as pp
+import matplotlib as mpl
 
 # Private
 #import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
@@ -42,23 +46,26 @@ def log_parse():
 
 
 class tool_audio():
+    MAX_INT = 32768.0
+    CHUNK   = 1024 #frame per buffer
+    RATE    = 44100 #sampling rate
+    UNIT_CHUNK_TIME = float(CHUNK) / float(RATE)
+    CHANNEL=1 #number of channels
+    FORMAT=pyaudio.paInt16
+    
     def __init__(self):
-        self.form=pyaudio.paFloat32
-        self.channel=1 #number of channels
-        self.rate1=44100 #sampling rate
-        self.chunk=1024 #frame size
+        self.DTYPE = np.int16
         
         self.p=pyaudio.PyAudio()
-        self.stream=self.p.open(format=self.form, channels=self.channel, rate=self.rate1, \
-                                input=True, frames_per_buffer=self.chunk)
+        self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, \
+                                input=True, frames_per_buffer=self.CHUNK)
         rospy.logout('Done subscribing audio')
 
     def audio_cb(self):
 
-        data=self.stream.read(self.chunk)
-        decoded=np.fromstring(data, 'Float32')
-        ## decoded2=np.fromstring(data, 'Int16')
-
+        data=self.stream.read(self.CHUNK)
+        decoded=np.fromstring(data, self.DTYPE)
+        
         frames.append(decoded)
         l=len(frames)
         if l*self.chunk>=3000:
@@ -77,28 +84,109 @@ class tool_audio():
 
     def reset(self):
 
-        nMaxFrame = 3000
-        frames=deque([], nMaxFrame)
+        RECORD_SECONDS = 3
 
-        count = 0
-        while not rospy.is_shutdown():
-            count += 1
+        frames=[]        
+        new_frames = []    
+        FT_l = []
 
-            data=self.stream.read(self.chunk)
-            decoded=np.fromstring(data, 'Float32')
-            frames.append(decoded)
+        # Get noise frequency
+        f = np.fft.fftfreq(self.CHUNK, 1.0/float(self.RATE)) 
+        
+        for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
+            data=self.stream.read(self.CHUNK)
+            audio_data=np.fromstring(data, self.DTYPE)
+            F = np.fft.fft(audio_data / self.MAX_INT)
+            FT_l.append(F)
 
-            print len(frames), len(decoded), count
-            
-            if count == nMaxFrame: 
-                break
+            ## freq      = np.fft.fftfreq(len(freq_data), 1.0/float(self.RATE))
+            frames.append(audio_data)
+            ## amplitude = self.get_rms(data)            
+
+        freq_l = []
+        for i, F in enumerate(FT_l):
+            index, value = max(enumerate(F), key=operator.itemgetter(1))
+            freq_l.append(abs(f[index]))
+        mean_freq = np.mean(freq_l)
+
+        print mean_freq
+        pp.figure()
+        for i in xrange(10):
+            pp.plot(f,FT_l[i],'b*')
+        pp.plot([mean_freq, mean_freq], [0, 20],'r')
+        pp.show()
+        
+        
+        def filter_rule(x, freq, mean_freq):
+            band = 0.05
+            if abs(freq) > mean_freq+band or abs(freq) < mean_freq-band:
+                return x
             else:
-                rospy.sleep(1/1000.)
-        
-        
-        self.mu = 0.0
-        
+                return 0
 
+        # Filter the bandwidth of the noise
+        for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
+            
+            data=self.stream.read(self.CHUNK)
+            audio_data=np.fromstring(data, self.DTYPE)
+            F = np.fft.fft(audio_data / self.MAX_INT)
+
+            F_filt = np.array([filter_rule(x,freq, mean_freq) for x, freq in zip(F,f)])
+            new_audio_data = np.fft.ifft(F_filt)*float(self.MAX_INT)
+            string_audio_data = np.array(new_audio_data, dtype=self.DTYPE).tostring()
+            new_frames.append(string_audio_data)            
+
+            ## b,a=signal.iirdesign(0.03,0.07,5,40)
+            ## global b,a,fulldata #global variables for filter coefficients and array
+            ## audio_data = np.fromstring(in_data, dtype=np.int16)
+            #do whatever with data, in my case I want to hear my data filtered in realtime
+            ## audio_data = signal.filtfilt(b,a,audio_data,padlen=200).astype(np.int16).tostring()
+            ## fulldata = np.append(fulldata,audio_data) #saves filtered data in an array
+
+        ## import wave
+        ## WAVE_OUTPUT_FILENAME = "output.wav"
+        ## wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        ## wf.setnchannels(self.CHANNEL)
+        ## wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        ## wf.setframerate(self.RATE)
+        ## wf.writeframes(b''.join(new_frames))
+        ## wf.close()
+            
+
+        pp.figure()
+        pp.plot(frames,'b-')
+        pp.plot(new_frames,'r-')
+        pp.show()
+
+        
+                
+    def close(self):
+        self.stream.stop_stream()
+        self.stream.close()
+
+    def get_rms(self, block):
+        # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
+        
+        # RMS amplitude is defined as the square root of the 
+        # mean over time of the square of the amplitude.
+        # so we need to convert this string of bytes into 
+        # a string of 16-bit samples...
+
+        # we will get one short out for each 
+        # two chars in the string.
+        count = len(block)/2
+        format = "%dh"%(count)
+        shorts = struct.unpack( format, block )
+
+        # iterate over the block.
+        sum_squares = 0.0
+        for sample in shorts:
+        # sample is a signed short in +/- 32768. 
+        # normalize it to 1.0
+            n = sample / self.MAX_INT
+            sum_squares += n*n
+
+        return math.sqrt( sum_squares / count )        
 
 class tool_ft():
     def __init__(self,ft_sensor_topic_name):
@@ -303,6 +391,9 @@ class ADL_log():
         ## 		math.degrees(self.head_tracker.delta_rot[2,0])
         
     def close_log_file(self):
+        # Finish data collection
+        self.audio.close()
+        
         d = {}
         d['init_time'] = self.init_time
         ## dict['init_pos'] = self.tool_tracker.init_pos
@@ -342,18 +433,21 @@ class ADL_log():
                 
 
 if __name__ == '__main__':
-    
-    log = ADL_log()
-    log.init_log_file()
 
-    while not rospy.is_shutdown():
-        log.log_state()
-        rospy.sleep(1/1000.)
+    audio = tool_audio()
+    audio.reset()
 
-    log.close_log_file()
+
     
-    ## ar = adl_recording()   
-    ## ar.start()
+    ## log = ADL_log()
+    ## log.init_log_file()
+
+    ## while not rospy.is_shutdown():
+    ##     log.log_state()
+    ##     rospy.sleep(1/1000.)
+
+    ## log.close_log_file()
+    
 
     
 
