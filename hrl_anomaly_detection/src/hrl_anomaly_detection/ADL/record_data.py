@@ -4,6 +4,8 @@
 import numpy as np
 import time, sys, threading
 import cPickle as pkl
+from collections import deque
+import pyaudio
 
 
 # ROS
@@ -15,7 +17,7 @@ import rospy, optparse, math, time
 import tf
 from geometry_msgs.msg import Wrench
 from geometry_msgs.msg import TransformStamped, WrenchStamped
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float32
 
 # HRL
 from hrl_srvs.srv import None_Bool, None_BoolResponse
@@ -47,10 +49,11 @@ class tool_audio():
         self.chunk=1024 #frame size
         
         self.p=pyaudio.PyAudio()
-        self.stream=self.p.open(format=self.form, channels=self.channel, rate=self.rate1, input=True, frames_per_buffer=self.chunk)
+        self.stream=self.p.open(format=self.form, channels=self.channel, rate=self.rate1, \
+                                input=True, frames_per_buffer=self.chunk)
         rospy.logout('Done subscribing audio')
 
-    def audio_cb(self)
+    def audio_cb(self):
 
         data=self.stream.read(self.chunk)
         decoded=np.fromstring(data, 'Float32')
@@ -72,18 +75,22 @@ class tool_audio():
             #Publish ROS messages
             self.audio_analyzer(z)#,data1)
 
-    def static_bias(self):
+    def reset(self):
 
         nMaxFrame = 3000
         frames=deque([], nMaxFrame)
-        
+
+        count = 0
         while not rospy.is_shutdown():
+            count += 1
 
             data=self.stream.read(self.chunk)
             decoded=np.fromstring(data, 'Float32')
             frames.append(decoded)
+
+            print len(frames), len(decoded), count
             
-            if len(frames) == nMaxFrame: 
+            if count == nMaxFrame: 
                 break
             else:
                 rospy.sleep(1/1000.)
@@ -233,17 +240,21 @@ class ADL_log():
         ## self.tool_tip = tool_pose(self.tool_name,self.tflistener)
         self.ft = tool_ft(self.ft_sensor_topic_name)
         self.ft_log_file = open(self.file_name+'_ft.log','w')
+        self.audio = tool_audio()
+        self.audio_log_file = open(self.file_name+'_audio.log','w')        
         ## self.tool_tracker_log_file = open(self.file_name+'_tool_tracker.log','w')
         ## self.tooltip_log_file = open(self.file_name+'_tool_tip.log','w')
         ## self.head_tracker_log_file = open(self.file_name+'_head.log','w')
         ## self.gen_log_file = open(self.file_name+'_gen.log','w')
         self.pkl = self.file_name+'.pkl'
 
-        ## raw_input('press Enter to set origin')
+        raw_input('press Enter to reset')
         ## self.tool_tracker.set_origin()
         ## self.tool_tip.set_origin()
         ## self.head_tracker.set_origin()
         ## self.ft.reset()
+        self.audio.reset()
+        
         raw_input('press Enter to begin the test')
         self.init_time = rospy.get_time()
         ## self.head_tracker.init_time = self.init_time
@@ -279,6 +290,7 @@ class ADL_log():
         ## self.tool_tracker.log(self.tool_tracker_log_file)
         ## self.tool_tip.log(self.tooltip_log_file)
         self.ft.log(self.ft_log_file)
+        self.audio.log(self.audio_log_file)
         ## print '\nTool_Pos\t\tForce:\t\t\tHead_rot',\
         ## 	'\nX: ', self.tool_tracker.delta_pos[0,0],'\t',\
         ## 		self.ft.force[0,0],'\t',\
