@@ -39,8 +39,62 @@ def log_parse():
     return options.tracker_name, options.ft_sensor_name 
 
 
+class tool_audio():
+    def __init__(self):
+        self.form=pyaudio.paFloat32
+        self.channel=1 #number of channels
+        self.rate1=44100 #sampling rate
+        self.chunk=1024 #frame size
+        
+        self.p=pyaudio.PyAudio()
+        self.stream=self.p.open(format=self.form, channels=self.channel, rate=self.rate1, input=True, frames_per_buffer=self.chunk)
+        rospy.logout('Done subscribing audio')
+
+    def audio_cb(self)
+
+        data=self.stream.read(self.chunk)
+        decoded=np.fromstring(data, 'Float32')
+        ## decoded2=np.fromstring(data, 'Int16')
+
+        frames.append(decoded)
+        l=len(frames)
+        if l*self.chunk>=3000:
+            index=range(0, l-2)
+            frames_arr=np.array(frames.popleft())
+            for i in index:
+                e=frames.popleft()
+                frames_arr=np.concatenate((frames_arr, e), axis=0)
+            frames_arr.reshape(-1)
+            z=((amp_frames_arr-self.mu)/self.sigma)
+
+            a=abs(z)>=self.stddevs*self.sigma
+
+            #Publish ROS messages
+            self.audio_analyzer(z)#,data1)
+
+    def static_bias(self):
+
+        nMaxFrame = 3000
+        frames=deque([], nMaxFrame)
+        
+        while not rospy.is_shutdown():
+
+            data=self.stream.read(self.chunk)
+            decoded=np.fromstring(data, 'Float32')
+            frames.append(decoded)
+            
+            if len(frames) == nMaxFrame: 
+                break
+            else:
+                rospy.sleep(1/1000.)
+        
+        
+        self.mu = 0.0
+        
+
+
 class tool_ft():
-    def __init__(self,ft_sensor_node_name):
+    def __init__(self,ft_sensor_topic_name):
         self.init_time = 0.
         self.counter = 0
         self.counter_prev = 0
@@ -57,13 +111,13 @@ class tool_ft():
         self.torque_raw_data = []
 
         #capture the force on the tool tip	
-        ## self.force_sub = rospy.Subscriber(ft_sensor_node_name,\
+        ## self.force_sub = rospy.Subscriber(ft_sensor_topic_name,\
         ## 	WrenchStamped, self.force_cb)
         #raw ft values from the NetFT
-        self.force_raw_sub = rospy.Subscriber(ft_sensor_node_name,\
+        self.force_raw_sub = rospy.Subscriber(ft_sensor_topic_name,\
         WrenchStamped, self.force_raw_cb)
         ## self.force_zero = rospy.Publisher('/tool_netft_zeroer/rezero_wrench', Bool)
-        rospy.logout('Done subscribing to '+ft_sensor_node_name+' topic')
+        rospy.logout('Done subscribing to '+ft_sensor_topic_name+' topic')
 
 
     def force_cb(self, msg):
@@ -133,7 +187,7 @@ class ADL_log():
         rospy.init_node('ADLs_log', anonymous = True)
 
         self.init_time = 0.
-        self.tool_tracker_name, self.ft_sensor_node_name = log_parse()        
+        self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()        
         rospy.logout('ADLs_log node subscribing..')
         
         #subscribe to the rigid body nodes		
@@ -177,7 +231,7 @@ class ADL_log():
     def init_log_file(self):
         self.task_cmd_input()
         ## self.tool_tip = tool_pose(self.tool_name,self.tflistener)
-        self.ft = tool_ft(self.ft_sensor_node_name)
+        self.ft = tool_ft(self.ft_sensor_topic_name)
         self.ft_log_file = open(self.file_name+'_ft.log','w')
         ## self.tool_tracker_log_file = open(self.file_name+'_tool_tracker.log','w')
         ## self.tooltip_log_file = open(self.file_name+'_tool_tip.log','w')
