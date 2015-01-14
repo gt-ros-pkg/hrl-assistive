@@ -57,39 +57,79 @@ class tool_audio():
     UNIT_SAMPLE_TIME = 1.0 / float(RATE)
     CHANNEL=1 #number of channels
     FORMAT=pyaudio.paInt16
+    DTYPE = np.int16
     
     def __init__(self):
-        self.DTYPE = np.int16
+        self.init_time = 0.
+        self.noise_freq_l = None
+        self.noise_band = 80.0
+        self.noise_amp_thres = 0.0  
+        self.noise_amp_mult = 5.0  
         
+        self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
+        self.audio_data = None
+        self.audio_amp  = None
+                
         self.p=pyaudio.PyAudio()
         self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, \
                                 input=True, frames_per_buffer=self.CHUNK)
         rospy.logout('Done subscribing audio')
 
-    def audio_cb(self):
+        
+    def log(self, log_file):
 
         data=self.stream.read(self.CHUNK)
-        decoded=np.fromstring(data, self.DTYPE)
+        audio_data=np.fromstring(data, self.DTYPE)
+
+        # Exclude low rms data
+        amp = self.get_rms(data)            
+        if amp < self.noise_amp_thres*self.noise_amp_mult:
+            audio_data = audio_data*np.exp( - self.noise_amp_mult*(self.noise_amp_thres - amp))
+            
+        new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
+
+        # Remove noise
+        for noise_freq in self.noise_freq_l:
+            new_F = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F)])
+        frame = np.fft.ifft(new_F)*float(self.MAX_INT)
+
+        if self.audio_amp is None: self.audio_amp = new_F
+        else: self.audio_amp = np.hstack([self.audio_amp, new_F])
+        if self.audio_data is None: self.audio_data = frame
+        else: self.audio_data = np.hstack([self.audio_data, frame])
+                
+        ## self.time_data.append(self.time)
+
+            
+    def save_audio(self):
         
-        frames.append(decoded)
-        l=len(frames)
-        if l*self.chunk>=3000:
-            index=range(0, l-2)
-            frames_arr=np.array(frames.popleft())
-            for i in index:
-                e=frames.popleft()
-                frames_arr=np.concatenate((frames_arr, e), axis=0)
-            frames_arr.reshape(-1)
-            z=((amp_frames_arr-self.mu)/self.sigma)
+        ## RECORD_SECONDS = 9.0
 
-            a=abs(z)>=self.stddevs*self.sigma
+        string_audio_data = np.array(self.audio_data, dtype=self.DTYPE).tostring() 
+        import wave
+        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
+        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        wf.setnchannels(self.CHANNEL)
+        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        wf.setframerate(self.RATE)
+        wf.writeframes(b''.join(string_audio_data))
+        wf.close()
+            
 
-            #Publish ROS messages
-            self.audio_analyzer(z)#,data1)
+        ## pp.figure()        
+        ## pp.subplot(211)
+        ## pp.plot(new_frames,'b-')
+        ## pp.plot(new_filt_frames,'r-')
+        
+        ## pp.subplot(212)
+        ## pp.plot(f[:n/10],np.abs(F[:n/10]),'b')
+        ## if new_F is not None:
+        ##     pp.plot(f[:n/10],np.abs(new_F[:n/10]),'r')
+        ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
+        ## pp.show()
+
 
     def reset(self):
-
-        RECORD_SECONDS = 9.0
 
         # Get noise frequency        
         frames=None
@@ -102,101 +142,37 @@ class tool_audio():
 
         if frames is None: frames = audio_data
         else: frames = np.hstack([frames, audio_data])
-        amp_thres = self.get_rms(data)            
+        self.noise_amp_thres = self.get_rms(data)            
 
         F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
 
         import heapq
         values = heapq.nlargest(3, F[:n/2]) #amplitude
 
-        max_freq_l = []
+        self.noise_freq_l = []
         for value in values:
-            max_freq_l.append([f[j] for j, k in enumerate(F[:n/2]) if k == value])
-        max_freq_l = np.array(max_freq_l)
+            self.noise_freq_l.append([f[j] for j, k in enumerate(F[:n/2]) if k == value])
+        self.noise_freq_l = np.array(self.noise_freq_l)
 
 
-        print "Amplitude threshold: ", amp_thres
+        print "Amplitude threshold: ", self.noise_amp_thres
         ## pp.figure()
         ## pp.plot(f[:n/4],np.abs(F[:n/4]),'b')
-        ## pp.stem(max_freq_l, values, 'r-*', bottom=0)
+        ## pp.stem(noise_freq_l, values, 'r-*', bottom=0)
         ## pp.show()
-        raw_input("Enter anything to start: ")
-        
-        
-        def filter_rule(x, freq, max_freq):
-            band = 80.0
-            if np.abs(freq) > max_freq+band or np.abs(freq) < max_freq-band:
-                return x
-            else:
-                return 0
-
-        # Filter the bandwidth of the noise
-        new_frames=None
-        new_filt_frames=None
-        f  = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
-        n=len(f)
-        zero_audio_data = np.zeros(self.CHUNK)
-        
-        for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
-            data=self.stream.read(self.CHUNK)
-            audio_data=np.fromstring(data, self.DTYPE)
-
-            if new_frames is None: new_frames = audio_data
-            else: new_frames = np.hstack([new_frames, audio_data])
-
-
-            # Exclude low rms data
-            amp = self.get_rms(data)            
-            if amp < amp_thres*1.2:
-                new_audio_data = zero_audio_data
-            else:
-                new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
-                
-                # Remove noise
-                for max_freq in max_freq_l:
-                    new_F = np.array([filter_rule(x,f[j], max_freq) for j, x in enumerate(new_F)])
-                new_audio_data = np.fft.ifft(new_F)*float(self.MAX_INT)
-            
-            if new_filt_frames is None: new_filt_frames = new_audio_data
-            else: new_filt_frames = np.hstack([new_filt_frames, new_audio_data])
-                
-
-        print new_filt_frames.shape
-        ## for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
-        ##                
-        ##     new_frames.append(string_audio_data)            
-
-        string_audio_data = np.array(new_filt_frames, dtype=self.DTYPE).tostring() 
-        import wave
-        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
-        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-        wf.setnchannels(self.CHANNEL)
-        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        wf.setframerate(self.RATE)
-        wf.writeframes(b''.join(string_audio_data))
-        wf.close()
-            
-
-        pp.figure()
-        
-        pp.subplot(211)
-        pp.plot(new_frames,'b-')
-        pp.plot(new_filt_frames,'r-')
-        
-        pp.subplot(212)
-        pp.plot(f[:n/10],np.abs(F[:n/10]),'b')
-        if new_F is not None:
-            pp.plot(f[:n/10],np.abs(new_F[:n/10]),'r')
-        pp.stem(max_freq_l, values, 'k-*', bottom=0)
-        
-        pp.show()
-
-        
+        ## raw_input("Enter anything to start: ")
+                        
                 
     def close(self):
         self.stream.stop_stream()
         self.stream.close()
 
+    def filter_rule(self, x, freq, noise_freq, noise_band):
+        if np.abs(freq) > noise_freq+noise_band or np.abs(freq) < noise_freq-noise_band:
+            return x
+        else:
+            return 0
+        
     def get_rms(self, block):
         # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
         
@@ -311,10 +287,15 @@ class tool_ft():
 
 
 class ADL_log():
-    def __init__(self):
+    def __init__(self, ft=True, audio=False, test_mode=False):
         rospy.init_node('ADLs_log', anonymous = True)
 
+        self.ft = ft
+        self.audio = audio
+        self.test_mode = test_mode
+
         self.init_time = 0.
+        self.file_name = 'test'
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()        
         rospy.logout('ADLs_log node subscribing..')
         
@@ -357,12 +338,20 @@ class ADL_log():
                     confirm = True
                     
     def init_log_file(self):
-        self.task_cmd_input()
+
+        if self.test_mode is False: 
+            self.task_cmd_input()
+
+        if self.ft: 
+            self.ft = tool_ft(self.ft_sensor_topic_name)
+            self.ft_log_file = open(self.file_name+'_ft.log','w')
+            
+        if self.audio: 
+            self.audio = tool_audio()
+            self.audio_log_file = open(self.file_name+'_audio.log','w')        
+
+            
         ## self.tool_tip = tool_pose(self.tool_name,self.tflistener)
-        self.ft = tool_ft(self.ft_sensor_topic_name)
-        self.ft_log_file = open(self.file_name+'_ft.log','w')
-        self.audio = tool_audio()
-        self.audio_log_file = open(self.file_name+'_audio.log','w')        
         ## self.tool_tracker_log_file = open(self.file_name+'_tool_tracker.log','w')
         ## self.tooltip_log_file = open(self.file_name+'_tool_tip.log','w')
         ## self.head_tracker_log_file = open(self.file_name+'_head.log','w')
@@ -370,18 +359,18 @@ class ADL_log():
         self.pkl = self.file_name+'.pkl'
 
         raw_input('press Enter to reset')
+        if self.ft: self.ft.reset()
+        if self.audio: self.audio.reset()
         ## self.tool_tracker.set_origin()
         ## self.tool_tip.set_origin()
         ## self.head_tracker.set_origin()
-        ## self.ft.reset()
-        self.audio.reset()
         
         raw_input('press Enter to begin the test')
         self.init_time = rospy.get_time()
+        if self.ft: self.ft.init_time = self.init_time
         ## self.head_tracker.init_time = self.init_time
         ## self.tool_tracker.init_time = self.init_time
         ## self.tool_tip.init_time = self.init_time
-        self.ft.init_time = self.init_time
 
         ## print >> self.gen_log_file,'Begin_time',self.init_time,\
         ## 	'\nTime X Y Z Rotx Roty Rotz',\
@@ -407,11 +396,11 @@ class ADL_log():
         ## 		Tx Ty Tz Tx_raw Ty_raw Tz_raw'
         
     def log_state(self, bias=True):
+        if self.ft: self.ft.log(self.ft_log_file)
+        if self.audio: self.audio.log(self.audio_log_file)
         ## self.head_tracker.log(self.head_tracker_log_file, log_delta_rot=True)
         ## self.tool_tracker.log(self.tool_tracker_log_file)
         ## self.tool_tip.log(self.tooltip_log_file)
-        self.ft.log(self.ft_log_file)
-        self.audio.log(self.audio_log_file)
         ## print '\nTool_Pos\t\tForce:\t\t\tHead_rot',\
         ## 	'\nX: ', self.tool_tracker.delta_pos[0,0],'\t',\
         ## 		self.ft.force[0,0],'\t',\
@@ -449,14 +438,23 @@ class ADL_log():
         ## dict['tip_rot_data'] = self.tool_tip.rot_data
         ## dict['ttime'] = self.tool_tip.time_data
 
-        ## dict['force'] = self.ft.force_data
-        d['force_raw'] = self.ft.force_raw_data
-        ## dict['torque'] = self.ft.torque_data
-        d['torque_raw'] = self.ft.torque_raw_data
-        d['ftime'] = self.ft.time_data
+        if self.ft:
+            ## dict['force'] = self.ft.force_data
+            d['force_raw'] = self.ft.force_raw_data
+            ## dict['torque'] = self.ft.torque_data
+            d['torque_raw'] = self.ft.torque_raw_data
+            d['ftime'] = self.ft.time_data
+            self.ft_log_file.close()
+
+        if self.audio:
+            d['audio_data']  = self.audio.audio_data
+            d['audio_amp']   = self.audio.audio_amp
+            d['audio_freq']  = self.audio.audio_freq
+            d['audio_chunk'] = self.audio.CHUNK
+            self.audio_log_file.close()
+        
         ut.save_pickle(d, self.pkl)
 
-        self.ft_log_file.close()
         ## self.tool_tracker_log_file.close()
         ## self.tooltip_log_file.close()
         ## self.head_tracker_log_file.close()
@@ -467,19 +465,18 @@ class ADL_log():
 
 if __name__ == '__main__':
 
-    audio = tool_audio()
-    audio.reset()
-
 
     
-    ## log = ADL_log()
-    ## log.init_log_file()
+    log = ADL_log(audio=True, ft=False, test_mode=True)
+    log.init_log_file()
 
-    ## while not rospy.is_shutdown():
-    ##     log.log_state()
-    ##     rospy.sleep(1/1000.)
+    rate = rospy.Rate(25) # 25Hz, nominally.    
+    while not rospy.is_shutdown():
+        log.log_state()
+        rate.sleep()
+        ## rospy.sleep(1/1000.)
 
-    ## log.close_log_file()
+    log.close_log_file()
     
 
     
