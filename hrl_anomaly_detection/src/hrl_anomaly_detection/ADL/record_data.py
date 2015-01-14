@@ -62,9 +62,10 @@ class tool_audio():
     def __init__(self):
         self.init_time = 0.
         self.noise_freq_l = None
-        self.noise_band = 80.0
+        self.noise_band = 200.0
         self.noise_amp_thres = 0.0  
-        self.noise_amp_mult = 5.0  
+        self.noise_amp_mult = 2.0  
+        self.noise_bias = 0.0
         
         self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
         self.audio_data = None
@@ -83,14 +84,18 @@ class tool_audio():
 
         # Exclude low rms data
         amp = self.get_rms(data)            
-        if amp < self.noise_amp_thres*self.noise_amp_mult:
+        if amp < self.noise_amp_thres*2.0:
             audio_data = audio_data*np.exp( - self.noise_amp_mult*(self.noise_amp_thres - amp))
-            
-        new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
 
+        audio_data -= self.noise_bias
+        new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
+        new_F1 = new_F[:self.CHUNK/2]
+        
         # Remove noise
         for noise_freq in self.noise_freq_l:
-            new_F = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F)])
+            new_F1 = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F1)])
+        new_F = np.hstack([new_F1, new_F1[::-1]])
+            
         frame = np.fft.ifft(new_F)*float(self.MAX_INT)
 
         if self.audio_amp is None: self.audio_amp = new_F
@@ -144,10 +149,13 @@ class tool_audio():
         else: frames = np.hstack([frames, audio_data])
         self.noise_amp_thres = self.get_rms(data)            
 
+        self.noise_bias = np.mean(audio_data)
+        audio_data -= self.noise_bias
+
         F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
 
         import heapq
-        values = heapq.nlargest(3, F[:n/2]) #amplitude
+        values = heapq.nlargest(10, F[:n/2]) #amplitude
 
         self.noise_freq_l = []
         for value in values:
@@ -156,6 +164,7 @@ class tool_audio():
 
 
         print "Amplitude threshold: ", self.noise_amp_thres
+        print "Noise bias: ", self.noise_bias
         ## pp.figure()
         ## pp.plot(f[:n/4],np.abs(F[:n/4]),'b')
         ## pp.stem(noise_freq_l, values, 'r-*', bottom=0)
@@ -470,7 +479,7 @@ if __name__ == '__main__':
     log = ADL_log(audio=True, ft=False, test_mode=True)
     log.init_log_file()
 
-    rate = rospy.Rate(25) # 25Hz, nominally.    
+    rate = rospy.Rate(1000) # 25Hz, nominally.    
     while not rospy.is_shutdown():
         log.log_state()
         rate.sleep()

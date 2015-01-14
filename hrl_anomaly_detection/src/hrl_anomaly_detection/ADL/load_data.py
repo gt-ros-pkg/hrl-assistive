@@ -55,8 +55,30 @@ if __name__ == '__main__':
         pp.plot(audio_data,'b-')
         
         pp.subplot(212)
-        pp.plot(audio_freq[:audio_chunk/10],np.abs(audio_amp[:audio_chunk/10]),'b')
+        pp.plot(audio_freq[:audio_chunk/10],np.log(np.abs(audio_amp[:audio_chunk/10])),'b')
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
         pp.show()
+
+        import pyaudio        
+        MAX_INT = 32768.0
+        CHUNK   = 1024 #frame per buffer
+        RATE    = 44100 #sampling rate
+        UNIT_SAMPLE_TIME = 1.0 / float(RATE)
+        CHANNEL=1 #number of channels
+        FORMAT=pyaudio.paInt16
+        DTYPE = np.int16
+
+        p=pyaudio.PyAudio()
+        stream=p.open(format=FORMAT, channels=CHANNEL, rate=RATE, \
+                                input=True, frames_per_buffer=CHUNK)
         
+        string_audio_data = np.array(audio_data, dtype=DTYPE).tostring() 
+        import wave
+        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
+        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        wf.setnchannels(CHANNEL)
+        wf.setsampwidth(p.get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(string_audio_data))
+        wf.close()
         
