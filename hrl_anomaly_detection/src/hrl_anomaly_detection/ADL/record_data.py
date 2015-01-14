@@ -8,6 +8,7 @@ from collections import deque
 import pyaudio
 import struct
 import scipy.signal as signal
+import scipy.fftpack
 import operator
 
 # ROS
@@ -25,8 +26,12 @@ from std_msgs.msg import Bool, Float32
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from hrl_msgs.msg import FloatArray
 import hrl_lib.util as ut
+
+# External Utils
 import matplotlib.pyplot as pp
 import matplotlib as mpl
+from pylab import *
+
 
 # Private
 #import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
@@ -49,7 +54,7 @@ class tool_audio():
     MAX_INT = 32768.0
     CHUNK   = 1024 #frame per buffer
     RATE    = 44100 #sampling rate
-    UNIT_CHUNK_TIME = float(CHUNK) / float(RATE)
+    UNIT_SAMPLE_TIME = 1.0 / float(RATE)
     CHANNEL=1 #number of channels
     FORMAT=pyaudio.paInt16
     
@@ -84,78 +89,106 @@ class tool_audio():
 
     def reset(self):
 
-        RECORD_SECONDS = 3
+        RECORD_SECONDS = 9.0
 
-        frames=[]        
-        new_frames = []    
-        FT_l = []
-
-        # Get noise frequency
-        f = np.fft.fftfreq(self.CHUNK, 1.0/float(self.RATE)) 
+        # Get noise frequency        
+        frames=None
+        f  = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
+        n=len(f)
         
-        for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
-            data=self.stream.read(self.CHUNK)
-            audio_data=np.fromstring(data, self.DTYPE)
-            F = np.fft.fft(audio_data / self.MAX_INT)
-            FT_l.append(F)
+        ## for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
+        data=self.stream.read(self.CHUNK)
+        audio_data=np.fromstring(data, self.DTYPE)
 
-            ## freq      = np.fft.fftfreq(len(freq_data), 1.0/float(self.RATE))
-            frames.append(audio_data)
-            ## amplitude = self.get_rms(data)            
+        if frames is None: frames = audio_data
+        else: frames = np.hstack([frames, audio_data])
+        amp_thres = self.get_rms(data)            
 
-        freq_l = []
-        for i, F in enumerate(FT_l):
-            index, value = max(enumerate(F), key=operator.itemgetter(1))
-            freq_l.append(abs(f[index]))
-        mean_freq = np.mean(freq_l)
+        F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
 
-        print mean_freq
-        pp.figure()
-        for i in xrange(10):
-            pp.plot(f,FT_l[i],'b*')
-        pp.plot([mean_freq, mean_freq], [0, 20],'r')
-        pp.show()
+        import heapq
+        values = heapq.nlargest(3, F[:n/2]) #amplitude
+
+        max_freq_l = []
+        for value in values:
+            max_freq_l.append([f[j] for j, k in enumerate(F[:n/2]) if k == value])
+        max_freq_l = np.array(max_freq_l)
+
+
+        print "Amplitude threshold: ", amp_thres
+        ## pp.figure()
+        ## pp.plot(f[:n/4],np.abs(F[:n/4]),'b')
+        ## pp.stem(max_freq_l, values, 'r-*', bottom=0)
+        ## pp.show()
+        raw_input("Enter anything to start: ")
         
         
-        def filter_rule(x, freq, mean_freq):
-            band = 0.05
-            if abs(freq) > mean_freq+band or abs(freq) < mean_freq-band:
+        def filter_rule(x, freq, max_freq):
+            band = 80.0
+            if np.abs(freq) > max_freq+band or np.abs(freq) < max_freq-band:
                 return x
             else:
                 return 0
 
         # Filter the bandwidth of the noise
+        new_frames=None
+        new_filt_frames=None
+        f  = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
+        n=len(f)
+        zero_audio_data = np.zeros(self.CHUNK)
+        
         for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
-            
             data=self.stream.read(self.CHUNK)
             audio_data=np.fromstring(data, self.DTYPE)
-            F = np.fft.fft(audio_data / self.MAX_INT)
 
-            F_filt = np.array([filter_rule(x,freq, mean_freq) for x, freq in zip(F,f)])
-            new_audio_data = np.fft.ifft(F_filt)*float(self.MAX_INT)
-            string_audio_data = np.array(new_audio_data, dtype=self.DTYPE).tostring()
-            new_frames.append(string_audio_data)            
+            if new_frames is None: new_frames = audio_data
+            else: new_frames = np.hstack([new_frames, audio_data])
 
-            ## b,a=signal.iirdesign(0.03,0.07,5,40)
-            ## global b,a,fulldata #global variables for filter coefficients and array
-            ## audio_data = np.fromstring(in_data, dtype=np.int16)
-            #do whatever with data, in my case I want to hear my data filtered in realtime
-            ## audio_data = signal.filtfilt(b,a,audio_data,padlen=200).astype(np.int16).tostring()
-            ## fulldata = np.append(fulldata,audio_data) #saves filtered data in an array
 
-        ## import wave
-        ## WAVE_OUTPUT_FILENAME = "output.wav"
-        ## wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-        ## wf.setnchannels(self.CHANNEL)
-        ## wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        ## wf.setframerate(self.RATE)
-        ## wf.writeframes(b''.join(new_frames))
-        ## wf.close()
+            # Exclude low rms data
+            amp = self.get_rms(data)            
+            if amp < amp_thres*1.2:
+                new_audio_data = zero_audio_data
+            else:
+                new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
+                
+                # Remove noise
+                for max_freq in max_freq_l:
+                    new_F = np.array([filter_rule(x,f[j], max_freq) for j, x in enumerate(new_F)])
+                new_audio_data = np.fft.ifft(new_F)*float(self.MAX_INT)
+            
+            if new_filt_frames is None: new_filt_frames = new_audio_data
+            else: new_filt_frames = np.hstack([new_filt_frames, new_audio_data])
+                
+
+        print new_filt_frames.shape
+        ## for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
+        ##                
+        ##     new_frames.append(string_audio_data)            
+
+        string_audio_data = np.array(new_filt_frames, dtype=self.DTYPE).tostring() 
+        import wave
+        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
+        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        wf.setnchannels(self.CHANNEL)
+        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        wf.setframerate(self.RATE)
+        wf.writeframes(b''.join(string_audio_data))
+        wf.close()
             
 
         pp.figure()
-        pp.plot(frames,'b-')
-        pp.plot(new_frames,'r-')
+        
+        pp.subplot(211)
+        pp.plot(new_frames,'b-')
+        pp.plot(new_filt_frames,'r-')
+        
+        pp.subplot(212)
+        pp.plot(f[:n/10],np.abs(F[:n/10]),'b')
+        if new_F is not None:
+            pp.plot(f[:n/10],np.abs(new_F[:n/10]),'r')
+        pp.stem(max_freq_l, values, 'k-*', bottom=0)
+        
         pp.show()
 
         
