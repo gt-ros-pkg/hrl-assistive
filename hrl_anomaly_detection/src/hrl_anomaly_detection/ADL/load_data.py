@@ -55,7 +55,7 @@ if __name__ == '__main__':
         pp.plot(audio_data,'b-')
         
         pp.subplot(212)
-        pp.plot(audio_freq[:audio_chunk/10],np.log(np.abs(audio_amp[:audio_chunk/10])),'b')
+        pp.plot(audio_freq[:audio_chunk/10],audio_amp[:audio_chunk/10],'b')
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
         pp.show()
 
