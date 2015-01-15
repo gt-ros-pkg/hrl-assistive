@@ -30,12 +30,12 @@ if __name__ == '__main__':
     d = ut.load_pickle(pkl_file)
 
     print d.keys()
-    ft = False
+    ft = True
     audio = True
     
     if ft:
-        ftime = d.get('ftime',None)
-        force = d.get('force_raw',None)
+        ftime = d.get('ft_time',None)
+        force = d.get('ft_force_raw',None)
 
         aForce = np.squeeze(force).T
         print aForce.shape

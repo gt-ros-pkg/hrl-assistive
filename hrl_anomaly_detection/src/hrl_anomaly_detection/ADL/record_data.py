@@ -259,6 +259,10 @@ class tool_audio(Thread):
 
 class tool_ft():
     def __init__(self,ft_sensor_topic_name):
+        super(tool_ft, self).__init__()
+        self.daemon = True
+        self.cancelled = False
+
         self.init_time = 0.
         self.counter = 0
         self.counter_prev = 0
@@ -306,13 +310,22 @@ class tool_ft():
 
     def reset(self):
         self.force_zero.publish(Bool(True))
-	
 
-    def log(self, log_file):
+        
+    def run(self):
+        """Overloaded Thread.run, runs the update 
+        method once per every xx milliseconds."""
+
+        rate = rospy.Rate(1000) # 25Hz, nominally.            
+        while not self.cancelled:
+            self.log()
+            rospy.sleep(1/1000.)
+    
+
+    def log(self):
         if self.counter > self.counter_prev:
             self.counter_prev = self.counter
             time_int = self.time-self.init_time
-            print >> log_file, time_int, self.counter,\
             self.force_raw[0,0],self.force_raw[1,0],self.force_raw[2,0],\
             self.torque_raw[0,0],self.torque_raw[1,0],self.torque_raw[2,0]
             ## self.force[0,0],self.force[1,0],self.force[2,0],\
@@ -325,25 +338,31 @@ class tool_ft():
             self.time_data.append(self.time)
 
 
-    def static_bias(self):
-        print '!!!!!!!!!!!!!!!!!!!!'
-        print 'BIASING FT'
-        print '!!!!!!!!!!!!!!!!!!!!'
-        f_list = []
-        t_list = []
-        for i in range(20):
-            f_list.append(self.force)
-            t_list.append(self.torque)
-            rospy.sleep(2/100.)
-        if f_list[0] != None and t_list[0] !=None:
-            self.force_bias = np.mean(np.column_stack(f_list),1)
-            self.torque_bias = np.mean(np.column_stack(t_list),1)
-            print self.gravity
-            print '!!!!!!!!!!!!!!!!!!!!'
-            print 'DONE Biasing ft'
-            print '!!!!!!!!!!!!!!!!!!!!'
-        else:
-            print 'Biasing Failed!'
+    def cancel(self):
+        """End this timer thread"""
+        self.cancelled = True
+        rospy.sleep(1.0)
+            
+            
+    ## def static_bias(self):
+    ##     print '!!!!!!!!!!!!!!!!!!!!'
+    ##     print 'BIASING FT'
+    ##     print '!!!!!!!!!!!!!!!!!!!!'
+    ##     f_list = []
+    ##     t_list = []
+    ##     for i in range(20):
+    ##         f_list.append(self.force)
+    ##         t_list.append(self.torque)
+    ##         rospy.sleep(2/100.)
+    ##     if f_list[0] != None and t_list[0] !=None:
+    ##         self.force_bias = np.mean(np.column_stack(f_list),1)
+    ##         self.torque_bias = np.mean(np.column_stack(t_list),1)
+    ##         print self.gravity
+    ##         print '!!!!!!!!!!!!!!!!!!!!'
+    ##         print 'DONE Biasing ft'
+    ##         print '!!!!!!!!!!!!!!!!!!!!'
+    ##     else:
+    ##         print 'Biasing Failed!'
 
 
 class ADL_log():
@@ -358,11 +377,6 @@ class ADL_log():
         self.file_name = 'test'
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()        
         rospy.logout('ADLs_log node subscribing..')
-        
-        #subscribe to the rigid body nodes		
-        ## self.tflistener = tf.TransformListener()
-        ## self.tool_tracker = tracker_pose(tool_tracker_name)
-        ## self.head_tracker = tracker_pose('head')
 
 
     def task_cmd_input(self):
@@ -404,116 +418,46 @@ class ADL_log():
 
         if self.ft: 
             self.ft = tool_ft(self.ft_sensor_topic_name)
-            self.ft_log_file = open(self.file_name+'_ft.log','w')
+            ## self.ft_log_file = open(self.file_name+'_ft.log','w')
             
         if self.audio: 
             self.audio = tool_audio()
-            self.audio_log_file = open(self.file_name+'_audio.log','w')        
-
+            ## self.audio_log_file = open(self.file_name+'_audio.log','w')        
             
-        ## self.tool_tip = tool_pose(self.tool_name,self.tflistener)
-        ## self.tool_tracker_log_file = open(self.file_name+'_tool_tracker.log','w')
-        ## self.tooltip_log_file = open(self.file_name+'_tool_tip.log','w')
-        ## self.head_tracker_log_file = open(self.file_name+'_head.log','w')
-        ## self.gen_log_file = open(self.file_name+'_gen.log','w')
         self.pkl = self.file_name+'.pkl'
 
         raw_input('press Enter to reset')
         if self.ft: self.ft.reset()
         if self.audio: self.audio.reset()
-        ## self.tool_tracker.set_origin()
-        ## self.tool_tip.set_origin()
-        ## self.head_tracker.set_origin()
         
-
-        ## print >> self.gen_log_file,'Begin_time',self.init_time,\
-        ## 	'\nTime X Y Z Rotx Roty Rotz',\
-        ## 	'\ntool_tracker_init_pos', self.tool_tracker.init_pos[0,0],\
-        ## 			self.tool_tracker.init_pos[1,0],\
-        ## 			self.tool_tracker.init_pos[2,0],\
-        ## 	'\ntool_tracker_init_rot', self.tool_tracker.init_rot[0,0],\
-        ## 			self.tool_tracker.init_rot[1,0],\
-        ## 			self.tool_tracker.init_rot[2,0],\
-        ## 	'\ntool_tip_init_pos', self.tool_tip.init_pos[0,0],\
-        ## 			self.tool_tip.init_pos[1,0],\
-        ## 			self.tool_tip.init_pos[2,0],\
-        ## 	'\ntool_tip_init_rot', self.tool_tip.init_rot[0,0],\
-        ## 			self.tool_tip.init_rot[1,0],\
-        ## 			self.tool_tip.init_rot[2,0],\
-        ## 	'\nhead_init_pos', self.head_tracker.init_pos[0,0],\
-        ## 			self.head_tracker.init_pos[1,0],\
-        ## 			self.head_tracker.init_pos[2,0],\
-        ## 	'\nhead_init_rot', self.head_tracker.init_rot[0,0],\
-        ## 			self.head_tracker.init_rot[1,0],\
-        ## 			self.head_tracker.init_rot[2,0],\
-        ## 	'\nTime Fx Fy Fz Fx_raw Fy_raw Fz_raw \
-        ## 		Tx Ty Tz Tx_raw Ty_raw Tz_raw'
 
     def log_start(self):
         
         raw_input('press Enter to begin the test')
         self.init_time = rospy.get_time()
-        if self.ft: self.ft.init_time = self.init_time
-        ## self.head_tracker.init_time = self.init_time
-        ## self.tool_tracker.init_time = self.init_time
-        ## self.tool_tip.init_time = self.init_time
-        
-        if self.ft: self.ft.log(self.ft_log_file)
-        if self.audio: self.audio.start()
-        
-        
-    def log_state(self, bias=True):
-        if self.ft: self.ft.log(self.ft_log_file)
-        if self.audio: self.audio.log(self.audio_log_file)
-        ## self.head_tracker.log(self.head_tracker_log_file, log_delta_rot=True)
-        ## self.tool_tracker.log(self.tool_tracker_log_file)
-        ## self.tool_tip.log(self.tooltip_log_file)
-        ## print '\nTool_Pos\t\tForce:\t\t\tHead_rot',\
-        ## 	'\nX: ', self.tool_tracker.delta_pos[0,0],'\t',\
-        ## 		self.ft.force[0,0],'\t',\
-        ## 		math.degrees(self.head_tracker.delta_rot[0,0]),\
-        ## 	'\nY: ', self.tool_tracker.delta_pos[1,0],'\t',\
-        ## 		self.ft.force[1,0],'\t',\
-        ## 		math.degrees(self.head_tracker.delta_rot[1,0]),\
-        ## 	'\nZ: ', self.tool_tracker.delta_pos[2,0],'\t',\
-        ## 		self.ft.force[2,0],'\t',\
-        ## 		math.degrees(self.head_tracker.delta_rot[2,0])
+        if self.ft: 
+            self.ft.init_time = self.init_time
+            self.ft.start()
+        if self.audio: 
+            self.audio.init_time = self.init_time
+            self.audio.start()
+                            
         
     def close_log_file(self):
         # Finish data collection
-        if self.ft: self.ft.log(self.ft_log_file)
+        if self.ft: self.ft.cancel()
         if self.audio: self.audio.cancel()
         
         
         d = {}
         d['init_time'] = self.init_time
-        ## dict['init_pos'] = self.tool_tracker.init_pos
-        ## dict['pos'] = self.tool_tracker.pos_data
-        ## dict['quat'] = self.tool_tracker.quat_data
-        ## dict['rot_data'] = self.tool_tracker.rot_data
-        ## dict['ptime'] = self.tool_tracker.time_data
-
-        ## dict['h_init_pos'] = self.head_tracker.init_pos
-        ## dict['h_init_rot'] = self.head_tracker.init_rot
-        ## dict['h_pos'] = self.head_tracker.pos_data
-        ## dict['h_quat'] = self.head_tracker.quat_data
-        ## dict['h_rot_data'] = self.head_tracker.rot_data
-        ## dict['htime'] = self.head_tracker.time_data
-
-        ## dict['tip_init_pos'] = self.tool_tip.init_pos
-        ## dict['tip_init_rot'] = self.tool_tip.init_rot
-        ## dict['tip_pos'] = self.tool_tip.pos_data
-        ## dict['tip_quat'] = self.tool_tip.quat_data
-        ## dict['tip_rot_data'] = self.tool_tip.rot_data
-        ## dict['ttime'] = self.tool_tip.time_data
 
         if self.ft:
             ## dict['force'] = self.ft.force_data
-            d['force_raw'] = self.ft.force_raw_data
+            d['ft_force_raw']  = self.ft.force_raw_data
             ## dict['torque'] = self.ft.torque_data
-            d['torque_raw'] = self.ft.torque_raw_data
-            d['ftime'] = self.ft.time_data
-            self.ft_log_file.close()
+            d['ft_torque_raw'] = self.ft.torque_raw_data
+            d['ft_time']       = self.ft.time_data
 
         if self.audio:
             d['audio_data']  = self.audio.audio_data
@@ -521,7 +465,6 @@ class ADL_log():
             d['audio_freq']  = self.audio.audio_freq
             d['audio_chunk'] = self.audio.CHUNK
             d['audio_time']  = self.audio.time_data
-            self.audio_log_file.close()
         
         ut.save_pickle(d, self.pkl)
 
