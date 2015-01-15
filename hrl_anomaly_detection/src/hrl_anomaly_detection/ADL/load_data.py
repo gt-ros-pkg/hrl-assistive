@@ -74,7 +74,7 @@ if __name__ == '__main__':
         
         string_audio_data = np.array(audio_data, dtype=DTYPE).tostring() 
         import wave
-        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
+        WAVE_OUTPUT_FILENAME = "~/git/pyaudio/test/output.wav"
         wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
         wf.setnchannels(CHANNEL)
         wf.setsampwidth(p.get_sample_size(FORMAT))

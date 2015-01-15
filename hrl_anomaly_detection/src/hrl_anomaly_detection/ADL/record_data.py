@@ -257,7 +257,7 @@ class tool_audio(Thread):
 
         return math.sqrt( sum_squares / count )        
 
-class tool_ft():
+class tool_ft(Thread):
     def __init__(self,ft_sensor_topic_name):
         super(tool_ft, self).__init__()
         self.daemon = True
@@ -309,8 +309,8 @@ class tool_ft():
 
 
     def reset(self):
-        self.force_zero.publish(Bool(True))
-
+        ## self.force_zero.publish(Bool(True))
+        pass
         
     def run(self):
         """Overloaded Thread.run, runs the update 
@@ -480,7 +480,7 @@ if __name__ == '__main__':
 
 
     
-    log = ADL_log(audio=True, ft=False, test_mode=True)
+    log = ADL_log(audio=True, ft=True, test_mode=False)
     log.init_log_file()
 
     log.log_start()
