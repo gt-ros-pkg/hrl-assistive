@@ -41,7 +41,7 @@ if __name__ == '__main__':
         print aForce.shape
 
         pp.figure()
-        pp.plot(ftime, aForce[0])
+        pp.plot(ftime, aForce[2])
         pp.show()
 
     if audio:
