@@ -34,12 +34,12 @@
     width: 40%;
     display: block;
     border-radius: 50%;
-/*    background-color: rgba(215, 43, 62, 0.85);*/
+/*    background: radial-gradient( rgba(215,43,62,0.7) 5%,  rgba(200,50,50,0.8) 85%, rgba(15,15,15,0.5) 100%);*/
     background-image: url("./icons/arrow-drag.png");
+    background-color: rgba(215, 43, 62, 0.85);
     background-size: 90% 90%;
-    background: radial-gradient( rgba(215,43,62,0.7) 5%,  rgba(200,50,50,0.8) 85%, rgba(15,15,15,0.5) 100%);
-/*    background-repeat: no-repeat;
-    background-position: center center;*/
+    background-repeat: no-repeat;
+    background-position: center center;
 }
 
 .target-rot {
@@ -50,9 +50,9 @@
     width: 40%;
     display: block;
     border-radius: 50%;
-    background-color: rgba(215, 43, 62, 0.85);
     background-image: url("./icons/arrow-rotate.png");
-    background-size: 99% 99%;
+    background-color: rgba(215, 43, 62, 0.85);
+    background-size: 90% 90%;
     background-repeat: no-repeat;
     background-position: center center;
 }

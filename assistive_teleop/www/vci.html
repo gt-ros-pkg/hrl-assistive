@@ -42,7 +42,7 @@
   
 </head>
 
-<body onload="RFH.init()" ondragstart="return false;" ondrop="return false;">
+<body onload="RFH.init()">
  <div id="status-bar">
      <div id="notifications"></div>
      <div id="network-status"></div>
@@ -73,6 +73,18 @@
         <label id="r-track-hand-toggle-label" for="r-track-hand-toggle">Watch Hand</label>
         <input type="checkbox" id="l-track-hand-toggle" checked="true"/>
         <label id="l-track-hand-toggle-label" for="l-track-hand-toggle">Watch Hand</label>
+        <div id="r-posrot-set">
+            <input class="menu-item" id="r-posrot-pos" type="radio" name="r-posrot-radio" checked="checked">
+            <label for="r-posrot-pos">Position</label>
+            <input class="menu-item" id="r-posrot-rot" type="radio" name="r-posrot-radio">
+            <label for="r-posrot-rot">Rotation</label>
+        </div>
+        <div id="l-posrot-set">
+            <input class="menu-item" id="l-posrot-pos" type="radio" name="l-posrot-radio" checked="checked">
+            <label for="l-posrot-pos">Position</label>
+            <input class="menu-item" id="l-posrot-rot" type="radio" name="l-posrot-radio">
+            <label for="l-posrot-rot">Rotation</label>
+        </div>
      </div>
  </div>
  <div id="video-main">
