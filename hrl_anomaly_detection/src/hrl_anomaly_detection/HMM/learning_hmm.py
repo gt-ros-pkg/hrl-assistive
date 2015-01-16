@@ -22,7 +22,6 @@ from matplotlib import animation
 
 ## import door_open_data as dod
 import ghmm
-import hrl_anomaly_detection.door_opening.mechanism_analyse_daehyung as mad
 from scipy.stats import norm
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import r2_score
@@ -69,7 +68,6 @@ class learning_hmm(learning_base):
             self.x_min.append([1])
             self.x_max.append([self.nMaxStep-self.nState+1])
             
-
         self.B_upper =  np.array(self.B_upper).flatten()            
         self.B_lower =  np.array(self.B_lower).flatten()            
                 
@@ -94,7 +92,6 @@ class learning_hmm(learning_base):
             if verbose: print "Generate new A matrix"                
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
-            #A,_ = mad.get_trans_mat(X_train, self.nState)
 
         if B is None and B_dict is None:
             print "Generate new B matrix"                                            

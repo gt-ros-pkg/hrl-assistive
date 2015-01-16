@@ -325,7 +325,6 @@ class tool_ft(Thread):
     def log(self):
         if self.counter > self.counter_prev:
             self.counter_prev = self.counter
-            time_int = self.time-self.init_time
             self.force_raw[0,0],self.force_raw[1,0],self.force_raw[2,0],\
             self.torque_raw[0,0],self.torque_raw[1,0],self.torque_raw[2,0]
             ## self.force[0,0],self.force[1,0],self.force[2,0],\
@@ -335,7 +334,8 @@ class tool_ft(Thread):
             self.force_raw_data.append(self.force_raw)
             ## self.torque_data.append(self.torque)
             self.torque_raw_data.append(self.torque_raw)
-            self.time_data.append(self.time)
+            self.time_data.append(rospy.get_time()-self.init_time)
+            
 
 
     def cancel(self):
@@ -454,8 +454,8 @@ class ADL_log():
 
         if self.ft:
             ## dict['force'] = self.ft.force_data
-            d['ft_force_raw']  = self.ft.force_raw_data
             ## dict['torque'] = self.ft.torque_data
+            d['ft_force_raw']  = self.ft.force_raw_data
             d['ft_torque_raw'] = self.ft.torque_raw_data
             d['ft_time']       = self.ft.time_data
 
