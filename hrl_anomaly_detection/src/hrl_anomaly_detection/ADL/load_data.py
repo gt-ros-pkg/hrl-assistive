@@ -2,7 +2,7 @@
 
 # System
 import numpy as np
-import time, sys, threading
+import time, sys, os
 import cPickle as pkl
 
 
@@ -27,6 +27,8 @@ if __name__ == '__main__':
 
     pkl_file = './test_cup_human_t1.pkl'
     pkl_file = './test.pkl'
+    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_1.pkl'
+    print os.path.isfile(pkl_file)
     d = ut.load_pickle(pkl_file)
 
     print d.keys()
@@ -42,7 +44,7 @@ if __name__ == '__main__':
 
         pp.figure()
         pp.plot(ftime, aForce[0])
-        pp.show()
+        ## pp.show()
 
     if audio:
         audio_data = d['audio_data']
@@ -50,6 +52,8 @@ if __name__ == '__main__':
         audio_freq = d['audio_freq']
         audio_chunk = d['audio_chunk']
 
+        print audio_data.shape
+        
         pp.figure()        
         pp.subplot(211)
         pp.plot(audio_data,'b-')
@@ -74,7 +78,7 @@ if __name__ == '__main__':
         
         string_audio_data = np.array(audio_data, dtype=DTYPE).tostring() 
         import wave
-        WAVE_OUTPUT_FILENAME = "~/git/pyaudio/test/output.wav"
+        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
         wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
         wf.setnchannels(CHANNEL)
         wf.setsampwidth(p.get_sample_size(FORMAT))
