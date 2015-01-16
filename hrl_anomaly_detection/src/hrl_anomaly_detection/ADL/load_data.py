@@ -27,7 +27,9 @@ if __name__ == '__main__':
 
     pkl_file = './test_cup_human_t1.pkl'
     pkl_file = './test.pkl'
-    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_1.pkl'
+    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
+    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
+    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
     print os.path.isfile(pkl_file)
     d = ut.load_pickle(pkl_file)
 

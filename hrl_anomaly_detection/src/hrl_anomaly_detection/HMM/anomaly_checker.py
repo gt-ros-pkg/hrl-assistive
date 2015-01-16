@@ -23,7 +23,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class anomaly_checker():
 
-    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, score_n=None, sig_mult=1.0, sig_offset=0.0, buff_coff_ratio=1.0):
+    def __init__(self, ml, nDim=1, fXInterval=1.0, fXMax=90.0, sig_mult=1.0, sig_offset=0.0):
 
         # Object
         self.ml = ml
@@ -39,96 +39,37 @@ class anomaly_checker():
         self.fAnomaly    = self.ml.nFutureStep
         self.sig_mult    = sig_mult
         self.sig_offset  = sig_offset
-
-        if score_n is None: self.score_n = 1.0 
-        else: self.score_n = float(score_n)
         
-        # N-buffers
-        self.buf_dict = {}
-        for i in xrange(self.nMaxBuf):
-            self.buf_dict['mu_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
-            self.buf_dict['sig_'+str(i)] = cb.CircularBuffer(i+1, (nDim,))       
-
-        self.init_buff_coff(buff_coff_ratio)
+        # 
+        self.mu_list = None
+        self.var_list = None
         
         pass
+        
+        
+    def update_buffer(self, Y_test):
 
-    def init_buff_coff(self, buff_coff_ratio):
-
-        if self.nFutureStep == 1:
-            self.buff_coff = [1.0]
+        # obsrv_range X nFutureStep
+        if type(Y_test) == list:
+            y = Y_test
         else:
-            x = np.arange(1.0, self.nFutureStep+0.1, 1.0)
-            ## self.buff_coff = buff_coff_ratio*np.exp(-x)
-            self.buff_coff = np.exp((-buff_coff_ratio*x))
+            y = Y_test.tolist()
 
-            ## self.buff_coff = np.arange(float(self.nFutureStep), 0.99, -1.0)
-            self.buff_coff /= np.sum(self.buff_coff) 
-        
-        
-    def update_buffer(self, X_test, Y_test):
+        self.mu_list, self.var_list = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
 
-        x          = X_test[-1]
-        x_sup, idx = hdl.find_nearest(self.aXRange, x, sup=True)
-        ## x_buf      = self.x_buf.get_array()
-        
-        mu_list  = [0.0]*self.nFutureStep
-        var_list = [0.0]*self.nFutureStep
-            
-        # fXTOL should be sufficiently small.    
-        if x - x_sup < self.fXTOL: # and x - x_buf[-1] >= 1.0:
-
-            # obsrv_range X nFutureStep
-            if type(Y_test) == list:
-                y = Y_test
-            else:
-                y = Y_test.tolist()
-
-            mu_list, var_list = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
-
-            for j in xrange(self.nFutureStep):
-                self.buf_dict['mu_'+str(j)].append(mu_list[j])
-                self.buf_dict['sig_'+str(j)].append(np.sqrt(var_list[j]))
-
-            return mu_list, var_list, idx
-        else:
-            return None, None, idx
+        return 
 
         
     def check_anomaly(self, y):
+        
+        thres_l = self.mu_list + self.sig_mult*self.var_list + self.sig_offset
+        error = [x for x in thres_l -y if x >= 0.0]
+        
+        if y > np.max(thres_l):
+            return 1.0, 0.0, len(error)
+        else:
+            return 0.0, np.min(error), len(error)
 
-        a_score  = np.zeros((self.nFutureStep))
-        m_err    = np.zeros((self.nFutureStep))
-
-        count = 0.
-        scale = 0.
-        for i in xrange(self.nFutureStep):
-
-            # check buff size
-            if len(self.buf_dict['mu_'+str(i)]) < i+1: continue
-            else: count += 1.
-            
-            mu  = self.buf_dict['mu_'+str(i)][0]
-            sig = self.buf_dict['sig_'+str(i)][0]
-
-            a_score[i], m_err[i] = self.cost(y, i, mu, sig, sig_mult=self.sig_mult, \
-                                           sig_offset=self.sig_offset)
-
-            scale += self.buff_coff[i]
-                                           
-
-        a_score *= self.buff_coff
-        m_err *= self.buff_coff
-                                           
-        score = round(np.sum(a_score)/scale, 2)            
-        threshold = round(self.score_n, 2)        
-        if score >= threshold: 
-            return 1.0, 0.0, score
-        else: 
-            ## print m_err[0], np.sum(m_err[:2])/2., m_err[:2], round(score,2), round(self.score_n*count, 2)
-            ## new_m_err = [e for e in m_err if e>0.0]            
-            return 0.0, np.sum(m_err)/scale, score
-                
         
     def check_anomaly_batch(self, y, param_list):
 
@@ -137,54 +78,19 @@ class anomaly_checker():
         err_l = np.zeros(nParam)
 
         for i, param in enumerate(param_list):
-            n = param[0]
-            sig_mult = param[1]
-            sig_offset = param[2]
-            buff_coff_ratio = param[3]
+            sig_mult = param[0]
+            sig_offset = param[1]
 
-            self.init_buff_coff(buff_coff_ratio)           
-                        
-            a_score = np.zeros((self.nFutureStep))
-            m_err   = np.zeros((self.nFutureStep))
+            thres_l = self.mu_list + sig_mult*self.var_list + sig_offset
             
-            count = 0.        
-            scale = 0.
-            for j in xrange(self.nFutureStep):
-                # check buff size
-                if len(self.buf_dict['mu_'+str(j)]) < j+1: continue
-                else: count += 1.
-
-                mu  = self.buf_dict['mu_'+str(j)][0]
-                sig = self.buf_dict['sig_'+str(j)][0]
-            
-                a_score[j], m_err[j] = self.cost(y, j, mu, sig, sig_mult=sig_mult, \
-                                                     sig_offset=sig_offset)
-
-                scale += self.buff_coff[j]
-
-            a_score *= self.buff_coff
-            m_err *= self.buff_coff
-
-            score = round(np.sum(a_score)/scale, 2)            
-            threshold = round(n, 2)
-            if score >= threshold:
+            if y > np.max(thres_l):
                 bAnomaly_l[i] = 1.0
-            else: 
-                ## new_m_err = [e for e in m_err if e>0.0]
-                err_l[i] = np.sum(m_err)/scale
-
-            ## print i, nParam, " = ", n, sig_mult, sig_offset, " : ", np.sum(a_score), n*count, " - ", bAnomaly_l[i], err_l[i]                
-
-        return bAnomaly_l, err_l 
+            else:
+                err = [x for x in thres_l -y if x >= 0.0]
+                err_l[i] = np.min(err)
             
-        
-
-    def cost(self, val, buff_idx, mu, sig, sig_mult, sig_offset):
-
-        err = mu + sig_mult * sig + sig_offset - val        
-        if err <= 0.0: return 1.0, err
-        else: return 0.0, err
-        
+        return bAnomaly_l, err_l 
+                            
         
     def simulation(self, X_test, Y_test):
 

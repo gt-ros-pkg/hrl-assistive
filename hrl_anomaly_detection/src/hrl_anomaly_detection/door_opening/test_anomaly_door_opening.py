@@ -348,25 +348,18 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
 
-    score_n         = np.arange(0.3,1.01,0.1)
     sig_mult        = np.arange(0.5, 8.0+0.00001, 0.5)
     sig_offset      = np.arange(0.0, 1.5+0.00001, 0.1)
 
-    if nFutureStep == 1:
-        buff_coff_ratio = [1.0]
-    else:
-        buff_coff_ratio = np.arange(0.05,0.61,0.1)    
     ## score_n    = [1.0]
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
     ## sig_offset = [0.0]
     
     param_list = []
-    for n in score_n:
-        for a in sig_mult:
-            for b in sig_offset:
-                for r in buff_coff_ratio:
-                    param_list.append([n,a,b,r])
-    
+    for a in sig_mult:
+        for b in sig_offset:
+            param_list.append([a,b])
+
     #-----------------------------------------------------------------        
     for i, test_idx in enumerate(test_idx_list):
 
@@ -433,7 +426,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                     # Simulate each profile
                     for k in xrange(len(trial)):
                         # Update buffer
-                        ac.update_buffer(X_test[:k+1], trial[:k+1])
+                        ac.update_buffer(trial[:k+1])
 
                         if k>= start_step:                    
                             # check anomaly score
@@ -461,10 +454,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
             tune_res_dict = {}
             tune_res_dict['test_idx'] = test_idx
             tune_res_dict['min_cost'] = cost_param[min_idx]
-            tune_res_dict['min_n'] = param_list[min_idx][0]
-            tune_res_dict['min_sig_mult'] = param_list[min_idx][1]
-            tune_res_dict['min_sig_offset'] = param_list[min_idx][2]
-            tune_res_dict['min_buff_coff_r'] = param_list[min_idx][3]
+            tune_res_dict['min_sig_mult'] = param_list[min_idx][0]
+            tune_res_dict['min_sig_offset'] = param_list[min_idx][1]
             tune_res_dict['min_fp'] = fp_param[min_idx]
             tune_res_dict['min_err'] = err_param[min_idx]
 
@@ -860,7 +851,7 @@ if __name__ == '__main__':
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
-        future_steps = [1, 2, 4, 8]             
+        future_steps = [1, 2, 4]             
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 1.0
         

@@ -592,7 +592,7 @@ class learning_hmm(learning_base):
             ## X_pred[i] = self.obsrv_range[max_idx]
             ## X_pred_prob[:,i] /= np.sum(X_pred_prob[:,i])
             
-        return mu_l, var_l
+        return np.array(mu_l), np.array(var_l)
         
 
     #----------------------------------------------------------------------        
