@@ -852,7 +852,7 @@ if __name__ == '__main__':
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
-        future_steps = [1, 2, 4]             
+        future_steps = [1, 2, 4, 8]             
         ## cost_ratios = [1.0]
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 1.0
