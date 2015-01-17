@@ -3,10 +3,10 @@ haptic_mpc:
     # Skin topic lists. Each should be publishing a TaxelArray message
     skin_list:
       none: []
-      fabric: ['/pr2_fabric_forearm_sensor/taxels/forces', '/pr2_fabric_upperarm_sensor/taxels/forces', '/pr2_pps_right_sensor/taxels/forces', '/pr2_pps_left_sensor/taxels/forces', '/pr2_fabric_gripper_left_link_sensor/taxels/forces', '/pr2_fabric_gripper_right_link_sensor/taxels/forces', '/pr2_fabric_gripper_palm_sensor/taxels/forces']    
+      fabric: []    
 
-      pps: ['/pr2_pps_right_sensor/taxels/forces']
-      bosch: ['/skin/bosch/forearm_taxel_array', '/skin/bosch/upperarm_taxel_array']
+      pps: []
+      bosch: []
 
     # Frames used for TF. torso_frame is the one the arm is attached to, inertial frame is to get the torso position in the world
     torso_frame: '/torso_lift_link'
