@@ -58,16 +58,12 @@ class learning_hmm(learning_base):
 
         self.B_lower=[]
         self.B_upper=[]
-        self.x_min=[]
-        self.x_max=[]
         for i in xrange(self.nState):
             self.B_lower.append([0.001])
             self.B_lower.append([0.001])
             self.B_upper.append([20.])
             self.B_upper.append([4.])
-            self.x_min.append([1])
-            self.x_max.append([self.nMaxStep-self.nState+1])
-            
+
         self.B_upper =  np.array(self.B_upper).flatten()            
         self.B_lower =  np.array(self.B_lower).flatten()            
                 
@@ -197,14 +193,39 @@ class learning_hmm(learning_base):
     def param_optimization(self, save_file):
 
         _,n   = self.aXData.shape # samples, length
+        mu    = np.zeros((self.nState,1))
+        sigma = np.zeros((self.nState,1))
+
 
         # Initial 
-        x0 = self.x_min
-        for i in xrange(self.nMaxStep-len(x0)):
-            x0[random.randint(0,len(x0))] += 1
-            
+        x0 = [1] * self.nState
+        while sum(x0)!=self.nMaxStep:
+            idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
+            if idx < 0 or idx >= self.nState: 
+                continue
+            else:
+                x0[idx] += 1
+
+        # Compute mean and std
+        index = 0
+        m_init = 0
+        while (index < self.nState):
+            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
+            m_init = m_init + int(x0[index])
+
+            mu[index] = np.mean(temp_vec)
+            sigma[index] = np.std(temp_vec)
+            index = index+1
+
+        B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
+        
+        ## hopping_step_size = np.zeros((self.nState*2))
+        ## for i in xrange(self.nState):
+        ##     hopping_step_size[i*2] = 2.0
+        ##     hopping_step_size[i*2+1] = 0.5             
+
         class MyTakeStep(object):
-            def __init__(self, stepsize=0.5, xmax=self.x_max, xmin=self.x_min):
+            def __init__(self, stepsize=0.5, xmax=self.B_upper, xmin=self.B_lower):
                 self.stepsize = stepsize
                 self.xmax = xmax
                 self.xmin = xmin
@@ -212,14 +233,27 @@ class learning_hmm(learning_base):
                 s = self.stepsize
                 n = len(x)
 
-                x = self.xmin
-                for i in xrange(self.nMaxStep-len(x)):
-                    x[random.randint(0,len(x))] += 1
-                    
+                for i in xrange(n):
+                    while True:
+
+                        if i%2==0:                        
+                            next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
+                        else:
+                            next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
+
+                        if next_x > self.xmax[i] or next_x < self.xmin[i]:
+                            continue
+                        else:
+                            x[i] = next_x
+                            break
+                                                                        
+                ## for i in xrange(n/2):
+                ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
+                ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
                 return x            
 
         class MyBounds(object):
-            def __init__(self, xmax=self.x_max, xmin=self.x_min ):
+            def __init__(self, xmax=self.B_upper, xmin=self.B_lower ):
                 self.xmax = xmax
                 self.xmin = xmin
             def __call__(self, **kwargs):
@@ -233,17 +267,17 @@ class learning_hmm(learning_base):
 
 
         bnds=[]
-        for i in xrange(len(self.x_min)):
-            bnds.append([self.x_min,self.x_max])
+        for i in xrange(len(self.B_lower)):
+            bnds.append([self.B_lower[i],self.B_upper[i]])
 
+            
         mytakestep = MyTakeStep()
         mybounds = MyBounds()
         minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds}
         self.last_x = None
 
         # T
-        res = optimize.basinhopping(self.mean_vars_score,x0, minimizer_kwargs=minimizer_kwargs, \
-                                    niter=3000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=3000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
         # , stepsize=2.0, interval=2
 
         B = res['x'].reshape((self.nState,2))
@@ -285,22 +319,6 @@ class learning_hmm(learning_base):
 
         return 
 
-    #----------------------------------------------------------------------        
-    #
-    def segment_scrore(self, x, *args):
-
-        # check limit
-        if self.last_x is None or np.linalg.norm(self.last_x-x) > 0.05:
-            tmax = bool(np.all(x <= self.x_max))
-            tmin = bool(np.all(x >= self.x_min))
-            if tmax and tmin == False: return 5            
-            self.last_x = x
-        else:
-            return self.last_score
-        
-
-
-        
     #----------------------------------------------------------------------        
     #
     def mean_vars_score(self, x, *args):
@@ -363,11 +381,11 @@ class learning_hmm(learning_base):
             
         for i in xrange(n):
 
-            if len(X[i]) < self.nCurrentStep+1: 
-                print "Why X is short??"
+            if len(X[i]) < self.nCurrentStep: 
+                print "Why X is short??", len(X[i])
                 sys.exit()
-            ## X_test = X[i][:self.nCurrentStep]
-            ## X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
+            X_test = X[i][:self.nCurrentStep]
+            X_pred = X[i][self.nCurrentStep:self.nCurrentStep+1]
                 
 
             bloglikelihood=False
@@ -382,7 +400,8 @@ class learning_hmm(learning_base):
             else:
 
                 # Past profile
-                final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?
+                final_ts_obj = ghmm.EmissionSequence(self.F,X_test) # is it neccessary?
+                #final_ts_obj = ghmm.EmissionSequence(self.F,X) # is it neccessary?
                 #final_ts_obj = ghmm.EmissionSequence(self.F,X_test+[X_pred]) # is it neccessary?
 
                 try:
@@ -716,7 +735,7 @@ class learning_hmm(learning_base):
             X=X_test.tolist()
 
         sample_weight=None # TODO: future input
-
+        
         #
         n = len(X)
         nCurrentStep = [5,10,15,20,25]
@@ -728,6 +747,8 @@ class learning_hmm(learning_base):
             self.nCurrentStep = nStep
             X_next = np.zeros((n))
             X_pred = np.zeros((n))
+            mu_pred  = np.zeros((n))
+            var_pred = np.zeros((n))
             
             for i in xrange(n):
                 if len(X[i]) > nStep+nFutureStep: #Full data                
@@ -737,9 +758,11 @@ class learning_hmm(learning_base):
                     print "Error: input should be full length data!!"
                     sys.exit()
 
-                X_pred[i], _ = self.one_step_predict(X_past)
+                mu, var = self.one_step_predict(X_past)
+                mu_pred[i] = mu[0]
+                var_pred[i] = var[0]
 
-            total_score[j] = r2_score(X_next, X_pred, sample_weight=sample_weight)
+            total_score[j] = r2_score(X_next, mu_pred, sample_weight=sample_weight)
 
         ## print "---------------------------------------------"
         ## print "Total Score"
