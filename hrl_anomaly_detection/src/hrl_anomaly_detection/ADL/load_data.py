@@ -27,14 +27,14 @@ if __name__ == '__main__':
 
     pkl_file = './test_cup_human_t1.pkl'
     pkl_file = './test.pkl'
-    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
-    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
-    pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
+    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
+    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
+    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
     print os.path.isfile(pkl_file)
     d = ut.load_pickle(pkl_file)
 
     print d.keys()
-    ft = True
+    ft = False
     audio = True
     
     if ft:
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         pp.plot(audio_data,'b-')
         
         pp.subplot(212)
-        pp.plot(audio_freq[:audio_chunk/10],audio_amp[:audio_chunk/10],'b')
+        pp.plot(audio_freq[:audio_chunk/2],np.abs(audio_amp[:audio_chunk/2]),'b')
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
         pp.show()
 

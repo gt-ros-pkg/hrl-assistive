@@ -68,7 +68,7 @@ class tool_audio(Thread):
         self.init_time = 0.
         self.noise_freq_l = None
         self.noise_band = 150.0
-        self.noise_amp_num = 5 #10
+        self.noise_amp_num = 20 #10
         self.noise_amp_thres = 0.0  
         self.noise_amp_mult = 2.0  
         self.noise_bias = 0.0
@@ -480,7 +480,7 @@ if __name__ == '__main__':
 
 
     
-    log = ADL_log(audio=True, ft=True, test_mode=False)
+    log = ADL_log(audio=True, ft=False, test_mode=True)
     log.init_log_file()
 
     log.log_start()
