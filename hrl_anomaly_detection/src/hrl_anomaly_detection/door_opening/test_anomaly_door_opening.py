@@ -521,10 +521,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         
         ## hcu.wait_file(tune_res_file)
         param_dict = ut.load_pickle(tune_res_file)
-        min_n           = param_dict['min_n']
         min_sig_mult    = param_dict['min_sig_mult']
         min_sig_offset  = param_dict['min_sig_offset']
-        min_buff_coff_r = param_dict['min_buff_coff_r']
 
         if test_idx != param_dict['test_idx']:
             print "------------------------------------------------------"
@@ -562,7 +560,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             org_trial = org_test_data[i][j]
             
             # Init checker
-            ac = anomaly_checker(lh, score_n=min_n, sig_mult=min_sig_mult, sig_offset=min_sig_offset, buff_coff_ratio=min_buff_coff_r)
+            ac = anomaly_checker(lh, sig_mult=min_sig_mult, sig_offset=min_sig_offset)
             fp_l = np.zeros((test_anomaly_idx[j]-start_step))
             ## tn_l = np.zeros((nMaxStep-test_anomaly_idx[j]))
 
@@ -603,7 +601,6 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
         roc_res_dict = {}
         roc_res_dict['test_idx'] = test_idx
         roc_res_dict['cost_ratio'] = cost_ratio
-        roc_res_dict['min_n'] = min_n
         roc_res_dict['min_sig_mult'] = min_sig_mult
         roc_res_dict['min_sig_offset'] = min_sig_offset
         
