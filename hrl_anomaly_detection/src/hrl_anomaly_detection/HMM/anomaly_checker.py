@@ -64,7 +64,7 @@ class anomaly_checker():
         
         thres_l = self.mu_list + self.sig_mult*self.var_list + self.sig_offset
         error = [x for x in thres_l -y if x >= 0.0]
-        
+            
         if y > np.max(thres_l):
             return 1.0, 0.0, len(error)
         else:
