@@ -348,7 +348,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
     
-    sig_mult        = np.arange(5.0, 16.0+0.00001, 0.5)
+    sig_mult        = np.arange(5.0, 50.0+0.00001, 2.0)
     sig_offset      = np.arange(0.0, 1.5+0.00001, 0.1)
 
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
@@ -697,31 +697,31 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         sat_list = []
         err_list = []
 
-        ## for cost_ratio in cost_ratios:
-        ##     fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-        ##                                         cost_ratio, nMaxStep, \
-        ##                                         trans_type, nFutureStep=nFutureStep, \
-        ##                                         aws=bAWS, bSimBlock=bSimBlock, \
-        ##                                         ang_interval=ang_interval)
-        ##     fp_list.append(fp)
-        ##     ## tn_list.append(tn)
-        ##     sef_list.append(sef)
-        ##     sat_list.append(sat)
-        ##     err_list.append(err)
-
-        sig_mults   = np.arange(5.0, 50.0+0.00001, 2.0)    
-        cost_ratio = 1.0
-        for sig_mult in sig_mults:
+        for cost_ratio in cost_ratios:
             fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                          cost_ratio, nMaxStep, \
-                                          trans_type, nFutureStep=nFutureStep, \
-                                          aws=bAWS, bSimBlock=bSimBlock, \
-                                          ang_interval=ang_interval, sig_mult=sig_mult)
+                                                cost_ratio, nMaxStep, \
+                                                trans_type, nFutureStep=nFutureStep, \
+                                                aws=bAWS, bSimBlock=bSimBlock, \
+                                                ang_interval=ang_interval)
             fp_list.append(fp)
             ## tn_list.append(tn)
             sef_list.append(sef)
             sat_list.append(sat)
-            err_list.append(err)        
+            err_list.append(err)
+
+        ## sig_mults   = np.arange(5.0, 50.0+0.00001, 2.0)    
+        ## cost_ratio = 1.0
+        ## for sig_mult in sig_mults:
+        ##     fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+        ##                                   cost_ratio, nMaxStep, \
+        ##                                   trans_type, nFutureStep=nFutureStep, \
+        ##                                   aws=bAWS, bSimBlock=bSimBlock, \
+        ##                                   ang_interval=ang_interval, sig_mult=sig_mult)
+        ##     fp_list.append(fp)
+        ##     ## tn_list.append(tn)
+        ##     sef_list.append(sef)
+        ##     sat_list.append(sat)
+        ##     err_list.append(err)        
 
         #---------------------------------------
         if bPlot:
