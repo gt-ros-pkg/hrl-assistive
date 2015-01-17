@@ -57,18 +57,18 @@ class anomaly_checker():
 
         self.mu_list, self.var_list = self.ml.multi_step_approximated_predict(y,n_jobs=-1,full_step=True)
 
-        return 
+        return self.mu_list, self.var_list
 
         
     def check_anomaly(self, y):
         
-        thres_l = self.mu_list + self.sig_mult*self.var_list + self.sig_offset
+        thres_l = self.mu_list + self.sig_mult*np.sqrt(self.var_list) + self.sig_offset
         error = [x for x in thres_l -y if x >= 0.0]
-            
+
         if y > np.max(thres_l):
-            return 1.0, 0.0, len(error)
+            return 1.0, 0.0, 1.0
         else:
-            return 0.0, np.min(error), len(error)
+            return 0.0, np.min(error), 0.0
 
         
     def check_anomaly_batch(self, y, param_list):
@@ -155,26 +155,22 @@ class anomaly_checker():
             line.set_data(x, y)
 
             if i > 0:
-                mu_list, var_list, idx = self.update_buffer(x,y)            
-
-                if mu_list is not None and var_list is not None:
-                    mu[idx,:]  = mu_list
-                    var[idx,:] = var_list
+                mu_list, var_list = self.update_buffer(y)            
 
                 ## # check anomaly score
-                bFlag, _, fScore = self.check_anomaly(y[-1])
+                bFlag, err, fScore = self.check_anomaly(y[-1])
             
             if i >= 2 and i < len(Y_test):# -self.nFutureStep:
 
-                x_sup = self.aXRange[idx]
-                a_X  = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
+                x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)            
+                a_X   = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
                 
                 if x[-1]-x_sup < x[-1]-x[-2]:                    
                     y_idx = 1
                 else:
                     y_idx = int((x[-1]-x_sup)/(x[-1]-x[-2]))+1
-                a_mu = np.hstack([y[-y_idx], mu[idx]])
-                a_sig = np.hstack([0, np.sqrt(var[idx])])
+                a_mu = np.hstack([y[-y_idx], mu_list])
+                a_sig = np.hstack([0, np.sqrt(var_list)])
 
                 lmean.set_data( a_X, a_mu)
 
@@ -187,9 +183,9 @@ class anomaly_checker():
                 lvar1.set_data( a_X, min_val)
                 lvar2.set_data( a_X, max_val)
                 lbar.set_height(fScore)
-                if fScore>=self.score_n:
+                if fScore>=1.0:
                     lbar.set_color('r')
-                elif fScore>=self.score_n*0.7:          
+                elif fScore>=0.7:          
                     lbar.set_color('orange')
                 else:
                     lbar.set_color('b')

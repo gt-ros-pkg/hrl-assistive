@@ -348,7 +348,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
     
-    sig_mult        = np.arange(0.5, 8.0+0.00001, 0.5)
+    sig_mult        = np.arange(5.0, 16.0+0.00001, 0.5)
     sig_offset      = np.arange(0.0, 1.5+0.00001, 0.1)
 
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
@@ -720,6 +720,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             fp_list.append(fp)
             ## tn_list.append(tn)
             sef_list.append(sef)
+            sat_list.append(sat)
             err_list.append(err)        
 
         #---------------------------------------
@@ -988,7 +989,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, score_n=1.0, sig_mult=2.0, sig_offset=0.5)
+            ac = anomaly_checker(lh, sig_mult=6.0, sig_offset=1.0)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
