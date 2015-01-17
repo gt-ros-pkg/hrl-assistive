@@ -68,7 +68,7 @@ class anomaly_checker():
         if y > np.max(thres_l):
             return 1.0, 0.0, 1.0
         else:
-            return 0.0, np.min(error), 0.0
+            return 0.0, np.mean(error), 0.0
 
         
     def check_anomaly_batch(self, y, param_list):
@@ -87,7 +87,7 @@ class anomaly_checker():
                 bAnomaly_l[i] = 1.0
             else:
                 err = [x for x in thres_l -y if x >= 0.0]
-                err_l[i] = np.min(err)
+                err_l[i] = np.mean(err)
             
         return bAnomaly_l, err_l 
                             
