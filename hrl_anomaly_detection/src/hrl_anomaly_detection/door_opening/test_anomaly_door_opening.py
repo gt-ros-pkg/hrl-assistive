@@ -567,7 +567,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             # Simulate each profile
             for k in xrange(len(trial)):
                 # Update buffer
-                ac.update_buffer(X_test[:k+1], trial[:k+1])
+                ac.update_buffer(trial[:k+1])
 
                 if k>= start_step:                    
                     # check anomaly score
