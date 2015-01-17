@@ -846,7 +846,7 @@ if __name__ == '__main__':
                           nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
     ###################################################################################            
-    if (opt.bROCHuman or opt.bCrossVal) and opt.bSimBlock is False: 
+    if (opt.bROCHuman) and opt.bSimBlock is False: 
         print "------------- ROC HUMAN -------------"
         ROC_target = "human"
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
@@ -880,7 +880,7 @@ if __name__ == '__main__':
             
 
     ###################################################################################            
-    elif opt.bROCRobot and opt.bSimBlock is False:
+    elif (opt.bROCRobot or opt.bCrossVal) and opt.bSimBlock is False:
         print "------------- ROC HUMAN -------------"
         ROC_target = "robot"        
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
