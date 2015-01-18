@@ -132,14 +132,14 @@ class learning_hmm(learning_base):
         index = 0
         m,n = np.shape(vec)
         ## print m,n
-        mult = 5
+        mult = 4
 
         o_x = np.arange(0.0, self.nMaxStep, 1.0)
         o_mu  = scp.mean(vec, axis=0)
         o_sig = scp.std(vec, axis=0)
 
-        f_mu  = interpolate.interp1d(o_x, o_mu, kind='linear')
-        f_sig = interpolate.interp1d(o_x, o_sig, kind='linear')
+        f_mu  = interpolate.interp1d(o_x, o_mu, kind='cubic')
+        f_sig = interpolate.interp1d(o_x, o_sig, kind='cubic')
             
         x = np.arange(0.0, float(self.nMaxStep-1)+1.0/float(mult), 1.0/float(mult))
         mu  = f_mu(x)
@@ -172,7 +172,7 @@ class learning_hmm(learning_base):
         ## import matplotlib.pyplot as pp
         ## pp.figure()
         ## pp.plot(mu)
-        ## pp.plot(mu+2.*sig)
+        ## pp.plot(mu+1.*sig)
         ## pp.plot(scp.mean(vec, axis=0), 'r')
         ## pp.show()
         ## sys.exit()
