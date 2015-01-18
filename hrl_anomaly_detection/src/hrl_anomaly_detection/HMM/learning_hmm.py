@@ -169,13 +169,13 @@ class learning_hmm(learning_base):
         sig = sig.reshape((len(sig),1))
 
         
-        import matplotlib.pyplot as pp
-        pp.figure()
-        pp.plot(mu)
-        pp.plot(mu+1.*sig)
-        pp.plot(scp.mean(vec, axis=0), 'r')
-        pp.show()
-        sys.exit()
+        ## import matplotlib.pyplot as pp
+        ## pp.figure()
+        ## pp.plot(mu)
+        ## pp.plot(mu+1.*sig)
+        ## pp.plot(scp.mean(vec, axis=0), 'r')
+        ## pp.show()
+        ## sys.exit()
             
         ## mu  = np.zeros((nState,1))
         ## sig = np.zeros((nState,1))
