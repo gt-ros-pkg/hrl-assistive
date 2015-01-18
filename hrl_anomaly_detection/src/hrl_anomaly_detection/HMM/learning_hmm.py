@@ -152,6 +152,8 @@ class learning_hmm(learning_base):
             mu  = scp.delete(mu,idx+1)
             sig = scp.delete(sig,idx+1)
 
+        mu = mu.reshape((len(mu),1))
+        sig = sig.reshape((len(sig),1))
 
         ## print mu
         ## print sig
