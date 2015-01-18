@@ -1,3 +1,155 @@
+    #----------------------------------------------------------------------        
+    # B matrix optimization
+    def param_optimization(self, save_file):
+
+        _,n   = self.aXData.shape # samples, length
+        mu    = np.zeros((self.nState,1))
+        sigma = np.zeros((self.nState,1))
+
+
+        # Initial 
+        x0 = [1] * self.nState
+        while sum(x0)!=self.nMaxStep:
+            idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
+            if idx < 0 or idx >= self.nState: 
+                continue
+            else:
+                x0[idx] += 1
+
+        # Compute mean and std
+        index = 0
+        m_init = 0
+        while (index < self.nState):
+            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
+            m_init = m_init + int(x0[index])
+
+            mu[index] = np.mean(temp_vec)
+            sigma[index] = np.std(temp_vec)
+            index = index+1
+
+        B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
+        
+        ## hopping_step_size = np.zeros((self.nState*2))
+        ## for i in xrange(self.nState):
+        ##     hopping_step_size[i*2] = 2.0
+        ##     hopping_step_size[i*2+1] = 0.5             
+
+        class MyTakeStep(object):
+            def __init__(self, stepsize=0.5, xmax=self.B_upper, xmin=self.B_lower):
+                self.stepsize = stepsize
+                self.xmax = xmax
+                self.xmin = xmin
+            def __call__(self, x):
+                s = self.stepsize
+                n = len(x)
+
+                for i in xrange(n):
+                    while True:
+
+                        if i%2==0:                        
+                            next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
+                        else:
+                            next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
+
+                        if next_x > self.xmax[i] or next_x < self.xmin[i]:
+                            continue
+                        else:
+                            x[i] = next_x
+                            break
+                                                                        
+                ## for i in xrange(n/2):
+                ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
+                ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
+                return x            
+
+        class MyBounds(object):
+            def __init__(self, xmax=self.B_upper, xmin=self.B_lower ):
+                self.xmax = xmax
+                self.xmin = xmin
+            def __call__(self, **kwargs):
+                x = kwargs["x_new"]
+                tmax = bool(np.all(x <= self.xmax))
+                tmin = bool(np.all(x >= self.xmin))
+                return tmax and tmin
+
+        def print_fun(x, f, accepted):
+            print("at minima %.4f accepted %d" % (f, int(accepted)))
+
+
+        bnds=[]
+        for i in xrange(len(self.B_lower)):
+            bnds.append([self.B_lower[i],self.B_upper[i]])
+
+            
+        mytakestep = MyTakeStep()
+        mybounds = MyBounds()
+        minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds}
+        self.last_x = None
+
+        # T
+        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=3000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
+        # , stepsize=2.0, interval=2
+
+        B = res['x'].reshape((self.nState,2))
+        fval = res['fun']
+        
+        ## # Set range of params
+        ## xmin = [0.0]* self.nState
+        ## xmax = [self.nMaxStep-(self.nState-1)]*self.nState
+
+        ## x_opt, fval = fmin(self.mean_vars_score,x0_int=x0, xmin_int=xmin, 
+        ##                    xmax_int=xmax, max_evaluations=1000,
+        ##                    custom_args={"self": self})
+
+        ## print x_opt
+        ## print fval
+
+        ## self.step_size_list = x_opt['x_int'].tolist()
+        ## print "Best step_size_list: "
+        ## string = None
+        ## for x in self.step_size_list:
+        ##     if string == None:
+        ##         string = str(x)+", " 
+        ##     else:
+        ##         string += str(x)+", "
+        ## print string
+
+        ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'step_size_list': self.step_size_list}]
+        ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'B': B.flatten()}]
+
+        # Save data
+        data = {}
+        data['score'] = [fval]
+        data['nState'] = self.nState
+        data['B'] = B
+
+        if save_file is None:
+            save_file='tune_data.pkl'            
+        ut.save_pickle(data, save_file)
+
+        return 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 #!/usr/local/bin/python
 
 import sys, os, copy

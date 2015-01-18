@@ -7,6 +7,7 @@ import rospy
 import inspect
 import warnings
 import random
+import scipy as scp
 
 # Util
 import hrl_lib.util as ut
@@ -254,24 +255,23 @@ class learning_base():
 
     #----------------------------------------------------------------------        
     #                
-    def init_emission_mat(self, nState):
+    ## def init_emission_mat(self, nState):
 
-        n,m = self.aXData.shape
+    ##     n,m = self.aXData.shape
         
+    ##     mu    = np.zeros((self.nState,1))
+    ##     sigma = np.zeros((self.nState,1))
 
-        # Cal mean, var        
-        import lwr as LWR
-        self.lwr_model = LWR(activation=0.1, exponentially_spaced=True, n_rfs=nState)
-        g = mixture.GMM(n_components=nState)
-        g.fit(aXData)
 
-        print g
+    ##     for i in xrange(self.nState):
+    ##         mu[i], sigma[i] = self.feature_to_mu_sigma(self.aXData, i+1)
 
-        
+    ##     B = np.hstack([mu, sigma])
 
-        return B
+    ##     return B
 
-        
+
+
     
     ## #----------------------------------------------------------------------
     ## #

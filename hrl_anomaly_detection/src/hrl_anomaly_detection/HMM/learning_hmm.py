@@ -2,6 +2,7 @@
 
 import sys, os, copy
 import numpy as np, math
+import scipy as scp
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -55,24 +56,10 @@ class learning_hmm(learning_base):
         self.obsrv_range = [np.min(aXData), np.max(aXData)]
         self.A = None # transition matrix        
         self.B = None # emission matrix        
-
-        self.B_lower=[]
-        self.B_upper=[]
-        for i in xrange(self.nState):
-            self.B_lower.append([0.001])
-            self.B_lower.append([0.001])
-            self.B_upper.append([20.])
-            self.B_upper.append([4.])
-
-        self.B_upper =  np.array(self.B_upper).flatten()            
-        self.B_lower =  np.array(self.B_lower).flatten()            
                 
         # emission domain of this model        
         self.F = ghmm.Float()  
                
-        # Confusion Matrix NOTE ???
-        ## cmat = np.zeros((4,4))
-        
         # Assign local functions
         learning_base.__dict__['fit'] = self.fit        
         learning_base.__dict__['predict'] = self.predict
@@ -89,28 +76,13 @@ class learning_hmm(learning_base):
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
 
-        if B is None and B_dict is None:
-            print "Generate new B matrix"                                            
+        if B is None:
+            if verbose: print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.        
-            self.mu, self.var = self.vectors_to_mean_vars(X_train, optimize=False)
+            self.mu, self.sig = self.vectors_to_mean_sigma(X_train, self.nState)
 
             # Emission probability matrix
-            B = np.hstack([self.mu, self.var]).tolist() # Must be [i,:] = [mu, var]
-        else:
-            if B_dict is not None:
-                B = B_dict['B']
-            
-            try:                
-                if bool(np.all(B.flatten() >= self.B_lower)) == False:
-                    print "[Error]: negative component of B is not allowed"
-                    ## sys.exit()
-                    self.ml = None
-                    return
-            except:
-                print "nState: ", self.nState
-                print "B_lower: ", len(self.B_lower)
-                print "B: ", len(B.flatten())
-                sys.exit()
+            B = np.hstack([self.mu, self.sig]).tolist() # Must be [i,:] = [mu, sig]
                 
         if pi is None:            
             # pi - initial probabilities per state 
@@ -120,7 +92,6 @@ class learning_hmm(learning_base):
 
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
-        ## self.ml = ghmm.HMMFromMatrices(self.F, ghmm.DiscreteDistribution(self.F), A, B, pi)
         
         ## print "Run Baum Welch method with (samples, length)", X_train.shape
         train_seq = X_train.tolist()
@@ -151,219 +122,40 @@ class learning_hmm(learning_base):
             self.var_z[i]  = np.sum(zp*self.state_range) - self.mu_z[i]**2
             #self.sig_z3[i] = self.var_z[i]**(1.5)
 
+
     #----------------------------------------------------------------------        
-    #
-    def vectors_to_mean_vars(self, vecs, optimize=False):
+    #                
+    # Returns mu,sigma for n hidden-states from feature-vector
+    def vectors_to_mean_sigma(self,vec,nState): 
 
-        _,n   = vecs.shape # samples, length
-        mu    = np.zeros((self.nState,1))
-        sigma = np.zeros((self.nState,1))
-
-        if self.step_size_list is None or len(self.step_size_list) != self.nState:
-            print "Use new step size list!!"
-            # Initial 
-            self.step_size_list = [1] * self.nState
-            while sum(self.step_size_list)!=self.nMaxStep:
-                idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
-                if idx < 0 or idx >= self.nState: 
-                    continue
-                else:
-                    self.step_size_list[idx] += 1                
-        else:
-            print "Use previous step size list!!"                            
-            print self.step_size_list
-
-        # Compute mean and std
         index = 0
-        m_init = 0
-        while (index < self.nState):
-            temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
-            m_init = m_init + int(self.step_size_list[index])
+        m,n = np.shape(vec)
+        ## print m,n
+        mu  = np.zeros((nState,1))
+        sig = np.zeros((nState,1))
+        DIVS = n/nState
 
-            mu[index] = np.mean(temp_vec)
-            sigma[index] = np.std(temp_vec)
-            if sigma[index] < 0.4: sigma[index] = 0.4
+        while (index < nState):
+            m_init = index*DIVS
+            temp_vec = vec[0:, (m_init):(m_init+DIVS)]            
+            temp_vec = np.reshape(temp_vec,DIVS*m)
+            mu[index] = scp.mean(temp_vec)
+            sig[index] = scp.std(temp_vec)
+            ## if index == 0:
+            ##     print 'mean = ', mu[index]
+            ##     print 'mean = ', scp.mean(vec[0:, (m_init):(m_init+DIVS)])
+            ##     print scp.std( vec[0:,(m_init):(m_init+DIVS)])
+            ##     print scp.std(temp_vec)
             index = index+1
 
-        return mu,sigma*2
-               
-
-    #----------------------------------------------------------------------        
-    # B matrix optimization
-    def param_optimization(self, save_file):
-
-        _,n   = self.aXData.shape # samples, length
-        mu    = np.zeros((self.nState,1))
-        sigma = np.zeros((self.nState,1))
-
-
-        # Initial 
-        x0 = [1] * self.nState
-        while sum(x0)!=self.nMaxStep:
-            idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
-            if idx < 0 or idx >= self.nState: 
-                continue
-            else:
-                x0[idx] += 1
-
-        # Compute mean and std
-        index = 0
-        m_init = 0
-        while (index < self.nState):
-            temp_vec = self.aXData[:,(m_init):(m_init + int(x0[index]))] 
-            m_init = m_init + int(x0[index])
-
-            mu[index] = np.mean(temp_vec)
-            sigma[index] = np.std(temp_vec)
-            index = index+1
-
-        B0 = np.hstack([mu, sigma]) # Must be [i,:] = [mu, sigma]
-        
-        ## hopping_step_size = np.zeros((self.nState*2))
-        ## for i in xrange(self.nState):
-        ##     hopping_step_size[i*2] = 2.0
-        ##     hopping_step_size[i*2+1] = 0.5             
-
-        class MyTakeStep(object):
-            def __init__(self, stepsize=0.5, xmax=self.B_upper, xmin=self.B_lower):
-                self.stepsize = stepsize
-                self.xmax = xmax
-                self.xmin = xmin
-            def __call__(self, x):
-                s = self.stepsize
-                n = len(x)
-
-                for i in xrange(n):
-                    while True:
-
-                        if i%2==0:                        
-                            next_x = x[i] + np.random.uniform(-2.*s, 2.*s)                                
-                        else:
-                            next_x = x[i] + np.random.uniform(-0.5*s, 0.5*s)
-
-                        if next_x > self.xmax[i] or next_x < self.xmin[i]:
-                            continue
-                        else:
-                            x[i] = next_x
-                            break
-                                                                        
-                ## for i in xrange(n/2):
-                ##     x[i*2] += np.random.uniform(-2.*s, 2.*s)
-                ##     x[i*2+1] += np.random.uniform(-0.5, 0.5)
-                return x            
-
-        class MyBounds(object):
-            def __init__(self, xmax=self.B_upper, xmin=self.B_lower ):
-                self.xmax = xmax
-                self.xmin = xmin
-            def __call__(self, **kwargs):
-                x = kwargs["x_new"]
-                tmax = bool(np.all(x <= self.xmax))
-                tmin = bool(np.all(x >= self.xmin))
-                return tmax and tmin
-
-        def print_fun(x, f, accepted):
-            print("at minima %.4f accepted %d" % (f, int(accepted)))
-
-
-        bnds=[]
-        for i in xrange(len(self.B_lower)):
-            bnds.append([self.B_lower[i],self.B_upper[i]])
-
-            
-        mytakestep = MyTakeStep()
-        mybounds = MyBounds()
-        minimizer_kwargs = {"method":"L-BFGS-B", "bounds":bnds}
-        self.last_x = None
-
-        # T
-        res = optimize.basinhopping(self.mean_vars_score,B0.flatten(), minimizer_kwargs=minimizer_kwargs, niter=3000, take_step=mytakestep, accept_test=mybounds, callback=print_fun)
-        # , stepsize=2.0, interval=2
-
-        B = res['x'].reshape((self.nState,2))
-        fval = res['fun']
-        
-        ## # Set range of params
-        ## xmin = [0.0]* self.nState
-        ## xmax = [self.nMaxStep-(self.nState-1)]*self.nState
-
-        ## x_opt, fval = fmin(self.mean_vars_score,x0_int=x0, xmin_int=xmin, 
-        ##                    xmax_int=xmax, max_evaluations=1000,
-        ##                    custom_args={"self": self})
-
-        ## print x_opt
-        ## print fval
-
-        ## self.step_size_list = x_opt['x_int'].tolist()
-        ## print "Best step_size_list: "
-        ## string = None
-        ## for x in self.step_size_list:
-        ##     if string == None:
-        ##         string = str(x)+", " 
-        ##     else:
-        ##         string += str(x)+", "
-        ## print string
-
-        ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'step_size_list': self.step_size_list}]
-        ## params_list = [{'nState': self.nState, 'fObsrvResol': self.fObsrvResol,'B': B.flatten()}]
-
-        # Save data
-        data = {}
-        data['score'] = [fval]
-        data['nState'] = self.nState
-        data['B'] = B
-
-        if save_file is None:
-            save_file='tune_data.pkl'            
-        ut.save_pickle(data, save_file)
-
-        return 
-
-    #----------------------------------------------------------------------        
-    #
-    def mean_vars_score(self, x, *args):
-
-        # check limit
-        if self.last_x is None or np.linalg.norm(self.last_x-x) > 0.05:
-            tmax = bool(np.all(x <= self.B_upper))
-            tmin = bool(np.all(x >= self.B_lower))
-            if tmax and tmin == False: return 5            
-            self.last_x = x
-        else:
-            return self.last_score
-            
-        B=x.reshape((self.nState,2))              
-        B_dict = {}
-        B_dict['B'] = B # trick to avoid fit_params' bug
-        
-        # K-fold CV: Split the dataset in two equal parts
-        nFold = 8
-        scores = cross_validation.cross_val_score(self, self.aXData, fit_params={'B_dict': B_dict}, cv=nFold, n_jobs=-1)
-        ## scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold)
-        
-        ## print x, " : ", -1.0 * sum(scores)/float(len(scores))
-        self.last_score = -1.0 * sum(scores)/float(len(scores))
-        return -1.0 * sum(scores)/float(len(scores))
-
-        
-    #----------------------------------------------------------------------        
-    #
-    def mean_vars_constraint1(self, x0):
-        return np.sum(x0) - self.nMaxStep
-
-    def mean_vars_constraint2(self, x0):
-        for x in x0:
-            if x < 1: return 1.0 
-            if np.isnan(x)==True: return 1.0
-        return 0.0
-        
+        return mu,sig
+                               
         
     #----------------------------------------------------------------------        
     #
     def predict(self, X):
         # Input
-        # @ X_test: samples x known steps
-        # @ x_pred: samples x 1
+        # @ X: samples x known steps
         # Output
         # @ observation distribution: mu, var #samples x 1 [list]
 
@@ -433,7 +225,7 @@ class learning_hmm(learning_base):
 
                         
                     total = np.sum(self.A[:,j]*alpha[-1,:]) #* scaling_factor
-                    [mu, var] = self.B[j]
+                    [mu, sig] = self.B[j]
                     
                     ## total = 0.0        
                     ## for k in xrange(self.nState): # N                  
@@ -442,7 +234,7 @@ class learning_hmm(learning_base):
                     ## (mu, sigma) = self.ml.getEmission(j)
 
                     t_mu += mu*total
-                    t_var += var*(total**2)
+                    t_var += (sig**2)*(total**2)
                     ## pred_numerator += norm.pdf(X_pred,loc=mu,scale=sigma) * total
                     ## pred_denominator += alpha[-1][j]*beta[self.nCurrentStep][j]
 
@@ -684,43 +476,33 @@ class learning_hmm(learning_base):
 
         if v == 0.0: v = 1.0e-6
         return m, np.sqrt(v), s
+
+
+    #----------------------------------------------------------------------        
+    # B matrix optimization
+    def param_optimization(self, save_file):
+
+        _,n   = self.aXData.shape # samples, length
+
+
+        # K-fold CV: Split the dataset in two equal parts
+        nFold = 8
+        scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold, n_jobs=-1)
+        score = -1.0 * sum(scores)/float(len(scores))
         
-    #----------------------------------------------------------------------
-    # Returns the mean accuracy on the given test data and labels.
-    ## def score(self, X_test, **kwargs):
-    ##     # Neccessary package
-    ##     from sklearn.metrics import r2_score
-
-    ##     # Get input
-    ##     if type(X_test) == np.ndarray:
-    ##         X=X_test.tolist()
-
-    ##     sample_weight=None # TODO: future input
-
-    ##     #
-    ##     n = len(X)
-    ##     score  = np.zeros((n))
-    ##     X_next = np.zeros((n))
-    ##     X_pred = np.zeros((n))
-
-    ##     for i in xrange(n):
-
-    ##         if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
-    ##             X_past = X[i][:self.nCurrentStep]
-    ##             X_next[i] = X[i][self.nCurrentStep]
-    ##         else:
-    ##             X_past = X[i][:-1]
-    ##             X_next[i] = X[i][-1]
-
-    ##         X_pred[i], _ = self.one_step_predict(X_past)
-
-    ##     return r2_score(X_next, X_pred, sample_weight=sample_weight)
-            
-    ##     ## from sklearn.metrics import accuracy_score
-    ##     ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
         
-    ##     ## return np.sum(score)/float(n)
+        # Save data
+        data = {}
+        data['score'] = [score]
+        data['nState'] = self.nState
+        ## data['B'] = self.B
 
+        if save_file is None:
+            save_file='tune_data.pkl'            
+        ut.save_pickle(data, save_file)
+
+        return 
+        
 
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
@@ -1013,8 +795,118 @@ def f(i, state_range, B, u_mu, u_sigma, u_alpha, trans_type="full"):
     
     # 
     mu  = np.sum(z_prob*B[:,0])
-    var = np.sum((z_prob**2)*B[:,1])
+    var = np.sum((z_prob**2)*(B[:,1]**2))
 
     return mu, var, i
                                               
 
+    ## #----------------------------------------------------------------------        
+    ## #
+    ## def vectors_to_mean_sigma(self, vecs, optimize=False):
+
+    ##     _,n   = vecs.shape # samples, length
+    ##     mu    = np.zeros((self.nState,1))
+    ##     sigma = np.zeros((self.nState,1))
+
+    ##     if self.step_size_list is None or len(self.step_size_list) != self.nState:
+    ##         print "Use new step size list!!"
+    ##         # Initial 
+    ##         self.step_size_list = [1] * self.nState
+    ##         while sum(self.step_size_list)!=self.nMaxStep:
+    ##             idx = int(random.gauss(float(self.nState)/2.0,float(self.nState)/2.0/2.0))
+    ##             if idx < 0 or idx >= self.nState: 
+    ##                 continue
+    ##             else:
+    ##                 self.step_size_list[idx] += 1                
+    ##     else:
+    ##         print "Use previous step size list!!"                            
+    ##         print self.step_size_list
+
+    ##     # Compute mean and std
+    ##     index = 0
+    ##     m_init = 0
+    ##     while (index < self.nState):
+    ##         temp_vec = vecs[:,(m_init):(m_init + int(self.step_size_list[index]))] 
+    ##         m_init = m_init + int(self.step_size_list[index])
+
+    ##         mu[index] = np.mean(temp_vec)
+    ##         sigma[index] = np.std(temp_vec)
+    ##         if sigma[index] < 0.4: sigma[index] = 0.4
+    ##         index = index+1
+
+    ##     return mu,sigma
+
+
+    ## #----------------------------------------------------------------------        
+    ## #
+    ## def mean_vars_score(self, x, *args):
+
+    ##     # check limit
+    ##     if self.last_x is None or np.linalg.norm(self.last_x-x) > 0.05:
+    ##         tmax = bool(np.all(x <= self.B_upper))
+    ##         tmin = bool(np.all(x >= self.B_lower))
+    ##         if tmax and tmin == False: return 5            
+    ##         self.last_x = x
+    ##     else:
+    ##         return self.last_score
+            
+    ##     B=x.reshape((self.nState,2))              
+    ##     B_dict = {}
+    ##     B_dict['B'] = B # trick to avoid fit_params' bug
+        
+    ##     # K-fold CV: Split the dataset in two equal parts
+    ##     nFold = 8
+    ##     scores = cross_validation.cross_val_score(self, self.aXData, fit_params={'B_dict': B_dict}, cv=nFold, n_jobs=-1)
+    ##     ## scores = cross_validation.cross_val_score(self, self.aXData, cv=nFold)
+        
+    ##     ## print x, " : ", -1.0 * sum(scores)/float(len(scores))
+    ##     self.last_score = -1.0 * sum(scores)/float(len(scores))
+    ##     return -1.0 * sum(scores)/float(len(scores))
+
+        
+    ## #----------------------------------------------------------------------        
+    ## #
+    ## def mean_vars_constraint1(self, x0):
+    ##     return np.sum(x0) - self.nMaxStep
+
+    ## def mean_vars_constraint2(self, x0):
+    ##     for x in x0:
+    ##         if x < 1: return 1.0 
+    ##         if np.isnan(x)==True: return 1.0
+    ##     return 0.0
+    
+    #----------------------------------------------------------------------
+    # Returns the mean accuracy on the given test data and labels.
+    ## def score(self, X_test, **kwargs):
+    ##     # Neccessary package
+    ##     from sklearn.metrics import r2_score
+
+    ##     # Get input
+    ##     if type(X_test) == np.ndarray:
+    ##         X=X_test.tolist()
+
+    ##     sample_weight=None # TODO: future input
+
+    ##     #
+    ##     n = len(X)
+    ##     score  = np.zeros((n))
+    ##     X_next = np.zeros((n))
+    ##     X_pred = np.zeros((n))
+
+    ##     for i in xrange(n):
+
+    ##         if len(X[i]) > self.nCurrentStep+self.nFutureStep: #Full data                
+    ##             X_past = X[i][:self.nCurrentStep]
+    ##             X_next[i] = X[i][self.nCurrentStep]
+    ##         else:
+    ##             X_past = X[i][:-1]
+    ##             X_next[i] = X[i][-1]
+
+    ##         X_pred[i], _ = self.one_step_predict(X_past)
+
+    ##     return r2_score(X_next, X_pred, sample_weight=sample_weight)
+            
+    ##     ## from sklearn.metrics import accuracy_score
+    ##     ## return accuracy_score(y_test, np.around(self.predict(X_test)), sample_weight=sample_weight)
+        
+    ##     ## return np.sum(score)/float(n)

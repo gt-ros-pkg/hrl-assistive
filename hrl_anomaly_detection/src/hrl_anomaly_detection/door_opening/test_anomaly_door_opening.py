@@ -243,8 +243,7 @@ def tuneCrossValHMM(cross_data_path, cross_test_path, nState, nMaxStep, trans_ty
         lh = learning_hmm(aXData=train_data[i], nState=nState, 
                           nMaxStep=nMaxStep, trans_type=trans_type)            
 
-        ## lh.fit(lh.aXData, verbose=False)    
-        
+        ## lh.fit(lh.aXData, verbose=False)            
         lh.param_optimization(save_file=B_tune_pkl)
 
         os.system('rm '+mutex_file)
@@ -264,7 +263,6 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, trans_type, tes
     test_data             = []
     test_anomaly_idx_data = []
     org_test_data         = []
-    B_list        = []
     nState_list   = []
     score_list    = []
 
@@ -312,19 +310,16 @@ def load_cross_param(cross_data_path, cross_test_path, nMaxStep, trans_type, tes
                 if min_nState == None:
                     min_nState = param_dict['nState']
                     min_score  = param_dict['score']
-                    min_B      = param_dict['B']
                 elif min_score > param_dict['score']:
                     min_nState = param_dict['nState']
                     min_score  = param_dict['score']
-                    min_B      = param_dict['B']
                                                             
-            B_list.append(min_B)
             nState_list.append(min_nState)
             score_list.append(min_score)
 
 
     print "Load cross validation params complete"
-    return test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, B_list, nState_list
+    return test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, nState_list
     
 
     
@@ -334,10 +329,10 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                           trans_type, nFutureStep, aws=False, test=False):
 
     # Get the best param for training set
-    test_idx_list, train_data, _, _, _, B_list, nState_list = load_cross_param(cross_data_path, \
-                                                                                 cross_test_path, \
-                                                                                 nMaxStep, \
-                                                                                 trans_type)
+    test_idx_list, train_data, _, _, _, nState_list = load_cross_param(cross_data_path, \
+                                                                          cross_test_path, \
+                                                                          nMaxStep, \
+                                                                          trans_type)
 
                                                                                  
     #-----------------------------------------------------------------            
@@ -404,7 +399,6 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                 ac_res = True
                 print "Get train data ", test_idx
                 nState = nState_list[i]
-                B      = B_list[i]
 
                 ## min_cost = 10000
                 ## min_fp   = None
@@ -416,7 +410,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                                   nMaxStep=nMaxStep,\
                                   nFutureStep=nFutureStep,\
                                   nCurrentStep=nCurrentStep, trans_type=trans_type)
-                lh.fit(lh.aXData, B=B, verbose=False)    
+                lh.fit(lh.aXData, verbose=False)    
 
                 for j, trial in enumerate(train_data[i]):
 
@@ -472,7 +466,7 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     sig_mult=None):
 
     # Get the best param for training set
-    test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, B_list, nState_list = \
+    test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, nState_list = \
       load_cross_param(cross_data_path, cross_test_path, nMaxStep, trans_type)   
 
     #-----------------------------------------------------------------
@@ -534,14 +528,12 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             print "------------------------------------------------------"
 
         nState = nState_list[i]
-        B      = B_list[i]
-
         
         lh = learning_hmm(aXData=train_data[i], nState=nState, \
                           nMaxStep=nMaxStep, \
                           nFutureStep=nFutureStep, \
                           trans_type=trans_type)
-        lh.fit(lh.aXData, B=B, verbose=False)    
+        lh.fit(lh.aXData, verbose=False)    
 
         # Init variables
         ## false_pos  = np.zeros((len(test_data[i]), len(test_data[i][0])-start_step))        
@@ -813,6 +805,9 @@ if __name__ == '__main__':
     ## trans_type = "left_right"
     trans_type = "full"
 
+    A = None
+    B = None
+
 
     # for block test
     if opt.bUseBlockData or opt.bAllPlot:    
@@ -830,19 +825,21 @@ if __name__ == '__main__':
         
         pkl_file  = "mech_class_"+doc.class_dir_list[nClass]+".pkl"      
         data_vecs, _, _ = mad.get_data(pkl_file, mech_class=cls, renew=opt.renew) # human data       
-        B_tune_pkl = "B_tune_"+doc.class_dir_list[nClass]+".pkl"        
+        ## B_tune_pkl = "B_tune_"+doc.class_dir_list[nClass]+".pkl"        
         
-        if os.path.isfile(B_tune_pkl) is False:
-            lh = learning_hmm(aXData=data_vecs[0], nState=31, 
-                              nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
-                              nCurrentStep=nCurrentStep, trans_type=trans_type)    
-            lh.param_optimization(save_file=B_tune_pkl)
-        else:                   
-            print "Tuned file exists!1 "    
-            A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls, pkl_file=B_tune_pkl)        
-            ## B = mad.get_trans_mat(data_vecs[0], nState)
-            ## print np.array(B).shape, nState
-            ## sys.exit()
+        ## if os.path.isfile(B_tune_pkl) is False or True:
+        ##     lh = learning_hmm(aXData=data_vecs[0], nState=31, 
+        ##                       nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
+        ##                       nCurrentStep=nCurrentStep, trans_type=trans_type)                
+        ##     lh.param_optimization(save_file=B_tune_pkl)
+        ## else:                   
+        ##     print "Tuned file exists!1 "    
+        ##     A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls, pkl_file=B_tune_pkl)        
+        ##     ## B = mad.get_trans_mat(data_vecs[0], nState)
+        ##     ## print np.array(B).shape, nState
+        ##     ## sys.exit()
+
+        nState=31
             
         # Training 
         lh = learning_hmm(aXData=data_vecs[0], nState=nState, 
@@ -975,7 +972,7 @@ if __name__ == '__main__':
     ###################################################################################                    
     elif opt.bUseBlockData:
 
-        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+        lh.fit(lh.aXData, A=A, verbose=opt.bVerbose)    
 
         ######################################################    
         # Test data
@@ -983,7 +980,7 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][2,:].tolist() # ikea cabinet door openning data
+        h_ftan   = data_vecs[0][22,:].tolist() # ikea cabinet door openning data
         h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
@@ -994,7 +991,7 @@ if __name__ == '__main__':
 
             ## x,y = get_interp_data(h_config, h_ftan)
             x,y = h_config, h_ftan
-            ac = anomaly_checker(lh, sig_mult=6.0, sig_offset=1.0)
+            ac = anomaly_checker(lh, sig_mult=5.0, sig_offset=0.5)
             ac.simulation(x,y)
             
             ## lh.animated_path_plot(x_test_all, opt.bAniReload)
@@ -1032,7 +1029,7 @@ if __name__ == '__main__':
     elif opt.bApproxObsrv:
         if lh.nFutureStep <= 1: print "Error: nFutureStep should be over than 2."
         
-        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+        lh.fit(lh.aXData, A=A, verbose=opt.bVerbose)    
         
         for i in xrange(1,31,2):
             
@@ -1120,12 +1117,12 @@ if __name__ == '__main__':
     ###################################################################################            
     elif opt.bAllPlot:
 
-        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+        lh.fit(lh.aXData, A=A, verbose=opt.bVerbose)    
         lh.all_path_plot(lh.aXData)
         lh.final_plot()
                 
     else:
-        lh.fit(lh.aXData, A=A, B=B, verbose=opt.bVerbose)    
+        lh.fit(lh.aXData, A=A, verbose=opt.bVerbose)    
         ## lh.path_plot(data_vecs[0], data_vecs[0,:,3])
 
         for i in xrange(18,31,2):
