@@ -32,6 +32,7 @@ from scipy import optimize
 ## from pysmac.optimize import fmin                
 from joblib import Parallel, delayed
 from scipy.optimize import fsolve
+from scipy import interpolate
 
 from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
@@ -131,29 +132,19 @@ class learning_hmm(learning_base):
         index = 0
         m,n = np.shape(vec)
         ## print m,n
-        mult = 2
+        mult = 6
 
-        o_mu  = np.zeros((self.nMaxStep, 1))
-        o_sig = np.zeros((self.nMaxStep, 1))
-        mu  = np.zeros((self.nMaxStep*mult, 1))
-        sig = np.zeros((self.nMaxStep*mult, 1))
+        o_x = np.arange(0.0, self.nMaxStep, 1.0)
+        o_mu  = scp.mean(vec, axis=0)
+        o_sig = scp.std(vec, axis=0)
 
-        for i in xrange(self.nMaxStep):
-            o_mu[i] = scp.mean(vec[:,i].flatten())
-            o_sig[i] = scp.std(vec[:,i].flatten())
+        f_mu  = interpolate.interp1d(o_x, o_mu)
+        f_sig = interpolate.interp1d(o_x, o_sig)
+            
+        x = np.arange(0.0, float(self.nMaxStep-1)+1.0/float(mult), 1.0/float(mult))
+        mu  = f_mu(x)
+        sig = f_sig(x)
 
-        for i in xrange(self.nMaxStep-1):
-            mu[i*mult] = o_mu[i]
-            sig[i*mult] = o_sig[i]
-
-            mu[i*mult+1] = (o_mu[i]+o_mu[i+1])/2.0
-            sig[i*mult+1] = np.sqrt((o_sig[i]**2 + o_sig[i+1]**2)*(0.5**2))
-
-        mu[-2] = o_mu[-1]
-        sig[-2] = o_sig[-1]
-        mu[-1] = o_mu[-1]
-        sig[-1] = o_sig[-1]
-                        
         ## # resample two times
         ## for i in xrange(self.nMaxStep-1):
         ##     mu[i*2+1]  = (mu[i*2] + mu[i*2+2])/2.0
@@ -178,13 +169,13 @@ class learning_hmm(learning_base):
         sig = sig.reshape((len(sig),1))
 
         
-        ## import matplotlib.pyplot as pp
-        ## pp.figure()
-        ## pp.plot(mu)
-        ## pp.plot(mu+2.*sig)
-        ## pp.plot(scp.mean(vec, axis=0), 'r')
-        ## pp.show()
-        ## sys.exit()
+        import matplotlib.pyplot as pp
+        pp.figure()
+        pp.plot(mu)
+        pp.plot(mu+2.*sig)
+        pp.plot(scp.mean(vec, axis=0), 'r')
+        pp.show()
+        sys.exit()
             
         ## mu  = np.zeros((nState,1))
         ## sig = np.zeros((nState,1))
