@@ -131,22 +131,56 @@ class learning_hmm(learning_base):
         index = 0
         m,n = np.shape(vec)
         ## print m,n
-        mu  = np.zeros((nState,1))
-        sig = np.zeros((nState,1))
-        DIVS = n/nState
 
-        while (index < nState):
-            m_init = index*DIVS
-            temp_vec = vec[0:, (m_init):(m_init+DIVS)]            
-            temp_vec = np.reshape(temp_vec,DIVS*m)
-            mu[index] = scp.mean(temp_vec)
-            sig[index] = scp.std(temp_vec)
-            ## if index == 0:
-            ##     print 'mean = ', mu[index]
-            ##     print 'mean = ', scp.mean(vec[0:, (m_init):(m_init+DIVS)])
-            ##     print scp.std( vec[0:,(m_init):(m_init+DIVS)])
-            ##     print scp.std(temp_vec)
-            index = index+1
+        mu  = np.zeros((self.nMaxStep, 1))
+        sig = np.zeros((self.nMaxStep, 1))
+
+        for i in xrange(self.nMaxStep):
+            mu[i] = scp.mean(vec[:,i].flatten())
+            sig[i] = scp.std(vec[:,i].flatten())
+            
+        while len(mu) != nState:
+
+            d_mu  = np.abs(mu[1:] - mu[:-1]) # -1 length 
+            d_sig = np.abs(sig[1:] - sig[:-1]) # -1 length 
+
+            idx = d_mu.tolist().index(min(d_mu))
+            #idx = d_sig.tolist().index(min(d_sig))
+            mu[idx]  = scp.mean(vec[:,idx:idx+2].flatten())
+            sig[idx] = scp.std(vec[:,idx:idx+2].flatten())
+
+            mu  = scp.delete(mu,idx+1)
+            sig = scp.delete(sig,idx+1)
+
+
+        ## print mu
+        ## print sig
+        ## import matplotlib.pyplot as pp
+
+        ## pp.figure()
+        ## pp.plot(mu)
+        ## pp.plot(mu+2.*sig)
+
+        ## pp.plot(scp.mean(vec, axis=0), 'r')
+        ## pp.show()
+        ## sys.exit()
+            
+        ## mu  = np.zeros((nState,1))
+        ## sig = np.zeros((nState,1))
+        ## DIVS = n/nState
+                  
+        ## while (index < nState):
+        ##     m_init = index*DIVS
+        ##     temp_vec = vec[0:, (m_init):(m_init+DIVS)]            
+        ##     temp_vec = np.reshape(temp_vec,DIVS*m)
+        ##     mu[index] = scp.mean(temp_vec)
+        ##     sig[index] = scp.std(temp_vec)
+        ##     ## if index == 0:
+        ##     ##     print 'mean = ', mu[index]
+        ##     ##     print 'mean = ', scp.mean(vec[0:, (m_init):(m_init+DIVS)])
+        ##     ##     print scp.std( vec[0:,(m_init):(m_init+DIVS)])
+        ##     ##     print scp.std(temp_vec)
+        ##     index = index+1
 
         return mu,sig
                                

@@ -333,8 +333,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                                                                           cross_test_path, \
                                                                           nMaxStep, \
                                                                           trans_type)
-
-                                                                                 
+    
     #-----------------------------------------------------------------            
     print "------------------------------------------------------"
     print "Loaded all best params B and nState"
@@ -726,7 +725,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             color = colors.next()
             shape = shapes.next()
 
-            idx_list = sorted(range(len(err_list)), key=lambda k: err_list[k])
+            idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
             ## idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
             sorted_fp_list  = [fp_list[i] for i in idx_list]
             sorted_sef_list = [sef_list[i] for i in idx_list]
@@ -984,7 +983,7 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][22,:].tolist() # ikea cabinet door openning data
+        h_ftan   = data_vecs[0][9,:].tolist() # ikea cabinet door openning data
         h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]
