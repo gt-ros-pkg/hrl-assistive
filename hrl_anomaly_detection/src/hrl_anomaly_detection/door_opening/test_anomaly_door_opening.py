@@ -160,7 +160,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
             x = (np.arange(0.0, nRemLength, 1.0)+1.0) * ang_interval
             ## b_trial = x*s + f_trial[-1]
             ## b_trial = 0.1*(np.exp(x)-1.0) + trial[n:]
-            b_trial = x*1.0 + trial[n:]
+            b_trial = x*0.5 + trial[n:]
 
             ## # Restrict max
             ## for i, sample in enumerate(b_trial):
