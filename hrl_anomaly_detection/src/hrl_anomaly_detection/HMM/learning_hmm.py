@@ -132,14 +132,14 @@ class learning_hmm(learning_base):
         index = 0
         m,n = np.shape(vec)
         ## print m,n
-        mult = 6
+        mult = 5
 
         o_x = np.arange(0.0, self.nMaxStep, 1.0)
         o_mu  = scp.mean(vec, axis=0)
         o_sig = scp.std(vec, axis=0)
 
-        f_mu  = interpolate.interp1d(o_x, o_mu)
-        f_sig = interpolate.interp1d(o_x, o_sig)
+        f_mu  = interpolate.interp1d(o_x, o_mu, kind='linear')
+        f_sig = interpolate.interp1d(o_x, o_sig, kind='linear')
             
         x = np.arange(0.0, float(self.nMaxStep-1)+1.0/float(mult), 1.0/float(mult))
         mu  = f_mu(x)
@@ -158,7 +158,7 @@ class learning_hmm(learning_base):
             ## idx = d_mu.tolist().index(min(d_mu))
             idx = d_sig.tolist().index(min(d_sig))
             mu[idx]  = (mu[idx]+mu[idx+1])/2.0
-            sig[idx] = np.sqrt((sig[idx]**2 + sig[idx+1]**2)*(0.5**2))
+            sig[idx] = (sig[idx] + sig[idx+1])/2.0
             ## mu[idx]  = scp.mean(vec[:,idx:idx+2].flatten())
             ## sig[idx] = scp.std(vec[:,idx:idx+2].flatten())
 
@@ -169,13 +169,13 @@ class learning_hmm(learning_base):
         sig = sig.reshape((len(sig),1))
 
         
-        ## import matplotlib.pyplot as pp
-        ## pp.figure()
-        ## pp.plot(mu)
-        ## pp.plot(mu+2.*sig)
-        ## pp.plot(scp.mean(vec, axis=0), 'r')
-        ## pp.show()
-        ## sys.exit()
+        import matplotlib.pyplot as pp
+        pp.figure()
+        pp.plot(mu)
+        pp.plot(mu+2.*sig)
+        pp.plot(scp.mean(vec, axis=0), 'r')
+        pp.show()
+        sys.exit()
             
         ## mu  = np.zeros((nState,1))
         ## sig = np.zeros((nState,1))
