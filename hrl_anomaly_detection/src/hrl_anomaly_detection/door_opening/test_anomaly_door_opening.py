@@ -983,7 +983,7 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][9,:].tolist() # ikea cabinet door openning data
+        h_ftan   = data_vecs[0][1,:].tolist() # ikea cabinet door openning data
         h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]

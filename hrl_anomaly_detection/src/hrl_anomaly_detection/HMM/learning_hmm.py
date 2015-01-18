@@ -144,8 +144,8 @@ class learning_hmm(learning_base):
             d_mu  = np.abs(mu[1:] - mu[:-1]) # -1 length 
             d_sig = np.abs(sig[1:] - sig[:-1]) # -1 length 
 
-            idx = d_mu.tolist().index(min(d_mu))
-            #idx = d_sig.tolist().index(min(d_sig))
+            #idx = d_mu.tolist().index(min(d_mu))
+            idx = d_sig.tolist().index(min(d_sig))
             mu[idx]  = scp.mean(vec[:,idx:idx+2].flatten())
             sig[idx] = scp.std(vec[:,idx:idx+2].flatten())
 
@@ -155,8 +155,6 @@ class learning_hmm(learning_base):
         mu = mu.reshape((len(mu),1))
         sig = sig.reshape((len(sig),1))
 
-        ## print mu
-        ## print sig
         ## import matplotlib.pyplot as pp
 
         ## pp.figure()
