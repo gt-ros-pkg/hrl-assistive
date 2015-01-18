@@ -152,15 +152,20 @@ class anomaly_checker():
             
             x = X_test[:i]
             y = Y_test[:i]
+            x_nxt = X_test[:i+1]
+            y_nxt = Y_test[:i+1]
             line.set_data(x, y)
+            
 
-            if i > 0:
+            if i > 1:
                 mu_list, var_list = self.update_buffer(y)            
+                
 
                 ## # check anomaly score
-                bFlag, err, fScore = self.check_anomaly(y[-1])
+                bFlag, err, fScore = self.check_anomaly(y_nxt[-1])
+                
             
-            if i >= 2 and i < len(Y_test):# -self.nFutureStep:
+            if i >= 3 and i < len(Y_test)-1:# -self.nFutureStep:
 
                 x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)            
                 a_X   = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
