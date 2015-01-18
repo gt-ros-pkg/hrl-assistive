@@ -132,7 +132,7 @@ class learning_hmm(learning_base):
         index = 0
         m,n = np.shape(vec)
         ## print m,n
-        mult = 4
+        mult = 6
 
         o_x = np.arange(0.0, self.nMaxStep, 1.0)
         o_mu  = scp.mean(vec, axis=0)
