@@ -856,7 +856,7 @@ if __name__ == '__main__':
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
-        future_steps = [1, 8]             
+        future_steps = [1]             
         ## cost_ratios = [1.0]
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.92, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 1.0
@@ -983,7 +983,7 @@ if __name__ == '__main__':
         h_config =  np.array(h_config)*180.0/3.14
 
         # Training data            
-        h_ftan   = data_vecs[0][1,:].tolist() # ikea cabinet door openning data
+        h_ftan   = data_vecs[0][17,:].tolist() # ikea cabinet door openning data
         h_config = np.arange(0,float(len(h_ftan)), 1.0)
 
         x_test = h_ftan[:nCurrentStep]

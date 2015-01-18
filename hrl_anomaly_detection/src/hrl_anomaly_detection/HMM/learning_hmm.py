@@ -131,23 +131,45 @@ class learning_hmm(learning_base):
         index = 0
         m,n = np.shape(vec)
         ## print m,n
+        mult = 2
 
-        mu  = np.zeros((self.nMaxStep, 1))
-        sig = np.zeros((self.nMaxStep, 1))
+        o_mu  = np.zeros((self.nMaxStep, 1))
+        o_sig = np.zeros((self.nMaxStep, 1))
+        mu  = np.zeros((self.nMaxStep*mult, 1))
+        sig = np.zeros((self.nMaxStep*mult, 1))
 
         for i in xrange(self.nMaxStep):
-            mu[i] = scp.mean(vec[:,i].flatten())
-            sig[i] = scp.std(vec[:,i].flatten())
-            
+            o_mu[i] = scp.mean(vec[:,i].flatten())
+            o_sig[i] = scp.std(vec[:,i].flatten())
+
+        for i in xrange(self.nMaxStep-1):
+            mu[i*mult] = o_mu[i]
+            sig[i*mult] = o_sig[i]
+
+            mu[i*mult+1] = (o_mu[i]+o_mu[i+1])/2.0
+            sig[i*mult+1] = np.sqrt((o_sig[i]**2 + o_sig[i+1]**2)*(0.5**2))
+
+        mu[-2] = o_mu[-1]
+        sig[-2] = o_sig[-1]
+        mu[-1] = o_mu[-1]
+        sig[-1] = o_sig[-1]
+                        
+        ## # resample two times
+        ## for i in xrange(self.nMaxStep-1):
+        ##     mu[i*2+1]  = (mu[i*2] + mu[i*2+2])/2.0
+        ##     sig[i*2+1] = np.sqrt((sig[i*2]**2 + sig[i*2+2]**2)*(0.5**2))
+
         while len(mu) != nState:
 
             d_mu  = np.abs(mu[1:] - mu[:-1]) # -1 length 
             d_sig = np.abs(sig[1:] - sig[:-1]) # -1 length 
 
-            #idx = d_mu.tolist().index(min(d_mu))
+            ## idx = d_mu.tolist().index(min(d_mu))
             idx = d_sig.tolist().index(min(d_sig))
-            mu[idx]  = scp.mean(vec[:,idx:idx+2].flatten())
-            sig[idx] = scp.std(vec[:,idx:idx+2].flatten())
+            mu[idx]  = (mu[idx]+mu[idx+1])/2.0
+            sig[idx] = np.sqrt((sig[idx]**2 + sig[idx+1]**2)*(0.5**2))
+            ## mu[idx]  = scp.mean(vec[:,idx:idx+2].flatten())
+            ## sig[idx] = scp.std(vec[:,idx:idx+2].flatten())
 
             mu  = scp.delete(mu,idx+1)
             sig = scp.delete(sig,idx+1)
@@ -155,12 +177,11 @@ class learning_hmm(learning_base):
         mu = mu.reshape((len(mu),1))
         sig = sig.reshape((len(sig),1))
 
+        
         ## import matplotlib.pyplot as pp
-
         ## pp.figure()
         ## pp.plot(mu)
         ## pp.plot(mu+2.*sig)
-
         ## pp.plot(scp.mean(vec, axis=0), 'r')
         ## pp.show()
         ## sys.exit()
