@@ -338,7 +338,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
                                                                                  cross_test_path, \
                                                                                  nMaxStep, \
                                                                                  trans_type)
-        
+
+                                                                                 
     #-----------------------------------------------------------------            
     print "------------------------------------------------------"
     print "Loaded all best params B and nState"
@@ -832,11 +833,12 @@ if __name__ == '__main__':
         B_tune_pkl = "B_tune_"+doc.class_dir_list[nClass]+".pkl"        
         
         if os.path.isfile(B_tune_pkl) is False:
-            lh = learning_hmm(aXData=data_vecs[0], nState=30, 
+            lh = learning_hmm(aXData=data_vecs[0], nState=31, 
                               nMaxStep=nMaxStep, nFutureStep=nFutureStep, 
                               nCurrentStep=nCurrentStep, trans_type=trans_type)    
             lh.param_optimization(save_file=B_tune_pkl)
-        else:                       
+        else:                   
+            print "Tuned file exists!1 "    
             A, B, pi, nState = doc.get_hmm_init_param(mech_class=cls, pkl_file=B_tune_pkl)        
             ## B = mad.get_trans_mat(data_vecs[0], nState)
             ## print np.array(B).shape, nState
