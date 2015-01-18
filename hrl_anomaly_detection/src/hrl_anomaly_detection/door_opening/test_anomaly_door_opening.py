@@ -160,7 +160,7 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
             x = (np.arange(0.0, nRemLength, 1.0)+1.0) * ang_interval
             ## b_trial = x*s + f_trial[-1]
             ## b_trial = 0.1*(np.exp(x)-1.0) + trial[n:]
-            b_trial = x*0.1 + trial[n:]
+            b_trial = x*1.0 + trial[n:]
 
             ## # Restrict max
             ## for i, sample in enumerate(b_trial):
@@ -176,13 +176,13 @@ def simulated_block_conv(trials, nMinStep, nMaxStep, ang_interval, nRandom=5):
 
             new_anomaly_pts.append(n)
 
-            ## pp.figure()                    
-            ## x = np.arange(0.0, len(trial), 1.0)*ang_interval
-            ## print x.shape, new_trial.shape, n
-            ## pp.plot(x, new_trial,'r')
-            ## pp.plot(x, trial,'b')
-            ## pp.plot([n-1,n-1],[0,10.0])
-            ## pp.show()
+            pp.figure()                    
+            x = np.arange(0.0, len(trial), 1.0)*ang_interval
+            print x.shape, new_trial.shape, n
+            pp.plot(x, new_trial,'r')
+            pp.plot(x, trial,'b')
+            pp.plot([n-1,n-1],[0,10.0])
+            pp.show()
 
             
 
@@ -736,7 +736,11 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             sorted_sat_list = [sat_list[i] for i in idx_list]
             sorted_err_list = [err_list[i] for i in idx_list]            
 
-            semantic_label=str(nFutureStep)+' step PHMM anomaly detection', 
+            if nFutureStep == 1:
+                semantic_label=str(nFutureStep)+' step PHMM (= HMM)' 
+            else:
+                semantic_label=str(nFutureStep)+' step PHMM' 
+                    
             sem_l='-'; sem_c=color; sem_m=shape                        
 
             if bSimBlock:
@@ -759,8 +763,6 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ## pp.ylim(0.,4)            
         pp.show()
         ## pp.savefig('robot_roc_sig_0_3.pdf')
-
-            
 
     
     
@@ -852,7 +854,7 @@ if __name__ == '__main__':
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
-        future_steps = [1, 2, 4, 8]             
+        future_steps = [1, 8]             
         ## cost_ratios = [1.0]
         cost_ratios = [1.0, 0.999, 0.99, 0.98, 0.97, 0.95, 0.92, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 1.0
@@ -867,6 +869,7 @@ if __name__ == '__main__':
             mech_vec_list, mech_nm_list = mar.pkls_to_mech_vec_list(r_pkls, 36)
 
             ## mpu.set_figure_size(10, 7.)
+            sematic_label = 'Gaussian models \n known mechanism class'
             
             pp.figure()                    
             ## mar.generate_roc_curve_no_prior(mech_vec_list, mech_nm_list)
