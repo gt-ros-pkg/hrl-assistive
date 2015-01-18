@@ -419,6 +419,8 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
 
                     # Simulate each profile
                     for k in xrange(len(trial)):
+                        if k==0: continue
+                        
                         # Update buffer
                         ac.update_buffer(trial[:k])
 
@@ -562,6 +564,8 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
 
             # Simulate each profile
             for k in xrange(len(trial)):
+                if k==0: continue
+                
                 # Update buffer
                 ac.update_buffer(trial[:k])
 
