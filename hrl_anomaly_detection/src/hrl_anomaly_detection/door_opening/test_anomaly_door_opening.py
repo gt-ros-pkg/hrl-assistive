@@ -699,7 +699,6 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
 
         # --------------------------------------------------------
         fp_list = []
-        ## tn_list = []
         sef_list = []
         sat_list = []
         err_list = []
@@ -711,37 +710,36 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ##                                         aws=bAWS, bSimBlock=bSimBlock, \
         ##                                         ang_interval=ang_interval)
         ##     fp_list.append(fp)
-        ##     ## tn_list.append(tn)
         ##     sef_list.append(sef)
         ##     sat_list.append(sat)
         ##     err_list.append(err)
 
-        sig_offsets   = np.arange(0.1, 10.0+0.00001, 0.2)    
-        cost_ratio = 1.0
-        for sig_offset in sig_offsets:
-            fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                          cost_ratio, nMaxStep, \
-                                          trans_type, nFutureStep=nFutureStep, \
-                                          aws=bAWS, bSimBlock=bSimBlock, \
-                                          ang_interval=ang_interval, sig_offset=sig_offset)
-            fp_list.append(fp)
-            sef_list.append(sef)
-            sat_list.append(sat)
-            err_list.append(err)        
-
-        ## sig_mults   = np.arange(5.0, 50.0+0.00001, 2.0)    
+        ## sig_offsets   = np.arange(0.1, 6.0+0.00001, 0.2)    
         ## cost_ratio = 1.0
-        ## for sig_mult in sig_mults:
+        ## for sig_offset in sig_offsets:
         ##     fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
         ##                                   cost_ratio, nMaxStep, \
         ##                                   trans_type, nFutureStep=nFutureStep, \
         ##                                   aws=bAWS, bSimBlock=bSimBlock, \
-        ##                                   ang_interval=ang_interval, sig_mult=sig_mult)
+        ##                                   ang_interval=ang_interval, sig_offset=sig_offset)
         ##     fp_list.append(fp)
-        ##     ## tn_list.append(tn)
         ##     sef_list.append(sef)
         ##     sat_list.append(sat)
         ##     err_list.append(err)        
+
+        sig_mults   = np.arange(5.0, 50.0+0.00001, 2.0)    
+        cost_ratio = 1.0
+        for sig_mult in sig_mults:
+            fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+                                          cost_ratio, nMaxStep, \
+                                          trans_type, nFutureStep=nFutureStep, \
+                                          aws=bAWS, bSimBlock=bSimBlock, \
+                                          ang_interval=ang_interval, sig_mult=sig_mult)
+            fp_list.append(fp)
+            ## tn_list.append(tn)
+            sef_list.append(sef)
+            sat_list.append(sat)
+            err_list.append(err)        
             
         #---------------------------------------
         if bPlot:
