@@ -716,7 +716,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ##     sat_list.append(sat)
         ##     err_list.append(err)
 
-        sig_offsets   = np.arange(0.1, 10.0+0.00001, 0.1)    
+        sig_offsets   = np.arange(0.1, 10.0+0.00001, 0.2)    
         cost_ratio = 1.0
         for sig_offset in sig_offsets:
             fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
