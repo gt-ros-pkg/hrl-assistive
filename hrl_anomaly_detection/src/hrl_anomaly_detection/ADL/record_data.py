@@ -68,7 +68,7 @@ class tool_audio(Thread):
         self.init_time = 0.
         self.noise_freq_l = None
         self.noise_band = 150.0
-        self.noise_amp_num = 20 #10
+        self.noise_amp_num = 0 #20 #10
         self.noise_amp_thres = 0.0  
         self.noise_amp_mult = 2.0  
         self.noise_bias = 0.0
@@ -78,6 +78,9 @@ class tool_audio(Thread):
         self.audio_amp  = None
 
         self.time_data = []
+        
+        self.b,self.a = self.butter_bandpass(1,1000, self.RATE, order=3)
+        
                 
         self.p=pyaudio.PyAudio()
         self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, \
@@ -100,21 +103,24 @@ class tool_audio(Thread):
         data=self.stream.read(self.CHUNK)
         self.time_data.append(rospy.get_time()-self.init_time)
         
-        audio_data=np.fromstring(data, self.DTYPE)
+        audio_data = np.fromstring(data, self.DTYPE)
+        ## audio_data = signal.lfilter(self.b, self.a, audio_data)
+        
 
         # Exclude low rms data
-        amp = self.get_rms(data)            
-        if amp < self.noise_amp_thres*2.0:
-            audio_data = audio_data*np.exp( - self.noise_amp_mult*(self.noise_amp_thres - amp))
+        ## amp = self.get_rms(data)            
+        ## if amp < self.noise_amp_thres*2.0:
+        ##     audio_data = audio_data*np.exp( - self.noise_amp_mult*(self.noise_amp_thres - amp))
 
-        audio_data -= self.noise_bias
+        ## audio_data -= self.noise_bias
         new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
         
         # Remove noise
-        for noise_freq in self.noise_freq_l:
-            new_F = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F)])
-            
-        frame = np.fft.ifft(new_F)*float(self.MAX_INT)
+        ## for noise_freq in self.noise_freq_l:
+        ##     new_F = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F)])
+                                
+        ## frame = np.fft.ifft(new_F)*float(self.MAX_INT)
+        frame = audio_data
 
         if self.audio_amp is None: self.audio_amp = new_F
         else: self.audio_amp = np.hstack([self.audio_amp, new_F])
@@ -184,8 +190,8 @@ class tool_audio(Thread):
         else: frames = np.hstack([frames, audio_data])
         self.noise_amp_thres = self.get_rms(data)            
         
-        self.noise_bias = np.mean(audio_data)
-        audio_data -= self.noise_bias
+        ## self.noise_bias = np.mean(audio_data)
+        ## audio_data -= self.noise_bias
 
         F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT       
         f  = np.fft.fftfreq(len(F), self.UNIT_SAMPLE_TIME) 
@@ -232,6 +238,18 @@ class tool_audio(Thread):
             return x
         else:
             return 0
+                  
+
+    def butter_bandpass(self, lowcut, highcut, fs, order=5):
+        '''
+        fs: sampling frequency
+        '''
+        nyq = 0.5 * fs
+        low = lowcut / nyq
+        high = highcut / nyq
+        b, a = signal.butter(order, [low, high], btype='band')
+        return b, a
+
         
     def get_rms(self, block):
         # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
@@ -428,7 +446,7 @@ class ADL_log():
 
         raw_input('press Enter to reset')
         if self.ft: self.ft.reset()
-        if self.audio: self.audio.reset()
+        ## if self.audio: self.audio.reset()
         
 
     def log_start(self):
