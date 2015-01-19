@@ -343,11 +343,11 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
     X_test = np.arange(0.0, 36.0, 1.0)
     start_step = 2
     
-    ## sig_mult        = np.arange(0.1, 60.0+0.00001, 0.5)
-    sig_offset      = np.arange(0.0, 10.0+0.00001, 0.2)
+    sig_mult        = np.arange(0.1, 5.0+0.00001, 0.2)
+    sig_offset      = np.arange(0.0, 10.0+0.00001, 0.5)
 
     ## sig_mult   = np.arange(0.5, 10.0+0.00001, 0.1)
-    sig_mult   = [0.0]
+    ## sig_mult   = [0.0]
     ## sig_offset = [0.0]
     
     param_list = []
@@ -465,7 +465,7 @@ def get_threshold_by_cost(cross_data_path, cross_test_path, cost_ratios, nMaxSte
 
 def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
                     trans_type, nFutureStep=5, aws=False, bSimBlock=False, ang_interval=1.0, \
-                    sig_mult=None):
+                    sig_mult=None, sig_offset=None):
 
     # Get the best param for training set
     test_idx_list, train_data, test_data, test_anomaly_idx_data, org_test_data, nState_list = \
@@ -488,6 +488,10 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                         "_sig_mult_"+str(sig_mult)+'.pkl')
             mutex_file_part = "running_"+str(test_idx)+"_sig_mult_"+str(sig_mult)
+        elif sig_offset != None:
+            roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
+                                        "_sig_offset_"+str(sig_offset)+'.pkl')
+            mutex_file_part = "running_"+str(test_idx)+"_sig_offset_"+str(sig_offset)
         else:
             roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                         "_cratio_"+str(cost_ratio)+'.pkl')
@@ -553,6 +557,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             if sig_mult != None:
                 min_sig_mult = sig_mult
                 min_sig_offset = 0.0
+            elif sig_offset != None:
+                min_sig_mult = 0.0
+                min_sig_offset = sig_offset
 
             org_trial = org_test_data[i][j]
 
@@ -694,17 +701,31 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         sat_list = []
         err_list = []
 
-        for cost_ratio in cost_ratios:
+        ## for cost_ratio in cost_ratios:
+        ##     fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
+        ##                                         cost_ratio, nMaxStep, \
+        ##                                         trans_type, nFutureStep=nFutureStep, \
+        ##                                         aws=bAWS, bSimBlock=bSimBlock, \
+        ##                                         ang_interval=ang_interval)
+        ##     fp_list.append(fp)
+        ##     ## tn_list.append(tn)
+        ##     sef_list.append(sef)
+        ##     sat_list.append(sat)
+        ##     err_list.append(err)
+
+        sig_offsets   = np.arange(0.1, 10.0+0.00001, 0.5)    
+        cost_ratio = 1.0
+        for sig_offset in sig_offsets:
             fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
-                                                cost_ratio, nMaxStep, \
-                                                trans_type, nFutureStep=nFutureStep, \
-                                                aws=bAWS, bSimBlock=bSimBlock, \
-                                                ang_interval=ang_interval)
+                                          cost_ratio, nMaxStep, \
+                                          trans_type, nFutureStep=nFutureStep, \
+                                          aws=bAWS, bSimBlock=bSimBlock, \
+                                          ang_interval=ang_interval, sig_offset=sig_offset)
             fp_list.append(fp)
             ## tn_list.append(tn)
             sef_list.append(sef)
             sat_list.append(sat)
-            err_list.append(err)
+            err_list.append(err)        
 
         ## sig_mults   = np.arange(5.0, 50.0+0.00001, 2.0)    
         ## cost_ratio = 1.0
@@ -719,7 +740,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ##     sef_list.append(sef)
         ##     sat_list.append(sat)
         ##     err_list.append(err)        
-
+            
         #---------------------------------------
         if bPlot:
 
@@ -858,8 +879,8 @@ if __name__ == '__main__':
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
 
         future_steps = [1, 2, 4, 8]             
-        ## cost_ratios = [1.0]
-        cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.92, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
+        cost_ratios = [1.0]
+        ## cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.92, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 1.0
         
         
