@@ -716,7 +716,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
         ##     sat_list.append(sat)
         ##     err_list.append(err)
 
-        sig_offsets   = np.arange(0.1, 10.0+0.00001, 0.5)    
+        sig_offsets   = np.arange(0.1, 10.0+0.00001, 0.1)    
         cost_ratio = 1.0
         for sig_offset in sig_offsets:
             fp, sef, sat, err = get_roc_by_cost(cross_data_path, cross_test_path, \
@@ -749,7 +749,7 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
             color = colors.next()
             shape = shapes.next()
 
-            idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
+            idx_list = sorted(range(len(err_list)), key=lambda k: err_list[k])
             ## idx_list = sorted(range(len(fp_list)), key=lambda k: fp_list[k])
             sorted_fp_list  = [fp_list[i] for i in idx_list]
             sorted_sef_list = [sef_list[i] for i in idx_list]

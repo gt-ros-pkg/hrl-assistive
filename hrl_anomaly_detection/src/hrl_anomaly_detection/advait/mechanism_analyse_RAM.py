@@ -502,7 +502,8 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
 
     ## print labels # mechanism
     ## print len(chunks) # mechanism + actor?
-            
+
+    
     #chunks=None
     feats = np.column_stack(feat_list)
     data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels, chunks is name of sample
@@ -1310,7 +1311,8 @@ if __name__ == '__main__':
                            plot_prev=False)
 
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
-        s_range = np.arange(0.05, 1.8, 0.2) 
+        
+        s_range = np.arange(0.05, 6.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)
