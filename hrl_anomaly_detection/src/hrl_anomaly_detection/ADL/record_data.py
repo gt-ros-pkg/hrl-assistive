@@ -79,7 +79,7 @@ class tool_audio(Thread):
 
         self.time_data = []
         
-        self.b,self.a = self.butter_bandpass(1,1000, self.RATE, order=3)
+        self.b,self.a = self.butter_bandpass(1,400, self.RATE, order=6)
         
                 
         self.p=pyaudio.PyAudio()

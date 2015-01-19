@@ -22,11 +22,22 @@ import hrl_lib.util as ut
 import matplotlib.pyplot as pp
 import matplotlib as mpl
 
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    '''
+    fs: sampling frequency
+    '''
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = signal.butter(order, [low, high], btype='band')
+    return b, a
+
 
 if __name__ == '__main__':
 
     pkl_file = './test_cup_human_t1.pkl'
     pkl_file = './test.pkl'
+    ## pkl_file = './noise.pkl'
     ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
     ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
     ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
@@ -54,14 +65,21 @@ if __name__ == '__main__':
         audio_freq = d['audio_freq']
         audio_chunk = d['audio_chunk']
 
-        print audio_data.shape
+        
+        import scipy.signal as signal
+        RATE    = 44100 #sampling rate        
+        b, a = butter_bandpass(1,20, RATE, order=3)
+        audio_data = signal.lfilter(b, a, audio_data)
+        ## audio_amp = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
+        
+        
         
         pp.figure()        
         pp.subplot(211)
-        pp.plot(audio_data,'b-')
+        pp.plot(audio_data[:-len(audio_data)/4],'b-')
         
         pp.subplot(212)
-        pp.plot(audio_freq[:audio_chunk/16],np.abs(audio_amp[:audio_chunk/16]),'b')
+        pp.plot(audio_freq[:audio_chunk/32],np.abs(audio_amp[:audio_chunk/32]),'b')
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
         pp.show()
 
