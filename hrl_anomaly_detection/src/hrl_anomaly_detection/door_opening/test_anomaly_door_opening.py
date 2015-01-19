@@ -633,6 +633,9 @@ def get_roc_by_cost(cross_data_path, cross_test_path, cost_ratio, nMaxStep, \
             if sig_mult != None:
                 roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                             "_sig_mult_"+str(sig_mult)+'.pkl')
+            elif sig_offset != None:
+                roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
+                                            "_sig_offset_"+str(sig_offset)+'.pkl')
             else:
                 roc_res_file = os.path.join(roc_res_path, "roc_"+str(test_idx)+ \
                                             "_cratio_"+str(cost_ratio)+'.pkl')
@@ -722,7 +725,6 @@ def generate_roc_curve(cross_data_path, cross_test_path, future_steps, cost_rati
                                           aws=bAWS, bSimBlock=bSimBlock, \
                                           ang_interval=ang_interval, sig_offset=sig_offset)
             fp_list.append(fp)
-            ## tn_list.append(tn)
             sef_list.append(sef)
             sat_list.append(sat)
             err_list.append(err)        
@@ -872,7 +874,7 @@ if __name__ == '__main__':
                           nCurrentStep=nCurrentStep, trans_type=trans_type)    
 
     ###################################################################################            
-    if (opt.bROCHuman or opt.bCrossVal) and opt.bSimBlock is False: 
+    if (opt.bROCHuman) and opt.bSimBlock is False: 
         print "------------- ROC HUMAN -------------"
         ROC_target = "human"
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
@@ -907,13 +909,14 @@ if __name__ == '__main__':
             
 
     ###################################################################################            
-    elif (opt.bROCRobot) and opt.bSimBlock is False:
+    elif (opt.bROCRobot or opt.bCrossVal) and opt.bSimBlock is False:
         print "------------- ROC HUMAN -------------"
         ROC_target = "robot"        
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2015/door_'+ROC_target+'_cross_data'
         cross_test_path = os.path.join(cross_data_path,ROC_target+'_'+trans_type)        
-        future_steps = [1, 2, 4, 8] 
-        cost_ratios = [1.0, 0.99, 0.97, 0.96, 0.955, 0.95, 0.945, 0.94, 0.93, 0.9, 0.8, 0.75, 0.7, 0.0]
+        future_steps = [1, 2, 4, 8]             
+        cost_ratios = [1.0]
+        ## cost_ratios = [1.0, 0.9999, 0.999, 0.99, 0.98, 0.97, 0.95, 0.92, 0.9, 0.8, 0.7, 0.5, 0.3, 0.0]
         ang_interval = 1.0
         
         #--------------------------------------------------------------------------------

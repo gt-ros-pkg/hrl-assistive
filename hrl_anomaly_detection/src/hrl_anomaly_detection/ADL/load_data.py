@@ -30,6 +30,12 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     low = lowcut / nyq
     high = highcut / nyq
     b, a = signal.butter(order, [low, high], btype='band')
+
+    ## print low, high
+    ## wp = [low, high]
+    ## ws = [0., high+0.05]    
+    ## b, a = signal.iirdesign(wp, ws, 10, 1, ftype='butter')
+        
     return b, a
 
 
@@ -37,7 +43,7 @@ if __name__ == '__main__':
 
     pkl_file = './test_cup_human_t1.pkl'
     pkl_file = './test.pkl'
-    ## pkl_file = './noise.pkl'
+    pkl_file = './noise.pkl'
     ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
     ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
     ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
@@ -68,18 +74,23 @@ if __name__ == '__main__':
         
         import scipy.signal as signal
         RATE    = 44100 #sampling rate        
-        b, a = butter_bandpass(1,20, RATE, order=3)
+        b, a = butter_bandpass(1,600, RATE, order=3)
         audio_data = signal.lfilter(b, a, audio_data)
+        ## audio_data = signal.filtfilt(b,a,audio_data,padlen=2000)
+        
         ## audio_amp = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
         
-        
+        print np.array(audio_data).shape
         
         pp.figure()        
         pp.subplot(211)
-        pp.plot(audio_data[:-len(audio_data)/4],'b-')
+        pp.plot(audio_data,'b-')
         
         pp.subplot(212)
-        pp.plot(audio_freq[:audio_chunk/32],np.abs(audio_amp[:audio_chunk/32]),'b')
+        xs = audio_freq[:audio_chunk/16]
+        ys = np.abs(audio_amp[:audio_chunk/16])
+        ys = np.multiply(20,np.log10(ys))        
+        pp.plot(xs,ys,'b')
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
         pp.show()
 
@@ -89,7 +100,7 @@ if __name__ == '__main__':
         RATE    = 44100 #sampling rate
         UNIT_SAMPLE_TIME = 1.0 / float(RATE)
         CHANNEL=1 #number of channels
-        FORMAT=pyaudio.paInt16
+        FORMAT= pyaudio.paInt16
         DTYPE = np.int16
 
         p=pyaudio.PyAudio()
