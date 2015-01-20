@@ -74,8 +74,8 @@ class tool_audio(Thread):
         self.noise_bias = 0.0
         
         self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
-        self.audio_data = None
-        self.audio_amp  = None
+        self.audio_data = []
+        self.audio_amp  = []
 
         self.time_data = []
         
@@ -122,10 +122,8 @@ class tool_audio(Thread):
         ## frame = np.fft.ifft(new_F)*float(self.MAX_INT)
         frame = audio_data
 
-        if self.audio_amp is None: self.audio_amp = new_F
-        else: self.audio_amp = np.hstack([self.audio_amp, new_F])
-        if self.audio_data is None: self.audio_data = frame
-        else: self.audio_data = np.hstack([self.audio_data, frame])
+        self.audio_amp.append(new_F)
+        self.audio_data.append(frame)
                 
         ## self.time_data.append(self.time)
 
@@ -146,19 +144,19 @@ class tool_audio(Thread):
             count += self.CHUNK
             rospy.sleep(0.01)        
             
-    def save_audio(self):
+    ## def save_audio(self):
         
-        ## RECORD_SECONDS = 9.0
+    ##     ## RECORD_SECONDS = 9.0
 
-        string_audio_data = np.array(self.audio_data, dtype=self.DTYPE).tostring() 
-        import wave
-        WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
-        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-        wf.setnchannels(self.CHANNEL)
-        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        wf.setframerate(self.RATE)
-        wf.writeframes(b''.join(string_audio_data))
-        wf.close()
+    ##     string_audio_data = np.array(self.audio_data, dtype=self.DTYPE).tostring() 
+    ##     import wave
+    ##     WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
+    ##     wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+    ##     wf.setnchannels(self.CHANNEL)
+    ##     wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+    ##     wf.setframerate(self.RATE)
+    ##     wf.writeframes(b''.join(string_audio_data))
+    ##     wf.close()
             
 
         ## pp.figure()        
