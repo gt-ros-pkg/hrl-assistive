@@ -220,4 +220,8 @@ if __name__ == '__main__':
     # Cutting
     scaling(d)
     
-        
+
+    # Learning
+
+
+    # TEST
