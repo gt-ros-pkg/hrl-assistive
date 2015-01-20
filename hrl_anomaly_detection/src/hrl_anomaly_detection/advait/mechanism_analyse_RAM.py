@@ -44,6 +44,7 @@ def pkls_to_mech_vec_list(pkl_list, reject_len):
     linear_vel_list = []
 
     for d in all_d_list:
+
         l = 100
         for v in d['vec_list']:
             l = min(l, len(v))
@@ -440,7 +441,9 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
     labels_test = []
     feat_list_test = []
     chunks_test = []
+
     for i, v_mat in enumerate(mech_vec_list):
+        
         nm = mech_nm_list[i]
         if nm not in rd.tags_dict: #name filtering
             ## print nm + ' is not in tags_dict'
@@ -489,6 +492,7 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
             feat_list_test.append(v_mat)
         else:
             feat_list.append(v_mat)
+
         ## print '-------------------------'
         ## print 'nm:', nm
         if nm == 'HSI_kitchen_cabinet_right':
@@ -498,7 +502,8 @@ def create_blocked_dataset_semantic_classes(mech_vec_list,
 
     ## print labels # mechanism
     ## print len(chunks) # mechanism + actor?
-            
+
+    
     #chunks=None
     feats = np.column_stack(feat_list)
     data = Dataset.from_wizard(samples=feats.A.T, targets=labels, chunks=chunks) # make samples with labels, chunks is name of sample
@@ -804,8 +809,8 @@ def generate_roc_curve(mech_vec_list, mech_nm_list,
         #pp.plot(fp_list, err_mean_list, '-or', label='with prior')
 
 
-    pp.xlabel('False positive rate (percentage)')
-    pp.ylabel('Mean excess force (Newtons)')
+    pp.xlabel('False positive rate (percentage)', fontsize=20)
+    pp.ylabel('Mean excess force (Newtons)', fontsize=20)
     pp.xlim(-0.5,45)
     mpu.legend()
 
@@ -1306,7 +1311,8 @@ if __name__ == '__main__':
                            plot_prev=False)
 
         pkl_list = glob.glob(data_path+'RAM_db/robot_trials/perfect_perception/*_new.pkl')
-        s_range = np.arange(0.05, 1.8, 0.2) 
+        
+        s_range = np.arange(0.05, 6.8, 0.2) 
         m_range = np.arange(0.1, 3.8, 0.6)
         r_pkls = filter_pkl_list(pkl_list, typ = 'rotary')
         mech_vec_list, mech_nm_list = pkls_to_mech_vec_list(r_pkls, 36)

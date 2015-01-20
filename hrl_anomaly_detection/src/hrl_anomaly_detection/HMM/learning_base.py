@@ -7,6 +7,7 @@ import rospy
 import inspect
 import warnings
 import random
+import scipy as scp
 
 # Util
 import hrl_lib.util as ut
@@ -246,13 +247,31 @@ class learning_base():
 
             # Gaussian transition probability
             ## z_prob = norm.pdf(float(i),loc=u_mu_list[i],scale=u_sigma_list[i])
-            
 
             # Normalization 
             trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
                 
         return trans_prob_mat
-    
+
+    #----------------------------------------------------------------------        
+    #                
+    ## def init_emission_mat(self, nState):
+
+    ##     n,m = self.aXData.shape
+        
+    ##     mu    = np.zeros((self.nState,1))
+    ##     sigma = np.zeros((self.nState,1))
+
+
+    ##     for i in xrange(self.nState):
+    ##         mu[i], sigma[i] = self.feature_to_mu_sigma(self.aXData, i+1)
+
+    ##     B = np.hstack([mu, sigma])
+
+    ##     return B
+
+
+
     
     ## #----------------------------------------------------------------------
     ## #
