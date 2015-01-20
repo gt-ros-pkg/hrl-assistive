@@ -33,6 +33,7 @@ from matplotlib.cbook import flatten
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
+from sPickle import Pickler
 import tf.transformations as tft
 from score_generator import ScoreGenerator
 import data_clustering as clust
@@ -41,9 +42,12 @@ import hrl_lib.util as ut
 
 class DataReader(object):
     
-    def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1):
+    def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1,tf_listener=None):
         self.score_sheet = []
-        self.tf_listener = tf.TransformListener()
+        if tf_listener is None:
+            self.tf_listener = tf.TransformListener()
+        else:
+            self.tf_listener = tf_listener
 
         self.subject = subject
         self.sub_num = int(list(subject)[3])
@@ -51,7 +55,7 @@ class DataReader(object):
         self.data_finish = data_finish
 
         self.model = model
-        self.max_distance = 10 #0.02
+        self.max_distance = 0.04 #10
         self.task = task
         self.num_goal_locations = 1
         self.pos_clust=pos_clust
@@ -137,7 +141,7 @@ class DataReader(object):
         #    tool_tip_data[num] = np.array(createBMatrix([line[2],line[3],line[4]],tft.quaternion_from_euler#(line[5],line[6],line[7],'rxyz')))
         self.distance = []
         self.raw_goal_data = [] #np.zeros([self.length,4,4])
-        self.max_start_distance = 5 #0.2
+        self.max_start_distance = .4 #0.2
         i = 0
         while self.raw_goal_data == []:
             #temp = np.array(np.matrix(world_B_headc_reference_data[i]).I*np.matrix(world_B_tool_data[i])*tool_correction)
@@ -147,7 +151,7 @@ class DataReader(object):
                 self.reference.append(0)
             else:
                 i+=1
-                print 'The first ',i,' data points in the file was noise'
+                print 'The first ', i, ' data points in the file was noise'
 
 
         for num in xrange(1,self.length):
@@ -183,31 +187,36 @@ class DataReader(object):
         return self.raw_goal_data
 
     def cluster_data(self):
-        self.pos_clust = np.min([len(self.raw_goal_data),self.pos_clust])
-        self.ori_clust = np.min([len(self.raw_goal_data),self.ori_clust])
-        self.clustered_goal_data = np.zeros([1,4,4])
-        self.clustered_number = np.zeros([1,1])
-        self.clustered_reference = np.zeros([1,1])
+        self.pos_clust = np.min([len(self.raw_goal_data), self.pos_clust])
+        self.ori_clust = np.min([len(self.raw_goal_data), self.ori_clust])
+        self.clustered_goal_data = np.zeros([1, 4, 4])
+        self.clustered_number = np.zeros([1, 1])
+        self.clustered_reference = np.zeros([1, 1])
 
-        # Clusters should be done separately for goals with different reference frames. Here I separate the data by reference frame, run clustering, then recombine the data.
+        # Clusters should be done separately for goals with different reference frames. Here I separate the data by
+        # reference frame, run clustering, then recombine the data.
         for i in xrange(len(self.reference_options)):
-            opt_cluster = np.zeros([self.reference.count(i),4,4])
+            print 'Clustering data for reference option ', i
+            opt_cluster = np.zeros([self.reference.count(i), 4, 4])
             pos_clust = np.min([self.pos_clust,len(opt_cluster)])
             ori_clust = np.min([self.ori_clust,len(opt_cluster)])
             j = 0
-            for num,ref in enumerate(self.reference):
+            for num, ref in enumerate(self.reference):
                 if ref == i:
                     opt_cluster[j] = self.raw_goal_data[num]
-                    j+=1
+                    j += 1
             enough = False
             count = 0
-            while not enough and (count<10):
+            while not enough and (count < 10):
                 count += 1
-                cluster = clust.DataCluster(pos_clust, 0.01, ori_clust, 0.02)
+                # cluster = clust.DataCluster(pos_clust, 0.01, ori_clust, 0.02)
+                cluster = clust.DataCluster(pos_clust, 0.03, ori_clust, 0.05)
                 clustered_goal_data, number, num_pos_clusters = cluster.clustering(opt_cluster)
-                clustered_reference = np.zeros([len(clustered_goal_data),1])+i
+                clustered_reference = np.zeros([len(clustered_goal_data), 1])+i
                 if num_pos_clusters == self.pos_clust:
                     self.pos_clust += 10
+                    self.pos_clust = np.min([len(self.raw_goal_data), self.pos_clust])
+                    pos_clust = np.min([self.pos_clust,len(opt_cluster)])
                 else:
                     enough = True
             self.clustered_goal_data = np.vstack([self.clustered_goal_data, clustered_goal_data])
@@ -253,17 +262,21 @@ class DataReader(object):
 
     def generate_output_goals(self, test_goals=None):
         #print test_goals
+
         if test_goals is None:
             goals = self.clustered_goal_data
             number = self.clustered_number
             reference = self.clustered_reference
         else:
             goals = test_goals
+            print 'The number of raw goals being fed into the output goal generator is: ', len(test_goals)
             number = []
             reference = []
-            for item in goals:
-               number.append(1)
-               reference.append(0)
+            number = np.ones([len(goals), 1])
+            reference = np.zeros(len(goals))
+            # for item in goals:
+            #    number.append([1])
+            #    reference.append(0)
                #number = np.ones(len(goals))
         self.goal_unique = [] 
         for num in xrange(len(number)):
@@ -277,7 +290,7 @@ class DataReader(object):
         self.goal_unique = np.array(self.goal_unique)
         #print 'Goal unique is \n',self.goal_unique
 
-        print 'Total number of goals as summed from the clustering: ',np.array(number).sum()
+        print 'Total number of goals as summed from the clustering: ', np.array(number).sum()
         print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible ' \
               'distance of head center (0.2m)' % (self.length, len(self.raw_goal_data), len(self.goal_unique))
         
@@ -385,11 +398,18 @@ class DataReader(object):
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
-        save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
+
         if self.task == 'shaving':
-            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', self.sub_num,
-                                              '_score_data.pkl']))
-        print 'There was no existing score data for this task. I therefore created a new file.'
+            print 'Using the alternative streaming method for saving data because it is a big data set.'
+            file = open(''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
+                                 '_score_data.pkl']), "wb")
+            pickler = Pickler(file, -1)
+            pickler.dump(score_sheet)
+            file.close()
+        else:
+            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
+        print 'There was no existing score data for this task. I therefore created a new file. And I was successful at ' \
+              'it! Yay!'
 #        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
 #            data1 = load_pickle(''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
 #            if  (np.array_equal(data1[:,0:2],self.score_sheet[:,0:2])):
@@ -763,12 +783,12 @@ class DataReader(object):
 
 if __name__ == "__main__":
     data_start = 0
-    data_finish = 5 #4000 #'end'
-    model = 'autobed' #options are: 'chair', 'bed', 'autobed'
+    data_finish = 'end' #'end'
+    model = 'chair' #options are: 'chair', 'bed', 'autobed'
     task = 'shaving'
-    subject = 'sub3_shaver'
-    pos_clust = 200
-    ori_clust = 5
+    subject = 'sub6_shaver'
+    pos_clust = 50
+    ori_clust = 2
     rospy.init_node(''.join(['data_reader_', subject, '_', str(data_start), '_', str(data_finish), '_',
                              str(int(time.time()))]))
     start_time = time.time()
@@ -778,8 +798,8 @@ if __name__ == "__main__":
     raw_data = runData.get_raw_data()
 
     ## To test clustering by using raw data sampled instead of clusters
-    #sampled_raw = runData.sample_raw_data(raw_data,1000)
-    #runData.generate_output_goals(test_goals=sampled_raw)
+    # sampled_raw = runData.sample_raw_data(raw_data,1000)
+    # runData.generate_output_goals(test_goals=sampled_raw)
     
     # To run using the clustering system
     runData.cluster_data()
@@ -788,9 +808,9 @@ if __name__ == "__main__":
     print 'Time to convert data into useful matrices: %fs'%(time.time()-start_time)
     print 'Now starting to generate the score. This will take a long time if there were many goal locations.'
     start_time = time.time()
-    #runData.pub_rviz()
+    runData.pub_rviz()
     #runData.plot_goals()
-    runData.generate_score(viz_rviz=True, visualize=False, plot=False)
+    # runData.generate_score(viz_rviz=True, visualize=False, plot=False)
     print 'Time to generate all scores: %fs' % (time.time()-start_time)
     #print 'Now trying to plot the data. This might take a while for lots of data; depends on amount of data in score sheet. ~60 seconds.'
     #start_time = time.time()

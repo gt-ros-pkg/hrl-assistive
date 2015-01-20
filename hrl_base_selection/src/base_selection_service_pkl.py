@@ -46,7 +46,7 @@ class BaseSelector(object):
                    'l_wrist_flex_joint',
                    'l_wrist_roll_joint']
 
-    def __init__(self, transform_listener=None, model='chair', testing=False):
+    def __init__(self, transform_listener=None, model='chair', mode='normal'):
         if transform_listener is None:
             self.listener = tf.TransformListener()
         else:
@@ -66,8 +66,8 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.testing = testing
-        if self.testing:
+        self.moded = mode
+        if self.mode == 'test':
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
                                        [   m.sin(angle),   m.cos(angle),          0.,       2.5],
@@ -84,6 +84,7 @@ class BaseSelector(object):
                                        [   m.sin(angle),   m.cos(angle),          0.,       0.],
                                        [             0.,             0.,          1.,       .5],
                                        [             0.,             0.,          0.,       1.]])
+
 
         start_time = time.time()
         print 'Loading data, please wait.'
@@ -253,6 +254,28 @@ class BaseSelector(object):
         self.bed_state_head_theta = data.data[0]
         self.bed_state_leg_theta = data.data[2]
 
+    def bed_pose_cb(self, data):
+        pos_temp = [data.pose.position.x,
+                    data.pose.position.y,
+                    data.pose.position.z]
+        ori_temp = [data.pose.orientation.x,
+                    data.pose.orientation.y,
+                    data.pose.orientation.z,
+                    data.pose.orientation.w]
+        self.pr2_B_head = createBMatrix(trans, rot)
+
+    def head_pose_cb(self, data):
+        pos_temp = [data.pose.position.x,
+                    data.pose.position.y,
+                    data.pose.position.z]
+        ori_temp = [data.pose.orientation.x,
+                    data.pose.orientation.y,
+                    data.pose.orientation.z,
+                    data.pose.orientation.w]
+        self.pr2_B_ar = createBMatrix(trans, rot)
+        self.model_B_ar = np.eye(4)
+
+
      # Function that determines a good base location to be able to reach the goal location.
     #def handle_select_base(self, req):#, task):
     def handle_select_base(self, req):
@@ -278,8 +301,8 @@ class BaseSelector(object):
         # self.pr2_B_head = createBMatrix(pos_temp, ori_temp)
         # #print 'head from input: \n', head
         if self.task == 'shaving_test':
-            self.testing = True
-        if not self.testing:
+            self.mode = 'test'
+        if self.mode == 'normal':
             try:
                 now = rospy.Time.now()
                 self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(15))
@@ -320,6 +343,10 @@ class BaseSelector(object):
                 rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
                               "head location:\r\n%s" % e)
                 return None
+
+        if self.mode == 'sim':
+            self.head_pose_sub = rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.head_pose_cb)
+            self.bed_pose_sub = rospy.Subscriber('/haptic_mpc/bed_pose', PoseStamped, self.bed_pose_cb)
 
         print 'The homogeneous transfrom from PR2 base link to head: \n', self.pr2_B_head
         z_origin = np.array([0, 0, 1])
@@ -777,7 +804,7 @@ class BaseSelector(object):
 if __name__ == "__main__":
     #model = 'bed'
     rospy.init_node('select_base_server')
-    selector = BaseSelector(testing=False)
+    selector = BaseSelector(mode='normal')
     rospy.spin()
 
 

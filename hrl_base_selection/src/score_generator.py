@@ -59,15 +59,15 @@ class ScoreGenerator(object):
          
         # The reference frame for the pr2 base link
         pr2_B_base_link = np.matrix([[       1.,        0.,   0.,         0.0],
-                                       [       0.,        1.,   0.,         0.0],
-                                       [       0.,        0.,   1.,         0.0],
-                                       [       0.,        0.,   0.,         1.0]])
+                                     [       0.,        1.,   0.,         0.0],
+                                     [       0.,        0.,   1.,         0.0],
+                                     [       0.,        0.,   0.,         1.0]])
 
         # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
         if self.model == 'chair':
             pr2_B_head = np.matrix([[       1.,        0.,   0.,         0.0],
                                     [       0.,        1.,   0.,         0.0],
-                                    [       0.,        0.,   1.,     1.33626],
+                                    [       0.,        0.,   1.,     1.30626],  # 1.33626
                                     [       0.,        0.,   0.,         1.0]])
         if self.model == 'bed':
             an = -m.pi/4
@@ -80,6 +80,11 @@ class ScoreGenerator(object):
                                     [  -2.12275759e-04,   9.99999964e-01,   1.62826039e-04,              0.], #0.34 #.42
                                     [   9.65835368e-01,   1.62826039e-04,   2.59156353e-01,  6.85000000e-01],
                                     [        0.,  0.,        0.,     1.]])
+            pr2_B_head = np.matrix([[  2.58031289e-01,  -1.01870021e-04,  -9.66136555e-01,  2.94000000e-01],
+                                    [  1.33691899e-05,   9.99999995e-01,  -1.01870021e-04,  1.45571068e-16],
+                                    [  9.66136561e-01,   1.33691899e-05,   2.58031289e-01,  6.82000000e-01],
+                                    [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,  1.00000000e+00]])
+
         for item in self.reference_names:
             if item == 'head':
                 self.pr2_B_reference.append(pr2_B_head)
@@ -96,7 +101,7 @@ class ScoreGenerator(object):
         # Centered at the very tip of the gripper.
         self.goal_B_gripper = np.matrix([[0.,  0.,   1.,   0.0],
                                          [0.,  1.,   0.,   0.0],
-                                         [-1.,  0.,   0.,   0.0],
+                                         [-1.,  0.,   0.,  0.0],
                                          [0.,  0.,   0.,   1.0]])
         
         self.selection_mat = []
@@ -149,6 +154,7 @@ class ScoreGenerator(object):
         self.setup_openrave()
 
     def receive_new_goals(self, goals):
+        self.goals = goals
         print 'Score generator received a list of desired goal locations. It contains ', len(goals), ' goal ' \
                                                                                                          'locations.'
         self.selection_mat = np.zeros(len(self.goals))
@@ -228,6 +234,8 @@ class ScoreGenerator(object):
             y_int = .1
             theta_int = m.pi/2
         if self.model == 'chair':
+            x_min = -1.5
+            x_max = 1.5+.01
             bedz_min = 0.
             bedtheta_min = 0.
             headx_min = 0.
@@ -277,7 +285,7 @@ class ScoreGenerator(object):
             this_reachable = []
             this_manipulable = []
             for t in xrange(len(score_stuff)):
-                if score_stuff[t, 9] < 0.80:
+                if score_stuff[t, 9] < 0.40:  # Only keeps base configurations with reachability score > .8
                     del_index.append(t)
             score_stuff = np.delete(score_stuff, del_index, 0)
             for item in score_stuff:
@@ -441,7 +449,7 @@ class ScoreGenerator(object):
         if not there_is_a_good_location:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return [[[0], [0], [0], [0], [0], [0]], [0, 0, 0]]
-        max_base_locations = np.min([3, self.number_goals+1])
+        max_base_locations = np.min([2, self.number_goals+1])
         print 'Time to manage data sets and eliminate base configurations with zero reach score: %fs'%(time.time()-start_time)
         start_time = time.time()
         print 'Now starting to look at multiple base location combinations. Checking ', max_base_locations-1, ' max ' \
@@ -514,8 +522,9 @@ class ScoreGenerator(object):
             this_btheta.append(self.scores[hx, hz][i][5])
         comparison = np.vstack([this_x, this_y, this_bz, this_btheta, this_theta, this_z])
         for i in xrange(len(item)-1):
-            diff = np.linalg.norm(comparison[0:4, i]-comparison[0:4, i+1])
-            if diff < .4:
+            diff_xy = np.linalg.norm(comparison[0:2, i]-comparison[0:2, i+1])
+            # diff_all = np.linalg.norm(comparison[0:4, i]-comparison[0:4, i+1])
+            if diff_xy < .4:
                 too_close = True
         if too_close and len(item) > 1:
             return None
@@ -654,14 +663,15 @@ class ScoreGenerator(object):
 
     def eval_init_config(self, init_config):
         reached = 0.
-        for i in xrange(len(init_config[0])):
+        total_length = len(self.goals)
+        for i in xrange(len(init_config[0][0])):
             delete_index = []
-            x = init_config[0][i]
-            y = init_config[1][i]
-            th = init_config[2][i]
-            z = init_config[3][i]
-            bz = init_config[4][i]
-            bth = init_config[5][i]
+            x = init_config[0][0][i]
+            y = init_config[0][1][i]
+            th = init_config[0][2][i]
+            z = init_config[0][3][i]
+            bz = init_config[0][4][i]
+            bth = init_config[0][5][i]
             origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
                                       [ m.sin(th),  m.cos(th),     0.,         y],
                                       [        0.,         0.,     1.,        0.],
@@ -673,7 +683,7 @@ class ScoreGenerator(object):
             if self.model == 'chair':
                 origin_B_head = np.matrix([[1.,        0.,   0.,         0.0],
                                            [0.,        1.,   0.,         0.0],
-                                           [0.,        0.,   1.,     1.33626],
+                                           [0.,        0.,   1.,     1.30626],  # 1.33626
                                            [0.,        0.,   0.,         1.0]])
                 self.selection_mat = np.zeros(len(self.goals))
                 self.goal_list = np.zeros([len(self.goals), 4, 4])
@@ -702,8 +712,10 @@ class ScoreGenerator(object):
                         if sol is not None:
                             reached += 1
                             delete_index.append(num)
+            # print 'goal list: ', self.goals
+            # print 'delete list: ', delete_index
             self.goals = np.delete(self.goals, delete_index, 0)
-        score = reached/len(self.goals)
+        score = reached/total_length
         print 'Score is (% of reached goals): ', score
         return score
 
@@ -767,11 +779,11 @@ class ScoreGenerator(object):
             '''
             # This is the old wheelchair model
             self.env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
-            self.originsubject_B_headfloor = np.matrix([[1., 0.,  0., .442603], #.45 #.438
-                                                        [0., 1.,  0., .384275], #0.34 #.42
+            self.originsubject_B_headfloor = np.matrix([[1., 0.,  0., .492603],  # .442603 #.45 #.438
+                                                        [0., 1.,  0., .384275],  # 0.34 #.42
                                                         [0., 0.,  1.,      0.],
                                                         [0., 0.,  0.,      1.]])
-            self.originsubject_B_originworld = copy.copy(self.originsubject_B_headfloor)
+            self.originsubject_B_originworld = copy.copy(self.originsubject_B_headfloor.I)
             
         elif self.model == 'bed':
             self.env.Load(''.join([pkg_path, '/models/head_bed.dae']))
