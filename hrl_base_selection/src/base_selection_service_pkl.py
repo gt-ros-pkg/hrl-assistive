@@ -254,21 +254,21 @@ class BaseSelector(object):
         self.bed_state_head_theta = data.data[0]
         self.bed_state_leg_theta = data.data[2]
 
-    def bed_pose_cb(self, data):
-        pos_temp = [data.pose.position.x,
+    def head_pose_cb(self, data):
+        trans = [data.pose.position.x,
                     data.pose.position.y,
                     data.pose.position.z]
-        ori_temp = [data.pose.orientation.x,
+        rot = [data.pose.orientation.x,
                     data.pose.orientation.y,
                     data.pose.orientation.z,
                     data.pose.orientation.w]
         self.pr2_B_head = createBMatrix(trans, rot)
 
-    def head_pose_cb(self, data):
-        pos_temp = [data.pose.position.x,
+    def bed_pose_cb(self, data):
+        trans = [data.pose.position.x,
                     data.pose.position.y,
                     data.pose.position.z]
-        ori_temp = [data.pose.orientation.x,
+        rot = [data.pose.orientation.x,
                     data.pose.orientation.y,
                     data.pose.orientation.z,
                     data.pose.orientation.w]
