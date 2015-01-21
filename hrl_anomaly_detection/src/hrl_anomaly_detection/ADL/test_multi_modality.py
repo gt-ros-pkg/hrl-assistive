@@ -182,22 +182,25 @@ def cutting(data):
         audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
         audio_data_cut = audio_data_l[i][a_idx_start:a_idx_end]
 
-        cut_coff = int(float(len(audio_time_cut))/float(len(ft_time_list[i])))
-        for j, sample in audio_data_cut:
 
-            audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
-            audio_amp = np.fft.fft(audio_data / float(self.MAX_INT)) 
+
+        
+        ## cut_coff = int(float(len(audio_time_cut))/float(len(ft_time_list[i])))
+        ## for j, sample in audio_data_cut:
+
+        ##     audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
+        ##     audio_amp = np.fft.fft(audio_data / float(self.MAX_INT)) 
             
-            downSample(sample)
+        ##     downSample(sample)
 
         
 
-        import scipy as scp
-        new_audio_data = scp.signal.resample(np.array(audio_data_cut).flatten(), 1000)
+        ## import scipy as scp
+        ## new_audio_data = scp.signal.resample(np.array(audio_data_cut).flatten(), 1000)
 
-        pp.figure()
-        pp.plot(new_audio_data)
-        pp.show()
+        ## pp.figure()
+        ## pp.plot(new_audio_data)
+        ## pp.show()
 
         
         ## # resample? down sample
@@ -220,35 +223,8 @@ def cutting(data):
         
         audio_time_list.append(audio_time_cut)
         audio_data_list.append(audio_data_cut)
+       
 
-
-
-        
-
-        ## time_range = np.arange(0.0, 1024.0, 1.0)/44100.0               
-                                
-        ## # find init
-        ## pp.figure()
-        ## pp.subplot(411)
-        ## pp.plot(ft_time_l[i][idx_start:idx_end], f[idx_start:idx_end])
-        ## ## pp.stem([idx_start, idx_end], [f[idx_start], f[idx_end]], 'k-*', bottom=0)
-        ## pp.title(names[i])
-        
-        ## pp.subplot(412)
-        ## for k in xrange(len(audio_data_cut)):            
-        ##     cur_time = time_range + audio_time_cut[0] + float(k)*1024.0/44100.0
-        ##     pp.plot(cur_time, audio_data_cut[k], 'b.')
-
-
-        ## pp.subplot(413)
-        ## pp.plot(audio_time_cut, np.mean((np.array(audio_data_cut)),axis=1))
-            
-        ## pp.subplot(414)
-        ## pp.plot(audio_time_cut, np.std((np.array(audio_data_cut)),axis=1))
-        ## ## pp.stem([idx_start, idx_end], [max(audio_data_l[i][idx_start]), max(audio_data_l[i][idx_end])], 'k-*', bottom=0)
-        ## ## pp.title(names[i])
-        ## ## pp.plot(audio_freq_l[i], audio_amp_l[i])
-        ## pp.show()
 
                
     # find minimum length data
@@ -309,6 +285,32 @@ def cutting(data):
         ## elif block is False: pp.plot(audio_data, 'r-')
 
 
+def plot_audio(time_list, data_list):
+    
+    time_range = np.arange(0.0, 1024.0, 1.0)/44100.0               
+
+    # find init
+    pp.figure()
+    pp.subplot(411)
+    pp.plot(ft_time_l[i][idx_start:idx_end], f[idx_start:idx_end])
+    ## pp.stem([idx_start, idx_end], [f[idx_start], f[idx_end]], 'k-*', bottom=0)
+    pp.title(names[i])
+
+    pp.subplot(412)
+    for k in xrange(len(audio_data_cut)):            
+        cur_time = time_range + audio_time_cut[0] + float(k)*1024.0/44100.0
+        pp.plot(cur_time, audio_data_cut[k], 'b.')
+
+
+    pp.subplot(413)
+    pp.plot(audio_time_cut, np.mean((np.array(audio_data_cut)),axis=1))
+
+    pp.subplot(414)
+    pp.plot(audio_time_cut, np.std((np.array(audio_data_cut)),axis=1))
+    ## pp.stem([idx_start, idx_end], [max(audio_data_l[i][idx_start]), max(audio_data_l[i][idx_end])], 'k-*', bottom=0)
+    ## pp.title(names[i])
+    ## pp.plot(audio_freq_l[i], audio_amp_l[i])
+    pp.show()
         
 
 if __name__ == '__main__':
