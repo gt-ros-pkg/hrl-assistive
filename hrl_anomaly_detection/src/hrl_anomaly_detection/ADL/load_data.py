@@ -86,8 +86,9 @@ if __name__ == '__main__':
         ## b, a = butter_bandpass(1,600, RATE, order=3)
         ## audio_data = signal.lfilter(b, a, audio_data)
         ## audio_data = signal.filtfilt(b,a,audio_data,padlen=2000)
-        
-        ## audio_amp = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
+
+        ## for chunk in audio_data
+        ##     audio_amp = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
         
         print np.array(audio_data).shape
 
@@ -105,13 +106,14 @@ if __name__ == '__main__':
         pp.plot(audio_data,'b.')
         
         pp.subplot(212)
-        ## xs = audio_freq[:audio_chunk/16]
-        ## ys = np.abs(audio_amp[:audio_chunk/16])
-        ## ys = np.multiply(20,np.log10(ys))        
-        ## pp.plot(xs,ys,'b')
-        ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
-        ## pp.plot(rms)
+        xs = audio_freq[:audio_chunk/16]
+        ys = np.abs(audio_amp[:][:audio_chunk/16])
+        ys = np.multiply(20,np.log10(ys))        
+        pp.plot(xs,ys,'b')
         pp.show()
+
+        ## pp.plot(rms)
+        ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
 
         ## import pyaudio        
         ## MAX_INT = 32768.0
