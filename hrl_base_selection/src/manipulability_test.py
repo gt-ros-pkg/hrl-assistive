@@ -29,19 +29,21 @@ from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
 
 import pickle
+import sPickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
 
 class Manipulability_Testing(object):
 
     def __init__(self, subj=1):
+        self.tf_listener = tf.TransformListener()
         self.subj = subj
         self.model = 'chair'
         self.visualize = False
         data_start = 0
-        data_finish = 4000  # 4000 #'end'
-        pos_clust = 50
-        ori_clust = 2
+        data_finish = 'end '  # 2000  # 4000 #'end'
+        pos_clust = 20  # 10
+        ori_clust = 2  # 2
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         print 'Loading scores.'
@@ -63,25 +65,49 @@ class Manipulability_Testing(object):
         subject = ''.join(['sub', str(self.subj), '_shaver'])
         print 'Reading in raw data from the task.'
         read_data = DataReader(subject=subject, data_start=data_start, data_finish=data_finish, model=model, task=task,
-                             pos_clust=pos_clust, ori_clust=ori_clust)
+                             pos_clust=pos_clust, ori_clust=ori_clust,tf_listener=self.tf_listener)
         raw_data = read_data.get_raw_data()
         print 'Raw data is ready!'
         goal_data = read_data.generate_output_goals(test_goals=raw_data)
-        print 'Setting up openrave'
-        self.setup_openrave()
+        # print 'Setting up openrave'
+        # self.setup_openrave()
         print 'I will now pick base locations to evaluate. They will share the same reachability score, but will have' \
-              'differing manipulability scores.'
+              ' differing manipulability scores.'
+        # print 'before sorting:'
+        # for i in xrange(10):
+        #     print self.scores[i]
+        self.scores = np.array(sorted(self.scores, key=lambda t: (t[1][1], t[1][2]), reverse=True))
+        # print 'after sorting:'
+        # for i in xrange(10):
+        #     print self.scores[i]
         best_base = self.scores[0]
         if best_base[1][1] == 0:
             print 'There are no base locations with reachable goals. Something went wrong in the scoring or the setup'
+        print 'The best base location is: \n', best_base
         comparison_bases = []
         max_num_of_comparisons = 3
-        count = 0
+        max_reach_count = 0
+        print 'best base manip score is:', best_base[1][2]
         for i in xrange(len(self.scores)):
             if self.scores[i, 1][1] == best_base[1][1] and self.scores[i, 1][1] > 0:
-                if self.scores[i, 1][2] <= best_base[1][2]*(max_num_of_comparisons-count)/(max_num_of_comparisons+1):
-                    comparison_bases.append(self.scores[i])
-                    count += 1
+                max_reach_count += 1
+                # print self.scores[i,1][2]
+        print 'The number of base configurations that can reach all clustered goals is: ',max_reach_count
+        count = 0
+        for i in np.arange(int(max_reach_count/max_num_of_comparisons), int(max_reach_count*3),
+                           int(max_reach_count/max_num_of_comparisons)):
+            print 'i: ',i
+            if self.scores[int(i), 1][1] <= best_base[1][1] and self.scores[int(i), 1][1] > 0:
+                comparison_bases.append(self.scores[i])
+
+                # print self.scores[i,1][2]
+                # if self.scores[i, 1][2] <= best_base[1][2]*(max_num_of_comparisons-count)/(max_num_of_comparisons+1):
+                # if self.scores[i, 1][2] <= best_base[1][2]*m.pow(.9, count):
+                    # comparison_bases.append(self.scores[i])
+                    # count += 1
+                    # if count > 5:
+                    #     break
+        # print 'number of base configurations that can reach all 20 clustered goal locations: ',count
         print 'The comparison base locations are:'
         for item in comparison_bases:
             print item
@@ -96,15 +122,19 @@ class Manipulability_Testing(object):
         myReferenceNames = reference_options
         myGoals = goal_data
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model)
+                                  goals=myGoals, model=self.model,tf_listener=self.tf_listener)
         selector.receive_new_goals(goal_data)
         best_base_score = selector.eval_init_config(best_base)
+        # selector.show_rviz()
         print 'The score for the best base was: ', best_base_score
         comparison_base_scores = []
         for item in comparison_bases:
+            selector.receive_new_goals(goal_data)
             comparison_base_scores.append(selector.eval_init_config(item))
+        print 'The best base location is: \n', best_base
+        print 'The score for the best base was: ', best_base_score
         for i in xrange(len(comparison_base_scores)):
-            print 'A comparison base score for base: ', comparison_bases[i]
+            print 'A comparison base score for base: \n', comparison_bases[i]
             print 'The score was: ', comparison_base_scores[i]
         return best_base_score, comparison_base_scores
 
@@ -116,12 +146,12 @@ class Manipulability_Testing(object):
         start_time = time.time()
         print 'Starting to convert data!'
         runData = DataReader(subject=subject, data_start=data_start, data_finish=data_finish, model=model, task=task,
-                             pos_clust=pos_clust, ori_clust=ori_clust)
+                             pos_clust=pos_clust, ori_clust=ori_clust, tf_listener=self.tf_listener)
         raw_data = runData.get_raw_data()
 
         ## To test clustering by using raw data sampled instead of clusters
-        #sampled_raw = runData.sample_raw_data(raw_data,1000)
-        #runData.generate_output_goals(test_goals=sampled_raw)
+        # sampled_raw = runData.sample_raw_data(raw_data, 100)
+        # runData.generate_output_goals(test_goals=sampled_raw)
 
         # To run using the clustering system
         runData.cluster_data()
@@ -130,8 +160,9 @@ class Manipulability_Testing(object):
         print 'Time to convert data into useful matrices: %fs'%(time.time()-start_time)
         print 'Now starting to generate the score. This will take a long time if there were many goal locations.'
         start_time = time.time()
-        #runData.pub_rviz()
-        #runData.plot_goals()
+        # runData.pub_rviz()
+        # rospy.spin()
+        # runData.plot_goals()
         runData.generate_score(viz_rviz=True, visualize=False, plot=False)
         print 'Time to generate all scores: %fs' % (time.time()-start_time)
         print 'Done generating the score sheet for this task and subject'
@@ -297,13 +328,33 @@ class Manipulability_Testing(object):
             print "Service call failed: %s"%e
 
     def load_task(self, task, model, subj):
-        return load_pickle(''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj),
-                                    '_score_data.pkl']))
+        file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data.pkl'])
+        return self.load_spickle(file_name)
+
+    ## read a pickle and return the object.
+    # @param filename - name of the pkl
+    # @return - object that had been pickled.
+    def load_spickle(self, filename):
+        try:
+            p = open(filename, 'rb')
+        except IOError:
+            print "hrl_lib.util: Pickle file cannot be opened."
+            return None
+        try:
+            picklelicious = pkl.load(p)
+        except ValueError:
+            print 'load_spickle failed once, trying again'
+            p.close()
+            p = open(filename, 'rb')
+            picklelicious = pkl.load(p)
+        p.close()
+        return picklelicious
 
 
 if __name__ == "__main__":
     rospy.init_node('manip_test')
-    myTest = Manipulability_Testing(subj=1)
+    myTest = Manipulability_Testing(subj=6)
+    rospy.spin()
     # myTest.initialize_test_conditions()
     # myTest.evaluate_task()
 
