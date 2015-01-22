@@ -6,6 +6,7 @@ import glob
 import socket
 import time
 import random 
+import scipy as scp
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -13,7 +14,7 @@ import rospy
 # Util
 import hrl_lib.util as ut
 import matplotlib.pyplot as pp
-import matplotlib as mpl
+import matplotlib as plt
 
 
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
@@ -125,27 +126,35 @@ def cutting(data):
         nZero = 5
         ft_zero = np.mean(f[:nZero]) * 1.5
 
-        idx_start = None
-        idx_end   = None        
-        for j in xrange(len(f)-nZero):
-            avg = np.mean(f[j:j+nZero])
+        if labels[i] == True:
+            idx_start = None
+            idx_end   = None        
+            for j in xrange(len(f)-nZero):
+                avg = np.mean(f[j:j+nZero])
+
+                if avg > ft_zero and idx_start is None:
+                    idx_start = j #i+nZero
+
+                if idx_start is not None:
+                    if avg < ft_zero and idx_end is None:
+                        idx_end = j+nZero*2
+
+            ft_time_cut  = np.array(ft_time_l[i][idx_start:idx_end])
+            ft_force_cut = ft_force_l[i][:,idx_start:idx_end]
+            ft_torque_cut= ft_torque_l[i][:,idx_start:idx_end]
+        else:
+            idx_start = 0
+            idx_end = len(ft_time_l[i])-1
+            ft_time_cut  = np.array(ft_time_l[i])
+            ft_force_cut = ft_force_l[i]
+            ft_torque_cut= ft_torque_l[i]
             
-            if avg > ft_zero and idx_start is None:
-                idx_start = j #i+nZero
-
-            if idx_start is not None:
-                if avg < ft_zero and idx_end is None:
-                    idx_end = j+nZero*2
-
-        ft_time_cut  = np.array(ft_time_l[i][idx_start:idx_end])
-        ft_force_cut = ft_force_l[i][:,idx_start:idx_end]
-        ft_torque_cut= ft_torque_l[i][:,idx_start:idx_end]
                     
         ft_time_list.append(ft_time_cut)
         ft_force_list.append(ft_force_cut)
         ft_torque_list.append(ft_torque_cut)
 
-        ft_force_mag_list.append(np.linalg.norm(ft_force_l[i][:,idx_start:idx_end], axis=0))
+        ## ft_force_mag_list.append(np.linalg.norm(ft_force_l[i][:,idx_start:idx_end], axis=0))
         
         ## # find init
         ## pp.figure()
@@ -186,8 +195,23 @@ def cutting(data):
         audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
         audio_data_cut = np.array(audio_data_l[i][a_idx_start:a_idx_end])
 
-        
-        plot_audio(audio_time_cut, audio_data_cut.flatten(), chunk=CHUNK, rate=RATE, title=names[i])
+
+        ## for j, data in enumerate(audio_data_cut):
+        ##     data = np.hstack([data, np.zeros(len(data))])
+        ##     F = np.fft.fft(data / float(MAX_INT))  #normalization & FFT          
+        ##     #F = np.fft.fft(data)  #normalization & FFT          
+        ##     print np.sum(np.abs(data))
+        ##     ## if np.sum(F) == 0.0:
+        ##     ##     print audio_data_cut[j-1], audio_data_cut[j], audio_data_cut[j+1]
+
+        ## sys.exit()
+
+
+        print "============================"
+        print audio_time_cut.shape
+        print audio_data_cut.shape
+        print "============================"
+        plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
         
         ## cut_coff = int(float(len(audio_time_cut))/float(len(ft_time_list[i])))
         ## for j, sample in audio_data_cut:
@@ -289,38 +313,102 @@ def cutting(data):
         ## elif block is False: pp.plot(audio_data, 'r-')
 
 
-def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0):
-    
-    ## time_range = np.arange(0.0, 1024.0, 1.0)/44100.0               
+def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
 
-    t = np.arange(0.0, len(data_list), 1.0)/rate
+    import librosa
+    from librosa import feature
 
+
+    data_seq = data_list.flatten()
+    t = np.arange(0.0, len(data_seq), 1.0)/rate    
     
     # find init
     pp.figure()
     ax1 =pp.subplot(411)
-    pp.plot(t, data_list)
+    pp.plot(t, data_seq)
     ## pp.plot(time_list, data_list)
     ## pp.stem([idx_start, idx_end], [f[idx_start], f[idx_end]], 'k-*', bottom=0)
     ax1.set_xlim([0, t[-1]])
     if title is not None: pp.title(title)
 
-    ax2 = pp.subplot(412)
-    Pxx, freqs, bins, im = pp.specgram(data_list, NFFT=chunk, Fs=rate, noverlap=0)
-    ax2.set_xlim([0, t[-1]])
-    ax2.set_ylim([0, 3000])
+
+    #========== Spectrogram =========================
+    from matplotlib.mlab import complex_spectrum, specgram, magnitude_spectrum
+    ax = pp.subplot(412)        
+    pp.specgram(data_seq, NFFT=chunk, Fs=rate)
+    ax.set_ylim([0,5000])
+    ax = pp.subplot(413)       
+    S = librosa.feature.melspectrogram(data_seq, sr=rate, n_fft=chunk, n_mels=30)
+    log_S = librosa.logamplitude(S, ref_power=np.max)
+    librosa.display.specshow(log_S, sr=rate, hop_length=8, x_axis='time', y_axis='mel')
+
+    ax = pp.subplot(414)            
+    f = np.arange(1, 10) * 1000
+    for i, data in enumerate(data_list):        
+
+        new_data = np.hstack([data/max_int, np.zeros(len(data))]) # zero padding
+        fft = np.fft.fft(new_data)  # FFT          
+        fftr=10*np.log10(abs(fft.real))[:len(new_data)/2]
+        freq=np.fft.fftfreq(np.arange(len(new_data)).shape[-1])[:len(new_data)/2]
+        
+        print fftr.shape, freq.shape
+
+        #count bin
+        
+        
+
+        
+    #========== RMS =========================
+    ## ax2 = pp.subplot(412)    
+    ## rms_list = []
+    ## for i, data in enumerate(data_list):
+    ##     rms_list.append(get_rms(data))
+    ## t = np.arange(0.0, len(data_list), 1.0)*chunk/rate    
+    ## pp.plot(t, rms_list) 
+
+    #========== MFCC =========================
+    ## ax = pp.subplot(412)
+    ## mfcc_feat = librosa.feature.mfcc(data_seq, n_mfcc=4, sr=rate, n_fft=1024)
+    ## ## mfcc_feat = feature.mfcc(data_list, sr=rate, n_mfcc=13, n_fft=1024, )
+    ## pp.imshow(mfcc_feat, origin='down')
+    ## ## ax.set_xlim([0, t[-1]*100])
+
+    ## ax = pp.subplot(413)
+    ## S = feature.melspectrogram(data_list, sr=rate, n_fft=1024, hop_length=1, n_mels=128)
+    ## log_S = librosa.logamplitude(S, ref_power=np.max)        
+    ## ## mfcc_feat = librosa.feature.mfcc(S=log_S, n_mfcc=20, sr=rate, n_fft=1024)
+    ## mfcc_feat = librosa.feature.delta(mfcc_feat)
+    ## pp.imshow(mfcc_feat, origin='down')
+
+    ## ax = pp.subplot(414)
+    ## mfcc_feat = librosa.feature.delta(mfcc_feat, order=2)
+    ## pp.imshow(mfcc_feat, origin='down')
+
     
+    
+    
+    ## librosa.display.specshow(log_S, sr=rate, hop_length=256, x_axis='time', y_axis='mel')
 
-    from features import mfcc, logfbank    
-    mfcc_feat = mfcc(data_list, rate, numcep=5, winlen=float(chunk)/rate, nfft=chunk, highfreq=3000)
-    ax3 = pp.subplot(413)
-    pp.imshow(mfcc_feat.T, origin='down')
-    ax3.set_xlim([0, t[-1]*100])
+    ## print log_S.shape
+    
+    ## pp.psd(data_list, NFFT=chunk, Fs=rate, noverlap=0)    
+    ## complex_spectrum(data_list, Fs=rate)
+    ## ax2.set_xlim([0, t[-1]])
+    ## ax2.set_ylim([0, 30000])
+    
+    
+    ## from features import mfcc, logfbank        
+    ## mfcc_feat = mfcc(data_list, rate, numcep=13)
+    ## ax4 = pp.subplot(414)
+    ## pp.imshow(mfcc_feat.T, origin='down')
+    ## ax4.set_xlim([0, t[-1]*100])
 
-    ax4 = pp.subplot(414)
-    fbank_feat = logfbank(data_list, rate, winlen=float(chunk)/rate, nfft=chunk, lowfreq=10, highfreq=3000)    
-    pp.imshow(fbank_feat.T, origin='down')
-    ax4.set_xlim([0, t[-1]*100])
+    ## ax4 = pp.subplot(414)
+    ## fbank_feat = logfbank(data_list, rate, winlen=float(chunk)/rate, nfft=chunk, lowfreq=10, highfreq=3000)    
+    ## pp.imshow(fbank_feat.T, origin='down')
+    ## ax4.set_xlim([0, t[-1]*100])
+
+
 
     
     ## pp.subplot(412)
@@ -337,33 +425,46 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0):
     ## pp.title(names[i])
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
     pp.show()
-        
+
+
+def get_rms(frame, MAX_INT=32768.0):
+    
+    count = len(frame)
+    return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
+
+    
 
 if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-    p.add_option('--renew', action='store_true', dest='renew',
+    p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
+                 default=False, help='Renew pickle files.')
+    opt, args = p.parse_args()
 
 
     data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     nMaxStep  = 36 # total step of data. It should be automatically assigned...
 
-    task = 2
+    task = 0
     if task == 1:
         prefix = 'microwave'
     elif task == 2:        
         prefix = 'down'
+    elif task == 3:        
+        prefix = 'lock'
     else:
         prefix = 'close'
     
     # Load data
     pkl_file = "./all_data.pkl"
-    if os.path.isfile(pkl_file) and False:
+    
+    if os.path.isfile(pkl_file) and opt.bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
-        d = load_data(data_path, prefix)
+        d = load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
         ut.save_pickle(d, pkl_file)
     
 
