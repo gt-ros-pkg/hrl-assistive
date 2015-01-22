@@ -137,9 +137,13 @@ def cutting(data):
                 if avg < ft_zero and idx_end is None:
                     idx_end = j+nZero*2
 
-        ft_time_list.append(ft_time_l[i][idx_start:idx_end])
-        ft_force_list.append(ft_force_l[i][:,idx_start:idx_end])
-        ft_torque_list.append(ft_torque_l[i][:,idx_start:idx_end])
+        ft_time_cut  = np.array(ft_time_l[i][idx_start:idx_end])
+        ft_force_cut = ft_force_l[i][:,idx_start:idx_end]
+        ft_torque_cut= ft_torque_l[i][:,idx_start:idx_end]
+                    
+        ft_time_list.append(ft_time_cut)
+        ft_force_list.append(ft_force_cut)
+        ft_torque_list.append(ft_torque_cut)
 
         ft_force_mag_list.append(np.linalg.norm(ft_force_l[i][:,idx_start:idx_end], axis=0))
         
@@ -158,12 +162,12 @@ def cutting(data):
         CHUNK   = 1024 #frame per buffer
         RATE    = 44100 #sampling rate
 
-        def downSample(fftx,ffty,degree=10):
-            x,y=[],[]
-            for i in range(len(ffty)/degree-1):
-                x.append(fftx[i*degree+degree/2])
-                y.append(sum(ffty[i*degreei+1)*degree])/degree)
-        return [x,y]
+        ## def downSample(fftx,ffty,degree=10):
+        ##     x,y=[],[]
+        ##     for i in range(len(ffty)/degree-1):
+        ##         x.append(fftx[i*degree+degree/2])
+        ##         y.append(sum(ffty[i*degreei+1)*degree])/degree)
+        ## return [x,y]
         #----------------------------------------------------
         
         start_time = ft_time_l[i][idx_start]
@@ -180,10 +184,10 @@ def cutting(data):
                 a_idx_end = j
 
         audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
-        audio_data_cut = audio_data_l[i][a_idx_start:a_idx_end]
+        audio_data_cut = np.array(audio_data_l[i][a_idx_start:a_idx_end])
 
-
-
+        
+        plot_audio(audio_time_cut, audio_data_cut.flatten(), chunk=CHUNK, rate=RATE, title=names[i])
         
         ## cut_coff = int(float(len(audio_time_cut))/float(len(ft_time_list[i])))
         ## for j, sample in audio_data_cut:
@@ -247,22 +251,22 @@ def cutting(data):
     print "'''''''''''''''''''''''''''''''''''''''''''"
     
 
-    ## Scaling or resample
-    import mlpy
+    ## ## Scaling or resample
+    ## import mlpy
     
-    dist, cost, path = mlpy.dtw_std(ft_force_list[ft_min_idx][2], ft_force_list[1][2], dist_only=False)
+    ## dist, cost, path = mlpy.dtw_std(ft_force_list[ft_min_idx][2], ft_force_list[1][2], dist_only=False)
 
-    print path
+    ## print path
 
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    fig = plt.figure(1)
-    ax = fig.add_subplot(111)
-    plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-    plot2 = plt.plot(path[0], path[1], 'w')
-    xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
-    ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
-    plt.show()
+    ## import matplotlib.pyplot as plt
+    ## import matplotlib.cm as cm
+    ## fig = plt.figure(1)
+    ## ax = fig.add_subplot(111)
+    ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
+    ## plot2 = plt.plot(path[0], path[1], 'w')
+    ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
+    ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
+    ## plt.show()
     
 
     ## pp.figure()
@@ -285,28 +289,50 @@ def cutting(data):
         ## elif block is False: pp.plot(audio_data, 'r-')
 
 
-def plot_audio(time_list, data_list):
+def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0):
     
-    time_range = np.arange(0.0, 1024.0, 1.0)/44100.0               
+    ## time_range = np.arange(0.0, 1024.0, 1.0)/44100.0               
 
+    t = np.arange(0.0, len(data_list), 1.0)/rate
+
+    
     # find init
     pp.figure()
-    pp.subplot(411)
-    pp.plot(ft_time_l[i][idx_start:idx_end], f[idx_start:idx_end])
+    ax1 =pp.subplot(411)
+    pp.plot(t, data_list)
+    ## pp.plot(time_list, data_list)
     ## pp.stem([idx_start, idx_end], [f[idx_start], f[idx_end]], 'k-*', bottom=0)
-    pp.title(names[i])
+    ax1.set_xlim([0, t[-1]])
+    if title is not None: pp.title(title)
 
-    pp.subplot(412)
-    for k in xrange(len(audio_data_cut)):            
-        cur_time = time_range + audio_time_cut[0] + float(k)*1024.0/44100.0
-        pp.plot(cur_time, audio_data_cut[k], 'b.')
+    ax2 = pp.subplot(412)
+    Pxx, freqs, bins, im = pp.specgram(data_list, NFFT=chunk, Fs=rate, noverlap=0)
+    ax2.set_xlim([0, t[-1]])
+    ax2.set_ylim([0, 3000])
+    
 
+    from features import mfcc, logfbank    
+    mfcc_feat = mfcc(data_list, rate, numcep=5, winlen=float(chunk)/rate, nfft=chunk, highfreq=3000)
+    ax3 = pp.subplot(413)
+    pp.imshow(mfcc_feat.T, origin='down')
+    ax3.set_xlim([0, t[-1]*100])
 
-    pp.subplot(413)
-    pp.plot(audio_time_cut, np.mean((np.array(audio_data_cut)),axis=1))
+    ax4 = pp.subplot(414)
+    fbank_feat = logfbank(data_list, rate, winlen=float(chunk)/rate, nfft=chunk, lowfreq=10, highfreq=3000)    
+    pp.imshow(fbank_feat.T, origin='down')
+    ax4.set_xlim([0, t[-1]*100])
 
-    pp.subplot(414)
-    pp.plot(audio_time_cut, np.std((np.array(audio_data_cut)),axis=1))
+    
+    ## pp.subplot(412)
+    ## for k in xrange(len(audio_data_cut)):            
+    ##     cur_time = time_range + audio_time_cut[0] + float(k)*1024.0/44100.0
+    ##     pp.plot(cur_time, audio_data_cut[k], 'b.')
+
+    ## pp.subplot(413)
+    ## pp.plot(audio_time_cut, np.mean((np.array(audio_data_cut)),axis=1))
+
+    ## pp.subplot(414)
+    ## pp.plot(audio_time_cut, np.std((np.array(audio_data_cut)),axis=1))
     ## pp.stem([idx_start, idx_end], [max(audio_data_l[i][idx_start]), max(audio_data_l[i][idx_end])], 'k-*', bottom=0)
     ## pp.title(names[i])
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
@@ -327,12 +353,14 @@ if __name__ == '__main__':
     task = 2
     if task == 1:
         prefix = 'microwave'
+    elif task == 2:        
+        prefix = 'down'
     else:
         prefix = 'close'
     
     # Load data
     pkl_file = "./all_data.pkl"
-    if os.path.isfile(pkl_file):
+    if os.path.isfile(pkl_file) and False:
         d = ut.load_pickle(pkl_file)
     else:
         d = load_data(data_path, prefix)
