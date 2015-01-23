@@ -7,6 +7,7 @@ import socket
 import time
 import random 
 import scipy as scp
+from scipy import interpolate       
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -92,13 +93,13 @@ def load_data(data_path, prefix, normal_only=True):
     return d
 
 
-def cutting(data):
+def cutting(d):
 
-    labels = data['labels']
-    names = data['names']
-    ft_time_l   = data['ft_time']
-    ft_force_l  = data['ft_force_raw']
-    ft_torque_l = data['ft_torque_raw']
+    labels      = d['labels']
+    names       = d['names']
+    ft_time_l   = d['ft_time']
+    ft_force_l  = d['ft_force_raw']
+    ft_torque_l = d['ft_torque_raw']
 
     audio_time_l = d['audio_time']
     audio_data_l = d['audio_data']
@@ -115,10 +116,17 @@ def cutting(data):
     audio_amp_list = []
     audio_freq_list = []
     audio_chunk_list = []
+    audio_rms_list = []
 
-    
+    hmm_input_l = []    
 
-    # Cut force data
+    MAX_INT = 32768.0
+    CHUNK   = 1024 #frame per buffer
+    RATE    = 44100 #sampling rate
+
+
+    # Minimum Length of force data
+    length_l = []    
     for i, force in enumerate(ft_force_l):
 
         f = np.linalg.norm(force,axis=0)
@@ -139,6 +147,30 @@ def cutting(data):
                     if avg < ft_zero and idx_end is None:
                         idx_end = j+nZero*2
 
+            length_l.append(idx_end-idx_start)
+    min_idx = np.argmin(length_l)
+    min_len = np.min(length_l)
+            
+
+    # Cut force data
+    for i, force in enumerate(ft_force_l):
+
+        f = np.linalg.norm(force,axis=0)
+                
+        nZero = 5
+        ft_zero = np.mean(f[:nZero]) * 1.5
+
+        if labels[i] == True:
+            idx_start = None
+            idx_end   = None        
+            for j in xrange(len(f)-nZero):
+                avg = np.mean(f[j:j+nZero])
+
+                if avg > ft_zero and idx_start is None:
+                    idx_start = j #i+nZero
+
+            idx_end = idx_start + min_len
+
             ft_time_cut  = np.array(ft_time_l[i][idx_start:idx_end])
             ft_force_cut = ft_force_l[i][:,idx_start:idx_end]
             ft_torque_cut= ft_torque_l[i][:,idx_start:idx_end]
@@ -148,14 +180,9 @@ def cutting(data):
             ft_time_cut  = np.array(ft_time_l[i])
             ft_force_cut = ft_force_l[i]
             ft_torque_cut= ft_torque_l[i]
-            
-                    
-        ft_time_list.append(ft_time_cut)
-        ft_force_list.append(ft_force_cut)
-        ft_torque_list.append(ft_torque_cut)
 
-        ## ft_force_mag_list.append(np.linalg.norm(ft_force_l[i][:,idx_start:idx_end], axis=0))
-        
+        ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
+                            
         ## # find init
         ## pp.figure()
         ## pp.subplot(211)
@@ -166,17 +193,6 @@ def cutting(data):
         ## pp.plot(force[2,:])
         ## pp.show()
         
-        #----------------------------------------------------
-        MAX_INT = 32768.0
-        CHUNK   = 1024 #frame per buffer
-        RATE    = 44100 #sampling rate
-
-        ## def downSample(fftx,ffty,degree=10):
-        ##     x,y=[],[]
-        ##     for i in range(len(ffty)/degree-1):
-        ##         x.append(fftx[i*degree+degree/2])
-        ##         y.append(sum(ffty[i*degreei+1)*degree])/degree)
-        ## return [x,y]
         #----------------------------------------------------
         
         start_time = ft_time_l[i][idx_start]
@@ -195,122 +211,41 @@ def cutting(data):
         audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
         audio_data_cut = np.array(audio_data_l[i][a_idx_start:a_idx_end])
 
+        # normalized rms
+        audio_rms_cut = np.zeros(len(audio_time_cut))
+        for j, data in enumerate(audio_data_cut):
+            audio_rms_cut[j] = get_rms(data, MAX_INT)
 
-        ## for j, data in enumerate(audio_data_cut):
-        ##     data = np.hstack([data, np.zeros(len(data))])
-        ##     F = np.fft.fft(data / float(MAX_INT))  #normalization & FFT          
-        ##     #F = np.fft.fft(data)  #normalization & FFT          
-        ##     print np.sum(np.abs(data))
-        ##     ## if np.sum(F) == 0.0:
-        ##     ##     print audio_data_cut[j-1], audio_data_cut[j], audio_data_cut[j+1]
+        x   = np.linspace(0.0, 1.0, len(ft_time_cut))
+        tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
 
-        ## sys.exit()
-
-
-        print "============================"
-        print audio_time_cut.shape
-        print audio_data_cut.shape
-        print "============================"
-        plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
+        xnew = np.linspace(0.0, 1.0, len(audio_rms_cut))
+        ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
         
-        ## cut_coff = int(float(len(audio_time_cut))/float(len(ft_time_list[i])))
-        ## for j, sample in audio_data_cut:
-
-        ##     audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
-        ##     audio_amp = np.fft.fft(audio_data / float(self.MAX_INT)) 
-            
-        ##     downSample(sample)
-
-        
-
-        ## import scipy as scp
-        ## new_audio_data = scp.signal.resample(np.array(audio_data_cut).flatten(), 1000)
-
+        ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
         ## pp.figure()
-        ## pp.plot(new_audio_data)
+        ## pp.subplot(211)
+        ## pp.plot(ft_force_mag_cut)
+        ## pp.subplot(212)
+        ## pp.plot(audio_rms_cut)
         ## pp.show()
 
-        
-        ## # resample? down sample
-        ## for j in xrange(len(ft_time_list[i])-1):
-        ##     start_time = ft_time_list[i][j]
-        ##     end_time   = ft_time_list[i][j+1]
+        ft_force_mag_list.append(ft_force_mag_cut)                
+        audio_rms_list.append(audio_rms_cut)
 
-        ##     audio_data_set = []            
-        ##     for k, t in enumerate(audio_time):
-        ##         if t >= start_time and t < end_time:                                    
-        ##             audio_data_set.
-
-        
-        ## print np.array(ft_time_list).shape
-        ## print len(audio_time_cut)
-        ## sys.exit()
-
-
-
-        
-        audio_time_list.append(audio_time_cut)
-        audio_data_list.append(audio_data_cut)
+        print ft_force_mag_cut.shape,audio_rms_cut.shape 
+        print np.vstack([ft_force_mag_list, audio_rms_cut]).shape
+        ## print "================"
+        hmm_input_l.append([np.vstack([ft_force_mag_list, audio_rms_cut])])
        
+    d = {}
+    d['ft_force_mag_l'] = ft_force_mag_list 
+    d['audio_rms_l']    = audio_rms_list 
+    d['hmm_input_l']    = hmm_input_l 
 
-
-               
-    # find minimum length data
-    ft_min_idx = -1        
-    for i, ft_time in enumerate(ft_time_list):
-        
-        if labels[i] is False:
-            print i, len(ft_time_list[i])
-            if ft_min_idx == -1: 
-                ft_min_idx = i
-            else:
-                if len(ft_time_list[ft_min_idx]) > len(ft_time_list[i]):
-                    ft_min_idx = i
-            
-    print "'''''''''''''''''''''''''''''''''''''''''''"
-    print "Minimum data index is ", ft_min_idx
-    print "Minimum data length is ", len(ft_time_list[ft_min_idx])
-    ## ft_data_min = int(ft_data_min/10.0)*10
-    ## print "We manually fix the length into ", ft_data_min
-    print "'''''''''''''''''''''''''''''''''''''''''''"
+    return d
     
 
-    ## ## Scaling or resample
-    ## import mlpy
-    
-    ## dist, cost, path = mlpy.dtw_std(ft_force_list[ft_min_idx][2], ft_force_list[1][2], dist_only=False)
-
-    ## print path
-
-    ## import matplotlib.pyplot as plt
-    ## import matplotlib.cm as cm
-    ## fig = plt.figure(1)
-    ## ax = fig.add_subplot(111)
-    ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-    ## plot2 = plt.plot(path[0], path[1], 'w')
-    ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
-    ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
-    ## plt.show()
-    
-
-    ## pp.figure()
-    ## pp.plot(ft_force_list[0][2,:],'r')
-    ## pp.plot(ft_force_mag_list[0])
-    ## pp.show()
-    
-            
-        
-        
-        
-        ## if block: 
-        ##     if '_b3' in pkl:
-        ##         pp.plot(force[0], 'b-')            
-        ## elif block is False: pp.plot(force[0], 'r-')
-
-        ## if block: 
-        ##     if '_b3' in pkl:
-        ##         pp.plot(audio_data, 'b-')            
-        ## elif block is False: pp.plot(audio_data, 'r-')
 
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
@@ -341,30 +276,46 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     S = librosa.feature.melspectrogram(data_seq, sr=rate, n_fft=chunk, n_mels=30)
     log_S = librosa.logamplitude(S, ref_power=np.max)
     librosa.display.specshow(log_S, sr=rate, hop_length=8, x_axis='time', y_axis='mel')
+    ## ax.set_ylim([0,5000])
 
-    ax = pp.subplot(414)            
-    f = np.arange(1, 10) * 1000
-    for i, data in enumerate(data_list):        
+    ## ax = pp.subplot(414)            
+    ## bands = np.arange(0, 10) * 100
+    ## hists = []
+    ## for i, data in enumerate(data_list):        
 
-        new_data = np.hstack([data/max_int, np.zeros(len(data))]) # zero padding
-        fft = np.fft.fft(new_data)  # FFT          
-        fftr=10*np.log10(abs(fft.real))[:len(new_data)/2]
-        freq=np.fft.fftfreq(np.arange(len(new_data)).shape[-1])[:len(new_data)/2]
+
+    ##     S = librosa.feature.melspectrogram(data, sr=rate, n_fft=chunk, n_mels=30, fmin=100, fmax=5000)
+    ##     log_S = librosa.logamplitude(S, ref_power=np.max)
         
-        print fftr.shape, freq.shape
+    ##     ## new_data = np.hstack([data/max_int, np.zeros(len(data))]) # zero padding
+    ##     ## fft = np.fft.fft(new_data)  # FFT          
+    ##     ## fftr=10*np.log10(abs(fft.real))[:len(new_data)/2]
+    ##     ## freq=np.fft.fftfreq(np.arange(len(new_data)).shape[-1])[:len(new_data)/2]
+        
+    ##     ## ## print fftr.shape, freq.shape
+    ##     ## hists.append(S[:,1])
+    ##     if hists == []:
+    ##         hists = log_S[:,1:2]
+    ##     else:
+    ##         hists = np.hstack([hists, log_S[:,1:2]])
+    ##     print log_S.shape, S.shape, hists.shape
 
-        #count bin
+    ##     ## #count bin
+    ##     ## hist, hin_edges = np.histogram(freq, weights=fftr, bins=bands, density=True)
+    ##     ## hists.append(hist)
+        
+    ## pp.imshow(hists, origin='down')
         
         
 
         
     #========== RMS =========================
-    ## ax2 = pp.subplot(412)    
-    ## rms_list = []
-    ## for i, data in enumerate(data_list):
-    ##     rms_list.append(get_rms(data))
-    ## t = np.arange(0.0, len(data_list), 1.0)*chunk/rate    
-    ## pp.plot(t, rms_list) 
+    ax2 = pp.subplot(414)    
+    rms_list = []
+    for i, data in enumerate(data_list):
+        rms_list.append(get_rms(data))
+    t = np.arange(0.0, len(data_list), 1.0)*chunk/rate    
+    pp.plot(t, rms_list) 
 
     #========== MFCC =========================
     ## ax = pp.subplot(412)
@@ -446,7 +397,6 @@ if __name__ == '__main__':
 
 
     data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
-    nMaxStep  = 36 # total step of data. It should be automatically assigned...
 
     task = 0
     if task == 1:
@@ -459,22 +409,24 @@ if __name__ == '__main__':
         prefix = 'close'
     
     # Load data
-    pkl_file = "./all_data.pkl"
+    pkl_file = "./"+prefix+"_data.pkl"
     
     if os.path.isfile(pkl_file) and opt.bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
         d = load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
+        d = cutting(d)
         ut.save_pickle(d, pkl_file)
-    
 
-    # Cutting
-    d = cutting(d)
-    ## scaling(d)
-    
-
+    aXData   = d['hmm_input_l']
+    nState   = 30 
+    trans_type= "left_right"
+    ## nMaxStep = 36 # total step of data. It should be automatically assigned...
+            
     # Learning
-    
+    from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
+    lhm = learning_hmm_multi(aXData=aXData, nState=nState, trans_type=trans_type)
+
 
 
     # TEST

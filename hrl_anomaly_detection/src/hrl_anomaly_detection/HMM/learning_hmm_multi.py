@@ -38,9 +38,9 @@ from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 
-class learning_hmm(learning_base):
-    def __init__(self, aXData, nState, nMaxStep, nFutureStep=5, nCurrentStep=10, \
-                 step_size_list=None, trans_type="left_right"):
+class learning_hmm_multi(learning_base):
+    def __init__(self, aXData, nState, nFutureStep=5, nCurrentStep=10, \
+                 trans_type="left_right"):
 
         learning_base.__init__(self, aXData, trans_type)
 
@@ -48,12 +48,9 @@ class learning_hmm(learning_base):
         self.nState= nState # the number of hidden states
         self.nFutureStep = nFutureStep
         self.nCurrentStep = nCurrentStep
-        self.step_size_list = step_size_list
         
         ## Un-tunable parameters
-        ## self.trans_type = trans_type #"left_right" #"full"
-        self.nMaxStep = nMaxStep  # the length of profile
-        self.obsrv_range = [np.min(aXData), np.max(aXData)]
+        self.trans_type = trans_type #"left_right" #"full"
         self.A = None # transition matrix        
         self.B = None # emission matrix        
                 
