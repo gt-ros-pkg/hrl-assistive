@@ -8,6 +8,7 @@ import time
 import random 
 import scipy as scp
 from scipy import interpolate       
+import mlpy
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -15,7 +16,8 @@ import rospy
 # Util
 import hrl_lib.util as ut
 import matplotlib.pyplot as pp
-import matplotlib as plt
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
@@ -124,119 +126,177 @@ def cutting(d):
     CHUNK   = 1024 #frame per buffer
     RATE    = 44100 #sampling rate
 
+    
+    #------------------------------------------
+    # Get reference data
+    for i, force in enumerate(ft_force_l):
+        if labels[i] is False: continue
+        else: 
+            ref_idx = i
+            break
+        
+    ft_time   = ft_time_l[ref_idx]
+    ft_force  = ft_force_l[ref_idx]
+    ft_torque = ft_torque_l[ref_idx]        
+    ft_force_mag = np.linalg.norm(ft_force,axis=0)
+                
+    nZero = 5
+    ft_zero = np.mean(ft_force_mag[:nZero]) * 1.5
 
-    # Minimum Length of force data
-    length_l = []    
+    idx_start = None
+    idx_end   = None        
+    for j in xrange(len(ft_force_mag)-nZero):
+        avg = np.mean(ft_force_mag[j:j+nZero])
+
+        if avg > ft_zero and idx_start is None:
+            idx_start = j #i+nZero
+        if idx_start is not None:
+            if avg < ft_zero and idx_end is None:
+                idx_end = j+nZero
+
+    ft_time_cut      = np.array(ft_time[idx_start:idx_end])
+    ft_force_cut     = ft_force[:,idx_start:idx_end]
+    ft_torque_cut    = ft_torque[:,idx_start:idx_end]
+    ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
+
+    #----------------------------------------------------
+    start_time = ft_time[idx_start]
+    end_time   = ft_time[idx_end]
+    audio_time = audio_time_l[ref_idx]
+    audio_data = audio_data_l[ref_idx]
+
+    a_idx_start = None
+    a_idx_end   = None                
+    for j, t in enumerate(audio_time):
+
+        if t > start_time and a_idx_start is None:
+            a_idx_start = j
+        if t > end_time and a_idx_end is None:
+            a_idx_end = j
+
+    audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
+    audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end])
+
+    # normalized rms
+    audio_rms_ref = np.zeros(len(audio_time_cut))
+    for j, data in enumerate(audio_data_cut):
+        audio_rms_ref[j] = get_rms(data, MAX_INT)
+
+    x   = np.linspace(0.0, 1.0, len(ft_time_cut))
+    tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
+
+    xnew = np.linspace(0.0, 1.0, len(audio_rms_ref))
+    ft_force_mag_ref = interpolate.splev(xnew, tck, der=0)
+
+    print "==================================="
+    print ft_force_mag_ref.shape,audio_rms_ref.shape 
+    print "==================================="
+
+       
+    # DTW wrt the reference
     for i, force in enumerate(ft_force_l):
 
-        f = np.linalg.norm(force,axis=0)
-                
-        nZero = 5
-        ft_zero = np.mean(f[:nZero]) * 1.5
+        ## if ref_idx == i:
+        ##     print "its reference"
+        ##     hmm_input_l.append(np.vstack([ft_force_mag_ref, audio_rms_ref]))            
+        ##     continue
 
-        if labels[i] == True:
-            idx_start = None
-            idx_end   = None        
-            for j in xrange(len(f)-nZero):
-                avg = np.mean(f[j:j+nZero])
-
-                if avg > ft_zero and idx_start is None:
-                    idx_start = j #i+nZero
-
-                if idx_start is not None:
-                    if avg < ft_zero and idx_end is None:
-                        idx_end = j+nZero*2
-
-            length_l.append(idx_end-idx_start)
-    min_idx = np.argmin(length_l)
-    min_len = np.min(length_l)
-            
-
-    # Cut force data
-    for i, force in enumerate(ft_force_l):
-
-        f = np.linalg.norm(force,axis=0)
-                
-        nZero = 5
-        ft_zero = np.mean(f[:nZero]) * 1.5
-
-        if labels[i] == True:
-            idx_start = None
-            idx_end   = None        
-            for j in xrange(len(f)-nZero):
-                avg = np.mean(f[j:j+nZero])
-
-                if avg > ft_zero and idx_start is None:
-                    idx_start = j #i+nZero
-
-            idx_end = idx_start + min_len
-
-            ft_time_cut  = np.array(ft_time_l[i][idx_start:idx_end])
-            ft_force_cut = ft_force_l[i][:,idx_start:idx_end]
-            ft_torque_cut= ft_torque_l[i][:,idx_start:idx_end]
-        else:
-            idx_start = 0
-            idx_end = len(ft_time_l[i])-1
-            ft_time_cut  = np.array(ft_time_l[i])
-            ft_force_cut = ft_force_l[i]
-            ft_torque_cut= ft_torque_l[i]
-
+        ft_time   = ft_time_l[i]
+        ft_force  = ft_force_l[i]
+        ft_torque = ft_torque_l[i]        
+        ft_force_mag = np.linalg.norm(ft_force,axis=0)
+        
+        start_time = ft_time[0]
+        end_time   = ft_time[-1]
+        ft_time_cut      = np.array(ft_time)
+        ft_force_cut     = ft_force
+        ft_torque_cut    = ft_torque
         ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
-                            
-        ## # find init
-        ## pp.figure()
-        ## pp.subplot(211)
-        ## pp.plot(f)
-        ## pp.stem([idx_start, idx_end], [f[idx_start], f[idx_end]], 'k-*', bottom=0)
-        ## pp.title(names[i])
-        ## pp.subplot(212)
-        ## pp.plot(force[2,:])
-        ## pp.show()
         
-        #----------------------------------------------------
-        
-        start_time = ft_time_l[i][idx_start]
-        end_time   = ft_time_l[i][idx_end]
         audio_time = audio_time_l[i]
-
+        audio_data = audio_data_l[i]
         a_idx_start = None
         a_idx_end   = None                
         for j, t in enumerate(audio_time):
-            
             if t > start_time and a_idx_start is None:
                 a_idx_start = j
             if t > end_time and a_idx_end is None:
                 a_idx_end = j
 
-        audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
-        audio_data_cut = np.array(audio_data_l[i][a_idx_start:a_idx_end])
+        audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end+1])
+        audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end+1])              
 
+        audio_time_cut = audio_time
+        audio_data_cut = audio_data        
+        
         # normalized rms
         audio_rms_cut = np.zeros(len(audio_time_cut))
         for j, data in enumerate(audio_data_cut):
             audio_rms_cut[j] = get_rms(data, MAX_INT)
 
+
+        print start_time, end_time
+        print audio_time[a_idx_start], audio_time[a_idx_end]
+        print ft_time_cut.shape, ft_force_mag_cut.shape
+        print len(audio_time_cut), audio_rms_cut.shape
+        
+        pp.figure(1)
+        ax = pp.subplot(211)
+        pp.plot(ft_time_cut, ft_force_mag_cut)
+        ax.set_xlim([0, 6.0])
+        ax = pp.subplot(212)
+        pp.plot(audio_time_cut, audio_rms_cut)
+        ax.set_xlim([0, 6.0])
+        pp.show()
+        
         x   = np.linspace(0.0, 1.0, len(ft_time_cut))
         tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
 
         xnew = np.linspace(0.0, 1.0, len(audio_rms_cut))
         ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
+
+        # Compare with reference
+        dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)
+        ## fig = plt.figure(1)
+        ## ax = fig.add_subplot(111)
+        ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
+        ## plot2 = plt.plot(path[0], path[1], 'w')
+        ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
+        ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
+        ## plt.show()
+
+
+        ft_force_mag_cut_dtw = []        
+        audio_rms_cut_dtw    = []        
+        new_idx = []
+        for idx in xrange(len(path[0])-1):
+            if path[0][idx] == path[0][idx+1]: continue
+            
+            new_idx.append(path[1][idx])
+            ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][idx]])
+            audio_rms_cut_dtw.append(audio_rms_cut[path[1][idx]])
+        ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][-1]])
+        audio_rms_cut_dtw.append(audio_rms_cut[path[1][-1]])
+
+
+            
+        ## dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut_dtw, dist_only=False)
+        ## fig = plt.figure(1)
+        ## ax = fig.add_subplot(111)
+        ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
+        ## plot2 = plt.plot(path[0], path[1], 'w')
+        ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
+        ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
+        ## plt.show()
+                    
+        print "==================================="
+        print len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
+        print "==================================="
+
         
-        ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
-        ## pp.figure()
-        ## pp.subplot(211)
-        ## pp.plot(ft_force_mag_cut)
-        ## pp.subplot(212)
-        ## pp.plot(audio_rms_cut)
-        ## pp.show()
-
-        ft_force_mag_list.append(ft_force_mag_cut)                
-        audio_rms_list.append(audio_rms_cut)
-
-        print ft_force_mag_cut.shape,audio_rms_cut.shape 
-        print np.vstack([ft_force_mag_list, audio_rms_cut]).shape
-        ## print "================"
-        hmm_input_l.append([np.vstack([ft_force_mag_list, audio_rms_cut])])
+        ft_force_mag_list.append(ft_force_mag_cut_dtw)                
+        audio_rms_list.append(audio_rms_cut_dtw)
+        hmm_input_l.append(np.vstack([ft_force_mag_cut_dtw, audio_rms_cut_dtw]))
        
     d = {}
     d['ft_force_mag_l'] = ft_force_mag_list 
@@ -245,7 +305,6 @@ def cutting(d):
 
     return d
     
-
 
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
@@ -377,6 +436,30 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
     pp.show()
 
+def plot_all(data):
+
+        ## # find init
+        ## pp.figure()
+        ## pp.subplot(211)
+        ## pp.plot(f)
+        ## pp.stem([idx_start, idx_end], [f[idx_start], f[idx_end]], 'k-*', bottom=0)
+        ## pp.title(names[i])
+        ## pp.subplot(212)
+        ## pp.plot(force[2,:])
+        ## pp.show()
+        
+        ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
+    pp.figure()
+    pp.subplot(211)
+    for i, d in enumerate(data):
+        pp.plot(d[0])
+        
+    pp.subplot(212)
+    for i, d in enumerate(data):
+        pp.plot(d[1])
+    pp.show()
+    
+    
 
 def get_rms(frame, MAX_INT=32768.0):
     
@@ -415,9 +498,12 @@ if __name__ == '__main__':
         d = ut.load_pickle(pkl_file)
     else:
         d = load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
-        d = cutting(d)
+        d = cutting(d)        
         ut.save_pickle(d, pkl_file)
 
+    plot_all(d['hmm_input_l'])
+
+        
     aXData   = d['hmm_input_l']
     nState   = 30 
     trans_type= "left_right"
