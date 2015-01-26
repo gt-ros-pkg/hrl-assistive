@@ -20,7 +20,7 @@ from sklearn.metrics import classification_report
 from sklearn.externals import six
 
 class learning_base():
-    def __init__(self, aXData, trans_type="left_right"):
+    def __init__(self, aXData=None, trans_type="left_right"):
 
         # Common parameters
         self.aXData = aXData

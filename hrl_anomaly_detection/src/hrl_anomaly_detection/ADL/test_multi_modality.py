@@ -168,9 +168,9 @@ def cutting(d):
     a_idx_start = None
     a_idx_end   = None                
     for j, t in enumerate(audio_time):
-
         if t > start_time and a_idx_start is None:
-            a_idx_start = j
+            if (audio_time[j+1] - audio_time[j]) >  float(CHUNK)/float(RATE) :
+                a_idx_start = j
         if t > end_time and a_idx_end is None:
             a_idx_end = j
 
@@ -192,20 +192,22 @@ def cutting(d):
     print ft_force_mag_ref.shape,audio_rms_ref.shape 
     print "==================================="
 
-       
+    
     # DTW wrt the reference
     for i, force in enumerate(ft_force_l):
 
-        ## if ref_idx == i:
-        ##     print "its reference"
-        ##     hmm_input_l.append(np.vstack([ft_force_mag_ref, audio_rms_ref]))            
-        ##     continue
+        if ref_idx == i:
+            print "its reference"
+            ft_force_mag_list.append(ft_force_mag_ref)                
+            audio_rms_list.append(audio_rms_ref)
+            hmm_input_l.append(np.vstack([ft_force_mag_ref, audio_rms_ref]))            
+            continue
 
         ft_time   = ft_time_l[i]
         ft_force  = ft_force_l[i]
         ft_torque = ft_torque_l[i]        
         ft_force_mag = np.linalg.norm(ft_force,axis=0)
-        
+
         start_time = ft_time[0]
         end_time   = ft_time[-1]
         ft_time_cut      = np.array(ft_time)
@@ -219,15 +221,14 @@ def cutting(d):
         a_idx_end   = None                
         for j, t in enumerate(audio_time):
             if t > start_time and a_idx_start is None:
-                a_idx_start = j
+                if (audio_time[j+1] - audio_time[j]) >  float(CHUNK)/float(RATE) :
+                    a_idx_start = j
             if t > end_time and a_idx_end is None:
                 a_idx_end = j
+                break
 
         audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end+1])
         audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end+1])              
-
-        audio_time_cut = audio_time
-        audio_data_cut = audio_data        
         
         # normalized rms
         audio_rms_cut = np.zeros(len(audio_time_cut))
@@ -235,26 +236,33 @@ def cutting(d):
             audio_rms_cut[j] = get_rms(data, MAX_INT)
 
 
-        print start_time, end_time
-        print audio_time[a_idx_start], audio_time[a_idx_end]
-        print ft_time_cut.shape, ft_force_mag_cut.shape
-        print len(audio_time_cut), audio_rms_cut.shape
-        
-        pp.figure(1)
-        ax = pp.subplot(211)
-        pp.plot(ft_time_cut, ft_force_mag_cut)
-        ax.set_xlim([0, 6.0])
-        ax = pp.subplot(212)
-        pp.plot(audio_time_cut, audio_rms_cut)
-        ax.set_xlim([0, 6.0])
-        pp.show()
-        
+        ## print ft_time_cut.shape, ft_force_mag_cut.shape
+        ## print len(audio_time_cut), audio_rms_cut.shape
+
         x   = np.linspace(0.0, 1.0, len(ft_time_cut))
         tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
 
         xnew = np.linspace(0.0, 1.0, len(audio_rms_cut))
         ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
 
+
+        ## pp.figure(1)
+        ## ax = pp.subplot(311)
+        ## pp.plot(ft_force_mag_cut)
+        ## ## pp.plot(ft_time_cut, ft_force_mag_cut)
+        ## ## ax.set_xlim([0, 6.0])
+        ## ax = pp.subplot(312)
+        ## pp.plot(audio_rms_cut)
+        ## ## pp.plot(audio_time_cut, audio_rms_cut)
+        ## ## ax.set_xlim([0, 6.0])
+        ## ax = pp.subplot(313)
+        ## pp.plot(audio_time_cut,'r')
+        ## pp.plot(ft_time_cut,'b')
+        ## ## pp.plot(audio_rms_cut)
+        ## ## ax.set_xlim([0, 6.0])
+        ## pp.show()
+             
+        
         # Compare with reference
         dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)
         ## fig = plt.figure(1)
@@ -292,16 +300,15 @@ def cutting(d):
         print "==================================="
         print len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
         print "==================================="
-
         
         ft_force_mag_list.append(ft_force_mag_cut_dtw)                
         audio_rms_list.append(audio_rms_cut_dtw)
         hmm_input_l.append(np.vstack([ft_force_mag_cut_dtw, audio_rms_cut_dtw]))
        
     d = {}
-    d['ft_force_mag_l'] = ft_force_mag_list 
-    d['audio_rms_l']    = audio_rms_list 
-    d['hmm_input_l']    = hmm_input_l 
+    d['ft_force_mag_l'] = np.array(ft_force_mag_list)
+    d['audio_rms_l']    = np.array(audio_rms_list)
+    d['hmm_input_l']    = np.array(hmm_input_l)
 
     return d
     
@@ -501,18 +508,22 @@ if __name__ == '__main__':
         d = cutting(d)        
         ut.save_pickle(d, pkl_file)
 
-    plot_all(d['hmm_input_l'])
+    ## plot_all(d['hmm_input_l'])
 
         
     aXData   = d['hmm_input_l']
+    aXData1  = d['ft_force_mag_l']
+    aXData2  = d['audio_rms_l']
+    
     nState   = 30 
     trans_type= "left_right"
     ## nMaxStep = 36 # total step of data. It should be automatically assigned...
             
     # Learning
     from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
-    lhm = learning_hmm_multi(aXData=aXData, nState=nState, trans_type=trans_type)
+    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
 
 
 
     # TEST
+    lhm.fit(aXData1, aXData2)

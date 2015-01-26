@@ -33,16 +33,17 @@ from scipy import optimize
 from joblib import Parallel, delayed
 ## from scipy.optimize import fsolve
 ## from scipy import interpolate
+from scipy import interpolate
 
 from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 
 class learning_hmm_multi(learning_base):
-    def __init__(self, aXData, nState, nFutureStep=5, nCurrentStep=10, \
+    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, \
                  trans_type="left_right"):
 
-        learning_base.__init__(self, aXData, trans_type)
+        learning_base.__init__(self, trans_type)
 
         ## Tunable parameters                
         self.nState= nState # the number of hidden states
@@ -66,7 +67,7 @@ class learning_hmm_multi(learning_base):
         
     #----------------------------------------------------------------------        
     #
-    def fit(self, X_train, A=None, B=None, pi=None, B_dict=None, verbose=False):
+    def fit(self, aXData1, aXData2, A=None, B=None, pi=None, B_dict=None, verbose=False):
 
         if A is None:        
             if verbose: print "Generate new A matrix"                
@@ -75,8 +76,9 @@ class learning_hmm_multi(learning_base):
 
         if B is None:
             if verbose: print "Generate new B matrix"                                            
-            # We should think about multivariate Gaussian pdf.        
-            self.mu, self.sig = self.vectors_to_mean_sigma(X_train, self.nState)
+            # We should think about multivariate Gaussian pdf.  
+
+            self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
 
             # Emission probability matrix
             B = np.hstack([self.mu, self.sig]).tolist() # Must be [i,:] = [mu, sig]
@@ -88,7 +90,7 @@ class learning_hmm_multi(learning_base):
             pi[0] = 1.0
 
         # HMM model object
-        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
+        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
         
         ## print "Run Baum Welch method with (samples, length)", X_train.shape
         train_seq = X_train.tolist()
@@ -169,3 +171,109 @@ class learning_hmm_multi(learning_base):
         return sum(total_score) / float(len(nCurrentStep))
         
         
+    #----------------------------------------------------------------------        
+    #                
+    # Returns mu,sigma for n hidden-states from feature-vector
+    def vectors_to_mean_cov(self,vec1, vec2, nState): 
+
+        if len(vec1[0]) != len(vec2[0]):
+            print "data length different!!! ", len(vec1[0]), len(vec2[0])
+            sys.exit()
+
+                    
+        index = 0
+        m,n = np.shape(vec1)
+        ## print m,n
+        mult = 2
+
+        o_x = np.arange(0.0, n, 1.0)
+        o_mu1  = scp.mean(vec1, axis=0)
+        o_sig1 = scp.std(vec1, axis=0)
+        o_mu2  = scp.mean(vec2, axis=0)
+        o_sig2 = scp.std(vec2, axis=0)
+        o_cov  = np.zeros((n,2,2))
+
+        for i in xrange(n):
+            o_cov[i] = np.cov(np.concatenate((vec1[:,i],vec2[:,i]),axis=0))
+        
+        f_mu1  = interpolate.interp1d(o_x, o_mu1, kind='linear')
+        f_sig1 = interpolate.interp1d(o_x, o_sig1, kind='linear')
+        f_mu2  = interpolate.interp1d(o_x, o_mu2, kind='linear')
+        f_sig2 = interpolate.interp1d(o_x, o_sig2, kind='linear')
+
+        f_cov11 = interpolate.interp1d(o_x, o_cov[:,0,0], kind='linear')
+        f_cov12 = interpolate.interp1d(o_x, o_cov[:,0,1], kind='linear')
+        f_cov21 = interpolate.interp1d(o_x, o_cov[:,1,0], kind='linear')
+        f_cov22 = interpolate.interp1d(o_x, o_cov[:,1,1], kind='linear')
+
+            
+        x = np.arange(0.0, float(n-1)+1.0/float(mult), 1.0/float(mult))
+        mu1  = f_mu1(x)
+        sig1 = f_sig1(x)
+        mu2  = f_mu2(x)
+        sig2 = f_sig2(x)
+
+        cov11 = f_cov11(x)
+        cov12 = f_cov12(x)
+        cov21 = f_cov21(x)
+        cov22 = f_cov22(x)
+        
+        while len(mu1) != nState:
+
+            d_mu1  = np.abs(mu1[1:] - mu1[:-1]) # -1 length 
+            d_sig1 = np.abs(sig1[1:] - sig1[:-1]) # -1 length 
+            idx = d_sig1.tolist().index(min(d_sig1))
+            
+            mu1[idx]  = (mu1[idx]+mu1[idx+1])/2.0
+            sig1[idx] = (sig1[idx]+sig1[idx+1])/2.0
+            mu2[idx]  = (mu2[idx]+mu2[idx+1])/2.0
+            sig2[idx] = (sig2[idx]+sig2[idx+1])/2.0
+            
+        
+            mu  = scp.delete(mu,idx+1)
+            sig = scp.delete(sig,idx+1)
+
+        mu = mu.reshape((len(mu),1))
+        sig = sig.reshape((len(sig),1))
+
+        
+        ## import matplotlib.pyplot as pp
+        ## pp.figure()
+        ## pp.plot(mu)
+        ## pp.plot(mu+1.*sig)
+        ## pp.plot(scp.mean(vec, axis=0), 'r')
+        ## pp.show()
+        ## sys.exit()
+
+
+    ## index = 0
+    ## m,n = np.shape(fvec1)
+    ## #print m,n
+    ## mu_1 = np.zeros((20,1))
+    ## mu_2 = np.zeros((20,1))
+    ## cov = np.zeros((20,2,2))
+    ## DIVS = m/20
+
+    ## while (index < 20):
+    ##     m_init = index*DIVS
+    ##     temp_fvec1 = fvec1[(m_init):(m_init+DIVS),0:]
+    ##     temp_fvec2 = fvec2[(m_init):(m_init+DIVS),0:]
+    ##     temp_fvec1 = np.reshape(temp_fvec1,DIVS*n)
+    ##     temp_fvec2 = np.reshape(temp_fvec2,DIVS*n)
+    ##     mu_1[index] = np.mean(temp_fvec1)
+    ##     mu_2[index] = np.mean(temp_fvec2)
+    ##     cov[index,:,:] = np.cov(np.concatenate((temp_fvec1,temp_fvec2),axis=0))
+    ##     if index == 0:
+    ##         print 'mean = ', mu_2[index]
+    ##         print 'mean = ', scp.mean(fvec2[(m_init):(m_init+DIVS),0:])
+    ##         print np.shape(np.concatenate((temp_fvec1,temp_fvec2),axis=0))
+    ##         print cov[index,:,:]
+    ##         print scp.std(fvec2[(m_init):(m_init+DIVS),0:])
+    ##         print scp.std(temp_fvec2)
+    ##     index = index+1
+        
+    ## return mu_1,mu_2,cov
+
+
+        
+        return mu,sig
