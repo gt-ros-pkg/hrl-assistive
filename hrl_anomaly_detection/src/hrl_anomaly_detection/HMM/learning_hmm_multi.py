@@ -79,7 +79,7 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-
+            
             # Emission probability matrix
             B = [0.0] * self.nState
             for i in range(self.nState):
@@ -109,23 +109,43 @@ class learning_hmm_multi(learning_base):
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
-        print "----------------------"
-        seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
-        seq = np.array(seq)
-        X1, X2 = self.convert_sequence_reverse(seq)
+        ## print "----------------------"
+        ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
+        ## seq = np.array(seq)
+        ## X1, X2 = self.convert_sequence_reverse(seq)
 
-        plt.figure()
-        plt.subplot(211)
-        plt.plot(aXData1[0],'r')
-        for j in xrange(len(X1)):
-            plt.plot(X1[j],'b')
-        plt.subplot(212)
-        plt.plot(aXData2[0],'r')        
-        for j in xrange(len(X2)):
-            plt.plot(X2[j],'b')
-        ## plt.subplot(313)
-        plt.show()
-        sys.exit()
+
+        ## mu = np.array(self.B[:,0])
+        ## cov = np.array(self.B[:,1])
+        ## mu1 = []
+        ## mu2 = []
+        ## cov11=[]
+        ## cov12=[]
+        ## cov21=[]
+        ## cov22=[]
+            
+        ## for i in xrange(len(mu)):
+        ##     mu1.append(mu[i][0])
+        ##     mu2.append(mu[i][1])
+        ##     cov11.append(cov[i][0])
+        ##     cov22.append(cov[i][3])
+            
+        ## plt.figure()
+        ## plt.subplot(211)
+        ## plt.plot(aXData1[0],'r')
+        ## ## plt.plot(self.mu1,'b')
+        ## ## plt.plot(mu1+np.sqrt(cov11),'b')
+        ## for j in xrange(len(X1)):
+        ##     plt.plot(X1[j],'b')
+        ## plt.subplot(212)
+        ## plt.plot(aXData2[0],'r')        
+        ## ## plt.plot(self.mu2,'b')
+        ## ## plt.plot(mu2+np.sqrt(cov22),'b')
+        ## for j in xrange(len(X2)):
+        ##     plt.plot(X2[j],'b')
+        ## ## plt.subplot(313)
+        ## plt.show()
+        ## sys.exit()
         
         # state range
         self.state_range = np.arange(0, self.nState, 1)
@@ -155,10 +175,8 @@ class learning_hmm_multi(learning_base):
             print "No alpha is available !!"
 
 
-        print np.array(alpha).shape
-        print np.array(scale).shape
-        sys.exit()
-
+        ## print scale
+            
         pred_numerator = 0.0
         ## pred_denominator = 0.0
         for j in xrange(self.nState): # N+1
@@ -339,37 +357,37 @@ class learning_hmm_multi(learning_base):
     #
     def init_plot(self, bAni=False):
         print "Start to print out"
-        
-        self.fig = plt.figure(1)
-        self.gs = gridspec.GridSpec(2, 1) 
 
-        ## Main predictive distribution
-        self.ax1 = self.fig.add_subplot(self.gs[0])
-        self.ax2 = self.fig.add_subplot(self.gs[1])
+        self.fig = plt.figure(1)
+        gs = gridspec.GridSpec(2, 1) 
+        
+        self.ax1 = self.fig.add_subplot(gs[0])        
+        self.ax2 = self.fig.add_subplot(gs[1])        
 
     #----------------------------------------------------------------------        
     #
     def pred_plot(self, X_test1, X_test2):
-        
+
         X_test = self.convert_sequence(X_test1, X_test2)
         mu, cov = self.predict(X_test)
 
-        print X_test1.shape
-        print mu.shape
+        print mu
+        print cov
+
+        ## self.gs = gridspec.GridSpec(2, 1) 
         
+        ## Main predictive distribution        
         self.ax1.plot(np.hstack([X_test1[0], mu[0]]))
         self.ax2.plot(np.hstack([X_test2[0], mu[1]]))
-
-
         
-        
+
     #----------------------------------------------------------------------        
     #
     def final_plot(self):
         plt.rc('text', usetex=True)
         
-        ## self.ax.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
-        ## self.ax.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
+        ## self.ax1.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
+        ## self.ax1.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
         ## self.ax.set_xlim([0, self.nMaxStep])
         ## self.ax.set_ylim(self.obsrv_range)
         

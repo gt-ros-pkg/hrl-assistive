@@ -509,11 +509,12 @@ if __name__ == '__main__':
         ut.save_pickle(d, pkl_file)
 
     ## plot_all(d['hmm_input_l'])
-
+    scale1 = 1.0
+    scale2 = 1000.0
         
-    aXData   = d['hmm_input_l']
-    aXData1  = d['ft_force_mag_l']
-    aXData2  = d['audio_rms_l']
+    ## aXData   = d['hmm_input_l']
+    aXData1  = d['ft_force_mag_l'] * scale1
+    aXData2  = d['audio_rms_l'] * scale2
     
     nState   = 15 
     trans_type= "left_right"
