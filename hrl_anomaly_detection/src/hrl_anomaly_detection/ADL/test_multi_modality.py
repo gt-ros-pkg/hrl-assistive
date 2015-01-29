@@ -9,6 +9,7 @@ import random
 import scipy as scp
 from scipy import interpolate       
 import mlpy
+from sklearn import preprocessing
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -508,13 +509,16 @@ if __name__ == '__main__':
         d = cutting(d)        
         ut.save_pickle(d, pkl_file)
 
-    ## plot_all(d['hmm_input_l'])
-    scale1 = 1.0
-    scale2 = 1000.0
-        
+    ## plot_all(d['hmm_input_l'])        
     ## aXData   = d['hmm_input_l']
-    aXData1  = d['ft_force_mag_l'] * scale1
-    aXData2  = d['audio_rms_l'] * scale2
+    aXData1  = d['ft_force_mag_l']
+    aXData2  = d['audio_rms_l'] 
+
+    # min max scaling
+    min_max_scaler1 = preprocessing.MinMaxScaler()
+    min_max_scaler2 = preprocessing.MinMaxScaler()
+    aXData1_scaled = min_max_scaler1.fit_transform(aXData1)
+    aXData2_scaled = min_max_scaler2.fit_transform(aXData2)
     
     nState   = 15 
     trans_type= "left_right"
@@ -523,12 +527,12 @@ if __name__ == '__main__':
     # Learning
     from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-    lhm.fit(aXData1, aXData2)
+    lhm.fit(aXData1_scaled, aXData2_scaled)
 
 
     # TEST
-    X_test1 = aXData1[0:1,:50]
-    X_test2 = aXData2[0:1,:50]
+    X_test1 = aXData1_scaled[0:1,:50]
+    X_test2 = aXData2_scaled[0:1,:50]
     ## X_test = lhm.convert_sequence(X_test1, X_test2)
     ## lhm.predict(X_test)
 

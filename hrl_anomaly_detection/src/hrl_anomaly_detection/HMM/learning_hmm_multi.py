@@ -371,8 +371,8 @@ class learning_hmm_multi(learning_base):
         X_test = self.convert_sequence(X_test1, X_test2)
         mu, cov = self.predict(X_test)
 
-        print mu
-        print cov
+        ## print mu
+        ## print cov
 
         ## self.gs = gridspec.GridSpec(2, 1) 
         
