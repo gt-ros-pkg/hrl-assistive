@@ -18,6 +18,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.externals import six
+from sklearn import preprocessing
 
 class learning_base():
     def __init__(self, aXData=None, trans_type="left_right"):
@@ -253,6 +254,22 @@ class learning_base():
                 
         return trans_prob_mat
 
+        
+    #----------------------------------------------------------------------        
+    #                
+    def scaling(self, X):
+        '''        
+        '''
+        
+        X_scaled = preprocessing.scale(np.array(X))
+
+        print np.array(X).shape
+        print X_scaled.shape
+        sys.exit()
+        
+        return X_scaled
+
+        
     #----------------------------------------------------------------------        
     #                
     ## def init_emission_mat(self, nState):
