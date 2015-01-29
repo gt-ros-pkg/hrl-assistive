@@ -515,15 +515,23 @@ if __name__ == '__main__':
     aXData1  = d['ft_force_mag_l']
     aXData2  = d['audio_rms_l']
     
-    nState   = 30 
+    nState   = 15 
     trans_type= "left_right"
     ## nMaxStep = 36 # total step of data. It should be automatically assigned...
             
     # Learning
     from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-
+    lhm.fit(aXData1, aXData2)
 
 
     # TEST
-    lhm.fit(aXData1, aXData2)
+    X_test1 = aXData1[0:1,:50]
+    X_test2 = aXData2[0:1,:50]
+    ## X_test = lhm.convert_sequence(X_test1, X_test2)
+    ## lhm.predict(X_test)
+
+    #
+    lhm.init_plot()
+    lhm.pred_plot(X_test1, X_test2)
+    lhm.final_plot()

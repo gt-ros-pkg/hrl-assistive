@@ -81,46 +81,102 @@ class learning_hmm_multi(learning_base):
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
 
             # Emission probability matrix
-            B = np.hstack([self.mu, self.sig]).tolist() # Must be [i,:] = [mu, sig]
-                
+            B = [0.0] * self.nState
+            for i in range(self.nState):
+                B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i][0][0],self.cov[i][0][1], \
+                                                   self.cov[i][1][0],self.cov[i][1][1]]]       
+                            
         if pi is None:            
             # pi - initial probabilities per state 
             ## pi = [1.0/float(self.nState)] * self.nState
             pi = [0.] * self.nState
             pi[0] = 1.0
 
+
+        # Training input
+        X_train = self.convert_sequence(aXData1, aXData2)
+
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-        
-        ## print "Run Baum Welch method with (samples, length)", X_train.shape
+
+        print "Run Baum Welch method with (samples, length)", X_train.shape        
         train_seq = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, train_seq)        
-        self.ml.baumWelch(final_seq, 10000)
+        self.ml.baumWelch(final_seq)
+        ## self.ml.baumWelch(final_seq, 10000)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
-        ## self.mean_path_plot(mu[:,0], sigma[:,0])        
-        ## print "Completed to fitting", np.array(final_seq).shape
+        print "----------------------"
+        seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
+        seq = np.array(seq)
+        X1, X2 = self.convert_sequence_reverse(seq)
+
+        plt.figure()
+        plt.subplot(211)
+        plt.plot(aXData1[0],'r')
+        for j in xrange(len(X1)):
+            plt.plot(X1[j],'b')
+        plt.subplot(212)
+        plt.plot(aXData2[0],'r')        
+        for j in xrange(len(X2)):
+            plt.plot(X2[j],'b')
+        ## plt.subplot(313)
+        plt.show()
+        sys.exit()
         
         # state range
         self.state_range = np.arange(0, self.nState, 1)
+        return
 
-        # Pre-computation for PHMM variables
-        self.mu_z   = np.zeros((self.nState))
-        self.mu_z2  = np.zeros((self.nState))
-        self.mu_z3  = np.zeros((self.nState))
-        self.var_z  = np.zeros((self.nState))
-        self.sig_z3 = np.zeros((self.nState))
-        for i in xrange(self.nState):
-            zp             = self.A[i,:]*self.state_range
-            self.mu_z[i]   = np.sum(zp)
-            self.mu_z2[i]  = self.mu_z[i]**2
-            #self.mu_z3[i]  = self.mu_z[i]**3
-            self.var_z[i]  = np.sum(zp*self.state_range) - self.mu_z[i]**2
-            #self.sig_z3[i] = self.var_z[i]**(1.5)
 
+    #----------------------------------------------------------------------        
+    #
+    def predict(self, X):
+
+        n,m    = X.shape
+        X_test = X[0].tolist()
+        mu_l  = np.zeros(2) 
+        cov_l = np.zeros(4)
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
+
+        try:
+            # alpha: X_test length y #latent States at the moment t when state i is ended
+            #        test_profile_length x number_of_hidden_state
+            (alpha,scale) = self.ml.forward(final_ts_obj)
+            alpha         = np.array(alpha)
+            scale         = np.array(scale)
+            ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
+            ## print "scale = " + str(scale) + "\n"
+        except:
+            print "No alpha is available !!"
+
+
+        print np.array(alpha).shape
+        print np.array(scale).shape
+        sys.exit()
+
+        pred_numerator = 0.0
+        ## pred_denominator = 0.0
+        for j in xrange(self.nState): # N+1
+
+            total = np.sum(self.A[:,j]*alpha[-1,:]) #* scaling_factor
+            [[mu1, mu2], [cov11, cov12, cov21, cov22]] = self.B[j]
+
+            print mu1, mu2, cov11, cov12, cov21, cov22, total
+            
+            mu_l[0] += mu1*total
+            mu_l[1] += mu2*total
+            cov_l[0] += (cov11)*(total**2)
+            cov_l[1] += (cov12)*(total**2)
+            cov_l[2] += (cov21)*(total**2)
+            cov_l[3] += (cov22)*(total**2)
+
+        return mu_l, cov_l
+    
 
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
@@ -176,6 +232,37 @@ class learning_hmm_multi(learning_base):
     # Returns mu,sigma for n hidden-states from feature-vector
     def vectors_to_mean_cov(self,vec1, vec2, nState): 
 
+        index = 0
+        m,n = np.shape(vec1)
+        #print m,n
+        mu_1 = np.zeros(nState)
+        mu_2 = np.zeros(nState)
+        cov = np.zeros((nState,2,2))
+        DIVS = n/nState
+
+        while (index < nState):
+            m_init = index*DIVS
+            temp_vec1 = vec1[:,(m_init):(m_init+DIVS)]
+            temp_vec2 = vec2[:,(m_init):(m_init+DIVS)]
+            temp_vec1 = np.reshape(temp_vec1,(1,DIVS*m))
+            temp_vec2 = np.reshape(temp_vec2,(1,DIVS*m))
+            mu_1[index] = np.mean(temp_vec1)
+            mu_2[index] = np.mean(temp_vec2)
+            cov[index,:,:] = np.cov(np.concatenate((temp_vec1,temp_vec2),axis=0))
+            ## if index == 0:
+            ##     print 'mean = ', mu_2[index]
+            ##     print 'mean = ', scp.mean(vec2[0:,(m_init):(m_init+DIVS)])
+            ##     print np.shape(np.concatenate((temp_vec1,temp_vec2),axis=0))
+            ##     print cov[index,:,:]
+            ##     print scp.std(vec2[0:,(m_init):(m_init+DIVS)])
+            ##     print scp.std(temp_vec2)
+            index = index+1
+
+        return mu_1,mu_2,cov
+
+    
+    def vectors_to_mean_cov2(self,vec1, vec2, nState): 
+
         if len(vec1[0]) != len(vec2[0]):
             print "data length different!!! ", len(vec1[0]), len(vec2[0])
             sys.exit()
@@ -186,7 +273,7 @@ class learning_hmm_multi(learning_base):
         ## print m,n
         mult = 2
 
-        o_x = np.arange(0.0, n, 1.0)
+        o_x    = np.arange(0.0, n, 1.0)
         o_mu1  = scp.mean(vec1, axis=0)
         o_sig1 = scp.std(vec1, axis=0)
         o_mu2  = scp.mean(vec2, axis=0)
@@ -203,7 +290,7 @@ class learning_hmm_multi(learning_base):
 
         f_cov11 = interpolate.interp1d(o_x, o_cov[:,0,0], kind='linear')
         f_cov12 = interpolate.interp1d(o_x, o_cov[:,0,1], kind='linear')
-        f_cov21 = interpolate.interp1d(o_x, o_cov[:,1,0], kind='linear')
+        ## f_cov21 = interpolate.interp1d(o_x, o_cov[:,1,0], kind='linear')
         f_cov22 = interpolate.interp1d(o_x, o_cov[:,1,1], kind='linear')
 
             
@@ -215,7 +302,7 @@ class learning_hmm_multi(learning_base):
 
         cov11 = f_cov11(x)
         cov12 = f_cov12(x)
-        cov21 = f_cov21(x)
+        cov21 = f_cov12(x)
         cov22 = f_cov22(x)
         
         while len(mu1) != nState:
@@ -225,9 +312,9 @@ class learning_hmm_multi(learning_base):
             idx = d_sig1.tolist().index(min(d_sig1))
             
             mu1[idx]  = (mu1[idx]+mu1[idx+1])/2.0
-            sig1[idx] = (sig1[idx]+sig1[idx+1])/2.0
+            sig1[idx] = np.sqrt(sig1[idx]**2+sig1[idx+1]**2)
             mu2[idx]  = (mu2[idx]+mu2[idx+1])/2.0
-            sig2[idx] = (sig2[idx]+sig2[idx+1])/2.0
+            sig2[idx] = np.sqrt(sig2[idx]**2+sig2[idx+1]**2)
             
         
             mu  = scp.delete(mu,idx+1)
@@ -245,35 +332,71 @@ class learning_hmm_multi(learning_base):
         ## pp.show()
         ## sys.exit()
 
-
-    ## index = 0
-    ## m,n = np.shape(fvec1)
-    ## #print m,n
-    ## mu_1 = np.zeros((20,1))
-    ## mu_2 = np.zeros((20,1))
-    ## cov = np.zeros((20,2,2))
-    ## DIVS = m/20
-
-    ## while (index < 20):
-    ##     m_init = index*DIVS
-    ##     temp_fvec1 = fvec1[(m_init):(m_init+DIVS),0:]
-    ##     temp_fvec2 = fvec2[(m_init):(m_init+DIVS),0:]
-    ##     temp_fvec1 = np.reshape(temp_fvec1,DIVS*n)
-    ##     temp_fvec2 = np.reshape(temp_fvec2,DIVS*n)
-    ##     mu_1[index] = np.mean(temp_fvec1)
-    ##     mu_2[index] = np.mean(temp_fvec2)
-    ##     cov[index,:,:] = np.cov(np.concatenate((temp_fvec1,temp_fvec2),axis=0))
-    ##     if index == 0:
-    ##         print 'mean = ', mu_2[index]
-    ##         print 'mean = ', scp.mean(fvec2[(m_init):(m_init+DIVS),0:])
-    ##         print np.shape(np.concatenate((temp_fvec1,temp_fvec2),axis=0))
-    ##         print cov[index,:,:]
-    ##         print scp.std(fvec2[(m_init):(m_init+DIVS),0:])
-    ##         print scp.std(temp_fvec2)
-    ##     index = index+1
-        
-    ## return mu_1,mu_2,cov
-
-
-        
         return mu,sig
+
+
+    #----------------------------------------------------------------------        
+    #
+    def init_plot(self, bAni=False):
+        print "Start to print out"
+        
+        self.fig = plt.figure(1)
+        self.gs = gridspec.GridSpec(2, 1) 
+
+        ## Main predictive distribution
+        self.ax1 = self.fig.add_subplot(self.gs[0])
+        self.ax2 = self.fig.add_subplot(self.gs[1])
+
+    #----------------------------------------------------------------------        
+    #
+    def pred_plot(self, X_test1, X_test2):
+        
+        X_test = self.convert_sequence(X_test1, X_test2)
+        mu, cov = self.predict(X_test)
+
+        print X_test1.shape
+        print mu.shape
+        
+        self.ax1.plot(np.hstack([X_test1[0], mu[0]]))
+        self.ax2.plot(np.hstack([X_test2[0], mu[1]]))
+
+
+        
+        
+    #----------------------------------------------------------------------        
+    #
+    def final_plot(self):
+        plt.rc('text', usetex=True)
+        
+        ## self.ax.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
+        ## self.ax.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
+        ## self.ax.set_xlim([0, self.nMaxStep])
+        ## self.ax.set_ylim(self.obsrv_range)
+        
+        plt.show()
+
+
+    #----------------------------------------------------------------------        
+    #
+    def convert_sequence(self, X1, X2):
+
+        m,n = X1.shape
+        X = np.zeros((m,2*n))
+        for i in xrange(n):
+            X[:,i*2:i*2+2] = np.hstack([X1[:,i:i+1], X2[:,i:i+1]])
+
+        return X
+        
+    #----------------------------------------------------------------------        
+    #
+    def convert_sequence_reverse(self, X):
+
+        m,n = X.shape
+        X1 = np.zeros((m,n/2))
+        X2 = np.zeros((m,n/2))
+        for i in xrange(n/2):
+            X1[:,i:i+1] = X[:,i*2:i*2+1] 
+            X2[:,i:i+1] = X[:,i*2+1:i*2+2] 
+
+        return X1, X2
+        
