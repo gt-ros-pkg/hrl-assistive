@@ -253,6 +253,22 @@ class learning_base():
                 
         return trans_prob_mat
 
+        
+    #----------------------------------------------------------------------        
+    #                
+    ## def scaling(self, X):
+    ##     '''        
+    ##     '''
+        
+    ##     X_scaled = preprocessing.scale(np.array(X))
+
+    ##     print np.array(X).shape
+    ##     print X_scaled.shape
+    ##     sys.exit()
+        
+    ##     return X_scaled
+
+        
     #----------------------------------------------------------------------        
     #                
     ## def init_emission_mat(self, nState):

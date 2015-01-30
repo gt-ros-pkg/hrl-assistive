@@ -3,6 +3,8 @@
 import sys, os, copy
 import numpy as np, math
 import scipy as scp
+from scipy import optimize, interpolate
+from scipy.stats import norm
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -13,7 +15,6 @@ import random
 # Util
 import hrl_lib.util as ut
 ## import cPickle
-## from sklearn.externals import joblib
 
 # Matplot
 import matplotlib
@@ -23,17 +24,14 @@ from matplotlib import animation
 
 ## import door_open_data as dod
 import ghmm
-from scipy.stats import norm
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import r2_score
 from sklearn.base import clone
 from sklearn import cross_validation
-from scipy import optimize
-## from pysmac.optimize import fmin                
 from joblib import Parallel, delayed
+## from pysmac.optimize import fmin                
 ## from scipy.optimize import fsolve
 ## from scipy import interpolate
-from scipy import interpolate
 
 from learning_base import learning_base
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
@@ -94,14 +92,16 @@ class learning_hmm_multi(learning_base):
 
 
         # Training input
-        X_train = self.convert_sequence(aXData1, aXData2)
+        X_train  = self.convert_sequence(aXData1, aXData2)
+        ## X_scaled = self.scaling(X_train)
 
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
 
-        print "Run Baum Welch method with (samples, length)", X_train.shape        
-        train_seq = X_train.tolist()
-        final_seq = ghmm.SequenceSet(self.F, train_seq)        
+        print "Run Baum Welch method with (samples, length)", np.array(X_train).shape        
+        if type(X_train) is not list:
+                X_train = X_train.tolist()
+        final_seq = ghmm.SequenceSet(self.F, X_train)        
         self.ml.baumWelch(final_seq)
         ## self.ml.baumWelch(final_seq, 10000)
 
@@ -156,8 +156,17 @@ class learning_hmm_multi(learning_base):
     #
     def predict(self, X):
 
-        n,m    = X.shape
-        X_test = X[0].tolist()
+        print "--------------------"
+        print np.array(X).shape
+        print "--------------------"
+
+        seq = self.ml.sample(2, 50, seed=3586663) 
+        seq = np.array(seq)
+        print seq.shape
+        
+            
+        ## n,m    = np.array(X).shape
+        X_test = X #[0] #.tolist()
         mu_l  = np.zeros(2) 
         cov_l = np.zeros(4)
 
@@ -169,13 +178,19 @@ class learning_hmm_multi(learning_base):
             (alpha,scale) = self.ml.forward(final_ts_obj)
             alpha         = np.array(alpha)
             scale         = np.array(scale)
-            ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
+            print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
             ## print "scale = " + str(scale) + "\n"
         except:
             print "No alpha is available !!"
 
+        f = lambda x: round(x,12)
+        for i in range(len(alpha)):
+            alpha[i] = map(f, alpha[i])
+        ## alpha[-1] = map(f, alpha[-1])
 
         ## print scale
+        print alpha[-2,:]
+        print alpha[-1,:]
             
         pred_numerator = 0.0
         ## pred_denominator = 0.0
@@ -184,7 +199,7 @@ class learning_hmm_multi(learning_base):
             total = np.sum(self.A[:,j]*alpha[-1,:]) #* scaling_factor
             [[mu1, mu2], [cov11, cov12, cov21, cov22]] = self.B[j]
 
-            print mu1, mu2, cov11, cov12, cov21, cov22, total
+            ## print mu1, mu2, cov11, cov12, cov21, cov22, total
             
             mu_l[0] += mu1*total
             mu_l[1] += mu2*total
@@ -368,13 +383,13 @@ class learning_hmm_multi(learning_base):
     #
     def pred_plot(self, X_test1, X_test2):
 
-        X_test = self.convert_sequence(X_test1, X_test2)
+        X_test = self.convert_sequence(X_test1, X_test2, emission=False)        
+        ## X_test = np.squeeze(X_test)
+        
         mu, cov = self.predict(X_test)
 
         ## print mu
         ## print cov
-
-        ## self.gs = gridspec.GridSpec(2, 1) 
         
         ## Main predictive distribution        
         self.ax1.plot(np.hstack([X_test1[0], mu[0]]))
@@ -396,12 +411,21 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def convert_sequence(self, X1, X2):
+    def convert_sequence(self, X1, X2, emission=False):
+        
+        n,m = np.array(X1).shape
 
-        m,n = X1.shape
-        X = np.zeros((m,2*n))
+        X = []
         for i in xrange(n):
-            X[:,i*2:i*2+2] = np.hstack([X1[:,i:i+1], X2[:,i:i+1]])
+            Xs = []
+            if emission:
+                for j in xrange(m):
+                    Xs.append([X1[i,j], X2[i,j]])
+            else:
+                for j in xrange(m):
+                    Xs.append(X1[i,j])
+                    Xs.append(X2[i,j])
+            X.append(Xs)
 
         return X
         

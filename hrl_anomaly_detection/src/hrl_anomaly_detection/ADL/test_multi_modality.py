@@ -519,7 +519,7 @@ if __name__ == '__main__':
     min_max_scaler2 = preprocessing.MinMaxScaler()
     aXData1_scaled = min_max_scaler1.fit_transform(aXData1)
     aXData2_scaled = min_max_scaler2.fit_transform(aXData2)
-    
+
     nState   = 15 
     trans_type= "left_right"
     ## nMaxStep = 36 # total step of data. It should be automatically assigned...
@@ -528,7 +528,6 @@ if __name__ == '__main__':
     from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
     lhm.fit(aXData1_scaled, aXData2_scaled)
-
 
     # TEST
     X_test1 = aXData1_scaled[0:1,:50]
