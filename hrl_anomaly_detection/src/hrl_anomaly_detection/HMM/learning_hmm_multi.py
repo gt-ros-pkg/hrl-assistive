@@ -90,17 +90,15 @@ class learning_hmm_multi(learning_base):
             pi = [0.] * self.nState
             pi[0] = 1.0
 
-
         # Training input
         X_train  = self.convert_sequence(aXData1, aXData2)
         ## X_scaled = self.scaling(X_train)
-
+        
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
 
-        print "Run Baum Welch method with (samples, length)", np.array(X_train).shape        
-        if type(X_train) is not list:
-                X_train = X_train.tolist()
+        print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
+        X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
         self.ml.baumWelch(final_seq)
         ## self.ml.baumWelch(final_seq, 10000)
@@ -156,22 +154,17 @@ class learning_hmm_multi(learning_base):
     #
     def predict(self, X):
 
-        print "--------------------"
-        print np.array(X).shape
-        print "--------------------"
-
-        seq = self.ml.sample(2, 50, seed=3586663) 
-        seq = np.array(seq)
-        print seq.shape
-        
-            
         ## n,m    = np.array(X).shape
-        X_test = X #[0] #.tolist()
+        X_test = X[0].tolist()
+        print "Predict: ", np.shape(X_test)        
+        
         mu_l  = np.zeros(2) 
         cov_l = np.zeros(4)
 
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
 
+        print X_test
+        
         try:
             # alpha: X_test length y #latent States at the moment t when state i is ended
             #        test_profile_length x number_of_hidden_state
@@ -182,15 +175,15 @@ class learning_hmm_multi(learning_base):
             ## print "scale = " + str(scale) + "\n"
         except:
             print "No alpha is available !!"
-
+            
         f = lambda x: round(x,12)
         for i in range(len(alpha)):
+            print np.sum(alpha[i])            
             alpha[i] = map(f, alpha[i])
         ## alpha[-1] = map(f, alpha[-1])
 
         ## print scale
-        print alpha[-2,:]
-        print alpha[-1,:]
+        ## print alpha[-2,:]
             
         pred_numerator = 0.0
         ## pred_denominator = 0.0
@@ -388,7 +381,7 @@ class learning_hmm_multi(learning_base):
         
         mu, cov = self.predict(X_test)
 
-        ## print mu
+        print mu
         ## print cov
         
         ## Main predictive distribution        
@@ -418,16 +411,19 @@ class learning_hmm_multi(learning_base):
         X = []
         for i in xrange(n):
             Xs = []
-            if emission:
-                for j in xrange(m):
-                    Xs.append([X1[i,j], X2[i,j]])
-            else:
-                for j in xrange(m):
-                    Xs.append(X1[i,j])
-                    Xs.append(X2[i,j])
-            X.append(Xs)
+            for j in xrange(m):
+                Xs.append([X1[i,j], X2[i,j]])                
+            ## if emission:
+            ##     for j in xrange(m):
+            ##         Xs.append([X1[i,j], X2[i,j]])
+            ## else:
+            ##     for j in xrange(m):
+            ##         Xs.append(X1[i,j])
+            ##         Xs.append(X2[i,j])
+            
+            X.append(np.array(Xs).flatten().tolist())
 
-        return X
+        return np.array(X)
         
     #----------------------------------------------------------------------        
     #

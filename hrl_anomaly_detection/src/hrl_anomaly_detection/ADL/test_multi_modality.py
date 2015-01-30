@@ -27,6 +27,7 @@ from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker
 def load_data(data_path, prefix, normal_only=True):
 
     pkl_list = glob.glob(data_path+prefix+'*.pkl')
+    ## pkl_list = glob.glob(data_path+'*.pkl')
 
     ft_time_list   = []
     ft_force_list  = []
@@ -474,7 +475,20 @@ def get_rms(frame, MAX_INT=32768.0):
     count = len(frame)
     return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
 
-    
+
+def scaling(X):
+    '''        
+    '''
+
+    ## X_scaled = preprocessing.scale(np.array(X))
+
+    min_c = np.min(X)
+    max_c = np.max(X)
+    X_scaled = X / (max_c-min_c) + min_c
+
+    return X_scaled, min_c, max_c
+
+
 
 if __name__ == '__main__':
 
@@ -515,12 +529,12 @@ if __name__ == '__main__':
     aXData2  = d['audio_rms_l'] 
 
     # min max scaling
-    min_max_scaler1 = preprocessing.MinMaxScaler()
-    min_max_scaler2 = preprocessing.MinMaxScaler()
-    aXData1_scaled = min_max_scaler1.fit_transform(aXData1)
-    aXData2_scaled = min_max_scaler2.fit_transform(aXData2)
+    aXData1_scaled, min_c1, max_c1 = scaling(aXData1)
+    aXData2_scaled, min_c2, max_c2 = scaling(aXData2)    
+    aXData1_scaled = aXData1
+    ## aXData2_scaled = aXData2
 
-    nState   = 15 
+    nState   = 20
     trans_type= "left_right"
     ## nMaxStep = 36 # total step of data. It should be automatically assigned...
             
@@ -528,10 +542,11 @@ if __name__ == '__main__':
     from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
     lhm.fit(aXData1_scaled, aXData2_scaled)
-
+    print "----------------------------"
+    
     # TEST
-    X_test1 = aXData1_scaled[0:1,:50]
-    X_test2 = aXData2_scaled[0:1,:50]
+    X_test1 = aXData1_scaled[0:1,:-65]
+    X_test2 = aXData2_scaled[0:1,:-65]
     ## X_test = lhm.convert_sequence(X_test1, X_test2)
     ## lhm.predict(X_test)
 

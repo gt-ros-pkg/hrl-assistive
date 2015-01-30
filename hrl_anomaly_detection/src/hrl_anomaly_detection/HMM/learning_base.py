@@ -256,17 +256,6 @@ class learning_base():
         
     #----------------------------------------------------------------------        
     #                
-    ## def scaling(self, X):
-    ##     '''        
-    ##     '''
-        
-    ##     X_scaled = preprocessing.scale(np.array(X))
-
-    ##     print np.array(X).shape
-    ##     print X_scaled.shape
-    ##     sys.exit()
-        
-    ##     return X_scaled
 
         
     #----------------------------------------------------------------------        
