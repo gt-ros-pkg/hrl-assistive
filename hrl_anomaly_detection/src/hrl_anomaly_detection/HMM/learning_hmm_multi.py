@@ -76,7 +76,7 @@ class learning_hmm_multi(learning_base):
             if verbose: print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.  
 
-            self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
+            self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov3(aXData1, aXData2, self.nState)
             
             # Emission probability matrix
             B = [0.0] * self.nState
@@ -286,8 +286,40 @@ class learning_hmm_multi(learning_base):
 
         return mu_1,mu_2,cov
 
-    
     def vectors_to_mean_cov2(self,vec1, vec2, nState): 
+
+        index = 0
+        m,n = np.shape(vec1)
+        #print m,n
+        mu_1 = np.zeros(nState)
+        mu_2 = np.zeros(nState)
+        cov = np.zeros((nState,2,2))
+
+        widths = np.zeros((nState, 1))        
+        centers = np.zeros((nState, 1))        
+        activation=0.1
+        cutoff=0.001        
+        last_input_x = 1.0
+        alpha_x = -math.log(cutoff)        
+
+        temp = 0.0
+        for i in range(nState): 
+            t = (i + 1)  / (nState - 1) * 1.0; # 1.0 is the default duration
+            input_x = math.exp(-alpha_x * t)
+            widths[i] = (input_x - last_input_x) ** 2 / -math.log(activation)
+            centers[i] = last_input_x
+            last_input_x = input_x
+            
+            print centers[i], widths[i]
+            temp += widths[i]
+
+        print temp
+        sys.exit()
+
+        return mu_1,mu_2,cov
+        
+    
+    def vectors_to_mean_cov3(self,vec1, vec2, nState): 
 
         if len(vec1[0]) != len(vec2[0]):
             print "data length different!!! ", len(vec1[0]), len(vec2[0])
@@ -304,33 +336,19 @@ class learning_hmm_multi(learning_base):
         o_sig1 = scp.std(vec1, axis=0)
         o_mu2  = scp.mean(vec2, axis=0)
         o_sig2 = scp.std(vec2, axis=0)
-        o_cov  = np.zeros((n,2,2))
 
-        for i in xrange(n):
-            o_cov[i] = np.cov(np.concatenate((vec1[:,i],vec2[:,i]),axis=0))
         
         f_mu1  = interpolate.interp1d(o_x, o_mu1, kind='linear')
         f_sig1 = interpolate.interp1d(o_x, o_sig1, kind='linear')
         f_mu2  = interpolate.interp1d(o_x, o_mu2, kind='linear')
         f_sig2 = interpolate.interp1d(o_x, o_sig2, kind='linear')
 
-        f_cov11 = interpolate.interp1d(o_x, o_cov[:,0,0], kind='linear')
-        f_cov12 = interpolate.interp1d(o_x, o_cov[:,0,1], kind='linear')
-        ## f_cov21 = interpolate.interp1d(o_x, o_cov[:,1,0], kind='linear')
-        f_cov22 = interpolate.interp1d(o_x, o_cov[:,1,1], kind='linear')
-
-            
         x = np.arange(0.0, float(n-1)+1.0/float(mult), 1.0/float(mult))
         mu1  = f_mu1(x)
         sig1 = f_sig1(x)
         mu2  = f_mu2(x)
         sig2 = f_sig2(x)
-
-        cov11 = f_cov11(x)
-        cov12 = f_cov12(x)
-        cov21 = f_cov12(x)
-        cov22 = f_cov22(x)
-        
+               
         while len(mu1) != nState:
 
             d_mu1  = np.abs(mu1[1:] - mu1[:-1]) # -1 length 
@@ -338,27 +356,34 @@ class learning_hmm_multi(learning_base):
             idx = d_sig1.tolist().index(min(d_sig1))
             
             mu1[idx]  = (mu1[idx]+mu1[idx+1])/2.0
-            sig1[idx] = np.sqrt(sig1[idx]**2+sig1[idx+1]**2)
+            sig1[idx] = 0.5*(mu1[idx]**2 + sig1[idx]**2 + mu1[idx+1]**2 + sig1[idx+1]**2) - ( 0.5*(mu1[idx]+mu1[idx+1]) )**2
             mu2[idx]  = (mu2[idx]+mu2[idx+1])/2.0
-            sig2[idx] = np.sqrt(sig2[idx]**2+sig2[idx+1]**2)
-            
+            sig2[idx] = 0.5*(mu2[idx]**2 + sig2[idx]**2 + mu2[idx+1]**2 + sig2[idx+1]**2) - ( 0.5*(mu2[idx]+mu2[idx+1]) )**2
         
-            mu  = scp.delete(mu,idx+1)
-            sig = scp.delete(sig,idx+1)
+            mu1  = scp.delete(mu1,idx+1)
+            sig1 = scp.delete(sig1,idx+1)
+            mu2  = scp.delete(mu2,idx+1)
+            sig2 = scp.delete(sig2,idx+1)
 
-        mu = mu.reshape((len(mu),1))
-        sig = sig.reshape((len(sig),1))
-
-        
+        cov  = np.zeros((len(mu1),2,2))
+        for i in xrange(len(mu1)):
+            cov[i,0,0] = sig1[i]**2
+            cov[i,0,1] = cov[i,1,0] = (mu1[i] + sig1[i])*(mu2[i] + sig2[i]) - mu1[i] * mu2[i]
+            cov[i,1,1] = sig2[i]**2
+                
         ## import matplotlib.pyplot as pp
         ## pp.figure()
-        ## pp.plot(mu)
-        ## pp.plot(mu+1.*sig)
-        ## pp.plot(scp.mean(vec, axis=0), 'r')
+        ## pp.subplot(211)
+        ## pp.plot(mu1)
+        ## pp.plot(mu1+1.*np.sqrt(cov[:,0,0]))
+        ## ## pp.plot(scp.mean(vec1, axis=0), 'r')
+        ## pp.subplot(212)
+        ## pp.plot(mu2)
+        ## pp.plot(mu2+1.*np.sqrt(cov[:,1,1]))        
         ## pp.show()
         ## sys.exit()
 
-        return mu,sig
+        return mu1, mu2, cov
 
 
     #----------------------------------------------------------------------        

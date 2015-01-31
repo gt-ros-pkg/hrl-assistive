@@ -534,7 +534,7 @@ if __name__ == '__main__':
     aXData1_scaled = aXData1
     ## aXData2_scaled = aXData2
 
-    nState   = 20
+    nState   = 30
     trans_type= "left_right"
     ## nMaxStep = 36 # total step of data. It should be automatically assigned...
             
