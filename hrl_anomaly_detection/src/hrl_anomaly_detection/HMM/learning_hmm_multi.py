@@ -39,7 +39,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class learning_hmm_multi(learning_base):
     def __init__(self, nState, nFutureStep=5, nCurrentStep=10, \
-                 trans_type="left_right"):
+                 trans_type="left_right", nEmissionDim=2):
 
         learning_base.__init__(self, trans_type)
 
@@ -47,6 +47,7 @@ class learning_hmm_multi(learning_base):
         self.nState= nState # the number of hidden states
         self.nFutureStep = nFutureStep
         self.nCurrentStep = nCurrentStep
+        self.nEmissionDim = nEmissionDim
         
         ## Un-tunable parameters
         self.trans_type = trans_type #"left_right" #"full"
@@ -55,7 +56,7 @@ class learning_hmm_multi(learning_base):
                 
         # emission domain of this model        
         self.F = ghmm.Float()  
-               
+
         # Assign local functions
         learning_base.__dict__['fit'] = self.fit        
         learning_base.__dict__['predict'] = self.predict
@@ -76,24 +77,25 @@ class learning_hmm_multi(learning_base):
             if verbose: print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.  
 
-            self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov3(aXData1, aXData2, self.nState)
+            self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
             
             # Emission probability matrix
             B = [0.0] * self.nState
             for i in range(self.nState):
-                B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i][0][0],self.cov[i][0][1], \
-                                                   self.cov[i][1][0],self.cov[i][1][1]]]       
+                B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i,0,0],self.cov[i,0,1], \
+                                                   self.cov[i,1,0],self.cov[i,1,1]]]       
+
                             
         if pi is None:            
             # pi - initial probabilities per state 
             ## pi = [1.0/float(self.nState)] * self.nState
-            pi = [0.] * self.nState
+            pi = [0.0] * self.nState
             pi[0] = 1.0
 
         # Training input
         X_train  = self.convert_sequence(aXData1, aXData2)
         ## X_scaled = self.scaling(X_train)
-        
+
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
 
@@ -107,46 +109,29 @@ class learning_hmm_multi(learning_base):
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
-        ## print "----------------------"
-        ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
-        ## seq = np.array(seq)
-        ## X1, X2 = self.convert_sequence_reverse(seq)
-
-
-        ## mu = np.array(self.B[:,0])
-        ## cov = np.array(self.B[:,1])
-        ## mu1 = []
-        ## mu2 = []
-        ## cov11=[]
-        ## cov12=[]
-        ## cov21=[]
-        ## cov22=[]
+        # Get loglikelihood threshold
+        n,m = np.shape(aXData1)
+        likelihood_sum = np.zeros(self.nState)
+        likelihood_cnt = np.zeros(self.nState)
+        for j in xrange(m):  
+            if j < 3: continue
+            X_train  = self.convert_sequence(aXData1[:,:j], aXData2[:,:j])            
             
-        ## for i in xrange(len(mu)):
-        ##     mu1.append(mu[i][0])
-        ##     mu2.append(mu[i][1])
-        ##     cov11.append(cov[i][0])
-        ##     cov22.append(cov[i][3])
-            
-        ## plt.figure()
-        ## plt.subplot(211)
-        ## plt.plot(aXData1[0],'r')
-        ## ## plt.plot(self.mu1,'b')
-        ## ## plt.plot(mu1+np.sqrt(cov11),'b')
-        ## for j in xrange(len(X1)):
-        ##     plt.plot(X1[j],'b')
-        ## plt.subplot(212)
-        ## plt.plot(aXData2[0],'r')        
-        ## ## plt.plot(self.mu2,'b')
-        ## ## plt.plot(mu2+np.sqrt(cov22),'b')
-        ## for j in xrange(len(X2)):
-        ##     plt.plot(X2[j],'b')
-        ## ## plt.subplot(313)
-        ## plt.show()
-        ## sys.exit()
-        
+            for i in xrange(n):                                  
+                p = self.likelihood(X_train[i:i+1])
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i].tolist())
+                posterior = self.ml.posterior(final_ts_obj)
+                state_idx = posterior[j-1].index(max(posterior[j-1]))
+
+                likelihood_sum[state_idx] += p
+                likelihood_cnt[state_idx] += 1.0
+                
+        self.likelihood_avg = likelihood_sum / likelihood_cnt
+
         # state range
         self.state_range = np.arange(0, self.nState, 1)
+        self.x1_range = np.linspace(np.min(aXData1), np.max(aXData1), 100)
+        self.x2_range = np.linspace(np.min(aXData2), np.max(aXData2), 100)
         return
 
 
@@ -155,44 +140,42 @@ class learning_hmm_multi(learning_base):
     def predict(self, X):
 
         ## n,m    = np.array(X).shape
-        X_test = X[0].tolist()
-        print "Predict: ", np.shape(X_test)        
+        X = np.squeeze(X)
+        X_test = X.tolist()
+        ## print "Input: ", np.shape(X_test)        
         
         mu_l  = np.zeros(2) 
         cov_l = np.zeros(4)
 
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
 
-        print X_test
-        
         try:
             # alpha: X_test length y #latent States at the moment t when state i is ended
             #        test_profile_length x number_of_hidden_state
             (alpha,scale) = self.ml.forward(final_ts_obj)
             alpha         = np.array(alpha)
             scale         = np.array(scale)
-            print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
+            ## print "alpha: ", np.array(alpha).shape,"\n" #+ str(alpha) + "\n"
             ## print "scale = " + str(scale) + "\n"
         except:
             print "No alpha is available !!"
             
         f = lambda x: round(x,12)
         for i in range(len(alpha)):
-            print np.sum(alpha[i])            
             alpha[i] = map(f, alpha[i])
-        ## alpha[-1] = map(f, alpha[-1])
-
-        ## print scale
-        ## print alpha[-2,:]
-            
+        alpha[-1] = map(f, alpha[-1])
+        
+        n = len(X_test)
         pred_numerator = 0.0
         ## pred_denominator = 0.0
+        
         for j in xrange(self.nState): # N+1
 
-            total = np.sum(self.A[:,j]*alpha[-1,:]) #* scaling_factor
+            total = np.sum(self.A[:,j]*alpha[n/self.nEmissionDim-1,:]) #* scaling_factor
             [[mu1, mu2], [cov11, cov12, cov21, cov22]] = self.B[j]
 
             ## print mu1, mu2, cov11, cov12, cov21, cov22, total
+            pred_numerator += total
             
             mu_l[0] += mu1*total
             mu_l[1] += mu2*total
@@ -201,9 +184,127 @@ class learning_hmm_multi(learning_base):
             cov_l[2] += (cov21)*(total**2)
             cov_l[3] += (cov22)*(total**2)
 
-        return mu_l, cov_l
-    
+        ## if pred_numerator < 1.0:
+        ##     print "PRED>> Low prediction numerator", pred_numerator
 
+        return mu_l, cov_l
+
+
+    #----------------------------------------------------------------------        
+    #
+    def predict2(self, X, x1, x2):
+
+        ## n,m    = np.array(X).shape
+        X = np.squeeze(X)
+        X_test = X.tolist()        
+        n = len(X_test)
+        ## print "Input: ", np.shape(X_test)        
+
+        mu_l  = np.zeros(2)
+        cov_l = np.zeros(4)
+
+        
+        ## final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+
+        ## try:
+        ##     # alpha: X_test length y #latent States at the moment t when state i is ended
+        ##     #        test_profile_length x number_of_hidden_state
+        ##     (alpha,scale) = self.ml.forward(final_ts_obj)
+        ##     beta          = self.ml.backward(final_ts_obj, scale)
+
+        ## except:
+        ##     print "No alpha is available !!"
+
+        ## alpha = np.array(alpha)
+        ## scale = np.array(scale)
+        ## beta  = np.array(beta)
+
+        ## alpha_beta = np.sum(alpha[n/self.nEmissionDim-2,:] * beta[n/self.nEmissionDim-2,:])
+
+        #------------------------------------------------------
+        ## max_p = 0.0        
+        ## for i, x1 in enumerate(self.x1_range):
+        ##     for j, x2 in enumerate(self.x2_range):
+
+        ##         if abs(X_test[-2]-x1) > 0.5: continue
+        ##         if abs(X_test[-1]-x2) > 0.5: continue
+                
+        ##         final_ts_obj = ghmm.EmissionSequence(self.F, X_test+[x1, x2])
+
+        ##         try:                
+        ##             ## p = self.ml.loglikelihood(final_ts_obj)
+        ##             p = self.ml.posterior(final_ts_obj)
+        ##         except:
+        ##             continue
+                
+        ##         if max_p < p:
+        ##             max_p = p
+        ##             max_x1 = x1
+        ##             max_x2 = x2
+        
+        ## #------------------------------------------------------
+        ## final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+        ## p = self.ml.posterior(final_ts_obj)
+
+        ## for j in xrange(self.nState):
+        ##     total = np.sum(self.A[:,j]*p[n/self.nEmissionDim-1]) #* scaling_factor
+        ##     [[mu1, mu2], [cov11, cov12, cov21, cov22]] = self.B[j]
+            
+        ##     mu_l[0] += mu1*total
+        ##     mu_l[1] += mu2*total
+        ##     cov_l[0] += (cov11)*(total**2)
+        ##     cov_l[1] += (cov12)*(total**2)
+        ##     cov_l[2] += (cov21)*(total**2)
+        ##     cov_l[3] += (cov22)*(total**2)
+
+
+        #------------------------------------------------------
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test + [x1, x2])
+
+        try:
+            (alpha,scale) = self.ml.forward(final_ts_obj)
+        except:
+            print "No alpha is available !!"
+
+            
+        alpha = np.array(alpha)
+        ## print x2
+        ## print alpha[n/self.nEmissionDim]
+
+        for j in xrange(self.nState):
+            
+            [[mu1, mu2], [cov11, cov12, cov21, cov22]] = self.B[j]
+
+            mu_l[0] = x1
+            mu_l[1] += alpha[n/self.nEmissionDim,j]*(mu2 + cov21/cov11*(x1 - mu1) )
+            ## cov_l[0] += (cov11)*(total**2)
+            ## cov_l[1] += (cov12)*(total**2)
+            ## cov_l[2] += (cov21)*(total**2)
+            ## cov_l[3] += (cov22)*(total**2)
+
+            
+
+        return mu_l, cov_l
+        
+
+    #----------------------------------------------------------------------        
+    #
+    def likelihood(self, X):
+
+        X = np.squeeze(X)
+        X_test = X.tolist()        
+        n = len(X_test)
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+
+        try:    
+            p = self.ml.loglikelihood(final_ts_obj)
+            ## p = self.ml.posterior(final_ts_obj)
+        except:
+            p = 0.0
+
+        return p
+        
     #----------------------------------------------------------------------
     # Returns the mean accuracy on the given test data and labels.
     def score(self, X_test, **kwargs):
@@ -313,9 +414,6 @@ class learning_hmm_multi(learning_base):
             print centers[i], widths[i]
             temp += widths[i]
 
-        print temp
-        sys.exit()
-
         return mu_1,mu_2,cov
         
     
@@ -399,19 +497,19 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def pred_plot(self, X_test1, X_test2):
+    def data_plot(self, X_test1, X_test2, color='r'):
 
-        X_test = self.convert_sequence(X_test1, X_test2, emission=False)        
-        ## X_test = np.squeeze(X_test)
-        
-        mu, cov = self.predict(X_test)
-
-        print mu
-        ## print cov
         
         ## Main predictive distribution        
-        self.ax1.plot(np.hstack([X_test1[0], mu[0]]))
-        self.ax2.plot(np.hstack([X_test2[0], mu[1]]))
+        self.ax1.plot(np.hstack([X_test1[0]]), color)
+        self.ax2.plot(np.hstack([X_test2[0]]), color)
+
+        ## self.ax1.plot(np.hstack([X_test1[0], mu[0]]))
+        ## self.ax2.plot(np.hstack([X_test2[0], mu[1]]))
+
+        
+
+
         
 
     #----------------------------------------------------------------------        
@@ -436,17 +534,15 @@ class learning_hmm_multi(learning_base):
         X = []
         for i in xrange(n):
             Xs = []
-            for j in xrange(m):
-                Xs.append([X1[i,j], X2[i,j]])                
-            ## if emission:
-            ##     for j in xrange(m):
-            ##         Xs.append([X1[i,j], X2[i,j]])
-            ## else:
-            ##     for j in xrange(m):
-            ##         Xs.append(X1[i,j])
-            ##         Xs.append(X2[i,j])
-            
-            X.append(np.array(Xs).flatten().tolist())
+                
+            if emission:
+                for j in xrange(m):
+                    Xs.append([X1[i,j], X2[i,j]])
+                X.append(Xs)                    
+            else:
+                for j in xrange(m):
+                    Xs.append([X1[i,j], X2[i,j]])                
+                X.append(np.array(Xs).flatten().tolist())
 
         return np.array(X)
         
@@ -462,4 +558,228 @@ class learning_hmm_multi(learning_base):
             X2[:,i:i+1] = X[:,i*2+1:i*2+2] 
 
         return X1, X2
+        
+
+    #----------------------------------------------------------------------        
+    #
+    def simulation(self, X1, X2):
+
+        X1= np.squeeze(X1)
+        X2= np.squeeze(X2)
+        
+        X_time = np.arange(0.0, len(X1), 1.0)
+        
+        plt.rc('text', usetex=True)
+        
+        self.fig = plt.figure(1)
+        self.gs = gridspec.GridSpec(2, 2, width_ratios=[6, 1]) 
+        
+        #-------------------------- 1 ------------------------------------
+        self.ax11 = self.fig.add_subplot(self.gs[0,0])
+        self.ax11.set_xlim([0, np.max(X_time)*1.05])
+        self.ax11.set_ylim([0, np.max(X1)*1.4])
+        ## self.ax11.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
+        ## self.ax11.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
+
+        self.ax12 = self.fig.add_subplot(self.gs[0,1])        
+        lbar_1,    = self.ax12.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
+        self.ax12.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
+        self.ax12.text(0.05, 0.95, 'Abnormal', fontsize='14', zorder=0)            
+        self.ax12.set_xlim([0.0, 1.0])
+        self.ax12.set_ylim([0, 1.0])        
+        self.ax12.set_xlabel("Anomaly \n Gauge", fontsize=18)        
+        plt.setp(self.ax12.get_xticklabels(), visible=False)
+        plt.setp(self.ax12.get_yticklabels(), visible=False)
+
+        self.ax21 = self.fig.add_subplot(self.gs[1,0])
+        self.ax21.set_xlim([0, np.max(X_time)*1.05])
+        self.ax21.set_ylim([0, np.max(X1)*1.4])
+        ## self.ax21.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
+        ## self.ax21.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
+
+        self.ax22 = self.fig.add_subplot(self.gs[1,1])        
+        lbar_2,    = self.ax22.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
+        self.ax22.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
+        self.ax22.text(0.05, 0.95, 'Abnormal', fontsize='14', zorder=0)            
+        self.ax22.set_xlim([0.0, 1.0])
+        self.ax22.set_ylim([0, 1.0])        
+        self.ax22.set_xlabel("Anomaly \n Gauge", fontsize=18)        
+        plt.setp(self.ax22.get_xticklabels(), visible=False)
+        plt.setp(self.ax22.get_yticklabels(), visible=False)
+        
+        #-------------------------- 1 ------------------------------------
+
+        lAll_1, = self.ax11.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
+        line_1, = self.ax11.plot([], [], lw=2, label='Current force history')
+        lmean_1, = self.ax11.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
+        lvar1_1, = self.ax11.plot([], [], '--', color='0.75', linewidth=2.0, \
+                                  label=r'Predicted bounds \mu \pm ( d_1 \sigma + d_2 )')    
+        lvar2_1, = self.ax11.plot([], [], '--', color='0.75', linewidth=2.0, )    
+        ## self.ax11.legend(loc=2,prop={'size':12})        
+
+        lAll_2, = self.ax21.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
+        line_2, = self.ax21.plot([], [], lw=2, label='Current force history')
+        lmean_2, = self.ax21.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
+        lvar1_2, = self.ax21.plot([], [], '--', color='0.75', linewidth=2.0, \
+                                  label=r'Predicted bounds \mu \pm ( d_1 \sigma + d_2 )')    
+        lvar2_2, = self.ax21.plot([], [], '--', color='0.75', linewidth=2.0, )    
+        ## self.ax21.legend(loc=2,prop={'size':12})               
+        
+        self.fig.subplots_adjust(wspace=0.02)        
+        
+        def init():
+            lAll_1.set_data([],[])
+            line_1.set_data([],[])
+            lmean_1.set_data([],[])
+            lvar1_1.set_data([],[])
+            lvar2_1.set_data([],[])
+            lbar_1.set_height(0.0)            
+
+            lAll_2.set_data([],[])
+            line_2.set_data([],[])
+            lmean_2.set_data([],[])
+            lvar1_2.set_data([],[])
+            lvar2_2.set_data([],[])
+            lbar_2.set_height(0.0)            
+            
+            return lAll_1, line_1, lmean_1, lvar1_1, lvar2_1, lbar_1, \
+              lAll_2, line_2, lmean_2, lvar1_2, lvar2_2, lbar_2,
+
+        def animate(i):
+            lAll_1.set_data(X_time, X1)            
+            lAll_2.set_data(X_time, X2)            
+            
+            x = X_time[:i]
+            y1 = X1[:i]
+            y2 = X2[:i]
+
+            ## if i >= 30:
+            ##     y1[29] = 4.0
+            
+            x_nxt = X_time[:i+1]
+            y_nxt1 = X1[:i+1]
+            y_nxt2 = X2[:i+1]
+            line_1.set_data(x, y1)
+            line_2.set_data(x, y2)
+
+            
+            if i > 1:
+            ##     mu_list, var_list = self.update_buffer(y)            
+                ## # check anomaly score
+                ## bFlag, err, fScore = self.check_anomaly(y_nxt[-1])
+                
+                X_test = self.convert_sequence(np.array([y1]), np.array([y2]), emission=False)                
+                ## mu, cov = self.predict(X_test)
+                p       = self.likelihood(X_test)
+
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                posterior = self.ml.posterior(final_ts_obj)
+                state_idx = posterior[i-1].index(max(posterior[i-1]))
+                threshold = self.likelihood_avg[state_idx]
+                
+            
+            if i >= 3 and i < len(X1)-1:# -self.nFutureStep:
+
+                ## x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)            
+                ## a_X   = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
+                
+                ## if x[-1]-x_sup < x[-1]-x[-2]:                    
+                ##     y_idx = 1
+                ## else:
+                ##     y_idx = int((x[-1]-x_sup)/(x[-1]-x[-2]))+1
+                ## a_time = [x[-1], x[-1]+1.0] 
+                ## a_mu1  = np.hstack([y1[-1], mu[0]])
+                ## a_mu2  = np.hstack([y2[-1], mu[1]])
+                ## a_sig1 = np.hstack([0, np.sqrt(cov[0])])
+                ## a_sig2 = np.hstack([0, np.sqrt(cov[3])])
+
+                ## lmean_1.set_data( a_time, a_mu1)
+                ## lmean_2.set_data( a_time, a_mu2)
+
+                ## sig_mult = self.sig_mult*np.arange(self.nFutureStep) + self.sig_offset
+                ## sig_mult = np.hstack([0, sig_mult])
+
+                ## min_val = a_mu1 - a_sig1 
+                ## max_val = a_mu1 + a_sig1 
+
+                ## lvar1_1.set_data( a_time, min_val)
+                ## lvar2_1.set_data( a_time, max_val)
+
+                lbar_2.set_height(1)
+                if p < threshold*0.7:
+                    lbar_2.set_color('r')
+                elif p < threshold*0.95:          
+                    lbar_2.set_color('orange')
+                else:
+                    lbar_2.set_color('b')
+                    
+            else:
+                lmean_1.set_data([],[])
+                lvar1_1.set_data([],[])
+                lvar2_1.set_data([],[])
+                lbar_1.set_height(0.0)           
+
+                lmean_2.set_data([],[])
+                lvar1_2.set_data([],[])
+                lvar2_2.set_data([],[])
+                lbar_2.set_height(0.0)           
+                
+            ## if i>=0 or i<4 : 
+            ##     self.ax1.legend(handles=[lAll, line, lmean, lvar1], loc=2,prop={'size':12})        
+            ## else:
+            ##     self.ax1.legend.set_visible(False)
+                                
+            ## if i%3 == 0 and i >0:
+            ##     plt.savefig('roc_ani_'+str(i)+'.pdf')
+                
+                
+            return lAll_1, line_1, lmean_1, lvar1_1, lvar2_1, lbar_1, \
+              lAll_2, line_2, lmean_2, lvar1_2, lvar2_2, lbar_2,
+
+           
+        anim = animation.FuncAnimation(self.fig, animate, init_func=init,
+                                       frames=len(X1), interval=300, blit=True)
+
+        ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
+        plt.show()
+
+        
+        
+        ## print "----------------------"
+        ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
+        ## seq = np.array(seq)
+        ## X1, X2 = self.convert_sequence_reverse(seq)
+
+
+        ## mu = np.array(self.B[:,0])
+        ## cov = np.array(self.B[:,1])
+        ## mu1 = []
+        ## mu2 = []
+        ## cov11=[]
+        ## cov12=[]
+        ## cov21=[]
+        ## cov22=[]
+            
+        ## for i in xrange(len(mu)):
+        ##     mu1.append(mu[i][0])
+        ##     mu2.append(mu[i][1])
+        ##     cov11.append(cov[i][0])
+        ##     cov22.append(cov[i][3])
+            
+        ## plt.figure()
+        ## plt.subplot(211)
+        ## plt.plot(aXData1[0],'r')
+        ## ## plt.plot(self.mu1,'b')
+        ## ## plt.plot(mu1+np.sqrt(cov11),'b')
+        ## for j in xrange(len(X1)):
+        ##     plt.plot(X1[j],'b')
+        ## plt.subplot(212)
+        ## plt.plot(aXData2[0],'r')        
+        ## ## plt.plot(self.mu2,'b')
+        ## ## plt.plot(mu2+np.sqrt(cov22),'b')
+        ## for j in xrange(len(X2)):
+        ##     plt.plot(X2[j],'b')
+        ## ## plt.subplot(313)
+        ## plt.show()
+        ## sys.exit()
         

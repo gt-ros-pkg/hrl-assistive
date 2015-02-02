@@ -484,11 +484,23 @@ def scaling(X):
 
     min_c = np.min(X)
     max_c = np.max(X)
-    X_scaled = X / (max_c-min_c) + min_c
+    X_scaled = (X-min_c) / (max_c-min_c) * 5.0
 
     return X_scaled, min_c, max_c
 
 
+def movingaverage(values,window):
+    weigths = np.repeat(1.0, window)/window
+    #including valid will REQUIRE there to be enough datapoints.
+    #for example, if you take out valid, it will start @ point one,
+    #not having any prior points, so itll be 1+0+0 = 1 /3 = .3333
+
+    new_values = []
+    for value in values:
+        new_value = np.convolve(value, weigths, 'valid')
+        new_values.append(new_value)
+    return np.array(new_values)
+    
 
 if __name__ == '__main__':
 
@@ -498,6 +510,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
                  default=False, help='Renew pickle files.')
+    p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
+                 default=False, help='Plot by time using animation')
     opt, args = p.parse_args()
 
 
@@ -528,13 +542,19 @@ if __name__ == '__main__':
     aXData1  = d['ft_force_mag_l']
     aXData2  = d['audio_rms_l'] 
 
+    # Mvg filtering
+    ## aXData1_avg = movingaverage(aXData1, 5)
+    ## aXData2_avg = movingaverage(aXData2, 5)    
+    aXData1_avg = aXData1
+    aXData2_avg = aXData2
+    
     # min max scaling
-    aXData1_scaled, min_c1, max_c1 = scaling(aXData1)
-    aXData2_scaled, min_c2, max_c2 = scaling(aXData2)    
-    aXData1_scaled = aXData1
-    ## aXData2_scaled = aXData2
-
-    nState   = 30
+    aXData1_scaled, min_c1, max_c1 = scaling(aXData1_avg)
+    aXData2_scaled, min_c2, max_c2 = scaling(aXData2_avg)    
+    ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
+    ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
+    
+    nState   = 20
     trans_type= "left_right"
     ## nMaxStep = 36 # total step of data. It should be automatically assigned...
             
@@ -543,14 +563,29 @@ if __name__ == '__main__':
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
     lhm.fit(aXData1_scaled, aXData2_scaled)
     print "----------------------------"
-    
-    # TEST
-    X_test1 = aXData1_scaled[0:1,:-65]
-    X_test2 = aXData2_scaled[0:1,:-65]
-    ## X_test = lhm.convert_sequence(X_test1, X_test2)
-    ## lhm.predict(X_test)
 
-    #
-    lhm.init_plot()
-    lhm.pred_plot(X_test1, X_test2)
-    lhm.final_plot()
+    if opt.bAnimation:
+
+        lhm.simulation(aXData1_scaled[0], aXData2_scaled[0])
+        
+    else:
+        # TEST
+        nCurrentStep = 37
+        ## X_test1 = aXData1_scaled[0:1,:nCurrentStep]
+        ## X_test2 = aXData2_scaled[0:1,:nCurrentStep]
+        X_test1 = aXData1_scaled[0:1]
+        X_test2 = aXData2_scaled[0:1]
+
+        #
+        lhm.init_plot()
+        lhm.data_plot(X_test1, X_test2, color = 'r')
+
+        X_test1[0,50] = 2.7
+        X_test1[0,51] = 2.7
+        X_test = lhm.convert_sequence(X_test1, X_test2, emission=False)
+        print lhm.likelihood(X_test), lhm.likelihood_avg
+        ## mu, cov = self.predict(X_test)
+        lhm.data_plot(X_test1, X_test2, color = 'b')
+
+        
+        lhm.final_plot()
