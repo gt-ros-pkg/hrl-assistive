@@ -20,13 +20,12 @@ import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker
 
 def load_data(data_path, prefix, normal_only=True):
 
-    pkl_list = glob.glob(data_path+prefix+'*.pkl')
+    pkl_list = glob.glob(data_path+'*_'+prefix+'*.pkl')
     ## pkl_list = glob.glob(data_path+'*.pkl')
 
     ft_time_list   = []
@@ -45,8 +44,7 @@ def load_data(data_path, prefix, normal_only=True):
     for pkl in pkl_list:
         
         bNormal = True
-        if '_b' in pkl: bNormal = False
-
+        if pkl.find('success') < 0: bNormal = False
         if normal_only and bNormal is False: continue
 
         d = ut.load_pickle(pkl)
@@ -266,6 +264,7 @@ def cutting(d):
              
         
         # Compare with reference
+        #-------------------------------------------------------------
         dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)
         ## fig = plt.figure(1)
         ## ax = fig.add_subplot(111)
@@ -287,6 +286,19 @@ def cutting(d):
             audio_rms_cut_dtw.append(audio_rms_cut[path[1][idx]])
         ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][-1]])
         audio_rms_cut_dtw.append(audio_rms_cut[path[1][-1]])
+        #-------------------------------------------------------------
+        import rpy2.robjects.numpy2ri
+        from rpy2.robjects.packages import importr
+
+        # Set up our R namespaces
+        R = rpy2.robjects.r
+        DTW = importr('dtw')
+
+        
+
+        
+        
+        #-------------------------------------------------------------
 
 
             
@@ -445,7 +457,7 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
     pp.show()
 
-def plot_all(data):
+def plot_all(data1, data2):
 
         ## # find init
         ## pp.figure()
@@ -460,12 +472,12 @@ def plot_all(data):
         ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
     pp.figure()
     pp.subplot(211)
-    for i, d in enumerate(data):
-        pp.plot(d[0])
+    for i, d in enumerate(data1):
+        pp.plot(d)
         
     pp.subplot(212)
-    for i, d in enumerate(data):
-        pp.plot(d[1])
+    for i, d in enumerate(data2):
+        pp.plot(d)
     pp.show()
     
     
@@ -484,7 +496,7 @@ def scaling(X):
 
     min_c = np.min(X)
     max_c = np.max(X)
-    X_scaled = (X-min_c) / (max_c-min_c) * 5.0
+    X_scaled = (X-min_c) / (max_c-min_c) * 1.0
 
     return X_scaled, min_c, max_c
 
@@ -512,16 +524,18 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
+    p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
+                 default=False, help='Plot all data')
     opt, args = p.parse_args()
 
 
     data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
 
-    task = 0
+    task = 1
     if task == 1:
         prefix = 'microwave'
     elif task == 2:        
-        prefix = 'down'
+        prefix = 'door'
     elif task == 3:        
         prefix = 'lock'
     else:
@@ -553,6 +567,16 @@ if __name__ == '__main__':
     aXData2_scaled, min_c2, max_c2 = scaling(aXData2_avg)    
     ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
     ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
+
+
+    #---------------------------------------------------------------------------
+    if opt.bAllPlot:
+        print np.shape(aXData1_scaled), np.shape(aXData2_scaled)
+        plot_all(aXData1_scaled, aXData2_scaled)
+        sys.exit()
+
+
+    #---------------------------------------------------------------------------
     
     nState   = 20
     trans_type= "left_right"
