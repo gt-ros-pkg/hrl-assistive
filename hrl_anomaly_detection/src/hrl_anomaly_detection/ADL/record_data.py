@@ -11,6 +11,7 @@ import scipy.signal as signal
 import scipy.fftpack
 import operator
 from threading import Thread
+import glob
 
 # ROS
 import roslib
@@ -395,24 +396,55 @@ class ADL_log():
         rospy.logout('ADLs_log node subscribing..')
 
 
-    def task_cmd_input(self):
+    def task_cmd_input(self, subject=None, task=None, actor=None, trial_name=None):
         confirm = False
         while not confirm:
             valid = True
-            self.sub_name=raw_input("Enter subject's name: ")
-            num=raw_input("Enter the number for the choice of task:"+\
-            "\n1) cup \n2) door \n3) wipe"+\
-            "\n4) spoon\n5) tooth brush\n6) comb\n: ")
+
+            if subject is not None: self.sub_name = subject
+            else: self.sub_name=raw_input("Enter subject's name: ")
+
+            if task is not None: num = task
+            else:
+                num=raw_input("Enter the number for the choice of task:")
+                ## "\n1) cup \n2) door \n3) drawer"+\
+                ## "\n4) staple\n5) microwave_black\n6) dishwasher\n7) wallsw\n: ")
+                
             if num == '1':
-                self.task_name = 'cup'
+                self.task_name = 'microwave_black'
             elif num == '2':
-                self.task_name = 'door'
+                self.task_name = 'microwave_white'
+            elif num == '3':
+                self.task_name = 'microwave_kitchen'
+            elif num == '4':
+                self.task_name = 'door_room'
+            elif num == '5':
+                self.task_name = 'door_storage'
+            elif num == '6':
+                self.task_name = 'door_reception'
+            elif num == '7':
+                self.task_name = 'drawer_white'
+            elif num == '8':
+                self.task_name = 'drawer_desk'
+            elif num == '9':
+                self.task_name = 'drawer_reception',
+            elif num == '10':
+                self.task_name = 'wallsw_nidrr_room'
+
+            elif num == '11':
+                self.task_name = 'cup'
+            elif num == '12':
+                self.task_name = 'staple'
+            elif num == '13':
+                self.task_name = 'dishwasher'
             else:
                 print '\n!!!!!Invalid choice of task!!!!!\n'
                 valid = False
+                sys.exit()
 
             if valid:
-                num=raw_input("Select actor:\n1) human \n2) robot\n: ")
+                if actor is not None: num = actor
+                else: num=raw_input("Select actor:\n1) human \n2) robot\n: ")
                 if num == '1':
                     self.actor = 'human'
                 elif num == '2':
@@ -420,17 +452,21 @@ class ADL_log():
                 else:
                     print '\n!!!!!Invalid choice of actor!!!!!\n'
                     valid = False
-            if valid:
-                self.trial_name=raw_input("Enter trial's name (e.g. arm1, arm2): ")
-                self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
-                ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
-                if ans == 'y':
-                    confirm = True
+                    sys.exit()
                     
-    def init_log_file(self):
+            if valid:
+                if trial_name is not None: self.trial_name = trial_name
+                else:
+                    self.trial_name=raw_input("Enter trial's name (e.g. success, failure_reason): ")
+                self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
+                ## ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
+                ## if ans == 'y':
+                confirm = True
+                    
+    def init_log_file(self, subject=None, task=None, actor=None, trial_name=None):
 
         if self.test_mode is False: 
-            self.task_cmd_input()
+            self.task_cmd_input(subject, task, actor, trial_name)
 
         if self.ft: 
             self.ft = tool_ft(self.ft_sensor_topic_name)
@@ -439,8 +475,19 @@ class ADL_log():
         if self.audio: 
             self.audio = tool_audio()
             ## self.audio_log_file = open(self.file_name+'_audio.log','w')        
-            
-        self.pkl = self.file_name+'.pkl'
+
+
+        pkl_list = glob.glob('*.pkl')
+        max_num = 0
+        for pkl in pkl_list:
+            if pkl.find(self.file_name)>=0:
+                num = pkl.split('_')[-1].split('.')[0] 
+                if max_num < num:
+                    max_num = num
+        max_num = int(max_num)+1
+        self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
+
+        print "File name: ", self.pkl
 
         raw_input('press Enter to reset')
         if self.ft: self.ft.reset()
@@ -494,10 +541,13 @@ class ADL_log():
 
 if __name__ == '__main__':
 
-
+    subject = 'dh'
+    task = '1'
+    actor = '1'
+    trial_name = 'success'
     
-    log = ADL_log(audio=True, ft=False, test_mode=True)
-    log.init_log_file()
+    log = ADL_log(audio=True, ft=True, test_mode=False)
+    log.init_log_file(subject, task, actor, trial_name)
 
     log.log_start()
     
