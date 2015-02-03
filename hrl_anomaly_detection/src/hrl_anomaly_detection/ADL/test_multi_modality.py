@@ -139,6 +139,8 @@ def cutting(d):
     ft_force  = ft_force_l[ref_idx]
     ft_torque = ft_torque_l[ref_idx]        
     ft_force_mag = np.linalg.norm(ft_force,axis=0)
+    audio_time = audio_time_l[ref_idx]
+    audio_data = audio_data_l[ref_idx]    
                 
     nZero = 5
     ft_zero = np.mean(ft_force_mag[:nZero]) * 1.5
@@ -157,13 +159,11 @@ def cutting(d):
     ft_time_cut      = np.array(ft_time[idx_start:idx_end])
     ft_force_cut     = ft_force[:,idx_start:idx_end]
     ft_torque_cut    = ft_torque[:,idx_start:idx_end]
-    ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
+    ft_force_mag_cut = ft_force_mag[idx_start:idx_end]
 
     #----------------------------------------------------
     start_time = ft_time[idx_start]
     end_time   = ft_time[idx_end]
-    audio_time = audio_time_l[ref_idx]
-    audio_data = audio_data_l[ref_idx]
 
     a_idx_start = None
     a_idx_end   = None                
@@ -263,17 +263,34 @@ def cutting(d):
         ## pp.show()
              
         
-        # Compare with reference
+
         #-------------------------------------------------------------
-        dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)
+
+        from test_dtw2 import Dtw
+
+        ref_seq    = np.vstack([ft_force_mag_ref, audio_rms_ref])
+        tgt_seq = np.vstack([ft_force_mag_cut, audio_rms_cut])
+
+        dtw = Dtw(ref_seq.T, tgt_seq.T, distance_weights=[1.0, 1.0])
+        ## dtw = Dtw(ref_seq.T, tgt_seq.T, distance_weights=[1.0, 10000.0])
+        ## dtw = Dtw(ref_seq.T, tgt_seq.T, distance_weights=[1.0, 10000000.0])
+        
+        dtw.calculate()
+        path = dtw.get_path()
+        path = np.array(path).T
+        
+        #-------------------------------------------------------------        
+        dist, cost, path_1d = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)        
         ## fig = plt.figure(1)
         ## ax = fig.add_subplot(111)
         ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-        ## plot2 = plt.plot(path[0], path[1], 'w')
+        ## plot2 = plt.plot(path_1d[0], path_1d[1], 'w')
+        ## plot2 = plt.plot(path[0], path[1], 'r')
         ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
         ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
         ## plt.show()
-
+        ## sys.exit()
+        #-------------------------------------------------------------        
 
         ft_force_mag_cut_dtw = []        
         audio_rms_cut_dtw    = []        
@@ -286,31 +303,8 @@ def cutting(d):
             audio_rms_cut_dtw.append(audio_rms_cut[path[1][idx]])
         ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][-1]])
         audio_rms_cut_dtw.append(audio_rms_cut[path[1][-1]])
-        #-------------------------------------------------------------
-        import rpy2.robjects.numpy2ri
-        from rpy2.robjects.packages import importr
-
-        # Set up our R namespaces
-        R = rpy2.robjects.r
-        DTW = importr('dtw')
 
         
-
-        
-        
-        #-------------------------------------------------------------
-
-
-            
-        ## dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut_dtw, dist_only=False)
-        ## fig = plt.figure(1)
-        ## ax = fig.add_subplot(111)
-        ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-        ## plot2 = plt.plot(path[0], path[1], 'w')
-        ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
-        ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
-        ## plt.show()
-                    
         print "==================================="
         print len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
         print "==================================="
@@ -491,12 +485,11 @@ def get_rms(frame, MAX_INT=32768.0):
 def scaling(X):
     '''        
     '''
-
     ## X_scaled = preprocessing.scale(np.array(X))
 
     min_c = np.min(X)
     max_c = np.max(X)
-    X_scaled = (X-min_c) / (max_c-min_c) * 1.0
+    X_scaled = (X-min_c) / (max_c-min_c) * 5.0
 
     return X_scaled, min_c, max_c
 
@@ -590,7 +583,7 @@ if __name__ == '__main__':
 
     if opt.bAnimation:
 
-        lhm.simulation(aXData1_scaled[0], aXData2_scaled[0])
+        lhm.simulation(aXData1_scaled[2], aXData2_scaled[2])
         
     else:
         # TEST

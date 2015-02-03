@@ -116,11 +116,12 @@ class learning_hmm_multi(learning_base):
         for j in xrange(m):  
             if j < 3: continue
             X_train  = self.convert_sequence(aXData1[:,:j], aXData2[:,:j])            
-            
+
             for i in xrange(n):                                  
                 p = self.likelihood(X_train[i:i+1])
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i].tolist())
                 posterior = self.ml.posterior(final_ts_obj)
+
                 state_idx = posterior[j-1].index(max(posterior[j-1]))
 
                 likelihood_sum[state_idx] += p
@@ -653,8 +654,8 @@ class learning_hmm_multi(learning_base):
             y1 = X1[:i]
             y2 = X2[:i]
 
-            ## if i >= 30:
-            ##     y1[29] = 4.0
+            if i >= 30:
+                y1[29] = 2.0
             
             x_nxt = X_time[:i+1]
             y_nxt1 = X1[:i+1]
