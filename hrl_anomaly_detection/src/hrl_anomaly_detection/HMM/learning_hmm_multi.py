@@ -84,7 +84,6 @@ class learning_hmm_multi(learning_base):
             for i in range(self.nState):
                 B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i,0,0],self.cov[i,0,1], \
                                                    self.cov[i,1,0],self.cov[i,1,1]]]       
-
                             
         if pi is None:            
             # pi - initial probabilities per state 
@@ -95,15 +94,15 @@ class learning_hmm_multi(learning_base):
         # Training input
         X_train  = self.convert_sequence(aXData1, aXData2)
         ## X_scaled = self.scaling(X_train)
-
+        
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
 
         print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
-        self.ml.baumWelch(final_seq)
-        ## self.ml.baumWelch(final_seq, 10000)
+        ## self.ml.baumWelch(final_seq)
+        self.ml.baumWelch(final_seq, 10000)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
@@ -126,8 +125,13 @@ class learning_hmm_multi(learning_base):
 
                 likelihood_sum[state_idx] += p
                 likelihood_cnt[state_idx] += 1.0
-                
-        self.likelihood_avg = likelihood_sum / likelihood_cnt
+
+        try:
+            self.likelihood_avg = likelihood_sum / likelihood_cnt
+        except:
+            print "likelihood_cnt error"
+            print likelihood_cnt
+            sys.exit()
 
         # state range
         self.state_range = np.arange(0, self.nState, 1)

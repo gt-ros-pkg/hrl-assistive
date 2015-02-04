@@ -6,13 +6,18 @@ import glob
 import socket
 import time
 import random 
-import scipy as scp
-from scipy import interpolate       
-import mlpy
-from sklearn import preprocessing
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
+
+# Machine learning library
+import mlpy
+import scipy as scp
+from scipy import interpolate       
+from sklearn import preprocessing
+from mvpa2.datasets.base import Dataset
+from mvpa2.generators.partition import NFoldPartitioner
+from mvpa2.generators import splitters
 
 # Util
 import hrl_lib.util as ut
@@ -20,306 +25,39 @@ import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
+import data_manager as dm
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
-from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker
-
-def load_data(data_path, prefix, normal_only=True):
-
-    pkl_list = glob.glob(data_path+'*_'+prefix+'*.pkl')
-    ## pkl_list = glob.glob(data_path+'*.pkl')
-
-    ft_time_list   = []
-    ft_force_list  = []
-    ft_torque_list = []
-
-    audio_time_list = []
-    audio_data_list = []
-    audio_amp_list = []
-    audio_freq_list = []
-    audio_chunk_list = []
-
-    label_list = []
-    name_list = []
-
-    for pkl in pkl_list:
-        
-        bNormal = True
-        if pkl.find('success') < 0: bNormal = False
-        if normal_only and bNormal is False: continue
-
-        d = ut.load_pickle(pkl)
-
-        ft_time  = d.get('ft_time',None)
-        ft_force  = d.get('ft_force_raw',None)
-        ft_torque = d.get('ft_torque_raw',None)
-        
-        audio_time  = d['audio_time']
-        audio_data  = d['audio_data']
-        audio_amp   = d['audio_amp']
-        audio_freq  = d['audio_freq']
-        audio_chunk = d['audio_chunk']
-
-        ft_force = np.array(ft_force).squeeze().T
-        ft_torque = np.array(ft_torque).squeeze().T
-
-        ft_time_list.append(ft_time)
-        ft_force_list.append(ft_force)
-        ft_torque_list.append(ft_torque)
-
-        audio_time_list.append(audio_time)
-        audio_data_list.append(audio_data)
-        audio_amp_list.append(audio_amp)
-        audio_freq_list.append(audio_freq)
-        audio_chunk_list.append(audio_chunk)
-
-        label_list.append(bNormal)
-
-        head, tail = os.path.split(pkl)
-        name_list.append(tail)
+from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
-    d = {}
-    d['ft_time']       = ft_time_list
-    d['ft_force_raw']  = ft_force_list
-    d['ft_torque_raw'] = ft_torque_list
+def fig_roc_human(aXData1, aXData2, chunks, labels):
 
-    d['audio_time']  = audio_time_list
-    d['audio_data']  = audio_data_list
-    d['audio_amp']   = audio_amp_list
-    d['audio_freq']  = audio_freq_list
-    d['audio_chunk'] = audio_chunk_list    
+    # min max scaling
+    aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+    aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
 
-    d['labels'] = label_list
-    d['names'] = name_list
-        
-    return d
-
-
-def cutting(d):
-
-    labels      = d['labels']
-    names       = d['names']
-    ft_time_l   = d['ft_time']
-    ft_force_l  = d['ft_force_raw']
-    ft_torque_l = d['ft_torque_raw']
-
-    audio_time_l = d['audio_time']
-    audio_data_l = d['audio_data']
-    audio_amp_l  = d['audio_amp']
-    audio_freq_l = d['audio_freq']
-    audio_chunk_l= d['audio_chunk']
-
-    ft_time_list   = []
-    ft_force_list  = []
-    ft_torque_list = []
-    ft_force_mag_list = []
-    audio_time_list = []
-    audio_data_list = []
-    audio_amp_list = []
-    audio_freq_list = []
-    audio_chunk_list = []
-    audio_rms_list = []
-
-    hmm_input_l = []    
-
-    MAX_INT = 32768.0
-    CHUNK   = 1024 #frame per buffer
-    RATE    = 44100 #sampling rate
-
+    dataSet    = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, chunks, labels)
+    nState     = 20
+    trans_type = "left_right"
     
-    #------------------------------------------
-    # Get reference data
-    for i, force in enumerate(ft_force_l):
-        if labels[i] is False: continue
-        else: 
-            ref_idx = i
-            break
+    # Cross validation
+    nfs    = NFoldPartitioner(cvtype=1) # 1-fold ?
+    spl    = splitters.Splitter(attr='partitions')
+    splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
+
+    for l_wdata, l_vdata in splits:
+
+        x1 = l_wdata.samples[:,0,:]
+        x2 = l_wdata.samples[:,1,:]
+
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(aXData1_scaled, aXData2_scaled)
+
+        sys.exit()
         
-    ft_time   = ft_time_l[ref_idx]
-    ft_force  = ft_force_l[ref_idx]
-    ft_torque = ft_torque_l[ref_idx]        
-    ft_force_mag = np.linalg.norm(ft_force,axis=0)
-    audio_time = audio_time_l[ref_idx]
-    audio_data = audio_data_l[ref_idx]    
-                
-    nZero = 5
-    ft_zero = np.mean(ft_force_mag[:nZero]) * 1.5
-
-    idx_start = None
-    idx_end   = None        
-    for j in xrange(len(ft_force_mag)-nZero):
-        avg = np.mean(ft_force_mag[j:j+nZero])
-
-        if avg > ft_zero and idx_start is None:
-            idx_start = j #i+nZero
-        if idx_start is not None:
-            if avg < ft_zero and idx_end is None:
-                idx_end = j+nZero
-
-    ft_time_cut      = np.array(ft_time[idx_start:idx_end])
-    ft_force_cut     = ft_force[:,idx_start:idx_end]
-    ft_torque_cut    = ft_torque[:,idx_start:idx_end]
-    ft_force_mag_cut = ft_force_mag[idx_start:idx_end]
-
-    #----------------------------------------------------
-    start_time = ft_time[idx_start]
-    end_time   = ft_time[idx_end]
-
-    a_idx_start = None
-    a_idx_end   = None                
-    for j, t in enumerate(audio_time):
-        if t > start_time and a_idx_start is None:
-            if (audio_time[j+1] - audio_time[j]) >  float(CHUNK)/float(RATE) :
-                a_idx_start = j
-        if t > end_time and a_idx_end is None:
-            a_idx_end = j
-
-    audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
-    audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end])
-
-    # normalized rms
-    audio_rms_ref = np.zeros(len(audio_time_cut))
-    for j, data in enumerate(audio_data_cut):
-        audio_rms_ref[j] = get_rms(data, MAX_INT)
-
-    x   = np.linspace(0.0, 1.0, len(ft_time_cut))
-    tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
-
-    xnew = np.linspace(0.0, 1.0, len(audio_rms_ref))
-    ft_force_mag_ref = interpolate.splev(xnew, tck, der=0)
-
-    print "==================================="
-    print ft_force_mag_ref.shape,audio_rms_ref.shape 
-    print "==================================="
-
     
-    # DTW wrt the reference
-    for i, force in enumerate(ft_force_l):
-
-        if ref_idx == i:
-            print "its reference"
-            ft_force_mag_list.append(ft_force_mag_ref)                
-            audio_rms_list.append(audio_rms_ref)
-            hmm_input_l.append(np.vstack([ft_force_mag_ref, audio_rms_ref]))            
-            continue
-
-        ft_time   = ft_time_l[i]
-        ft_force  = ft_force_l[i]
-        ft_torque = ft_torque_l[i]        
-        ft_force_mag = np.linalg.norm(ft_force,axis=0)
-
-        start_time = ft_time[0]
-        end_time   = ft_time[-1]
-        ft_time_cut      = np.array(ft_time)
-        ft_force_cut     = ft_force
-        ft_torque_cut    = ft_torque
-        ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
-        
-        audio_time = audio_time_l[i]
-        audio_data = audio_data_l[i]
-        a_idx_start = None
-        a_idx_end   = None                
-        for j, t in enumerate(audio_time):
-            if t > start_time and a_idx_start is None:
-                if (audio_time[j+1] - audio_time[j]) >  float(CHUNK)/float(RATE) :
-                    a_idx_start = j
-            if t > end_time and a_idx_end is None:
-                a_idx_end = j
-                break
-
-        audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end+1])
-        audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end+1])              
-        
-        # normalized rms
-        audio_rms_cut = np.zeros(len(audio_time_cut))
-        for j, data in enumerate(audio_data_cut):
-            audio_rms_cut[j] = get_rms(data, MAX_INT)
-
-
-        ## print ft_time_cut.shape, ft_force_mag_cut.shape
-        ## print len(audio_time_cut), audio_rms_cut.shape
-
-        x   = np.linspace(0.0, 1.0, len(ft_time_cut))
-        tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
-
-        xnew = np.linspace(0.0, 1.0, len(audio_rms_cut))
-        ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
-
-
-        ## pp.figure(1)
-        ## ax = pp.subplot(311)
-        ## pp.plot(ft_force_mag_cut)
-        ## ## pp.plot(ft_time_cut, ft_force_mag_cut)
-        ## ## ax.set_xlim([0, 6.0])
-        ## ax = pp.subplot(312)
-        ## pp.plot(audio_rms_cut)
-        ## ## pp.plot(audio_time_cut, audio_rms_cut)
-        ## ## ax.set_xlim([0, 6.0])
-        ## ax = pp.subplot(313)
-        ## pp.plot(audio_time_cut,'r')
-        ## pp.plot(ft_time_cut,'b')
-        ## ## pp.plot(audio_rms_cut)
-        ## ## ax.set_xlim([0, 6.0])
-        ## pp.show()
-             
-        
-
-        #-------------------------------------------------------------
-
-        from test_dtw2 import Dtw
-
-        ref_seq    = np.vstack([ft_force_mag_ref, audio_rms_ref])
-        tgt_seq = np.vstack([ft_force_mag_cut, audio_rms_cut])
-
-        dtw = Dtw(ref_seq.T, tgt_seq.T, distance_weights=[1.0, 1.0])
-        ## dtw = Dtw(ref_seq.T, tgt_seq.T, distance_weights=[1.0, 10000.0])
-        ## dtw = Dtw(ref_seq.T, tgt_seq.T, distance_weights=[1.0, 10000000.0])
-        
-        dtw.calculate()
-        path = dtw.get_path()
-        path = np.array(path).T
-        
-        #-------------------------------------------------------------        
-        dist, cost, path_1d = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)        
-        ## fig = plt.figure(1)
-        ## ax = fig.add_subplot(111)
-        ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-        ## plot2 = plt.plot(path_1d[0], path_1d[1], 'w')
-        ## plot2 = plt.plot(path[0], path[1], 'r')
-        ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
-        ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
-        ## plt.show()
-        ## sys.exit()
-        #-------------------------------------------------------------        
-
-        ft_force_mag_cut_dtw = []        
-        audio_rms_cut_dtw    = []        
-        new_idx = []
-        for idx in xrange(len(path[0])-1):
-            if path[0][idx] == path[0][idx+1]: continue
-            
-            new_idx.append(path[1][idx])
-            ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][idx]])
-            audio_rms_cut_dtw.append(audio_rms_cut[path[1][idx]])
-        ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][-1]])
-        audio_rms_cut_dtw.append(audio_rms_cut[path[1][-1]])
-
-        
-        print "==================================="
-        print len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
-        print "==================================="
-        
-        ft_force_mag_list.append(ft_force_mag_cut_dtw)                
-        audio_rms_list.append(audio_rms_cut_dtw)
-        hmm_input_l.append(np.vstack([ft_force_mag_cut_dtw, audio_rms_cut_dtw]))
-       
-    d = {}
-    d['ft_force_mag_l'] = np.array(ft_force_mag_list)
-    d['audio_rms_l']    = np.array(audio_rms_list)
-    d['hmm_input_l']    = np.array(hmm_input_l)
-
-    return d
     
+    return
 
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
@@ -476,36 +214,6 @@ def plot_all(data1, data2):
     
     
 
-def get_rms(frame, MAX_INT=32768.0):
-    
-    count = len(frame)
-    return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
-
-
-def scaling(X):
-    '''        
-    '''
-    ## X_scaled = preprocessing.scale(np.array(X))
-
-    min_c = np.min(X)
-    max_c = np.max(X)
-    X_scaled = (X-min_c) / (max_c-min_c) * 5.0
-
-    return X_scaled, min_c, max_c
-
-
-def movingaverage(values,window):
-    weigths = np.repeat(1.0, window)/window
-    #including valid will REQUIRE there to be enough datapoints.
-    #for example, if you take out valid, it will start @ point one,
-    #not having any prior points, so itll be 1+0+0 = 1 /3 = .3333
-
-    new_values = []
-    for value in values:
-        new_value = np.convolve(value, weigths, 'valid')
-        new_values.append(new_value)
-    return np.array(new_values)
-    
 
 if __name__ == '__main__':
 
@@ -517,6 +225,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
+    p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
+                 default=False, help='Plot by a figure of ROC human')
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
     opt, args = p.parse_args()
@@ -526,7 +236,7 @@ if __name__ == '__main__':
 
     task = 1
     if task == 1:
-        prefix = 'microwave'
+        prefix = 'microwave_black'
     elif task == 2:        
         prefix = 'door'
     elif task == 3:        
@@ -540,52 +250,66 @@ if __name__ == '__main__':
     if os.path.isfile(pkl_file) and opt.bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
-        d = load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
-        d = cutting(d)        
+        d = dm.load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
+        d = dm.cutting(d)        
         ut.save_pickle(d, pkl_file)
 
-    ## plot_all(d['hmm_input_l'])        
-    ## aXData   = d['hmm_input_l']
+    #
     aXData1  = d['ft_force_mag_l']
     aXData2  = d['audio_rms_l'] 
+    labels   = d['labels']
+    chunks   = d['chunks'] 
 
-    # Mvg filtering
-    ## aXData1_avg = movingaverage(aXData1, 5)
-    ## aXData2_avg = movingaverage(aXData2, 5)    
-    aXData1_avg = aXData1
-    aXData2_avg = aXData2
     
-    # min max scaling
-    aXData1_scaled, min_c1, max_c1 = scaling(aXData1_avg)
-    aXData2_scaled, min_c2, max_c2 = scaling(aXData2_avg)    
-    ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
-    ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
-
-
     #---------------------------------------------------------------------------
     if opt.bAllPlot:
-        print np.shape(aXData1_scaled), np.shape(aXData2_scaled)
+
+        # Mvg filtering
+        ## aXData1_avg = movingaverage(aXData1, 5)
+        ## aXData2_avg = movingaverage(aXData2, 5)    
+        aXData1_avg = aXData1
+        aXData2_avg = aXData2
+
+        # min max scaling
+        aXData1_scaled, min_c1, max_c1 = scaling(aXData1_avg)
+        aXData2_scaled, min_c2, max_c2 = scaling(aXData2_avg)    
+        ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
+        ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
+       
         plot_all(aXData1_scaled, aXData2_scaled)
-        sys.exit()
 
-
-    #---------------------------------------------------------------------------
-    
-    nState   = 20
-    trans_type= "left_right"
-    ## nMaxStep = 36 # total step of data. It should be automatically assigned...
-            
-    # Learning
-    from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
-    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-    lhm.fit(aXData1_scaled, aXData2_scaled)
-    print "----------------------------"
-
-    if opt.bAnimation:
-
-        lhm.simulation(aXData1_scaled[2], aXData2_scaled[2])
+    #---------------------------------------------------------------------------           
+    elif opt.bRocHuman:
         
+        fig_roc_human(aXData1, aXData2, chunks, labels)
+
+    
+    #---------------------------------------------------------------------------   
+    elif opt.bAnimation:
+
+        nState   = 20
+        trans_type= "left_right"
+        ## nMaxStep = 36 # total step of data. It should be automatically assigned...
+
+        # Learning
+        from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(aXData1_scaled, aXData2_scaled)
+
+        
+        lhm.simulation(aXData1_scaled[2], aXData2_scaled[2])
+
+    #---------------------------------------------------------------------------           
     else:
+
+        nState   = 20
+        trans_type= "left_right"
+        ## nMaxStep = 36 # total step of data. It should be automatically assigned...
+
+        # Learning
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(aXData1_scaled, aXData2_scaled)
+        
         # TEST
         nCurrentStep = 37
         ## X_test1 = aXData1_scaled[0:1,:nCurrentStep]
