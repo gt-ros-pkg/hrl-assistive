@@ -18,6 +18,7 @@ from sklearn import preprocessing
 from mvpa2.datasets.base import Dataset
 from mvpa2.generators.partition import NFoldPartitioner
 from mvpa2.generators import splitters
+from joblib import Parallel, delayed
 
 # Util
 import hrl_lib.util as ut
@@ -30,34 +31,131 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
-def fig_roc_human(aXData1, aXData2, chunks, labels):
+def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPlot=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+    nState     = 20
+    trans_type = "left_right"
+    
+    # Check the existance of workspace
+    cross_test_path = os.path.join(cross_data_path, str(nState))
+    if os.path.isdir(cross_test_path) == False:
+        os.system('mkdir -p '+cross_test_path)
 
     # min max scaling
     aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
     aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
-
     dataSet    = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, chunks, labels)
-    nState     = 20
-    trans_type = "left_right"
-    
+
     # Cross validation
     nfs    = NFoldPartitioner(cvtype=1) # 1-fold ?
     spl    = splitters.Splitter(attr='partitions')
     splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
 
-    for l_wdata, l_vdata in splits:
+    threshold_mult = np.arange(0.05, 1.2, 0.05)    
+    count = 0
+    for ths in threshold_mult:
+    
+        # save file name
+        res_file = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+        res_file = os.path.join(cross_test_path, res_file)
+        
+        mutex_file_part = 'running_ths_'+str(ths)
+        mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+        mutex_file      = os.path.join(cross_test_path, mutex_file_full)
+        
+        if os.path.isfile(res_file): 
+            count += 1            
+            continue
+        elif hcu.is_file(cross_test_path, mutex_file_part): continue
+        elif os.path.isfile(mutex_file): continue
+        os.system('touch '+mutex_file)
 
-        x1 = l_wdata.samples[:,0,:]
-        x2 = l_wdata.samples[:,1,:]
+        for l_wdata, l_vdata in splits:
+            fp, err = anomaly_check(l_wdata, l_vdata, nState, trans_type, ths)
+            print fp, err
 
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-        lhm.fit(aXData1_scaled, aXData2_scaled)
+        print "aaaaaaaaaaaaaaa"
+        
+        n_jobs = 4
+        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(l_wdata, l_vdata, nState, trans_type, ths) \
+                                    for l_wdata, l_vdata in splits) 
+        fp_ll, err_ll = zip(*r)
 
+        print fp_ll, err_ll, ths        
+        import operator
+        fp_l = reduce(operator.add, fp_ll)
+        err_l = reduce(operator.add, err_ll)
+        print fp_l, err_l
         sys.exit()
         
-    
-    
+        d = {}
+        d['fp']  = np.mean(fp_l)
+        if err_l == []:         
+            d['err'] = 0.0
+        else:
+            d['err'] = np.mean(err_l)
+        
+        ut.save_pickle(d,res_file)        
+        os.system('rm '+mutex_file)
+        print "-----------------------------------------------"
+
+    if count == len(threshold_mult) and bPlot:
+        print "#############################################################################"
+        print "All file exist "
+        print "#############################################################################"        
+
+        fp_l = []
+        err_l = []
+        for ths in threshold_mult:
+            res_file   = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+            res_file   = os.path.join(cross_test_path, res_file)
+
+            d = ut.load_pickle(pkl_file)
+            fp  = d['fp'] 
+            err = d['err']         
+
+            fp_l.append(fp)
+            err_l.append(err)
+        
+            fp_l  = np.array(fp_l)*100.0
+            sem_c = 'b'
+            sem_m = '+'
+            semantic_label='likelihood detection \n with known mechanism class'
+
+            pp.figure()
+            pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+            pp.xlabel('False positive rate (percentage)')
+            pp.ylabel('Mean excess likelihood')    
+            pp.xlim([0, 30])
+            pp.show()
+                            
     return
+
+def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
+
+    # Cross validation
+    x_train1 = l_wdata.samples[:,0,:]
+    x_train2 = l_wdata.samples[:,1,:]
+
+    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+    lhm.fit(x_train1, x_train2)
+
+    x_test1 = l_vdata.samples[:,0,:]
+    x_test2 = l_vdata.samples[:,1,:]
+    n,m = np.shape(x_test1)
+    
+    fp_l  = []
+    err_l = []
+    for i in range(n):
+        for j in range(2,4,1):
+            fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
+            fp_l.append(fp)
+            if err != 0.0: err_l.append(err)
+
+    return fp_l, err_l
+    
 
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
@@ -280,8 +378,10 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------           
     elif opt.bRocHuman:
+
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/multi_'+prefix
         
-        fig_roc_human(aXData1, aXData2, chunks, labels)
+        fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix)
 
     
     #---------------------------------------------------------------------------   

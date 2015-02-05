@@ -78,6 +78,8 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
+
+            self.cov *= 1.5 # to avoid No convergence warning
             
             # Emission probability matrix
             B = [0.0] * self.nState
@@ -113,7 +115,7 @@ class learning_hmm_multi(learning_base):
         likelihood_sum = np.zeros(self.nState)
         likelihood_cnt = np.zeros(self.nState)
         for j in xrange(m):  
-            if j < 3: continue
+            if j < 1: continue
             X_train  = self.convert_sequence(aXData1[:,:j], aXData2[:,:j])            
 
             for i in xrange(n):                                  
@@ -126,12 +128,11 @@ class learning_hmm_multi(learning_base):
                 likelihood_sum[state_idx] += p
                 likelihood_cnt[state_idx] += 1.0
 
-        try:
-            self.likelihood_avg = likelihood_sum / likelihood_cnt
-        except:
-            print "likelihood_cnt error"
+        if 0.0 in likelihood_cnt:
+            print "there is zero in likelihood"
             print likelihood_cnt
             sys.exit()
+        self.likelihood_avg = likelihood_sum / likelihood_cnt
 
         # state range
         self.state_range = np.arange(0, self.nState, 1)
@@ -306,6 +307,7 @@ class learning_hmm_multi(learning_base):
             p = self.ml.loglikelihood(final_ts_obj)
             ## p = self.ml.posterior(final_ts_obj)
         except:
+            print "Likelihood error!!!! "
             p = 0.0
 
         return p
@@ -565,6 +567,29 @@ class learning_hmm_multi(learning_base):
         return X1, X2
         
 
+    #----------------------------------------------------------------------        
+    #
+    def anomaly_check(self, X1, X2, ths_mult):
+
+        X_test = self.convert_sequence(X1, X2, emission=False)                
+        p      = self.likelihood(X_test)
+        n      = len(np.squeeze(X1))
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+        posterior = self.ml.posterior(final_ts_obj)
+        state_idx = posterior[n-1].index(max(posterior[n-1]))
+        threshold = self.likelihood_avg[state_idx]
+
+        if p < threshold*ths_mult:
+            ## print 1.0, " : ", state_idx, p, threshold*ths_mult            
+            return 1.0, 0.0 # anomaly
+        else:
+            ## print 0.0, " : ", state_idx, p, threshold*ths_mult
+            return 0.0, p - threshold*ths_mult # normal    
+
+
+
+        
     #----------------------------------------------------------------------        
     #
     def simulation(self, X1, X2):
