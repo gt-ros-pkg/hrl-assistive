@@ -26,6 +26,32 @@
     width: 50%;
     background-image: url("./icons/arrow-toward.png");
 }
+
+.cw-button {
+    position: absolute;
+    bottom: 0px;
+    left:1%;
+    display: block;
+    height: 20%;
+    width: 48%;
+    transform:scaleY(-1);
+    background-size: 90% 90%;
+    background-repeat: no-repeat;
+    background-image: url("./icons/rot-ccw.png");
+}
+
+.ccw-button {
+    position: absolute;
+    bottom: 0px;
+    right: 1%;
+    display: block;
+    height: 20%;
+    width: 48%;
+    transform:scaleY(-1);
+    background-size: 90% 90%;
+    background-repeat: no-repeat;
+    background-image: url("./icons/rot-cw.png");
+}
 .target-trans {
     position:absolute;
     left:30%;
@@ -56,3 +82,5 @@
     background-repeat: no-repeat;
     background-position: center center;
 }
+
+

@@ -174,50 +174,72 @@ RFH.EERotControlIcon = function (options) {
     self.lastDragTime = new Date();
     self.container = $('<div/>', {id: self.divId,
                                   class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
-    self.cwRot = $('<div/>', {class: "cw-rot"}).appendTo('#'+self.divId).button();
+    self.cwRot = $('<div/>', {class: "cw-button"}).appendTo('#'+self.divId).button();
     self.target = $('<div/>', {class: "target-rot"}).appendTo('#'+self.divId);
-    self.ccwRot = $('<div/>', {class: "ccw-rot"}).appendTo('#'+self.divId).button();
+    self.ccwRot = $('<div/>', {class: "ccw-button"}).appendTo('#'+self.divId).button();
     $('#'+self.divId+' .target-rot').on('dragstart', function(event) { event.stopPropagation()})
                                     .draggable({containment:"parent",
                                                 distance: 8,
                                                 revertDuration: 100,
                                                 revert: true});
+    self.rpy_to_quat = function (roll, pitch, yaw) {
+        // Convert from RPY
+        var phi = roll / 2.0;
+        var the = pitch / 2.0;
+        var psi = yaw / 2.0;
+        var x = Math.sin(phi) * Math.cos(the) * Math.cos(psi) - 
+                Math.cos(phi) * Math.sin(the) * Math.sin(psi);
+        var y = Math.cos(phi) * Math.sin(the) * Math.cos(psi) + 
+                Math.sin(phi) * Math.cos(the) * Math.sin(psi);
+        var z = Math.cos(phi) * Math.cos(the) * Math.sin(psi) - 
+                Math.sin(phi) * Math.sin(the) * Math.cos(psi);
+        var w = Math.cos(phi) * Math.cos(the) * Math.cos(psi) + 
+                Math.sin(phi) * Math.sin(the) * Math.sin(psi);
+        var quaternion = new ROSLIB.Quaternion({x:x, y:y, z:z, w:w});
+        quaternion.normalize();
+        return quaternion;
+        }
 
-    self.awayCB = function (event) {
-        var dx = self.smooth ? 0.005 : 0.05;
+    self.ccwCB = function (event) {
+        var dAng= self.smooth ? Math.PI/100 : Math.PI/20;
         var dt = self.smooth ? 50 : 1000;
-        if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
+        if ($('#'+self.divId+' .ccw-button').hasClass('ui-state-active')) {
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
-            goal.pose.position = self.arm.state.pose.position;
-            goal.pose.position.x += dx;
-            goal.pose.orientation = self.arm.state.pose.orientation;
+            goal.pose = self.arm.state.pose;
+            var dQuat = self.rpy_to_quat(-dAng, 0, 0);
+            var quat = new ROSLIB.Quaternion(goal.pose.orientation);
+            quat.multiply(dQuat)
+            quat.normalize();
+            goal.pose.orientation = quat;
             self.arm.goalPosePublisher.publish(goal);
-            setTimeout(function () {self.awayCB(event)}, dt);
+            setTimeout(function () {self.ccwCB(event)}, dt);
         } 
     }
-    $('#'+self.divId+' .ccw-button').on('mousedown.rfh', self.awayCB);
+    $('#'+self.divId+' .ccw-button').on('mousedown.rfh', self.ccwCB);
 
-    self.towardCB = function (event) {
-        
-        var dx = self.smooth ? 0.003 : 0.05;
+    self.cwCB = function (event) {
+        var dAng = self.smooth ? Math.PI/100 : Math.PI/20;
         var dt = self.smooth ? 100 : 1000;
-        if ($('#'+self.divId+' .toward-button').hasClass('ui-state-active')){
+        if ($('#'+self.divId+' .cw-button').hasClass('ui-state-active')){
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
-            goal.pose.position = self.arm.state.pose.position;
-            goal.pose.position.x -= dx;
-            goal.pose.orientation = self.arm.state.pose.orientation;
+            goal.pose = self.arm.state.pose;
+            var dQuat = self.rpy_to_quat(dAng, 0, 0);
+            var quat = new ROSLIB.Quaternion(goal.pose.orientation);
+            quat.multiply(dQuat)
+            quat.normalize();
+            goal.pose.orientation = quat;
             self.arm.goalPosePublisher.publish(goal);
-            setTimeout(function () {self.towardCB(event)}, dt);
+            setTimeout(function () {self.cwCB(event)}, dt);
         }
     }
-    $('#'+self.divId+' .cw-button').on('mousedown.rfh', self.towardCB);
+    $('#'+self.divId+' .cw-button').on('mousedown.rfh', self.cwCB);
 
     self.onDrag = function (event, ui) {
         // x -> rot around Z
         // y -> rot around y
-        var mod_del = self.smooth ? 0.005 : 0.005;
+        var dAng = self.smooth ? Math.PI/100 : Math.PI/20;
         var dt = self.smooth ? 100 : 1000;
         clearTimeout(self.dragTimer);
         var time = new Date();

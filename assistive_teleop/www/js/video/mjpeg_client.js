@@ -182,7 +182,7 @@ var initMjpegCanvas = function (divId) {
     "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     imageTopic: '/head_mount_kinect/rgb/image_color',
+                                     imageTopic: '/head_mount_kinect/rgb/image',
                                      infoTopic: '/head_mount_kinect/rgb/camera_info',
                                      //imageTopic: '/head_wfov_camera/image_rect_color',
                                      //infoTopic: '/head_wfov_camera/camera_info',
@@ -195,7 +195,7 @@ var initMjpegCanvas = function (divId) {
     RFH.mjpeg.cameraModel.updateCameraInfo();
 
     RFH.driveCam = new RFH.MjpegClient({ros: RFH.ros,
-                                         imageTopic: '/head_mount_kinect/rgb/image_color',
+                                         imageTopic: '/head_mount_kinect/rgb/image',
                                          infoTopic: '/head_mount_kinect/rgb/camera_info',
                                         //imageTopic: '/tilt_camera/image_rect_color',
                                         //infoTopic: '/tilt_camera/camera_info',
