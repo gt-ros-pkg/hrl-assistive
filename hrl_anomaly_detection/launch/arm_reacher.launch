@@ -1,0 +1,8 @@
+<launch>
+    <group ns="right" >
+
+      <node name="arm_server" pkg="hrl_anomaly_detection" type="arm_reacher_adl_server.py" args="" output="screen"/>
+
+    </group>
+
+</launch>

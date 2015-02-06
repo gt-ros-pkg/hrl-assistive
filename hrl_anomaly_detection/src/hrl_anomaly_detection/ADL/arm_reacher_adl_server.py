@@ -19,6 +19,16 @@ class armReachAction(mpcBaseAction):
         # service request
         self.reach_service = rospy.Service('/adl/arm_reach_enable', None_Bool, self.start_cb)
 
+
+        rate = rospy.Rate(100) # 25Hz, nominally.                
+        while not rospy.is_shutdown():
+
+            if self.getJointAngles() != []:
+                print "----------------------"
+                print "Current joint angles"
+                print self.getJointAngles()
+                print "----------------------"
+                break
         
     def start_cb(self, req):
 
@@ -31,21 +41,27 @@ class armReachAction(mpcBaseAction):
         
     def run(self):
 
-        self.setOrientationControl()
-
         pos  = Point()
         quat = Quaternion()
 
-        #going to home with arm curled high near left shoulder:
-        (pos.x, pos.y, pos.z) = (0.801033944729, -0.101276517595, 0.196885866571)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 20.0
+
+        # going to home
+        print "MOVE1"
+        lJoint = [-1.0309357552025427, 1.1668491091040116, -0.5191943954490865, -1.8896653025274457, 3.8369242574394975, -0.8069487133997452, 2.7471289084492376]
+        timeout = 10.0
+        self.setPostureGoal(lJoint, timeout)
+
+        # Front 
+        print "MOVES1"
+        (pos.x, pos.y, pos.z) = (0.552, -0.469, -0.215)
+        (quat.x, quat.y, quat.z, quat.w) = (1.0, 0.0, 0.0, 0.0)
+        timeout = 10.0
         self.setOrientGoal(pos, quat, timeout)
 
-        #moving to high in front of chest, pointing down:
-        (pos.x, pos.y, pos.z) = (0.677839595079, -0.1569018662, 0.1919789999723)
-        (quat.x, quat.y, quat.z, quat.w) = (0.13867505,  0.13867505,  0.13867505,  0.97072534)
-        timeout = 20.0
+        print "MOVES2"
+        (pos.x, pos.y, pos.z) = (0.82, -0.469, -0.215)
+        (quat.x, quat.y, quat.z, quat.w) = (1.0, 0.0, 0.0, 0.0)
+        timeout = 10.0
         self.setOrientGoal(pos, quat, timeout)
         
         return True
