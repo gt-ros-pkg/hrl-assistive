@@ -59,7 +59,8 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    controller = 'static'
+    ## controller = 'static'
+    controller = 'actionlib'
     arm        = 'r'
 
     rospy.init_node('arm_reacher')    
