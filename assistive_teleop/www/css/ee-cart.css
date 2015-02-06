@@ -1,6 +1,6 @@
 .cart-ctrl-container {
     position: absolute;
-    background-color: rgba(0,0,0,0.31);
+    background-color: rgba(0,0,0,0.20);
     border-radius: 50%;
     bottom: 40px;
     width: 200px;
@@ -34,12 +34,10 @@
     width: 40%;
     display: block;
     border-radius: 50%;
-/*    background-color: rgba(215, 43, 62, 0.85);*/
-    background-image: url("./icons/arrow-drag.png");
-    background-size: 90% 90%;
-    background: radial-gradient( rgba(215,43,62,0.7) 5%,  rgba(200,50,50,0.8) 85%, rgba(15,15,15,0.5) 100%);
-/*    background-repeat: no-repeat;
-    background-position: center center;*/
+    background: url("./icons/arrow-drag.png"), radial-gradient( rgba(254,206,47,0.95) 50%, rgba(0,0,0,0.87) 100%);
+    background-size: 99% 99%;
+    background-repeat: no-repeat;
+    background-position: center center;
 }
 
 .target-rot {
@@ -50,8 +48,7 @@
     width: 40%;
     display: block;
     border-radius: 50%;
-    background-color: rgba(215, 43, 62, 0.85);
-    background-image: url("./icons/arrow-rotate.png");
+    background: url("./icons/arrow-rotate.png"), radial-gradient( rgba(254,206,47,0.95) 50%, rgba(0,0,0,0.87) 100%);
     background-size: 99% 99%;
     background-repeat: no-repeat;
     background-position: center center;

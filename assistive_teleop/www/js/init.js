@@ -49,7 +49,9 @@ var RFH = {
  //   if (!this.checkBrowser()) {return}
     this.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     this.PORT = '9091';//Must match port on which rosbridge is being served
-    $("body").css({"height": window.innerHeight, "width":window.innerWidth});
+    $("body").css({"height": window.innerHeight, "width":window.innerWidth})
+             .on('dragstart', function (event) { return false})
+             .on('drop', function (event) { return false});
     window.addEventListener('resize', function () {
         $("body").css({"height": window.innerHeight, "width":window.innerWidth});
     });

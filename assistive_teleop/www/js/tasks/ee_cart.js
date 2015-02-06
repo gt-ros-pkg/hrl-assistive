@@ -88,7 +88,8 @@ RFH.EECartControlIcon = function (options) {
     $('#'+self.divId+' .target-trans').draggable({containment:"parent",
                                  distance: 8,
                                  revertDuration: 100,
-                                 revert: true});
+                                 revert: true})
+                                 .on("dragstart", function (event) { event.stopPropagation() });
 
     self.awayCB = function (event) {
         var dx = self.smooth ? 0.005 : 0.03;
