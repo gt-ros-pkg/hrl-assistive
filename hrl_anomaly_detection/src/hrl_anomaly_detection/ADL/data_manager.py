@@ -167,11 +167,13 @@ def cutting(d):
             if avg < ft_zero and idx_end is None:
                 idx_end = j+nZero
 
+    if idx_end is None: idx_end = len(ft_force_mag)-nZero
+
     ft_time_cut      = np.array(ft_time[idx_start:idx_end])
     ft_force_cut     = ft_force[:,idx_start:idx_end]
     ft_torque_cut    = ft_torque[:,idx_start:idx_end]
     ft_force_mag_cut = ft_force_mag[idx_start:idx_end]
-
+    
     # Audio cut
     start_time = ft_time[idx_start]
     end_time   = ft_time[idx_end]

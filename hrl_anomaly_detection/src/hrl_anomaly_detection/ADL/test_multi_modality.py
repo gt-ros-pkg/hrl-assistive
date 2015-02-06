@@ -72,23 +72,14 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
 
-        for l_wdata, l_vdata in splits:
-            fp, err = anomaly_check(l_wdata, l_vdata, nState, trans_type, ths)
-            print fp, err
-
-        print "aaaaaaaaaaaaaaa"
-        
         n_jobs = 4
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(l_wdata, l_vdata, nState, trans_type, ths) \
                                     for l_wdata, l_vdata in splits) 
         fp_ll, err_ll = zip(*r)
 
-        print fp_ll, err_ll, ths        
         import operator
         fp_l = reduce(operator.add, fp_ll)
         err_l = reduce(operator.add, err_ll)
-        print fp_l, err_l
-        sys.exit()
         
         d = {}
         d['fp']  = np.mean(fp_l)
@@ -149,7 +140,7 @@ def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
     fp_l  = []
     err_l = []
     for i in range(n):
-        for j in range(2,4,1):
+        for j in range(2,m,1):
             fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
             fp_l.append(fp)
             if err != 0.0: err_l.append(err)
