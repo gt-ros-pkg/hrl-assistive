@@ -92,6 +92,12 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
         os.system('rm '+mutex_file)
         print "-----------------------------------------------"
 
+    if count == len(threshold_mult):
+        print "#############################################################################"
+        print "All file exist "
+        print "#############################################################################"        
+
+        
     if count == len(threshold_mult) and bPlot:
         print "#############################################################################"
         print "All file exist "
