@@ -94,14 +94,11 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
 
     if count == len(threshold_mult):
         print "#############################################################################"
-        print "All file exist "
+        print "All file exist ", count
         print "#############################################################################"        
 
         
     if count == len(threshold_mult) and bPlot:
-        print "#############################################################################"
-        print "All file exist "
-        print "#############################################################################"        
 
         fp_l = []
         err_l = []
@@ -109,24 +106,24 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
             res_file   = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
             res_file   = os.path.join(cross_test_path, res_file)
 
-            d = ut.load_pickle(pkl_file)
+            d = ut.load_pickle(res_file)
             fp  = d['fp'] 
             err = d['err']         
 
-            fp_l.append(fp)
-            err_l.append(err)
+            fp_l.append([fp])
+            err_l.append([err])
         
-            fp_l  = np.array(fp_l)*100.0
-            sem_c = 'b'
-            sem_m = '+'
-            semantic_label='likelihood detection \n with known mechanism class'
+        fp_l  = np.array(fp_l)*100.0
+        sem_c = 'b'
+        sem_m = '+'
+        semantic_label='likelihood detection \n with known mechanism class'
 
-            pp.figure()
-            pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
-            pp.xlabel('False positive rate (percentage)')
-            pp.ylabel('Mean excess likelihood')    
-            pp.xlim([0, 30])
-            pp.show()
+        pp.figure()
+        pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+        pp.xlabel('False positive rate (percentage)')
+        pp.ylabel('Mean excess log likelihood')    
+        ## pp.xlim([0, 30])
+        pp.show()
                             
     return
 
@@ -324,6 +321,8 @@ if __name__ == '__main__':
                  default=False, help='Plot by a figure of ROC human')
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
+    p.add_option('--plot', '--p', action='store_true', dest='bPlot',
+                 default=False, help='Plot')
     opt, args = p.parse_args()
 
 
@@ -331,7 +330,9 @@ if __name__ == '__main__':
 
     task = 1
     if task == 1:
-        prefix = 'microwave_black'
+        prefix = 'microwave'
+        ## prefix = 'microwave_black'
+        ## prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'door'
     elif task == 3:        
@@ -362,12 +363,12 @@ if __name__ == '__main__':
         # Mvg filtering
         ## aXData1_avg = movingaverage(aXData1, 5)
         ## aXData2_avg = movingaverage(aXData2, 5)    
-        aXData1_avg = aXData1
-        aXData2_avg = aXData2
+        ## aXData1_avg = aXData1
+        ## aXData2_avg = aXData2
 
         # min max scaling
-        aXData1_scaled, min_c1, max_c1 = scaling(aXData1_avg)
-        aXData2_scaled, min_c2, max_c2 = scaling(aXData2_avg)    
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
         ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
         ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
        
@@ -378,7 +379,7 @@ if __name__ == '__main__':
 
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/multi_'+prefix
         
-        fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix)
+        fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, opt.bPlot)
 
     
     #---------------------------------------------------------------------------   

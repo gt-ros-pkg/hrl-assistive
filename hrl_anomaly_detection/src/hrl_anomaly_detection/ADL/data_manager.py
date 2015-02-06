@@ -138,11 +138,16 @@ def cutting(d):
     # Get reference data
     #------------------------------------------------------
     # Ref ID    
+    max_f   = 0.0
+    max_idx = 0
     for i, force in enumerate(ft_force_l):
         if labels[i] is False: continue
         else: 
-            ref_idx = i
-            break
+            ft_force_mag = np.linalg.norm(force,axis=0)
+            f = np.max(ft_force_mag)
+            if max_f < f:
+                ref_idx = i
+                max_f = f
 
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
@@ -320,7 +325,7 @@ def cutting(d):
 
         
         print "==================================="
-        print len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
+        print names[i], len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
         print "==================================="
 
         label_list.append(labels[i])
