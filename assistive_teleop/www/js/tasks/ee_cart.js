@@ -246,14 +246,16 @@ RFH.EERotControlIcon = function (options) {
         var timeleft = time - self.lastDragTime;
         if (timeleft > 1000) {
             self.lastDragTime = time;
-            var dx = -mod_del * (ui.position.left - ui.originalPosition.left);
-            var dy = -mod_del * (ui.position.top - ui.originalPosition.top);
+            var dx = -dAng * (ui.position.left - ui.originalPosition.left);
+            var dy = -dAng * (ui.position.top - ui.originalPosition.top);
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
-            goal.pose.position = self.arm.state.pose.position;
-            goal.pose.position.y += dx;
-            goal.pose.position.z += dy;
-            goal.pose.orientation = self.arm.state.pose.orientation;
+            goal.pose = self.arm.state.pose;
+            var quat = new ROSLIB.Quaternion(goal.pose.orientation);
+            var dQuat = self.rpy_to_quat(0, dy, dx); 
+            quat.multiply(dQuat);
+            quat.normalize();
+            goal.pose.orientation = quat;
             self.arm.goalPosePublisher.publish(goal);
             self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, dt);
         } else {
