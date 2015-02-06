@@ -65,14 +65,15 @@ RFH.Drive = function (options) {
     self.start = function () {
         //TODO: set informative cursor
         // everything i can think of to not get stuck driving...
+        $(".map-look").hide();
+        $('#'+self.div).off('click.rfh-look').removeClass('cursor-eyes'); // There has got to be a cleaner way...
         $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
         $('#'+self.div).on('mouseleave.rfh mouseout.rfh', self.setUnsafe)
         $('#'+self.div).on('mousedown.rfh', self.driveGo);
         $('#'+self.div).on('mouseup.rfh', self.driveStop);
         $('#'+self.div).on('blur.rfh', self.driveStop);
-        $('#controls .drive, #drive-image').show();
-        RFH.driveCam.refreshSize();
-        $('#mjpeg-image').hide();
+        $('#controls .drive').show();
+        RFH.mjpeg.refreshSize();
     }
 
     self.stop = function () {
@@ -80,8 +81,8 @@ RFH.Drive = function (options) {
         $('#'+self.div).removeClass('drive-safe');
         $('#'+self.div).off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover')
         $('#controls .drive').hide();
-        $('#drive-image').attr('src', '').hide();
-        $('#mjpeg-image').show();
+        $(".map-look").show();
+        $('#'+self.div).on('click.rfh-look', RFH.lookCtrl.pointHead).addClass('cursor-eyes'); // There is got to be a cleaner way...
     }
 
     self.driveGo = function (event) {
@@ -96,7 +97,7 @@ RFH.Drive = function (options) {
     self.driveStop = function (event) {
         self.setUnsafe();
         $('#'+self.div).off('mousemove.rfh');
-   } 
+    } 
 
     self.setSafe = function () {
         $('#'+self.div).addClass('drive-safe');
