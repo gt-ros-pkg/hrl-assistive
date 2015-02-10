@@ -31,11 +31,11 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
-def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPlot=False):
+def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20, \
+                  threshold_mult = np.arange(0.05, 1.2, 0.05), bPlot=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
-    nState     = 20
     trans_type = "left_right"
     
     # Check the existance of workspace
@@ -53,7 +53,6 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
     spl    = splitters.Splitter(attr='partitions')
     splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
 
-    threshold_mult = np.arange(0.05, 1.2, 0.05)    
     count = 0
     for ths in threshold_mult:
     
@@ -87,7 +86,7 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
             d['err'] = 0.0
         else:
             d['err'] = np.mean(err_l)
-        
+
         ut.save_pickle(d,res_file)        
         os.system('rm '+mutex_file)
         print "-----------------------------------------------"
@@ -112,12 +111,11 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, bPl
 
             fp_l.append([fp])
             err_l.append([err])
-        
+
         fp_l  = np.array(fp_l)*100.0
         sem_c = 'b'
         sem_m = '+'
         semantic_label='likelihood detection \n with known mechanism class'
-
         pp.figure()
         pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
         pp.xlabel('False positive rate (percentage)')
@@ -151,6 +149,47 @@ def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
     return fp_l, err_l
     
 
+
+def fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes):
+        
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+    
+    pp.figure()    
+    for prefix in prefixes:
+
+        cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
+
+        
+        fp_l = []
+        err_l = []
+        for ths in threshold_mult:
+            res_file   = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+            res_file   = os.path.join(cross_test_path, res_file)
+
+            d = ut.load_pickle(res_file)
+            fp  = d['fp'] 
+            err = d['err']         
+
+            fp_l.append([fp])
+            err_l.append([err])
+
+        fp_l  = np.array(fp_l)*100.0
+
+        color = colors.next()
+        shape = shapes.next()
+        ## semantic_label='likelihood detection \n with known mechanism class'
+        semantic_label=prefix
+        pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+
+    pp.legend(loc=1,prop={'size':14})
+
+    pp.xlabel('False positive rate (percentage)')
+    pp.ylabel('Mean excess log likelihood')    
+    pp.show()
+        
+    
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
 
@@ -332,7 +371,7 @@ if __name__ == '__main__':
     if task == 1:
         prefix = 'microwave'
         prefix = 'microwave_black'
-        prefix = 'microwave_white'
+        ## prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'door'
     elif task == 3:        
@@ -357,8 +396,23 @@ if __name__ == '__main__':
     chunks   = d['chunks'] 
 
     
+    #---------------------------------------------------------------------------           
+    if opt.bRocHuman:
+
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/multi_'+prefix
+        nState          = 20
+        threshold_mult  = np.arange(0.05, 1.2, 0.05)    
+
+        fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, opt.bPlot)
+
+        if opt.bAllPlot:
+            prefixes = ['microwave', 'microwave_black', 'microwave_white']
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015'                
+            fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes)
+
+            
     #---------------------------------------------------------------------------
-    if opt.bAllPlot:
+    elif opt.bAllPlot:
 
         # Mvg filtering
         ## aXData1_avg = movingaverage(aXData1, 5)
@@ -374,14 +428,7 @@ if __name__ == '__main__':
        
         plot_all(aXData1_scaled, aXData2_scaled)
 
-    #---------------------------------------------------------------------------           
-    elif opt.bRocHuman:
-
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/multi_'+prefix
-        
-        fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, opt.bPlot)
-
-    
+            
     #---------------------------------------------------------------------------   
     elif opt.bAnimation:
 

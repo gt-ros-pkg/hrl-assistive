@@ -8,6 +8,10 @@
     <!--include file="$(find pr2_arm_navigation_actions)/launch/move_right_arm.launch"/-->
     <!--include file="$(find planning_environment)/launch/environment_server.launch"/-->
 
+    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
+      <param name="tip_name" value="r_gripper_tool_frame" />
+      <param name="root_name" value="torso_lift_link" />
+    </node>
 
     <group ns="right" >
       
