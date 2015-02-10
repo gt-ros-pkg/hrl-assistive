@@ -47,19 +47,19 @@ class armReachAction(mpcBaseAction):
 
         # going to home
         print "MOVE1"
-        lJoint = [-1.0309357552025427, 1.1668491091040116, -0.5191943954490865, -1.8896653025274457, 3.8369242574394975, -0.8069487133997452, 2.7471289084492376]
+        lJoint = [-1.0279779716247095, 1.1623408571610438, -0.5189701523715264, -1.886861849092819, 3.8320233539566377, -0.8064352219188305, 2.7413668578022]
         timeout = 10.0
         self.setPostureGoal(lJoint, timeout)
-
+        
         # Front 
         print "MOVES1"
-        (pos.x, pos.y, pos.z) = (0.552, -0.469, -0.215)
+        (pos.x, pos.y, pos.z) = (0.452, -0.469, -0.215)
         (quat.x, quat.y, quat.z, quat.w) = (1.0, 0.0, 0.0, 0.0)
         timeout = 10.0
         self.setOrientGoal(pos, quat, timeout)
 
         print "MOVES2"
-        (pos.x, pos.y, pos.z) = (0.82, -0.469, -0.215)
+        (pos.x, pos.y, pos.z) = (0.72, -0.469, -0.215)
         (quat.x, quat.y, quat.z, quat.w) = (1.0, 0.0, 0.0, 0.0)
         timeout = 10.0
         self.setOrientGoal(pos, quat, timeout)

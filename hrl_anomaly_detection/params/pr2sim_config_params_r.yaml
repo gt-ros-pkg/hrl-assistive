@@ -29,4 +29,27 @@ haptic_mpc:
         min: [-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0]
 
 
+  groups:
+    - name: right_arm_joints
+      joints:
+        - r_shoulder_pan_joint
+        - r_shoulder_lift_joint
+        - r_upper_arm_roll_joint
+        - r_elbow_flex_joint
+        - r_forearm_roll_joint
+        - r_wrist_flex_joint
+        - r_wrist_roll_joint
+    - name: right_arm_links
+        - r_upper_arm_link
+        - r_elbow_flex_link
+        - r_forearm_link
+        - r_wrist_flex_link
+        - r_gripper_palm_link
+        - r_gripper_l_finger_link
+        - r_gripper_l_finger_tip_link
+        - r_gripper_r_finger_link
+        - r_gripper_r_finger_tip_link
+    - name: right_arm
+      base_link: torso_lift_link
+      tip_link: r_gripper_tool_frame
 
