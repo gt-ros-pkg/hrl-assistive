@@ -93,6 +93,7 @@ RFH.EECartControlIcon = function (options) {
     self.divId = options.divId;
     self.parentId = options.parentId;
     self.arm = options.arm;
+    self.smooth = options.smooth || false;
     self.lastDragTime = new Date();
     self.container = $('<div/>', {id: self.divId,
                                   class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
@@ -106,8 +107,8 @@ RFH.EECartControlIcon = function (options) {
                                  .on("dragstart", function (event) { event.stopPropagation() });
 
     self.awayCB = function (event) {
-        var dx = self.smooth ? 0.005 : 0.03;
-        var dt = self.smooth ? 50 : 1000;
+        var dx = self.smooth ? 0.02 : 0.02;
+        var dt = self.smooth ? 100 : 500;
         if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
@@ -121,8 +122,8 @@ RFH.EECartControlIcon = function (options) {
     $('#'+self.divId+' .away-button').on('mousedown.rfh', self.awayCB);
 
     self.towardCB = function (event) {
-        var dx = self.smooth ? 0.003 : 0.03;
-        var dt = self.smooth ? 100 : 1000;
+        var dx = self.smooth ? 0.02 : 0.02;
+        var dt = self.smooth ? 100 : 500;
         if ($('#'+self.divId+' .toward-button').hasClass('ui-state-active')){
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
@@ -136,8 +137,8 @@ RFH.EECartControlIcon = function (options) {
     $('#'+self.divId+' .toward-button').on('mousedown.rfh', self.towardCB);
 
     self.onDrag = function (event, ui) {
-        var mod_del = self.smooth ? 0.005 : 0.0025;
-        var dt = self.smooth ? 100 : 1000;
+        var mod_del = self.smooth ? 0.0025 : 0.0015;
+        var dt = self.smooth ? 100 : 500;
         clearTimeout(self.dragTimer);
         var time = new Date();
         var timeleft = time - self.lastDragTime;
@@ -171,6 +172,7 @@ RFH.EERotControlIcon = function (options) {
     self.divId = options.divId;
     self.parentId = options.parentId;
     self.arm = options.arm;
+    self.smooth = options.smooth || false;
     self.lastDragTime = new Date();
     self.container = $('<div/>', {id: self.divId,
                                   class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
@@ -201,8 +203,8 @@ RFH.EERotControlIcon = function (options) {
         }
 
     self.ccwCB = function (event) {
-        var dAng= self.smooth ? Math.PI/100 : Math.PI/20;
-        var dt = self.smooth ? 50 : 1000;
+        var dAng= self.smooth ? Math.PI/50 : Math.PI/20;
+        var dt = self.smooth ? 100 : 500;
         if ($('#'+self.divId+' .ccw-button').hasClass('ui-state-active')) {
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
@@ -219,8 +221,8 @@ RFH.EERotControlIcon = function (options) {
     $('#'+self.divId+' .ccw-button').on('mousedown.rfh', self.ccwCB);
 
     self.cwCB = function (event) {
-        var dAng = self.smooth ? Math.PI/100 : Math.PI/20;
-        var dt = self.smooth ? 100 : 1000;
+        var dAng = self.smooth ? Math.PI/50 : Math.PI/20;
+        var dt = self.smooth ? 100 : 500;
         if ($('#'+self.divId+' .cw-button').hasClass('ui-state-active')){
             var goal = self.arm.ros.composeMsg('geometry_msgs/PoseStamped');
             goal.header.frame_id = '/torso_lift_link';
@@ -239,8 +241,8 @@ RFH.EERotControlIcon = function (options) {
     self.onDrag = function (event, ui) {
         // x -> rot around Z
         // y -> rot around y
-        var dAng = self.smooth ? Math.PI/100 : Math.PI/20;
-        var dt = self.smooth ? 100 : 1000;
+        var dAng = self.smooth ? Math.PI/200 : Math.PI/100;
+        var dt = self.smooth ? 100 : 500;
         clearTimeout(self.dragTimer);
         var time = new Date();
         var timeleft = time - self.lastDragTime;
