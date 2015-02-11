@@ -541,10 +541,12 @@ class ADL_log():
 
 if __name__ == '__main__':
 
-    subject = 'dh'
-    task = '1'
+    subject = 'phil'
+    task = '2'
     actor = '1'
     trial_name = 'success'
+    ## trial_name = 'stickblock'
+    ## trial_name = 'contentsdrop'
     
     log = ADL_log(audio=True, ft=True, test_mode=False)
     log.init_log_file(subject, task, actor, trial_name)
