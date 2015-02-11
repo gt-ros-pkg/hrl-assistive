@@ -383,17 +383,22 @@ class tool_ft(Thread):
 
 
 class ADL_log():
-    def __init__(self, ft=True, audio=False, test_mode=False):
+    def __init__(self, ft=True, audio=False, manip=False, test_mode=False):
         rospy.init_node('ADLs_log', anonymous = True)
 
         self.ft = ft
         self.audio = audio
+        self.manip = manip
         self.test_mode = test_mode
 
         self.init_time = 0.
         self.file_name = 'test'
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()        
         rospy.logout('ADLs_log node subscribing..')
+
+        if self.manip:
+            rospy.wait_for_service("/adl/arm_reach_enable")
+            self.armReachAction = rospy.ServiceProxy("/adl/arm_reach_enable", None_Bool)
 
 
     def task_cmd_input(self, subject=None, task=None, actor=None, trial_name=None):
@@ -504,6 +509,13 @@ class ADL_log():
         if self.audio: 
             self.audio.init_time = self.init_time
             self.audio.start()
+
+        if self.manip:
+            rospy.sleep(1.0)
+            ret = self.armReachAction()
+            print ret
+                    
+
                             
         
     def close_log_file(self):
@@ -548,7 +560,7 @@ if __name__ == '__main__':
     ## trial_name = 'stickblock'
     ## trial_name = 'contentsdrop'
     
-    log = ADL_log(audio=True, ft=True, test_mode=False)
+    log = ADL_log(audio=True, ft=True, manip=False, test_mode=False)
     log.init_log_file(subject, task, actor, trial_name)
 
     log.log_start()

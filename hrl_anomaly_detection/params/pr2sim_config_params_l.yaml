@@ -3,9 +3,9 @@ haptic_mpc:
     # Skin topic lists. Each should be publishing a TaxelArray message
     skin_list:
       none: []
-      fabric: ['/l_upper_arm_roll_tactile_sensor/taxels/forces', '/l_forearm_roll_link_geom_l_forearm_link_tactile_sensor/taxels/forces', '/l_wrist_flex_tactile_sensor/taxels/forces', '/l_wrist_roll_link_geom_l_gripper_palm_tactile_sensor/taxels/forces', '/l_gripper_l_finger_link_geom_tactile_sensor/taxels/forces', '/l_gripper_l_finger_tip_contact_sensor/taxels/forces', '/l_gripper_r_finger_link_geom_tactile_sensor/taxels/forces', '/l_gripper_r_finger_tip_contact_sensor/taxels/forces']  
-      pps: ['/pr2_pps_right_sensor/taxels/forces']
-      bosch: ['/skin/bosch/forearm_taxel_array', '/skin/bosch/upperarm_taxel_array']
+      fabric: []  
+      pps: []
+      bosch: []
 
     # Frames used for TF. torso_frame is the one the arm is attached to, inertial frame is to get the torso position in the world
     torso_frame: '/torso_lift_link'
@@ -24,4 +24,27 @@ haptic_mpc:
         min: [-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0]
 
 
+  groups:
+    - name: left_arm_joints
+      joints:
+        - l_shoulder_pan_joint
+        - l_shoulder_lift_joint
+        - l_upper_arm_roll_joint
+        - l_elbow_flex_joint
+        - l_forearm_roll_joint
+        - l_wrist_flex_joint
+        - l_wrist_roll_joint
+    - name: left_arm_links
+        - l_upper_arm_link
+        - l_elbow_flex_link
+        - l_forearm_link
+        - l_wrist_flex_link
+        - l_gripper_palm_link
+        - l_gripper_l_finger_link
+        - l_gripper_l_finger_tip_link
+        - l_gripper_r_finger_link
+        - l_gripper_r_finger_tip_link
+    - name: left_arm
+      base_link: torso_lift_link
+      tip_link: l_gripper_tool_frame
 

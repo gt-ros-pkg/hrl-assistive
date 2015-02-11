@@ -78,13 +78,14 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
+
+            self.cov *= 1.5 # to avoid No convergence warning
             
             # Emission probability matrix
             B = [0.0] * self.nState
             for i in range(self.nState):
                 B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i,0,0],self.cov[i,0,1], \
                                                    self.cov[i,1,0],self.cov[i,1,1]]]       
-
                             
         if pi is None:            
             # pi - initial probabilities per state 
@@ -95,15 +96,15 @@ class learning_hmm_multi(learning_base):
         # Training input
         X_train  = self.convert_sequence(aXData1, aXData2)
         ## X_scaled = self.scaling(X_train)
-
+        
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
 
         print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
-        self.ml.baumWelch(final_seq)
-        ## self.ml.baumWelch(final_seq, 10000)
+        ## self.ml.baumWelch(final_seq)
+        self.ml.baumWelch(final_seq, 10000)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
@@ -114,18 +115,23 @@ class learning_hmm_multi(learning_base):
         likelihood_sum = np.zeros(self.nState)
         likelihood_cnt = np.zeros(self.nState)
         for j in xrange(m):  
-            if j < 3: continue
+            if j < 1: continue
             X_train  = self.convert_sequence(aXData1[:,:j], aXData2[:,:j])            
-            
+
             for i in xrange(n):                                  
                 p = self.likelihood(X_train[i:i+1])
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i].tolist())
                 posterior = self.ml.posterior(final_ts_obj)
+
                 state_idx = posterior[j-1].index(max(posterior[j-1]))
 
                 likelihood_sum[state_idx] += p
                 likelihood_cnt[state_idx] += 1.0
-                
+
+        if 0.0 in likelihood_cnt:
+            print "there is zero in likelihood"
+            print likelihood_cnt
+            sys.exit()
         self.likelihood_avg = likelihood_sum / likelihood_cnt
 
         # state range
@@ -301,6 +307,7 @@ class learning_hmm_multi(learning_base):
             p = self.ml.loglikelihood(final_ts_obj)
             ## p = self.ml.posterior(final_ts_obj)
         except:
+            print "Likelihood error!!!! "
             p = 0.0
 
         return p
@@ -562,6 +569,29 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
+    def anomaly_check(self, X1, X2, ths_mult):
+
+        X_test = self.convert_sequence(X1, X2, emission=False)                
+        p      = self.likelihood(X_test)
+        n      = len(np.squeeze(X1))
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+        posterior = self.ml.posterior(final_ts_obj)
+        state_idx = posterior[n-1].index(max(posterior[n-1]))
+        threshold = self.likelihood_avg[state_idx]
+
+        if p < threshold*ths_mult:
+            ## print 1.0, " : ", state_idx, p, threshold*ths_mult            
+            return 1.0, 0.0 # anomaly
+        else:
+            ## print 0.0, " : ", state_idx, p, threshold*ths_mult
+            return 0.0, p - threshold*ths_mult # normal    
+
+
+
+        
+    #----------------------------------------------------------------------        
+    #
     def simulation(self, X1, X2):
 
         X1= np.squeeze(X1)
@@ -653,8 +683,8 @@ class learning_hmm_multi(learning_base):
             y1 = X1[:i]
             y2 = X2[:i]
 
-            ## if i >= 30:
-            ##     y1[29] = 4.0
+            if i >= 30:
+                y1[29] = 2.0
             
             x_nxt = X_time[:i+1]
             y_nxt1 = X1[:i+1]
