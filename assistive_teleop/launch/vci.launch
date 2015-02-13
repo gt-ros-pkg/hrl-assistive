@@ -7,7 +7,7 @@
   <arg name="kinect_ns" default="head_mount_kinect" />
   <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
   <!-- kinect_camera may need to be set to .../image_raw for simulated kinect -->
-  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_color" />
+  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
 
@@ -25,6 +25,13 @@
 
   <!-- Launch Kinect (needed for pixel_2_3d -->
   <include if="$(arg launch_kinect)" file="/etc/ros/distro/openni_head.launch" />
+  <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
+  <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
+      <remap from="image" to="$(arg kinect_camera)" />
+      <remap from="point_cloud" to="$(arg kinect_points)" />
+      <param name="normal_radius" type="double" value="0.035" />
+      <param name="use_closest_pixel"  value="false"/>
+  </node>
 
   <!-- State Throttling -->
   <node name="head_state_throttle" pkg="topic_tools" type="throttle"
@@ -75,14 +82,6 @@
 -->
 
 
-  <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect 
-  <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
-      <remap from="image" to="$(arg kinect_camera)" />
-      <remap from="point_cloud" to="$(arg kinect_points)" />
-      <param name="normal_radius" type="double" value="0.035" />
-      <param name="use_closest_pixel"  value="True"/>
-  </node>
--->
 <!--
   <node name="l_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
         args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >

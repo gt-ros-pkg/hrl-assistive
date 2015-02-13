@@ -57,6 +57,9 @@ RFH.CartesianEEControl = function (options) {
     $("#"+self.side+"-track-hand-toggle").button().on('change.rfh', self.updateTrackHand);
     $("#"+self.side+"-track-hand-toggle-label").hide();
 
+    /// Touch Spot Controls ///
+    
+
 
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplayDiv = self.side+'GripperDisplay';
