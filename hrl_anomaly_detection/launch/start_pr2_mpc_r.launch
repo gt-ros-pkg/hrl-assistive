@@ -6,7 +6,6 @@
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/mpc_params_pr2.yaml" />
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/pr2_config_params_r.yaml" />
 
-
       <!--<node name="mpc_teleop" pkg="hrl_haptic_mpc" type="mpc_teleop_rviz.py" args="-r pr2 -a $(arg arm) - -orientation" output="screen"/>-->
       <node name="waypoint_generator" pkg="hrl_haptic_mpc" type="waypoint_generator.py" args="-r pr2 -s fabric -a $(arg arm)" output="screen"/>
       <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node.py" args="-r pr2 -s fabric -a $(arg arm)" output="screen"/>
