@@ -399,7 +399,7 @@ class ADL_log():
         if self.manip:
             rospy.wait_for_service("/adl/arm_reach_enable")
             self.armReachAction = rospy.ServiceProxy("/adl/arm_reach_enable", None_Bool)
-
+            rospy.loginfo("arm reach server connected!!")
 
     def task_cmd_input(self, subject=None, task=None, actor=None, trial_name=None):
         confirm = False
@@ -486,7 +486,7 @@ class ADL_log():
         max_num = 0
         for pkl in pkl_list:
             if pkl.find(self.file_name)>=0:
-                num = pkl.split('_')[-1].split('.')[0] 
+                num = int(pkl.split('_')[-1].split('.')[0])
                 if max_num < num:
                     max_num = num
         max_num = int(max_num)+1
@@ -514,6 +514,9 @@ class ADL_log():
             rospy.sleep(1.0)
             ret = self.armReachAction()
             print ret
+
+            self.close_log_file()
+            sys.exit()
                     
 
                             
@@ -553,14 +556,16 @@ class ADL_log():
 
 if __name__ == '__main__':
 
-    subject = 'phil'
+    subject = 'gatsbii'
     task = '2'
-    actor = '1'
+    actor = '2'
     trial_name = 'success'
-    ## trial_name = 'stickblock'
-    ## trial_name = 'contentsdrop'
+    trial_name = 'stickblock'
+    trial_name = 'contentscollision'
+    ## trial_name = 'paperblock'
+    manip=True
     
-    log = ADL_log(audio=True, ft=True, manip=False, test_mode=False)
+    log = ADL_log(audio=True, ft=True, manip=manip, test_mode=False)
     log.init_log_file(subject, task, actor, trial_name)
 
     log.log_start()
