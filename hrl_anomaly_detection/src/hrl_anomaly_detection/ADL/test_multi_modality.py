@@ -150,7 +150,7 @@ def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
     
 
 
-def fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes):
+def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
         
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -160,12 +160,11 @@ def fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes):
     for prefix in prefixes:
 
         cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
-
         
         fp_l = []
         err_l = []
         for ths in threshold_mult:
-            res_file   = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
             res_file   = os.path.join(cross_test_path, res_file)
 
             d = ut.load_pickle(res_file)
@@ -373,8 +372,8 @@ if __name__ == '__main__':
     task = 1
     if task == 1:
         prefix = 'microwave'
-        prefix = 'microwave_black'
-        prefix = 'microwave_white'
+        ## prefix = 'microwave_black'
+        ## prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'door'
     elif task == 3:        
@@ -414,12 +413,12 @@ if __name__ == '__main__':
 
         if opt.bAllPlot:
             prefixes = ['microwave', 'microwave_black', 'microwave_white']
-            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015'                
-            fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes)
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='human', attr='chunks')
 
             
     #---------------------------------------------------------------------------           
-    if opt.bRocRobot:
+    elif opt.bRocRobot:
 
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot/multi_'+prefix
         nState          = 20
@@ -431,8 +430,8 @@ if __name__ == '__main__':
 
         if opt.bAllPlot:
             prefixes = ['microwave', 'microwave_black', 'microwave_white']
-            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015'                
-            fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes)
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
             
             
     #---------------------------------------------------------------------------
