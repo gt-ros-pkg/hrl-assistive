@@ -71,9 +71,12 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
 
+        print "---------------------------------"
+        print "Total splits: ", len(splits)
+
         n_jobs = 4
-        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(l_wdata, l_vdata, nState, trans_type, ths) \
-                                    for l_wdata, l_vdata in splits) 
+        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(i, l_wdata, l_vdata, nState, trans_type, ths) \
+                                    for i, (l_wdata, l_vdata) in enumerate(splits)) 
         fp_ll, err_ll = zip(*r)
 
         import operator
@@ -125,8 +128,10 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
                             
     return
 
-def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
+def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
 
+    print i
+    
     # Cross validation
     x_train1 = l_wdata.samples[:,0,:]
     x_train2 = l_wdata.samples[:,1,:]
@@ -141,11 +146,13 @@ def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
     fp_l  = []
     err_l = []
     for i in range(n):
+        print i, n, m
         for j in range(2,m,1):
             fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
             fp_l.append(fp)
             if err != 0.0: err_l.append(err)
 
+                
     return fp_l, err_l
     
 
