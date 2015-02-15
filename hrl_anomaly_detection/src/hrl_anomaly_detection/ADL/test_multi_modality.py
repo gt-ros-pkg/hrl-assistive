@@ -32,7 +32,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
 def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20, \
-            threshold_mult = np.arange(0.05, 1.2, 0.05), operator='robot', attr='id', bPlot=False):
+            threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -57,7 +57,7 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
     for ths in threshold_mult:
     
         # save file name
-        res_file = prefix+'_roc_'+operator+'_'+'ths_'+str(ths)+'.pkl'
+        res_file = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
         res_file = os.path.join(cross_test_path, res_file)
         
         mutex_file_part = 'running_ths_'+str(ths)
@@ -102,7 +102,7 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
         fp_l = []
         err_l = []
         for ths in threshold_mult:
-            res_file   = prefix+'_roc_'+operator+'_'+'ths_'+str(ths)+'.pkl'
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
             res_file   = os.path.join(cross_test_path, res_file)
 
             d = ut.load_pickle(res_file)
@@ -410,7 +410,7 @@ if __name__ == '__main__':
         threshold_mult  = np.arange(0.05, 1.2, 0.05)    
 
         fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
-                operator='human', bPlot=opt.bPlot)
+                opr='human', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
             prefixes = ['microwave', 'microwave_black', 'microwave_white']
@@ -427,7 +427,7 @@ if __name__ == '__main__':
         attr            = 'id'
 
         fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
-                operator='robot', attr='id', bPlot=opt.bPlot)
+                opr='robot', attr='id', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
             prefixes = ['microwave', 'microwave_black', 'microwave_white']
