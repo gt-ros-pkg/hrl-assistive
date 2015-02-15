@@ -79,9 +79,9 @@ class learning_hmm_multi(learning_base):
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
             self.cov[:,0,0] *= 1.5 #1.5 # to avoid No convergence warning
-            self.cov[:,1,0] *= 5.5 #1.5 # to avoid No convergence warning
-            self.cov[:,0,1] *= 5.5 #1.5 # to avoid No convergence warning
-            self.cov[:,1,1] *= 5.5 #1.5 # to avoid No convergence warning
+            self.cov[:,1,0] *= 1.5 #1.5 # to avoid No convergence warning
+            self.cov[:,0,1] *= 1.5 #1.5 # to avoid No convergence warning
+            self.cov[:,1,1] *= 1.5 #1.5 # to avoid No convergence warning
             
             # Emission probability matrix
             B = [0.0] * self.nState
@@ -105,9 +105,9 @@ class learning_hmm_multi(learning_base):
         print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
-        ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-        print "baumwelch return : ", ret
-        ## self.ml.baumWelch(final_seq, 10000)
+        ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
+        self.ml.baumWelch(final_seq)
+        ## print "baumwelch return : ", ret
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
