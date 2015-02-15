@@ -113,7 +113,7 @@ class learning_hmm_multi(learning_base):
         self.B = np.array(self.B)
 
         # Get loglikelihood threshold
-        print "Compute loglikihood threshold"
+        ## print "Compute loglikihood threshold"
         n,m = np.shape(aXData1)
         likelihood_sum = np.zeros(self.nState)
         likelihood_cnt = np.zeros(self.nState)

@@ -130,16 +130,12 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
 
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
 
-    print i
-    
     # Cross validation
     x_train1 = l_wdata.samples[:,0,:]
     x_train2 = l_wdata.samples[:,1,:]
 
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-    print "before fitting"
     lhm.fit(x_train1, x_train2)
-    print "fitted"
 
     x_test1 = l_vdata.samples[:,0,:]
     x_test2 = l_vdata.samples[:,1,:]
@@ -149,7 +145,6 @@ def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
     err_l = []
     for i in range(n):
         for j in range(2,m,1):
-            print "--- ", i,j
             fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
             fp_l.append(fp)
             if err != 0.0: err_l.append(err)
@@ -381,7 +376,7 @@ if __name__ == '__main__':
     task = 1
     if task == 1:
         prefix = 'microwave'
-        ## prefix = 'microwave_black'
+        prefix = 'microwave_black'
         ## prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'door'
