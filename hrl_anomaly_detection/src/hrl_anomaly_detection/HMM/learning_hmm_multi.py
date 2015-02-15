@@ -105,7 +105,7 @@ class learning_hmm_multi(learning_base):
         print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
-        ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=0.01)
+        ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=0.001)
         ## self.ml.baumWelch(final_seq, 10000)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
