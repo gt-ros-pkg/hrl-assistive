@@ -136,6 +136,7 @@ def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
     x_train1 = l_wdata.samples[:,0,:]
     x_train2 = l_wdata.samples[:,1,:]
 
+    print "before creating object"
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
     print "before fitting"
     lhm.fit(x_train1, x_train2)
