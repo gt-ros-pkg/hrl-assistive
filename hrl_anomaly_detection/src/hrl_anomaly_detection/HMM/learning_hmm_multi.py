@@ -105,14 +105,15 @@ class learning_hmm_multi(learning_base):
         print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
-        ## self.ml.baumWelch(final_seq)
-        self.ml.baumWelch(final_seq, 10000)
+        self.ml.baumWelch(final_seq)
+        ## self.ml.baumWelch(final_seq, 10000)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
         # Get loglikelihood threshold
+        print "Compute loglikihood threshold"
         n,m = np.shape(aXData1)
         likelihood_sum = np.zeros(self.nState)
         likelihood_cnt = np.zeros(self.nState)
