@@ -79,7 +79,7 @@ class learning_hmm_multi(learning_base):
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
 
-            self.cov *= 1.5 # to avoid No convergence warning
+            self.cov *= 3.0 #1.5 # to avoid No convergence warning
             
             # Emission probability matrix
             B = [0.0] * self.nState
