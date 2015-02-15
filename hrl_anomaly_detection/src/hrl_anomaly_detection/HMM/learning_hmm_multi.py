@@ -78,8 +78,10 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-
-            self.cov *= 3.0 #1.5 # to avoid No convergence warning
+            self.cov[:,0,0] *= 1.5 #1.5 # to avoid No convergence warning
+            self.cov[:,1,0] *= 10.0 #1.5 # to avoid No convergence warning
+            self.cov[:,0,1] *= 10.0 #1.5 # to avoid No convergence warning
+            self.cov[:,1,1] *= 10.0 #1.5 # to avoid No convergence warning
             
             # Emission probability matrix
             B = [0.0] * self.nState
@@ -128,11 +130,10 @@ class learning_hmm_multi(learning_base):
                 likelihood_sum[state_idx] += p
                 likelihood_cnt[state_idx] += 1.0
 
-        if 0.0 in likelihood_cnt:
-            print "there is zero in likelihood"
-            print likelihood_cnt
-            sys.exit()
-        self.likelihood_avg = likelihood_sum / likelihood_cnt
+        self.likelihood_avg = likelihood_sum            
+        for i in xrange(len(self.likelihood_avg)): 
+            if likelihood_cnt[i] == 0.0: continue
+            self.likelihood_avg[i] /= likelihood_cnt[i]
 
         # state range
         self.state_range = np.arange(0, self.nState, 1)

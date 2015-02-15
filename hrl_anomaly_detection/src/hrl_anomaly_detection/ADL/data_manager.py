@@ -357,6 +357,8 @@ def cutting(d, dtw_flag=False):
 
 def cutting_for_robot(d, dtw_flag=False):
 
+    print "Cutting for Robot"
+    
     labels      = d['labels']
     names       = d['names']
     ft_time_l   = d['ft_time']
@@ -397,10 +399,19 @@ def cutting_for_robot(d, dtw_flag=False):
         if labels[i] is False: continue
         else: 
             ft_force_mag = np.linalg.norm(force,axis=0)
-            f = np.max(ft_force_mag)
-            if max_f < f:
+            for j, f_mag in enumerate(ft_force_mag[::-1]):
+                if f_mag > 1.0: 
+                    idx = len(ft_force_mag)-j
+                    break
+            if max_idx < idx:
+                max_idx = idx
                 ref_idx = i
-                max_f = f
+                print max_idx
+            
+            ## f = np.max(ft_force_mag)
+            ## if max_f < f:
+            ##     ref_idx = i
+            ##     max_f = f
 
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
@@ -411,8 +422,9 @@ def cutting_for_robot(d, dtw_flag=False):
     audio_data = audio_data_l[ref_idx]    
 
     # Force cut
-    nZero = 10
+    nZero = 2
     ft_zero = np.mean(ft_force_mag[:nZero]) * 3.0
+    print "ft_zero: ", ft_zero
 
     idx_start = None
     idx_end   = None        

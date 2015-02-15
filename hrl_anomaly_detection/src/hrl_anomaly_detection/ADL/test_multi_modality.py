@@ -459,6 +459,9 @@ if __name__ == '__main__':
         trans_type= "left_right"
         ## nMaxStep = 36 # total step of data. It should be automatically assigned...
 
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        
         # Learning
         from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
@@ -474,6 +477,9 @@ if __name__ == '__main__':
         trans_type= "left_right"
         ## nMaxStep = 36 # total step of data. It should be automatically assigned...
 
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        
         # Learning
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
         lhm.fit(aXData1_scaled, aXData2_scaled)
