@@ -106,6 +106,7 @@ class learning_hmm_multi(learning_base):
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
         ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=0.05)
+        print "baumwelch return : ", ret
         ## self.ml.baumWelch(final_seq, 10000)
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
