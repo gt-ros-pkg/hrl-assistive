@@ -78,10 +78,10 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-            self.cov[:,0,0] *= 2.0 #1.5 # to avoid No convergence warning
-            self.cov[:,1,0] *= 2.0 #1.5 # to avoid No convergence warning
-            self.cov[:,0,1] *= 2.0 #1.5 # to avoid No convergence warning
-            self.cov[:,1,1] *= 2.0 #1.5 # to avoid No convergence warning
+            self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
+            self.cov[:,1,0] *= 1.5 # to avoid No convergence warning
+            self.cov[:,0,1] *= 1.5 # to avoid No convergence warning
+            self.cov[:,1,1] *= 1.5 # to avoid No convergence warning
             
             # Emission probability matrix
             B = [0.0] * self.nState

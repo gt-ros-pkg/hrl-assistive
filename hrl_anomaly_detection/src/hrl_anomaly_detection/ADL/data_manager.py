@@ -639,7 +639,7 @@ def get_rms(frame, MAX_INT=32768.0):
     return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
 
 
-def scaling(X, scale=10.0):
+def scaling(X, scale=1.0):
     '''        
     '''
     ## X_scaled = preprocessing.scale(np.array(X))
