@@ -74,10 +74,6 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
         print "---------------------------------"
         print "Total splits: ", len(splits)
 
-        for i, (l_wdata, l_vdata) in enumerate(splits):
-            anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths)
-        sys.exit()
-
         n_jobs = 4
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(i, l_wdata, l_vdata, nState, trans_type, ths) \
                                     for i, (l_wdata, l_vdata) in enumerate(splits)) 
