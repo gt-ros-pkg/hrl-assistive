@@ -215,6 +215,7 @@ var PR2ArmMPC = function (options) {
     var self = this;
     self.ros = options.ros;
     self.side = options.side;
+    self.ee_frame = options.ee_frame;
     self.stateTopic = options.stateTopic || 'haptic_mpc/gripper_pose';
     self.goalTopic = options.goalTopic || 'haptic_mpc/goal_pose';
     self.state = null;
@@ -260,6 +261,7 @@ var PR2ArmJTTask = function (options) {
     var self = this;
     self.ros = options.ros;
     self.side = options.side;
+    self.ee_frame = options.ee_frame;
     self.stateTopic = options.stateTopic || options.side[0]+'_cart/state/x';
     self.goalTopic = options.goalTopic || options.side[0]+'_cart/command_pose';
     self.state = null;
@@ -309,6 +311,9 @@ var PR2 = function (ros) {
     self.base = new PR2Base(self.ros);
     self.head = new PR2Head(self.ros);
     self.r_arm_cart = new PR2ArmJTTask({side:'right',
-                                     ros: self.ros});
-    self.l_arm_cart = new PR2ArmMPC({side:'left', ros: self.ros});
+                                        ros: self.ros,
+                                        ee_frame:'r_gripper_tool_frame'});
+    self.l_arm_cart = new PR2ArmMPC({side:'left',
+                                     ros: self.ros,
+                                     ee_frame:'l_gripper_tool_frame'});
 }

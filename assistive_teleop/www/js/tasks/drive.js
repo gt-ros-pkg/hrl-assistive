@@ -39,7 +39,6 @@ RFH.Drive = function (options) {
     self.laserSled = new RFH.LaserSled({ros:self.ros, tfClient: self.tfClient});
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
-    self.headTF = new ROSLIB.Transform();
     self.timer = null;
     self.clamp = function (x,a,b) {
         return ( x < a ) ? a : ( ( x > b ) ? b : x );
@@ -49,18 +48,7 @@ RFH.Drive = function (options) {
     }
     $('#controls .drive.up').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(0.2)});
     $('#controls .drive.down').button().hide().on('click.rfh', function(event) {self.laserSled.sendCmd(1.1)});
-
-    self.updateHead = function (transform) { self.headTF = transform; }
-    self.tryTFSubscribe = function () {
-        if (self.camera.frame_id !== '') {
-            self.tfClient.subscribe(self.camera.frame_id, self.updateHead);
-            console.log("Got camera data, subscribing to TF Frame: "+self.camera.frame_id);
-        } else {
-            console.log("No camera data -> no TF Transform");
-            setTimeout(self.tryTFSubscribe, 500);
-            }
-    }
-    self.tryTFSubscribe();
+    
 
     self.start = function () {
         //TODO: set informative cursor
@@ -131,17 +119,17 @@ RFH.Drive = function (options) {
         var pose = new ROSLIB.Pose({position:{x: xyz[0],
                                               y: xyz[1], 
                                               z: xyz[2]}});
-        pose.applyTransform(self.headTF);
-        if (pose.position.z >= self.headTF.translation.z) {
+        pose.applyTransform(self.camera.transform);
+        if (pose.position.z >= self.camera.transform.translation.z) {
             RFH.log('Please click on the ground near the robot to drive.');
             throw new Error("Clicked point not on the ground");
         }
-        var z0 = self.headTF.translation.z;
+        var z0 = self.camera.transform.translation.z;
         var z1 = pose.position.z;
         var dist = (z0+0.05)/(z0-z1) // -0.05 = z0 - ((z0-z1)/1)*x -> lenght of line to intersection
         var gnd_pt = [0,0,0];
-        gnd_pt[0] = self.headTF.translation.x + (pose.position.x - self.headTF.translation.x) * dist;
-        gnd_pt[1] = self.headTF.translation.y + (pose.position.y - self.headTF.translation.y) * dist; 
+        gnd_pt[0] = self.camera.transform.translation.x + (pose.position.x - self.camera.transform.translation.x) * dist;
+        gnd_pt[1] = self.camera.transform.translation.y + (pose.position.y - self.camera.transform.translation.y) * dist; 
         var r = Math.sqrt(gnd_pt[0]*gnd_pt[0] + gnd_pt[1]*gnd_pt[1]);
         var theta = Math.atan2(gnd_pt[1], gnd_pt[0]);
         console.log("R: "+r+", Theta: "+theta);

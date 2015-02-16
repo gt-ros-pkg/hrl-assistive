@@ -7,11 +7,19 @@ RFH.CartesianEEControl = function (options) {
     self.gripper = options.gripper;
     self.smooth = self.arm instanceof PR2ArmJTTask;
     self.tfClient = options.tfClient;
+    self.handTF = null;
     self.camera = options.camera;
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
     $('#touchspot-toggle').button()
     $('#touchspot-toggle-label').hide();
+
+    if (self.arm.ee_frame !== '') {
+        self.tfClient.subscribe(self.camera.frame_id, function (tf) {self.handTF = tf;});
+        console.log("Got camera data, subscribing to TF Frame: "+self.camera.frame_id);
+    } else {
+        console.log("Empty EE Frame for " + self.arm.side + " arm.");
+    };
 
     /// POSITION CONTROLS ///
     self.posCtrlId = self.side+'posCtrlIcon';

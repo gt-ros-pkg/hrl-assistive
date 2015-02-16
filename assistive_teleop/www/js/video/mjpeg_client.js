@@ -43,7 +43,8 @@ RFH.MjpegClient = function (options) {
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
                                                infoTopic: options.infoTopic,
-                                               rotated: options.rotated || false});
+                                               rotated: options.rotated || false,
+                                               tfClient: options.tfClient});
     self.refreshSize = function (resizeEvent) {
         if (!self.cameraModel.has_data) {
             $('#'+self.divId).html("Waiting on camera information.");
@@ -104,6 +105,8 @@ RFH.ROSCameraModel = function (options) {
     self.width = options.width || 640;
     self.height = options.height || 480;
     self.frame_id = '';
+    self.tfClient = options.tfClient;
+    self.transform = null;
     self.distortion_model = '';
     self.D = [0,0,0,0,0];
     self.K = [[1,0,0],[0,1,0],[0,0,1]];
@@ -119,6 +122,16 @@ RFH.ROSCameraModel = function (options) {
         ros: self.ros,     
         name: self.infoTopic,
         messageType: 'sensor_msgs/CameraInfo'});
+
+    self.tryTFSubscribe = function () {
+        if (self.frame_id !== '') {
+            self.tfClient.subscribe(self.camera.frame_id, function (tf) { self.transform = tf });
+            console.log("Got camera data, subscribing to TF Frame: "+self.camera.frame_id);
+        } else {
+            console.log("No camera data -> no TF Transform");
+            setTimeout(self.tryTFSubscribe, 500);
+            }
+    }
 
     self.infoMsgCB = function (infoMsg) {
         console.log("Updating camera model from " + self.infoTopic)
@@ -144,6 +157,12 @@ RFH.ROSCameraModel = function (options) {
         self.KR = numeric.dot(self.K, self.R);
         self.KR_inv = numeric.inv(self.KR);
         self.has_data = true;
+        if (self.frame_id !== '') {
+            self.tfClient.subscribe(self.frame_id, function (tf) { self.transform = tf });
+            console.log("Subscribing to TF Frame: "+self.frame_id);
+        } else {
+            console.log("Camera at " + self.infoTopic + " reported empty frame id, cannot get TF data");
+        }
         self.cameraInfoSubscriber.unsubscribe(); // Close subscriber to save bandwidth
         }
     
@@ -170,7 +189,9 @@ RFH.ROSCameraModel = function (options) {
        return numeric.mul(d/mag, vec);
     }
 
-    self.projectPoint = function (px, py, pz) {
+    self.projectPoint = function (px, py, pz, frame_id) {
+        frame_id = typeof frame_id !== 'undefined' ? frame_id : self.frame_id;
+        //TODO: Make use of frame id here.
         var pixel_hom = numeric.dot(self.P, [[px],[py],[pz],[1]]);
         var pix_x = pixel_hom[0]/pixel_hom[2];
         var pix_y = pixel_hom[1]/pixel_hom[2];
@@ -182,8 +203,8 @@ var initMjpegCanvas = function (divId) {
     "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     //imageTopic: '/head_mount_kinect/rgb/image_color',
-                                     imageTopic: '/head_mount_kinect/rgb/image',
+                                     imageTopic: '/head_mount_kinect/rgb/image_color',
+                                     //imageTopic: '/head_mount_kinect/rgb/image',
                                      infoTopic: '/head_mount_kinect/rgb/camera_info',
                                      //imageTopic: '/head_wfov_camera/image_rect_color',
                                      //infoTopic: '/head_wfov_camera/camera_info',
@@ -191,7 +212,8 @@ var initMjpegCanvas = function (divId) {
                                      divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
-                                     quality: 85});
+                                     quality: 85,
+                                     tfClient:RFH.tfClient});
     RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
     RFH.mjpeg.cameraModel.updateCameraInfo();
 };
