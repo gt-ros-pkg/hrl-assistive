@@ -422,7 +422,7 @@ def cutting_for_robot(d, dtw_flag=False):
     audio_data = audio_data_l[ref_idx]    
 
     # Force cut
-    nZero = 2
+    nZero = 5 #for mix 2
     ft_zero = np.mean(ft_force_mag[:nZero]) * 3.0
     print "ft_zero: ", ft_zero
 
