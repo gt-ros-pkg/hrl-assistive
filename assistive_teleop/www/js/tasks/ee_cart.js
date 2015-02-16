@@ -8,18 +8,44 @@ RFH.CartesianEEControl = function (options) {
     self.smooth = self.arm instanceof PR2ArmJTTask;
     self.tfClient = options.tfClient;
     self.handTF = null;
+    self.cameraTF = null;
+    self.opFrame = new ROSLIB.Transform();
     self.camera = options.camera;
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
     $('#touchspot-toggle').button()
     $('#touchspot-toggle-label').hide();
 
+    self.updateOpFrame = function () {
+        if (self.eeTF === null || self.cameraTF === null) { return; };
+        var hf = self.eeTF.clone();
+        var cf = self.cameraTF.clone();
+        self.opFrame = hf.clone();
+    };
+
+    // Get EE frame updates from TF
     if (self.arm.ee_frame !== '') {
-        self.tfClient.subscribe(self.camera.frame_id, function (tf) {self.handTF = tf;});
-        console.log("Got camera data, subscribing to TF Frame: "+self.camera.frame_id);
+        self.tfClient.subscribe(self.arm.ee_frame, function (tf) {
+                                                       self.eeTF = tf;
+                                                       self.updateOpFrame();
+                                                       });
+        console.log("Subscribing to TF Frame: "+self.arm.ee_frame);
     } else {
         console.log("Empty EE Frame for " + self.arm.side + " arm.");
     };
+
+    // Get camera frame updates from TF
+    self.checkCameraTF = function () {
+        if (self.camera.frame_id !== '') {
+            self.tfClient.subscribe(self.camera.frame_id, function (tf) { 
+                                                              self.cameraTF = tf;
+                                                              self.updateOpFrame();
+                                                          });
+        } else {
+            setTimeout(self.checkCameraTF, 500);
+        }
+    };
+    self.checkCameraTF();
 
     /// POSITION CONTROLS ///
     self.posCtrlId = self.side+'posCtrlIcon';
