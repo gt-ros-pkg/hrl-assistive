@@ -113,24 +113,68 @@ class learning_hmm_multi(learning_base):
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
-        # Get loglikelihood threshold
+        # Get average loglikelihood threshold
         ## print "Compute loglikihood threshold"
         n,m = np.shape(aXData1)
         likelihood_sum = np.zeros(self.nState)
         likelihood_cnt = np.zeros(self.nState)
+        likelihood     = np.zeros(n)
+
+        X_train  = self.convert_sequence(aXData1, aXData2)
+        for i in xrange(n):                                                          
+            p = self.loglikelihood(X_train[i:i+1])                
+            final_ts_obj  = ghmm.EmissionSequence(self.F, X_train[i].tolist())                
+            (alpha,scale) = self.ml.forward(final_ts_obj)
+            alpha         = np.array(alpha)
+            scale         = np.array(scale)
+
+            for j in xrange(self.nState):
+                likelihood_sum[j] += np.sum(alpha[:m,j]*scale[:m])
+        
+        likelihood_sum /= float(n)
+        likelihood_sum = np.log(likelihood_sum)
+
+        self.likelihood_avg = np.zeros(self.nState)
+        for i in xrange(self.nState):
+            self.likelihood_avg[i] = np.sum(likelihood_sum[:i+1])            
+        print self.likelihood_avg
+
+        for i in xrange(n):                                                          
+
+        
+        sys.exit()
+        
         for j in xrange(m):  
             if j < 1: continue
             X_train  = self.convert_sequence(aXData1[:,:j], aXData2[:,:j])            
 
             for i in xrange(n):                                                          
-                p = self.likelihood(X_train[i:i+1])
+                p = self.loglikelihood(X_train[i:i+1])
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i].tolist())
                 posterior = self.ml.posterior(final_ts_obj)
 
-                state_idx = posterior[j-1].index(max(posterior[j-1]))
+                
+                (alpha,scale) = self.ml.forward(final_ts_obj)
+                alpha         = np.array(alpha)
+                scale         = np.array(scale)
 
-                likelihood_sum[state_idx] += p
-                likelihood_cnt[state_idx] += 1.0
+                if j==13:
+                    print np.shape(alpha), np.shape(scale), np.shape(posterior)
+                    print p, np.sum(np.log(scale[:j]))
+                    print np.sum(alpha[j-1,:]*scale[j-1]), scale[j-1]
+                    print p, np.log(scale[j-1])
+                    ## print alpha[j-1,:]
+                    print np.sum(posterior[j-1])
+                    
+                    ## print p, np.sum(np.log(alpha[len(X_train[i])-1,:])), scale[-1]
+                    ## temp=-1
+                    ## print alpha[len(X_train[i])+temp,:], np.sum(alpha[len(X_train[i])+temp,:])
+                    ## print scale[temp]
+                    sys.exit()
+
+                ## state_idx = posterior[j-1].index(max(posterior[j-1]))
+                ## likelihood_sum[state_idx] += p
+                ## likelihood_cnt[state_idx] += 1.0
 
         self.likelihood_avg = likelihood_sum            
         for i in xrange(len(self.likelihood_avg)): 
@@ -298,7 +342,7 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def likelihood(self, X):
+    def loglikelihood(self, X):
 
         X = np.squeeze(X)
         X_test = X.tolist()        
@@ -576,7 +620,7 @@ class learning_hmm_multi(learning_base):
     def anomaly_check(self, X1, X2, ths_mult):
 
         X_test = self.convert_sequence(X1, X2, emission=False)                
-        p      = self.likelihood(X_test)
+        p      = self.loglikelihood(X_test)
         n      = len(np.squeeze(X1))
 
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -704,7 +748,7 @@ class learning_hmm_multi(learning_base):
                 
                 X_test = self.convert_sequence(np.array([y1]), np.array([y2]), emission=False)                
                 ## mu, cov = self.predict(X_test)
-                p       = self.likelihood(X_test)
+                p       = self.loglikelihood(X_test)
 
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 posterior = self.ml.posterior(final_ts_obj)
