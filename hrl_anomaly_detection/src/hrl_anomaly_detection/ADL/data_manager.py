@@ -639,8 +639,9 @@ def get_rms(frame, MAX_INT=32768.0):
     return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
 
 
-def scaling(X, scale=1.0):
+def scaling(X, scale=10.0):
     '''        
+    scale should be over than 10.0(?) to avoid floating number problem in ghmm.
     '''
     ## X_scaled = preprocessing.scale(np.array(X))
     

@@ -78,11 +78,11 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-            self.cov[:,0,0] *= 2. #1.5 # to avoid No convergence warning
-            self.cov[:,1,0] *= 2. #1.5 # to avoid No convergence warning
-            self.cov[:,0,1] *= 2. #1.5 # to avoid No convergence warning
-            self.cov[:,1,1] *= 2. #1.5 # to avoid No convergence warning
-            
+            ## self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
+            ## self.cov[:,1,0] *= 1.5 # to avoid No convergence warning
+            ## self.cov[:,0,1] *= 1.5 # to avoid No convergence warning
+            ## self.cov[:,1,1] *= 1.5 # to avoid No convergence warning
+
             # Emission probability matrix
             B = [0.0] * self.nState
             for i in range(self.nState):
@@ -106,8 +106,8 @@ class learning_hmm_multi(learning_base):
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-        self.ml.baumWelch(final_seq)
-        ## print "baumwelch return : ", ret
+        ret = self.ml.baumWelch(final_seq)
+        print "baumwelch return : ", ret
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
@@ -122,7 +122,7 @@ class learning_hmm_multi(learning_base):
             if j < 1: continue
             X_train  = self.convert_sequence(aXData1[:,:j], aXData2[:,:j])            
 
-            for i in xrange(n):                                  
+            for i in xrange(n):                                                          
                 p = self.likelihood(X_train[i:i+1])
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i].tolist())
                 posterior = self.ml.posterior(final_ts_obj)
