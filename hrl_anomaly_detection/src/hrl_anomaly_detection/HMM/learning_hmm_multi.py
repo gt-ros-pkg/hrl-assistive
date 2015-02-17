@@ -600,10 +600,12 @@ class learning_hmm_multi(learning_base):
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
         path,logp    = self.ml.viterbi(final_ts_obj)
 
-        if len(path) == 0: return 0.0, logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
+        if len(path) == 0: 
+            print "zero path: ", logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
+            return 0.0, logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
         err = logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
 
-        print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
+        ## print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
         
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
