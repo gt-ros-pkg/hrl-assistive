@@ -426,7 +426,7 @@ if __name__ == '__main__':
 
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot/multi_'+prefix
         nState          = 20
-        threshold_mult  = np.arange(0.01, 4.0, 0.1)    
+        threshold_mult  = np.arange(0.0, 4.2, 0.1)    
         attr            = 'id'
 
         fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
