@@ -52,13 +52,6 @@ class armReachAction(mpcBaseAction):
         ## lJoint = [-1.0279779716247095, 1.1623408571610438, -0.5189701523715264, -1.886861849092819, 3.8320233539566377, -0.8064352219188305, 2.7413668578022]
         ## timeout = 10.0
         ## self.setPostureGoal(lJoint, timeout)
-        
-        # Front 
-        print "MOVES1"
-        (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 2.0
-        self.setOrientGoal(pos, quat, timeout)
 
         ## confirm = False
         ## while not confirm:
@@ -67,6 +60,48 @@ class armReachAction(mpcBaseAction):
         ##     ans = raw_input("Enter y to confirm to start: ")
         ##     if ans == 'y':
         ##         confirm = True
+        ## print self.getJointAngles()        
+        
+        #--------------------------------------------------------------        
+        # Microwave closing
+        #--------------------------------------------------------------        
+        ## # Front 
+        ## print "MOVES1"
+        ## (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        
+        ## print "MOVES2"
+        ## (pos.x, pos.y, pos.z) = (0.67, -0.63, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 1.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        ## ## raw_input("Enter anything to start: ")
+
+        ## # Front 
+        ## print "MOVES3"
+        ## (pos.x, pos.y, pos.z) = (0.58, -0.56, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
+
+        ## # Front 
+        ## print "MOVES4"
+        ## (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 3.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        
+        #--------------------------------------------------------------        
+        # Staples
+        #--------------------------------------------------------------        
+        # Up
+        print "MOVES1"
+        (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
+        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        timeout = 2.0
+        self.setOrientGoal(pos, quat, timeout)
         
         print "MOVES2"
         (pos.x, pos.y, pos.z) = (0.67, -0.63, -0.24)
@@ -81,15 +116,7 @@ class armReachAction(mpcBaseAction):
         (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
         timeout = 2.0
         self.setOrientGoal(pos, quat, timeout)
-
-        # Front 
-        print "MOVES4"
-        (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 3.0
-        self.setOrientGoal(pos, quat, timeout)
         
-        ## print self.getJointAngles()        
         
         return True
 
