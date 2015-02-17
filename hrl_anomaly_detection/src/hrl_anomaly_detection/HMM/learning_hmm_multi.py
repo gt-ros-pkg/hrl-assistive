@@ -66,7 +66,8 @@ class learning_hmm_multi(learning_base):
         
     #----------------------------------------------------------------------        
     #
-    def fit(self, aXData1, aXData2, A=None, B=None, pi=None, B_dict=None, verbose=False):
+    def fit(self, aXData1, aXData2, A=None, B=None, pi=None, cov_mult=[1.0, 1.0, 1.0, 1.0], \
+            B_dict=None, verbose=False):
 
         if A is None:        
             if verbose: print "Generate new A matrix"                
@@ -78,10 +79,10 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-            self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
-            self.cov[:,1,0] *= 5.5 # to avoid No convergence warning
-            self.cov[:,0,1] *= 5.5 # to avoid No convergence warning
-            self.cov[:,1,1] *= 5.5 # to avoid No convergence warning
+            ## self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
+            ## self.cov[:,1,0] *= 5.5 # to avoid No convergence warning
+            ## self.cov[:,0,1] *= 5.5 # to avoid No convergence warning
+            ## self.cov[:,1,1] *= 5.5 # to avoid No convergence warning
 
             # Emission probability matrix
             B = [0.0] * self.nState
@@ -106,7 +107,7 @@ class learning_hmm_multi(learning_base):
         X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-        ret = self.ml.baumWelch(final_seq)
+        ret = self.ml.baumWelch(final_seq, 10000)
         print "baumwelch return : ", ret
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()

@@ -364,7 +364,7 @@ if __name__ == '__main__':
     p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
                  default=False, help='Plot by a figure of ROC human')
     p.add_option('--roc_robot', '--rr', action='store_true', dest='bRocRobot',
-                 default=False, help='Plot by a figure of ROC robot')
+                 default=True, help='Plot by a figure of ROC robot')
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
