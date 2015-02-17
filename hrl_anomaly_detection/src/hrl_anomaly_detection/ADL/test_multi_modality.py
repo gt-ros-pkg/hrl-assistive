@@ -337,13 +337,15 @@ def plot_all(data1, data2):
         
         ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
     pp.figure()
-    pp.subplot(211)
+    ax1 = pp.subplot(211)
     for i, d in enumerate(data1):
-        pp.plot(d)
+        pp.plot(d, label=str(i))
         
     pp.subplot(212)
     for i, d in enumerate(data2):
         pp.plot(d)
+
+    ## ax1.legend()
     pp.show()
     
     
@@ -377,7 +379,7 @@ if __name__ == '__main__':
     if task == 1:
         prefix = 'microwave'
         #prefix = 'microwave_black'
-        #prefix = 'microwave_white'
+        prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'door'
     elif task == 3:        
