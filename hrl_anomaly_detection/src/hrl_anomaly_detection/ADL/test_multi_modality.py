@@ -149,7 +149,6 @@ def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
             fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
             fp_l.append(fp)
             if err != 0.0: err_l.append(err)
-
                 
     return fp_l, err_l
     
