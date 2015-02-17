@@ -376,8 +376,8 @@ if __name__ == '__main__':
     task = 1
     if task == 1:
         prefix = 'microwave'
-        prefix = 'microwave_black'
-        prefix = 'microwave_white'
+        #prefix = 'microwave_black'
+        #prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'door'
     elif task == 3:        
