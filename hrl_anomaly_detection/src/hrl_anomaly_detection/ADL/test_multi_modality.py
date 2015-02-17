@@ -410,7 +410,7 @@ if __name__ == '__main__':
 
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+prefix
         nState          = 20
-        threshold_mult  = np.arange(0.05, 1.2, 0.05)    
+        threshold_mult  = np.arange(0.01, 2.0, 0.1)    
 
         fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
                 opr='human', bPlot=opt.bPlot)
@@ -502,7 +502,9 @@ if __name__ == '__main__':
         X_test1[0,50] = 2.7
         X_test1[0,51] = 2.7
         X_test = lhm.convert_sequence(X_test1, X_test2, emission=False)
-        print lhm.likelihood(X_test), lhm.likelihood_avg
+
+        fp, err = lhm.anomaly_check(x_test1, x_test2, ths_mult=1.0)
+        ## print lhm.likelihood(X_test), lhm.likelihood_avg
         ## mu, cov = self.predict(X_test)
         lhm.data_plot(X_test1, X_test2, color = 'b')
 
