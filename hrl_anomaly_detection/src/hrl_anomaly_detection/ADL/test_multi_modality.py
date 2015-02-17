@@ -410,7 +410,7 @@ if __name__ == '__main__':
 
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+prefix
         nState          = 20
-        threshold_mult  = np.arange(0.01, 2.0, 0.1)    
+        threshold_mult  = np.arange(0.01, 4.0, 0.1)    
 
         fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
                 opr='human', bPlot=opt.bPlot)
@@ -497,16 +497,26 @@ if __name__ == '__main__':
 
         #
         lhm.init_plot()
-        lhm.data_plot(X_test1, X_test2, color = 'r')
 
-        X_test1[0,50] = 2.7
-        X_test1[0,51] = 2.7
-        X_test = lhm.convert_sequence(X_test1, X_test2, emission=False)
+        X_test2[0,nCurrentStep-2] = 12.7
+        X_test2[0,nCurrentStep-1] = 11.7
+        
+        lhm.likelihood_disp(X_test1, X_test2, 2.0)
 
-        fp, err = lhm.anomaly_check(x_test1, x_test2, ths_mult=1.0)
-        ## print lhm.likelihood(X_test), lhm.likelihood_avg
-        ## mu, cov = self.predict(X_test)
-        lhm.data_plot(X_test1, X_test2, color = 'b')
+        
+        ## lhm.data_plot(X_test1, X_test2, color = 'r')
+
+        ## X_test2[0,nCurrentStep-2] = 12.7
+        ## X_test2[0,nCurrentStep-1] = 11.7
+        ## X_test = lhm.convert_sequence(X_test1[:nCurrentStep], X_test2[:nCurrentStep], emission=False)
+
+        ## fp, err = lhm.anomaly_check(X_test1, X_test2, ths_mult=0.01)
+        ## print fp, err
+        
+        ## ## print lhm.likelihood(X_test), lhm.likelihood_avg
+        ## ## mu, cov = self.predict(X_test)
+        
+        ## lhm.data_plot(X_test1, X_test2, color = 'b')
 
         
         lhm.final_plot()

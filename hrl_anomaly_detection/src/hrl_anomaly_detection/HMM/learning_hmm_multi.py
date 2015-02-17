@@ -603,6 +603,8 @@ class learning_hmm_multi(learning_base):
         if len(path) == 0: return 0.0, logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
         err = logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
 
+        print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
+        
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
 
@@ -790,7 +792,32 @@ class learning_hmm_multi(learning_base):
         ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         plt.show()
 
+
+
+    def likelihood_disp(self, X1, X2, ths_mult):
+
+        n,m = np.shape(X1)
+        X_test = self.convert_sequence(X1, X2, emission=False)                
+
+        x      = range(m)
+        ll     = np.zeros(m)
+        ll_mu  = np.zeros(m)
+        ll_ths = np.zeros(m)
+        for i in xrange(m):
         
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim+1].tolist())
+            path,logp    = self.ml.viterbi(final_ts_obj)
+
+            if len(path) == 0: continue
+
+            ll[i]     = logp
+            ll_mu[i]  = self.ll_mu[path[-1]]
+            ll_ths[i] = self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]]
+            
+        
+        self.ax1.plot(x, ll, 'b')
+        self.ax1.plot(x, ll_mu, 'r')
+        self.ax1.plot(x, ll_ths, 'r--')
         
         ## print "----------------------"
         ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
