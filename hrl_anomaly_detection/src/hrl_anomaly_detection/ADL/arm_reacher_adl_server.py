@@ -47,19 +47,6 @@ class armReachAction(mpcBaseAction):
         quat = Quaternion()
 
 
-        # going to home
-        ## print "MOVE1"
-        ## lJoint = [-1.0279779716247095, 1.1623408571610438, -0.5189701523715264, -1.886861849092819, 3.8320233539566377, -0.8064352219188305, 2.7413668578022]
-        ## timeout = 10.0
-        ## self.setPostureGoal(lJoint, timeout)
-        
-        # Front 
-        print "MOVES1"
-        (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 2.0
-        self.setOrientGoal(pos, quat, timeout)
-
         ## confirm = False
         ## while not confirm:
         ##     print "Current pose"
@@ -67,29 +54,115 @@ class armReachAction(mpcBaseAction):
         ##     ans = raw_input("Enter y to confirm to start: ")
         ##     if ans == 'y':
         ##         confirm = True
+        ## print self.getJointAngles()        
+        
+        #--------------------------------------------------------------        
+        # Microwave closing
+        #--------------------------------------------------------------        
+        ## # Front 
+        ## print "MOVES1"
+        ## (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        
+        ## print "MOVES2"
+        ## (pos.x, pos.y, pos.z) = (0.67, -0.63, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 1.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        ## ## raw_input("Enter anything to start: ")
+
+        ## # Front 
+        ## print "MOVES3"
+        ## (pos.x, pos.y, pos.z) = (0.58, -0.56, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
+
+        ## # Front 
+        ## print "MOVES4"
+        ## (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 3.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        
+        ## #--------------------------------------------------------------        
+        ## # Staples
+        ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
+        ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
+        ## #--------------------------------------------------------------        
+        # Up
+        print "MOVES1"
+        (pos.x, pos.y, pos.z) = (0.32, -0.63, -0.29)
+        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        timeout = 1.5
+        self.setOrientGoal(pos, quat, timeout)
         
         print "MOVES2"
-        (pos.x, pos.y, pos.z) = (0.67, -0.63, -0.24)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 1.0
-        self.setOrientGoal(pos, quat, timeout)
-        ## raw_input("Enter anything to start: ")
-
-        # Front 
-        print "MOVES3"
-        (pos.x, pos.y, pos.z) = (0.58, -0.56, -0.24)
+        (pos.x, pos.y, pos.z) = (0.35+0.07, -0.63, -0.29)
         (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
         timeout = 2.0
         self.setOrientGoal(pos, quat, timeout)
 
-        # Front 
-        print "MOVES4"
-        (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
+        ## # Front 
+        print "MOVES3"
+        (pos.x, pos.y, pos.z) = (0.35, -0.63, -0.29)
         (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 3.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         
-        ## print self.getJointAngles()        
+
+        ## #--------------------------------------------------------------        
+        ## # key
+        ## #--------------------------------------------------------------        
+        ## # Up
+        ## print "MOVES1"
+        ## (pos.x, pos.y, pos.z) = (0.4, -0.47, -0.64)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.707, 0.0, 0.707)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        ## rospy.sleep(2)
+        ## ## print self.getEndeffectorPose()
+        ## ## raw_input("Enter anything to start: ")
+        
+        ## ## print "MOVES2"
+        ## (pos.x, pos.y, pos.z) = (0.38, -0.47, -0.68)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.707, 0.0, 0.707)
+        ## timeout = 0.7
+        ## self.setOrientGoal(pos, quat, timeout)
+
+        ## ## # Front 
+        ## (pos.x, pos.y, pos.z) = (0.42, -0.47, -0.62)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.707, 0.0, 0.707)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
+
+        ## #--------------------------------------------------------------        
+        ## # case
+        ## #--------------------------------------------------------------        
+        ## # Up
+        ## print "MOVES1"
+        ## (pos.x, pos.y, pos.z) = (0.42, -0.48, -0.35)
+        ## (quat.x, quat.y, quat.z, quat.w) = (-0.146, 0.675, 0.172, 0.702)
+        ## timeout = 4.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        ## ## print self.getEndeffectorPose()
+        ## ## raw_input("Enter anything to start: ")
+        
+        ## print "MOVES2"
+        ## (pos.x, pos.y, pos.z) = (0.42, -0.48, -0.45)
+        ## (quat.x, quat.y, quat.z, quat.w) = (-0.146, 0.675, 0.172, 0.702)
+        ## timeout = 1.0 
+        ## self.setOrientGoal(pos, quat, timeout)
+
+        ## print "MOVES3"
+        ## (pos.x, pos.y, pos.z) = (0.44, -0.48, -0.33)
+        ## (quat.x, quat.y, quat.z, quat.w) = (-0.146, 0.675, 0.172, 0.702)
+        ## timeout = 3.0
+        ## self.setOrientGoal(pos, quat, timeout)
+        
+
         
         return True
 
@@ -103,7 +176,7 @@ if __name__ == '__main__':
     # Initial variables
     d_robot    = 'pr2'
     controller = 'static'
-    ## controller = 'actionlib'
+    controller = 'actionlib'
     arm        = 'r'
 
     rospy.init_node('arm_reacher')    
