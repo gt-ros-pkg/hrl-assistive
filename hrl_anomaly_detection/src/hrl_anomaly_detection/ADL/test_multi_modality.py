@@ -381,7 +381,7 @@ if __name__ == '__main__':
         #prefix = 'microwave_black'
         prefix = 'microwave_white'
     elif task == 2:        
-        prefix = 'door'
+        prefix = 'joystick_key'
     elif task == 3:        
         prefix = 'lock'
     else:
