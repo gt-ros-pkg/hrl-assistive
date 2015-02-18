@@ -345,7 +345,7 @@ def plot_all(data1, data2):
     for i, d in enumerate(data2):
         pp.plot(d)
 
-    ## ax1.legend()
+    ax1.legend()
     pp.show()
     
     
