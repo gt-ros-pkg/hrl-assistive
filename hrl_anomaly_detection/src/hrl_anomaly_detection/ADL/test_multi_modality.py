@@ -375,7 +375,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'
 
-    task = 1
+    task = 3
     if task == 1:
         prefix = 'microwave'
         #prefix = 'microwave_black'
@@ -383,7 +383,7 @@ if __name__ == '__main__':
     elif task == 2:        
         prefix = 'joystick_key'
     elif task == 3:        
-        prefix = 'lock'
+        prefix = 'case'
     else:
         prefix = 'close'
 
