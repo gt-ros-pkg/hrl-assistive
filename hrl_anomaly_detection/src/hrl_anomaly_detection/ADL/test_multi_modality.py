@@ -390,12 +390,15 @@ if __name__ == '__main__':
 
     task = 2
     if task == 1:
+        #door class?
         prefix = 'microwave'
         prefix = 'microwave_black'
         #prefix = 'microwave_white'
-    elif task == 2:        
+    elif task == 2: 
+        #button class       
         prefix = 'joystick_key'
     elif task == 3:        
+        #lock class
         prefix = 'case'
     else:
         prefix = 'close'
