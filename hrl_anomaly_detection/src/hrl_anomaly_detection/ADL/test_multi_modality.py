@@ -161,7 +161,8 @@ def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', 
     shapes = itertools.cycle(['x','v', 'o', '+'])
     
     pp.figure()    
-    for prefix in prefixes:
+    ## pp.title("ROC of anomaly detection ")
+    for i, prefix in enumerate(prefixes):
 
         cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
         
@@ -182,8 +183,12 @@ def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', 
 
         color = colors.next()
         shape = shapes.next()
-        ## semantic_label='likelihood detection \n with known mechanism class'
-        semantic_label=prefix
+
+        if i==0:
+            semantic_label='Known mechanism \n class -'+prefix
+        else:
+            semantic_label='Known mechanism \n identity -'+prefix
+            
         pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=1,prop={'size':14})
@@ -336,16 +341,24 @@ def plot_all(data1, data2):
         ## pp.show()
         
         ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
+
     pp.figure()
+    plt.rc('text', usetex=True)
     ax1 = pp.subplot(211)
     for i, d in enumerate(data1):
         pp.plot(d, label=str(i))
+    ## ax1.set_title("Force")
+    ax1.set_ylabel("Force [L2]", fontsize=18)
+
         
-    pp.subplot(212)
+    ax2 = pp.subplot(212)
     for i, d in enumerate(data2):
         pp.plot(d)
-
-    ax1.legend()
+    ## ax2.set_title("Audio")
+    ax2.set_ylabel("Audio [RMS]", fontsize=18)
+    ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+    
+    ## ax1.legend()
     pp.show()
     
     
@@ -375,11 +388,11 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'
 
-    task = 3
+    task = 2
     if task == 1:
         prefix = 'microwave'
-        #prefix = 'microwave_black'
-        prefix = 'microwave_white'
+        prefix = 'microwave_black'
+        #prefix = 'microwave_white'
     elif task == 2:        
         prefix = 'joystick_key'
     elif task == 3:        
@@ -435,7 +448,8 @@ if __name__ == '__main__':
                 opr='robot', attr='id', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
-            prefixes = ['microwave', 'microwave_black', 'microwave_white']
+            ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
+            prefixes = ['microwave', 'microwave_black']
             cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
             
