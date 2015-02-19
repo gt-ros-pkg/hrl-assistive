@@ -31,8 +31,8 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
-def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20, \
-                  threshold_mult = np.arange(0.05, 1.2, 0.05), bPlot=False):
+def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20, \
+            threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -48,8 +48,8 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nSt
     aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
     dataSet    = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, chunks, labels)
 
-    # Cross validation
-    nfs    = NFoldPartitioner(cvtype=1) # 1-fold ?
+    # Cross validation   
+    nfs    = NFoldPartitioner(cvtype=1,attr=attr) # 1-fold ?
     spl    = splitters.Splitter(attr='partitions')
     splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
 
@@ -57,7 +57,7 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nSt
     for ths in threshold_mult:
     
         # save file name
-        res_file = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+        res_file = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
         res_file = os.path.join(cross_test_path, res_file)
         
         mutex_file_part = 'running_ths_'+str(ths)
@@ -71,11 +71,15 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nSt
         elif os.path.isfile(mutex_file): continue
         os.system('touch '+mutex_file)
 
+        print "---------------------------------"
+        print "Total splits: ", len(splits)
+
         n_jobs = 4
-        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(l_wdata, l_vdata, nState, trans_type, ths) \
-                                    for l_wdata, l_vdata in splits) 
+        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(i, l_wdata, l_vdata, nState, trans_type, ths) \
+                                    for i, (l_wdata, l_vdata) in enumerate(splits)) 
         fp_ll, err_ll = zip(*r)
 
+        
         import operator
         fp_l = reduce(operator.add, fp_ll)
         err_l = reduce(operator.add, err_ll)
@@ -102,7 +106,7 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nSt
         fp_l = []
         err_l = []
         for ths in threshold_mult:
-            res_file   = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
             res_file   = os.path.join(cross_test_path, res_file)
 
             d = ut.load_pickle(res_file)
@@ -125,7 +129,7 @@ def fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nSt
                             
     return
 
-def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
+def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
 
     # Cross validation
     x_train1 = l_wdata.samples[:,0,:]
@@ -145,27 +149,27 @@ def anomaly_check(l_wdata, l_vdata, nState, trans_type, ths):
             fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
             fp_l.append(fp)
             if err != 0.0: err_l.append(err)
-
+                
     return fp_l, err_l
     
 
 
-def fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes):
+def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
         
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     
     pp.figure()    
-    for prefix in prefixes:
+    ## pp.title("ROC of anomaly detection ")
+    for i, prefix in enumerate(prefixes):
 
         cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
-
         
         fp_l = []
         err_l = []
         for ths in threshold_mult:
-            res_file   = prefix+'_roc_human_'+'ths_'+str(ths)+'.pkl'
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
             res_file   = os.path.join(cross_test_path, res_file)
 
             d = ut.load_pickle(res_file)
@@ -179,8 +183,12 @@ def fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes):
 
         color = colors.next()
         shape = shapes.next()
-        ## semantic_label='likelihood detection \n with known mechanism class'
-        semantic_label=prefix
+
+        if i==0:
+            semantic_label='Known mechanism \n class -'+prefix
+        else:
+            semantic_label='Known mechanism \n identity -'+prefix
+            
         pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=1,prop={'size':14})
@@ -333,14 +341,24 @@ def plot_all(data1, data2):
         ## pp.show()
         
         ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
+
     pp.figure()
-    pp.subplot(211)
+    plt.rc('text', usetex=True)
+    ax1 = pp.subplot(211)
     for i, d in enumerate(data1):
-        pp.plot(d)
+        pp.plot(d, label=str(i))
+    ## ax1.set_title("Force")
+    ax1.set_ylabel("Force [L2]", fontsize=18)
+
         
-    pp.subplot(212)
+    ax2 = pp.subplot(212)
     for i, d in enumerate(data2):
         pp.plot(d)
+    ## ax2.set_title("Audio")
+    ax2.set_ylabel("Audio [RMS]", fontsize=18)
+    ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+    
+    ## ax1.legend()
     pp.show()
     
     
@@ -358,6 +376,8 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
                  default=False, help='Plot by a figure of ROC human')
+    p.add_option('--roc_robot', '--rr', action='store_true', dest='bRocRobot',
+                 default=False, help='Plot by a figure of ROC robot')
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
@@ -365,19 +385,25 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
 
-    data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
+    ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
+    data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'
 
-    task = 1
+    task = 2
     if task == 1:
+        #door class?
         prefix = 'microwave'
         prefix = 'microwave_black'
-        ## prefix = 'microwave_white'
-    elif task == 2:        
-        prefix = 'door'
+        #prefix = 'microwave_white'
+    elif task == 2: 
+        #button class       
+        prefix = 'joystick_key'
     elif task == 3:        
-        prefix = 'lock'
+        #lock class
+        prefix = 'case'
     else:
         prefix = 'close'
+
+    dtw_flag = False
     
     # Load data
     pkl_file = "./"+prefix+"_data.pkl"
@@ -386,7 +412,8 @@ if __name__ == '__main__':
         d = ut.load_pickle(pkl_file)
     else:
         d = dm.load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
-        d = dm.cutting(d)        
+        ## d = dm.cutting(d, dtw_flag=dtw_flag)        
+        d = dm.cutting_for_robot(d, dtw_flag=dtw_flag)        
         ut.save_pickle(d, pkl_file)
 
     #
@@ -399,17 +426,36 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     if opt.bRocHuman:
 
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/multi_'+prefix
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+prefix
         nState          = 20
-        threshold_mult  = np.arange(0.05, 1.2, 0.05)    
+        threshold_mult  = np.arange(0.01, 4.0, 0.1)    
 
-        fig_roc_human(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, opt.bPlot)
+        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
+                opr='human', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
             prefixes = ['microwave', 'microwave_black', 'microwave_white']
-            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015'                
-            fig_roc_human_all(cross_data_path, nState, threshold_mult, prefixes)
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='human', attr='chunks')
 
+            
+    #---------------------------------------------------------------------------           
+    elif opt.bRocRobot:
+
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot/multi_'+prefix
+        nState          = 20
+        threshold_mult  = np.arange(0.0, 4.2, 0.1)    
+        attr            = 'id'
+
+        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
+                opr='robot', attr='id', bPlot=opt.bPlot)
+
+        if opt.bAllPlot:
+            ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
+            prefixes = ['microwave', 'microwave_black']
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
+            
             
     #---------------------------------------------------------------------------
     elif opt.bAllPlot:
@@ -436,6 +482,9 @@ if __name__ == '__main__':
         trans_type= "left_right"
         ## nMaxStep = 36 # total step of data. It should be automatically assigned...
 
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        
         # Learning
         from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
@@ -451,6 +500,9 @@ if __name__ == '__main__':
         trans_type= "left_right"
         ## nMaxStep = 36 # total step of data. It should be automatically assigned...
 
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        
         # Learning
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
         lhm.fit(aXData1_scaled, aXData2_scaled)
@@ -464,14 +516,26 @@ if __name__ == '__main__':
 
         #
         lhm.init_plot()
-        lhm.data_plot(X_test1, X_test2, color = 'r')
 
-        X_test1[0,50] = 2.7
-        X_test1[0,51] = 2.7
-        X_test = lhm.convert_sequence(X_test1, X_test2, emission=False)
-        print lhm.likelihood(X_test), lhm.likelihood_avg
-        ## mu, cov = self.predict(X_test)
-        lhm.data_plot(X_test1, X_test2, color = 'b')
+        X_test2[0,nCurrentStep-2] = 12.7
+        X_test2[0,nCurrentStep-1] = 11.7
+        
+        lhm.likelihood_disp(X_test1, X_test2, 2.0)
+
+        
+        ## lhm.data_plot(X_test1, X_test2, color = 'r')
+
+        ## X_test2[0,nCurrentStep-2] = 12.7
+        ## X_test2[0,nCurrentStep-1] = 11.7
+        ## X_test = lhm.convert_sequence(X_test1[:nCurrentStep], X_test2[:nCurrentStep], emission=False)
+
+        ## fp, err = lhm.anomaly_check(X_test1, X_test2, ths_mult=0.01)
+        ## print fp, err
+        
+        ## ## print lhm.likelihood(X_test), lhm.likelihood_avg
+        ## ## mu, cov = self.predict(X_test)
+        
+        ## lhm.data_plot(X_test1, X_test2, color = 'b')
 
         
         lhm.final_plot()
