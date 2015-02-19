@@ -511,6 +511,12 @@ class ADL_log():
                 self.task_name = 'joystick_key'
             elif num == '14':
                 self.task_name = 'switch_device'
+            elif num == '15':
+                self.task_name = 'switch_outlet'
+            elif num == '16':
+                self.task_name = 'lock_huggies'
+            elif num == '17':
+                self.task_name = 'lock_wipes'
             else:
                 print '\n!!!!!Invalid choice of task!!!!!\n'
                 valid = False
@@ -555,7 +561,7 @@ class ADL_log():
         ## if self.audio: self.audio.reset()
         
 
-    def log_start(self):
+    def log_start(self, trial_name):
         
         raw_input('press Enter to begin the test')
         self.init_time = rospy.get_time()
@@ -574,7 +580,7 @@ class ADL_log():
             ret = self.armReachAction()
             print ret
 
-            self.close_log_file()
+            self.close_log_file(trial_name)
             sys.exit()
                     
 
@@ -644,7 +650,7 @@ class ADL_log():
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task = '14'
+    task = '17'
     actor = '2'
     trial_name = 'success'
     ## trial_name = 'brokenkey'
@@ -657,7 +663,7 @@ if __name__ == '__main__':
     log = ADL_log(audio=True, ft=True, kinematics=True,  manip=manip, test_mode=False)
     log.init_log_file(subject, task, actor)
 
-    log.log_start()
+    log.log_start(trial_name)
     
     rate = rospy.Rate(1000) # 25Hz, nominally.    
     while not rospy.is_shutdown():
