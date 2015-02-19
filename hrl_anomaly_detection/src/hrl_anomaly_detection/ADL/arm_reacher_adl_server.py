@@ -92,25 +92,25 @@ class armReachAction(mpcBaseAction):
         ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
         ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
         ## #--------------------------------------------------------------        
-        # Up
-        print "MOVES1"
-        (pos.x, pos.y, pos.z) = (0.32, -0.63, -0.29)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 1.5
-        self.setOrientGoal(pos, quat, timeout)
+        ## # Up
+        ## print "MOVES1"
+        ## (pos.x, pos.y, pos.z) = (0.32, -0.63, -0.29)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 1.5
+        ## self.setOrientGoal(pos, quat, timeout)
         
-        print "MOVES2"
-        (pos.x, pos.y, pos.z) = (0.35+0.07, -0.63, -0.29)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 2.0
-        self.setOrientGoal(pos, quat, timeout)
+        ## print "MOVES2"
+        ## (pos.x, pos.y, pos.z) = (0.35+0.07, -0.63, -0.29)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 2.0
+        ## self.setOrientGoal(pos, quat, timeout)
 
-        ## # Front 
-        print "MOVES3"
-        (pos.x, pos.y, pos.z) = (0.35, -0.63, -0.29)
-        (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        timeout = 1.0
-        self.setOrientGoal(pos, quat, timeout)
+        ## ## # Front 
+        ## print "MOVES3"
+        ## (pos.x, pos.y, pos.z) = (0.35, -0.63, -0.29)
+        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
+        ## timeout = 1.0
+        ## self.setOrientGoal(pos, quat, timeout)
         
 
         ## #--------------------------------------------------------------        
@@ -162,6 +162,30 @@ class armReachAction(mpcBaseAction):
         ## timeout = 3.0
         ## self.setOrientGoal(pos, quat, timeout)
         
+        ## #--------------------------------------------------------------        
+        ## # Switch
+        ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
+        ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
+        ## #--------------------------------------------------------------        
+        print "MOVES1"
+        (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.35)
+        (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
+        timeout = 1.0
+        self.setOrientGoal(pos, quat, timeout)
+        ## print self.getEndeffectorPose()
+        ## raw_input("Enter anything to start: ")
+        
+        print "MOVES2"
+        (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.41)
+        (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
+        timeout = 1.0 
+        self.setOrientGoal(pos, quat, timeout)
+
+        print "MOVES3"
+        (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.35)
+        (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
+        timeout = 1.0
+        self.setOrientGoal(pos, quat, timeout)
 
         
         return True
