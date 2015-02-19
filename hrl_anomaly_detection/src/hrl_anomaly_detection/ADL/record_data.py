@@ -383,12 +383,13 @@ class tool_ft(Thread):
 
 
 class ADL_log():
-    def __init__(self, ft=True, audio=False, manip=False, test_mode=False):
+    def __init__(self, ft=True, audio=False, kinematics=False, manip=False, test_mode=False):
         rospy.init_node('ADLs_log', anonymous = True)
 
         self.ft = ft
         self.audio = audio
         self.manip = manip
+        self.kinematics = kinematics
         self.test_mode = test_mode
 
         self.init_time = 0.
@@ -437,11 +438,13 @@ class ADL_log():
                 self.task_name = 'wallsw_nidrr_room'
 
             elif num == '11':
-                self.task_name = 'cup'
+                self.task_name = 'case'
             elif num == '12':
                 self.task_name = 'staple'
             elif num == '13':
-                self.task_name = 'dishwasher'
+                self.task_name = 'joystick_key'
+            elif num == '14':
+                self.task_name = 'switch_device'
             else:
                 print '\n!!!!!Invalid choice of task!!!!!\n'
                 valid = False
@@ -557,11 +560,12 @@ class ADL_log():
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task = '2'
+    task = '14'
     actor = '2'
     trial_name = 'success'
-    trial_name = 'stickblock'
-    trial_name = 'contentscollision'
+    ## trial_name = 'brokenkey'
+    ## trial_name = 'stickblock'
+    ## trial_name = 'contentscollision'
     ## trial_name = 'paperblock'
     manip=True
     
