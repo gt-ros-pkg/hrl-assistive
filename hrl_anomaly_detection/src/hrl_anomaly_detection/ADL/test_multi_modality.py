@@ -388,7 +388,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'
 
-    task = 2
+    task = 1
     if task == 1:
         #door class?
         prefix = 'microwave'
@@ -451,8 +451,12 @@ if __name__ == '__main__':
                 opr='robot', attr='id', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
-            ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
-            prefixes = ['microwave', 'microwave_black']
+            if task ==1:
+                ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
+                prefixes = ['microwave', 'microwave_black']
+            else:
+                prefixes = ['microwave', 'microwave_black']
+                
             cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
             
@@ -508,15 +512,14 @@ if __name__ == '__main__':
         lhm.fit(aXData1_scaled, aXData2_scaled)
         
         # TEST
-        nCurrentStep = 37
+        nCurrentStep = 27
         ## X_test1 = aXData1_scaled[0:1,:nCurrentStep]
         ## X_test2 = aXData2_scaled[0:1,:nCurrentStep]
         X_test1 = aXData1_scaled[0:1]
         X_test2 = aXData2_scaled[0:1]
 
         #
-        lhm.init_plot()
-
+        X_test2[0,nCurrentStep-3] = 10.7
         X_test2[0,nCurrentStep-2] = 12.7
         X_test2[0,nCurrentStep-1] = 11.7
         
@@ -537,5 +540,3 @@ if __name__ == '__main__':
         
         ## lhm.data_plot(X_test1, X_test2, color = 'b')
 
-        
-        lhm.final_plot()

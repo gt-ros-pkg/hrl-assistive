@@ -21,6 +21,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib import animation
+from matplotlib import rc
 
 ## import door_open_data as dod
 import ghmm
@@ -126,8 +127,9 @@ class learning_hmm_multi(learning_base):
         X_train  = self.convert_sequence(aXData1, aXData2)
         for i in xrange(n):                                                          
             for j in xrange(m):
+                if j==0: continue
                 
-                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim+1].tolist())
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
                 path,logp    = self.ml.viterbi(final_ts_obj)
 
                 if len(path) == 0: continue
@@ -807,8 +809,9 @@ class learning_hmm_multi(learning_base):
         ll_mu  = np.zeros(m)
         ll_ths = np.zeros(m)
         for i in xrange(m):
+            if i == 0: continue
         
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim+1].tolist())
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
             path,logp    = self.ml.viterbi(final_ts_obj)
 
             if len(path) == 0: continue
@@ -816,11 +819,38 @@ class learning_hmm_multi(learning_base):
             ll[i]     = logp
             ll_mu[i]  = self.ll_mu[path[-1]]
             ll_ths[i] = self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]]
-            
+
+
+        l = [0]
+        for p in path:
+            l.append(p%2)
+
+        import matplotlib.collections as collections
         
-        self.ax1.plot(x, ll, 'b')
-        self.ax1.plot(x, ll_mu, 'r')
-        self.ax1.plot(x, ll_ths, 'r--')
+        plt.figure()
+        plt.rc('text', usetex=True)
+        ax1 = plt.subplot(311)
+        ax1.plot(x, X1[0])
+        collection = collections.BrokenBarHCollection.span_where(x, ymin=0, ymax=10, where=np.array(l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        ax1.add_collection(collection)
+        ax1.set_ylabel("Force magnitude")
+            
+        ax2 = plt.subplot(312)
+        ax2.plot(x, X2[0])
+        collection = collections.BrokenBarHCollection.span_where(x, ymin=0, ymax=10, where=np.array(l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        ax2.add_collection(collection)
+        ax2.set_ylabel("Audio [RMS]")
+
+        
+        ax3 = plt.subplot(313)
+        
+        ax3.plot(x, ll, 'b', label='{log likelihood per current step}')
+        ax3.plot(x, ll_mu, 'r', label=r'$\mu$')
+        ax3.plot(x, ll_ths, 'r--', label=r'$\mu + c \sigma$')
+        ax3.set_ylabel("Log likelihood")
+        
+        ax3.legend(loc='best',prop={'size':10})
+        plt.show()
         
         ## print "----------------------"
         ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
