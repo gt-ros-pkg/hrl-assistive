@@ -86,9 +86,9 @@ var RFH = {
                                                      div: 'battery-status'});
     // Setup a client to listen to TFs.
         RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
-                                            angularThres : 0.005,
-                                            transThres : 0.005,
-                                            rate : 10.0,
+                                            angularThres : 0.0025,
+                                            transThres : 0.0025,
+                                            rate : 20.0,
                                             fixedFrame : '/base_link' });
         RFH.pr2 = new PR2(RFH.ros);
         initMjpegCanvas('video-main');
