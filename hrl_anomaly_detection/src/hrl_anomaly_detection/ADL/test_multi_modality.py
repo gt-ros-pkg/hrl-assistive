@@ -386,32 +386,36 @@ if __name__ == '__main__':
 
 
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
-    data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'
-
-    task = 1
-    if task == 1:
-        #door class?
-        prefix = 'microwave'
-        prefix = 'microwave_black'
-        #prefix = 'microwave_white'
-    elif task == 2: 
-        #button class       
-        prefix = 'joystick_key'
-    elif task == 3:        
-        #lock class
-        prefix = 'case'
+    cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
+    
+    class_num = 3
+    task  = 1
+    if class_num == 0:
+        class_name = 'door'
+        task_names = ['microwave_black', 'microwave_white']
+    elif class_num == 1: 
+        class_name = 'switch'
+        task_names = ['wall', 'device', 'outlet']
+    elif class_num == 2:        
+        class_name = 'lock'
+        task_names = ['case', 'wipe', 'diaper']
+    elif class_num == 3:        
+        class_name = 'button'
+        task_names = ['joystick', 'keyboard']
     else:
-        prefix = 'close'
+        print "Please specify right task."
+        sys.exit()
 
     dtw_flag = False
     
     # Load data
-    pkl_file = "./"+prefix+"_data.pkl"
+    pkl_file  = os.path.join(cross_root_path,task_names[task]+"_data.pkl")    
+    data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'+class_name+'/'
     
     if os.path.isfile(pkl_file) and opt.bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
-        d = dm.load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
+        d = dm.load_data(data_path, task_names[task], normal_only=(not opt.bAbnormal))
         ## d = dm.cutting(d, dtw_flag=dtw_flag)        
         d = dm.cutting_for_robot(d, dtw_flag=dtw_flag)        
         ut.save_pickle(d, pkl_file)
@@ -426,28 +430,29 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     if opt.bRocHuman:
 
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+prefix
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+\
+                          task_names[task]
         nState          = 20
         threshold_mult  = np.arange(0.01, 4.0, 0.1)    
 
-        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
+        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, task_names[task], nState, threshold_mult, \
                 opr='human', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
             prefixes = ['microwave', 'microwave_black', 'microwave_white']
-            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human'                
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human'
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='human', attr='chunks')
 
             
     #---------------------------------------------------------------------------           
     elif opt.bRocRobot:
 
-        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot/multi_'+prefix
+        cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task])
         nState          = 20
         threshold_mult  = np.arange(0.0, 4.2, 0.1)    
         attr            = 'id'
 
-        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState, threshold_mult, \
+        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, task_names[task], nState, threshold_mult, \
                 opr='robot', attr='id', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
