@@ -57,6 +57,8 @@ def load_data(data_path, prefix, normal_only=True):
         ft_time  = d.get('ft_time',None)
         ft_force  = d.get('ft_force_raw',None)
         ft_torque = d.get('ft_torque_raw',None)
+
+        print np.shape(ft_time), np.shape(ft_force)
         
         audio_time  = d['audio_time']
         audio_data  = d['audio_data']
@@ -133,7 +135,7 @@ def cutting(d, dtw_flag=False):
     MAX_INT = 32768.0
     CHUNK   = 1024 #frame per buffer
     RATE    = 44100 #sampling rate
-    
+
     #------------------------------------------------------
     # Get reference data
     #------------------------------------------------------
@@ -388,7 +390,7 @@ def cutting_for_robot(d, dtw_flag=False):
     MAX_INT = 32768.0
     CHUNK   = 1024 #frame per buffer
     RATE    = 44100 #sampling rate
-    
+
     #------------------------------------------------------
     # Get reference data
     #------------------------------------------------------
@@ -400,7 +402,7 @@ def cutting_for_robot(d, dtw_flag=False):
         else: 
             ft_force_mag = np.linalg.norm(force,axis=0)
             for j, f_mag in enumerate(ft_force_mag[::-1]):
-                if f_mag > 1.0: 
+                if f_mag > ft_force_mag[-1]*2.0: 
                     idx = len(ft_force_mag)-j
                     break
             if max_idx < idx:
@@ -413,6 +415,8 @@ def cutting_for_robot(d, dtw_flag=False):
             ##     ref_idx = i
             ##     max_f = f
 
+    sys.exit()
+            
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
     ft_force  = ft_force_l[ref_idx]
