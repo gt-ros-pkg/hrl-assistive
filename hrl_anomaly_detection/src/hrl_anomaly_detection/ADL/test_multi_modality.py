@@ -58,7 +58,7 @@ def fig_roc_offline(cross_data_path, \
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     splits = []
-    for i in xrange(10):
+    for i in xrange(30):
         test_dataSet  = Dataset.random_samples(true_dataSet, len(false_aXData1))
         train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
         train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
