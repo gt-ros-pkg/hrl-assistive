@@ -599,7 +599,7 @@ class learning_hmm_multi(learning_base):
 
         X_test = self.convert_sequence(X1, X2, emission=False)                
         n      = len(np.squeeze(X1))
-
+        
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
         path,logp    = self.ml.viterbi(final_ts_obj)
 

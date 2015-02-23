@@ -49,14 +49,20 @@ def fig_roc_offline(cross_data_path, \
     # min max scaling for true data
     aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
     aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
-    true_labels = [True]*len(true_aXData1)
-    dataSet    = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+    labels = [True]*len(true_aXData1)
+    true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
+
+    aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1)
+    aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2)    
+    labels = [False]*len(false_aXData1)
+    false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     splits = []
     for i in xrange(10):
-        test_dataSet  = Dataset.random_samples(dataSet, len(false_aXData1))
-        train_ids = [val for val in dataSet.sa.id if val not in test_dataSet.sa.id] 
-        train_dataSet = Dataset.get_samples_by_attr(dataSet, 'id', train_ids)
+        test_dataSet  = Dataset.random_samples(true_dataSet, len(false_aXData1))
+        train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+        train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+        train_dataSet = true_dataSet[train_ids]
         splits.append([train_dataSet, test_dataSet])
         
     # Cross validation   
@@ -93,22 +99,32 @@ def fig_roc_offline(cross_data_path, \
 
         n_jobs = 4
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(i, l_wdata, l_vdata, nState, \
-                                                                   trans_type, ths) \
+                                                                   trans_type, ths, false_dataSet) \
                                     for i, (l_wdata, l_vdata) in enumerate(splits)) 
-        fp_ll, err_ll = zip(*r)
+        fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
 
-        
         import operator
-        fp_l = reduce(operator.add, fp_ll)
-        err_l = reduce(operator.add, err_ll)
+        fn_l = reduce(operator.add, fn_ll)
+        tn_l = reduce(operator.add, tn_ll)
+        fn_err_l = reduce(operator.add, fn_err_ll)
+        tn_err_l = reduce(operator.add, tn_err_ll)
         
         d = {}
-        d['fp']  = np.mean(fp_l)
-        if err_l == []:         
-            d['err'] = 0.0
+        d['fn']  = np.mean(fn_l)
+        d['tp']  = 1.0 - np.mean(fn_l)
+        d['tn']  = np.mean(tn_l)
+        d['fp']  = 1.0 - np.mean(tn_l)
+        
+        if fn_err_l == []:         
+            d['fn_err'] = 0.0
         else:
-            d['err'] = np.mean(err_l)
+            d['fn_err'] = np.mean(fn_err_l)
 
+        if tn_err_l == []:         
+            d['tn_err'] = 0.0
+        else:
+            d['tn_err'] = np.mean(tn_err_l)
+            
         ut.save_pickle(d,res_file)        
         os.system('rm '+mutex_file)
         print "-----------------------------------------------"
@@ -122,26 +138,33 @@ def fig_roc_offline(cross_data_path, \
     if count == len(threshold_mult) and bPlot:
 
         fp_l = []
+        tp_l = []
         err_l = []
         for ths in threshold_mult:
             res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
             res_file   = os.path.join(cross_test_path, res_file)
 
             d = ut.load_pickle(res_file)
+            tp  = d['tp'] 
+            fn  = d['fn'] 
             fp  = d['fp'] 
-            err = d['err']         
+            tn  = d['tn'] 
+            fn_err = d['fn_err']         
+            tn_err = d['tn_err']         
 
             fp_l.append([fp])
+            tp_l.append([tp])
             err_l.append([err])
 
         fp_l  = np.array(fp_l)*100.0
+        tp_l  = np.array(tp_l)*100.0
         sem_c = 'b'
         sem_m = '+'
         semantic_label='likelihood detection \n with known mechanism class'
         pp.figure()
-        pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+        pp.plot(fp_l, tp_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
         pp.xlabel('False positive rate (percentage)')
-        pp.ylabel('Mean excess log likelihood')    
+        pp.ylabel('True positive rate (percentage)')    
         ## pp.xlim([0, 30])
         pp.show()
                             
@@ -246,7 +269,7 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
     return
 
     
-def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths):
+def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None):
 
     # Cross validation
     x_train1 = l_wdata.samples[:,0,:]
@@ -254,20 +277,32 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths):
 
     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
     lhm.fit(x_train1, x_train2)
+       
+    fn_l  = []
+    tn_l  = []
+    fn_err_l = []
+    tn_err_l = []
 
+    # True data
     x_test1 = l_vdata.samples[:,0,:]
     x_test2 = l_vdata.samples[:,1,:]
     n,m = np.shape(x_test1)
-    
-    fp_l  = []
-    err_l = []
     for i in range(n):
-        for j in range(2,m,1):
-            fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
-            fp_l.append(fp)
-            if err != 0.0: err_l.append(err)
-                
-    return fp_l, err_l
+        fn, err = lhm.anomaly_check(x_test1[i:i+1,:], x_test2[i:i+1,:], ths_mult=ths)           
+        fn_l.append(fn)
+        if err != 0.0: fn_err_l.append(err)
+
+    # False data
+    x_test1 = false_dataSet.samples[:,0]
+    x_test2 = false_dataSet.samples[:,1]
+    n = len(x_test1)
+    for i in range(n):
+            
+        tn, err = lhm.anomaly_check(np.array([x_test1[i]]), np.array([x_test2[i]]), ths_mult=ths)           
+        tn_l.append(tn)
+        if err != 0.0: tn_err_l.append(err)
+
+    return fn_l, tn_l, fn_err_l, tn_err_l
     
 
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
