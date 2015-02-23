@@ -31,6 +31,122 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
+def fig_roc_offline(cross_data_path, \
+                    true_aXData1, true_aXData2, true_chunks, \
+                    false_aXData1, false_aXData2, false_chunks, \
+                    prefix, nState=20, \
+                    threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+    trans_type = "left_right"
+    
+    # Check the existance of workspace
+    cross_test_path = os.path.join(cross_data_path, str(nState))
+    if os.path.isdir(cross_test_path) == False:
+        os.system('mkdir -p '+cross_test_path)
+
+    # min max scaling for true data
+    aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
+    aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+    true_labels = [True]*len(true_aXData1)
+    dataSet    = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+
+    splits = []
+    for i in xrange(10):
+        test_dataSet  = Dataset.random_samples(dataSet, len(false_aXData1))
+        train_ids = [val for val in dataSet.sa.id if val not in test_dataSet.sa.id] 
+        train_dataSet = Dataset.get_samples_by_attr(dataSet, 'id', train_ids)
+        splits.append([train_dataSet, test_dataSet])
+        
+    # Cross validation   
+    ## nFold  = len(aXData1_scaled)/len(false_aXData1)
+    ## nFold  = 2 #len(false_aXData1)
+    ## nfs    = NFoldPartitioner(cvtype=nFold,attr=attr) # 1-fold ?
+    ## spl    = splitters.Splitter(attr='partitions')
+    ## splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
+
+
+    ## for i, (l_wdata, l_vdata) in enumerate(splits):
+    ##     print len(l_wdata), len(l_vdata), nFold, len(false_aXData1)
+
+    count = 0
+    for ths in threshold_mult:
+    
+        # save file name
+        res_file = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+        res_file = os.path.join(cross_test_path, res_file)
+        
+        mutex_file_part = 'running_ths_'+str(ths)
+        mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+        mutex_file      = os.path.join(cross_test_path, mutex_file_full)
+        
+        if os.path.isfile(res_file): 
+            count += 1            
+            continue
+        elif hcu.is_file(cross_test_path, mutex_file_part): continue
+        elif os.path.isfile(mutex_file): continue
+        os.system('touch '+mutex_file)
+
+        print "---------------------------------"
+        print "Total splits: ", len(splits)
+
+        n_jobs = 4
+        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(i, l_wdata, l_vdata, nState, \
+                                                                   trans_type, ths) \
+                                    for i, (l_wdata, l_vdata) in enumerate(splits)) 
+        fp_ll, err_ll = zip(*r)
+
+        
+        import operator
+        fp_l = reduce(operator.add, fp_ll)
+        err_l = reduce(operator.add, err_ll)
+        
+        d = {}
+        d['fp']  = np.mean(fp_l)
+        if err_l == []:         
+            d['err'] = 0.0
+        else:
+            d['err'] = np.mean(err_l)
+
+        ut.save_pickle(d,res_file)        
+        os.system('rm '+mutex_file)
+        print "-----------------------------------------------"
+
+    if count == len(threshold_mult):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
+
+        
+    if count == len(threshold_mult) and bPlot:
+
+        fp_l = []
+        err_l = []
+        for ths in threshold_mult:
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+            res_file   = os.path.join(cross_test_path, res_file)
+
+            d = ut.load_pickle(res_file)
+            fp  = d['fp'] 
+            err = d['err']         
+
+            fp_l.append([fp])
+            err_l.append([err])
+
+        fp_l  = np.array(fp_l)*100.0
+        sem_c = 'b'
+        sem_m = '+'
+        semantic_label='likelihood detection \n with known mechanism class'
+        pp.figure()
+        pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+        pp.xlabel('False positive rate (percentage)')
+        pp.ylabel('Mean excess log likelihood')    
+        ## pp.xlim([0, 30])
+        pp.show()
+                            
+    return
+
 def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20, \
             threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False):
 
@@ -129,7 +245,8 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
                             
     return
 
-def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
+    
+def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths):
 
     # Cross validation
     x_train1 = l_wdata.samples[:,0,:]
@@ -153,6 +270,29 @@ def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
     return fp_l, err_l
     
 
+def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
+
+    # Cross validation
+    x_train1 = l_wdata.samples[:,0,:]
+    x_train2 = l_wdata.samples[:,1,:]
+
+    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+    lhm.fit(x_train1, x_train2)
+
+    x_test1 = l_vdata.samples[:,0,:]
+    x_test2 = l_vdata.samples[:,1,:]
+    n,m = np.shape(x_test1)
+    
+    fp_l  = []
+    err_l = []
+    for i in range(n):
+        for j in range(2,m,1):
+            fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
+            fp_l.append(fp)
+            if err != 0.0: err_l.append(err)
+                
+    return fp_l, err_l
+    
 
 def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
         
@@ -376,7 +516,9 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
                  default=False, help='Plot by a figure of ROC human')
-    p.add_option('--roc_robot', '--rr', action='store_true', dest='bRocRobot',
+    p.add_option('--roc_online_robot', '--ron', action='store_true', dest='bRocOnlineRobot',
+                 default=False, help='Plot by a figure of ROC robot')
+    p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
@@ -388,20 +530,34 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 3
-    task  = 1
+    class_num = 0
+    task  = 0
     if class_num == 0:
         class_name = 'door'
-        task_names = ['microwave_black', 'microwave_white']
+        task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
+        f_zero_size = [8, 5, 10]
+        f_thres     = [1.0, 1.7, 3.0]
+        audio_thres = [1.0, 1.0, 1.0]
     elif class_num == 1: 
         class_name = 'switch'
-        task_names = ['wall', 'device', 'outlet']
+        task_names = ['wallsw', 'switch_device', 'switch_outlet']
+        f_zero_size = [2, 5, 8]
+        f_thres    = [0.4, 1.35, 1.35]
     elif class_num == 2:        
         class_name = 'lock'
-        task_names = ['case', 'wipe', 'diaper']
+        task_names = ['case', 'lock_wipes', 'lock_huggies']
+        f_zero_size = [5, 5, 5]
+        f_thres    = [1.0, 1.35, 1.35]
     elif class_num == 3:        
+        class_name = 'complex'
+        task_names = ['toaster_white', 'glass_case']
+        f_zero_size = [5, 2, 8]
+        f_thres    = [1.0, 0.5, 1.35]
+    elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
+        f_zero_size = [5, 5, 8]
+        f_thres    = [1.35, 1.35, 1.35]
     else:
         print "Please specify right task."
         sys.exit()
@@ -415,17 +571,30 @@ if __name__ == '__main__':
     if os.path.isfile(pkl_file) and opt.bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
-        d = dm.load_data(data_path, task_names[task], normal_only=(not opt.bAbnormal))
+        ## d = dm.load_data(data_path, task_names[task], normal_only=(not opt.bAbnormal))
         ## d = dm.cutting(d, dtw_flag=dtw_flag)        
-        d = dm.cutting_for_robot(d, dtw_flag=dtw_flag)        
+        d = dm.load_data(data_path, task_names[task], normal_only=False)
+        d = dm.cutting_for_robot(d, f_zero_size=f_zero_size[task], f_thres=f_thres[task], \
+                                 audio_thres=audio_thres[task], dtw_flag=dtw_flag)        
         ut.save_pickle(d, pkl_file)
 
     #
-    aXData1  = d['ft_force_mag_l']
-    aXData2  = d['audio_rms_l'] 
-    labels   = d['labels']
-    chunks   = d['chunks'] 
+    ## aXData1  = d['ft_force_mag_l']
+    ## aXData2  = d['audio_rms_l'] 
+    ## labels   = d['labels']
+    ## chunks   = d['chunks'] 
 
+    true_aXData1 = d['ft_force_mag_true_l']
+    true_aXData2 = d['audio_rms_true_l'] 
+    true_chunks  = d['true_chunks']
+
+    false_aXData1 = d['ft_force_mag_false_l']
+    false_aXData2 = d['audio_rms_false_l'] 
+    false_chunks  = d['false_chunks']
+
+    print "All: ", len(true_aXData1)+len(false_aXData1), \
+      " Success: ", len(true_aXData1), \
+      " Failure: ", len(false_aXData1)
     
     #---------------------------------------------------------------------------           
     if opt.bRocHuman:
@@ -443,9 +612,9 @@ if __name__ == '__main__':
             cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human'
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='human', attr='chunks')
 
-            
+
     #---------------------------------------------------------------------------           
-    elif opt.bRocRobot:
+    elif opt.bRocOnlineRobot:
 
         cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task])
         nState          = 20
@@ -466,18 +635,43 @@ if __name__ == '__main__':
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
             
             
+    #---------------------------------------------------------------------------           
+    elif opt.bRocOfflineRobot:
+        
+        print "ROC Offline Robot"
+        cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task])
+        nState          = 20
+        threshold_mult  = np.arange(0.0, 4.2, 0.1)    
+        attr            = 'id'
+
+        fig_roc_offline(cross_data_path, \
+                        true_aXData1, true_aXData2, true_chunks, \
+                        false_aXData1, false_aXData2, false_chunks, \
+                        task_names[task], nState, threshold_mult, \
+                opr='robot', attr='id', bPlot=opt.bPlot)
+
+        if opt.bAllPlot:
+            if task ==1:
+                ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
+                prefixes = ['microwave', 'microwave_black']
+            else:
+                prefixes = ['microwave', 'microwave_black']
+                
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
+            
+            
     #---------------------------------------------------------------------------
     elif opt.bAllPlot:
 
-        # Mvg filtering
-        ## aXData1_avg = movingaverage(aXData1, 5)
-        ## aXData2_avg = movingaverage(aXData2, 5)    
-        ## aXData1_avg = aXData1
-        ## aXData2_avg = aXData2
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
 
-        # min max scaling
-        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
-        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        if opt.bAbnormal:
+            # min max scaling
+            aXData1_scaled, _, _ = dm.scaling(aXData1, min_c1, max_c1, scale=10.0)
+            aXData2_scaled, _, _ = dm.scaling(aXData2, min_c2, max_c2, scale=10.0)
+
         ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
         ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
        
