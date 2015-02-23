@@ -54,7 +54,7 @@ def load_data(data_path, prefix, normal_only=True):
         
         d = ut.load_pickle(pkl)
 
-        ft_time  = d.get('ft_time',None)
+        ft_time   = d.get('ft_time',None)
         ft_force  = d.get('ft_force_raw',None)
         ft_torque = d.get('ft_torque_raw',None)
 
@@ -70,7 +70,7 @@ def load_data(data_path, prefix, normal_only=True):
 
         ft_force = np.array(ft_force).squeeze().T
         ft_torque = np.array(ft_torque).squeeze().T
-
+        
         ft_time_list.append(ft_time)
         ft_force_list.append(ft_force)
         ft_torque_list.append(ft_torque)
@@ -408,6 +408,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     max_f   = 0.0
     max_idx = 0
     min_len = 100000000000000
+    idx     = 1
     for i, force in enumerate(ft_force_l):
         if labels[i] is False: continue
         else: 
@@ -422,6 +423,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             if max_idx < idx:
                 max_idx = idx
                 ref_idx = i
+
             
             ## f = np.max(ft_force_mag)
             ## if max_f < f:

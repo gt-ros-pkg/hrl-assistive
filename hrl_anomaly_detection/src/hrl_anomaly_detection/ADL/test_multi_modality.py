@@ -154,7 +154,7 @@ def fig_roc_offline(cross_data_path, \
 
             fp_l.append([fp])
             tp_l.append([tp])
-            err_l.append([err])
+            err_l.append([fn_err])
 
         fp_l  = np.array(fp_l)*100.0
         tp_l  = np.array(tp_l)*100.0
@@ -565,7 +565,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 0
+    class_num = 3
     task  = 0
     if class_num == 0:
         class_name = 'door'
@@ -577,22 +577,26 @@ if __name__ == '__main__':
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
         f_zero_size = [2, 5, 8]
-        f_thres    = [0.4, 1.35, 1.35]
+        f_thres     = [0.4, 1.35, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
     elif class_num == 2:        
         class_name = 'lock'
         task_names = ['case', 'lock_wipes', 'lock_huggies']
         f_zero_size = [5, 5, 5]
-        f_thres    = [1.0, 1.35, 1.35]
+        f_thres     = [1.0, 1.35, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
     elif class_num == 3:        
         class_name = 'complex'
         task_names = ['toaster_white', 'glass_case']
         f_zero_size = [5, 2, 8]
-        f_thres    = [1.0, 0.5, 1.35]
+        f_thres     = [1.0, 0.5, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
     elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
         f_zero_size = [5, 5, 8]
-        f_thres    = [1.35, 1.35, 1.35]
+        f_thres     = [1.35, 1.35, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
     else:
         print "Please specify right task."
         sys.exit()
@@ -614,8 +618,8 @@ if __name__ == '__main__':
         ut.save_pickle(d, pkl_file)
 
     #
-    ## aXData1  = d['ft_force_mag_l']
-    ## aXData2  = d['audio_rms_l'] 
+    aXData1  = d['ft_force_mag_l']
+    aXData2  = d['audio_rms_l'] 
     ## labels   = d['labels']
     ## chunks   = d['chunks'] 
 
