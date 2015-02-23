@@ -28,14 +28,24 @@ RFH.CartesianEEControl = function (options) {
         var x = new THREE.Vector3();
         var y = new THREE.Vector3();
         var z = new THREE.Vector3();
+        // TODO: Check to catch degenerate croxx products here
         x.subVectors(target, eePos).normalize();
+        if (x.length() === 0) {
+            throw "Orient Hand: End effector and target at same position"
+        };
         z.subVectors(camPos, eePos).normalize();
+        if (z.length() === 0) {
+            throw "Orient Hand: End effector and camera at same position"
+        };
         y.crossVectors(z,x).normalize();
-
+        if (y.length() === 0) {
+            throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned."
+        };
+        z.crossVectors(x,y).normalize();
         var rotMat = new THREE.Matrix4();
-        rotMat[0] = x.x; rotMat[4] = y.x; rotMat[8] = z.x;
-        rotMat[1] = x.y; rotMat[5] = y.y; rotMat[9] = z.y;
-        rotMat[2] = x.z; rotMat[6] = y.z; rotMat[10] = z.z;
+        rotMat.elements[0] = x.x; rotMat.elements[4] = y.x; rotMat.elements[8] = z.x;
+        rotMat.elements[1] = x.y; rotMat.elements[5] = y.y; rotMat.elements[9] = z.y;
+        rotMat.elements[2] = x.z; rotMat.elements[6] = y.z; rotMat.elements[10] = z.z;
         return new THREE.Quaternion().setFromRotationMatrix(rotMat);
     };
 
