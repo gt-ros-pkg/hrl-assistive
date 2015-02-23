@@ -501,7 +501,7 @@ class ADL_log():
             elif num == '9':
                 self.task_name = 'drawer_reception',
             elif num == '10':
-                self.task_name = 'wallsw_nidrr_room'
+                self.task_name = 'wallsw_darpa'
 
             elif num == '11':
                 self.task_name = 'case'
@@ -517,6 +517,12 @@ class ADL_log():
                 self.task_name = 'lock_huggies'
             elif num == '17':
                 self.task_name = 'lock_wipes'
+            elif num == '18':
+                self.task_name = 'toaster_white'                
+            elif num == '19':
+                self.task_name = 'glass_case'                
+            elif num == '20':
+                self.task_name = 'lab_cabinet'                
             else:
                 print '\n!!!!!Invalid choice of task!!!!!\n'
                 valid = False
@@ -617,9 +623,11 @@ class ADL_log():
 
         ## if trial_name is not None: self.trial_name = trial_name
         ## else:
-        flag = raw_input("Enter trial's name (e.g. 1:success, 2:failure_reason): ")
+        flag = raw_input("Enter trial's name (e.g. 1:success, 2:failure_reason, 3: exit): ")
+        #flag = "1"
         if flag == "1": self.trial_name = 'success'
         elif flag == "2": self.trial_name = trial_name
+        elif flag == "3": sys.exit()
         else: self.trial_name = flag
         self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
 
@@ -650,7 +658,7 @@ class ADL_log():
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task = '17'
+    task = '10'
     actor = '2'
     trial_name = 'success'
     ## trial_name = 'brokenkey'
