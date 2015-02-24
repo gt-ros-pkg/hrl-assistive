@@ -14,12 +14,16 @@ RFH.CartesianEEControl = function (options) {
     self.cameraTF = null;
     self.eeInOpMat = null;
     self.op2baseMat = null;
-    self.focusPoint = new THREE.Vector3(1,0,1);
+    self.focusPoint = new THREE.Vector3(0.3,0,1);
     self.camera = options.camera;
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
     $('#touchspot-toggle').button()
     $('#touchspot-toggle-label').hide();
+
+    self.setFocusPoint = function (pos) {
+        self.focusPoint = new THREE.Vector3(pos.x, pos.y, pos.z);
+    };
 
     self.orientHand = function (pos) {
         var target = self.focusPoint.clone(); // 3D point in /base_link to point at
@@ -28,7 +32,6 @@ RFH.CartesianEEControl = function (options) {
         var x = new THREE.Vector3();
         var y = new THREE.Vector3();
         var z = new THREE.Vector3();
-        // TODO: Check to catch degenerate croxx products here
         x.subVectors(target, eePos).normalize();
         if (x.length() === 0) {
             throw "Orient Hand: End effector and target at same position"

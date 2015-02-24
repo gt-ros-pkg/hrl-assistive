@@ -97,14 +97,14 @@ var LookatIk = function (ros, goalTopic) {
 
 var Pixel23DClient = function (ros) {
     'use strict';
-    var p23D = this;
-    p23D.ros = ros;
-    p23D.serviceClient =  new p23D.ros.Service({
+    var self = this;
+    self.ros = ros;
+    self.serviceClient =  new self.ros.Service({
                                         name: '/pixel_2_3d',
                                         serviceType: 'Pixel23d'});
-    p23D.call = function (u, v, cb) {
-        var req = new p23D.ros.ServiceRequest({'pixel_u':u, 'pixel_v':v});
-        p23D.serviceClient.callService(req, cb);
+    self.call = function (u, v, cb) {
+        var req = new self.ros.ServiceRequest({'pixel_u':u, 'pixel_v':v});
+        self.serviceClient.callService(req, cb);
     }
 }
 

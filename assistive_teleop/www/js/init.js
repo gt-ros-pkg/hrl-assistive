@@ -91,6 +91,7 @@ var RFH = {
                                             rate : 20.0,
                                             fixedFrame : '/base_link' });
         RFH.pr2 = new PR2(RFH.ros);
+        RFH.pixel23DClient = new RFH.Pixel23DClient(RFH.ros);
         initMjpegCanvas('video-main');
 //        initMarkerDisplay('markers');
         RFH.initTaskMenu('main-menu');

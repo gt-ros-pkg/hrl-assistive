@@ -103,8 +103,8 @@ RFH.ROSCameraModel = function (options) {
     self.ros = options.ros;
     self.infoTopic = options.infoTopic;
     self.rotated = options.rotated || false;
-    self.width = options.width || 640;
-    self.height = options.height || 480;
+    self.width = null;
+    self.height = null;
     self.frame_id = '';
     self.tfClient = options.tfClient;
     self.transform = null;
@@ -175,6 +175,7 @@ RFH.ROSCameraModel = function (options) {
     }
     self.updateCameraInfo = function () {
         // Re-subscribe to get new parameters
+        self.has_data = false;
         self.cameraInfoSubscriber.subscribe(self.infoSubCB);
     }
 
