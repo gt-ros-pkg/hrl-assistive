@@ -97,6 +97,7 @@ RFH.MjpegClient = function (options) {
 };
 
 RFH.ROSCameraModel = function (options) {
+    "use strict";
     var self = this;
     var options = options || {};
     self.ros = options.ros;
