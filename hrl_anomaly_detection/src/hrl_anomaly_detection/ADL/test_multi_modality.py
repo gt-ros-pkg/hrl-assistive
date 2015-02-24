@@ -52,11 +52,13 @@ def fig_roc_offline(cross_data_path, \
     labels = [True]*len(true_aXData1)
     true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
 
+    # min max scaling for false data
     aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1)
     aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2)    
     labels = [False]*len(false_aXData1)
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
+    # K random training-test set
     splits = []
     for i in xrange(40):
         test_dataSet  = Dataset.random_samples(true_dataSet, len(false_aXData1))
@@ -65,74 +67,71 @@ def fig_roc_offline(cross_data_path, \
         train_dataSet = true_dataSet[train_ids]
         splits.append([train_dataSet, test_dataSet])
         
-    # Cross validation   
-    ## nFold  = len(aXData1_scaled)/len(false_aXData1)
-    ## nFold  = 2 #len(false_aXData1)
-    ## nfs    = NFoldPartitioner(cvtype=nFold,attr=attr) # 1-fold ?
-    ## spl    = splitters.Splitter(attr='partitions')
-    ## splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
+    ## Multi dimension
+    for i in xrange(3):
+        count = 0
+        for ths in threshold_mult:
 
+            # save file name
+            res_file = prefix+'_roc_'+opr+'_'+'dim_'+str(i)+'_ths_'+str(ths)+'.pkl'
+            res_file = os.path.join(cross_test_path, res_file)
 
-    ## for i, (l_wdata, l_vdata) in enumerate(splits):
-    ##     print len(l_wdata), len(l_vdata), nFold, len(false_aXData1)
+            mutex_file_part = 'running_dim_'+str(i)+'_ths_'+str(ths)
+            mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+            mutex_file      = os.path.join(cross_test_path, mutex_file_full)
 
-    count = 0
-    for ths in threshold_mult:
-    
-        # save file name
-        res_file = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
-        res_file = os.path.join(cross_test_path, res_file)
-        
-        mutex_file_part = 'running_ths_'+str(ths)
-        mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
-        mutex_file      = os.path.join(cross_test_path, mutex_file_full)
-        
-        if os.path.isfile(res_file): 
-            count += 1            
-            continue
-        elif hcu.is_file(cross_test_path, mutex_file_part): continue
-        elif os.path.isfile(mutex_file): continue
-        os.system('touch '+mutex_file)
+            if os.path.isfile(res_file): 
+                count += 1            
+                continue
+            elif hcu.is_file(cross_test_path, mutex_file_part): continue
+            elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
 
-        print "---------------------------------"
-        print "Total splits: ", len(splits)
+            print "---------------------------------"
+            print "Total splits: ", len(splits)
 
-        n_jobs = 4
-        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(i, l_wdata, l_vdata, nState, \
-                                                                   trans_type, ths, false_dataSet) \
-                                    for i, (l_wdata, l_vdata) in enumerate(splits)) 
-        fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
+            ## for j, (l_wdata, l_vdata) in enumerate(splits):
+            ##     anomaly_check_offline(j, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet, \
+            ##                           check_dim=i)
+            ##     sys.exit()
+                                  
+            n_jobs = 4
+            r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
+                                                                       trans_type, ths, false_dataSet, \
+                                                                       check_dim=i) \
+                                        for j, (l_wdata, l_vdata) in enumerate(splits)) 
+            fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
 
-        import operator
-        fn_l = reduce(operator.add, fn_ll)
-        tn_l = reduce(operator.add, tn_ll)
-        fn_err_l = reduce(operator.add, fn_err_ll)
-        tn_err_l = reduce(operator.add, tn_err_ll)
-        
-        d = {}
-        d['fn']  = np.mean(fn_l)
-        d['tp']  = 1.0 - np.mean(fn_l)
-        d['tn']  = np.mean(tn_l)
-        d['fp']  = 1.0 - np.mean(tn_l)
-        
-        if fn_err_l == []:         
-            d['fn_err'] = 0.0
-        else:
-            d['fn_err'] = np.mean(fn_err_l)
+            import operator
+            fn_l = reduce(operator.add, fn_ll)
+            tn_l = reduce(operator.add, tn_ll)
+            fn_err_l = reduce(operator.add, fn_err_ll)
+            tn_err_l = reduce(operator.add, tn_err_ll)
 
-        if tn_err_l == []:         
-            d['tn_err'] = 0.0
-        else:
-            d['tn_err'] = np.mean(tn_err_l)
-            
-        ut.save_pickle(d,res_file)        
-        os.system('rm '+mutex_file)
-        print "-----------------------------------------------"
+            d = {}
+            d['fn']  = np.mean(fn_l)
+            d['tp']  = 1.0 - np.mean(fn_l)
+            d['tn']  = np.mean(tn_l)
+            d['fp']  = 1.0 - np.mean(tn_l)
 
-    if count == len(threshold_mult):
-        print "#############################################################################"
-        print "All file exist ", count
-        print "#############################################################################"        
+            if fn_err_l == []:         
+                d['fn_err'] = 0.0
+            else:
+                d['fn_err'] = np.mean(fn_err_l)
+
+            if tn_err_l == []:         
+                d['tn_err'] = 0.0
+            else:
+                d['tn_err'] = np.mean(tn_err_l)
+
+            ut.save_pickle(d,res_file)        
+            os.system('rm '+mutex_file)
+            print "-----------------------------------------------"
+
+        if count == len(threshold_mult):
+            print "#############################################################################"
+            print "All file exist ", count
+            print "#############################################################################"        
 
         
     if count == len(threshold_mult) and bPlot:
@@ -280,14 +279,20 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
     return
 
     
-def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None):
+def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None, check_dim=2):
 
     # Cross validation
-    x_train1 = l_wdata.samples[:,0,:]
-    x_train2 = l_wdata.samples[:,1,:]
+    if check_dim is not 2:
+        x_train1 = l_wdata.samples[:,check_dim,:]
 
-    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-    lhm.fit(x_train1, x_train2)
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1)
+        lhm.fit(x_train1)
+    else:
+        x_train1 = l_wdata.samples[:,0,:]
+        x_train2 = l_wdata.samples[:,1,:]
+
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(x_train1, x_train2)
        
     fn_l  = []
     tn_l  = []
@@ -295,21 +300,36 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
     tn_err_l = []
 
     # True data
-    x_test1 = l_vdata.samples[:,0,:]
-    x_test2 = l_vdata.samples[:,1,:]
+    if check_dim == 2:
+        x_test1 = l_vdata.samples[:,0,:]
+        x_test2 = l_vdata.samples[:,1,:]
+    else:
+        x_test1 = l_vdata.samples[:,check_dim,:]
+        
     n,m = np.shape(x_test1)
     for i in range(n):
-        fn, err = lhm.anomaly_check(x_test1[i:i+1,:], x_test2[i:i+1,:], ths_mult=ths)           
+        if check_dim == 2:
+            fn, err = lhm.anomaly_check(x_test1[i:i+1,:], x_test2[i:i+1,:], ths_mult=ths)           
+        else:
+            fn, err = lhm.anomaly_check(x_test1[i:i+1,:], ths_mult=ths)           
+                
         fn_l.append(fn)
         if err != 0.0: fn_err_l.append(err)
 
     # False data
-    x_test1 = false_dataSet.samples[:,0]
-    x_test2 = false_dataSet.samples[:,1]
+    if check_dim == 2:
+        x_test1 = false_dataSet.samples[:,0]
+        x_test2 = false_dataSet.samples[:,1]
+    else:
+        x_test1 = false_dataSet.samples[:,check_dim]
+        
     n = len(x_test1)
     for i in range(n):
+        if check_dim == 2:            
+            tn, err = lhm.anomaly_check(np.array([x_test1[i]]), np.array([x_test2[i]]), ths_mult=ths)           
+        else:
+            tn, err = lhm.anomaly_check(np.array([x_test1[i]]), ths_mult=ths)           
             
-        tn, err = lhm.anomaly_check(np.array([x_test1[i]]), np.array([x_test2[i]]), ths_mult=ths)           
         tn_l.append(tn)
         if err != 0.0: tn_err_l.append(err)
 
@@ -577,7 +597,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 1
+    task  = 2
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -698,7 +718,7 @@ if __name__ == '__main__':
                         true_aXData1, true_aXData2, true_chunks, \
                         false_aXData1, false_aXData2, false_chunks, \
                         task_names[task], nState, threshold_mult, \
-                opr='robot', attr='id', bPlot=opt.bPlot)
+                        opr='robot', attr='id', bPlot=opt.bPlot)
 
         if opt.bAllPlot:
             if task ==1:

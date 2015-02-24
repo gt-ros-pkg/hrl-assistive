@@ -67,7 +67,7 @@ class learning_hmm_multi(learning_base):
         
     #----------------------------------------------------------------------        
     #
-    def fit(self, aXData1, aXData2, A=None, B=None, pi=None, cov_mult=[1.0, 1.0, 1.0, 1.0], \
+    def fit(self, aXData1, aXData2=None, A=None, B=None, pi=None, cov_mult=[1.0, 1.0, 1.0, 1.0], \
             B_dict=None, verbose=False):
 
         if A is None:        
@@ -79,33 +79,39 @@ class learning_hmm_multi(learning_base):
             if verbose: print "Generate new B matrix"                                            
             # We should think about multivariate Gaussian pdf.  
 
-            self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-            ## self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
-            ## self.cov[:,1,0] *= 5.5 # to avoid No convergence warning
-            ## self.cov[:,0,1] *= 5.5 # to avoid No convergence warning
-            ## self.cov[:,1,1] *= 5.5 # to avoid No convergence warning
+            if self.nEmissionDim == 1:
+                self.mu, self.sig = self.vectors_to_mean_sigma(aXData1, self.nState)
+                B = np.vstack([self.mu, self.sig]).T.tolist() # Must be [i,:] = [mu, sig]
+            else:
+                self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
+                ## self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
+                ## self.cov[:,1,0] *= 5.5 # to avoid No convergence warning
+                ## self.cov[:,0,1] *= 5.5 # to avoid No convergence warning
+                ## self.cov[:,1,1] *= 5.5 # to avoid No convergence warning
 
-            # Emission probability matrix
-            B = [0.0] * self.nState
-            for i in range(self.nState):
-                B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i,0,0],self.cov[i,0,1], \
-                                                   self.cov[i,1,0],self.cov[i,1,1]]]       
-                            
+                # Emission probability matrix
+                B = [0.0] * self.nState
+                for i in range(self.nState):
+                    B[i] = [[self.mu1[i],self.mu2[i]],[self.cov[i,0,0],self.cov[i,0,1], \
+                                                       self.cov[i,1,0],self.cov[i,1,1]]]       
+                                            
         if pi is None:            
             # pi - initial probabilities per state 
             ## pi = [1.0/float(self.nState)] * self.nState
             pi = [0.0] * self.nState
             pi[0] = 1.0
 
-        # Training input
-        X_train  = self.convert_sequence(aXData1, aXData2)
-        ## X_scaled = self.scaling(X_train)
-        
         # HMM model object
-        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-
+        if self.nEmissionDim==1:
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
+            X_train = aXData1.tolist()
+        else:
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
+            X_train = self.convert_sequence(aXData1, aXData2) # Training input
+            X_train = X_train.tolist()
+        
+            
         print "Run Baum Welch method with (samples, length)", np.shape(X_train)                        
-        X_train = X_train.tolist()
         final_seq = ghmm.SequenceSet(self.F, X_train)        
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
@@ -124,17 +130,16 @@ class learning_hmm_multi(learning_base):
         self.ll_mu  = np.zeros(self.nState)
         self.ll_std = np.zeros(self.nState)
 
-        X_train  = self.convert_sequence(aXData1, aXData2)
         for i in xrange(n):                                                          
             for j in xrange(m):
                 if j==0: continue
-                
-                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
+
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
+                ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
                 path,logp    = self.ml.viterbi(final_ts_obj)
 
                 if len(path) == 0: continue
                 ll_list[path[-1]].append(logp)
-
 
         for i, ll in enumerate(ll_list):
             self.ll_mu[i]  = np.array(ll).mean()
@@ -160,9 +165,9 @@ class learning_hmm_multi(learning_base):
 
 
         # state range
-        self.state_range = np.arange(0, self.nState, 1)
-        self.x1_range = np.linspace(np.min(aXData1), np.max(aXData1), 100)
-        self.x2_range = np.linspace(np.min(aXData2), np.max(aXData2), 100)
+        ## self.state_range = np.arange(0, self.nState, 1)
+        ## self.x1_range = np.linspace(np.min(aXData1), np.max(aXData1), 100)
+        ## self.x2_range = np.linspace(np.min(aXData2), np.max(aXData2), 100)
         return
 
 
@@ -385,7 +390,28 @@ class learning_hmm_multi(learning_base):
         ## print total_score
         ## print "---------------------------------------------"
         return sum(total_score) / float(len(nCurrentStep))
+
         
+    #----------------------------------------------------------------------        
+    #                
+    # Returns mu,sigma for n hidden-states from feature-vector
+    def vectors_to_mean_sigma(self,vec, nState): 
+
+        index = 0
+        m,n = np.shape(vec)
+        mu  = np.zeros(nState)
+        sig = np.zeros(nState)
+        DIVS = n/nState
+
+        while (index < nState):
+            m_init = index*DIVS
+            temp_vec = vec[:,(m_init):(m_init+DIVS)]
+            temp_vec = np.reshape(temp_vec,(1,DIVS*m))
+            mu[index]  = np.mean(temp_vec)
+            sig[index] = np.std(temp_vec)
+            index = index+1
+
+        return mu, sig
         
     #----------------------------------------------------------------------        
     #                
@@ -595,10 +621,13 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def anomaly_check(self, X1, X2, ths_mult):
+    def anomaly_check(self, X1, X2=None, ths_mult=None):
 
-        X_test = self.convert_sequence(X1, X2, emission=False)                
-        n      = len(np.squeeze(X1))
+        if self.nEmissionDim == 1:
+            X_test = X1
+        else:
+            X_test = self.convert_sequence(X1, X2, emission=False)                
+        n = len(np.squeeze(X1))
         
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
         path,logp    = self.ml.viterbi(final_ts_obj)
