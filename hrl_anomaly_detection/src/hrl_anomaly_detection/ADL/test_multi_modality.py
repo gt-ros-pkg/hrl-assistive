@@ -159,10 +159,21 @@ def fig_roc_offline(cross_data_path, \
         fp_l  = np.array(fp_l)*100.0
         tp_l  = np.array(tp_l)*100.0
         sem_c = 'b'
-        sem_m = '+'
+        sem_m = 'o'
         semantic_label='likelihood detection \n with known mechanism class'
         pp.figure()
-        pp.plot(fp_l, tp_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+        pp.plot(fp_l, tp_l, sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+
+        fp_l = fp_l[:,0]
+        tp_l = tp_l[:,0]
+        
+        from scipy.optimize import curve_fit
+        def sigma(e, k ,n, offset): return k*((e+offset)**n)
+        param, var = curve_fit(sigma, fp_l, tp_l)
+        new_fp_l = np.linspace(fp_l.min(), fp_l.max(), 50)
+        pp.plot(new_fp_l, sigma(new_fp_l, *param))
+
+        
         pp.xlabel('False positive rate (percentage)')
         pp.ylabel('True positive rate (percentage)')    
         ## pp.xlim([0, 30])
@@ -565,8 +576,8 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 3
-    task  = 0
+    class_num = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
