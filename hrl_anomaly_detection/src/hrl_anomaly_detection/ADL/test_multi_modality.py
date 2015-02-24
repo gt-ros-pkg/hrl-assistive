@@ -73,7 +73,7 @@ def fig_roc_offline(cross_data_path, \
         for ths in threshold_mult:
 
             # save file name
-            res_file = prefix+'_roc_'+opr+'_'+'dim_'+str(i)+'_ths_'+str(ths)+'.pkl'
+            res_file = prefix+'_roc_'+opr+'_dim_'+str(i)+'_ths_'+str(ths)+'.pkl'
             res_file = os.path.join(cross_test_path, res_file)
 
             mutex_file_part = 'running_dim_'+str(i)+'_ths_'+str(ths)
@@ -136,32 +136,41 @@ def fig_roc_offline(cross_data_path, \
         
     if count == len(threshold_mult) and bPlot:
 
-        fp_l = []
-        tp_l = []
-        err_l = []
-        for ths in threshold_mult:
-            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
-            res_file   = os.path.join(cross_test_path, res_file)
-
-            d = ut.load_pickle(res_file)
-            tp  = d['tp'] 
-            fn  = d['fn'] 
-            fp  = d['fp'] 
-            tn  = d['tn'] 
-            fn_err = d['fn_err']         
-            tn_err = d['tn_err']         
-
-            fp_l.append([fp])
-            tp_l.append([tp])
-            err_l.append([fn_err])
-
-        fp_l  = np.array(fp_l)*100.0
-        tp_l  = np.array(tp_l)*100.0
-        sem_c = 'b'
-        sem_m = 'o'
-        semantic_label='likelihood detection \n with known mechanism class'
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+        
         pp.figure()
-        pp.plot(fp_l, tp_l, sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+        
+        for i in xrange(3):
+            fp_l = []
+            tp_l = []
+            err_l = []
+            for ths in threshold_mult:
+                res_file   = prefix+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
+                res_file   = os.path.join(cross_test_path, res_file)
+
+                d = ut.load_pickle(res_file)
+                tp  = d['tp'] 
+                fn  = d['fn'] 
+                fp  = d['fp'] 
+                tn  = d['tn'] 
+                fn_err = d['fn_err']         
+                tn_err = d['tn_err']         
+
+                fp_l.append([fp])
+                tp_l.append([tp])
+                err_l.append([fn_err])
+
+            fp_l  = np.array(fp_l)*100.0
+            tp_l  = np.array(tp_l)*100.0
+
+            color = colors.next()
+            shape = shapes.next()
+            semantic_label='likelihood detection \n with known mechanism class '+str(i)
+            pp.plot(fp_l, tp_l, shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+
+            
 
         fp_l = fp_l[:,0]
         tp_l = tp_l[:,0]
@@ -176,6 +185,8 @@ def fig_roc_offline(cross_data_path, \
         pp.xlabel('False positive rate (percentage)')
         pp.ylabel('True positive rate (percentage)')    
         ## pp.xlim([0, 30])
+        pp.legend(loc=1,prop={'size':14})
+        
         pp.show()
                             
     return
@@ -397,7 +408,7 @@ def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', 
             
         pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
-    pp.legend(loc=1,prop={'size':14})
+    pp.legend(loc=0,prop={'size':14})
 
     pp.xlabel('False positive rate (percentage)')
     pp.ylabel('Mean excess log likelihood')    
@@ -607,8 +618,8 @@ if __name__ == '__main__':
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
-        f_zero_size = [2, 5, 8]
-        f_thres     = [0.4, 1.35, 1.35]
+        f_zero_size = [5, 5, 8]
+        f_thres     = [1.5, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
     elif class_num == 2:        
         class_name = 'lock'
