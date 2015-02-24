@@ -81,13 +81,13 @@ class learning_hmm_multi(learning_base):
 
             if self.nEmissionDim == 1:
                 self.mu, self.sig = self.vectors_to_mean_sigma(aXData1, self.nState)
-                B = np.vstack([self.mu, self.sig]).T.tolist() # Must be [i,:] = [mu, sig]
+                B = np.vstack([self.mu, self.sig*cov_mult[0]]).T.tolist() # Must be [i,:] = [mu, sig]
             else:
                 self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
-                self.cov[:,0,0] *= 1.5 # to avoid No convergence warning
-                self.cov[:,1,0] *= 5.5 # to avoid No convergence warning
-                self.cov[:,0,1] *= 5.5 # to avoid No convergence warning
-                self.cov[:,1,1] *= 5.5 # to avoid No convergence warning
+                self.cov[:,0,0] *= cov_mult[0] #1.5 # to avoid No convergence warning
+                self.cov[:,1,0] *= cov_mult[1] #5.5 # to avoid No convergence warning
+                self.cov[:,0,1] *= cov_mult[2] #5.5 # to avoid No convergence warning
+                self.cov[:,1,1] *= cov_mult[3] #5.5 # to avoid No convergence warning
 
                 # Emission probability matrix
                 B = [0.0] * self.nState

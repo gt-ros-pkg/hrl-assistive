@@ -35,7 +35,8 @@ def fig_roc_offline(cross_data_path, \
                     true_aXData1, true_aXData2, true_chunks, \
                     false_aXData1, false_aXData2, false_chunks, \
                     prefix, nState=20, \
-                    threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False):
+                    threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
+                    cov_mult=[1.0, 1.0, 1.0, 1.0]):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -98,7 +99,7 @@ def fig_roc_offline(cross_data_path, \
             n_jobs = 4
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
                                                                        trans_type, ths, false_dataSet, \
-                                                                       check_dim=i) \
+                                                                       cov_mult=cov_mult, check_dim=i) \
                                         for j, (l_wdata, l_vdata) in enumerate(splits)) 
             fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
 
@@ -290,20 +291,22 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
     return
 
     
-def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None, check_dim=2):
+def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None, 
+                          cov_mult=[1.0, 1.0, 1.0, 1.0], check_dim=2):
 
     # Cross validation
     if check_dim is not 2:
         x_train1 = l_wdata.samples[:,check_dim,:]
 
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1)
-        lhm.fit(x_train1)
+        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4)
+        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4)
     else:
         x_train1 = l_wdata.samples[:,0,:]
         x_train2 = l_wdata.samples[:,1,:]
 
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-        lhm.fit(x_train1, x_train2)
+        lhm.fit(x_train1, x_train2, cov_mult=cov_mult)
        
     fn_l  = []
     tn_l  = []
@@ -615,30 +618,35 @@ if __name__ == '__main__':
         f_zero_size = [8, 5, 10]
         f_thres     = [1.0, 1.7, 3.0]
         audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.5, 1.5, 1.5],[1.0, 1.0, 1.0, 1.0],[1.5, 5.5, 5.5, 5.5]]
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
         f_zero_size = [5, 5, 8]
         f_thres     = [1.5, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
     elif class_num == 2:        
         class_name = 'lock'
         task_names = ['case', 'lock_wipes', 'lock_huggies']
         f_zero_size = [5, 5, 5]
         f_thres     = [1.0, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
     elif class_num == 3:        
         class_name = 'complex'
         task_names = ['toaster_white', 'glass_case']
         f_zero_size = [5, 2, 8]
         f_thres     = [1.0, 0.5, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
     elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
         f_zero_size = [5, 5, 8]
         f_thres     = [1.35, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
     else:
         print "Please specify right task."
         sys.exit()
@@ -703,7 +711,7 @@ if __name__ == '__main__':
         attr            = 'id'
 
         fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, task_names[task], nState, threshold_mult, \
-                opr='robot', attr='id', bPlot=opt.bPlot)
+                opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task])
 
         if opt.bAllPlot:
             if task ==1:
