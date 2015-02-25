@@ -21,17 +21,17 @@ RFH.Pixel23DClient = function (options) {
 
     self.serviceClient =  new ROSLIB.Service({
                                         ros: self.ros,
-                                        name: self.serviceName;
+                                        name: self.serviceName,
                                         serviceType: 'Pixel23d'});
 
     // Calls the service with given pixel coordinated,
     // checks for success, and calls given callback with returned pose
     self.call = function (u, v, cb) {
-        var req = new self.ros.ServiceRequest({'pixel_u':u, 'pixel_v':v});
+        var req = new ROSLIB.ServiceRequest({'pixel_u':u, 'pixel_v':v});
         var cb_err_wrap = function (resp) {
             switch (resp.error_flag) {
                 case 0:
-                    cb(resp.pixel3d);
+                    cb(resp.pixel3d.pose);
                     break;
                 case 1:
                     throw "Pixel23D (u: %u%, v:%v%): No Camera Info Received".replace("%u%", u).replace("%v%", v);

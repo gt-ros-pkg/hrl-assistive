@@ -29,6 +29,7 @@
   <script type="text/javascript" src="js/tasks/torso.js"></script>
   <script type="text/javascript" src="js/tasks/gripper.js"></script>
   <script type="text/javascript" src="js/tasks/ee_cart.js"></script>
+  <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
 
   <script type="text/javascript" src="js/video/mjpeg_client.js"></script>
@@ -39,6 +40,7 @@
   <link type="text/css" href="css/torso.css" rel="stylesheet" />
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
+  <link type="text/css" href="css/focus.css" rel="stylesheet" />
   
 </head>
 
@@ -79,6 +81,8 @@
             <input class="menu-item" id="r-posrot-rot" type="radio" name="r-posrot-radio">
             <label for="r-posrot-rot">Rotation</label>
         </div>
+        <input type="checkbox" id="select-focus-toggle"/>
+        <label id="select-focus-toggle-label" for="select-focus-toggle">Choose Target Spot</label>
         <div id="l-posrot-set">
             <input class="menu-item" id="l-posrot-pos" type="radio" name="l-posrot-radio" checked="checked">
             <label for="l-posrot-pos">Position</label>
@@ -103,8 +107,9 @@
          <img id="tallIcon" src="./css/icons/tall.png"></img>
          <img id="shortIcon" src="./css/icons/short.png"></img>
          <div id="torsoSlider"></div>
-         <!-- divs for driving additional video -->
-        <img id="drive-image"></img>
+         <!-- divs for arm controls -->
+         <img id="rightFocusPoint" class="focus-point" src="./css/icons/focus-point.png"></img>
+         <img id="leftFocusPoint" class="focus-point" src="./css/icons/focus-point.png"></img>
      </div>
  </div>
 

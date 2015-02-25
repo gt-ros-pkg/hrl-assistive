@@ -31,6 +31,6 @@ RFH.Look = function (options) {
         self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
     };
 
-    $('#'+self.div + ' img').addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
+    $('#'+self.div + '-image').addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
     $('.map-look').css("display","block");
 }

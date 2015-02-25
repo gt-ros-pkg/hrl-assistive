@@ -91,7 +91,9 @@ var RFH = {
                                             rate : 20.0,
                                             fixedFrame : '/base_link' });
         RFH.pr2 = new PR2(RFH.ros);
-        RFH.pixel23DClient = new RFH.Pixel23DClient(RFH.ros);
+        RFH.pixel23DClient = new RFH.Pixel23DClient({ros: RFH.ros,
+                                                     cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
+                                                     });
         initMjpegCanvas('video-main');
 //        initMarkerDisplay('markers');
         RFH.initTaskMenu('main-menu');

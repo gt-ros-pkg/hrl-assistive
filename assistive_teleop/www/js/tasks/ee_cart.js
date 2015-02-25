@@ -14,20 +14,26 @@ RFH.CartesianEEControl = function (options) {
     self.cameraTF = null;
     self.eeInOpMat = null;
     self.op2baseMat = null;
-    self.focusPoint = new THREE.Vector3(0.3,0,1);
     self.camera = options.camera;
+
+    self.focusPoint = new RFH.FocalPoint({camera: self.camera,
+                                          tfClient: self.tfClient,
+                                          ros: self.ros,
+                                          side: self.arm.side,
+                                          divId: self.div,
+    });
+
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
-    $('#touchspot-toggle').button()
-    $('#touchspot-toggle-label').hide();
+    $('#touchspot-toggle, #select-focus-toggle').button()
+    $('#touchspot-toggle-label, #select-focus-toggle-label').hide();
 
-    self.setFocusPoint = function (pos) {
-        self.focusPoint = new THREE.Vector3(pos.x, pos.y, pos.z);
-    };
-
-    self.orientHand = function (pos) {
-        var target = self.focusPoint.clone(); // 3D point in /base_link to point at
-        var eePos = pos !== null ? pos : self.eeTF.translation.clone(); // 3D point in /base_link from which to point
+    self.orientHand = function () {
+        if (self.focusPoint.point === null) {
+            throw "Orient Hand: No focus point.";
+        } 
+        var target = self.focusPoint.point.clone(); // 3D point in /base_link to point at
+        var eePos =  self.eeTF.translation.clone(); // 3D point in /base_link from which to point
         var camPos = self.cameraTF.translation.clone(); // 3D point of view (resolve free rotation to orient hand second axis toward camera)
         var x = new THREE.Vector3();
         var y = new THREE.Vector3();
@@ -160,13 +166,19 @@ RFH.CartesianEEControl = function (options) {
         var q = new THREE.Quaternion();
         var s = new THREE.Vector3();
         goalInOpMat.decompose(p,q,s);
-        q = self.orientHand(p);
+        try {
+            q = self.orientHand();
+        }
+        catch (e) {
+            console.log(e);
+            //Ignore
+        }
+            
         q = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
         self.arm.sendGoal({position: p,
                            orientation: q,
                            frame_id: self.tfClient.fixedFrame});
     };
-
 
     /// POSITION CONTROLS ///
     self.posCtrlId = self.side+'posCtrlIcon';
@@ -209,10 +221,6 @@ RFH.CartesianEEControl = function (options) {
     $("#"+self.side+"-track-hand-toggle").button().on('change.rfh', self.updateTrackHand);
     $("#"+self.side+"-track-hand-toggle-label").hide();
 
-    /// Touch Spot Controls ///
-    
-
-
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplayDiv = self.side+'GripperDisplay';
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
@@ -225,20 +233,27 @@ RFH.CartesianEEControl = function (options) {
     gripperCSS[self.arm.side] = "3%";
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
+    /// SELECT FOCUS POINT CONTROLS ///
+
+    self.selectFocusCB = function (e, ui) {
+        self.focusPoint.getNewFocusPoint();
+    };
 
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
-        $("#touchspot-toggle-label, #"+self.side+"-track-hand-toggle-label, #"+self.side+"-posrot-set").show();
+        $("#touchspot-toggle-label, #select-focus-toggle-label, #"+self.side+"-track-hand-toggle-label, #"+self.side+"-posrot-set").show();
         var mode = $('#'+self.side+'-posrot-set>input:checked').attr('id').slice(-3);
         $('#'+self.side+mode+'CtrlIcon').show();
         $("#"+self.gripperDisplayDiv).show();
         self.updateTrackHand();
+        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB);
     };
     
     self.stop = function () {
-        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #touchspot-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
+        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #touchspot-toggle-label, #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
         clearInterval(RFH.pr2.head.pubInterval);
         $('#'+self.gripperDisplayDiv).hide();
+        $('#select-focus-toggle-label').off('click.rfh');
     };
 }
 
