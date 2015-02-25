@@ -84,6 +84,8 @@ class BaseSelector(object):
                                        [   m.sin(angle),   m.cos(angle),          0.,       0.],
                                        [             0.,             0.,          1.,       .5],
                                        [             0.,             0.,          0.,       1.]])
+        if self.mode == 'sim':
+            self.pr2_B_ar = np.eye(4)
 
 
         start_time = time.time()
@@ -256,24 +258,28 @@ class BaseSelector(object):
 
     def head_pose_cb(self, data):
         trans = [data.pose.position.x,
-                    data.pose.position.y,
-                    data.pose.position.z]
+                 data.pose.position.y,
+                 data.pose.position.z]
         rot = [data.pose.orientation.x,
-                    data.pose.orientation.y,
-                    data.pose.orientation.z,
-                    data.pose.orientation.w]
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
         self.pr2_B_head = createBMatrix(trans, rot)
+        if self.model == 'chair':
+            ar_trans = [data.pose.position.x,
+                        data.pose.position.y,
+                        0.]
+            self.pr2_B_ar = createBMatrix(ar_trans, rot)
 
     def bed_pose_cb(self, data):
         trans = [data.pose.position.x,
-                    data.pose.position.y,
-                    data.pose.position.z]
+                 data.pose.position.y,
+                 data.pose.position.z]
         rot = [data.pose.orientation.x,
-                    data.pose.orientation.y,
-                    data.pose.orientation.z,
-                    data.pose.orientation.w]
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
         self.pr2_B_ar = createBMatrix(trans, rot)
-        self.model_B_ar = np.eye(4)
 
 
      # Function that determines a good base location to be able to reach the goal location.
@@ -346,7 +352,9 @@ class BaseSelector(object):
 
         if self.mode == 'sim':
             self.head_pose_sub = rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.head_pose_cb)
-            self.bed_pose_sub = rospy.Subscriber('/haptic_mpc/bed_pose', PoseStamped, self.bed_pose_cb)
+            if self.model == 'autobed':
+                self.bed_pose_sub = rospy.Subscriber('/haptic_mpc/bed_pose', PoseStamped, self.bed_pose_cb)
+            self.model_B_ar = np.eye(4)
 
         print 'The homogeneous transfrom from PR2 base link to head: \n', self.pr2_B_head
         z_origin = np.array([0, 0, 1])
@@ -802,9 +810,10 @@ class BaseSelector(object):
 
 
 if __name__ == "__main__":
-    #model = 'bed'
+    # model = 'bed'
+    mode = 'test'  # Mode options are: 'normal' 'test' 'sim'
     rospy.init_node('select_base_server')
-    selector = BaseSelector(mode='normal')
+    selector = BaseSelector(mode=mode)
     rospy.spin()
 
 
