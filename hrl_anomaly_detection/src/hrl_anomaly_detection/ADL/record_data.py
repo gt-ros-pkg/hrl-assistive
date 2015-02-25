@@ -11,6 +11,7 @@ import scipy.signal as signal
 import scipy.fftpack
 import operator
 from threading import Thread
+import glob
 
 # ROS
 import roslib
@@ -22,6 +23,8 @@ import tf
 from geometry_msgs.msg import Wrench
 from geometry_msgs.msg import TransformStamped, WrenchStamped
 from std_msgs.msg import Bool, Float32
+import threading
+from sensor_msgs.msg import JointState
 
 # HRL
 from hrl_srvs.srv import None_Bool, None_BoolResponse
@@ -50,6 +53,70 @@ def log_parse():
 
     return options.tracker_name, options.ft_sensor_name 
 
+class robot_kinematics(Thread):
+    def __init__(self):
+        super(robot_kinematics, self).__init__()
+        self.daemon = True
+        self.cancelled = False
+        self.arm = 'r'
+        self.init_time = 0.
+        self.jstate_lock = threading.RLock() ## joint state lock
+
+        self.joint_angles = []
+
+        self.time_data  = []
+        self.joint_data = []
+
+        
+        groups = rospy.get_param('/right/haptic_mpc/groups' )
+        for group in groups:
+            if group['name'] == 'left_arm_joints' and self.arm == 'l':
+                self.joint_names_list = group['joints']
+            elif group['name'] == 'right_arm_joints' and self.arm == 'r':
+                self.joint_names_list = group['joints']
+
+        rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
+
+    def jointStatesCallback(self, data):
+        joint_angles = []
+        ## joint_efforts = []
+        joint_vel = []
+        jt_idx_list = [0]*len(self.joint_names_list)
+        for i, jt_nm in enumerate(self.joint_names_list):
+            jt_idx_list[i] = data.name.index(jt_nm)
+
+        for i, idx in enumerate(jt_idx_list):
+            if data.name[idx] != self.joint_names_list[i]:
+                raise RuntimeError('joint angle name does not match.')
+            joint_angles.append(data.position[idx])
+            ## joint_efforts.append(data.effort[idx])
+            joint_vel.append(data.velocity[idx])
+
+        with self.jstate_lock:
+            self.joint_angles  = joint_angles
+            ## self.joint_efforts = joint_efforts
+            self.joint_velocities = joint_vel
+
+            
+    def run(self):
+        """Overloaded Thread.run, runs the update 
+        method once per every xx milliseconds."""
+
+        rate = rospy.Rate(1000) # 25Hz, nominally.            
+        while not self.cancelled:
+            self.log()
+            rospy.sleep(1/1000.)
+            
+    def log(self):
+        
+        self.time_data.append(rospy.get_time()-self.init_time)
+        self.joint_data.append(self.joint_angles)
+
+    def cancel(self):
+        """End this timer thread"""
+        self.cancelled = True
+        rospy.sleep(1.0)
+        
 
 class tool_audio(Thread):
     MAX_INT = 32768.0
@@ -382,11 +449,13 @@ class tool_ft(Thread):
 
 
 class ADL_log():
-    def __init__(self, ft=True, audio=False, test_mode=False):
+    def __init__(self, ft=True, audio=False, kinematics=False, manip=False, test_mode=False):
         rospy.init_node('ADLs_log', anonymous = True)
 
         self.ft = ft
         self.audio = audio
+        self.manip = manip
+        self.kinematics = kinematics
         self.test_mode = test_mode
 
         self.init_time = 0.
@@ -394,25 +463,74 @@ class ADL_log():
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()        
         rospy.logout('ADLs_log node subscribing..')
 
+        if self.manip:
+            rospy.wait_for_service("/adl/arm_reach_enable")
+            self.armReachAction = rospy.ServiceProxy("/adl/arm_reach_enable", None_Bool)
+            rospy.loginfo("arm reach server connected!!")
 
-    def task_cmd_input(self):
+    def task_cmd_input(self, subject=None, task=None, actor=None):
         confirm = False
         while not confirm:
             valid = True
-            self.sub_name=raw_input("Enter subject's name: ")
-            num=raw_input("Enter the number for the choice of task:"+\
-            "\n1) cup \n2) door \n3) wipe"+\
-            "\n4) spoon\n5) tooth brush\n6) comb\n: ")
+
+            if subject is not None: self.sub_name = subject
+            else: self.sub_name=raw_input("Enter subject's name: ")
+
+            if task is not None: num = task
+            else:
+                num=raw_input("Enter the number for the choice of task:")
+                ## "\n1) cup \n2) door \n3) drawer"+\
+                ## "\n4) staple\n5) microwave_black\n6) dishwasher\n7) wallsw\n: ")
+                
             if num == '1':
-                self.task_name = 'cup'
+                self.task_name = 'microwave_black'
             elif num == '2':
-                self.task_name = 'door'
+                self.task_name = 'microwave_white'
+            elif num == '3':
+                self.task_name = 'microwave_kitchen'
+            elif num == '4':
+                self.task_name = 'door_room'
+            elif num == '5':
+                self.task_name = 'door_storage'
+            elif num == '6':
+                self.task_name = 'door_reception'
+            elif num == '7':
+                self.task_name = 'drawer_white'
+            elif num == '8':
+                self.task_name = 'drawer_desk'
+            elif num == '9':
+                self.task_name = 'drawer_reception',
+            elif num == '10':
+                self.task_name = 'wallsw_darpa'
+
+            elif num == '11':
+                self.task_name = 'case'
+            elif num == '12':
+                self.task_name = 'staple'
+            elif num == '13':
+                self.task_name = 'joystick_key'
+            elif num == '14':
+                self.task_name = 'switch_device'
+            elif num == '15':
+                self.task_name = 'switch_outlet'
+            elif num == '16':
+                self.task_name = 'lock_huggies'
+            elif num == '17':
+                self.task_name = 'lock_wipes'
+            elif num == '18':
+                self.task_name = 'toaster_white'                
+            elif num == '19':
+                self.task_name = 'glass_case'                
+            elif num == '20':
+                self.task_name = 'lab_cabinet'                
             else:
                 print '\n!!!!!Invalid choice of task!!!!!\n'
                 valid = False
+                sys.exit()
 
             if valid:
-                num=raw_input("Select actor:\n1) human \n2) robot\n: ")
+                if actor is not None: num = actor
+                else: num=raw_input("Select actor:\n1) human \n2) robot\n: ")
                 if num == '1':
                     self.actor = 'human'
                 elif num == '2':
@@ -420,17 +538,17 @@ class ADL_log():
                 else:
                     print '\n!!!!!Invalid choice of actor!!!!!\n'
                     valid = False
-            if valid:
-                self.trial_name=raw_input("Enter trial's name (e.g. arm1, arm2): ")
-                self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
-                ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
-                if ans == 'y':
-                    confirm = True
+                    sys.exit()
                     
-    def init_log_file(self):
+            if valid:
+                ## ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
+                ## if ans == 'y':
+                confirm = True
+                    
+    def init_log_file(self, subject=None, task=None, actor=None):
 
         if self.test_mode is False: 
-            self.task_cmd_input()
+            self.task_cmd_input(subject, task, actor)
 
         if self.ft: 
             self.ft = tool_ft(self.ft_sensor_topic_name)
@@ -439,15 +557,17 @@ class ADL_log():
         if self.audio: 
             self.audio = tool_audio()
             ## self.audio_log_file = open(self.file_name+'_audio.log','w')        
-            
-        self.pkl = self.file_name+'.pkl'
+
+        if self.kinematics: 
+            self.kinematics = robot_kinematics()
+            ## self.audio_log_file = open(self.file_name+'_audio.log','w')        
 
         raw_input('press Enter to reset')
         if self.ft: self.ft.reset()
         ## if self.audio: self.audio.reset()
         
 
-    def log_start(self):
+    def log_start(self, trial_name):
         
         raw_input('press Enter to begin the test')
         self.init_time = rospy.get_time()
@@ -457,12 +577,26 @@ class ADL_log():
         if self.audio: 
             self.audio.init_time = self.init_time
             self.audio.start()
+        if self.kinematics: 
+            self.kinematics.init_time = self.init_time
+            self.kinematics.start()
+
+        if self.manip:
+            rospy.sleep(1.0)
+            ret = self.armReachAction()
+            print ret
+
+            self.close_log_file(trial_name)
+            sys.exit()
+                    
+
                             
         
-    def close_log_file(self):
+    def close_log_file(self, trial_name):
         # Finish data collection
         if self.ft: self.ft.cancel()
         if self.audio: self.audio.cancel()
+        if self.kinematics: self.kinematics.cancel()
         
         
         d = {}
@@ -481,6 +615,35 @@ class ADL_log():
             d['audio_freq']  = self.audio.audio_freq
             d['audio_chunk'] = self.audio.CHUNK
             d['audio_time']  = self.audio.time_data
+
+        if self.kinematics:
+            d['kinematics_time']  = self.kinematics.time_data
+            d['kinematics_joint'] = self.kinematics.joint_data
+
+
+        ## if trial_name is not None: self.trial_name = trial_name
+        ## else:
+        flag = raw_input("Enter trial's name (e.g. 1:success, 2:failure_reason, 3: exit): ")
+        #flag = "1"
+        if flag == "1": self.trial_name = 'success'
+        elif flag == "2": self.trial_name = trial_name
+        elif flag == "3": sys.exit()
+        else: self.trial_name = flag
+        self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
+
+            
+        pkl_list = glob.glob('*.pkl')
+        max_num = 0
+        for pkl in pkl_list:
+            if pkl.find(self.file_name)>=0:
+                num = int(pkl.split('_')[-1].split('.')[0])
+                if max_num < num:
+                    max_num = num
+        max_num = int(max_num)+1
+        self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
+
+        print "File name: ", self.pkl
+            
         
         ut.save_pickle(d, self.pkl)
 
@@ -494,12 +657,21 @@ class ADL_log():
 
 if __name__ == '__main__':
 
-
+    subject = 'gatsbii'
+    task = '10'
+    actor = '2'
+    trial_name = 'success'
+    ## trial_name = 'brokenkey'
+    ## trial_name = 'stickblock'
+    ## trial_name = 'contentscollision'
+    ## trial_name = 'paperblock'
+    manip=True
     
-    log = ADL_log(audio=True, ft=False, test_mode=True)
-    log.init_log_file()
+    ## log = ADL_log(audio=True, ft=True, manip=manip, test_mode=False)
+    log = ADL_log(audio=True, ft=True, kinematics=True,  manip=manip, test_mode=False)
+    log.init_log_file(subject, task, actor)
 
-    log.log_start()
+    log.log_start(trial_name)
     
     rate = rospy.Rate(1000) # 25Hz, nominally.    
     while not rospy.is_shutdown():
@@ -507,7 +679,7 @@ if __name__ == '__main__':
         rate.sleep()
         ## rospy.sleep(1/1000.)
 
-    log.close_log_file()
+    log.close_log_file(trial_name)
     
 
     

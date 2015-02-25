@@ -6,12 +6,19 @@ import glob
 import socket
 import time
 import random 
-import scipy as scp
-from scipy import interpolate       
-import mlpy
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
+
+# Machine learning library
+import mlpy
+import scipy as scp
+from scipy import interpolate       
+from sklearn import preprocessing
+from mvpa2.datasets.base import Dataset
+from mvpa2.generators.partition import NFoldPartitioner
+from mvpa2.generators import splitters
+from joblib import Parallel, delayed
 
 # Util
 import hrl_lib.util as ut
@@ -19,300 +26,398 @@ import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-
+import data_manager as dm
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
-from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker
-
-def load_data(data_path, prefix, normal_only=True):
-
-    pkl_list = glob.glob(data_path+prefix+'*.pkl')
-
-    ft_time_list   = []
-    ft_force_list  = []
-    ft_torque_list = []
-
-    audio_time_list = []
-    audio_data_list = []
-    audio_amp_list = []
-    audio_freq_list = []
-    audio_chunk_list = []
-
-    label_list = []
-    name_list = []
-
-    for pkl in pkl_list:
-        
-        bNormal = True
-        if '_b' in pkl: bNormal = False
-
-        if normal_only and bNormal is False: continue
-
-        d = ut.load_pickle(pkl)
-
-        ft_time  = d.get('ft_time',None)
-        ft_force  = d.get('ft_force_raw',None)
-        ft_torque = d.get('ft_torque_raw',None)
-        
-        audio_time  = d['audio_time']
-        audio_data  = d['audio_data']
-        audio_amp   = d['audio_amp']
-        audio_freq  = d['audio_freq']
-        audio_chunk = d['audio_chunk']
-
-        ft_force = np.array(ft_force).squeeze().T
-        ft_torque = np.array(ft_torque).squeeze().T
-
-        ft_time_list.append(ft_time)
-        ft_force_list.append(ft_force)
-        ft_torque_list.append(ft_torque)
-
-        audio_time_list.append(audio_time)
-        audio_data_list.append(audio_data)
-        audio_amp_list.append(audio_amp)
-        audio_freq_list.append(audio_freq)
-        audio_chunk_list.append(audio_chunk)
-
-        label_list.append(bNormal)
-
-        head, tail = os.path.split(pkl)
-        name_list.append(tail)
+from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
-    d = {}
-    d['ft_time']       = ft_time_list
-    d['ft_force_raw']  = ft_force_list
-    d['ft_torque_raw'] = ft_torque_list
+def fig_roc_offline(cross_data_path, \
+                    true_aXData1, true_aXData2, true_chunks, \
+                    false_aXData1, false_aXData2, false_chunks, \
+                    prefix, nState=20, \
+                    threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
+                    cov_mult=[1.0, 1.0, 1.0, 1.0]):
 
-    d['audio_time']  = audio_time_list
-    d['audio_data']  = audio_data_list
-    d['audio_amp']   = audio_amp_list
-    d['audio_freq']  = audio_freq_list
-    d['audio_chunk'] = audio_chunk_list    
-
-    d['labels'] = label_list
-    d['names'] = name_list
-        
-    return d
-
-
-def cutting(d):
-
-    labels      = d['labels']
-    names       = d['names']
-    ft_time_l   = d['ft_time']
-    ft_force_l  = d['ft_force_raw']
-    ft_torque_l = d['ft_torque_raw']
-
-    audio_time_l = d['audio_time']
-    audio_data_l = d['audio_data']
-    audio_amp_l  = d['audio_amp']
-    audio_freq_l = d['audio_freq']
-    audio_chunk_l= d['audio_chunk']
-
-    ft_time_list   = []
-    ft_force_list  = []
-    ft_torque_list = []
-    ft_force_mag_list = []
-    audio_time_list = []
-    audio_data_list = []
-    audio_amp_list = []
-    audio_freq_list = []
-    audio_chunk_list = []
-    audio_rms_list = []
-
-    hmm_input_l = []    
-
-    MAX_INT = 32768.0
-    CHUNK   = 1024 #frame per buffer
-    RATE    = 44100 #sampling rate
-
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+    trans_type = "left_right"
     
-    #------------------------------------------
-    # Get reference data
-    for i, force in enumerate(ft_force_l):
-        if labels[i] is False: continue
-        else: 
-            ref_idx = i
-            break
+    # Check the existance of workspace
+    cross_test_path = os.path.join(cross_data_path, str(nState))
+    if os.path.isdir(cross_test_path) == False:
+        os.system('mkdir -p '+cross_test_path)
+
+    # min max scaling for true data
+    aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
+    aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+    labels = [True]*len(true_aXData1)
+    true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
+
+    # min max scaling for false data
+    aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1)
+    aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2)    
+    labels = [False]*len(false_aXData1)
+    false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
+
+    # K random training-test set
+    splits = []
+    for i in xrange(40):
+        test_dataSet  = Dataset.random_samples(true_dataSet, len(false_aXData1))
+        train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+        train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+        train_dataSet = true_dataSet[train_ids]
+        splits.append([train_dataSet, test_dataSet])
         
-    ft_time   = ft_time_l[ref_idx]
-    ft_force  = ft_force_l[ref_idx]
-    ft_torque = ft_torque_l[ref_idx]        
-    ft_force_mag = np.linalg.norm(ft_force,axis=0)
-                
-    nZero = 5
-    ft_zero = np.mean(ft_force_mag[:nZero]) * 1.5
+    ## Multi dimension
+    for i in xrange(3):
+        count = 0
+        for ths in threshold_mult:
 
-    idx_start = None
-    idx_end   = None        
-    for j in xrange(len(ft_force_mag)-nZero):
-        avg = np.mean(ft_force_mag[j:j+nZero])
+            # save file name
+            res_file = prefix+'_roc_'+opr+'_dim_'+str(i)+'_ths_'+str(ths)+'.pkl'
+            res_file = os.path.join(cross_test_path, res_file)
 
-        if avg > ft_zero and idx_start is None:
-            idx_start = j #i+nZero
-        if idx_start is not None:
-            if avg < ft_zero and idx_end is None:
-                idx_end = j+nZero
+            mutex_file_part = 'running_dim_'+str(i)+'_ths_'+str(ths)
+            mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+            mutex_file      = os.path.join(cross_test_path, mutex_file_full)
 
-    ft_time_cut      = np.array(ft_time[idx_start:idx_end])
-    ft_force_cut     = ft_force[:,idx_start:idx_end]
-    ft_torque_cut    = ft_torque[:,idx_start:idx_end]
-    ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
+            if os.path.isfile(res_file): 
+                count += 1            
+                continue
+            elif hcu.is_file(cross_test_path, mutex_file_part): continue
+            elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
 
-    #----------------------------------------------------
-    start_time = ft_time[idx_start]
-    end_time   = ft_time[idx_end]
-    audio_time = audio_time_l[ref_idx]
-    audio_data = audio_data_l[ref_idx]
+            print "---------------------------------"
+            print "Total splits: ", len(splits)
 
-    a_idx_start = None
-    a_idx_end   = None                
-    for j, t in enumerate(audio_time):
-        if t > start_time and a_idx_start is None:
-            if (audio_time[j+1] - audio_time[j]) >  float(CHUNK)/float(RATE) :
-                a_idx_start = j
-        if t > end_time and a_idx_end is None:
-            a_idx_end = j
+            ## for j, (l_wdata, l_vdata) in enumerate(splits):
+            ##     anomaly_check_offline(j, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet, \
+            ##                           check_dim=i)
+            ##     sys.exit()
+                                  
+            n_jobs = 4
+            r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
+                                                                       trans_type, ths, false_dataSet, \
+                                                                       cov_mult=cov_mult, check_dim=i) \
+                                        for j, (l_wdata, l_vdata) in enumerate(splits)) 
+            fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
 
-    audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end])
-    audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end])
+            import operator
+            fn_l = reduce(operator.add, fn_ll)
+            tn_l = reduce(operator.add, tn_ll)
+            fn_err_l = reduce(operator.add, fn_err_ll)
+            tn_err_l = reduce(operator.add, tn_err_ll)
 
-    # normalized rms
-    audio_rms_ref = np.zeros(len(audio_time_cut))
-    for j, data in enumerate(audio_data_cut):
-        audio_rms_ref[j] = get_rms(data, MAX_INT)
+            d = {}
+            d['fn']  = np.mean(fn_l)
+            d['tp']  = 1.0 - np.mean(fn_l)
+            d['tn']  = np.mean(tn_l)
+            d['fp']  = 1.0 - np.mean(tn_l)
 
-    x   = np.linspace(0.0, 1.0, len(ft_time_cut))
-    tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
+            if fn_err_l == []:         
+                d['fn_err'] = 0.0
+            else:
+                d['fn_err'] = np.mean(fn_err_l)
 
-    xnew = np.linspace(0.0, 1.0, len(audio_rms_ref))
-    ft_force_mag_ref = interpolate.splev(xnew, tck, der=0)
+            if tn_err_l == []:         
+                d['tn_err'] = 0.0
+            else:
+                d['tn_err'] = np.mean(tn_err_l)
 
-    print "==================================="
-    print ft_force_mag_ref.shape,audio_rms_ref.shape 
-    print "==================================="
+            ut.save_pickle(d,res_file)        
+            os.system('rm '+mutex_file)
+            print "-----------------------------------------------"
 
+        if count == len(threshold_mult):
+            print "#############################################################################"
+            print "All file exist ", count
+            print "#############################################################################"        
+
+        
+    if count == len(threshold_mult) and bPlot:
+
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+        
+        pp.figure()
+        
+        for i in xrange(3):
+            fp_l = []
+            tp_l = []
+            err_l = []
+            for ths in threshold_mult:
+                res_file   = prefix+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
+                res_file   = os.path.join(cross_test_path, res_file)
+
+                d = ut.load_pickle(res_file)
+                tp  = d['tp'] 
+                fn  = d['fn'] 
+                fp  = d['fp'] 
+                tn  = d['tn'] 
+                fn_err = d['fn_err']         
+                tn_err = d['tn_err']         
+
+                fp_l.append([fp])
+                tp_l.append([tp])
+                err_l.append([fn_err])
+
+            fp_l  = np.array(fp_l)*100.0
+            tp_l  = np.array(tp_l)*100.0
+
+            color = colors.next()
+            shape = shapes.next()
+            semantic_label='likelihood detection \n with known mechanism class '+str(i)
+            pp.plot(fp_l, tp_l, shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+
+            
+
+        fp_l = fp_l[:,0]
+        tp_l = tp_l[:,0]
+        
+        from scipy.optimize import curve_fit
+        def sigma(e, k ,n, offset): return k*((e+offset)**n)
+        param, var = curve_fit(sigma, fp_l, tp_l)
+        new_fp_l = np.linspace(fp_l.min(), fp_l.max(), 50)
+        pp.plot(new_fp_l, sigma(new_fp_l, *param))
+
+        
+        pp.xlabel('False positive rate (percentage)')
+        pp.ylabel('True positive rate (percentage)')    
+        ## pp.xlim([0, 30])
+        pp.legend(loc=1,prop={'size':14})
+        
+        pp.show()
+                            
+    return
+
+def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20, \
+            threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+    trans_type = "left_right"
     
-    # DTW wrt the reference
-    for i, force in enumerate(ft_force_l):
+    # Check the existance of workspace
+    cross_test_path = os.path.join(cross_data_path, str(nState))
+    if os.path.isdir(cross_test_path) == False:
+        os.system('mkdir -p '+cross_test_path)
 
-        if ref_idx == i:
-            print "its reference"
-            ft_force_mag_list.append(ft_force_mag_ref)                
-            audio_rms_list.append(audio_rms_ref)
-            hmm_input_l.append(np.vstack([ft_force_mag_ref, audio_rms_ref]))            
+    # min max scaling
+    aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+    aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+    dataSet    = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, chunks, labels)
+
+    # Cross validation   
+    nfs    = NFoldPartitioner(cvtype=1,attr=attr) # 1-fold ?
+    spl    = splitters.Splitter(attr='partitions')
+    splits = [list(spl.generate(x)) for x in nfs.generate(dataSet)] # split by chunk
+
+    count = 0
+    for ths in threshold_mult:
+    
+        # save file name
+        res_file = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+        res_file = os.path.join(cross_test_path, res_file)
+        
+        mutex_file_part = 'running_ths_'+str(ths)
+        mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+        mutex_file      = os.path.join(cross_test_path, mutex_file_full)
+        
+        if os.path.isfile(res_file): 
+            count += 1            
             continue
+        elif hcu.is_file(cross_test_path, mutex_file_part): continue
+        elif os.path.isfile(mutex_file): continue
+        os.system('touch '+mutex_file)
 
-        ft_time   = ft_time_l[i]
-        ft_force  = ft_force_l[i]
-        ft_torque = ft_torque_l[i]        
-        ft_force_mag = np.linalg.norm(ft_force,axis=0)
+        print "---------------------------------"
+        print "Total splits: ", len(splits)
 
-        start_time = ft_time[0]
-        end_time   = ft_time[-1]
-        ft_time_cut      = np.array(ft_time)
-        ft_force_cut     = ft_force
-        ft_torque_cut    = ft_torque
-        ft_force_mag_cut = np.linalg.norm(ft_force_cut, axis=0)            
+        n_jobs = 4
+        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(i, l_wdata, l_vdata, nState, trans_type, ths) \
+                                    for i, (l_wdata, l_vdata) in enumerate(splits)) 
+        fp_ll, err_ll = zip(*r)
+
         
-        audio_time = audio_time_l[i]
-        audio_data = audio_data_l[i]
-        a_idx_start = None
-        a_idx_end   = None                
-        for j, t in enumerate(audio_time):
-            if t > start_time and a_idx_start is None:
-                if (audio_time[j+1] - audio_time[j]) >  float(CHUNK)/float(RATE) :
-                    a_idx_start = j
-            if t > end_time and a_idx_end is None:
-                a_idx_end = j
-                break
-
-        audio_time_cut = np.array(audio_time[a_idx_start:a_idx_end+1])
-        audio_data_cut = np.array(audio_data[a_idx_start:a_idx_end+1])              
+        import operator
+        fp_l = reduce(operator.add, fp_ll)
+        err_l = reduce(operator.add, err_ll)
         
-        # normalized rms
-        audio_rms_cut = np.zeros(len(audio_time_cut))
-        for j, data in enumerate(audio_data_cut):
-            audio_rms_cut[j] = get_rms(data, MAX_INT)
+        d = {}
+        d['fp']  = np.mean(fp_l)
+        if err_l == []:         
+            d['err'] = 0.0
+        else:
+            d['err'] = np.mean(err_l)
 
+        ut.save_pickle(d,res_file)        
+        os.system('rm '+mutex_file)
+        print "-----------------------------------------------"
 
-        ## print ft_time_cut.shape, ft_force_mag_cut.shape
-        ## print len(audio_time_cut), audio_rms_cut.shape
+    if count == len(threshold_mult):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
 
-        x   = np.linspace(0.0, 1.0, len(ft_time_cut))
-        tck = interpolate.splrep(x, ft_force_mag_cut, s=0)
-
-        xnew = np.linspace(0.0, 1.0, len(audio_rms_cut))
-        ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
-
-
-        ## pp.figure(1)
-        ## ax = pp.subplot(311)
-        ## pp.plot(ft_force_mag_cut)
-        ## ## pp.plot(ft_time_cut, ft_force_mag_cut)
-        ## ## ax.set_xlim([0, 6.0])
-        ## ax = pp.subplot(312)
-        ## pp.plot(audio_rms_cut)
-        ## ## pp.plot(audio_time_cut, audio_rms_cut)
-        ## ## ax.set_xlim([0, 6.0])
-        ## ax = pp.subplot(313)
-        ## pp.plot(audio_time_cut,'r')
-        ## pp.plot(ft_time_cut,'b')
-        ## ## pp.plot(audio_rms_cut)
-        ## ## ax.set_xlim([0, 6.0])
-        ## pp.show()
-             
         
-        # Compare with reference
-        dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut, dist_only=False)
-        ## fig = plt.figure(1)
-        ## ax = fig.add_subplot(111)
-        ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-        ## plot2 = plt.plot(path[0], path[1], 'w')
-        ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
-        ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
-        ## plt.show()
+    if count == len(threshold_mult) and bPlot:
 
+        fp_l = []
+        err_l = []
+        for ths in threshold_mult:
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+            res_file   = os.path.join(cross_test_path, res_file)
 
-        ft_force_mag_cut_dtw = []        
-        audio_rms_cut_dtw    = []        
-        new_idx = []
-        for idx in xrange(len(path[0])-1):
-            if path[0][idx] == path[0][idx+1]: continue
-            
-            new_idx.append(path[1][idx])
-            ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][idx]])
-            audio_rms_cut_dtw.append(audio_rms_cut[path[1][idx]])
-        ft_force_mag_cut_dtw.append(ft_force_mag_cut[path[1][-1]])
-        audio_rms_cut_dtw.append(audio_rms_cut[path[1][-1]])
+            d = ut.load_pickle(res_file)
+            fp  = d['fp'] 
+            err = d['err']         
 
+            fp_l.append([fp])
+            err_l.append([err])
 
-            
-        ## dist, cost, path = mlpy.dtw_std(ft_force_mag_ref, ft_force_mag_cut_dtw, dist_only=False)
-        ## fig = plt.figure(1)
-        ## ax = fig.add_subplot(111)
-        ## plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
-        ## plot2 = plt.plot(path[0], path[1], 'w')
-        ## xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
-        ## ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
-        ## plt.show()
-                    
-        print "==================================="
-        print len(ft_force_mag_cut_dtw), len(audio_rms_cut_dtw)
-        print "==================================="
-        
-        ft_force_mag_list.append(ft_force_mag_cut_dtw)                
-        audio_rms_list.append(audio_rms_cut_dtw)
-        hmm_input_l.append(np.vstack([ft_force_mag_cut_dtw, audio_rms_cut_dtw]))
+        fp_l  = np.array(fp_l)*100.0
+        sem_c = 'b'
+        sem_m = '+'
+        semantic_label='likelihood detection \n with known mechanism class'
+        pp.figure()
+        pp.plot(fp_l, err_l, '--'+sem_m+sem_c, label= semantic_label, mec=sem_c, ms=8, mew=2)
+        pp.xlabel('False positive rate (percentage)')
+        pp.ylabel('Mean excess log likelihood')    
+        ## pp.xlim([0, 30])
+        pp.show()
+                            
+    return
+
+    
+def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None, 
+                          cov_mult=[1.0, 1.0, 1.0, 1.0], check_dim=2):
+
+    # Cross validation
+    if check_dim is not 2:
+        x_train1 = l_wdata.samples[:,check_dim,:]
+
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1)
+        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4)
+        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4)
+    else:
+        x_train1 = l_wdata.samples[:,0,:]
+        x_train2 = l_wdata.samples[:,1,:]
+
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(x_train1, x_train2, cov_mult=cov_mult)
        
-    d = {}
-    d['ft_force_mag_l'] = np.array(ft_force_mag_list)
-    d['audio_rms_l']    = np.array(audio_rms_list)
-    d['hmm_input_l']    = np.array(hmm_input_l)
+    fn_l  = []
+    tn_l  = []
+    fn_err_l = []
+    tn_err_l = []
 
-    return d
+    # True data
+    if check_dim == 2:
+        x_test1 = l_vdata.samples[:,0,:]
+        x_test2 = l_vdata.samples[:,1,:]
+    else:
+        x_test1 = l_vdata.samples[:,check_dim,:]
+        
+    n,m = np.shape(x_test1)
+    for i in range(n):
+        if check_dim == 2:
+            fn, err = lhm.anomaly_check(x_test1[i:i+1,:], x_test2[i:i+1,:], ths_mult=ths)           
+        else:
+            fn, err = lhm.anomaly_check(x_test1[i:i+1,:], ths_mult=ths)           
+                
+        fn_l.append(fn)
+        if err != 0.0: fn_err_l.append(err)
+
+    # False data
+    if check_dim == 2:
+        x_test1 = false_dataSet.samples[:,0]
+        x_test2 = false_dataSet.samples[:,1]
+    else:
+        x_test1 = false_dataSet.samples[:,check_dim]
+        
+    n = len(x_test1)
+    for i in range(n):
+        if check_dim == 2:            
+            tn, err = lhm.anomaly_check(np.array([x_test1[i]]), np.array([x_test2[i]]), ths_mult=ths)           
+        else:
+            tn, err = lhm.anomaly_check(np.array([x_test1[i]]), ths_mult=ths)           
+            
+        tn_l.append(tn)
+        if err != 0.0: tn_err_l.append(err)
+
+    return fn_l, tn_l, fn_err_l, tn_err_l
     
 
+def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
+
+    # Cross validation
+    x_train1 = l_wdata.samples[:,0,:]
+    x_train2 = l_wdata.samples[:,1,:]
+
+    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+    lhm.fit(x_train1, x_train2)
+
+    x_test1 = l_vdata.samples[:,0,:]
+    x_test2 = l_vdata.samples[:,1,:]
+    n,m = np.shape(x_test1)
+    
+    fp_l  = []
+    err_l = []
+    for i in range(n):
+        for j in range(2,m,1):
+            fp, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
+            fp_l.append(fp)
+            if err != 0.0: err_l.append(err)
+                
+    return fp_l, err_l
+    
+
+def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
+        
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+    
+    pp.figure()    
+    ## pp.title("ROC of anomaly detection ")
+    for i, prefix in enumerate(prefixes):
+
+        cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
+        
+        fp_l = []
+        err_l = []
+        for ths in threshold_mult:
+            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+            res_file   = os.path.join(cross_test_path, res_file)
+
+            d = ut.load_pickle(res_file)
+            fp  = d['fp'] 
+            err = d['err']         
+
+            fp_l.append([fp])
+            err_l.append([err])
+
+        fp_l  = np.array(fp_l)*100.0
+
+        color = colors.next()
+        shape = shapes.next()
+
+        if i==0:
+            semantic_label='Known mechanism \n class -'+prefix
+        else:
+            semantic_label='Known mechanism \n identity -'+prefix
+            
+        pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+
+    pp.legend(loc=0,prop={'size':14})
+
+    pp.xlabel('False positive rate (percentage)')
+    pp.ylabel('Mean excess log likelihood')    
+    pp.show()
+        
+    
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
 
@@ -443,7 +548,7 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
     pp.show()
 
-def plot_all(data):
+def plot_all(data1, data2):
 
         ## # find init
         ## pp.figure()
@@ -456,24 +561,28 @@ def plot_all(data):
         ## pp.show()
         
         ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
+
     pp.figure()
-    pp.subplot(211)
-    for i, d in enumerate(data):
-        pp.plot(d[0])
+    plt.rc('text', usetex=True)
+    ax1 = pp.subplot(211)
+    for i, d in enumerate(data1):
+        pp.plot(d, label=str(i))
+    ## ax1.set_title("Force")
+    ax1.set_ylabel("Force [L2]", fontsize=18)
+
         
-    pp.subplot(212)
-    for i, d in enumerate(data):
-        pp.plot(d[1])
+    ax2 = pp.subplot(212)
+    for i, d in enumerate(data2):
+        pp.plot(d)
+    ## ax2.set_title("Audio")
+    ax2.set_ylabel("Audio [RMS]", fontsize=18)
+    ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+    
+    ## ax1.legend()
     pp.show()
     
     
 
-def get_rms(frame, MAX_INT=32768.0):
-    
-    count = len(frame)
-    return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
-
-    
 
 if __name__ == '__main__':
 
@@ -483,47 +592,239 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
                  default=False, help='Renew pickle files.')
+    p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
+                 default=False, help='Plot by time using animation')
+    p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
+                 default=False, help='Plot by a figure of ROC human')
+    p.add_option('--roc_online_robot', '--ron', action='store_true', dest='bRocOnlineRobot',
+                 default=False, help='Plot by a figure of ROC robot')
+    p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
+                 default=False, help='Plot by a figure of ROC robot')
+    p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
+                 default=False, help='Plot all data')
+    p.add_option('--plot', '--p', action='store_true', dest='bPlot',
+                 default=False, help='Plot')
     opt, args = p.parse_args()
 
 
-    data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
-
-    task = 0
-    if task == 1:
-        prefix = 'microwave'
-    elif task == 2:        
-        prefix = 'down'
-    elif task == 3:        
-        prefix = 'lock'
+    ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
+    cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
+    
+    class_num = 0
+    task  = 0
+    if class_num == 0:
+        class_name = 'door'
+        task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
+        f_zero_size = [8, 5, 10]
+        f_thres     = [1.0, 1.7, 3.0]
+        audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.5, 1.5, 1.5],[1.0, 1.0, 1.0, 1.0],[1.5, 5.5, 5.5, 5.5]]
+    elif class_num == 1: 
+        class_name = 'switch'
+        task_names = ['wallsw', 'switch_device', 'switch_outlet']
+        f_zero_size = [5, 5, 8]
+        f_thres     = [1.5, 1.35, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+    elif class_num == 2:        
+        class_name = 'lock'
+        task_names = ['case', 'lock_wipes', 'lock_huggies']
+        f_zero_size = [5, 5, 5]
+        f_thres     = [1.0, 1.35, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+    elif class_num == 3:        
+        class_name = 'complex'
+        task_names = ['toaster_white', 'glass_case']
+        f_zero_size = [5, 2, 8]
+        f_thres     = [1.0, 0.5, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+    elif class_num == 4:        
+        class_name = 'button'
+        task_names = ['joystick', 'keyboard']
+        f_zero_size = [5, 5, 8]
+        f_thres     = [1.35, 1.35, 1.35]
+        audio_thres = [1.0, 1.0, 1.0]
+        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
     else:
-        prefix = 'close'
+        print "Please specify right task."
+        sys.exit()
+
+    dtw_flag = False
     
     # Load data
-    pkl_file = "./"+prefix+"_data.pkl"
+    pkl_file  = os.path.join(cross_root_path,task_names[task]+"_data.pkl")    
+    data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/robot_20150213/'+class_name+'/'
     
     if os.path.isfile(pkl_file) and opt.bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
-        d = load_data(data_path, prefix, normal_only=(not opt.bAbnormal))
-        d = cutting(d)        
+        ## d = dm.load_data(data_path, task_names[task], normal_only=(not opt.bAbnormal))
+        ## d = dm.cutting(d, dtw_flag=dtw_flag)        
+        d = dm.load_data(data_path, task_names[task], normal_only=False)
+        d = dm.cutting_for_robot(d, f_zero_size=f_zero_size[task], f_thres=f_thres[task], \
+                                 audio_thres=audio_thres[task], dtw_flag=dtw_flag)        
         ut.save_pickle(d, pkl_file)
 
-    ## plot_all(d['hmm_input_l'])
+    #
+    aXData1  = d['ft_force_mag_l']
+    aXData2  = d['audio_rms_l'] 
+    ## labels   = d['labels']
+    ## chunks   = d['chunks'] 
+
+    true_aXData1 = d['ft_force_mag_true_l']
+    true_aXData2 = d['audio_rms_true_l'] 
+    true_chunks  = d['true_chunks']
+
+    false_aXData1 = d['ft_force_mag_false_l']
+    false_aXData2 = d['audio_rms_false_l'] 
+    false_chunks  = d['false_chunks']
+
+    print "All: ", len(true_aXData1)+len(false_aXData1), \
+      " Success: ", len(true_aXData1), \
+      " Failure: ", len(false_aXData1)
+    
+    #---------------------------------------------------------------------------           
+    if opt.bRocHuman:
+
+        cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+\
+                          task_names[task]
+        nState          = 20
+        threshold_mult  = np.arange(0.01, 4.0, 0.1)    
+
+        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, task_names[task], nState, threshold_mult, \
+                opr='human', bPlot=opt.bPlot)
+
+        if opt.bAllPlot:
+            prefixes = ['microwave', 'microwave_black', 'microwave_white']
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human'
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='human', attr='chunks')
+
+
+    #---------------------------------------------------------------------------           
+    elif opt.bRocOnlineRobot:
+
+        cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task])
+        nState          = 20
+        threshold_mult  = np.arange(0.0, 4.2, 0.1)    
+        attr            = 'id'
+
+        fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, task_names[task], nState, threshold_mult, \
+                opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task])
+
+        if opt.bAllPlot:
+            if task ==1:
+                ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
+                prefixes = ['microwave', 'microwave_black']
+            else:
+                prefixes = ['microwave', 'microwave_black']
+                
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
+            
+            
+    #---------------------------------------------------------------------------           
+    elif opt.bRocOfflineRobot:
+        
+        print "ROC Offline Robot"
+        cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task])
+        nState          = 20
+        threshold_mult  = np.arange(0.0, 4.2, 0.1)    
+        attr            = 'id'
+
+        fig_roc_offline(cross_data_path, \
+                        true_aXData1, true_aXData2, true_chunks, \
+                        false_aXData1, false_aXData2, false_chunks, \
+                        task_names[task], nState, threshold_mult, \
+                        opr='robot', attr='id', bPlot=opt.bPlot)
+
+        if opt.bAllPlot:
+            if task ==1:
+                ## prefixes = ['microwave', 'microwave_black', 'microwave_white']
+                prefixes = ['microwave', 'microwave_black']
+            else:
+                prefixes = ['microwave', 'microwave_black']
+                
+            cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
+            fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
+            
+            
+    #---------------------------------------------------------------------------
+    elif opt.bAllPlot:
+
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
+
+        if opt.bAbnormal:
+            # min max scaling
+            aXData1_scaled, _, _ = dm.scaling(aXData1, min_c1, max_c1, scale=10.0)
+            aXData2_scaled, _, _ = dm.scaling(aXData2, min_c2, max_c2, scale=10.0)
+
+        ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
+        ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
+       
+        plot_all(aXData1_scaled, aXData2_scaled)
+
+            
+    #---------------------------------------------------------------------------   
+    elif opt.bAnimation:
+
+        nState   = 20
+        trans_type= "left_right"
+        ## nMaxStep = 36 # total step of data. It should be automatically assigned...
+
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        
+        # Learning
+        from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(aXData1_scaled, aXData2_scaled)
 
         
-    aXData   = d['hmm_input_l']
-    aXData1  = d['ft_force_mag_l']
-    aXData2  = d['audio_rms_l']
-    
-    nState   = 30 
-    trans_type= "left_right"
-    ## nMaxStep = 36 # total step of data. It should be automatically assigned...
-            
-    # Learning
-    from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
-    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.simulation(aXData1_scaled[2], aXData2_scaled[2])
 
+    #---------------------------------------------------------------------------           
+    else:
 
+        nState   = 20
+        trans_type= "left_right"
+        ## nMaxStep = 36 # total step of data. It should be automatically assigned...
 
-    # TEST
-    lhm.fit(aXData1, aXData2)
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(aXData2)    
+        
+        # Learning
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm.fit(aXData1_scaled, aXData2_scaled)
+        
+        # TEST
+        nCurrentStep = 27
+        ## X_test1 = aXData1_scaled[0:1,:nCurrentStep]
+        ## X_test2 = aXData2_scaled[0:1,:nCurrentStep]
+        X_test1 = aXData1_scaled[0:1]
+        X_test2 = aXData2_scaled[0:1]
+
+        #
+        X_test2[0,nCurrentStep-3] = 10.7
+        X_test2[0,nCurrentStep-2] = 12.7
+        X_test2[0,nCurrentStep-1] = 11.7
+        
+        lhm.likelihood_disp(X_test1, X_test2, 2.0)
+
+        
+        ## lhm.data_plot(X_test1, X_test2, color = 'r')
+
+        ## X_test2[0,nCurrentStep-2] = 12.7
+        ## X_test2[0,nCurrentStep-1] = 11.7
+        ## X_test = lhm.convert_sequence(X_test1[:nCurrentStep], X_test2[:nCurrentStep], emission=False)
+
+        ## fp, err = lhm.anomaly_check(X_test1, X_test2, ths_mult=0.01)
+        ## print fp, err
+        
+        ## ## print lhm.likelihood(X_test), lhm.likelihood_avg
+        ## ## mu, cov = self.predict(X_test)
+        
+        ## lhm.data_plot(X_test1, X_test2, color = 'b')
+
