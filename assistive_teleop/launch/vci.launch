@@ -25,12 +25,13 @@
 
   <!-- Launch Kinect (needed for pixel_2_3d -->
   <include if="$(arg launch_kinect)" file="/etc/ros/distro/openni_head.launch" />
+
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
-      <remap from="image" to="$(arg kinect_camera)" />
+      <remap from="info_topic" to="$(arg kinect_ns)/depth_lowres/camera_info" />
       <remap from="point_cloud" to="$(arg kinect_points)" />
       <param name="normal_radius" type="double" value="0.035" />
-      <param name="use_closest_pixel"  value="false"/>
+      <param name="use_closest_pixel"  value="true"/>
   </node>
 
   <!-- State Throttling -->

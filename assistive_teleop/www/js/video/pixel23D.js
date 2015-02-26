@@ -31,7 +31,9 @@ RFH.Pixel23DClient = function (options) {
         var cb_err_wrap = function (resp) {
             switch (resp.error_flag) {
                 case 0:
-                    cb(resp.pixel3d.pose);
+                    var pose = new ROSLIB.Pose({position: resp.pixel3d.pose.position,
+                                                orientation: resp.pixel3d.pose.orientation});
+                    cb(pose);
                     break;
                 case 1:
                     throw "Pixel23D (u: %u%, v:%v%): No Camera Info Received".replace("%u%", u).replace("%v%", v);
@@ -53,8 +55,8 @@ RFH.Pixel23DClient = function (options) {
 
     // Receives pixel values in 0-1 range, scales to size of image used by pixel23d, and calls.
     self.callRelativeScale = function (u, v, cb) {
-        u *= self.imageWidth;
-        v *= self.imageHeight;
+        u = Math.round(u*self.imageWidth);
+        v = Math.round(v*self.imageHeight);
         self.call(u, v, cb);
     };
 }

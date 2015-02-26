@@ -14,6 +14,7 @@ RFH.CartesianEEControl = function (options) {
     self.cameraTF = null;
     self.eeInOpMat = null;
     self.op2baseMat = null;
+    self.orientRot = 0;
     self.camera = options.camera;
 
     self.focusPoint = new RFH.FocalPoint({camera: self.camera,
@@ -51,6 +52,7 @@ RFH.CartesianEEControl = function (options) {
             throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned."
         };
         z.crossVectors(x,y).normalize();
+        // TODO: Rotate wrist based on offset, EXPOSE CONTROLS!
         var rotMat = new THREE.Matrix4();
         rotMat.elements[0] = x.x; rotMat.elements[4] = y.x; rotMat.elements[8] = z.x;
         rotMat.elements[1] = x.y; rotMat.elements[5] = y.y; rotMat.elements[9] = z.y;
@@ -170,10 +172,8 @@ RFH.CartesianEEControl = function (options) {
             q = self.orientHand();
         }
         catch (e) {
-            console.log(e);
-            //Ignore
+            console.log(e); // log error and keep moving
         }
-            
         q = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
         self.arm.sendGoal({position: p,
                            orientation: q,

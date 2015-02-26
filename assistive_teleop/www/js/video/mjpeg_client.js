@@ -193,7 +193,21 @@ RFH.ROSCameraModel = function (options) {
 
     self.projectPoint = function (px, py, pz, frame_id) {
         frame_id = typeof frame_id !== 'undefined' ? frame_id : self.frame_id;
-        //TODO: Make use of frame id here.
+        if (frame_id[0] === '/') {
+          frame_id = frame_id.substring(1);
+        }
+        if (frame_id !== self.tfClient.fixedFrame.substring(1) && 
+            frame_id !== self.frame_id) {
+            throw "cameraModel.projectPoint - Unknown frame_id"
+            return;
+        }
+        if (frame_id === self.tfClient.fixedFrame) {
+            pose = new ROSLIB.Pose({position: new ROSLIB.Point(px, py, pz)});
+            pose.applyTransform(self.transform);
+            px = pose.position.x;
+            py = pose.position.y;
+            pz = pose.position.z;
+        }
         var pixel_hom = numeric.dot(self.P, [[px],[py],[pz],[1]]);
         var pix_x = pixel_hom[0]/pixel_hom[2];
         var pix_y = pixel_hom[1]/pixel_hom[2];
@@ -205,9 +219,8 @@ var initMjpegCanvas = function (divId) {
     "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     imageTopic: '/head_mount_kinect/rgb/image_raw',
-                                     //imageTopic: '/head_mount_kinect/rgb/image',
-                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     imageTopic: '/head_mount_kinect/rgb_lowres/image',
+                                     infoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
                                      //imageTopic: '/head_wfov_camera/image_rect_color',
                                      //infoTopic: '/head_wfov_camera/camera_info',
                                      containerId: 'video-main',

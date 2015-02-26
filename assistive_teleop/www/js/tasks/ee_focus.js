@@ -11,10 +11,14 @@ RFH.FocalPoint = function (options) {
     $('#'+self.pointDivId).hide(); // Start off with point hidden
 
     self.positionFocusPointImage = function (trans) {
-        if (self.point === null) { return };
-        var pixel = self.camera.projectPoint(self.point.x, self.point.y, self.point.z, 'base_link');
-        var u = pixel[0] + $('#'+self.pointDivId).width;
-        var v = pixel[1] + $('#'+self.pointDivId).height;
+        // TODO: FIX THIS!
+        if (self.pointInCam === null) { return };
+        var pixel = self.camera.projectPoint(self.point.x,
+                                             self.point.y,
+                                             self.point.z,
+                                             'base_link');
+        var u = pixel[0]*$('#'+self.divId).width() + $('#'+self.pointDivId).width();
+        var v = pixel[1]*$('#'+self.divId).height() + $('#'+self.pointDivId).height();
         $('#'+self.pointDivId).css({'left':u, 'top':v});
     };
 
@@ -33,15 +37,21 @@ RFH.FocalPoint = function (options) {
         $('#select-focus-toggle').removeAttr('checked').button("refresh");
     };
 
+
     self.getNewFocusPoint = function () {
         var oldCursor = $('#'+self.divId).css('cursor');
-        $('#'+self.divId).css('cursor', 'url(./css/cursors/focus/focus-pointer.png) 15 60, auto');
+        $('#'+self.divId).css('cursor', 'url(./css/cursors/focus/focus-pointer.png) 20 8, auto');
+        $(".map-look").hide();
+        $('#'+self.divId).on('mousemove', function(e) { 
+                                            console.log(RFH.positionInElement(e));
+                                            });
         var clickCB = function (e) {
             e.stopPropagation();
             var pt = RFH.positionInElement(e);
             var x = pt[0]/self.camera.width;
             var y = pt[1]/self.camera.height;
             $('#'+self.divId).css('cursor', oldCursor);
+            $(".map-look").hide();
             self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
         };
         $('#'+self.divId).one('click', clickCB);
