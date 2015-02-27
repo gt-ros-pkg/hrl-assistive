@@ -193,25 +193,35 @@ RFH.ROSCameraModel = function (options) {
 
     self.projectPoint = function (px, py, pz, frame_id) {
         frame_id = typeof frame_id !== 'undefined' ? frame_id : self.frame_id;
+        var fixedFrame = self.tfClient.fixedFrame.substring(1);
         if (frame_id[0] === '/') {
           frame_id = frame_id.substring(1);
         }
-        if (frame_id !== self.tfClient.fixedFrame.substring(1) && 
-            frame_id !== self.frame_id) {
+        if (frame_id !== fixedFrame && frame_id !== self.frame_id) {
             throw "cameraModel.projectPoint - Unknown frame_id"
             return;
         }
-        if (frame_id === self.tfClient.fixedFrame) {
-            pose = new ROSLIB.Pose({position: new ROSLIB.Point(px, py, pz)});
-            pose.applyTransform(self.transform);
-            px = pose.position.x;
-            py = pose.position.y;
-            pz = pose.position.z;
+        if (frame_id === fixedFrame) {
+            var q = new THREE.Quaternion(self.transform.rotation.x,
+                                         self.transform.rotation.y,
+                                         self.transform.rotation.z,
+                                         self.transform.rotation.w);
+            var tfMat = new THREE.Matrix4().makeRotationFromQuaternion(q);
+            tfMat.setPosition(new THREE.Vector3(self.transform.translation.x,
+                                                self.transform.translation.y,
+                                                self.transform.translation.z));
+            var pose = new THREE.Vector3(px, py, pz);
+            tfMat.getInverse(tfMat);
+            pose.applyMatrix4(tfMat);
+            px = pose.x;
+            py = pose.y;
+            pz = pose.z;
         }
         var pixel_hom = numeric.dot(self.P, [[px],[py],[pz],[1]]);
         var pix_x = pixel_hom[0]/pixel_hom[2];
         var pix_y = pixel_hom[1]/pixel_hom[2];
-        return [pix_x/self.width, pix_y/self.height];
+        return [pix_x, pix_y];
+        //return [pix_x/self.width, pix_y/self.height];
     }
 };
 
@@ -219,8 +229,10 @@ var initMjpegCanvas = function (divId) {
     "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     imageTopic: '/head_mount_kinect/rgb_lowres/image',
-                                     infoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+                                     //imageTopic: '/head_mount_kinect/rgb_lowres/image',
+                                     //infoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+                                     imageTopic: '/head_mount_kinect/rgb/image_color',
+                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
                                      //imageTopic: '/head_wfov_camera/image_rect_color',
                                      //infoTopic: '/head_wfov_camera/camera_info',
                                      containerId: 'video-main',
