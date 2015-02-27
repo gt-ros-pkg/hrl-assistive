@@ -23,19 +23,21 @@ RFH.FocalPoint = function (options) {
 
     self.pixel23d = new RFH.Pixel23DClient({
             ros: RFH.ros,
-            //cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
-            cameraInfoTopic: '/head_mount_kinect/rgb/camera_info',
+            cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+            //cameraInfoTopic: '/head_mount_kinect/rgb/camera_info',
             serviceName: '/pixel_2_3d'
         });
 
     self.setFocusPoint = function (pose) {
-        self.point = new THREE.Vector3(pose.position.x,
-                                       pose.position.y,
-                                       pose.position.z);
-        self.tfClient.subscribe(self.camera.frame_id, self.positionFocusPointImage);
-        $('#'+self.pointDivId).show();
         $('#select-focus-toggle').removeAttr('checked').button("refresh");
         $('.depth-mask').hide();
+        if (pose !== null) {
+            self.point = new THREE.Vector3(pose.position.x,
+                                           pose.position.y,
+                                           pose.position.z);
+            self.tfClient.subscribe(self.camera.frame_id, self.positionFocusPointImage);
+            $('#'+self.pointDivId).show();
+        }
     };
 
 

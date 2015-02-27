@@ -27,9 +27,9 @@ RFH.CartesianEEControl = function (options) {
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
 //    $('#touchspot-toggle, 
-//      $('#select-focus-toggle').button()
+      $('#select-focus-toggle').button()
 //    $('#touchspot-toggle-label,
-//      $('#select-focus-toggle-label').hide();
+      $('#select-focus-toggle-label').hide();
 
     self.orientHand = function () {
         if (self.focusPoint.point === null) {
@@ -245,20 +245,20 @@ RFH.CartesianEEControl = function (options) {
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
         //$("#touchspot-toggle-label, #select-focus-toggle-label, #"+self.side+"-track-hand-toggle-label, #"+self.side+"-posrot-set").show();
-        $("#"+self.side+"-track-hand-toggle-label, #"+self.side+"-posrot-set").show();
+        $("#"+self.side+"-track-hand-toggle-label, #select-focus-toggle-label, #"+self.side+"-posrot-set").show();
         var mode = $('#'+self.side+'-posrot-set>input:checked').attr('id').slice(-3);
         $('#'+self.side+mode+'CtrlIcon').show();
         $("#"+self.gripperDisplayDiv).show();
         self.updateTrackHand();
-        //$('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB);
+        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB);
     };
     
     self.stop = function () {
-        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
+        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
         //$('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #touchspot-toggle-label, #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
         clearInterval(RFH.pr2.head.pubInterval);
         $('#'+self.gripperDisplayDiv).hide();
-//        $('#select-focus-toggle-label').off('click.rfh');
+        $('#select-focus-toggle-label').off('click.rfh');
     };
 }
 
