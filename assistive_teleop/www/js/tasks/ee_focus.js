@@ -43,7 +43,7 @@ RFH.FocalPoint = function (options) {
         var oldCursor = $('#'+self.divId).css('cursor');
         $('#'+self.divId).css('cursor', 'url(./css/cursors/focus/focus-pointer.png) 20 8, auto');
         $(".map-look").hide();
-        $('.depth-mask').show();
+//        $('.depth-mask').show();
         $('#'+self.divId).on('mousemove', function(e) { 
                                             console.log(RFH.positionInElement(e));
                                             });
@@ -56,7 +56,8 @@ RFH.FocalPoint = function (options) {
             var y = pt[1]/self.camera.height;
             $('#'+self.divId).css('cursor', oldCursor);
             $(".map-look").hide();
-            self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
+            //self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
+            self.pixel23d.callRelativeScale(pt[0]/self.camera.width, pt[1]/self.camera.height, self.setFocusPoint);
         };
         $('#'+self.divId).one('click', clickCB);
     };

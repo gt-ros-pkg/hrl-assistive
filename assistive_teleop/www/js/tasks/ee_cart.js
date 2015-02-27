@@ -271,13 +271,50 @@ RFH.EECartControlIcon = function (options) {
     self.container = $('<div/>', {id: self.divId,
                                   class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
     self.away = $('<div/>', {class: "away-button"}).appendTo('#'+self.divId).button();
-    self.target = $('<div/>', {class: "target-trans"}).appendTo('#'+self.divId);
+//    self.target = $('<div/>', {class: "target-trans"}).appendTo('#'+self.divId);
     self.toward = $('<div/>', {class: "toward-button"}).appendTo('#'+self.divId).button();
-    $('#'+self.divId+' .target-trans').draggable({containment:"parent",
-                                 distance: 8,
-                                 revertDuration: 100,
-                                 revert: true})
-                                 .on("dragstart", function (event) { event.stopPropagation() });
+    self.left = $('<div/>', {class: "left-button"}).appendTo('#'+self.divId).button().html("<");
+    self.right = $('<div/>', {class: "right-button"}).appendTo('#'+self.divId).button().html(">");
+    self.up = $('<div/>', {class: "up-button"}).appendTo('#'+self.divId).button().html("^");
+    self.down = $('<div/>', {class: "down-button"}).appendTo('#'+self.divId).button().html("v");
+//    $('#'+self.divId+' .target-trans').draggable({containment:"parent",
+//                                 distance: 8,
+//                                 revertDuration: 100,
+//                                 revert: true})
+//                                 .on("dragstart", function (event) { event.stopPropagation() });
+//
+
+    self.leftCB = function (event) {
+        if ($('#'+self.divId+' .left-button').hasClass('ui-state-active')) {
+            self.arm.eeDeltaCmd({x:-self.arm.dx});
+            setTimeout(function () {self.leftCB(event)}, self.arm.dt);
+        } 
+    }
+    $('#'+self.divId+' .left-button').on('mousedown.rfh', self.leftCB);
+
+    self.rightCB = function (event) {
+        if ($('#'+self.divId+' .right-button').hasClass('ui-state-active')) {
+            self.arm.eeDeltaCmd({x:self.arm.dx});
+            setTimeout(function () {self.rightCB(event)}, self.arm.dt);
+        } 
+    }
+    $('#'+self.divId+' .right-button').on('mousedown.rfh', self.rightCB);
+
+    self.upCB = function (event) {
+        if ($('#'+self.divId+' .up-button').hasClass('ui-state-active')) {
+            self.arm.eeDeltaCmd({y:-self.arm.dx});
+            setTimeout(function () {self.upCB(event)}, self.arm.dt);
+        } 
+    }
+    $('#'+self.divId+' .up-button').on('mousedown.rfh', self.upCB);
+
+    self.downCB = function (event) {
+        if ($('#'+self.divId+' .down-button').hasClass('ui-state-active')) {
+            self.arm.eeDeltaCmd({y:self.arm.dx});
+            setTimeout(function () {self.downCB(event)}, self.arm.dt);
+        } 
+    }
+    $('#'+self.divId+' .down-button').on('mousedown.rfh', self.downCB);
 
     self.awayCB = function (event) {
         if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
@@ -295,26 +332,26 @@ RFH.EECartControlIcon = function (options) {
     }
     $('#'+self.divId+' .toward-button').on('mousedown.rfh', self.towardCB);
 
-    self.onDrag = function (event, ui) {
-        clearTimeout(self.dragTimer);
-        var time = new Date();
-        var timeleft = time - self.lastDragTime;
-        if (timeleft > 100) {
-            self.lastDragTime = time;
-            var delX = self.arm.dx/30 * (ui.position.left - ui.originalPosition.left);
-            var delY = self.arm.dx/30 * (ui.position.top - ui.originalPosition.top);
-            self.arm.eeDeltaCmd({x: delX, y: delY});
-            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, self.arm.dt);
-        } else {
-            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, timeleft);
-        }
-
-    }
-
-    self.dragStop = function (event, ui) {
-        clearTimeout(self.dragTimer);
-    }
-    $('#'+self.divId+' .target-trans').on('drag', self.onDrag).on('dragstop', self.dragStop);
+//    self.onDrag = function (event, ui) {
+//        clearTimeout(self.dragTimer);
+//        var time = new Date();
+//        var timeleft = time - self.lastDragTime;
+//        if (timeleft > 100) {
+//            self.lastDragTime = time;
+//            var delX = self.arm.dx/30 * (ui.position.left - ui.originalPosition.left);
+//            var delY = self.arm.dx/30 * (ui.position.top - ui.originalPosition.top);
+//            self.arm.eeDeltaCmd({x: delX, y: delY});
+//            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, self.arm.dt);
+//        } else {
+//            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, timeleft);
+//        }
+//
+//    }
+//
+//    self.dragStop = function (event, ui) {
+//        clearTimeout(self.dragTimer);
+//    }
+//    $('#'+self.divId+' .target-trans').on('drag', self.onDrag).on('dragstop', self.dragStop);
 }
 
 RFH.EERotControlIcon = function (options) {
