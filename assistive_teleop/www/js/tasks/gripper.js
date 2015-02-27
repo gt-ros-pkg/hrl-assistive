@@ -12,9 +12,9 @@ RFH.GripperDisplay = function (options) {
         step: 0.001,
         orientation: 'horizontal'});
     
-    $('#'+self.divId+' .ui-slider-range').css({"background":"rgba(152,152,152,0.4)",
+    $('#'+self.divId+' .ui-slider-range').css({"background":"rgba(22,22,22,0.9)",
                                                "text-align":"center"}).html("Gripper");
-    $('#'+self.divId+'.ui-slider').css({"background":"rgba(50,50,50,0.12)" });
+    $('#'+self.divId+'.ui-slider').css({"background":"rgba(50,50,50,0.72)" });
     $('#'+self.divId+' .ui-slider-handle').css({"height":"160%",
                                                 "top":"-30%",
                                                 "width":"7%",

@@ -78,28 +78,70 @@
 
 .cw-button {
     position: absolute;
-    bottom: 0px;
-    left:1%;
+    top: 0px;
+    left:0%;
     display: block;
-    height: 20%;
-    width: 48%;
+    height: 15%;
+    width: 20%;
     transform:scaleY(-1);
     background-size: 90% 90%;
     background-repeat: no-repeat;
     background-image: url("./icons/rot-ccw.png");
+    opacity: 0.8;
 }
 
 .ccw-button {
     position: absolute;
-    bottom: 0px;
-    right: 1%;
+    top: 0px;
+    right: 0%;
     display: block;
-    height: 20%;
-    width: 48%;
+    height: 15%;
+    width: 20%;
     transform:scaleY(-1);
     background-size: 90% 90%;
     background-repeat: no-repeat;
     background-image: url("./icons/rot-cw.png");
+    opacity: 0.8;
+}
+
+.rotLeft-button {
+    position: absolute;
+    top: 25%;
+    left:0%;
+    display: block;
+    height: 60%%;
+    width: 15%;
+    opacity: 0.8;
+}
+
+.rotRight-button {
+    position: absolute;
+    bottom: 20%;
+    right:0%;
+    display: block;
+    height: 60%;
+    width: 15%;
+    opacity: 0.8;
+}
+
+.rotUp-button {
+    position: absolute;
+    top: 0px;
+    left:20%;
+    display: block;
+    height: 15%;
+    width: 60%;
+    opacity: 0.8;
+}
+
+.rotDown-button {
+    position: absolute;
+    bottom: 0px;
+    left:25%;
+    display: block;
+    height: 15%;
+    width: 60%;
+    opacity: 0.8;
 }
 
 .target-trans {
