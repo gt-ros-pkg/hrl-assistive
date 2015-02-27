@@ -35,6 +35,7 @@ RFH.FocalPoint = function (options) {
         self.tfClient.subscribe(self.camera.frame_id, self.positionFocusPointImage);
         $('#'+self.pointDivId).show();
         $('#select-focus-toggle').removeAttr('checked').button("refresh");
+        $('.depth-mask').hide();
     };
 
 
@@ -42,13 +43,16 @@ RFH.FocalPoint = function (options) {
         var oldCursor = $('#'+self.divId).css('cursor');
         $('#'+self.divId).css('cursor', 'url(./css/cursors/focus/focus-pointer.png) 20 8, auto');
         $(".map-look").hide();
+        $('.depth-mask').show();
         $('#'+self.divId).on('mousemove', function(e) { 
                                             console.log(RFH.positionInElement(e));
                                             });
         var clickCB = function (e) {
             e.stopPropagation();
             var pt = RFH.positionInElement(e);
-            var x = pt[0]/self.camera.width;
+            var lMaskWidth = $('#depthMaskLeft').width(); 
+            var rMaskWidth = $('#depthMaskRight').width(); 
+            var x = (pt[0] - lMaskWidth) / (self.camera.width - lMaskWidth - rMaskWidth);
             var y = pt[1]/self.camera.height;
             $('#'+self.divId).css('cursor', oldCursor);
             $(".map-look").hide();
