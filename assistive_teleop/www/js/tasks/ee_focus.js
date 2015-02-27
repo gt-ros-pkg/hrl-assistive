@@ -11,20 +11,20 @@ RFH.FocalPoint = function (options) {
     $('#'+self.pointDivId).hide(); // Start off with point hidden
 
     self.positionFocusPointImage = function (trans) {
-        // TODO: FIX THIS!
-        if (self.pointInCam === null) { return };
+        if (self.point === null) { return };
         var pixel = self.camera.projectPoint(self.point.x,
                                              self.point.y,
                                              self.point.z,
                                              'base_link');
-        var u = pixel[0]*$('#'+self.divId).width() + $('#'+self.pointDivId).width();
-        var v = pixel[1]*$('#'+self.divId).height() + $('#'+self.pointDivId).height();
+        var u = pixel[0];
+        var v = pixel[1];
         $('#'+self.pointDivId).css({'left':u, 'top':v});
     };
 
     self.pixel23d = new RFH.Pixel23DClient({
             ros: RFH.ros,
-            cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+            //cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+            cameraInfoTopic: '/head_mount_kinect/rgb/camera_info',
             serviceName: '/pixel_2_3d'
         });
 
@@ -52,12 +52,11 @@ RFH.FocalPoint = function (options) {
             var pt = RFH.positionInElement(e);
             var lMaskWidth = $('#depthMaskLeft').width(); 
             var rMaskWidth = $('#depthMaskRight').width(); 
-            var x = (pt[0] - lMaskWidth) / (self.camera.width - lMaskWidth - rMaskWidth);
-            var y = pt[1]/self.camera.height;
+//            var x = (pt[0] - lMaskWidth) / (self.camera.width - lMaskWidth - rMaskWidth);
+            var x = (pt[0]/e.target.width);
+            var y = (pt[1]/e.target.height);
             $('#'+self.divId).css('cursor', oldCursor);
-            $(".map-look").hide();
-            //self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
-            self.pixel23d.callRelativeScale(pt[0]/self.camera.width, pt[1]/self.camera.height, self.setFocusPoint);
+            self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
         };
         $('#'+self.divId).one('click', clickCB);
     };
