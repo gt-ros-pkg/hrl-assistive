@@ -53,11 +53,11 @@ def load_data(data_path, prefix, normal_only=True):
         if pkl.find('success') < 0: bNormal = False
         if normal_only and bNormal is False: continue
 
-        if bNormal: count += 1        
-        if bNormal and count==25: 
+        ## if bNormal: count += 1        
+        ## if bNormal and count==25: 
                 
-            print "aaaaaa ", pkl
-            continue
+        ##     print "aaaaaa ", pkl
+        ##     continue
 
         d = ut.load_pickle(pkl)
 

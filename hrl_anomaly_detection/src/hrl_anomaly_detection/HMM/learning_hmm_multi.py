@@ -141,10 +141,19 @@ class learning_hmm_multi(learning_base):
                 if len(path) == 0: continue
                 ll_list[path[-1]].append(logp)
 
-        for i, ll in enumerate(ll_list):
-            self.ll_mu[i]  = np.array(ll).mean()
-            self.ll_std[i] = np.sqrt(np.array(ll).var())
+
                 
+        for i, ll in enumerate(ll_list):
+            if len(ll) > 0: 
+                self.ll_mu[i]  = np.array(ll).mean()
+                self.ll_std[i] = np.sqrt(np.array(ll).var())
+            else:
+                print ll
+                self.ll_mu[i]  = self.ll_mu[i-1]
+                self.ll_std[i] = self.ll_std[i-1]
+                
+
+            
             ## path          = self.ml.viterbi(final_ts_obj)
             ## (alpha,scale) = self.ml.forward(final_ts_obj)
             ## alpha         = np.array(alpha)

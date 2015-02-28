@@ -91,16 +91,16 @@ def fig_roc_offline(cross_data_path, \
             print "---------------------------------"
             print "Total splits: ", len(splits)
 
-            ## for j, (l_wdata, l_vdata) in enumerate(splits):
-            ##     anomaly_check_offline(j, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet, \
-            ##                           check_dim=i)
-            ##     sys.exit()
+            for j, (l_wdata, l_vdata) in enumerate(splits):
+                anomaly_check_offline(j, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet, \
+                                      check_dim=i)
+            sys.exit()
                                   
             n_jobs = 4
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
                                                                        trans_type, ths, false_dataSet, \
                                                                        cov_mult=cov_mult, check_dim=i) \
-                                        for j, (l_wdata, l_vdata) in enumerate(splits)) 
+                                        for j, (l_wdata, l_vdata) in enumerate(splits))
             fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
 
             import operator
@@ -637,8 +637,8 @@ if __name__ == '__main__':
     elif class_num == 3:        
         class_name = 'complex'
         task_names = ['toaster_white', 'glass_case']
-        f_zero_size = [5, 2, 8]
-        f_thres     = [1.0, 0.5, 1.35]
+        f_zero_size = [5, 3, 8]
+        f_thres     = [1.0, 1.5, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
     elif class_num == 4:        
