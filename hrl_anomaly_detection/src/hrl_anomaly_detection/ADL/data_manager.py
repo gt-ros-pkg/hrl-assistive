@@ -46,12 +46,19 @@ def load_data(data_path, prefix, normal_only=True):
     label_list = []
     name_list = []
 
+    count = -1
     for i, pkl in enumerate(pkl_list):
-        
+                
         bNormal = True
         if pkl.find('success') < 0: bNormal = False
         if normal_only and bNormal is False: continue
-        
+
+        if bNormal: count += 1        
+        if bNormal and count==25: 
+                
+            print "aaaaaa ", pkl
+            continue
+
         d = ut.load_pickle(pkl)
 
         ft_time   = d.get('ft_time',None)

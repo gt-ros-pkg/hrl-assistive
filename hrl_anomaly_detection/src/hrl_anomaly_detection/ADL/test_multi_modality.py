@@ -566,6 +566,7 @@ def plot_all(data1, data2):
     plt.rc('text', usetex=True)
     ax1 = pp.subplot(211)
     for i, d in enumerate(data1):
+        ## if i==25: continue
         pp.plot(d, label=str(i))
     ## ax1.set_title("Force")
     ax1.set_ylabel("Force [L2]", fontsize=18)
@@ -610,8 +611,8 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 0
-    task  = 0
+    class_num = 3
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
