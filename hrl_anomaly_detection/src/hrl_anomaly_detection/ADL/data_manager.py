@@ -53,6 +53,9 @@ def load_data(data_path, prefix, normal_only=True):
         if pkl.find('success') < 0: bNormal = False
         if normal_only and bNormal is False: continue
 
+        ## if bNormal is False:
+        ##     if pkl.find('gatsbii_glass_case_robot_stickblock_1') < 0: continue
+        
         ## if bNormal: count += 1        
         ## if bNormal and count==25:                 
         ##     print "aaaaaa ", pkl
@@ -91,7 +94,8 @@ def load_data(data_path, prefix, normal_only=True):
 
         head, tail = os.path.split(pkl)
 
-        name = tail.split('_')[0] + '_' + tail.split('_')[1] + '_' + tail.split('_')[2]
+        ## name = tail.split('_')[0] + '_' + tail.split('_')[1] + '_' + tail.split('_')[2]
+        name = tail.split('.')[0] 
         name_list.append(name)
 
 
@@ -777,3 +781,112 @@ def movingaverage(values,window):
     return np.array(new_values)
     
     
+def simulated_anomaly(X, num, data_type, min_c=0.0, max_c=10.0, scale=10.0):
+    '''
+    num : number of anomaly data
+    '''
+
+    force_an = ['stretch', 'shorten', 'amplified', 'weaken', 'rndimpulse']
+    sound_an = ['weaken', 'rndimpulse']
+
+    length = len(X[0])
+        
+    new_X = []
+    for i in xrange(num):
+
+        # randomly select 
+        x_idx = random.randint(0,len(X)-1)
+
+        # random anomaly type
+        if data_type == 'force':
+            an = random.choice(force_an)
+            
+            if an == 'stretch':
+                print "Streched force"
+
+                mag = random.uniform(1.2, 2.0)
+
+                x   = np.linspace(0.0, 1.0, length)
+                tck = interpolate.splrep(x, X[x_idx], s=0)
+
+                xnew = np.linspace(0.0, 1.0, length*mag)
+                x_anomaly = interpolate.splev(xnew, tck, der=0)
+                
+            elif an == 'shorten':
+                print "Shorten force"
+
+                mag = random.uniform(0.1, 0.8)
+
+                x   = np.linspace(0.0, 1.0, length)
+                tck = interpolate.splrep(x, X[x_idx], s=0)
+
+                xnew = np.linspace(0.0, 1.0, length*mag)
+                x_anomaly = interpolate.splev(xnew, tck, der=0)
+                
+            elif an == 'amplified':
+                print "Amplied force"
+
+                mag = random.uniform(1.2, 2.0)                
+                x_anomaly = X[x_idx]*mag
+                
+            elif an == 'weaken':
+                print "Weaken force"
+
+                mag = random.uniform(0.2, 0.8)                
+                x_anomaly = X[x_idx]*mag
+                                
+            elif an == 'rndimpulse':
+                print "Random impulse force"
+
+                peak  = scale * random.uniform(1.2, 2.0)
+                width = random.randint(3,6)
+                loc   = random.randint(1+width,length-1-width)
+
+                xnew    = range(width)
+                impulse = np.zeros(width)
+                impulse[width/2] = peak
+                x_anomaly = X[x_idx]
+
+                for i in xrange(width):
+                    if i < width/2:
+                        impulse[i] = (i+1)*peak/float(width/2)
+                    else:
+                        impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+
+                    x_anomaly[loc+i] += impulse[i] 
+            else:
+                print "Not implemented type of simuated anomaly"
+
+
+        elif data_type == 'sound':
+            an = random.choice(sound_an)
+                
+            if an == 'weaken':
+                print "Weaken sound"
+
+                mag = random.uniform(0.2, 0.8)                
+                x_anomaly = X[x_idx] *mag
+
+            elif an == 'rndimpulse':
+                print "Random impulse sound"
+
+                peak  = scale * random.uniform(0.3, 1.0)
+                width = random.randint(2,4)
+                loc   = random.randint(1+width,length-1-width)
+
+                xnew    = range(width)
+                impulse = np.zeros(width)
+                impulse[width/2] = peak
+                x_anomaly = np.ones(np.shape(X[x_idx])) * X[x_idx][0]
+
+                for i in xrange(width):
+                    if i < width/2:
+                        impulse[i] = (i+1)*peak/float(width/2)
+                    else:
+                        impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+
+                    x_anomaly[loc+i] += impulse[i] 
+                                
+        new_X.append(x_anomaly)
+
+    return new_X

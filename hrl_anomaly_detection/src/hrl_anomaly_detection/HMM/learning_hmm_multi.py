@@ -655,10 +655,10 @@ class learning_hmm_multi(learning_base):
 
         if len(path) == 0: 
             print "zero path: ", logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
-            print X_test[0]
-            print "----------------------------------------------------------------------------------"
-            sys.exit() 
-            return 0.0, logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
+            ## print X_test[0]
+            ## print "----------------------------------------------------------------------------------"
+            ## sys.exit() 
+            return 1.0, 0.0 #logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
         err = logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
 
         ## print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
@@ -882,19 +882,25 @@ class learning_hmm_multi(learning_base):
         for p in path:
             l.append(p%2)
 
+        new_x = np.arange(0.0, float(m)-0.5, 0.5)
+        new_l = []
+        for i in xrange(len(new_x)):
+            ## print round(new_x[i]), len(new_x), i, len(l)
+            new_l.append(l[int(round(new_x[i]))])
+
         import matplotlib.collections as collections
         
         plt.figure()
         plt.rc('text', usetex=True)
         ax1 = plt.subplot(311)
         ax1.plot(x, X1[0])
-        collection = collections.BrokenBarHCollection.span_where(x, ymin=0, ymax=10, where=np.array(l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=10, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
         ax1.set_ylabel("Force magnitude")
             
         ax2 = plt.subplot(312)
         ax2.plot(x, X2[0])
-        collection = collections.BrokenBarHCollection.span_where(x, ymin=0, ymax=10, where=np.array(l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=10, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
         ax2.set_ylabel("Audio [RMS]")
 
