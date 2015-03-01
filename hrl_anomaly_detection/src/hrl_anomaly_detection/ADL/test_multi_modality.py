@@ -48,15 +48,15 @@ def fig_roc_offline(cross_data_path, \
         os.system('mkdir -p '+cross_test_path)
 
     # min max scaling for true data
-    aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
-    aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+    aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
+    aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
     labels = [True]*len(true_aXData1)
     true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
     print "Scaling data: ", np.shape(true_aXData1), " => ", np.shape(aXData1_scaled)
     
     # min max scaling for false data
-    aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1)
-    aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2)    
+    aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0, verbose=True)
+    aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
     labels = [False]*len(false_aXData1)
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
@@ -619,7 +619,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 0
+    class_num = 3
     task  = 1
     if class_num == 0:
         class_name = 'door'
@@ -633,7 +633,7 @@ if __name__ == '__main__':
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
         f_zero_size = [5, 5, 8]
-        f_thres     = [1.5, 1.35, 1.35]
+        f_thres     = [0.5, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
         nState_l    = [20, 20, 20]
@@ -772,7 +772,7 @@ if __name__ == '__main__':
 
         if opt.bAbnormal:
             # min max scaling
-            aXData1_scaled, _, _ = dm.scaling(aXData1, min_c1, max_c1, scale=10.0)
+            aXData1_scaled, _, _ = dm.scaling(aXData1, min_c1, max_c1, scale=10.0, verbose=False)
             aXData2_scaled, _, _ = dm.scaling(aXData2, min_c2, max_c2, scale=10.0)
 
         ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)

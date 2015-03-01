@@ -743,7 +743,7 @@ def get_rms(frame, MAX_INT=32768.0):
     return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
 
 
-def scaling(X, min_c=None, max_c=None, scale=10.0):
+def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
     '''        
     scale should be over than 10.0(?) to avoid floating number problem in ghmm.
     Return list type
@@ -756,6 +756,7 @@ def scaling(X, min_c=None, max_c=None, scale=10.0):
 
     X_scaled = []
     for x in X:
+        if verbose is True: print min_c, max_c, " : ", np.min(x), np.max(x)
         X_scaled.append(((x-min_c) / (max_c-min_c) * scale))
 
     ## X_scaled = (X-min_c) / (max_c-min_c) * scale
