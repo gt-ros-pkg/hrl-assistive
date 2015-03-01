@@ -54,8 +54,7 @@ def load_data(data_path, prefix, normal_only=True):
         if normal_only and bNormal is False: continue
 
         ## if bNormal: count += 1        
-        ## if bNormal and count==25: 
-                
+        ## if bNormal and count==25:                 
         ##     print "aaaaaa ", pkl
         ##     continue
 
@@ -220,9 +219,9 @@ def cutting(d, dtw_flag=False):
     xnew = np.linspace(0.0, 1.0, len(audio_rms_ref))
     ft_force_mag_ref = interpolate.splev(xnew, tck, der=0)
 
-    ## print "==================================="
-    ## print ft_force_mag_ref.shape,audio_rms_ref.shape 
-    ## print "==================================="
+    print "==================================="
+    print ft_force_mag_ref.shape,audio_rms_ref.shape 
+    print "==================================="
 
     
     # DTW wrt the reference
@@ -414,15 +413,13 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     # Ref ID    
     max_f   = 0.0
     max_idx = 0
-    min_len = 100000000000000
     idx     = 1
     for i, force in enumerate(ft_force_l):
         if labels[i] is False: continue
         else: 
             ft_force_mag = np.linalg.norm(force,axis=0)
-            if min_len > len(ft_force_mag):
-                min_len = len(ft_force_mag)
-            
+
+            # find end part starting to settle force
             for j, f_mag in enumerate(ft_force_mag[::-1]):
                 if f_mag > f_thres: #ft_force_mag[-1]*2.0: 
                     idx = len(ft_force_mag)-j
@@ -431,11 +428,6 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
                 max_idx = idx
                 ref_idx = i
 
-            
-            ## f = np.max(ft_force_mag)
-            ## if max_f < f:
-            ##     ref_idx = i
-            ##     max_f = f
 
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
@@ -493,6 +485,14 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     xnew = np.linspace(0.0, 1.0, len(audio_rms_ref_cut))
     ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
 
+
+    print "==================================="
+    print "Reference size"
+    print "-----------------------------------"
+    print ft_force_mag_cut.shape,audio_rms_ref_cut.shape 
+    print "==================================="
+
+    
     # Cut wrt maximum length
     nZero = f_zero_size #for mix 2
     idx_start = None
@@ -519,7 +519,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     if idx_end is None: idx_end = len(ft_force_mag_cut)-nZero        
     if idx_end <= idx_start: idx_end += 3
     idx_length = idx_end - idx_start + nZero
-    ## print idx_start, idx_end, idx_length, len(ft_force_mag), len(ft_time)
+    print idx_start, idx_end, idx_length, len(ft_force_mag), len(ft_time)
     
     #-------------------------------------------------------------------        
     
@@ -589,9 +589,17 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             if idx_start == None:
                 if ft_avg > f_thres and ft_avg < ft_avg2:
                     idx_start = j-nZero
-                    break
+            else:
+                if ft_avg < f_thres and idx_end is None:
+                    idx_end = j + nZero
+                if idx_end is not None:
+                    if audio_rms_ref_cut[j] > audio_thres:
+                        idx_end = j + nZero
+                    if ft_avg > 10.0*f_thres: idx_end = None
+                    
         if idx_start == None: idx_start = 0
-
+        if idx_end is None: idx_end = len(ft_force_mag_cut)-nZero        
+        
 
         if labels[i] is True:            
             ## while True:
@@ -605,8 +613,9 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_start+idx_length]
             audio_rms_ref_cut = audio_rms_ref_cut[idx_start:idx_start+idx_length]
         else:
-            ft_force_mag_cut  = ft_force_mag_cut[idx_start:]
-            audio_rms_ref_cut = audio_rms_ref_cut[idx_start:]
+            print labels[i], " : ", idx_start, idx_end
+            ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_end]
+            audio_rms_ref_cut = audio_rms_ref_cut[idx_start:idx_end]
 
 
         label_list.append(labels[i])
@@ -737,14 +746,19 @@ def get_rms(frame, MAX_INT=32768.0):
 def scaling(X, min_c=None, max_c=None, scale=10.0):
     '''        
     scale should be over than 10.0(?) to avoid floating number problem in ghmm.
+    Return list type
     '''
     ## X_scaled = preprocessing.scale(np.array(X))
 
     if min_c is None or max_c is None:
         min_c = np.min(X)
         max_c = np.max(X)
-        
-    X_scaled = (X-min_c) / (max_c-min_c) * scale
+
+    X_scaled = []
+    for x in X:
+        X_scaled.append(((x-min_c) / (max_c-min_c) * scale))
+
+    ## X_scaled = (X-min_c) / (max_c-min_c) * scale
 
     return X_scaled, min_c, max_c
 
