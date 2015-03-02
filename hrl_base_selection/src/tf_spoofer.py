@@ -53,13 +53,13 @@ class TF_Spooer(object):
 
     def robot_cb(self, data):
         with self.lock:
-            trans = [data.pose.position.x,
-                     data.pose.position.y,
-                     data.pose.position.z]
-            rot = [data.pose.orientation.x,
-                   data.pose.orientation.y,
-                   data.pose.orientation.z,
-                   data.pose.orientation.w]
+            trans = [data.transform.translation.x,
+                     data.transform.translation.y,
+                     data.transform.translation.z]
+            rot = [data.transform.rotation.x,
+                   data.transform.rotation.y,
+                   data.transform.rotation.z,
+                   data.transform.rotation.w]
             world_B_robot_back = createBMatrix(trans, rot)
             robot_back_B_base_link = np.matrix([[1., 0., 0., 0.30],
                                                 [0., 1., 0., 0.],
@@ -68,7 +68,7 @@ class TF_Spooer(object):
             self.world_B_robot = world_B_robot_back*robot_back_B_base_link
             pos, ori = Bmat_to_pos_quat(self.world_B_robot)
             psm = PoseStamped()
-            psm.header.frame_id = '/optitrak'
+            psm.header.frame_id = data.header.frame_id
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
             psm.pose.position.z = pos[2]
@@ -86,13 +86,13 @@ class TF_Spooer(object):
     def head_cb(self, data):
         with self.lock:
 
-            trans = [data.pose.position.x,
-                     data.pose.position.y,
-                     data.pose.position.z]
-            rot = [data.pose.orientation.x,
-                   data.pose.orientation.y,
-                   data.pose.orientation.z,
-                   data.pose.orientation.w]
+            trans = [data.transform.translation.x,
+                     data.transform.translation.y,
+                     data.transform.translation.z]
+            rot = [data.transform.rotation.x,
+                   data.transform.rotation.y,
+                   data.transform.rotation.z,
+                   data.transform.rotation.w]
             world_B_head_back = createBMatrix(trans, rot)
             head_back_B_head_center = np.matrix([[1., 0., 0., 0.07],
                                                  [0., 1., 0., 0.],
@@ -100,7 +100,7 @@ class TF_Spooer(object):
                                                  [0., 0., 0., 1.]])
             pos, ori = Bmat_to_pos_quat(world_B_head_back*head_back_B_head_center)
             psm = PoseStamped()
-            psm.header.frame_id = '/optitrak'
+            psm.header.frame_id = data.header.frame_id
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
             psm.pose.position.z = pos[2]
@@ -116,13 +116,13 @@ class TF_Spooer(object):
     def reference_cb(self, data):
         with self.lock:
 
-            trans = [data.pose.position.x,
-                     data.pose.position.y,
-                     data.pose.position.z]
-            rot = [data.pose.orientation.x,
-                   data.pose.orientation.y,
-                   data.pose.orientation.z,
-                   data.pose.orientation.w]
+            trans = [data.transform.translation.x,
+                     data.transform.translation.y,
+                     data.transform.translation.z]
+            rot = [data.transform.rotation.x,
+                   data.transform.rotation.y,
+                   data.transform.rotation.z,
+                   data.transform.rotation.w]
             world_B_reference_back = createBMatrix(trans, rot)
             reference_back_B_reference = np.matrix([[1., 0., 0., 0.3],
                                                     [0., 1., 0., 0.3],
