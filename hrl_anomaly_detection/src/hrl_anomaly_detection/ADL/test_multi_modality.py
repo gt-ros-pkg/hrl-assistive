@@ -63,7 +63,7 @@ def fig_roc_offline_sim(cross_data_path, \
     # K random training-test set
     K = 10
     splits = []
-    for i in xrange(40):
+    for i in xrange(20):
         
         print os.path.join(cross_data_path,"train_dataSet_"+str(i))
         

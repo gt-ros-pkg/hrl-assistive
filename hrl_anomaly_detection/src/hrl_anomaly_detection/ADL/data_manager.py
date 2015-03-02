@@ -804,7 +804,8 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         # 1) only force
         # 2) only sound
         # 3) both
-        an_type = random.choice(an_types)            
+        ## an_type = random.choice(an_types)            
+        an_type = 'both'
 
         x1_anomaly = None
         x2_anomaly = None        
@@ -871,7 +872,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             else:
                 print "Not implemented type of simuated anomaly"
                 
-        elif an_type == 'sound' or an_type == 'both':
+        if an_type == 'sound' or an_type == 'both':
             an2 = random.choice(sound_an)
                 
             if an2 == 'weaken':
