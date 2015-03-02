@@ -29,12 +29,12 @@ class TF_Spoofer(object):
         self.target_pose = None
         self.world_B_robot = None
         self.world_B_reference = None
-        self.robot_sub = rospy.Subscriber('/robot_back/pose', TransformStamped, self.robot_cb)
         self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
-        self.head_sub = rospy.Subscriber('/head_back/pose', TransformStamped, self.head_cb)
         self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
-        self.reference_sub = rospy.Subscriber('/reference_back/pose', TransformStamped, self.reference_cb)
         self.reference_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
+        self.robot_sub = rospy.Subscriber('/robot_back/pose', TransformStamped, self.robot_cb)
+        self.head_sub = rospy.Subscriber('/head_back/pose', TransformStamped, self.head_cb)
+        self.reference_sub = rospy.Subscriber('/reference_back/pose', TransformStamped, self.reference_cb)
         print 'The tf_spoofer has initialized without a problem, as far as I can tell!'
         rospy.spin()
         # self.navigate = False
