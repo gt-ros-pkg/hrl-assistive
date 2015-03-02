@@ -70,6 +70,9 @@ class learning_hmm_multi(learning_base):
     def fit(self, aXData1, aXData2=None, A=None, B=None, pi=None, cov_mult=[1.0, 1.0, 1.0, 1.0], \
             B_dict=None, verbose=False):
 
+        X1 = np.array(aXData1)
+        X2 = np.array(aXData2)
+            
         if A is None:        
             if verbose: print "Generate new A matrix"                
             # Transition probability matrix (Initial transition probability, TODO?)
@@ -80,10 +83,10 @@ class learning_hmm_multi(learning_base):
             # We should think about multivariate Gaussian pdf.  
 
             if self.nEmissionDim == 1:
-                self.mu, self.sig = self.vectors_to_mean_sigma(aXData1, self.nState)
+                self.mu, self.sig = self.vectors_to_mean_sigma(X1, self.nState)
                 B = np.vstack([self.mu, self.sig*cov_mult[0]]).T.tolist() # Must be [i,:] = [mu, sig]
             else:
-                self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(aXData1, aXData2, self.nState)
+                self.mu1, self.mu2, self.cov = self.vectors_to_mean_cov(X1, X2, self.nState)
                 self.cov[:,0,0] *= cov_mult[0] #1.5 # to avoid No convergence warning
                 self.cov[:,1,0] *= cov_mult[1] #5.5 # to avoid No convergence warning
                 self.cov[:,0,1] *= cov_mult[2] #5.5 # to avoid No convergence warning
@@ -104,10 +107,10 @@ class learning_hmm_multi(learning_base):
         # HMM model object
         if self.nEmissionDim==1:
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), A, B, pi)
-            X_train = aXData1.tolist()
+            X_train = X1.tolist()
         else:
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-            X_train = self.convert_sequence(aXData1, aXData2) # Training input
+            X_train = self.convert_sequence(X1, X2) # Training input
             X_train = X_train.tolist()
         
             
@@ -123,7 +126,7 @@ class learning_hmm_multi(learning_base):
 
         # Get average loglikelihood threshold
         ## print "Compute loglikihood threshold"
-        n,m = np.shape(aXData1)
+        n,m = np.shape(X1)
         ll_list = []
         for i in xrange(self.nState):
             ll_list.append([])
@@ -140,11 +143,25 @@ class learning_hmm_multi(learning_base):
 
                 if len(path) == 0: continue
                 ll_list[path[-1]].append(logp)
+        print "Executed viterbi algorithm: ", np.shape(X1)
 
-        for i, ll in enumerate(ll_list):
-            self.ll_mu[i]  = np.array(ll).mean()
-            self.ll_std[i] = np.sqrt(np.array(ll).var())
                 
+        for i, ll in enumerate(ll_list):
+            if len(ll) > 0: 
+                self.ll_mu[i]  = np.array(ll).mean()
+                self.ll_std[i] = np.sqrt(np.array(ll).var())
+            else:
+                self.ll_mu[i]  = self.ll_mu[i-1]
+                self.ll_std[i] = self.ll_std[i-1]
+
+        ## print "---------------------"                
+        ## print "Avg log likelihoods"
+        ## print "---------------------"
+        ## print self.ll_std
+        ## print self.ll_mu
+        ## print "---------------------"
+        
+            
             ## path          = self.ml.viterbi(final_ts_obj)
             ## (alpha,scale) = self.ml.forward(final_ts_obj)
             ## alpha         = np.array(alpha)
@@ -167,7 +184,7 @@ class learning_hmm_multi(learning_base):
         # state range
         ## self.state_range = np.arange(0, self.nState, 1)
         ## self.x1_range = np.linspace(np.min(aXData1), np.max(aXData1), 100)
-        ## self.x2_range = np.linspace(np.min(aXData2), np.max(aXData2), 100)
+        ## self.x2_range = np.linspace(np.min(X2), np.max(aXData2), 100)
         return
 
 
@@ -426,6 +443,7 @@ class learning_hmm_multi(learning_base):
         cov = np.zeros((nState,2,2))
         DIVS = n/nState
 
+
         while (index < nState):
             m_init = index*DIVS
             temp_vec1 = vec1[:,(m_init):(m_init+DIVS)]
@@ -632,9 +650,15 @@ class learning_hmm_multi(learning_base):
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
         path,logp    = self.ml.viterbi(final_ts_obj)
 
+        ## print path, logp, self.ll_mu[path[-1]], logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
+        ## raw_input()
+
         if len(path) == 0: 
             print "zero path: ", logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
-            return 0.0, logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
+            ## print X_test[0]
+            ## print "----------------------------------------------------------------------------------"
+            ## sys.exit() 
+            return 1.0, 0.0 #logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
         err = logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
 
         ## print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
@@ -831,7 +855,11 @@ class learning_hmm_multi(learning_base):
     def likelihood_disp(self, X1, X2, ths_mult):
 
         n,m = np.shape(X1)
-        X_test = self.convert_sequence(X1, X2, emission=False)                
+
+        if self.nEmissionDim == 1:
+            X_test = X1
+        else:        
+            X_test = self.convert_sequence(X1, X2, emission=False)                
 
         x      = range(m)
         ll     = np.zeros(m)
@@ -854,19 +882,25 @@ class learning_hmm_multi(learning_base):
         for p in path:
             l.append(p%2)
 
+        new_x = np.arange(0.0, float(m)-0.5, 0.5)
+        new_l = []
+        for i in xrange(len(new_x)):
+            ## print round(new_x[i]), len(new_x), i, len(l)
+            new_l.append(l[int(round(new_x[i]))])
+
         import matplotlib.collections as collections
         
         plt.figure()
         plt.rc('text', usetex=True)
         ax1 = plt.subplot(311)
         ax1.plot(x, X1[0])
-        collection = collections.BrokenBarHCollection.span_where(x, ymin=0, ymax=10, where=np.array(l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=10, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
         ax1.set_ylabel("Force magnitude")
             
         ax2 = plt.subplot(312)
         ax2.plot(x, X2[0])
-        collection = collections.BrokenBarHCollection.span_where(x, ymin=0, ymax=10, where=np.array(l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=10, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
         ax2.set_ylabel("Audio [RMS]")
 

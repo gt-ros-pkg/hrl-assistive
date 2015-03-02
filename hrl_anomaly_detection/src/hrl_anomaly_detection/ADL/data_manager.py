@@ -46,12 +46,21 @@ def load_data(data_path, prefix, normal_only=True):
     label_list = []
     name_list = []
 
+    count = -1
     for i, pkl in enumerate(pkl_list):
-        
+                
         bNormal = True
         if pkl.find('success') < 0: bNormal = False
         if normal_only and bNormal is False: continue
+
+        ## if bNormal is False:
+        ##     if pkl.find('gatsbii_glass_case_robot_stickblock_1') < 0: continue
         
+        ## if bNormal: count += 1        
+        ## if bNormal and (count==13 or count == 9 or count == 2):                 
+        ##     print "aaaaaa ", pkl
+        ##     continue
+
         d = ut.load_pickle(pkl)
 
         ft_time   = d.get('ft_time',None)
@@ -85,7 +94,8 @@ def load_data(data_path, prefix, normal_only=True):
 
         head, tail = os.path.split(pkl)
 
-        name = tail.split('_')[0] + '_' + tail.split('_')[1] + '_' + tail.split('_')[2]
+        ## name = tail.split('_')[0] + '_' + tail.split('_')[1] + '_' + tail.split('_')[2]
+        name = tail.split('.')[0] 
         name_list.append(name)
 
 
@@ -213,9 +223,9 @@ def cutting(d, dtw_flag=False):
     xnew = np.linspace(0.0, 1.0, len(audio_rms_ref))
     ft_force_mag_ref = interpolate.splev(xnew, tck, der=0)
 
-    ## print "==================================="
-    ## print ft_force_mag_ref.shape,audio_rms_ref.shape 
-    ## print "==================================="
+    print "==================================="
+    print ft_force_mag_ref.shape,audio_rms_ref.shape 
+    print "==================================="
 
     
     # DTW wrt the reference
@@ -407,15 +417,13 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     # Ref ID    
     max_f   = 0.0
     max_idx = 0
-    min_len = 100000000000000
     idx     = 1
     for i, force in enumerate(ft_force_l):
         if labels[i] is False: continue
         else: 
             ft_force_mag = np.linalg.norm(force,axis=0)
-            if min_len > len(ft_force_mag):
-                min_len = len(ft_force_mag)
-            
+
+            # find end part starting to settle force
             for j, f_mag in enumerate(ft_force_mag[::-1]):
                 if f_mag > f_thres: #ft_force_mag[-1]*2.0: 
                     idx = len(ft_force_mag)-j
@@ -424,11 +432,6 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
                 max_idx = idx
                 ref_idx = i
 
-            
-            ## f = np.max(ft_force_mag)
-            ## if max_f < f:
-            ##     ref_idx = i
-            ##     max_f = f
 
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
@@ -486,6 +489,14 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     xnew = np.linspace(0.0, 1.0, len(audio_rms_ref_cut))
     ft_force_mag_cut = interpolate.splev(xnew, tck, der=0)
 
+
+    print "==================================="
+    print "Reference size"
+    print "-----------------------------------"
+    print ft_force_mag_cut.shape,audio_rms_ref_cut.shape 
+    print "==================================="
+
+    
     # Cut wrt maximum length
     nZero = f_zero_size #for mix 2
     idx_start = None
@@ -512,7 +523,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     if idx_end is None: idx_end = len(ft_force_mag_cut)-nZero        
     if idx_end <= idx_start: idx_end += 3
     idx_length = idx_end - idx_start + nZero
-    ## print idx_start, idx_end, idx_length, len(ft_force_mag), len(ft_time)
+    print idx_start, idx_end, idx_length, len(ft_force_mag), len(ft_time)
     
     #-------------------------------------------------------------------        
     
@@ -582,9 +593,17 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             if idx_start == None:
                 if ft_avg > f_thres and ft_avg < ft_avg2:
                     idx_start = j-nZero
-                    break
+            else:
+                if ft_avg < f_thres and idx_end is None:
+                    idx_end = j + nZero
+                if idx_end is not None:
+                    if audio_rms_ref_cut[j] > audio_thres:
+                        idx_end = j + nZero
+                    if ft_avg > 10.0*f_thres: idx_end = None
+                    
         if idx_start == None: idx_start = 0
-
+        if idx_end is None: idx_end = len(ft_force_mag_cut)-nZero        
+        
 
         if labels[i] is True:            
             ## while True:
@@ -598,8 +617,9 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_start+idx_length]
             audio_rms_ref_cut = audio_rms_ref_cut[idx_start:idx_start+idx_length]
         else:
-            ft_force_mag_cut  = ft_force_mag_cut[idx_start:]
-            audio_rms_ref_cut = audio_rms_ref_cut[idx_start:]
+            print labels[i], " : ", idx_start, idx_end
+            ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_end]
+            audio_rms_ref_cut = audio_rms_ref_cut[idx_start:idx_end]
 
 
         label_list.append(labels[i])
@@ -727,17 +747,23 @@ def get_rms(frame, MAX_INT=32768.0):
     return  np.linalg.norm(frame/MAX_INT) / np.sqrt(float(count))
 
 
-def scaling(X, min_c=None, max_c=None, scale=10.0):
+def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
     '''        
     scale should be over than 10.0(?) to avoid floating number problem in ghmm.
+    Return list type
     '''
     ## X_scaled = preprocessing.scale(np.array(X))
 
     if min_c is None or max_c is None:
         min_c = np.min(X)
         max_c = np.max(X)
-        
-    X_scaled = (X-min_c) / (max_c-min_c) * scale
+
+    X_scaled = []
+    for x in X:
+        if verbose is True: print min_c, max_c, " : ", np.min(x), np.max(x)
+        X_scaled.append(((x-min_c) / (max_c-min_c) * scale))
+
+    ## X_scaled = (X-min_c) / (max_c-min_c) * scale
 
     return X_scaled, min_c, max_c
 
@@ -755,3 +781,166 @@ def movingaverage(values,window):
     return np.array(new_values)
     
     
+def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, max_c2):
+    '''
+    num : number of anomaly data
+    '''
+    
+    an_types = ['force', 'sound', 'both']
+    force_an = ['stretch', 'shorten', 'amplified', 'weaken', 'rndimpulse']
+    sound_an = ['weaken', 'rndimpulse']
+
+    length = len(true_aXData1[0])
+        
+    new_X1 = []
+    new_X2 = []
+    chunks = []
+    for i in xrange(num):
+
+        # randomly select 
+        x_idx = random.randint(0,len(true_aXData1)-1)
+
+        # three categories of anomalies
+        # 1) only force
+        # 2) only sound
+        # 3) both
+        ## an_type = random.choice(an_types)            
+        an_type = 'both'
+
+        x1_anomaly = None
+        x2_anomaly = None        
+        an1 = 'normal'
+        an2 = 'normal'
+        
+        # random anomaly type
+        if an_type == 'force' or an_type == 'both':
+            an1 = random.choice(force_an)
+            
+            if an1 == 'stretch':
+                print "Streched force"
+
+                mag = random.uniform(1.2, 2.0)
+
+                x   = np.linspace(0.0, 1.0, length)
+                tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
+
+                xnew = np.linspace(0.0, 1.0, length*mag)
+                x1_anomaly = interpolate.splev(xnew, tck, der=0)
+                
+            elif an1 == 'shorten':
+                print "Shorten force"
+
+                mag = random.uniform(0.1, 0.8)
+
+                x   = np.linspace(0.0, 1.0, length)
+                tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
+
+                xnew = np.linspace(0.0, 1.0, length*mag)
+                x1_anomaly = interpolate.splev(xnew, tck, der=0)
+                
+            elif an1 == 'amplified':
+                print "Amplied force"
+
+                mag = random.uniform(1.2, 2.0)                
+                x1_anomaly = true_aXData1[x_idx]*mag
+                
+            elif an1 == 'weaken':
+                print "Weaken force"
+
+                mag = random.uniform(0.2, 0.8)                
+                x1_anomaly = true_aXData1[x_idx]*mag
+                                
+            elif an1 == 'rndimpulse':
+                print "Random impulse force"
+
+                peak  = max_c1 * random.uniform(1.2, 2.0)
+                width = random.randint(3,6)
+                loc   = random.randint(1+width,length-1-width)
+
+                xnew    = range(width)
+                impulse = np.zeros(width)
+                impulse[width/2] = peak
+                x1_anomaly = true_aXData1[x_idx]
+
+                for i in xrange(width):
+                    if i < width/2:
+                        impulse[i] = (i+1)*peak/float(width/2)
+                    else:
+                        impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+
+                    x1_anomaly[loc+i] += impulse[i] 
+            else:
+                print "Not implemented type of simuated anomaly"
+                
+        if an_type == 'sound' or an_type == 'both':
+            an2 = random.choice(sound_an)
+                
+            if an2 == 'weaken':
+                print "Weaken sound"
+
+                mag = random.uniform(0.2, 0.8)                
+                x2_anomaly = true_aXData2[x_idx] *mag
+
+            elif an2 == 'rndimpulse':
+                print "Random impulse sound"
+
+                peak  = max_c2 * random.uniform(0.3, 1.0)
+                width = random.randint(2,4)
+                loc   = random.randint(1+width,length-1-width)
+
+                xnew    = range(width)
+                impulse = np.zeros(width)
+                impulse[width/2] = peak
+                x2_anomaly = np.ones(np.shape(true_aXData2[x_idx])) * true_aXData2[x_idx][0]
+
+                for i in xrange(width):
+                    if i < width/2:
+                        impulse[i] = (i+1)*peak/float(width/2)
+                    else:
+                        impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+
+                    x2_anomaly[loc+i] += impulse[i] 
+                    
+        else:
+            print "Undefined options"
+            continue
+            
+
+        if x1_anomaly is None:
+            x1_anomaly = true_aXData1[x_idx]
+        if x2_anomaly is None:
+            x2_anomaly = true_aXData2[x_idx]
+
+        # Zero padding to meet same length
+        n1 = len(x1_anomaly)
+        n2 = len(x2_anomaly)
+
+        if n1 >= n2:
+            x2_anomaly = np.hstack([x2_anomaly, [x2_anomaly[-1]]*(n1-n2)])
+        else:
+            x1_anomaly = np.hstack([x1_anomaly, [x1_anomaly[-1]]*(n2-n1)])
+
+        #print "New anomaly data size: ", len(x1_anomaly), " ", len(x2_anomaly)
+            
+        new_X1.append(x1_anomaly)
+        new_X2.append(x2_anomaly)
+        chunks.append(an1+"_"+an2)
+        
+    return new_X1, new_X2, chunks
+
+
+def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data):
+
+    _, min_c1, max_c1 = scaling(true_aXData1, scale=10.0)
+    _, min_c2, max_c2 = scaling(true_aXData2, scale=10.0)    
+    
+    # generate simulated data!!
+    aXData1, aXData2, chunks = simulated_anomaly(true_aXData1, true_aXData2, n_false_data, \
+                                         min_c1, max_c1, min_c2, max_c2)
+
+    d = {}
+    d['ft_force_mag_sim_false_l'] = aXData1
+    d['audio_rms_sim_false_l'] = aXData2
+    d['sim_false_chunks'] = chunks
+
+    return d
