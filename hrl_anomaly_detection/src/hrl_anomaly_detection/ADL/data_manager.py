@@ -884,14 +884,15 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an2 == 'rndimpulse':
                 print "Random impulse sound"
 
-                peak  = max_c2 * random.uniform(0.3, 1.0)
+                peak  = max_c2 * random.uniform(0.5, 1.0)
                 width = random.randint(2,4)
                 loc   = random.randint(1+width,length-1-width)
 
                 xnew    = range(width)
                 impulse = np.zeros(width)
                 impulse[width/2] = peak
-                x2_anomaly = np.ones(np.shape(true_aXData2[x_idx])) * true_aXData2[x_idx][0]
+                ## x2_anomaly = np.ones(np.shape(true_aXData2[x_idx])) * true_aXData2[x_idx][0]
+                x2_anomaly = true_aXData2[x_idx]
 
                 for i in xrange(width):
                     if i < width/2:
