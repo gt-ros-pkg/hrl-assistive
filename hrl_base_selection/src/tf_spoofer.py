@@ -64,22 +64,24 @@ class TF_Spoofer(object):
             world_B_robot_back = createBMatrix(trans, rot)
             robot_back_B_base_link = np.matrix([[1., 0., 0., 0.30],
                                                 [0., 1., 0., 0.],
-                                                [0., 0., 1., -0.65],
+                                                [0., 0., 1., 0.],
                                                 [0., 0., 0., 1.]])
-            self.world_B_robot = world_B_robot_back*robot_back_B_base_link
-            pos, ori = Bmat_to_pos_quat(self.world_B_robot)
+            world_B_robot = world_B_robot_back*robot_back_B_base_link
+            pos, ori = Bmat_to_pos_quat(world_B_robot)
+            pos[2] = 0.
+            self.world_B_robot = createBMatrix(pos, ori)
             psm = PoseStamped()
             psm.header.frame_id = data.header.frame_id
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
-            psm.pose.position.z = 0.
+            psm.pose.position.z = pos[2]
             psm.pose.orientation.x = ori[0]
             psm.pose.orientation.y = ori[1]
             psm.pose.orientation.z = ori[2]
             psm.pose.orientation.w = ori[3]
             self.robot_center_pub.publish(psm)
             self.tf_broadcaster.sendTransform((pos[0], pos[1], 0.), (ori[0], ori[1], ori[2], ori[3]),
-                                              rospy.Time.now(), '/optitrak', '/base_link')
+                                              rospy.Time.now(), '/base_link', '/optitrak')
             # world_B_pr2 = createBMatrix(trans, rot)
             # self.robot_pose = world_B_pr2
             # self.update_feedback()
@@ -125,9 +127,9 @@ class TF_Spoofer(object):
                    data.transform.rotation.z,
                    data.transform.rotation.w]
             world_B_reference_back = createBMatrix(trans, rot)
-            reference_back_B_reference = np.matrix([[1., 0., 0., 0.3],
-                                                    [0., 1., 0., 0.3],
-                                                    [0., 0., 1., -0.3],
+            reference_back_B_reference = np.matrix([[1., 0., 0., 0.],
+                                                    [0., 1., 0., 0.],
+                                                    [0., 0., 1., 0.],
                                                     [0., 0., 0., 1.]])
             world_B_reference = world_B_reference_back*reference_back_B_reference
             robot_B_reference = self.world_B_robot.I*world_B_reference
