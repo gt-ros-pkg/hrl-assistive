@@ -33,6 +33,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 def fig_roc_offline_sim(cross_data_path, \
                         true_aXData1, true_aXData2, true_chunks, \
+                        false_aXData1, false_aXData2, false_chunks, \
                         prefix, nState=20, \
                         threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
                         cov_mult=[1.0, 1.0, 1.0, 1.0]):
@@ -54,11 +55,9 @@ def fig_roc_offline_sim(cross_data_path, \
     print "Scaling data: ", np.shape(true_aXData1), " => ", np.shape(aXData1_scaled)
     
     # generate simulated data!!
-    n_false_data = 100
-    aXData1_scaled = dm.simulated_anomaly(true_aXData1, n_false_data, "force", min_c1, max_c1, scale=10.0)
-    aXData2_scaled = dm.simulated_anomaly(true_aXData2, n_false_data, "sound", min_c2, max_c2, scale=10.0)
-    labels = [False]*len(true_aXData1)
-    false_chunks = true_chunks
+    aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+    aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+    labels = [False]*len(false_aXData1)
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     # K random training-test set
@@ -727,7 +726,7 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
     pp.show()
 
-def plot_all(data1, data2, labels=None):
+def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
 
         ## # find init
         ## pp.figure()
@@ -749,6 +748,12 @@ def plot_all(data1, data2, labels=None):
             pp.plot(d, label=str(i), color='k', linewidth=6.0)
         else:
             pp.plot(d, label=str(i))
+
+    # for false data
+    if false_data1 is not None:
+        for i, d in enumerate(false_data1):
+            pp.plot(d, label=str(i), color='k', linewidth=6.0)
+            
     ## ax1.set_title("Force")
     ax1.set_ylabel("Force [L2]", fontsize=18)
 
@@ -759,6 +764,12 @@ def plot_all(data1, data2, labels=None):
             pp.plot(d, color='k', linewidth=6.0)
         else:
             pp.plot(d)
+
+    # for false data
+    if false_data2 is not None:
+        for i, d in enumerate(false_data2):
+            pp.plot(d, color='k', linewidth=6.0)
+            
     ## ax2.set_title("Audio")
     ax2.set_ylabel("Audio [RMS]", fontsize=18)
     ax2.set_xlabel("Time step [43Hz]", fontsize=18)
@@ -860,7 +871,7 @@ if __name__ == '__main__':
         d = dm.cutting_for_robot(d, f_zero_size=f_zero_size[task], f_thres=f_thres[task], \
                                  audio_thres=audio_thres[task], dtw_flag=dtw_flag)        
         ut.save_pickle(d, pkl_file)
-
+        
     #
     aXData1  = d['ft_force_mag_l']
     aXData2  = d['audio_rms_l'] 
@@ -871,14 +882,28 @@ if __name__ == '__main__':
     true_aXData2 = d['audio_rms_true_l'] 
     true_chunks  = d['true_chunks']
 
-    false_aXData1 = d['ft_force_mag_false_l']
-    false_aXData2 = d['audio_rms_false_l'] 
-    false_chunks  = d['false_chunks']
+    # Load simulated anomaly
+    if opt.bSimAbnormal:
+        pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
+        if os.path.isfile(pkl_file) and opt.bRenew is False:
+            dd = ut.load_pickle(pkl_file)
+        else:
+            n_false_data = 30
+            dd = dm.generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data)
+            ut.save_pickle(dd, pkl_file)
+
+        false_aXData1 = dd['ft_force_mag_sim_false_l']
+        false_aXData2 = dd['audio_rms_sim_false_l'] 
+        false_chunks  = dd['sim_false_chunks']
+    else:
+        false_aXData1 = d['ft_force_mag_false_l']
+        false_aXData2 = d['audio_rms_false_l'] 
+        false_chunks  = d['false_chunks']
 
     print "All: ", len(true_aXData1)+len(false_aXData1), \
       " Success: ", len(true_aXData1), \
       " Failure: ", len(false_aXData1)
-    
+      
     #---------------------------------------------------------------------------           
     if opt.bRocHuman:
 
@@ -907,6 +932,7 @@ if __name__ == '__main__':
 
         fig_roc_offline_sim(cross_data_path, \
                             true_aXData1, true_aXData2, true_chunks, \
+                            false_aXData1, false_aXData2, false_chunks, \
                             task_names[task], nState, threshold_mult, \
                             opr='robot', attr='id', bPlot=opt.bPlot)
 
@@ -962,27 +988,18 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.bAllPlot:
 
-        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
-        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
+        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
+        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
 
-        if opt.bAbnormal:
+        if opt.bAbnormal or opt.bSimAbnormal:
             # min max scaling
-            aXData1_scaled, _, _ = dm.scaling(aXData1, min_c1, max_c1, scale=10.0, verbose=False)
-            aXData2_scaled, _, _ = dm.scaling(aXData2, min_c2, max_c2, scale=10.0)
-            plot_all(aXData1_scaled, aXData2_scaled, labels=labels)            
-
-        if opt.bSimAbnormal:
-            n_false_data = 100
-            aXData1_scaled = aXData1_scaled + dm.simulated_anomaly(true_aXData1, n_false_data, "force", \
-                                                                   min_c1, max_c1, \
-                                                                   scale=10.0)
-            aXData2_scaled = aXData2_scaled + dm.simulated_anomaly(true_aXData2, n_false_data, "sound", \
-                                                                   min_c2, max_c2, \
-                                                                   scale=10.0)
-            plot_all(aXData1_scaled, aXData2_scaled)            
+            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)
+                        
+            plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
             
         else:
-            plot_all(aXData1_scaled, aXData2_scaled)            
+            plot_all(true_aXData1_scaled, true_aXData2_scaled)            
 
         ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
         ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
