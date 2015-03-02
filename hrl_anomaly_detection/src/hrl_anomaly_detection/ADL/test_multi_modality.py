@@ -841,7 +841,7 @@ if __name__ == '__main__':
         f_thres     = [1.0, 1.7, 3.0]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[1.0, 1.5, 1.5, 1.5],[1.0, 1.0, 1.0, 1.0],[1.5, 5.5, 5.5, 5.5]]
-        nState_l    = [30, 20, 20]
+        nState_l    = [20, 30, 20]
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
