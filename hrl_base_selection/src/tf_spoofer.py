@@ -76,7 +76,7 @@ class TF_Spooer(object):
             psm.pose.orientation.y = ori[1]
             psm.pose.orientation.z = ori[2]
             psm.pose.orientation.w = ori[3]
-            self.head_center_pub(psm)
+            self.head_center_pub.publish(psm)
             self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
                                               rospy.Time.now(), turtlename, '/optitrak', '/base_link')
             # world_B_pr2 = createBMatrix(trans, rot)
@@ -108,7 +108,7 @@ class TF_Spooer(object):
             psm.pose.orientation.y = ori[1]
             psm.pose.orientation.z = ori[2]
             psm.pose.orientation.w = ori[3]
-            self.head_center_pub(psm)
+            self.head_center_pub.publish(psm)
             # world_B_pr2 = createBMatrix(trans, rot)
             # self.robot_pose = world_B_pr2
             # self.update_feedback()
@@ -140,7 +140,7 @@ class TF_Spooer(object):
             psm.pose.orientation.y = ori[1]
             psm.pose.orientation.z = ori[2]
             psm.pose.orientation.w = ori[3]
-            self.reference_pub(psm)
+            self.reference_pub.publish(psm)
             self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
                                               rospy.Time.now(), turtlename, '/reference_location', "/base_link")
 
