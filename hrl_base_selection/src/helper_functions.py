@@ -5,7 +5,6 @@ import rospy
 
 import hrl_lib.transforms as tr
 import tf.transformations as tft
-import openravepy as op
 
 from geometry_msgs.msg import PoseStamped, Twist
 
