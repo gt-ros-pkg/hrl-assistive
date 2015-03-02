@@ -884,7 +884,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an2 == 'rndimpulse':
                 print "Random impulse sound"
 
-                peak  = max_c1 * random.uniform(0.3, 1.0)
+                peak  = max_c2 * random.uniform(0.3, 1.0)
                 width = random.randint(2,4)
                 loc   = random.randint(1+width,length-1-width)
 

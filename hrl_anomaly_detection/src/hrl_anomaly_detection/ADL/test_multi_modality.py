@@ -767,14 +767,14 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
         ## if i==2: continue
         #if i<13: continue
         if labels is not None and labels[i] == False:
-            pp.plot(d, label=str(i), color='k', linewidth=6.0)
+            pp.plot(d, label=str(i), color='k', linewidth=2.0)
         else:
             pp.plot(d, label=str(i))
 
     # for false data
     if false_data1 is not None:
         for i, d in enumerate(false_data1):
-            pp.plot(d, label=str(i), color='k', linewidth=6.0)
+            pp.plot(d, label=str(i), color='k', linewidth=2.0)
             
     ## ax1.set_title("Force")
     ax1.set_ylabel("Force [L2]", fontsize=18)
@@ -783,14 +783,14 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
     ax2 = pp.subplot(212)
     for i, d in enumerate(data2):
         if labels is not None and labels[i] == False:
-            pp.plot(d, color='k', linewidth=6.0)
+            pp.plot(d, color='k', linewidth=2.0)
         else:
             pp.plot(d)
 
     # for false data
     if false_data2 is not None:
         for i, d in enumerate(false_data2):
-            pp.plot(d, color='k', linewidth=6.0)
+            pp.plot(d, color='k', linewidth=2.0)
             
     ## ax2.set_title("Audio")
     ax2.set_ylabel("Audio [RMS]", fontsize=18)
@@ -949,7 +949,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(0.0, 20.001, 0.25)    
+        threshold_mult  = np.arange(0.0, 15.001, 0.25)    
         attr            = 'id'
 
         fig_roc_offline_sim(cross_data_path, \
@@ -1018,10 +1018,12 @@ if __name__ == '__main__':
             false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
             false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)
                         
-            plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
+            ## plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
+            plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2)
             
         else:
-            plot_all(true_aXData1_scaled, true_aXData2_scaled)            
+            ## plot_all(true_aXData1_scaled, true_aXData2_scaled)            
+            plot_all(true_aXData1, true_aXData2)            
 
         ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
         ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
