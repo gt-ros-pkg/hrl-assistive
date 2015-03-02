@@ -910,7 +910,7 @@ if __name__ == '__main__':
         if os.path.isfile(pkl_file) and opt.bRenew is False:
             dd = ut.load_pickle(pkl_file)
         else:
-            n_false_data = 30
+            n_false_data = 100
             dd = dm.generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data)
             ut.save_pickle(dd, pkl_file)
 
