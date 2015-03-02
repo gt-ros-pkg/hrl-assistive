@@ -9,7 +9,7 @@ roslib.load_manifest('hrl_face_adls')
 import rospy
 from hrl_msgs.msg import FloatArrayBare
 from std_msgs.msg import String, Int32, Int8, Bool
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Point, Quaternion, TransformStamped
 import tf
 from tf import TransformListener
 from tf import transformations as tft
@@ -29,11 +29,11 @@ class TF_Spooer(object):
         self.target_pose = None
         self.world_B_robot = None
         self.world_B_reference = None
-        self.robot_sub = rospy.Subscriber('/robot_back/pose', PoseStamped, self.robot_cb)
+        self.robot_sub = rospy.Subscriber('/robot_back/pose', TransformStamped, self.robot_cb)
         self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
-        self.head_sub = rospy.Subscriber('/head_back/pose', PoseStamped, self.head_cb)
+        self.head_sub = rospy.Subscriber('/head_back/pose', TransformStamped, self.head_cb)
         self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
-        self.reference_sub = rospy.Subscriber('/reference_back/pose', PoseStamped, self.reference_cb)
+        self.reference_sub = rospy.Subscriber('/reference_back/pose', TransformStamped, self.reference_cb)
         self.reference_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
         print 'The tf_spoofer has initialized without a problem, as far as I can tell!'
         # self.navigate = False
