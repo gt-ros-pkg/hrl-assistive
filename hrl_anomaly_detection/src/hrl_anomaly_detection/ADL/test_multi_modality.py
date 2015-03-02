@@ -883,7 +883,7 @@ if __name__ == '__main__':
     true_chunks  = d['true_chunks']
 
     # Load simulated anomaly
-    if opt.bSimAbnormal:
+    if opt.bSimAbnormal or opt.bRocOfflineSimRobot:
         pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
         if os.path.isfile(pkl_file) and opt.bRenew is False:
             dd = ut.load_pickle(pkl_file)
