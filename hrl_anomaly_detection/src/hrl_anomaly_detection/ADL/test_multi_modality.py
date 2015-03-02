@@ -841,7 +841,7 @@ if __name__ == '__main__':
         f_thres     = [1.0, 1.7, 3.0]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[1.0, 1.5, 1.5, 1.5],[1.0, 1.0, 1.0, 1.0],[1.5, 5.5, 5.5, 5.5]]
-        nState_l    = [20, 20, 20]
+        nState_l    = [30, 20, 20]
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
@@ -949,7 +949,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(0.0, 40.001, 0.5)    
+        threshold_mult  = np.arange(0.0, 20.001, 0.25)    
         attr            = 'id'
 
         fig_roc_offline_sim(cross_data_path, \
