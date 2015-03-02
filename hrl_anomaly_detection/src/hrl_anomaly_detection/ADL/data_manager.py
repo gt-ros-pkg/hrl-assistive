@@ -794,6 +794,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         
     new_X1 = []
     new_X2 = []
+    chunks = []
     for i in xrange(num):
 
         # randomly select 
@@ -807,12 +808,14 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
         x1_anomaly = None
         x2_anomaly = None        
+        an1 = 'normal'
+        an2 = 'normal'
         
         # random anomaly type
         if an_type == 'force' or an_type == 'both':
-            an = random.choice(force_an)
+            an1 = random.choice(force_an)
             
-            if an == 'stretch':
+            if an1 == 'stretch':
                 print "Streched force"
 
                 mag = random.uniform(1.2, 2.0)
@@ -823,7 +826,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 xnew = np.linspace(0.0, 1.0, length*mag)
                 x1_anomaly = interpolate.splev(xnew, tck, der=0)
                 
-            elif an == 'shorten':
+            elif an1 == 'shorten':
                 print "Shorten force"
 
                 mag = random.uniform(0.1, 0.8)
@@ -834,19 +837,19 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 xnew = np.linspace(0.0, 1.0, length*mag)
                 x1_anomaly = interpolate.splev(xnew, tck, der=0)
                 
-            elif an == 'amplified':
+            elif an1 == 'amplified':
                 print "Amplied force"
 
                 mag = random.uniform(1.2, 2.0)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                 
-            elif an == 'weaken':
+            elif an1 == 'weaken':
                 print "Weaken force"
 
                 mag = random.uniform(0.2, 0.8)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                                 
-            elif an == 'rndimpulse':
+            elif an1 == 'rndimpulse':
                 print "Random impulse force"
 
                 peak  = max_c1 * random.uniform(1.2, 2.0)
@@ -869,15 +872,15 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 print "Not implemented type of simuated anomaly"
                 
         elif an_type == 'sound' or an_type == 'both':
-            an = random.choice(sound_an)
+            an2 = random.choice(sound_an)
                 
-            if an == 'weaken':
+            if an2 == 'weaken':
                 print "Weaken sound"
 
                 mag = random.uniform(0.2, 0.8)                
                 x2_anomaly = true_aXData2[x_idx] *mag
 
-            elif an == 'rndimpulse':
+            elif an2 == 'rndimpulse':
                 print "Random impulse sound"
 
                 peak  = max_c1 * random.uniform(0.3, 1.0)
@@ -899,6 +902,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     
         else:
             print "Undefined options"
+            continue
             
 
         if x1_anomaly is None:
@@ -910,19 +914,18 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         n1 = len(x1_anomaly)
         n2 = len(x2_anomaly)
 
-        print n1, n2
-        
         if n1 >= n2:
             x2_anomaly = np.hstack([x2_anomaly, [x2_anomaly[-1]]*(n1-n2)])
         else:
             x1_anomaly = np.hstack([x1_anomaly, [x1_anomaly[-1]]*(n2-n1)])
 
-        print "New anomaly data size: ", len(x1_anomaly), " ", len(x2_anomaly)
+        #print "New anomaly data size: ", len(x1_anomaly), " ", len(x2_anomaly)
             
         new_X1.append(x1_anomaly)
         new_X2.append(x2_anomaly)
+        chunks.append(an1+"_"+an2)
         
-    return new_X1, new_X2
+    return new_X1, new_X2, chunks
 
 
 def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data):
@@ -931,12 +934,12 @@ def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data):
     _, min_c2, max_c2 = scaling(true_aXData2, scale=10.0)    
     
     # generate simulated data!!
-    aXData1, aXData2 = simulated_anomaly(true_aXData1, true_aXData2, n_false_data, \
+    aXData1, aXData2, chunks = simulated_anomaly(true_aXData1, true_aXData2, n_false_data, \
                                          min_c1, max_c1, min_c2, max_c2)
 
     d = {}
     d['ft_force_mag_sim_false_l'] = aXData1
     d['audio_rms_sim_false_l'] = aXData2
-    d['sim_false_chunks'] = []
+    d['sim_false_chunks'] = chunks
 
     return d
