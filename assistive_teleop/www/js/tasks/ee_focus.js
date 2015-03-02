@@ -10,7 +10,7 @@ RFH.FocalPoint = function (options) {
     self.pointDiv = options.pointDiv;
     $('#'+self.pointDivId).hide(); // Start off with point hidden
 
-    self.positionFocusPointImage = function (trans) {
+    self.positionFocusPointImage = function (tf) {
         if (self.point === null) { return };
         var pixel = self.camera.projectPoint(self.point.x,
                                              self.point.y,
@@ -51,13 +51,10 @@ RFH.FocalPoint = function (options) {
                                             });
         var clickCB = function (e) {
             e.stopPropagation();
+            $('#'+self.divId).css('cursor', oldCursor);
             var pt = RFH.positionInElement(e);
-            var lMaskWidth = $('#depthMaskLeft').width(); 
-            var rMaskWidth = $('#depthMaskRight').width(); 
-//            var x = (pt[0] - lMaskWidth) / (self.camera.width - lMaskWidth - rMaskWidth);
             var x = (pt[0]/e.target.width);
             var y = (pt[1]/e.target.height);
-            $('#'+self.divId).css('cursor', oldCursor);
             self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
         };
         $('#'+self.divId).one('click', clickCB);
@@ -68,5 +65,4 @@ RFH.FocalPoint = function (options) {
         $('#'+self.pointDivId).hide();
         self.point = null;
     };
-
 };
