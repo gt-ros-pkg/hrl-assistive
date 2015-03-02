@@ -36,7 +36,7 @@ def fig_roc_offline_sim(cross_data_path, \
                         false_aXData1, false_aXData2, false_chunks, \
                         prefix, nState=20, \
                         threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-                        cov_mult=[1.0, 1.0, 1.0, 1.0]):
+                        cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -52,7 +52,7 @@ def fig_roc_offline_sim(cross_data_path, \
     aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
     labels = [True]*len(true_aXData1)
     true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
-    print "Scaling data: ", np.shape(true_aXData1), " => ", np.shape(aXData1_scaled)
+    ## print "Scaling data: ", np.shape(true_aXData1), " => ", np.shape(aXData1_scaled)
     
     # generate simulated data!!
     aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
@@ -64,12 +64,30 @@ def fig_roc_offline_sim(cross_data_path, \
     K = 10
     splits = []
     for i in xrange(40):
-        test_dataSet  = Dataset.random_samples(true_dataSet, K)
-        train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
-        train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
-        train_dataSet = true_dataSet[train_ids]
-        splits.append([train_dataSet, test_dataSet])
         
+        print os.path.join(cross_data_path,"train_dataSet_"+str(i))
+        
+        if os.path.isfile(os.path.join(cross_data_path,"train_dataSet_"+str(i))) is False:
+        
+            test_dataSet  = Dataset.random_samples(true_dataSet, K)
+            train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+            train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+            train_dataSet = true_dataSet[train_ids]
+            test_false_dataSet  = Dataset.random_samples(false_dataSet, K)        
+
+            Dataset.save(train_dataSet, os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
+            Dataset.save(test_dataSet, os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
+            Dataset.save(test_false_dataSet, os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
+
+        else:
+
+            train_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
+            test_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
+            test_false_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
+            
+        splits.append([train_dataSet, test_dataSet, test_false_dataSet])
+
+            
     ## Multi dimension
     for i in xrange(3):
         count = 0
@@ -106,9 +124,9 @@ def fig_roc_offline_sim(cross_data_path, \
                                   
             n_jobs = 4
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
-                                                                       trans_type, ths, false_dataSet, \
+                                                                       trans_type, ths, l_zdata, \
                                                                        cov_mult=cov_mult, check_dim=i) \
-                                        for j, (l_wdata, l_vdata) in enumerate(splits))
+                                        for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
             fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
 
             import operator
@@ -744,6 +762,10 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
     plt.rc('text', usetex=True)
     ax1 = pp.subplot(211)
     for i, d in enumerate(data1):
+        ## if i==13: continue
+        ## if i==9: continue
+        ## if i==2: continue
+        #if i<13: continue
         if labels is not None and labels[i] == False:
             pp.plot(d, label=str(i), color='k', linewidth=6.0)
         else:
@@ -934,7 +956,7 @@ if __name__ == '__main__':
                             true_aXData1, true_aXData2, true_chunks, \
                             false_aXData1, false_aXData2, false_chunks, \
                             task_names[task], nState, threshold_mult, \
-                            opr='robot', attr='id', bPlot=opt.bPlot)
+                            opr='robot', attr='id', bPlot=opt.bPlot, renew=False)
 
             
     #---------------------------------------------------------------------------           

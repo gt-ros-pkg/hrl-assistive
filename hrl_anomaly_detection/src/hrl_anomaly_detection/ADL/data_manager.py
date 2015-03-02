@@ -57,7 +57,7 @@ def load_data(data_path, prefix, normal_only=True):
         ##     if pkl.find('gatsbii_glass_case_robot_stickblock_1') < 0: continue
         
         ## if bNormal: count += 1        
-        ## if bNormal and count==25:                 
+        ## if bNormal and (count==13 or count == 9 or count == 2):                 
         ##     print "aaaaaa ", pkl
         ##     continue
 
