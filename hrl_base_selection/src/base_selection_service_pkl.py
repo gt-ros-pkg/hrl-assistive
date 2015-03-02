@@ -281,7 +281,6 @@ class BaseSelector(object):
                data.pose.orientation.w]
         self.pr2_B_ar = createBMatrix(trans, rot)
 
-
      # Function that determines a good base location to be able to reach the goal location.
     #def handle_select_base(self, req):#, task):
     def handle_select_base(self, req):
@@ -811,7 +810,7 @@ class BaseSelector(object):
 
 if __name__ == "__main__":
     # model = 'bed'
-    mode = 'test'  # Mode options are: 'normal' 'test' 'sim'
+    mode = 'normal'  # Mode options are: 'normal' 'test' 'sim'
     rospy.init_node('select_base_server')
     selector = BaseSelector(mode=mode)
     rospy.spin()

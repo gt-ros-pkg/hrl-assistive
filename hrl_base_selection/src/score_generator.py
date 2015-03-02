@@ -497,11 +497,13 @@ class ScoreGenerator(object):
         if not there_is_a_good_location:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return [[[0], [0], [0], [0], [0], [0]], [0, 0, 0]]
-        max_base_locations = np.min([3, self.number_goals+1])
+        max_base_locations = np.min([4, self.number_goals+1])
         print 'Time to manage data sets and eliminate base configurations with zero reach score: %fs'%(time.time()-start_time)
         start_time = time.time()
         print 'Now starting to look at multiple base location combinations. Checking ', max_base_locations-1, ' max ' \
               'number of bases in combination. This may take a long time as well.'
+        self.best_score = []
+        self.best_score.append([self.sorted_scores[hx, hz][0][9], self.sorted_scores[hx, hz][0][10]])
 
         mult_base_scores = {}
 
@@ -528,7 +530,7 @@ class ScoreGenerator(object):
         return mult_base_scores, default_is_zero
 
     def combination_score(self, config_selections, hx, hz):
-        best_score = [self.sorted_scores[hx, hz][0][9], self.sorted_scores[hx, hz][0][10]]
+
         this_reachable = np.zeros(self.number_goals)
         this_manipulable = np.zeros(self.number_goals)
         this_personal_space = np.max([q for q in ((self.scores[hx, hz][cs][8])
@@ -548,7 +550,12 @@ class ScoreGenerator(object):
                                          for cs in config_selections
                                          )
                              ])
-        if (np.sum(this_manipulable) >= 1.01*best_score[1] and np.sum(this_reachable) >= .98*best_score[0] and np.sum(this_manipulable) >= comparison*1.01) or len(config_selections) == 1:
+        if len(config_selections) == 1:
+            return [this_personal_space, np.sum(this_reachable), np.sum(this_manipulable)]
+        elif np.sum(this_manipulable) >= 1.01*self.best_score[len(config_selections-2)][1] and np.sum(this_reachable) >= .98*self.best_score[len(config_selections-2)][0] and np.sum(this_manipulable) >= comparison*1.01:
+            if np.sum(this_manipulable) >= 1.01*self.best_score[len(config_selections-1)][1] and np.sum(this_reachable) >= .98*self.best_score[len(config_selections-1)][0]:
+                self.best_score[len(config_selections-1)] = [np.sum(this_reachable), np.sum(this_manipulable)]
+
             return [this_personal_space, np.sum(this_reachable), np.sum(this_manipulable)]
         else:
             return None
@@ -982,7 +989,7 @@ class ScoreGenerator(object):
         # h_err_int = m.pi/9.
         if self.model == 'chair':
             modeling_error = np.array([[x_e, y_e, th_e, h_e, m_x_e, m_y_e, m_th_e]])
-            print modeling_error[0]
+            # print modeling_error[0]
             # modeling_error = np.array([err for err in ([x_e, y_e, th_e, h_e, m_x_e, m_y_e, m_th_e]
             #                                            for x_e in np.arange(x_err_min, x_err_max, x_err_int)
             #                                            for y_e in np.arange(y_err_min, y_err_max, y_err_int)
@@ -1145,6 +1152,8 @@ class ScoreGenerator(object):
                 if len(self.goals) > 0:
                     self.goals = np.delete(self.goals, delete_index, 0)
         score = reached/total_length
+        # if score < 0.5:
+        #     print 'Score was less than 0.5. The error added was: ', modeling_error
         # print 'Score is (% of reached goals): ', score
         # print 'Time to score this initial configuration: %fs' % (time.time()-start_time)
         return score
@@ -1359,9 +1368,9 @@ class ScoreGenerator(object):
             marker.pose.orientation.y = ori[1]
             marker.pose.orientation.z = ori[2]
             marker.pose.orientation.w = ori[3]
-            marker.scale.x = .05
-            marker.scale.y = .05
-            marker.scale.z = .01
+            marker.scale.x = .09
+            marker.scale.y = .09
+            marker.scale.z = .025
             marker.color.a = 1.
             marker.color.r = 1.0
             marker.color.g = 0.0

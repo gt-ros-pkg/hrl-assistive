@@ -161,7 +161,8 @@ class Manipulability_Testing(object):
             multi_score_sample = []
             for sim_count in xrange(self.mc_simulation_number):
                 single_score_sample.append(random.sample(single_score_selection, 1)[0])
-                multi_score_sample.append(random.sample(multi_score_selection, 1)[0])
+                if len(multi_score_selection) > 0:
+                    multi_score_sample.append(random.sample(multi_score_selection, 1)[0])
 
         if anova_test:
             single_score = []
@@ -390,7 +391,7 @@ class Manipulability_Testing(object):
                                                                                                   )]))
                         # print 'printing comparison base'
             elif self.model == 'autobed':
-                for i in xrange(len(self.mc_simulation_number)):
+                for i in xrange(self.mc_simulation_number):
                     if len(best_base[0][0]) == 1:
                         locations.write(''.join([str(i), ' %f %f %f %f %f %f %f %f %f \n' % (best_base[0][0][0],
                                                                                              best_base[0][1][0],
@@ -418,8 +419,22 @@ class Manipulability_Testing(object):
                                                                                                               best_base[0][4][1],
                                                                                                               best_base[0][5][1]
                         )]))
+                for i in xrange(self.mc_simulation_number):
+                    if len(best_single_base[0][0]) == 1:
+                        locations.write(''.join([str(i), ' %f %f %f %f %f %f %f %f %f \n' % (best_single_base[0][0][0],
+                                                                                             best_single_base[0][1][0],
+                                                                                             best_single_base[0][2][0],
+                                                                                             best_single_base[0][3][0],
+                                                                                             best_single_base[0][4][0],
+                                                                                             best_single_base[0][5][0],
+                                                                                             best_single_base[1][1],
+                                                                                             best_single_base[1][2],
+                                                                                             best_single_base_scores[i])]))
+                    elif len(best_base[0][0]) == 2:
+                        print 'Something went horrible wrong, shouldn\'t have a multibase score in single base list'
+                        locations.write('Something went horrible wrong, shouldn\'t have a multibase score in single base list')
                 comparison_bases = np.array(comparison_bases)
-                for i in xrange(len(comparison_base_scores)):
+                for i in xrange(len(comparison_bases)):
                     if len(comparison_bases[i, 0][0]) == 1:
                         locations.write(''.join([str(i), ' %f %f %f %f %f %f %f %f %f \n' % (comparison_bases[i, 0][0][0],
                                                                                              comparison_bases[i, 0][1][0],
@@ -667,7 +682,7 @@ class Manipulability_Testing(object):
 
 
 if __name__ == "__main__":
-    rospy.init_node('manipulability_test_shaving_monte_carlo')
+    rospy.init_node('manipulability_shaving_chair')
     train_subj = 0
     test_subj = 0
     visualize_best = False
