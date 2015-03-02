@@ -18,7 +18,7 @@ roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 
 
-class TF_Spooer(object):
+class TF_Spoofer(object):
     """ Object for providing feedback to manually move from one location to another. For manual base positioning """
 
     def __init__(self):
@@ -36,6 +36,7 @@ class TF_Spooer(object):
         self.reference_sub = rospy.Subscriber('/reference_back/pose', TransformStamped, self.reference_cb)
         self.reference_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
         print 'The tf_spoofer has initialized without a problem, as far as I can tell!'
+        rospy.spin()
         # self.navigate = False
 
     # def update_feedback(self):
@@ -148,6 +149,6 @@ if __name__ == '__main__':
     rospy.init_node('tf_spoofer')
     # myrobot = '/base_location'
     # mytarget = '/goal_location'
-    tf_spoofer = TF_Spooer()
-    rospy.spin()
+    tf_spoofer = TF_Spoofer()
+
 
