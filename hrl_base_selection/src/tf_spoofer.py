@@ -29,14 +29,14 @@ class TF_Spoofer(object):
         self.target_pose = None
         self.world_B_robot = None
         self.world_B_reference = None
-        self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
+        self.robot_center_pub = rospy.Publisher('/robot_center', PoseStamped, latch=True)
         self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
         self.reference_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
         self.robot_sub = rospy.Subscriber('/robot_back/pose', TransformStamped, self.robot_cb)
         self.head_sub = rospy.Subscriber('/head_back/pose', TransformStamped, self.head_cb)
         self.reference_sub = rospy.Subscriber('/reference_back/pose', TransformStamped, self.reference_cb)
         print 'The tf_spoofer has initialized without a problem, as far as I can tell!'
-        rospy.spin()
+
         # self.navigate = False
 
     # def update_feedback(self):
@@ -72,13 +72,13 @@ class TF_Spoofer(object):
             psm.header.frame_id = data.header.frame_id
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
-            psm.pose.position.z = pos[2]
+            psm.pose.position.z = 0.
             psm.pose.orientation.x = ori[0]
             psm.pose.orientation.y = ori[1]
             psm.pose.orientation.z = ori[2]
             psm.pose.orientation.w = ori[3]
-            self.head_center_pub.publish(psm)
-            self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
+            self.robot_center_pub.publish(psm)
+            self.tf_broadcaster.sendTransform((pos[0], pos[1], 0.), (ori[0], ori[1], ori[2], ori[3]),
                                               rospy.Time.now(), '/optitrak', '/base_link')
             # world_B_pr2 = createBMatrix(trans, rot)
             # self.robot_pose = world_B_pr2
@@ -150,5 +150,5 @@ if __name__ == '__main__':
     # myrobot = '/base_location'
     # mytarget = '/goal_location'
     tf_spoofer = TF_Spoofer()
-
+    rospy.spin()
 
