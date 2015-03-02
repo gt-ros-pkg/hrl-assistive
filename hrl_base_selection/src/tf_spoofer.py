@@ -79,7 +79,7 @@ class TF_Spoofer(object):
             psm.pose.orientation.w = ori[3]
             self.head_center_pub.publish(psm)
             self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
-                                              rospy.Time.now(), turtlename, '/optitrak', '/base_link')
+                                              rospy.Time.now(), '/optitrak', '/base_link')
             # world_B_pr2 = createBMatrix(trans, rot)
             # self.robot_pose = world_B_pr2
             # self.update_feedback()
@@ -143,7 +143,7 @@ class TF_Spoofer(object):
             psm.pose.orientation.w = ori[3]
             self.reference_pub.publish(psm)
             self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
-                                              rospy.Time.now(), turtlename, '/reference_location', "/base_link")
+                                              rospy.Time.now(), '/reference_location', "/base_link")
 
 if __name__ == '__main__':
     rospy.init_node('tf_spoofer')
