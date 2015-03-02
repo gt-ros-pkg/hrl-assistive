@@ -807,8 +807,8 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         ## an_type = random.choice(an_types)            
         an_type = 'both'
 
-        x1_anomaly = None
-        x2_anomaly = None        
+        x1_anomaly = true_aXData1[x_idx]
+        x2_anomaly = true_aXData2[x_idx]
         an1 = 'normal'
         an2 = 'normal'
         
@@ -884,15 +884,15 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an2 == 'rndimpulse':
                 print "Random impulse sound"
 
-                peak  = max_c2 * random.uniform(0.5, 1.0)
-                width = random.randint(2,4)
-                loc   = random.randint(1+width,length-1-width)
+                peak  = max_c2 * random.uniform(0.5, 1.5)
+                width = random.randint(2,5)
+                loc   = random.randint(1+width,len(x1_anomaly)-1-width)
 
                 xnew    = range(width)
                 impulse = np.zeros(width)
                 impulse[width/2] = peak
-                ## x2_anomaly = np.ones(np.shape(true_aXData2[x_idx])) * true_aXData2[x_idx][0]
-                x2_anomaly = true_aXData2[x_idx]
+                x2_anomaly = np.ones(np.shape(x1_anomaly)) * true_aXData2[x_idx][0]
+                #x2_anomaly = true_aXData2[x_idx]
 
                 for i in xrange(width):
                     if i < width/2:
@@ -907,15 +907,9 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             continue
             
 
-        if x1_anomaly is None:
-            x1_anomaly = true_aXData1[x_idx]
-        if x2_anomaly is None:
-            x2_anomaly = true_aXData2[x_idx]
-
         # Zero padding to meet same length
         n1 = len(x1_anomaly)
         n2 = len(x2_anomaly)
-
         if n1 >= n2:
             x2_anomaly = np.hstack([x2_anomaly, [x2_anomaly[-1]]*(n1-n2)])
         else:
