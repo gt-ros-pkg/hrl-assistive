@@ -658,7 +658,7 @@ class learning_hmm_multi(learning_base):
             ## print X_test[0]
             ## print "----------------------------------------------------------------------------------"
             ## sys.exit() 
-            return 1.0, 0.0 #logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
+            return 1.0, 0.0 # anomaly
         err = logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
 
         ## print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])

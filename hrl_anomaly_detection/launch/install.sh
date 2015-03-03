@@ -1,5 +1,11 @@
 #!/bin/bash -x
 
+sudo apt-get install swig
+sudo apt-get install python-joblib
+sudo pip install cython
+sudo pip install h5py
+
+
 cd ~/git 
 git clone https://github.com/PyMVPA/PyMVPA.git
 cd PyMVPA
