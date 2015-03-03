@@ -61,7 +61,7 @@ def fig_roc_offline_sim(cross_data_path, \
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     # K random training-test set
-    K = 10
+    K = 5
     splits = []
     for i in xrange(30):
         
@@ -949,7 +949,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(0.0, 20.001, 0.25)    
+        threshold_mult  = np.arange(0.0, 20.001, 1.0)    
         attr            = 'id'
 
         fig_roc_offline_sim(cross_data_path, \
