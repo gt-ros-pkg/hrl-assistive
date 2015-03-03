@@ -51,8 +51,8 @@ class Manipulability_Testing(object):
         print 'I will use data that was trained on subject ', self.train_subj
         print 'I will test on data from subject ', self.test_subj
 
-        self.task = 'shaving' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
-        self.model = 'chair'  # options are: 'chair', 'bed', 'autobed'
+        self.task = 'feeding' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
+        self.model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
 
         pos_clust = 2
         ori_clust = 2
@@ -682,7 +682,7 @@ class Manipulability_Testing(object):
 
 
 if __name__ == "__main__":
-    rospy.init_node('manipulability_shaving_chair')
+    rospy.init_node('manipulability_feeding_autobed')
     train_subj = 0
     test_subj = 0
     visualize_best = False

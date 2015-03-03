@@ -338,7 +338,7 @@ class BaseSelector(object):
                     # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
                     # (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
                     # self.ar_B_model = createBMatrix(trans, rot)
-                if np.linalg.norm(trans) > 2:
+                if np.linalg.norm(trans) > 4:
                     rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
                                   'tag. Or just move it closer via other means. Alternatively, the PR2 may have lost '
                                   'sight of the AR tag or it is having silly issues recognizing it. ')
