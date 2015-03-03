@@ -29,8 +29,6 @@ RFH.FocalPoint = function (options) {
         });
 
     self.setFocusPoint = function (pose) {
-        $('#select-focus-toggle').removeAttr('checked').button("refresh");
-        $('.depth-mask').hide();
         if (pose !== null) {
             self.point = new THREE.Vector3(pose.position.x,
                                            pose.position.y,
@@ -41,27 +39,25 @@ RFH.FocalPoint = function (options) {
     };
 
 
-    self.getNewFocusPoint = function () {
-        var oldCursor = $('#'+self.divId).css('cursor');
+    self.getNewFocusPoint = function (cb) {
         $('#'+self.divId).css('cursor', 'url(./css/cursors/focus/focus-pointer.png) 20 8, auto');
-        $(".map-look").hide();
-//        $('.depth-mask').show();
-        $('#'+self.divId).on('mousemove', function(e) { 
-                                            console.log(RFH.positionInElement(e));
-                                            });
         var clickCB = function (e) {
             e.stopPropagation();
-            $('#'+self.divId).css('cursor', oldCursor);
+            $('#'+self.divId).css('cursor', 'auto');
             var pt = RFH.positionInElement(e);
             var x = (pt[0]/e.target.width);
             var y = (pt[1]/e.target.height);
-            self.pixel23d.callRelativeScale(x, y, self.setFocusPoint);
+            self.pixel23d.callRelativeScale(x, y, function (resp) {
+                                                    self.setFocusPoint(resp);
+                                                    cb()
+                                                    });
         };
         $('#'+self.divId).one('click', clickCB);
     };
 
     self.clear = function () {
         self.tfClient.unsubscribe(self.camera.frame_id, self.positionFocusPointImage);
+        $('#'+self.divId).css('cursor', 'auto');
         $('#'+self.pointDivId).hide();
         self.point = null;
     };

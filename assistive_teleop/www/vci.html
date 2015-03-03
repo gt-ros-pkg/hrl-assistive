@@ -71,24 +71,26 @@
         <!-- EE Cart Controls -->
 <!--        <input type="checkbox" id="touchspot-toggle"/>
         <label id="touchspot-toggle-label" for="touchspot-toggle">Touch Spot</label>-->
-        <input type="checkbox" id="r-track-hand-toggle" checked="true"/>
+        <!--<input type="checkbox" id="r-track-hand-toggle" checked="true"/>
         <label id="r-track-hand-toggle-label" for="r-track-hand-toggle">Watch Hand</label>
         <input type="checkbox" id="l-track-hand-toggle" checked="true"/>
-        <label id="l-track-hand-toggle-label" for="l-track-hand-toggle">Watch Hand</label>
-        <div id="r-posrot-set">
+        <label id="l-track-hand-toggle-label" for="l-track-hand-toggle">Watch Hand</label>-->
+        <div id="r-posrot-set" style="display:none">
             <input class="menu-item" id="r-posrot-pos" type="radio" name="r-posrot-radio" checked="checked">
             <label for="r-posrot-pos">Position</label>
             <input class="menu-item" id="r-posrot-rot" type="radio" name="r-posrot-radio">
             <label for="r-posrot-rot">Rotation</label>
         </div>
-        <input type="checkbox" id="select-focus-toggle"/>
-        <label id="select-focus-toggle-label" for="select-focus-toggle">Choose Target Spot</label>
-        <div id="l-posrot-set">
+        <div id="l-posrot-set" style="display:none">
             <input class="menu-item" id="l-posrot-pos" type="radio" name="l-posrot-radio" checked="checked">
             <label for="l-posrot-pos">Position</label>
             <input class="menu-item" id="l-posrot-rot" type="radio" name="l-posrot-radio">
             <label for="l-posrot-rot">Rotation</label>
         </div>
+        <input type="checkbox" id="select-focus-toggle"/>
+        <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
+        <button id="wristCW" style="display:none">CW</button>
+        <button id="wristCCW" style="display:none">CCW</button>
      </div>
  </div>
  <div id="video-main">
@@ -112,6 +114,18 @@
          <img id="leftFocusPoint" class="focus-point" src="./css/icons/focus-point.png"></img>
          <div id="depthMaskLeft" class="depth-mask" ></div>
          <div id="depthMaskRight" class="depth-mask" ></div>
+         <div id='armCtrlContainer' class="ctrlContainer" style="display:none">
+             <div class="slider"></div>
+             <div id="ctrl-ring" class="default">
+                 <div class="center"></div>
+                 <div class="arrow left default"></div>
+                 <div class="arrow right default"></div>
+                 <div class="arrow up default"></div>
+                 <div class="arrow down default"></div>
+             </div>
+             <div id="away-button">Further</div>
+             <div id="toward-button">Closer</div>
+         </div>
      </div>
  </div>
 

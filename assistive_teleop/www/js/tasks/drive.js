@@ -31,6 +31,7 @@ RFH.Drive = function (options) {
     "use strict";
     var self = this;
     var options = options || {};
+    self.name = options.name || 'drivingTask';
     self.ros = options.ros;
     self.div = options.targetDiv || 'markers';
     self.tfClient = options.tfClient;

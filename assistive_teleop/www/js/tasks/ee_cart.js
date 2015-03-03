@@ -1,13 +1,15 @@
 RFH.CartesianEEControl = function (options) {
     'use strict';
     var self = this;
+    self.name = options.name || options.arm+'EECartTask';
     self.div = options.div || 'mjpeg';
     self.arm = options.arm;
     self.side = self.arm.side[0];
     self.gripper = options.gripper;
-    self.arm.dx = self.arm instanceof PR2ArmJTTask ? 0.03 : 0.05;
-    self.arm.dRot = self.arm instanceof PR2ArmJTTask ? Math.PI/30 : Math.PI/8; 
-    self.arm.dt = self.arm instanceof PR2ArmJTTask ? 100 : 500;
+    self.stepSize = 0.1;
+    self.stepSizeRot = Math.PI/8;
+    self.dRot = self.arm instanceof PR2ArmJTTask ? Math.PI/30 : Math.PI/8; 
+//    self.dt = self.arm instanceof PR2ArmJTTask ? 100 : 500;
     self.tfClient = options.tfClient;
     self.ros = self.tfClient.ros;
     self.eeTF = null;
@@ -27,9 +29,20 @@ RFH.CartesianEEControl = function (options) {
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
 //    $('#touchspot-toggle, 
-      $('#select-focus-toggle').button()
-//    $('#touchspot-toggle-label,
-      $('#select-focus-toggle-label').hide();
+   $('#select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
+   $('#select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
+   $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
+
+   self.scaleSlideCB = function (e, ui) {
+        self.stepSize = ui.value;
+   };
+
+   $('#armCtrlContainer > .slider').slider({orientation: "vertical",
+                                            min:0.001,
+                                            max: 0.25,
+                                            value: self.stepSize,
+                                            step: 0.001,
+                                            stop: self.scaleSlideCB});
 
     self.orientHand = function () {
         if (self.focusPoint.point === null) {
@@ -54,7 +67,6 @@ RFH.CartesianEEControl = function (options) {
             throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned."
         };
         z.crossVectors(x,y).normalize();
-        // TODO: Rotate wrist based on offset, EXPOSE CONTROLS!
         var rotMat = new THREE.Matrix4();
         rotMat.elements[0] = x.x; rotMat.elements[4] = y.x; rotMat.elements[8] = z.x;
         rotMat.elements[1] = x.y; rotMat.elements[5] = y.y; rotMat.elements[9] = z.y;
@@ -144,7 +156,7 @@ RFH.CartesianEEControl = function (options) {
     };
     self.checkCameraTF();
 
-    self.arm.eeDeltaCmd = function (xyzrpy) {
+    self.eeDeltaCmd = function (xyzrpy) {
         if (self.op2baseMat === null || self.eeInOpMat === null) {
                 console.log("Hand Data not available to send commands.");
                 return;
@@ -176,6 +188,9 @@ RFH.CartesianEEControl = function (options) {
         catch (e) {
             console.log(e); // log error and keep moving
         }
+        var wristRotMat = new THREE.Matrix4().makeRotationZ(self.orientRot);
+        var wristRotQuat = new THREE.Quaternion().setFromRotationMatrix(wristRotMat)
+        q.multiply(wristRotQuat);
         q = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
         self.arm.sendGoal({position: p,
                            orientation: q,
@@ -183,20 +198,60 @@ RFH.CartesianEEControl = function (options) {
     };
 
     /// POSITION CONTROLS ///
-    self.posCtrlId = self.side+'posCtrlIcon';
-    self.targetIcon = new RFH.EECartControlIcon({divId: self.posCtrlId,
-                                                 parentId: self.div,
-                                                 arm: self.arm});
-    var handCtrlCSS = {bottom:"6%"};
-    handCtrlCSS[self.arm.side] = "7%";
-    $('#'+self.posCtrlId).css(handCtrlCSS).hide();
+    //self.posCtrlId = self.side+'posCtrlIcon';
+    //self.targetIcon = new RFH.EECartControlIcon({divId: self.posCtrlId,
+    //                                             parentId: self.div,
+    //                                             arm: self.arm});
+    //var handCtrlCSS = {bottom:"6%"};
+    //handCtrlCSS[self.arm.side] = "7%";
+    //$('#'+self.posCtrlId).css(handCtrlCSS).hide();
 
-    /// ROTATION CONTROLS ///
-    self.rotCtrlId = self.side+'rotCtrlIcon';
-    self.rotIcon = new RFH.EERotControlIcon({divId: self.rotCtrlId,
-                                                parentId: self.div,
-                                                 arm: self.arm});
-    $('#'+self.rotCtrlId).css(handCtrlCSS).hide();
+    ///// ROTATION CONTROLS ///
+    //self.rotCtrlId = self.side+'rotCtrlIcon';
+    //self.rotIcon = new RFH.EERotControlIcon({divId: self.rotCtrlId,
+    //                                            parentId: self.div,
+    //                                             arm: self.arm});
+    //$('#'+self.rotCtrlId).css(handCtrlCSS).hide();
+
+    self.ctrlRingActivate = function (e) {
+        $('#ctrl-ring').removeClass('default').addClass('active');
+        var pt = RFH.positionInElement(e);
+        var w = $(e.target).width();
+        var h = $(e.target).height();
+        var delX = self.stepSize * (pt[0]-w/2)/w;
+        var delY = self.stepSize * (pt[1]-w/2)/h;
+        self.eeDeltaCmd({x: delX, y: delY});
+    };
+
+    self.ctrlRingActivateRot = function (e) {
+        $('#ctrl-ring').removeClass('default').addClass('active');
+        var pt = RFH.positionInElement(e);
+        var w = $(e.target).width();
+        var h = $(e.target).height();
+        var delX = self.stepSizeRot * (pt[0]-w/2)/w;
+        var delY = self.stepSizeRot * (pt[1]-w/2)/h;
+        self.eeDeltaCmd({roll:-delY, pitch:-delX});
+    };
+
+    self.ctrlRingInactivate = function (e) {
+        $('#ctrl-ring').removeClass('active').addClass('default');
+    };
+
+    self.awayCB = function (e) {
+        self.eeDeltaCmd({z: self.stepSize});
+    };
+
+    self.towardCB = function (e) {
+        self.eeDeltaCmd({z: -self.stepSize});
+    };
+
+    self.cwCB = function (e) {
+        self.eeDeltaCmd({yaw: self.stepSizeRot});
+    };
+
+    self.ccwCB = function (e) {
+        self.eeDeltaCmd({yaw: -self.stepSizeRot});
+    };
 
     /// SWITCH POSITION AND ROTATION ///
     $('#'+self.side+'-posrot-set').buttonset().hide().on('change.rfh', function (event, ui) {
@@ -206,13 +261,13 @@ RFH.CartesianEEControl = function (options) {
         });
 
     /// TRACKING HAND WITH CAMERA ///
-    self.updateTrackHand = function (event) {
-        if ( $("#"+self.side+"-track-hand-toggle").is(":checked") ){
-            self.trackHand();
-        } else {
-            clearInterval(RFH.pr2.head.pubInterval);
-        }
-    }
+    //self.updateTrackHand = function (event) {
+    //    if ( $("#"+self.side+"-track-hand-toggle").is(":checked") ){
+    //        self.trackHand();
+    //    } else {
+    //        clearInterval(RFH.pr2.head.pubInterval);
+    //    }
+    //}
 
     self.trackHand = function () {
         clearInterval(RFH.pr2.head.pubInterval);
@@ -220,8 +275,6 @@ RFH.CartesianEEControl = function (options) {
             RFH.pr2.head.pointHead(0, 0, 0, self.side+'_gripper_tool_frame');
         }, 100);
     }
-    $("#"+self.side+"-track-hand-toggle").button().on('change.rfh', self.updateTrackHand);
-    $("#"+self.side+"-track-hand-toggle-label").hide();
 
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplayDiv = self.side+'GripperDisplay';
@@ -230,38 +283,90 @@ RFH.CartesianEEControl = function (options) {
                                                    divId: self.gripperDisplayDiv});
     var gripperCSS = {position: "absolute",
                       height: "5%",
-                      width: "40%",
-                      bottom: "15%",
-                      left: "30%"};
-//    gripperCSS[self.arm.side] = "3%";
+                      width: "30%",
+                      bottom: "5%"};
+    gripperCSS[self.arm.side] = "3%";
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
     /// SELECT FOCUS POINT CONTROLS ///
-
     self.selectFocusCB = function (e, ui) {
-        self.focusPoint.getNewFocusPoint();
+        if ($('#select-focus-toggle').is(':checked')) {
+            self.focusPoint.clear();
+            if (self.focusPoint.point === null) {
+                $('#armCtrlContainer').show();
+            }
+        } else {
+            $('#armCtrlContainer').hide();
+            var cb = function () {
+                $('#armCtrlContainer').show();
+                self.eeDeltaCmd({}); // Send command at current position to reorient arm
+            };
+            self.focusPoint.getNewFocusPoint(cb); // Pass in callback to perform cleanup/reversal
+        }
+    };
+
+    self.wristCWCB = function (e) {
+        self.orientRot += Math.Pi/12;
+        self.orientRot = self.orientRot % 2*Math.PI;
+        self.eeDeltaCmd({});
+    };
+
+    self.wristCCWCB = function (e) {
+        self.orientRot -= Math.Pi/12;
+        self.orientRot = self.orientRot % 2*Math.PI;
+        self.eeDeltaCmd({});
+    };
+
+    self.setRotationCtrls = function (e) {
+        $('#ctrl-ring').off('mousedown.rfh');
+        $('#toward-button, #away-button').off('click.rfh');
+        self.focusPoint.clear();
+
+        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
+        $('#away-button').on('click.rfh', self.cwCB).text('CW');
+        $('#toward-button').on('click.rfh', self.ccwCB).text('CCW');
+        $('#select-focus-toggle-label').off('click.rfh').hide();
+    };
+
+    self.setPositionCtrls = function (e) {
+        $('#ctrl-ring').off('mousedown.rfh');
+        $('#toward-button, #away-button').off('click.rfh');
+
+        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
+        $('#ctrl-ring').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.ctrlRingInactivate)
+        $('#away-button').on('click.rfh', self.awayCB).text('Away');
+        $('#toward-button').on('click.rfh', self.towardCB).text('Closer');
+        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
     };
 
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
         //$("#touchspot-toggle-label, #select-focus-toggle-label, #"+self.side+"-track-hand-toggle-label, #"+self.side+"-posrot-set").show();
-        $("#"+self.side+"-track-hand-toggle-label, #select-focus-toggle-label, #"+self.side+"-posrot-set").show();
+        $("#select-focus-toggle-label, #"+self.side+"-posrot-set, #armCtrlContainer, #wristCW, #wristCCW").show();
         var mode = $('#'+self.side+'-posrot-set>input:checked').attr('id').slice(-3);
         $('#'+self.side+mode+'CtrlIcon').show();
         $("#"+self.gripperDisplayDiv).show();
-        self.updateTrackHand();
-        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB);
+        self.trackHand();
+        $('#armCtrlContainer, #away-button, #toward-button').show();
+        $('#wristCW').on('click.rfh', self.wristCWCB)
+        $('#wristCCW').on('click.rfh', self.wristCCWCB)
+        $('#armCtrlContainer > .slider').slider('value', self.stepSize);
+        self.setPositionCtrls();
+        $('#r-posrot-pos').on('click.rfh', self.setPositionCtrls);
+        $('#r-posrot-rot').on('click.rfh', self.setRotationCtrls);
     };
     
     self.stop = function () {
-        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
+        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set, #armCtrlContainer, #wristCW, #wristCCW').hide();
         //$('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #touchspot-toggle-label, #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
-        clearInterval(RFH.pr2.head.pubInterval);
-        $('#'+self.gripperDisplayDiv).hide();
-        $('#select-focus-toggle-label').off('click.rfh');
+        clearInterval(RFH.pr2.head.pubInterval); // Stop following hand with camera
+        $('#'+self.gripperDisplayDiv).hide(); //Hide gripper controls
+        // De-register callbacks on controls
+        $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
+        $('#select-focus-toggle-label, #away-button, #toward-button, #wristCW, #wristCCW').off('click.rfh');
     };
 }
-
+/*
 RFH.EECartControlIcon = function (options) {
     'use strict';
     var self = this;
@@ -287,7 +392,7 @@ RFH.EECartControlIcon = function (options) {
 
     self.leftCB = function (event) {
         if ($('#'+self.divId+' .left-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({x:-self.arm.dx});
+            self.arm.eeDeltaCmd({x:-self.arm.stepSize});
             setTimeout(function () {self.leftCB(event)}, self.arm.dt);
         } 
     }
@@ -295,7 +400,7 @@ RFH.EECartControlIcon = function (options) {
 
     self.rightCB = function (event) {
         if ($('#'+self.divId+' .right-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({x:self.arm.dx});
+            self.arm.eeDeltaCmd({x:self.arm.stepSize});
             setTimeout(function () {self.rightCB(event)}, self.arm.dt);
         } 
     }
@@ -303,7 +408,7 @@ RFH.EECartControlIcon = function (options) {
 
     self.upCB = function (event) {
         if ($('#'+self.divId+' .up-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({y:-self.arm.dx});
+            self.arm.eeDeltaCmd({y:-self.arm.stepSize});
             setTimeout(function () {self.upCB(event)}, self.arm.dt);
         } 
     }
@@ -311,7 +416,7 @@ RFH.EECartControlIcon = function (options) {
 
     self.downCB = function (event) {
         if ($('#'+self.divId+' .down-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({y:self.arm.dx});
+            self.arm.eeDeltaCmd({y:self.arm.stepSize});
             setTimeout(function () {self.downCB(event)}, self.arm.dt);
         } 
     }
@@ -319,7 +424,7 @@ RFH.EECartControlIcon = function (options) {
 
     self.awayCB = function (event) {
         if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({z:self.arm.dx});
+            self.arm.eeDeltaCmd({z:self.arm.stepSize});
             setTimeout(function () {self.awayCB(event)}, self.arm.dt);
         } 
     }
@@ -327,7 +432,7 @@ RFH.EECartControlIcon = function (options) {
 
     self.towardCB = function (event) {
         if ($('#'+self.divId+' .toward-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({z:-self.arm.dx});
+            self.arm.eeDeltaCmd({z:-self.arm.stepSize});
             setTimeout(function () {self.towardCB(event)}, self.arm.dt);
         }
     }
@@ -339,8 +444,8 @@ RFH.EECartControlIcon = function (options) {
 //        var timeleft = time - self.lastDragTime;
 //        if (timeleft > 100) {
 //            self.lastDragTime = time;
-//            var delX = self.arm.dx/30 * (ui.position.left - ui.originalPosition.left);
-//            var delY = self.arm.dx/30 * (ui.position.top - ui.originalPosition.top);
+//            var delX = self.arm.stepSize/30 * (ui.position.left - ui.originalPosition.left);
+//            var delY = self.arm.stepSize/30 * (ui.position.top - ui.originalPosition.top);
 //            self.arm.eeDeltaCmd({x: delX, y: delY});
 //            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, self.arm.dt);
 //        } else {
@@ -450,9 +555,9 @@ RFH.EERotControlIcon = function (options) {
     //    var timeleft = time - self.lastDragTime;
     //    if (timeleft > 1000) {
     //        self.lastDragTime = time;
-    //        var dx = self.arm.dRot * (ui.position.left - ui.originalPosition.left);
+    //        var stepSize = self.arm.dRot * (ui.position.left - ui.originalPosition.left);
     //        var dy = self.arm.dRot * (ui.position.top - ui.originalPosition.top);
-    //        self.arm.eeDeltaCmd({pitch: -dx, roll: dy});
+    //        self.arm.eeDeltaCmd({pitch: -stepSize, roll: dy});
     //        self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, self.arm.dt);
     //    } else {
     //        self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, timeleft);
@@ -465,3 +570,4 @@ RFH.EERotControlIcon = function (options) {
     //}
     //$('#'+self.divId+' .target-rot').on('drag', self.onDrag).on('dragstop', self.dragStop);
 }
+*/

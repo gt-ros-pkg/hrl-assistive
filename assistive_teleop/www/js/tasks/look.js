@@ -1,6 +1,7 @@
 RFH.Look = function (options) {
     'use strict';
     var self = this;
+    self.name = options.name || 'lookingTask';
     self.ros = options.ros;
     self.div = options.div || 'mjpeg';
     self.camera = options.camera || new RFH.ROSCameraModel();
@@ -31,6 +32,13 @@ RFH.Look = function (options) {
         self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
     };
 
-    $('#'+self.div + '-image').addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
-    $('.map-look').css("display","block");
+    self.start = function () {
+        $('#'+self.div + '-image').addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
+        $('.map-look').css("display","block");
+    };
+
+    self.stop = function () {
+        $('#'+self.div + '-image').removeClass("cursor-eyes").off("click.rfh-look");
+        $('.map-look').css("display","none");
+    };
 }
