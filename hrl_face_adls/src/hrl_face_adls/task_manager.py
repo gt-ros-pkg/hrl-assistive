@@ -20,7 +20,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
-from navigation_feedback import *
+# from navigation_feedback import *
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
          'Arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
@@ -31,8 +31,8 @@ class ServoingManager(object):
     """ Manager for providing test goals to pr2 ar servoing. """
 
     def __init__(self, mode=None):
-        self.task = 'yogurt'
-        self.model = 'chair' # options are 'chair' and 'autobed'
+        self.task = 'feeding_quick'
+        self.model = 'autobed' # options are 'chair' and 'autobed'
         self.mode = mode
 
         if self.model == 'autobed':
@@ -58,7 +58,7 @@ class ServoingManager(object):
             self.object_pub = rospy.Publisher('/object_pose', PoseStamped, latch=True)
             self.base_goal_pub = rospy.Publisher('/base_goal', PoseStamped, latch=True)
             self.robot_location_pub = rospy.Publisher('/robot_location', PoseStamped, latch=True)
-            self.navigation = NavigationHelper(robot='/robot_location', target='/base_goal')
+            # self.navigation = NavigationHelper(robot='/robot_location', target='/base_goal')
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pose', PoseStamped, latch=True)
         self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped)
@@ -346,7 +346,7 @@ class ServoingManager(object):
 
 if __name__ == '__main__':
     rospy.init_node('ar_servo_manager')
-    mode = 'manual'  # options are 'manual' for manual base movement using motion capture positioning and auto otherwise
+    mode = 'normal'  # options are 'manual' for manual base movement using motion capture positioning and auto otherwise
     manager = ServoingManager(mode=mode)
     import sys
     rospy.spin()
