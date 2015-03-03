@@ -13,13 +13,14 @@ from geometry_msgs.msg import PoseStamped, Point, Quaternion, TransformStamped
 import tf
 from tf import TransformListener
 from tf import transformations as tft
-
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, Bmat_to_pos_quat
+roslib.load_manifest('hrl_pr2_ar_servo')
+from ar_pose.msg import ARMarker
 
 
 class TF_Spoofer(object):
-    """ Object for providing feedback to manually move from one location to another. For manual base positioning """
+    # Object for spoofing tf frames and ar tags to allow use of servoing without AR tags. For manual base positioning
 
     def __init__(self):
         self.tf_listener = tf.TransformListener()
@@ -32,25 +33,14 @@ class TF_Spoofer(object):
         self.robot_center_pub = rospy.Publisher('/robot_center', PoseStamped, latch=True)
         self.head_center_pub = rospy.Publisher('/head_center', PoseStamped, latch=True)
         self.reference_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
+        self.ar_pub = rospy.Publisher('/ar_marker', ARMarker, latch=True)
         self.robot_sub = rospy.Subscriber('/robot_back/pose', TransformStamped, self.robot_cb)
         self.head_sub = rospy.Subscriber('/head_back/pose', TransformStamped, self.head_cb)
         self.reference_sub = rospy.Subscriber('/reference_back/pose', TransformStamped, self.reference_cb)
+        self.tf_listener.waitForTransform('/base_link', '/r_arm_camera', now, rospy.Duration(15))
+        (trans, rot) = self.tf_listener.lookupTransform('/base_link', '/head_frame', now)
+        self.base_link_B_camera = createBMatrix(trans, rot)
         print 'The tf_spoofer has initialized without a problem, as far as I can tell!'
-
-        # self.navigate = False
-
-    # def update_feedback(self):
-    #     if self.navigate is True:
-    #         navigation = self.robot_pose.I*self.target_pose
-    #         print 'Desired move: (X, Y, Theta(Z)) ', navigation
-    #     else:
-    #         return
-    #
-    # def start_navigation(self):
-    #     self.navigate = True
-    #
-    # def stop_navigation(self):
-    #     self.navigate = False
 
     def robot_cb(self, data):
         with self.lock:
@@ -132,10 +122,10 @@ class TF_Spoofer(object):
                                                     [0., 0., 1., 0.],
                                                     [0., 0., 0., 1.]])
             world_B_reference = world_B_reference_back*reference_back_B_reference
-            robot_B_reference = self.world_B_robot.I*world_B_reference
+            robot_B_reference = (self.world_B_robot*self.base_link_B_camera).I*world_B_reference
             pos, ori = Bmat_to_pos_quat(robot_B_reference)
             psm = PoseStamped()
-            psm.header.frame_id = '/base_link'
+            psm.header.frame_id = '/r_arm_camera'
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
             psm.pose.position.z = pos[2]
@@ -145,7 +135,19 @@ class TF_Spoofer(object):
             psm.pose.orientation.w = ori[3]
             self.reference_pub.publish(psm)
             self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
-                                              rospy.Time.now(), '/reference_location', "/base_link")
+                                              rospy.Time.now(), '/reference_location', "/r_arm_camera")
+            ar_m = ARMarker()
+            ar_m.header.frame_id = '/r_arm_camera'
+            ar_m.pose.pose.position.x = pos[0]
+            ar_m.pose.pose.position.y = pos[1]
+            ar_m.pose.pose.position.z = pos[2]
+            ar_m.pose.pose.orientation.x = ori[0]
+            ar_m.pose.pose.orientation.y = ori[1]
+            ar_m.pose.pose.orientation.z = ori[2]
+            ar_m.pose.pose.orientation.w = ori[3]
+            self.ar_pub.publish(ar_m)
+            # self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
+            #                                   rospy.Time.now(), '/ar_marker', "/r_arm_camera")
 
 if __name__ == '__main__':
     rospy.init_node('tf_spoofer')
