@@ -61,24 +61,26 @@ def fig_roc_offline_sim(cross_data_path, \
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     # K random training-test set
-    K = 1
+    K = len(true_aXData1)/4
+    M = 30
     splits = []
-    ## for i in xrange(40):
-    for i in xrange(len(true_aXData1)):
+    for i in xrange(M):
+    ## for i in xrange(len(true_aXData1)):
+        print "(",K,",",K,") pairs in ", M, "iterations"
         
         if os.path.isfile(os.path.join(cross_data_path,"train_dataSet_"+str(i))) is False:
 
-            test_dataSet = true_dataSet[i]
-            train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
-            train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
-            train_dataSet = true_dataSet[train_ids]
-            test_false_dataSet = false_dataSet[K]
-            
-            ## test_dataSet  = Dataset.random_samples(true_dataSet, K)
+            ## test_dataSet = true_dataSet[i]
             ## train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
             ## train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
             ## train_dataSet = true_dataSet[train_ids]
-            ## test_false_dataSet  = Dataset.random_samples(false_dataSet, K)        
+            ## test_false_dataSet = false_dataSet[K]
+            
+            test_dataSet  = Dataset.random_samples(true_dataSet, K)
+            train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+            train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+            train_dataSet = true_dataSet[train_ids]
+            test_false_dataSet  = Dataset.random_samples(false_dataSet, K)        
 
             Dataset.save(train_dataSet, os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
             Dataset.save(test_dataSet, os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
@@ -94,7 +96,7 @@ def fig_roc_offline_sim(cross_data_path, \
 
             
     ## Multi dimension
-    for i in xrange(3): #temp
+    for i in xrange(3):
         count = 0
         for ths in threshold_mult:
 
@@ -838,7 +840,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 1
+    task  = 0
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
