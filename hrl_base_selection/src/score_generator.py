@@ -497,18 +497,20 @@ class ScoreGenerator(object):
         if not there_is_a_good_location:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return [[[0], [0], [0], [0], [0], [0]], [0, 0, 0]]
-        max_base_locations = np.min([4, self.number_goals+1])
+        max_base_locations = np.min([3, self.number_goals+1])
         print 'Time to manage data sets and eliminate base configurations with zero reach score: %fs'%(time.time()-start_time)
         start_time = time.time()
         print 'Now starting to look at multiple base location combinations. Checking ', max_base_locations-1, ' max ' \
               'number of bases in combination. This may take a long time as well.'
         self.best_score = []
-        self.best_score.append([self.sorted_scores[hx, hz][0][9], self.sorted_scores[hx, hz][0][10]])
+        # self.best_score.append([self.sorted_scores[hx, hz][0][9], self.sorted_scores[hx, hz][0][10]])
 
         mult_base_scores = {}
 
         for hx in np.arange(headx_min, headx_max, headx_int):
             for hy in np.arange(heady_min, heady_max, heady_int):
+                self.best_score = []
+                self.best_score.append([self.sorted_scores[hx, hy][0][9], self.sorted_scores[hx, hy][0][10]])
                 mult_base_scores[hx, hy] = np.array([t for t in ((list([self.get_xyths(comb_nums, hx, hy), self.combination_score(comb_nums,hx,hy)]))
                                                                   for num_base_locations in xrange(1, max_base_locations)
                                                                   for comb_nums in comb(xrange(self.score_length[hx,hy]),num_base_locations)
