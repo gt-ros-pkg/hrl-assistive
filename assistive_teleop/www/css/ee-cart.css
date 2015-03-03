@@ -1,40 +1,64 @@
-#armCtrlContainer > .slider{
-    position: absolute;
-    top: 15%;
-    left: -8%;
-    height: 70%;
-    width: 5%;
-    opacity: 0.85;
+#select-focus-toggle-label{
+    width: 80%;
+    margin-left: 10%;
 }
 
-#armCtrlContainer .ui-slider-handle{
-    left: -15%;
-    width: 130%;
-    height: 10%;
+#speedOptions {
+    display:none; /* Do not display initially */
+    margin-left: 2%;
+}
+
+#speedOptions label{
+    width: 24%;
+}
+
+#speedOptions-buttons .ui-button-text{
+   padding: 0.14em 0.14em; 
+   font-size: 1.0em;
+}
+
+#speedOptions-buttons{
+    width: 100%;
+}
+
+#speedOptions-form{
+    width: 100%;
+}
+
+#posrot-set label{
+    width: 48%;
+    margin-bottom: 0.3em;
+}
+
+#posrot-set .ui-button-text{
+    padding: 0.2em 1em;
+}
+
+#posrot-set{
+    margin-left:2%;
+    margin-right:2%;
 }
 
 #toward-button {
    font-size: x-large;
    position: absolute;
-   left: 25%;
+   left: 24.6%;
    bottom: 16%;
    height: 12%;
    width: 50%;
-   border-bottom-right-radius: 50% 100%;
-   border-bottom-left-radius: 50% 100%;
-   opacity: 0.7;
+   -webkit-clip-path: circle( 93% at center -177%);
+   opacity: 0.5;
 }
 
 #away-button {
    font-size: x-large;
    position: absolute;
-   left: 25%;
-   top: 15%;
+   left: 24.7%;
+   top: 15.4%;
    height: 12%;
    width: 50%;
-   border-top-right-radius: 50% 100%;
-   border-top-left-radius: 50% 100%;
-   opacity: 0.7;
+   -webkit-clip-path: circle( 93% at center 279%);
+   opacity: 0.5;
 }
 
 #ctrl-ring > .arrow{
@@ -53,12 +77,28 @@
     border-right: 20px solid rgba(76, 48, 19, 0.87);
 }
 
+#ctrl-ring > .arrow.left.active{
+    top: calc(50% - 10px);
+    left: 5%;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 20px solid rgba(0, 116, 199, 0.5);
+}
+
 #ctrl-ring > .arrow.right.default{
     top: calc(50% - 10px);
     right: 5%;
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
     border-left: 20px solid rgba(76, 48, 19, 0.87);
+}
+
+#ctrl-ring > .arrow.right.active{
+    top: calc(50% - 10px);
+    right: 5%;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 20px solid rgba(0, 116, 199, 0.5);
 }
 
 #ctrl-ring > .arrow.up.default{
@@ -69,12 +109,28 @@
     border-bottom: 20px solid rgba(76, 48, 19, 0.87);
 }
 
+#ctrl-ring > .arrow.up.active{
+    top: 5%;
+    left: calc(50% - 10px);
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+    border-bottom: 20px solid rgba(0, 116, 199, 0.5);
+}
+
 #ctrl-ring > .arrow.down.default{
     bottom: 5%;
     left: calc(50% - 15px);
     border-right: 10px solid transparent;
     border-left: 10px solid transparent;
     border-top: 20px solid rgba(76, 48, 19, 0.87);
+}
+
+#ctrl-ring > .arrow.down.active{
+    bottom: 5%;
+    left: calc(50% - 15px);
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+    border-top: 20px solid rgba(0, 116, 199, 0.5);
 }
 
 #ctrl-ring > .center{
@@ -92,9 +148,9 @@
     box-shadow: inset 0px 2px 0px #888888;
     background: radial-gradient(closest-side, 
     rgba(0,0,0,0) 70%,
-    rgba(0, 0, 0, 0.8) 70%,
-    rgba(255, 245, 206, 0.84) 71%,
-    rgba(255, 2250, 245, 0.94) 100%);    
+    rgba(0, 0, 0, 0.45) 70%,
+    rgba(255, 245, 206, 0.60) 71%,
+    rgba(255, 2250, 245, 0.60) 100%);    
 }
 
 #ctrl-ring.default {
@@ -102,9 +158,9 @@
     box-shadow: 0px 2px 0px  #888888;
     background: radial-gradient(closest-side, 
     rgba(0,0,0,0) 70%,
-    #d19405 70%,
-    rgba(255, 233, 146, 0.94) 71%,
-    rgba(255, 226, 111, 0.76) 100%);   
+    rgba(209, 148, 5, 0.4) 0%,
+    rgba(255, 233, 146, 0.55) 71%,
+    rgba(255, 226, 111, 0.58) 100%);   
 }
 
 #ctrl-ring {

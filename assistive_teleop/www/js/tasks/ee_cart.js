@@ -6,10 +6,14 @@ RFH.CartesianEEControl = function (options) {
     self.arm = options.arm;
     self.side = self.arm.side[0];
     self.gripper = options.gripper;
-    self.stepSize = 0.1;
-    self.stepSizeRot = Math.PI/8;
-    self.dRot = self.arm instanceof PR2ArmJTTask ? Math.PI/30 : Math.PI/8; 
-//    self.dt = self.arm instanceof PR2ArmJTTask ? 100 : 500;
+    self.posStepSizes = {'tiny': 0.025,
+                         'small': 0.05,
+                         'medium': 0.1,
+                         'large': 0.25};
+    self.rotStepSizes = {'tiny': Math.PI/16,
+                         'small': Math.PI/8,
+                         'medium': Math.PI/6,
+                         'large': Math.PI/4};
     self.tfClient = options.tfClient;
     self.ros = self.tfClient.ros;
     self.eeTF = null;
@@ -26,23 +30,22 @@ RFH.CartesianEEControl = function (options) {
                                           divId: self.div,
     });
 
+    self.pixel23d = new RFH.Pixel23DClient({
+            ros: self.ros,
+            cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+            serviceName: '/pixel_2_3d'
+    });
+
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
-//    $('#touchspot-toggle, 
-   $('#select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
-   $('#select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
+   $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
+   $('#speedOptions-buttons, #posrot-set').buttonset();
+   $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
    $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
 
-   self.scaleSlideCB = function (e, ui) {
-        self.stepSize = ui.value;
+   self.getStepSize = function () {
+     return $('input[name=speedOption]:checked').attr('id');
    };
-
-   $('#armCtrlContainer > .slider').slider({orientation: "vertical",
-                                            min:0.001,
-                                            max: 0.25,
-                                            value: self.stepSize,
-                                            step: 0.001,
-                                            stop: self.scaleSlideCB});
 
     self.orientHand = function () {
         if (self.focusPoint.point === null) {
@@ -156,6 +159,15 @@ RFH.CartesianEEControl = function (options) {
     };
     self.checkCameraTF();
 
+//    self.rotX = function(poseInBaseMat, ang) {
+//        ang = (ang) ? ang : self.orientRot;
+//        var wristRotMat = new THREE.Matrix4().makeRotationX(ang);
+//        var goalRotMat = new THREE.Matrix4().extractRotation(poseInBaseMat);
+//        goalRotMat.multiply(wristRotMat);
+//        goalRotMa
+//
+//    }
+
     self.eeDeltaCmd = function (xyzrpy) {
         if (self.op2baseMat === null || self.eeInOpMat === null) {
                 console.log("Hand Data not available to send commands.");
@@ -176,21 +188,18 @@ RFH.CartesianEEControl = function (options) {
         // Apply delta to current ee position
         var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
         //Transform goal back to base frame
-        goalInOpMat.multiplyMatrices(self.op2baseMat, goalInOpMat);
+        var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
         // Compose and send ros msg
         var p = new THREE.Vector3();
         var q = new THREE.Quaternion();
         var s = new THREE.Vector3();
-        goalInOpMat.decompose(p,q,s);
+        goalInBaseMat.decompose(p,q,s);
         try {
             q = self.orientHand();
         }
         catch (e) {
             console.log(e); // log error and keep moving
         }
-        var wristRotMat = new THREE.Matrix4().makeRotationZ(self.orientRot);
-        var wristRotQuat = new THREE.Quaternion().setFromRotationMatrix(wristRotMat)
-        q.multiply(wristRotQuat);
         q = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
         self.arm.sendGoal({position: p,
                            orientation: q,
@@ -214,66 +223,52 @@ RFH.CartesianEEControl = function (options) {
     //$('#'+self.rotCtrlId).css(handCtrlCSS).hide();
 
     self.ctrlRingActivate = function (e) {
-        $('#ctrl-ring').removeClass('default').addClass('active');
+        $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('default').addClass('active');
         var pt = RFH.positionInElement(e);
         var w = $(e.target).width();
         var h = $(e.target).height();
-        var delX = self.stepSize * (pt[0]-w/2)/w;
-        var delY = self.stepSize * (pt[1]-w/2)/h;
+        var delX = self.posStepSizes[self.getStepSize()] * (pt[0]-w/2)/w;
+        var delY = self.posStepSizes[self.getStepSize()] * (pt[1]-w/2)/h;
         self.eeDeltaCmd({x: delX, y: delY});
     };
 
     self.ctrlRingActivateRot = function (e) {
-        $('#ctrl-ring').removeClass('default').addClass('active');
+        $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('default').addClass('active');
         var pt = RFH.positionInElement(e);
         var w = $(e.target).width();
         var h = $(e.target).height();
-        var delX = self.stepSizeRot * (pt[0]-w/2)/w;
-        var delY = self.stepSizeRot * (pt[1]-w/2)/h;
-        self.eeDeltaCmd({roll:-delY, pitch:-delX});
+        var delX = self.rotStepSizes[self.getStepSize()] * (pt[0]-w/2)/w;
+        var delY = self.rotStepSizes[self.getStepSize()] * (pt[1]-w/2)/h;
+        self.eeDeltaCmd({roll:delY, pitch:-delX});
     };
 
     self.ctrlRingInactivate = function (e) {
-        $('#ctrl-ring').removeClass('active').addClass('default');
+        $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('active').addClass('default');
     };
 
     self.awayCB = function (e) {
-        self.eeDeltaCmd({z: self.stepSize});
+        self.eeDeltaCmd({z: self.posStepSizes[self.getStepSize()]});
     };
 
     self.towardCB = function (e) {
-        self.eeDeltaCmd({z: -self.stepSize});
+        self.eeDeltaCmd({z: -self.posStepSizes[self.getStepSize()]});
     };
 
     self.cwCB = function (e) {
-        self.eeDeltaCmd({yaw: self.stepSizeRot});
+        self.eeDeltaCmd({yaw: self.rotStepSizes[self.getStepSize()]});
     };
 
     self.ccwCB = function (e) {
-        self.eeDeltaCmd({yaw: -self.stepSizeRot});
+        self.eeDeltaCmd({yaw: -self.rotStepSizes[self.getStepSize()]});
     };
 
-    /// SWITCH POSITION AND ROTATION ///
-    $('#'+self.side+'-posrot-set').buttonset().hide().on('change.rfh', function (event, ui) {
-            var mode = event.target.id.slice(-3);
-            $('#'+self.side+'posCtrlIcon, #'+self.side+'rotCtrlIcon').hide();
-            $('#'+self.side+mode+'CtrlIcon').show();
-        });
-
-    /// TRACKING HAND WITH CAMERA ///
-    //self.updateTrackHand = function (event) {
-    //    if ( $("#"+self.side+"-track-hand-toggle").is(":checked") ){
-    //        self.trackHand();
-    //    } else {
-    //        clearInterval(RFH.pr2.head.pubInterval);
-    //    }
-    //}
-
+    /// TRACK HAND WITH CAMERA ///
     self.trackHand = function () {
         clearInterval(RFH.pr2.head.pubInterval);
+        RFH.pr2.head.pointHead(0, 0, 0, self.side+'_gripper_tool_frame'); // Start now, don't wait for first CB
         RFH.pr2.head.pubInterval = setInterval(function () {
             RFH.pr2.head.pointHead(0, 0, 0, self.side+'_gripper_tool_frame');
-        }, 100);
+        }, 500);
     }
 
     /// GRIPPER SLIDER CONTROLS ///
@@ -283,9 +278,9 @@ RFH.CartesianEEControl = function (options) {
                                                    divId: self.gripperDisplayDiv});
     var gripperCSS = {position: "absolute",
                       height: "5%",
-                      width: "30%",
+                      width: "27%",
                       bottom: "5%"};
-    gripperCSS[self.arm.side] = "3%";
+    gripperCSS[self.arm.side] = "2%";
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
     /// SELECT FOCUS POINT CONTROLS ///
@@ -317,6 +312,34 @@ RFH.CartesianEEControl = function (options) {
         self.eeDeltaCmd({});
     };
 
+    self.touchSpotCB = function (e) {
+        if ($('#touchspot-toggle').is(':checked')) {
+            $('#armCtrlContainer').show();
+        } else {
+            $('#armCtrlContainer').hide();
+            // TODO: Change cursor here?
+
+            var onRetCB = function (pose) {
+                var pt = new THREE.Vector3(pose.position);
+                self.arm.sendGoal({
+                    positoin: pt,
+                    orientation: self.eeTF.rotation,
+                    frame_id: 'base_link'
+                })
+                $('#touchspot-toggle').prop('checked', false);
+                $('#armCtrlContainer').show();
+            };
+
+            var clickCB = function (e) {
+                var pt = RFH.positionInElement(e);
+                var x = (pt[0]/e.target.width);
+                var y = (pt[1]/e.target.height);
+                self.pixel23d.callRelativeScale(x, y, onRetCB);
+            };
+            $('#'+self.div).one('click.rfh', clickCB);
+        }
+    };
+
     self.setRotationCtrls = function (e) {
         $('#ctrl-ring').off('mousedown.rfh');
         $('#toward-button, #away-button').off('click.rfh');
@@ -330,7 +353,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.setPositionCtrls = function (e) {
         $('#ctrl-ring').off('mousedown.rfh');
-        $('#toward-button, #away-button').off('click.rfh');
+        $('#toward-button, #away-button, #touchspot-toggle-label').off('click.rfh');
 
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
         $('#ctrl-ring').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.ctrlRingInactivate)
@@ -341,29 +364,35 @@ RFH.CartesianEEControl = function (options) {
 
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
-        //$("#touchspot-toggle-label, #select-focus-toggle-label, #"+self.side+"-track-hand-toggle-label, #"+self.side+"-posrot-set").show();
-        $("#select-focus-toggle-label, #"+self.side+"-posrot-set, #armCtrlContainer, #wristCW, #wristCCW").show();
-        var mode = $('#'+self.side+'-posrot-set>input:checked').attr('id').slice(-3);
-        $('#'+self.side+mode+'CtrlIcon').show();
-        $("#"+self.gripperDisplayDiv).show();
         self.trackHand();
         $('#armCtrlContainer, #away-button, #toward-button').show();
-        $('#wristCW').on('click.rfh', self.wristCWCB)
-        $('#wristCCW').on('click.rfh', self.wristCCWCB)
-        $('#armCtrlContainer > .slider').slider('value', self.stepSize);
-        self.setPositionCtrls();
-        $('#r-posrot-pos').on('click.rfh', self.setPositionCtrls);
-        $('#r-posrot-rot').on('click.rfh', self.setRotationCtrls);
+        $("#select-focus-toggle-label").show();
+        $('#speedOptions').show();
+        $("#"+self.gripperDisplayDiv).show();
+        $('#wristCW').on('click.rfh', self.wristCWCB).show();
+        $('#wristCCW').on('click.rfh', self.wristCCWCB).show();
+        $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
+        $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
+        $('#posrot-set').show();
+        $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
+        $('#posrot-pos').click();
     };
     
     self.stop = function () {
-        $('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set, #armCtrlContainer, #wristCW, #wristCCW').hide();
-        //$('#'+self.posCtrlId + ', #'+self.rotCtrlId+', #touchspot-toggle-label, #select-focus-toggle-label, #'+self.side+'-track-hand-toggle-label, #'+self.side+'-posrot-set').hide();
-        clearInterval(RFH.pr2.head.pubInterval); // Stop following hand with camera
-        $('#'+self.gripperDisplayDiv).hide(); //Hide gripper controls
-        // De-register callbacks on controls
+        clearInterval(RFH.pr2.head.pubInterval);
+        $('#armCtrlContainer').hide();
+        $('#away-button, #toward-button').off('click.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
-        $('#select-focus-toggle-label, #away-button, #toward-button, #wristCW, #wristCCW').off('click.rfh');
+        if ($('#select-focus-toggle').is(':checked')) {
+            $('#select-focus-toggle-label').click();
+        }
+        $("#select-focus-toggle-label").off('click.rfh').hide();
+        $('#speedOptions').hide();
+        $("#"+self.gripperDisplayDiv).hide();
+        $('#wristCW, #wristCCW').off('click.rfh').hide();
+        $('#posrot-pos, #posrot-rot').off('click.rfh').hide();
+        $('#posrot-set').hide();
+        $('#touchspot-toggle-label').off('click.rfh').hide();
     };
 }
 /*

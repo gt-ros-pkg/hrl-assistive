@@ -71,26 +71,31 @@
         <!-- EE Cart Controls -->
 <!--        <input type="checkbox" id="touchspot-toggle"/>
         <label id="touchspot-toggle-label" for="touchspot-toggle">Touch Spot</label>-->
-        <!--<input type="checkbox" id="r-track-hand-toggle" checked="true"/>
-        <label id="r-track-hand-toggle-label" for="r-track-hand-toggle">Watch Hand</label>
-        <input type="checkbox" id="l-track-hand-toggle" checked="true"/>
-        <label id="l-track-hand-toggle-label" for="l-track-hand-toggle">Watch Hand</label>-->
-        <div id="r-posrot-set" style="display:none">
-            <input class="menu-item" id="r-posrot-pos" type="radio" name="r-posrot-radio" checked="checked">
-            <label for="r-posrot-pos">Position</label>
-            <input class="menu-item" id="r-posrot-rot" type="radio" name="r-posrot-radio">
-            <label for="r-posrot-rot">Rotation</label>
-        </div>
-        <div id="l-posrot-set" style="display:none">
-            <input class="menu-item" id="l-posrot-pos" type="radio" name="l-posrot-radio" checked="checked">
-            <label for="l-posrot-pos">Position</label>
-            <input class="menu-item" id="l-posrot-rot" type="radio" name="l-posrot-radio">
-            <label for="l-posrot-rot">Rotation</label>
+        <div id="posrot-set" style="display:none">
+            <input class="menu-item" id="posrot-pos" type="radio" name="posrot-radio" checked="checked">
+            <label for="posrot-pos">Position</label>
+            <input class="menu-item" id="posrot-rot" type="radio" name="posrot-radio">
+            <label for="posrot-rot">Rotation</label>
         </div>
         <input type="checkbox" id="select-focus-toggle"/>
         <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
-        <button id="wristCW" style="display:none">CW</button>
-        <button id="wristCCW" style="display:none">CCW</button>
+<!--        <button id="wristCW" style="display:none">CW</button>
+        <button id="wristCCW" style="display:none">CCW</button>-->
+        <div id="speedOptions">
+            <h4>Step Size</h4>
+            <div id="speedOptions-buttons">
+              <form id="speedOptions-form">
+                <input type="radio" id="tiny" class="speed-option" name="speedOption"/>
+                <label for="tiny">XS</label>
+                <input type="radio" id="small" class="speed-option" name="speedOption"/>
+                <label for="small">S</label>
+                <input type="radio" id="medium" class="speed-option" name="speedOption" checked="checked"/>
+                <label for="medium">M</label>
+                <input type="radio" id="large" class="speed-option" name="speedOption"/>
+                <label for="large">L</label>
+              </form>
+            </div>
+        </div>
      </div>
  </div>
  <div id="video-main">
@@ -115,7 +120,7 @@
          <div id="depthMaskLeft" class="depth-mask" ></div>
          <div id="depthMaskRight" class="depth-mask" ></div>
          <div id='armCtrlContainer' class="ctrlContainer" style="display:none">
-             <div class="slider"></div>
+             <!--<div class="slider"></div>-->
              <div id="ctrl-ring" class="default">
                  <div class="center"></div>
                  <div class="arrow left default"></div>
@@ -123,7 +128,7 @@
                  <div class="arrow up default"></div>
                  <div class="arrow down default"></div>
              </div>
-             <div id="away-button">Further</div>
+             <div id="away-button">Away</div>
              <div id="toward-button">Closer</div>
          </div>
      </div>

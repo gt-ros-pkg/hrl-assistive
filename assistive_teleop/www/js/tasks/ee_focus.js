@@ -33,8 +33,8 @@ RFH.FocalPoint = function (options) {
             self.point = new THREE.Vector3(pose.position.x,
                                            pose.position.y,
                                            pose.position.z);
-            self.tfClient.subscribe(self.camera.frame_id, self.positionFocusPointImage);
-            $('#'+self.pointDivId).show();
+//            self.tfClient.subscribe(self.camera.frame_id, self.positionFocusPointImage);
+//            $('#'+self.pointDivId).show();
         }
     };
 

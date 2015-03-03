@@ -157,7 +157,7 @@ var PR2Head = function (ros) {
             z: z
         };
         headPointMsg.goal.pointing_frame = head.pointingFrame;
-        headPointMsg.goal.max_velocity = 0.35;
+        headPointMsg.goal.max_velocity = 0.25;
         head.pointPub.publish(headPointMsg);
     };
 };
