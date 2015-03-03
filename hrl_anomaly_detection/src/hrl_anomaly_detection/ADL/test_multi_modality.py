@@ -87,7 +87,7 @@ def fig_roc_offline_sim(cross_data_path, \
 
             
     ## Multi dimension
-    for i in xrange(2,3):
+    for i in xrange(3): #temp
         count = 0
         for ths in threshold_mult:
 
