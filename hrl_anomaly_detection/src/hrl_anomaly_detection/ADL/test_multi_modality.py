@@ -199,10 +199,17 @@ def fig_roc_offline_sim(cross_data_path, \
             fp_l  = np.array(fp_l)*100.0
             tp_l  = np.array(tp_l)*100.0
 
+            idx_list = sorted(range(len(fp_l)), key=lambda k: fp_l[k])
+            sorted_fp_l = [fp_l[j] for j in idx_list]
+            sorted_tp_l = [tp_l[j] for j in idx_list]
+            
             color = colors.next()
             shape = shapes.next()
-            semantic_label='likelihood detection \n with known mechanism class '+str(i)
-            pp.plot(fp_l, tp_l, shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+
+            if i==0: semantic_label='Force only'
+            elif i==1: semantic_label='Sound only'
+            else: semantic_label='Force and sound'
+            pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
 
 
@@ -216,10 +223,10 @@ def fig_roc_offline_sim(cross_data_path, \
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
         
-        pp.xlabel('False positive rate (percentage)')
-        pp.ylabel('True positive rate (percentage)')    
-        ## pp.xlim([0, 30])
-        pp.legend(loc=4,prop={'size':14})
+        pp.xlabel('False positive rate (percentage)', fontsize=16)
+        pp.ylabel('True positive rate (percentage)', fontsize=16)    
+        pp.ylim([0, 101])
+        pp.legend(loc=4,prop={'size':16})
         
         pp.show()
                             
@@ -838,7 +845,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -954,7 +961,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(1.0, 25.001, 0.5)    
+        threshold_mult  = np.arange(0.0, 25.001, 0.5)    
         attr            = 'id'
 
         fig_roc_offline_sim(cross_data_path, \
