@@ -91,7 +91,7 @@ class BaseSelector(object):
         start_time = time.time()
         print 'Loading data, please wait.'
         self.chair_scores = self.load_task('yogurt', 'chair')
-        self.autobed_scores = self.load_task('yogurt', 'autobed')
+        self.autobed_scores = self.load_task('feeding_quick', 'autobed')
         self.shaving_scores = self.load_task('shaving', 'chair')
         print 'Time to receive load data: %fs' % (time.time()-start_time)
         # Service
@@ -798,15 +798,16 @@ class BaseSelector(object):
         #print 'I found nothing! My given inputs were: \n', req.task, req.head
         return None
 
-
-    def load_task(self, task, model):
-
-        rospack = rospkg.RosPack()
-        pkg_path = rospack.get_path('hrl_base_selection')
-        
-        return load_pickle(''.join([pkg_path,'/data/', task, '_', model, '_score_data.pkl']))
-
-
+    def load_task(self, task, model, subj):
+        # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data.pkl'])
+        file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
+        # return self.load_spickle(file_name)
+        print 'loading file with name ', file_name
+        try:
+            return joblib.load(file_name)
+        except IOError:
+            print 'Load failed, sorry.'
+            return None
 
 if __name__ == "__main__":
     # model = 'bed'

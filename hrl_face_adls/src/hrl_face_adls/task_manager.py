@@ -18,6 +18,10 @@ from hrl_ellipsoidal_control.msg import EllipsoidParams
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 
+roslib.load_manifest('hrl_base_selection')
+from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
+# from navigation_feedback import *
+
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
          'Arm': ([0.337, -0.228, -0.317], [0.282, 0.850, 0.249, 0.370]),
          'Shoulder': ([0.108, -0.236, -0.105], [0.346, 0.857, 0.238, 0.299]),
@@ -26,18 +30,35 @@ POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
 class ServoingManager(object):
     """ Manager for providing test goals to pr2 ar servoing. """
 
-    def __init__(self):
-        self.task = 'yogurt'
-        self.model = 'chair' # options are 'chair' and 'autobed'
+    def __init__(self, mode=None):
+        self.task = 'feeding_quick'
+        self.model = 'autobed' # options are 'chair' and 'autobed'
+        self.mode = mode
 
         if self.model == 'autobed':
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
+            self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, latch=True)
 
         self.tfl = TransformListener()
 
+        if self.mode == 'manual':
+            self.base_pose = None
+            self.object_pose = None
+            self.raw_head_pose = None
+            self.raw_base_pose = None
+            self.raw_object_pose = None
+            self.raw_head_sub = rospy.Subscriber('/raw_head_pose', PoseStamped, self.raw_head_pose_cb)
+            self.raw_base_sub = rospy.Subscriber('/raw_robot_pose', PoseStamped, self.raw_base_pose_cb)
+            self.raw_object_sub = rospy.Subscriber('/raw_object_pose', PoseStamped, self.raw_object_pose_cb)
+            self.head_pub = rospy.Publisher('/head_pose', PoseStamped, latch=True)
+            self.base_pub = rospy.Publisher('/robot_pose', PoseStamped, latch=True)
+            self.object_pub = rospy.Publisher('/object_pose', PoseStamped, latch=True)
+            self.base_goal_pub = rospy.Publisher('/base_goal', PoseStamped, latch=True)
+            self.robot_location_pub = rospy.Publisher('/robot_location', PoseStamped, latch=True)
+            # self.navigation = NavigationHelper(robot='/robot_location', target='/base_goal')
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pose', PoseStamped, latch=True)
         self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped)
@@ -46,7 +67,6 @@ class ServoingManager(object):
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
         self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                               SingleJointPositionActionGoal, latch=True)
-        self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, latch=True)
 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 
@@ -82,7 +102,6 @@ class ServoingManager(object):
         self.feedback_pub.publish(msg)
         rospy.loginfo(msg)
 
-
     def ui_cb(self, msg):
         if self.model == 'chair':
             self.send_task_count = 0
@@ -101,7 +120,7 @@ class ServoingManager(object):
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
             return
         rospy.loginfo("[%s] Found head frame" % rospy.get_name());
-        self.test_head_pub.publish(self.head_pose)
+        # self.test_head_pub.publish(self.head_pose)
 
         loc = msg.data
         if loc not in POSES:
@@ -110,20 +129,20 @@ class ServoingManager(object):
             rospy.loginfo("[%s]" % rospy.get_name() + log_msg)
             return
         rospy.loginfo("[%s] Received valid goal location: %s" % (rospy.get_name(), loc))
-        pos, quat = POSES[loc]
-        goal_ps_ell = PoseStamped()
-        goal_ps_ell.header.frame_id = 'head_frame'
-        goal_ps_ell.pose.position = Point(*pos)
-        goal_ps_ell.pose.orientation = Quaternion(*quat)
+        # pos, quat = POSES[loc]
+        # goal_ps_ell = PoseStamped()
+        # goal_ps_ell.header.frame_id = 'head_frame'
+        # goal_ps_ell.pose.position = Point(*pos)
+        # goal_ps_ell.pose.orientation = Quaternion(*quat)
 
         now = rospy.Time.now()
-        self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(10))
-        goal_ps_ell.header.stamp = now
-        goal_ps = self.tfl.transformPose('base_link', goal_ps_ell)
-        self.test_pub.publish(goal_ps)
+        # self.tfl.waitForTransform('base_link', goal_ps_ell.header.frame_id, now, rospy.Duration(10))
+        # goal_ps_ell.header.stamp = now
+        # goal_ps = self.tfl.transformPose('base_link', goal_ps_ell)
+        # self.test_pub.publish(goal_ps)
         with self.lock:
             self.action = "touch"
-            self.goal_pose = goal_ps
+            # self.goal_pose = goal_ps
             self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
         base_goals = []
@@ -156,8 +175,6 @@ class ServoingManager(object):
                                              configuration_goals[2+3*i]])
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
         # msg.tag_goal_pose.header.frame_id
-        self.servo_goal_pub.publish(base_goals_list[0])
-
         torso_lift_msg = SingleJointPositionActionGoal()
         torso_lift_msg.goal.position = configuration_goals_list[0][0]
         self.torso_lift_pub.publish(torso_lift_msg)
@@ -169,16 +186,20 @@ class ServoingManager(object):
             autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1]+9, self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
 
-        ar_data = ARServoGoalData()
-        # 'base_link' in msg.tag_goal_pose.header.frame_id
-        with self.lock:
-            ar_data.tag_id = -1
-            ar_data.marker_topic = self.marker_topic
-            ar_data.tag_goal_pose = base_goals_list[0]
-            self.action = None
-            self.location = None
-        self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
-        rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
+        if self.mode == 'manual':
+            self.navigation.start_navigate()
+        else:
+            self.servo_goal_pub.publish(base_goals_list[0])
+            ar_data = ARServoGoalData()
+            # 'base_link' in msg.tag_goal_pose.header.frame_id
+            with self.lock:
+                ar_data.tag_id = -1
+                ar_data.marker_topic = self.marker_topic
+                ar_data.tag_goal_pose = base_goals_list[0]
+                self.action = None
+                self.location = None
+            self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
+            rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
         self.base_selection_complete = True
         self.send_task_count += 1
         self.goal_data_pub.publish(ar_data)
@@ -239,24 +260,93 @@ class ServoingManager(object):
         self.bed_state_head_theta = data.data[0]
         self.bed_state_leg_theta = data.data[2]
 
+
+
+    def base_goal_cb(self, data):
+        goal_trans = [data.pose.position.x,
+                 data.pose.position.y,
+                 data.pose.position.z]
+        goal_rot = [data.pose.orientation.x,
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
+        pr2_B_goal = createBMatrix(goal_trans, goal_rot)
+        pr2_trans = [data.pose.position.x,
+                 data.pose.position.y,
+                 data.pose.position.z]
+        pr2_rot = [data.pose.orientation.x,
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
+        world_B_pr2 = createBMatrix(pr2_trans, pr2_rot)
+        world_B_goal = world_B_pr2*pr2_B_goal
+
+        # self.head_pose = data
+
+    def update_relations(self):
+        pr2_trans = [self.raw_base_pose.pose.position.x,
+                     self.raw_base_pose.pose.position.y,
+                     self.raw_base_pose.pose.position.z]
+        pr2_rot = [self.raw_base_pose.pose.orientation.x,
+                   self.raw_base_pose.pose.orientation.y,
+                   self.raw_base_pose.pose.orientation.z,
+                   self.raw_base_pose.pose.orientation.w]
+        world_B_pr2 = createBMatrix(pr2_trans, pr2_rot)
+        head_trans = [self.raw_head_pose.pose.position.x,
+                     self.raw_head_pose.pose.position.y,
+                     self.raw_head_pose.pose.position.z]
+        head_rot = [self.raw_head_pose.pose.orientation.x,
+                   self.raw_head_pose.pose.orientation.y,
+                   self.raw_head_pose.pose.orientation.z,
+                   self.raw_head_pose.pose.orientation.w]
+        world_B_head = createBMatrix(head_trans, head_rot)
+        pr2_B_head = world_B_pr2.I*world_B_head
+        pos, ori = Bmat_to_pos_quat(pr2_B_head)
+        psm = PoseStamped()
+        psm.header.frame_id = '/base_link'
+        psm.pose.position.x = pos[0]
+        psm.pose.position.y = pos[1]
+        psm.pose.position.z = pos[2]
+        psm.pose.orientation.x = ori[0]
+        psm.pose.orientation.y = ori[1]
+        psm.pose.orientation.z = ori[2]
+        psm.pose.orientation.w = ori[3]
+        self.head_pub(psm)
+
+
+    def raw_head_pose_cb(self, data):
+        self.raw_head_pose = data
+        self.update_relations()
+
+    def raw_base_pose_cb(self, data):
+        self.raw_base_pose = data
+        self.update_relations()
+
+    def raw_object_pose_cb(self, data):
+        self.raw_object_pose = data
+
     def get_head_pose(self, head_frame="/head_frame"):
-        try:
-            now = rospy.Time.now()
-            self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(15))
-            pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
-            head_pose = PoseStamped()
-            head_pose.header.frame_id = "/base_link"
-            head_pose.header.stamp = now
-            head_pose.pose.position = Point(*pos)
-            head_pose.pose.orientation = Quaternion(*quat)
-            return head_pose
-        except Exception as e:
-            rospy.loginfo("TF Exception:\r\n%s" %e)
-            return None
+        if self.mode == 'manual':
+            return self.head_pose
+        else:
+            try:
+                now = rospy.Time.now()
+                self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(15))
+                pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
+                head_pose = PoseStamped()
+                head_pose.header.frame_id = "/base_link"
+                head_pose.header.stamp = now
+                head_pose.pose.position = Point(*pos)
+                head_pose.pose.orientation = Quaternion(*quat)
+                return head_pose
+            except Exception as e:
+                rospy.loginfo("TF Exception:\r\n%s" %e)
+                return None
 
 
 if __name__ == '__main__':
     rospy.init_node('ar_servo_manager')
-    manager = ServoingManager()
+    mode = 'normal'  # options are 'manual' for manual base movement using motion capture positioning and auto otherwise
+    manager = ServoingManager(mode=mode)
     import sys
     rospy.spin()
