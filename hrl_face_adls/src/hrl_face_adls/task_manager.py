@@ -254,7 +254,7 @@ class ServoingManager(object):
                 else:
                     tw.linear.x = np.sign(error_mat[0, 3])*0.15
                     base_move_pub.publish(tw)
-                    rospy.sleep(rate)
+                    rospy.sleep(.1)
             rospy.loginfo('Finished moving to X pose!')
             print 'Finished moving to X pose!'
             done = False
