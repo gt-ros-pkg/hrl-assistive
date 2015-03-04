@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
+import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 from hrl_anomaly_detection.HMM.anomaly_checker import anomaly_checker
 
 def load_data(data_path, prefix, normal_only=True):
@@ -56,10 +57,10 @@ def load_data(data_path, prefix, normal_only=True):
         ## if bNormal is False:
         ##     if pkl.find('gatsbii_glass_case_robot_stickblock_1') < 0: continue
         
-        if bNormal: count += 1        
-        if bNormal and (count==17 or count == 22 or count == 27):                 
-            print "aaaaaa ", pkl
-            continue
+        ## if bNormal: count += 1        
+        ## if bNormal and (count==17 or count == 22 or count == 27):                 
+        ##     print "aaaaaa ", pkl
+        ##     continue
 
         d = ut.load_pickle(pkl)
 
@@ -791,7 +792,20 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
     sound_an = ['weaken', 'rndimpulse']
 
     length = len(true_aXData1[0])
-        
+
+
+    # mean, var of true data    
+    x = range(len(true_aXData1[0]))
+    y1 = np.sum(true_aXData1, axis=0)
+    y1 = y1 / np.sum(y1)
+    y2 = np.sum(true_aXData2, axis=0).tolist()
+    ## y2 = y2 / np.sum(y2)    
+    max_y2_idx = y2.index(max(y2))
+
+    ## mu1, var1 = hdl.gaussian_param_estimation(x, y1)
+    ## mu2, var2 = hdl.gaussian_param_estimation(x, y2)
+    
+
     new_X1 = []
     new_X2 = []
     chunks = []
@@ -819,7 +833,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             if an1 == 'stretch':
                 print "Streched force"
 
-                mag = random.uniform(1.2, 2.0)
+                mag = random.uniform(1.5, 2.0)
 
                 x   = np.linspace(0.0, 1.0, length)
                 tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
@@ -830,7 +844,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an1 == 'shorten':
                 print "Shorten force"
 
-                mag = random.uniform(0.1, 0.8)
+                mag = random.uniform(0.1, 0.5)
 
                 x   = np.linspace(0.0, 1.0, length)
                 tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
@@ -841,13 +855,13 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an1 == 'amplified':
                 print "Amplied force"
 
-                mag = random.uniform(1.2, 2.0)                
+                mag = random.uniform(1.5, 2.0)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                 
             elif an1 == 'weaken':
                 print "Weaken force"
 
-                mag = random.uniform(0.2, 0.8)                
+                mag = random.uniform(0.1, 0.5)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                                 
             elif an1 == 'rndimpulse':
@@ -878,7 +892,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             if an2 == 'weaken':
                 print "Weaken sound"
 
-                mag = random.uniform(0.2, 0.8)                
+                mag = random.uniform(0.1, 0.5)                
                 x2_anomaly = true_aXData2[x_idx] *mag
 
             elif an2 == 'rndimpulse':
@@ -886,7 +900,11 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                 peak  = max_c2 * random.uniform(0.5, 1.5)
                 width = random.randint(2,5)
-                loc   = random.randint(1+width,len(x1_anomaly)-1-width)
+
+                while True:
+                    loc   = random.randint(1+width,len(x1_anomaly)-1-width)
+                    if loc < max_y2_idx - 10 or loc > max_y2_idx + 10:                        
+                        break
 
                 xnew    = range(width)
                 impulse = np.zeros(width)
@@ -920,6 +938,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         new_X1.append(x1_anomaly)
         new_X2.append(x2_anomaly)
         chunks.append(an1+"_"+an2)
+
         
     return new_X1, new_X2, chunks
 
