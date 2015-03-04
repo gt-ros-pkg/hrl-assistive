@@ -954,7 +954,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(0.0, 20.001, 0.5)    
+        threshold_mult  = np.arange(1.0, 25.001, 0.5)    
         attr            = 'id'
 
         fig_roc_offline_sim(cross_data_path, \
