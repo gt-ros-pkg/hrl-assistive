@@ -61,17 +61,28 @@ class armReachAction(mpcBaseAction):
 
         # These are the goals for autobed's data
         frame_id = '/head_frame'
-        # #going to in front of subjects face:        
-        (pos.x, pos.y, pos.z) = (0.2741387011303321, 0.05522571699560719, -0.011919598309888757)
-        (quat.x, quat.y, quat.z, quat.w) = (-0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394)
+
+         # #going to subjects mouth:
+        (pos.x, pos.y, pos.z) = (1.226054, -0.00, 1.120987)
+        (quat.x, quat.y, quat.z, quat.w) = (0.005207, 0.032937, 0.999380, -0.011313)
+        timeout = 35.0
+        self.setOrientGoal(pos, quat, timeout, frame_id)
+
+        # #going to mouth:
+        (pos.x, pos.y, pos.z) = (1.154571, -0.000, 1.175490)
+        (quat.x, quat.y, quat.z, quat.w) = ( -0.018872, 0.033197, 0.999248, 0.006737)
+        timeout = 35.0
+        self.setOrientGoal(pos, quat, timeout, frame_id)
+
+        # #going to in front of subjects face:
+        (pos.x, pos.y, pos.z) = (1.070794, -0.000, 1.183998)
+        (quat.x, quat.y, quat.z, quat.w) = (-0.018872, 0.033197, 0.999248, 0.006737)
         timeout = 10.0
         self.setOrientGoal(pos, quat, timeout, frame_id)
 
-        # #going to subjects mouth:
-        (pos.x, pos.y, pos.z) = (0.20608632401364894, 0.03540318703608347, 0.00607600258150498)
-        (quat.x, quat.y, quat.z, quat.w) = (-0.015224467044577382, 0.7345761465214938, 0.6783020152473445, -0.008513323454022942)
-        timeout = 35.0
-        self.setOrientGoal(pos, quat, timeout, frame_id)
+
+
+
 
         # These are the goals for wheelchair's new data (10/13/14)
         # frame_id = '/head_frame'

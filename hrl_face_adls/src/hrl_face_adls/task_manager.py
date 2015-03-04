@@ -3,13 +3,15 @@
 from threading import Lock
 import copy
 import numpy as np
+import math as m
+import ros
 
 import roslib
 roslib.load_manifest('hrl_face_adls')
 import rospy
 from hrl_msgs.msg import FloatArrayBare
 from std_msgs.msg import String, Int32, Int8, Bool
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
 from tf import TransformListener, transformations as tft
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
@@ -20,6 +22,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
+from tf_goal import TF_Goal
 # from navigation_feedback import *
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
@@ -42,28 +45,32 @@ class ServoingManager(object):
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, latch=True)
 
+            self.world_B_head = None
+            self.world_B_ref_model = None
+            self.world_B_robot = None
+
         self.tfl = TransformListener()
 
-        if self.mode == 'manual':
+        if self.mode == 'manual' or True:
             self.base_pose = None
             self.object_pose = None
             self.raw_head_pose = None
             self.raw_base_pose = None
             self.raw_object_pose = None
-            self.raw_head_sub = rospy.Subscriber('/raw_head_pose', PoseStamped, self.raw_head_pose_cb)
-            self.raw_base_sub = rospy.Subscriber('/raw_robot_pose', PoseStamped, self.raw_base_pose_cb)
-            self.raw_object_sub = rospy.Subscriber('/raw_object_pose', PoseStamped, self.raw_object_pose_cb)
-            self.head_pub = rospy.Publisher('/head_pose', PoseStamped, latch=True)
-            self.base_pub = rospy.Publisher('/robot_pose', PoseStamped, latch=True)
-            self.object_pub = rospy.Publisher('/object_pose', PoseStamped, latch=True)
+            self.raw_head_sub = rospy.Subscriber('/head_frame', PoseStamped, self.head_frame_cb)
+            self.raw_base_sub = rospy.Subscriber('/robot_frame', PoseStamped, self.robot_frame_cb)
+            self.raw_object_sub = rospy.Subscriber('/reference', PoseStamped, self.reference_cb)
+            # self.head_pub = rospy.Publisher('/head_frame', PoseStamped, latch=True)
+            # self.base_pub = rospy.Publisher('/robot_frame', PoseStamped, latch=True)
+            # self.object_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
             self.base_goal_pub = rospy.Publisher('/base_goal', PoseStamped, latch=True)
-            self.robot_location_pub = rospy.Publisher('/robot_location', PoseStamped, latch=True)
+            # self.robot_location_pub = rospy.Publisher('/robot_location', PoseStamped, latch=True)
             # self.navigation = NavigationHelper(robot='/robot_location', target='/base_goal')
         self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         self.servo_goal_pub = rospy.Publisher('servo_goal_pose', PoseStamped, latch=True)
         self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped)
-        self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
-        self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
+        # self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
+        # self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
         self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                               SingleJointPositionActionGoal, latch=True)
@@ -113,7 +120,7 @@ class ServoingManager(object):
         if self.model == 'chair':
             self.send_task_count = 3
         self.base_selection_complete = False
-        self.head_pose = self.get_head_pose()
+        self.head_pose = self.world_B_head
         if self.head_pose is None:
             log_msg = "Please register your head before sending a task."
             self.feedback_pub.publish(String(log_msg))
@@ -140,10 +147,10 @@ class ServoingManager(object):
         # goal_ps_ell.header.stamp = now
         # goal_ps = self.tfl.transformPose('base_link', goal_ps_ell)
         # self.test_pub.publish(goal_ps)
-        with self.lock:
-            self.action = "touch"
-            # self.goal_pose = goal_ps
-            self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
+        # with self.lock:
+        #     self.action = "touch"
+        #     # self.goal_pose = goal_ps
+        #     self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
         base_goals = []
         configuration_goals = []
@@ -152,42 +159,56 @@ class ServoingManager(object):
             base_goals.append(item)
         for item in config_array:
             configuration_goals.append(item)
+        base_goals[0] = 1.1
+        base_goals[1] = -1.1
 
-        print "Base Goals returned:\r\n", base_goals
-        if base_goals is None:
-            rospy.loginfo("No base goal found")
-            return
-        base_goals_list = []
-        configuration_goals_list = []
-        for i in xrange(int(len(base_goals)/7)):
-            psm = PoseStamped()
-            psm.header.frame_id = '/base_link'
-            psm.pose.position.x = base_goals[int(0+7*i)]
-            psm.pose.position.y = base_goals[int(1+7*i)]
-            psm.pose.position.z = base_goals[int(2+7*i)]
-            psm.pose.orientation.x = base_goals[int(3+7*i)]
-            psm.pose.orientation.y = base_goals[int(4+7*i)]
-            psm.pose.orientation.z = base_goals[int(5+7*i)]
-            psm.pose.orientation.w = base_goals[int(6+7*i)]
-            psm.header.frame_id = '/base_link'
-            base_goals_list.append(copy.copy(psm))
-            configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
-                                             configuration_goals[2+3*i]])
+        # print "Base Goals returned:\r\n", base_goals
+        # if base_goals is None:
+        #     rospy.loginfo("No base goal found")
+        #     return
+        # base_goals_list = []
+        # configuration_goals_list = []
+        # for i in xrange(int(len(base_goals)/7)):
+        #     psm = PoseStamped()
+        #     psm.header.frame_id = '/base_link'
+        #     psm.pose.position.x = base_goals[int(0+7*i)]
+        #     psm.pose.position.y = base_goals[int(1+7*i)]
+        #     psm.pose.position.z = base_goals[int(2+7*i)]
+        #     psm.pose.orientation.x = base_goals[int(3+7*i)]
+        #     psm.pose.orientation.y = base_goals[int(4+7*i)]
+        #     psm.pose.orientation.z = base_goals[int(5+7*i)]
+        #     psm.pose.orientation.w = base_goals[int(6+7*i)]
+        #     base_goals_list.append(copy.copy(psm))
+        #     configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
+        #                                      configuration_goals[2+3*i]])
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
         # msg.tag_goal_pose.header.frame_id
         torso_lift_msg = SingleJointPositionActionGoal()
-        torso_lift_msg.goal.position = configuration_goals_list[0][0]
+        torso_lift_msg.goal.position = configuration_goals[0]
         self.torso_lift_pub.publish(torso_lift_msg)
 
         # Move autobed if we are dealing with autobed. If not autobed, don't move it. Temporarily fixed to True for
         # testing
         if self.model == 'autobed':
-            autobed_goal = FloatArrayBare()
-            autobed_goal.data = [configuration_goals_list[0][2], configuration_goals_list[0][1]+9, self.bed_state_leg_theta]
-            self.autobed_pub.publish(autobed_goal)
+            # autobed_goal = FloatArrayBare()
+            # autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9, self.bed_state_leg_theta]
+            # self.autobed_pub.publish(autobed_goal)
+            print 'The autobed should be set to a height of: ', configuration_goals[1]+9
+            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
+
 
         if self.mode == 'manual':
             self.navigation.start_navigate()
+        elif True:
+            goal_B_ref_model= np.matrix([[m.cos(base_goals[2]), -m.sin(base_goals[2]),     0.,  base_goals[0]],
+                                         [m.sin(base_goals[2]),  m.cos(base_goals[2]),     0.,  base_goals[1]],
+                                         [             0.,               0.,     1.,        0.],
+                                         [             0.,               0.,     0.,        1.]])
+            world_B_goal = self.world_B_ref_model*goal_B_ref_model.I
+            # pub_goal_tf = TF_Goal(world_B_goal, self.tfl)
+            if self.servo_to_pose(world_B_goal):
+                self.base_selection_complete = True
+                print 'At desired location!!'
         else:
             self.servo_goal_pub.publish(base_goals_list[0])
             ar_data = ARServoGoalData()
@@ -200,9 +221,127 @@ class ServoingManager(object):
                 self.location = None
             self.feedback_pub.publish("Base Position Found. Please use servoing tool.")
             rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
-        self.base_selection_complete = True
         self.send_task_count += 1
-        self.goal_data_pub.publish(ar_data)
+        # self.goal_data_pub.publish(ar_data)
+
+    def servo_to_pose(self, world_B_goal):
+        # self.tfl.waitForTransform('/base_link', '/r_forearm_cam_optical_frame', rospy.Time(), rospy.Duration(15.0))
+        # (trans, rot) = self.tf_listener.lookupTransform('/base_link', '/r_forearm_cam_optical_frame', rospy.Time())
+        #
+        # self.tfl.waitForTransform(
+
+
+        # ref_model_B_goal = np.matrix([[m.cos(goal_base_pose[2]), -m.sin(goal_base_pose[2]),     0.,  goal_base_pose[0]],
+        #                               [m.sin(goal_base_pose[2]),  m.cos(goal_base_pose[2]),     0.,  goal_base_pose[1]],
+        #                               [             0.,               0.,     1.,        0.],
+        #                               [             0.,               0.,     0.,        1.]])
+        base_move_pub = rospy.Publisher('/base_controller/command', Twist)
+        # error_pos = 1
+        done_moving = False
+        rate = rospy.Rate(2)
+        while not done_moving:
+            done = False
+            tw = Twist()
+            tw.linear.x=0
+            tw.linear.y=0
+            tw.linear.z=0
+            tw.angular.x=0
+            tw.angular.y=0
+            tw.angular.z=0
+            # while not rospy.is_shutdown() and np.abs(world_B_goal[0, 3]-self.world_B_robot[0, 3]) > 0.1:
+            while not done:
+                error_mat = self.world_B_robot.I*world_B_goal
+                if np.abs(error_mat[0, 3]) < 0.1:
+                    done = True
+                else:
+                    tw.linear.x = np.sign(error_mat[0, 3])*0.15
+                    base_move_pub.publish(tw)
+                    rospy.sleep(.1)
+            rospy.loginfo('Finished moving to X pose!')
+            print 'Finished moving to X pose!'
+            done = False
+            tw = Twist()
+            tw.linear.x=0
+            tw.linear.y=0
+            tw.linear.z=0
+            tw.angular.x=0
+            tw.angular.y=0
+            tw.angular.z=0
+            while not done:
+                error_mat = self.world_B_robot.I*world_B_goal
+                if np.abs(error_mat[1, 3]) < 0.1:
+                    done = True
+                else:
+                    tw.linear.y = np.sign(error_mat[1, 3])*0.15
+                    base_move_pub.publish(tw)
+                    rospy.sleep(.1)
+            rospy.loginfo('Finished moving to Y pose!')
+            print 'Finished moving to Y pose!'
+            done = False
+            tw = Twist()
+            tw.linear.x=0
+            tw.linear.y=0
+            tw.linear.z=0
+            tw.angular.x=0
+            tw.angular.y=0
+            tw.angular.z=0
+            while not done:
+                error_mat = self.world_B_robot.I*world_B_goal
+                if np.abs(m.acos(error_mat[0, 0])) < 0.1:
+                    done = True
+                else:
+                    tw.angular.z = np.sign(m.acos(error_mat[0, 0]))*0.1
+                    base_move_pub.publish(tw)
+                    rospy.sleep(.1)
+            rospy.loginfo('Finished moving to goal pose!')
+            print 'Finished moving to goal pose!'
+            done_moving = True
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_pos = [error_mat[0,3], error_mat[1,3]]
+            # error_ori = m.acos(error_mat[0,0])
+            # # while not (rospy.is_shutdown() and (np.linalg.norm(error_pos)>0.1)) and False:
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_pos = [error_mat[0,3], error_mat[1,3]]
+            # move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
+            # normalized_pos = move / (np.linalg.norm(move))
+            # tw = Twist()
+            # tw.linear.x=normalized_pos[0]
+            # tw.linear.y=normalized_pos[1]
+            # tw.linear.z=0
+            # tw.angular.x=0
+            # tw.angular.y=0
+            # tw.angular.z=0
+            # base_move_pub.publish(tw)
+            # rospy.sleep(.1)
+            # # rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
+            # # print 'Finished moving to X-Y position. Now correcting orientation!'
+            # # while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1) and False:
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_ori = m.acos(error_mat[0,0])
+            # move = -error_ori
+            # normalized_ori = move / (np.linalg.norm(move))
+            # tw = Twist()
+            # tw.linear.x=0
+            # tw.linear.y=0
+            # tw.linear.z=0
+            # tw.angular.x=0
+            # tw.angular.y=0
+            # tw.angular.z=normalized_ori
+            # base_move_pub.publish(tw)
+            # rospy.sleep(.1)
+            # # self.world_B_robot
+            # # self.world_B_head
+            # # self.world_B_ref_model
+            # # world_B_ref = createBMatrix(self)
+            # # error =
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_pos = [error_mat[0,3], error_mat[1,3]]
+            # error_ori = m.acos(error_mat[0,0])
+            # if np.linalg.norm(error_pos)<0.05 and np.linalg.norm(error_ori)<0.05:
+            #     done_moving = True
+            # # rospy.loginfo('Finished moving to goal pose!')
+            # print 'Finished moving to goal pose!'
+        return True
 
     def call_arm_reacher(self):
         # Place holder return
@@ -313,20 +452,40 @@ class ServoingManager(object):
         psm.pose.orientation.w = ori[3]
         self.head_pub(psm)
 
+    def head_frame_cb(self, data):
+        trans = [data.pose.position.x,
+                 data.pose.position.y,
+                 data.pose.position.z]
+        rot = [data.pose.orientation.x,
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
+        self.world_B_head = createBMatrix(trans, rot)
+        # self.update_relations()
 
-    def raw_head_pose_cb(self, data):
-        self.raw_head_pose = data
-        self.update_relations()
+    def robot_frame_cb(self, data):
+        trans = [data.pose.position.x,
+                 data.pose.position.y,
+                 data.pose.position.z]
+        rot = [data.pose.orientation.x,
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
+        self.world_B_robot = createBMatrix(trans, rot)
+        # self.update_relations()
 
-    def raw_base_pose_cb(self, data):
-        self.raw_base_pose = data
-        self.update_relations()
-
-    def raw_object_pose_cb(self, data):
-        self.raw_object_pose = data
+    def reference_cb(self, data):
+        trans = [data.pose.position.x,
+                 data.pose.position.y,
+                 data.pose.position.z]
+        rot = [data.pose.orientation.x,
+               data.pose.orientation.y,
+               data.pose.orientation.z,
+               data.pose.orientation.w]
+        self.world_B_ref_model = createBMatrix(trans, rot)
 
     def get_head_pose(self, head_frame="/head_frame"):
-        if self.mode == 'manual':
+        if self.mode == 'manual' or True:
             return self.head_pose
         else:
             try:
