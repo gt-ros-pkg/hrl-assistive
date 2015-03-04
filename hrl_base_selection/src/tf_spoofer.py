@@ -15,6 +15,7 @@ from tf import TransformListener
 from tf import transformations as tft
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, Bmat_to_pos_quat
+
 roslib.load_manifest('hrl_pr2_ar_servo')
 from ar_pose.msg import ARMarker
 
@@ -78,9 +79,12 @@ class TF_Spoofer(object):
 
             pos, ori = Bmat_to_pos_quat(world_B_robot.I)
             pos[2] = 0.
+            self.tf_broadcaster.sendTransform((pos[0], pos[1], 0.), (ori[0], ori[1], ori[2], ori[3]),
+                                              rospy.Time.now(), '/optitrak', '/base_link')
             self.robot_B_world = createBMatrix(pos, ori)
+            pos, ori = Bmat_to_pos_quat(world_B_robot)
             psm = PoseStamped()
-            psm.header.frame_id = '/base_link'
+            psm.header.frame_id = '/optitrak'
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
             psm.pose.position.z = pos[2]
@@ -89,8 +93,7 @@ class TF_Spoofer(object):
             psm.pose.orientation.z = ori[2]
             psm.pose.orientation.w = ori[3]
             self.robot_center_pub.publish(psm)
-            self.tf_broadcaster.sendTransform((pos[0], pos[1], 0.), (ori[0], ori[1], ori[2], ori[3]),
-                                              rospy.Time.now(), '/optitrak', '/base_link')
+
             # world_B_pr2 = createBMatrix(trans, rot)
             # self.robot_pose = world_B_pr2
             # self.update_feedback()
