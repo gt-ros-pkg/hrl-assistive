@@ -186,9 +186,9 @@ class ServoingManager(object):
         # testing
         if self.model == 'autobed':
             # autobed_goal = FloatArrayBare()
-            # autobed_goal.data = [configuration_goals[2], configuration_goals_list[1]+9, self.bed_state_leg_theta]
+            # autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9, self.bed_state_leg_theta]
             # self.autobed_pub.publish(autobed_goal)
-            print 'The autobed should be set to a height of: ', configuration_goals_list[1]+9
+            print 'The autobed should be set to a height of: ', configuration_goals[1]+9
             print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
 
         if self.mode == 'manual':
