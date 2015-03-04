@@ -236,10 +236,11 @@ class ServoingManager(object):
         base_move_pub = rospy.Publisher('/base_controller/command', Twist)
         # error_pos = 1
         done_moving = False
+        rate = rospy.Rate(2)
         while not done_moving:
             done = False
             tw = Twist()
-            tw.linear.x=0.15
+            tw.linear.x=0
             tw.linear.y=0
             tw.linear.z=0
             tw.angular.x=0
@@ -253,7 +254,7 @@ class ServoingManager(object):
                 else:
                     tw.linear.x = np.sign(error_mat[0, 3])*0.15
                     base_move_pub.publish(tw)
-                    rospy.sleep(.1)
+                    rospy.sleep(rate)
             rospy.loginfo('Finished moving to X pose!')
             print 'Finished moving to X pose!'
             done = False
