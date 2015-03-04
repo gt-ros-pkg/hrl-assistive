@@ -56,10 +56,10 @@ def load_data(data_path, prefix, normal_only=True):
         ## if bNormal is False:
         ##     if pkl.find('gatsbii_glass_case_robot_stickblock_1') < 0: continue
         
-        ## if bNormal: count += 1        
-        ## if bNormal and (count==13 or count == 9 or count == 2):                 
-        ##     print "aaaaaa ", pkl
-        ##     continue
+        if bNormal: count += 1        
+        if bNormal and (count==17 or count == 22 or count == 27):                 
+            print "aaaaaa ", pkl
+            continue
 
         d = ut.load_pickle(pkl)
 

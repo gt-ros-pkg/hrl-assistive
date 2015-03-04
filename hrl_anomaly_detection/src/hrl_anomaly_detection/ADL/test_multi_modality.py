@@ -769,10 +769,8 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
     plt.rc('text', usetex=True)
     ax1 = pp.subplot(211)
     for i, d in enumerate(data1):
-        ## if i==13: continue
-        ## if i==9: continue
-        ## if i==2: continue
-        #if i<13: continue
+        ## if i==22 or i==27 or i==17: continue
+        ## if i<11: continue
         if labels is not None and labels[i] == False:
             pp.plot(d, label=str(i), color='k', linewidth=2.0)
         else:
@@ -803,7 +801,7 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
     ax2.set_ylabel("Audio [RMS]", fontsize=18)
     ax2.set_xlabel("Time step [43Hz]", fontsize=18)
     
-    ## ax1.legend()
+    #ax1.legend()
     pp.show()
     
     
