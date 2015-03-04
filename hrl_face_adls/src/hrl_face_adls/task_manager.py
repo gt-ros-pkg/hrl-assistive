@@ -185,9 +185,11 @@ class ServoingManager(object):
         # Move autobed if we are dealing with autobed. If not autobed, don't move it. Temporarily fixed to True for
         # testing
         if self.model == 'autobed':
-            autobed_goal = FloatArrayBare()
-            autobed_goal.data = [configuration_goals[2], configuration_goals_list[1]+9, self.bed_state_leg_theta]
-            self.autobed_pub.publish(autobed_goal)
+            # autobed_goal = FloatArrayBare()
+            # autobed_goal.data = [configuration_goals[2], configuration_goals_list[1]+9, self.bed_state_leg_theta]
+            # self.autobed_pub.publish(autobed_goal)
+            print 'The autobed should be set to a height of: ', configuration_goals_list[1]+9
+            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
 
         if self.mode == 'manual':
             self.navigation.start_navigate()
@@ -234,6 +236,8 @@ class ServoingManager(object):
                 tw.angular.z=0
                 base_move_pub.publish(tw)
                 rospy.sleep(.1)
+            rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
+            print 'Finished moving to X-Y position. Now correcting orientation!'
             while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1):
                 error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
                 error_ori = m.acos(error_mat[0,0])
@@ -258,7 +262,9 @@ class ServoingManager(object):
             error_ori = m.acos(error_mat[0,0])
             if np.linalg.norm(error_pos)<0.05 and np.linalg.norm(error_ori)<0.05:
                 done_moving = True
-        return true
+            rospy.loginfo('Finished moving to goal pose!')
+            print 'Finished moving to goal pose!'
+        return True
 
     def call_arm_reacher(self):
         # Place holder return
