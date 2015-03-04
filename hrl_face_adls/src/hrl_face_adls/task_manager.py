@@ -228,7 +228,7 @@ class ServoingManager(object):
             error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
             error_pos = [error_mat[0,3], error_mat[1,3]]
             move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
-            normalized_pos = .1*move / (np.linalg.norm(move))
+            normalized_pos = move / (np.linalg.norm(move))
             tw = Twist()
             tw.linear.x=normalized_pos[0]
             tw.linear.y=normalized_pos[1]
@@ -244,7 +244,7 @@ class ServoingManager(object):
             error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
             error_ori = m.acos(error_mat[0,0])
             move = -error_ori
-            normalized_ori = .1*move / (np.linalg.norm(move))
+            normalized_ori = move / (np.linalg.norm(move))
             tw = Twist()
             tw.linear.x=0
             tw.linear.y=0
