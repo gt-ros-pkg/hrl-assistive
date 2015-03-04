@@ -3,6 +3,7 @@
 from threading import Lock
 import copy
 import numpy as np
+import math as m
 
 import roslib
 roslib.load_manifest('hrl_face_adls')
