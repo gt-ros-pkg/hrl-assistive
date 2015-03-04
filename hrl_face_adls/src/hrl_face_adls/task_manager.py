@@ -203,7 +203,7 @@ class ServoingManager(object):
                                          [             0.,               0.,     1.,        0.],
                                          [             0.,               0.,     0.,        1.]])
             world_B_goal = self.world_B_ref_model*goal_B_ref_model.I
-            pub_goal_tf = TF_Goal(world_B_goal, self.tfl)
+            # pub_goal_tf = TF_Goal(world_B_goal, self.tfl)
             if self.servo_to_pose(world_B_goal):
                 self.base_selection_complete = True
                 print 'At desired location!!'
@@ -292,7 +292,7 @@ class ServoingManager(object):
                     rospy.sleep(.1)
             rospy.loginfo('Finished moving to goal pose!')
             print 'Finished moving to goal pose!'
-
+            done_moving = True
             # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
             # error_pos = [error_mat[0,3], error_mat[1,3]]
             # error_ori = m.acos(error_mat[0,0])
