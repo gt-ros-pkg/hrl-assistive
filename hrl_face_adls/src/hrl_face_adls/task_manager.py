@@ -159,6 +159,8 @@ class ServoingManager(object):
             base_goals.append(item)
         for item in config_array:
             configuration_goals.append(item)
+        base_goals[0] = 1.1
+        base_goals[1] = -1.1
 
         # print "Base Goals returned:\r\n", base_goals
         # if base_goals is None:
