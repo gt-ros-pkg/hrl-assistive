@@ -38,6 +38,8 @@ class ServoingManager(object):
         self.model = 'autobed' # options are 'chair' and 'autobed'
         self.mode = mode
 
+        self.send_task_count = 0
+
         if self.model == 'autobed':
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
@@ -93,8 +95,8 @@ class ServoingManager(object):
         self.send_task_count = 0
 
     def servo_fdbk_cb(self, msg):
-        if not msg.data == 5:
-            return
+        # if not msg.data == 5:
+        #     return
         #self.reach_goal_pub.publish(self.goal_pose)
         #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
         #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
@@ -112,10 +114,11 @@ class ServoingManager(object):
     def ui_cb(self, msg):
         if self.model == 'chair':
             self.send_task_count = 0
-        if self.send_task_count > 4:
+        if self.send_task_count > 1:
+            self.send_task_count = 3
+            self.servo_fdbk_cb(5)
+        if self.send_task_count > 5:
             self.send_task_count = 0
-        if self.send_task_count > 0:
-            self.send_task_count += 1
             return
         if self.model == 'chair':
             self.send_task_count = 3
@@ -159,8 +162,13 @@ class ServoingManager(object):
             base_goals.append(item)
         for item in config_array:
             configuration_goals.append(item)
-        base_goals[0] = 1.1
-        base_goals[1] = -1.1
+        # [0.9], [-0.8], [0.0], [0.14999999999999999], [0.10000000000000001], [1.2217304763960306]
+        base_goals[0] = .9
+        base_goals[1] = -.8
+        base_goals[2] = 0
+        configuration_goals[0]=0.15
+        configuration_goals[1]=0.1
+        configuration_goals[2]=1.221730476396
 
         # print "Base Goals returned:\r\n", base_goals
         # if base_goals is None:
@@ -193,7 +201,7 @@ class ServoingManager(object):
             # autobed_goal = FloatArrayBare()
             # autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9, self.bed_state_leg_theta]
             # self.autobed_pub.publish(autobed_goal)
-            print 'The autobed should be set to a height of: ', configuration_goals[1]+9
+            print 'The autobed should be set to a height of: ', configuration_goals[1]+7
             print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
 
 
