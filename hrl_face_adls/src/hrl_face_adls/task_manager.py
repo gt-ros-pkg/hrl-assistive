@@ -224,36 +224,36 @@ class ServoingManager(object):
             error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
             error_pos = [error_mat[0,3], error_mat[1,3]]
             error_ori = m.acos(error_mat[0,0])
-            while not rospy.is_shutdown() and (np.linalg.norm(error_pos)>0.05):
-                error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-                error_pos = [error_mat[0,3], error_mat[1,3]]
-                move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
-                normalized_pos = move / (np.linalg.norm(move)*5)
-                tw = Twist()
-                tw.linear.x=normalized_pos[0]
-                tw.linear.y=normalized_pos[1]
-                tw.linear.z=0
-                tw.angular.x=0
-                tw.angular.y=0
-                tw.angular.z=0
-                base_move_pub.publish(tw)
-                rospy.sleep(.1)
-            rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
-            print 'Finished moving to X-Y position. Now correcting orientation!'
-            while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1):
-                error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-                error_ori = m.acos(error_mat[0,0])
-                move = -error_ori
-                normalized_ori = move / (np.linalg.norm(move)*5)
-                tw = Twist()
-                tw.linear.x=0
-                tw.linear.y=0
-                tw.linear.z=0
-                tw.angular.x=0
-                tw.angular.y=0
-                tw.angular.z=normalized_ori
-                base_move_pub.publish(tw)
-                rospy.sleep(.1)
+            # while not (rospy.is_shutdown() and (np.linalg.norm(error_pos)>0.1)) and False:
+            error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            error_pos = [error_mat[0,3], error_mat[1,3]]
+            move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
+            normalized_pos = .1*move / (np.linalg.norm(move))
+            tw = Twist()
+            tw.linear.x=normalized_pos[0]
+            tw.linear.y=normalized_pos[1]
+            tw.linear.z=0
+            tw.angular.x=0
+            tw.angular.y=0
+            tw.angular.z=0
+            base_move_pub.publish(tw)
+            rospy.sleep(.1)
+            # rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
+            # print 'Finished moving to X-Y position. Now correcting orientation!'
+            # while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1) and False:
+            error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            error_ori = m.acos(error_mat[0,0])
+            move = -error_ori
+            normalized_ori = .1*move / (np.linalg.norm(move))
+            tw = Twist()
+            tw.linear.x=0
+            tw.linear.y=0
+            tw.linear.z=0
+            tw.angular.x=0
+            tw.angular.y=0
+            tw.angular.z=normalized_ori
+            base_move_pub.publish(tw)
+            rospy.sleep(.1)
             # self.world_B_robot
             # self.world_B_head
             # self.world_B_ref_model
@@ -264,7 +264,7 @@ class ServoingManager(object):
             error_ori = m.acos(error_mat[0,0])
             if np.linalg.norm(error_pos)<0.05 and np.linalg.norm(error_ori)<0.05:
                 done_moving = True
-            rospy.loginfo('Finished moving to goal pose!')
+            # rospy.loginfo('Finished moving to goal pose!')
             print 'Finished moving to goal pose!'
         return True
 
