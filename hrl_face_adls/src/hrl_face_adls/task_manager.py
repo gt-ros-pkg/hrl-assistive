@@ -4,6 +4,7 @@ from threading import Lock
 import copy
 import numpy as np
 import math as m
+import ros
 
 import roslib
 roslib.load_manifest('hrl_face_adls')
@@ -21,6 +22,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
+from tf_goal import TF_Goal
 # from navigation_feedback import *
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
@@ -192,11 +194,19 @@ class ServoingManager(object):
             print 'The autobed should be set to a height of: ', configuration_goals[1]+9
             print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
 
+
         if self.mode == 'manual':
             self.navigation.start_navigate()
         elif True:
-            if self.servo_to_pose(base_goals):
+            goal_B_ref_model= np.matrix([[m.cos(base_goals[2]), -m.sin(base_goals[2]),     0.,  base_goals[0]],
+                                         [m.sin(base_goals[2]),  m.cos(base_goals[2]),     0.,  base_goals[1]],
+                                         [             0.,               0.,     1.,        0.],
+                                         [             0.,               0.,     0.,        1.]])
+            world_B_goal = self.world_B_ref_model*goal_B_ref_model.I
+            pub_goal_tf = TF_Goal(world_B_goal, self.tfl)
+            if self.servo_to_pose(world_B_goal):
                 self.base_selection_complete = True
+                print 'At desired location!!'
         else:
             self.servo_goal_pub.publish(base_goals_list[0])
             ar_data = ARServoGoalData()
@@ -212,60 +222,122 @@ class ServoingManager(object):
         self.send_task_count += 1
         # self.goal_data_pub.publish(ar_data)
 
-    def servo_to_pose(self, goal_base_pose):
-        ref_model_B_goal = np.matrix([[m.cos(goal_base_pose[2]), -m.sin(goal_base_pose[2]),     0.,  goal_base_pose[0]],
-                                      [m.sin(goal_base_pose[2]),  m.cos(goal_base_pose[2]),     0.,  goal_base_pose[1]],
-                                      [             0.,               0.,     1.,        0.],
-                                      [             0.,               0.,     0.,        1.]])
+    def servo_to_pose(self, world_B_goal):
+        # self.tfl.waitForTransform('/base_link', '/r_forearm_cam_optical_frame', rospy.Time(), rospy.Duration(15.0))
+        # (trans, rot) = self.tf_listener.lookupTransform('/base_link', '/r_forearm_cam_optical_frame', rospy.Time())
+        #
+        # self.tfl.waitForTransform(
+
+
+        # ref_model_B_goal = np.matrix([[m.cos(goal_base_pose[2]), -m.sin(goal_base_pose[2]),     0.,  goal_base_pose[0]],
+        #                               [m.sin(goal_base_pose[2]),  m.cos(goal_base_pose[2]),     0.,  goal_base_pose[1]],
+        #                               [             0.,               0.,     1.,        0.],
+        #                               [             0.,               0.,     0.,        1.]])
         base_move_pub = rospy.Publisher('/base_controller/command', Twist)
         # error_pos = 1
         done_moving = False
         while not done_moving:
-            error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            error_pos = [error_mat[0,3], error_mat[1,3]]
-            error_ori = m.acos(error_mat[0,0])
-            # while not (rospy.is_shutdown() and (np.linalg.norm(error_pos)>0.1)) and False:
-            error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            error_pos = [error_mat[0,3], error_mat[1,3]]
-            move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
-            normalized_pos = move / (np.linalg.norm(move))
+            done = False
             tw = Twist()
-            tw.linear.x=normalized_pos[0]
-            tw.linear.y=normalized_pos[1]
+            tw.linear.x=0.15
+            tw.linear.y=0
             tw.linear.z=0
             tw.angular.x=0
             tw.angular.y=0
             tw.angular.z=0
-            base_move_pub.publish(tw)
-            rospy.sleep(.1)
-            # rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
-            # print 'Finished moving to X-Y position. Now correcting orientation!'
-            # while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1) and False:
-            error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            error_ori = m.acos(error_mat[0,0])
-            move = -error_ori
-            normalized_ori = move / (np.linalg.norm(move))
+            # while not rospy.is_shutdown() and np.abs(world_B_goal[0, 3]-self.world_B_robot[0, 3]) > 0.1:
+            while not done:
+                error_mat = self.world_B_robot.I*world_B_goal
+                if np.abs(error_mat[0, 3]) < 0.1:
+                    done = True
+                else:
+                    tw.linear.x = np.sign(error_mat[0, 3])*0.15
+                    base_move_pub.publish(tw)
+                    rospy.sleep(.1)
+            rospy.loginfo('Finished moving to X pose!')
+            print 'Finished moving to X pose!'
+            done = False
             tw = Twist()
             tw.linear.x=0
             tw.linear.y=0
             tw.linear.z=0
             tw.angular.x=0
             tw.angular.y=0
-            tw.angular.z=normalized_ori
-            base_move_pub.publish(tw)
-            rospy.sleep(.1)
-            # self.world_B_robot
-            # self.world_B_head
-            # self.world_B_ref_model
-            # world_B_ref = createBMatrix(self)
-            # error =
-            error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            error_pos = [error_mat[0,3], error_mat[1,3]]
-            error_ori = m.acos(error_mat[0,0])
-            if np.linalg.norm(error_pos)<0.05 and np.linalg.norm(error_ori)<0.05:
-                done_moving = True
-            # rospy.loginfo('Finished moving to goal pose!')
+            tw.angular.z=0
+            while not done:
+                error_mat = self.world_B_robot.I*world_B_goal
+                if np.abs(error_mat[1, 3]) < 0.1:
+                    done = True
+                else:
+                    tw.linear.y = np.sign(error_mat[1, 3])*0.15
+                    base_move_pub.publish(tw)
+                    rospy.sleep(.1)
+            rospy.loginfo('Finished moving to Y pose!')
+            print 'Finished moving to Y pose!'
+            done = False
+            tw = Twist()
+            tw.linear.x=0
+            tw.linear.y=0
+            tw.linear.z=0
+            tw.angular.x=0
+            tw.angular.y=0
+            tw.angular.z=0
+            while not done:
+                error_mat = self.world_B_robot.I*world_B_goal
+                if np.abs(m.acos(error_mat[0, 0])) < 0.1:
+                    done = True
+                else:
+                    tw.angular.z = np.sign(m.acos(error_mat[0, 0]))*0.1
+                    base_move_pub.publish(tw)
+                    rospy.sleep(.1)
+            rospy.loginfo('Finished moving to goal pose!')
             print 'Finished moving to goal pose!'
+
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_pos = [error_mat[0,3], error_mat[1,3]]
+            # error_ori = m.acos(error_mat[0,0])
+            # # while not (rospy.is_shutdown() and (np.linalg.norm(error_pos)>0.1)) and False:
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_pos = [error_mat[0,3], error_mat[1,3]]
+            # move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
+            # normalized_pos = move / (np.linalg.norm(move))
+            # tw = Twist()
+            # tw.linear.x=normalized_pos[0]
+            # tw.linear.y=normalized_pos[1]
+            # tw.linear.z=0
+            # tw.angular.x=0
+            # tw.angular.y=0
+            # tw.angular.z=0
+            # base_move_pub.publish(tw)
+            # rospy.sleep(.1)
+            # # rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
+            # # print 'Finished moving to X-Y position. Now correcting orientation!'
+            # # while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1) and False:
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_ori = m.acos(error_mat[0,0])
+            # move = -error_ori
+            # normalized_ori = move / (np.linalg.norm(move))
+            # tw = Twist()
+            # tw.linear.x=0
+            # tw.linear.y=0
+            # tw.linear.z=0
+            # tw.angular.x=0
+            # tw.angular.y=0
+            # tw.angular.z=normalized_ori
+            # base_move_pub.publish(tw)
+            # rospy.sleep(.1)
+            # # self.world_B_robot
+            # # self.world_B_head
+            # # self.world_B_ref_model
+            # # world_B_ref = createBMatrix(self)
+            # # error =
+            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
+            # error_pos = [error_mat[0,3], error_mat[1,3]]
+            # error_ori = m.acos(error_mat[0,0])
+            # if np.linalg.norm(error_pos)<0.05 and np.linalg.norm(error_ori)<0.05:
+            #     done_moving = True
+            # # rospy.loginfo('Finished moving to goal pose!')
+            # print 'Finished moving to goal pose!'
         return True
 
     def call_arm_reacher(self):
