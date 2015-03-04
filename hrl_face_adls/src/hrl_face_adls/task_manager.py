@@ -42,9 +42,13 @@ class ServoingManager(object):
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, latch=True)
 
+            self.world_B_head = None
+            self.world_B_ref_model = None
+            self.world_B_robot = None
+
         self.tfl = TransformListener()
 
-        if self.mode == 'manual':
+        if self.mode == 'manual' or True:
             self.base_pose = None
             self.object_pose = None
             self.raw_head_pose = None
@@ -113,7 +117,7 @@ class ServoingManager(object):
         if self.model == 'chair':
             self.send_task_count = 3
         self.base_selection_complete = False
-        # self.head_pose = self.get_head_pose()
+        self.head_pose = self.world_B_head
         if self.head_pose is None:
             log_msg = "Please register your head before sending a task."
             self.feedback_pub.publish(String(log_msg))
