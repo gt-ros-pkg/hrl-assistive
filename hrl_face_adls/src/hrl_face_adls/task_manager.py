@@ -205,10 +205,11 @@ class ServoingManager(object):
                                          [             0.,               0.,     1.,        0.],
                                          [             0.,               0.,     0.,        1.]])
             world_B_goal = self.world_B_ref_model*goal_B_ref_model.I
+            self.base_selection_complete = True
             # pub_goal_tf = TF_Goal(world_B_goal, self.tfl)
-            if self.servo_to_pose(world_B_goal):
-                self.base_selection_complete = True
-                print 'At desired location!!'
+            # if self.servo_to_pose(world_B_goal):
+            #     self.base_selection_complete = True
+            #     print 'At desired location!!'
         else:
             self.servo_goal_pub.publish(base_goals_list[0])
             ar_data = ARServoGoalData()
