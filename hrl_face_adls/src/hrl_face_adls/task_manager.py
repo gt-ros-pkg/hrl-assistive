@@ -10,7 +10,7 @@ roslib.load_manifest('hrl_face_adls')
 import rospy
 from hrl_msgs.msg import FloatArrayBare
 from std_msgs.msg import String, Int32, Int8, Bool
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
 from tf import TransformListener, transformations as tft
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
