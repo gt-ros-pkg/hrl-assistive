@@ -219,6 +219,7 @@ class ServoingManager(object):
                                       [             0.,               0.,     0.,        1.]])
         base_move_pub = rospy.Publisher('/base_controller/command', Twist)
         # error_pos = 1
+        done_moving = False
         while not done_moving:
             error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
             error_pos = [error_mat[0,3], error_mat[1,3]]
