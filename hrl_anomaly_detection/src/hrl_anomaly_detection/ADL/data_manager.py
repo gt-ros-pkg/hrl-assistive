@@ -911,26 +911,29 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 print "Random impulse sound"
 
                 peak  = max_c2 * random.uniform(0.2, 1.5)
-                width = random.randint(2,3)
-
+                
                 while True:
-                    loc   = random.randint(1+width,len(x1_anomaly)-1-width)
-                    if loc < max_y2_idx - 10 or loc > max_y2_idx + 10:                        
+                    width = random.randint(2,3)
+
+                    if len(x1_anomaly) <= 20+width: block_size = 4
+                    else: block_size = 10
+                        
+                    loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)                        
+                    if loc < max_y2_idx - block_size or loc > max_y2_idx + block_size:                        
                         break
 
                 xnew    = range(width)
                 impulse = np.zeros(width)
-                impulse[width/2] = peak
                 x2_anomaly = np.ones(np.shape(x1_anomaly)) * true_aXData2[x_idx][0]
                 #x2_anomaly = true_aXData2[x_idx]
 
                 for i in xrange(width):
                     if i < width/2:
-                        impulse[i] = (i+1)*peak/float(width/2)
+                        impulse[i] = (i)*peak/float(width/2)
                     else:
                         impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
 
-                    x2_anomaly[loc+i] += impulse[i] 
+                    x2_anomaly[loc+i-width/2] += impulse[i] 
             else:
                 print "Not implemented type of sound anomaly : ", an2
                     
