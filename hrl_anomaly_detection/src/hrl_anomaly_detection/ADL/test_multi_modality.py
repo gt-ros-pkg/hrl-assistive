@@ -845,7 +845,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 1
+    task  = 0
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1071,50 +1071,83 @@ if __name__ == '__main__':
 
         aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
         aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+        true_labels = [True]*len(true_aXData1)
 
-        # Learning
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
+        # generate simulated data!!
+        false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+        false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+        false_labels = [False]*len(false_aXData1)
+        false_dataSet = dm.create_mvpa_dataset(false_aXData1_scaled, false_aXData2_scaled, \
+                                               false_chunks, false_labels)
+            
 
-        if check_dim == 0: lhm.fit(aXData1_scaled, cov_mult=[cov_mult[task][0]]*4)
-        elif check_dim == 1: lhm.fit(aXData2_scaled, cov_mult=[cov_mult[task][3]]*4)
-        else: lhm.fit(aXData1_scaled, aXData2_scaled, cov_mult=cov_mult[task])
+        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+        test_dataSet  = true_dataSet[0]
+        train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+        train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+        train_dataSet = true_dataSet[train_ids]
 
-        
-        ## # TEST
-        ## nCurrentStep = 27
-        ## ## X_test1 = aXData1_scaled[0:1,:nCurrentStep]
-        ## ## X_test2 = aXData2_scaled[0:1,:nCurrentStep]
-        ## X_test1 = aXData1_scaled[0:1]
-        ## X_test2 = aXData2_scaled[0:1]
-
-        ## #
-        ## X_test2[0,nCurrentStep-3] = 10.7
-        ## X_test2[0,nCurrentStep-2] = 12.7
-        ## X_test2[0,nCurrentStep-1] = 11.7
-
-        aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1)
-        aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2)    
-
-        idx = 0
-        print "Chunk name: ", false_chunks[idx]
-        X1 = np.array([aXData1_scaled[idx]])
-        X2 = np.array([aXData2_scaled[idx]])
-        
-        
-        lhm.likelihood_disp(X1, X2, 2.0)
+        x_train1 = train_dataSet.samples[:,0,:]
+        x_train2 = train_dataSet.samples[:,1,:]
+        x_test1  = test_dataSet.samples[:,0,:]
+        x_test2  = test_dataSet.samples[:,1,:]
 
         
-        ## lhm.data_plot(X_test1, X_test2, color = 'r')
+        for K in range(len(false_labels)):
+                
+            test_dataSet  = false_dataSet[K]
+            x_test1 = np.array([test_dataSet.samples[:,0][0]])
+            x_test2 = np.array([test_dataSet.samples[:,1][0]])
+                        
+            print false_chunks[K]
 
-        ## X_test2[0,nCurrentStep-2] = 12.7
-        ## X_test2[0,nCurrentStep-1] = 11.7
-        ## X_test = lhm.convert_sequence(X_test1[:nCurrentStep], X_test2[:nCurrentStep], emission=False)
+            
+            # Learning
+            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
+            
+            if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
+            elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
+            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
 
-        ## fp, err = lhm.anomaly_check(X_test1, X_test2, ths_mult=0.01)
-        ## print fp, err
-        
-        ## ## print lhm.likelihood(X_test), lhm.likelihood_avg
-        ## ## mu, cov = self.predict(X_test)
-        
-        ## lhm.data_plot(X_test1, X_test2, color = 'b')
+
+            ## # TEST
+            ## ------------------------------------------------------------------
+            ## nCurrentStep = 27
+            ## ## X_test1 = aXData1_scaled[0:1,:nCurrentStep]
+            ## ## X_test2 = aXData2_scaled[0:1,:nCurrentStep]
+            ## X_test1 = aXData1_scaled[0:1]
+            ## X_test2 = aXData2_scaled[0:1]
+            
+            ## #
+            ## X_test2[0,nCurrentStep-3] = 10.7
+            ## X_test2[0,nCurrentStep-2] = 12.7
+            ## X_test2[0,nCurrentStep-1] = 11.7
+
+            ## ------------------------------------------------------------------
+            ## aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1)
+            ## aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2)    
+
+            ## idx = 0
+            ## print "Chunk name: ", false_chunks[idx]
+            ## X1 = np.array([aXData1_scaled[idx]])
+            ## X2 = np.array([aXData2_scaled[idx]])
+
+
+            lhm.likelihood_disp(x_test1, x_test2, 15.0)
+
+
+
+            ## lhm.data_plot(X_test1, X_test2, color = 'r')
+
+            ## X_test2[0,nCurrentStep-2] = 12.7
+            ## X_test2[0,nCurrentStep-1] = 11.7
+            ## X_test = lhm.convert_sequence(X_test1[:nCurrentStep], X_test2[:nCurrentStep], emission=False)
+
+            ## fp, err = lhm.anomaly_check(X_test1, X_test2, ths_mult=0.01)
+            ## print fp, err
+            
+            ## ## print lhm.likelihood(X_test), lhm.likelihood_avg
+            ## ## mu, cov = self.predict(X_test)
+
+            ## lhm.data_plot(X_test1, X_test2, color = 'b')
 

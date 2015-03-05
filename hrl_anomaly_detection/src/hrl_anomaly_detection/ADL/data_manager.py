@@ -788,8 +788,8 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
     '''
     
     an_types = ['force', 'sound', 'both']
-    force_an = ['stretch', 'shorten', 'amplified', 'weaken', 'rndimpulse']
-    sound_an = ['weaken', 'rndimpulse']
+    force_an = ['normal', 'magnified', 'shrinked', 'amplified', 'weaken']
+    sound_an = ['normal', 'weaken', 'rndimpulse']
 
     length = len(true_aXData1[0])
 
@@ -828,46 +828,52 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         
         # random anomaly type
         if an_type == 'force' or an_type == 'both':
-            an1 = random.choice(force_an)
-            
-            if an1 == 'stretch':
-                print "Streched force"
 
-                mag = random.uniform(1.5, 2.0)
-
-                x   = np.linspace(0.0, 1.0, length)
-                tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
-
-                xnew = np.linspace(0.0, 1.0, length*mag)
-                x1_anomaly = interpolate.splev(xnew, tck, der=0)
+            if an_type == 'force': an1 = random.choice(force_an[1:])
+            else: an1 = random.choice(force_an)
                 
-            elif an1 == 'shorten':
-                print "Shorten force"
+            if an1 == 'normal':
+                print "normal force"
+                x1_anomaly = true_aXData1[x_idx]
+            
+            elif an1 == 'magnified':
+                print "magnified force"
 
-                mag = random.uniform(0.1, 0.5)
+                mag = random.uniform(1.3, 1.7)
 
                 x   = np.linspace(0.0, 1.0, length)
                 tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
 
                 xnew = np.linspace(0.0, 1.0, length*mag)
-                x1_anomaly = interpolate.splev(xnew, tck, der=0)
+                x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
+                
+            elif an1 == 'shrinked':
+                print "shrinked force"
+
+                mag = random.uniform(0.2, 0.7)
+
+                x   = np.linspace(0.0, 1.0, length)
+                tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
+
+                xnew = np.linspace(0.0, 1.0, length*mag)
+                x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
                 
             elif an1 == 'amplified':
                 print "Amplied force"
 
-                mag = random.uniform(1.5, 2.0)                
+                mag = random.uniform(1.3, 1.8)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                 
             elif an1 == 'weaken':
                 print "Weaken force"
 
-                mag = random.uniform(0.1, 0.5)                
+                mag = random.uniform(0.05, 0.5)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                                 
             elif an1 == 'rndimpulse':
                 print "Random impulse force"
 
-                peak  = max_c1 * random.uniform(1.2, 2.0)
+                peak  = max_c1 * random.uniform(0.2, 1.5)
                 width = random.randint(3,6)
                 loc   = random.randint(1+width,length-1-width)
 
@@ -884,22 +890,28 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     x1_anomaly[loc+i] += impulse[i] 
             else:
-                print "Not implemented type of simuated anomaly"
+                print "Not implemented type of force anomaly : ", an1
                 
         if an_type == 'sound' or an_type == 'both':
-            an2 = random.choice(sound_an)
+
+            if an_type == 'sound' or an1 == 'normal': an2 = random.choice(sound_an[1:])
+            else: an2 = random.choice(sound_an)
                 
-            if an2 == 'weaken':
+            if an2 == 'normal':
+                print "normal sound"
+                x2_anomaly = true_aXData2[x_idx]
+            
+            elif an2 == 'weaken':
                 print "Weaken sound"
 
-                mag = random.uniform(0.1, 0.5)                
+                mag = random.uniform(0.05, 0.3)                
                 x2_anomaly = true_aXData2[x_idx] *mag
 
             elif an2 == 'rndimpulse':
                 print "Random impulse sound"
 
-                peak  = max_c2 * random.uniform(0.5, 1.5)
-                width = random.randint(2,5)
+                peak  = max_c2 * random.uniform(0.2, 1.5)
+                width = random.randint(2,3)
 
                 while True:
                     loc   = random.randint(1+width,len(x1_anomaly)-1-width)
@@ -919,6 +931,8 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                         impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
 
                     x2_anomaly[loc+i] += impulse[i] 
+            else:
+                print "Not implemented type of sound anomaly : ", an2
                     
         else:
             print "Undefined options"
