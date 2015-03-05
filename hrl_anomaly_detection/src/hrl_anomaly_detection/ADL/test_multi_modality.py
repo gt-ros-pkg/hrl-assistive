@@ -225,8 +225,8 @@ def fig_roc_offline_sim(cross_data_path, \
         
         pp.xlabel('False positive rate (percentage)', fontsize=16)
         pp.ylabel('True positive rate (percentage)', fontsize=16)    
-        pp.xlim([0, 70])
-        pp.ylim([30, 101])
+        ## pp.xlim([0, 70])
+        pp.ylim([0, 101])
         pp.legend(loc=4,prop={'size':16})
         
         pp.show()
@@ -962,7 +962,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 10.0 #np.arange(0.0, 25.001, 0.5)    
+        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
         ## threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 1.0 #np.arange(0.0, 25.001, 0.5)    
         attr            = 'id'
 
