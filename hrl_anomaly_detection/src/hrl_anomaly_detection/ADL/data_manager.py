@@ -839,7 +839,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an1 == 'magnified':
                 print "magnified force"
 
-                mag = random.uniform(1.3, 1.7)
+                mag = random.uniform(1.2, 1.7)
 
                 x   = np.linspace(0.0, 1.0, length)
                 tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
@@ -850,7 +850,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an1 == 'shrinked':
                 print "shrinked force"
 
-                mag = random.uniform(0.2, 0.7)
+                mag = random.uniform(0.2, 0.8)
 
                 x   = np.linspace(0.0, 1.0, length)
                 tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
@@ -861,13 +861,13 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             elif an1 == 'amplified':
                 print "Amplied force"
 
-                mag = random.uniform(1.3, 1.8)                
+                mag = random.uniform(1.2, 1.8)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                 
             elif an1 == 'weaken':
                 print "Weaken force"
 
-                mag = random.uniform(0.05, 0.5)                
+                mag = random.uniform(0.05, 0.8)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                                 
             elif an1 == 'rndimpulse':
