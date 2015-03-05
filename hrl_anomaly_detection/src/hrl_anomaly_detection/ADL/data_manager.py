@@ -612,7 +612,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             ##     elif idx_start+idx_length >= len(ft_time): idx_start -= 1                
             ##     else: break
             if idx_start+idx_length >= len(ft_force_mag_cut): 
-                print "Wrong idx length size"
+                print "Wrong idx length size", idx_start+idx_length, len(ft_force_mag_cut)
                 sys.exit()
 
             ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_start+idx_length]
