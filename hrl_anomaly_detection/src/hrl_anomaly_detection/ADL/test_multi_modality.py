@@ -61,7 +61,7 @@ def fig_roc_offline_sim(cross_data_path, \
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     # K random training-test set
-    K = len(true_aXData1)/4
+    K = len(true_aXData1)/3
     M = 30
     splits = []
     for i in xrange(M):
