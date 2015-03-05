@@ -225,7 +225,8 @@ def fig_roc_offline_sim(cross_data_path, \
         
         pp.xlabel('False positive rate (percentage)', fontsize=16)
         pp.ylabel('True positive rate (percentage)', fontsize=16)    
-        pp.ylim([0, 101])
+        pp.xlim([0, 70])
+        pp.ylim([30, 101])
         pp.legend(loc=4,prop={'size':16})
         
         pp.show()
@@ -845,7 +846,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
