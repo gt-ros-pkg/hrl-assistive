@@ -846,7 +846,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 1
-    task  = 2
+    task  = 0
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -858,8 +858,8 @@ if __name__ == '__main__':
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
-        f_zero_size = [3, 18, 7]
-        f_thres     = [0.5, 0.5, 1.0]
+        f_zero_size = [5, 18, 7]
+        f_thres     = [0.7, 0.5, 1.0]
         audio_thres = [1.0, 0.7, 0.0015]
         cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
         nState_l    = [20, 20, 20]
