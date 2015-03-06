@@ -41,10 +41,10 @@ RFH.TaskMenu = function (divId) {
     
     self.stopTask = function (taskObject) {
         taskObject.stop();
-        self.activeTask = null;
         if (taskObject.buttonText) {
             $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.startTask(taskObject)});
         }
+        self.startTask(self.tasks['lookingTask']);
     };
 
     self.waitForTaskStop = function (task) {
