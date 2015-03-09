@@ -759,6 +759,41 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     ## pp.plot(audio_freq_l[i], audio_amp_l[i])
     pp.show()
 
+
+def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, labels=None):
+
+    pp.figure()
+    plt.rc('text', usetex=True)
+    
+    ax1 = pp.subplot(211)
+    if false_data1 is None:
+        data = data1[data_idx]
+    else:
+        data = false_data1[data_idx]        
+    pp.plot(data, 'b', linewidth=1.5, label='Force')
+    ax1.set_xlim([0, len(data)])
+    ax1.set_ylim([0, np.amax(data)*1.1])
+    pp.grid()
+    ax1.set_ylabel("Magnitude [N]", fontsize=18)
+
+        
+    ax2 = pp.subplot(212)
+    if false_data2 is None:
+        data = data2[data_idx]
+    else:
+        data = false_data2[data_idx]
+    
+    pp.plot(data, 'b', linewidth=1.5, label='Sound')
+    ax2.set_xlim([0, len(data)])
+    pp.grid()
+    ax2.set_ylabel("RMS", fontsize=18)
+    ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+    
+    ax1.legend(prop={'size':18})
+    ax2.legend(prop={'size':18})
+    pp.show()
+
+    
 def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
 
         ## # find init
@@ -790,7 +825,7 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
             pp.plot(d, label=str(i), color='k', linewidth=2.0)
             
     ## ax1.set_title("Force")
-    ax1.set_ylabel("Force [L2]", fontsize=18)
+    ax1.set_ylabel("Force [N]", fontsize=18)
 
         
     ax2 = pp.subplot(212)
@@ -805,8 +840,7 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
         for i, d in enumerate(false_data2):
             pp.plot(d, color='k', linewidth=2.0)
             
-    ## ax2.set_title("Audio")
-    ax2.set_ylabel("Audio [RMS]", fontsize=18)
+    ax2.set_ylabel("Sound [RMS]", fontsize=18)
     ax2.set_xlabel("Time step [43Hz]", fontsize=18)
     
     #ax1.legend()
@@ -837,6 +871,8 @@ if __name__ == '__main__':
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
+    p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
+                 default=False, help='Plot one data')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
                  default=False, help='Plot')
     opt, args = p.parse_args()
@@ -845,7 +881,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 3
+    class_num = 0
     task  = 1
     if class_num == 0:
         class_name = 'door'
@@ -891,6 +927,7 @@ if __name__ == '__main__':
         print "Please specify right task."
         sys.exit()
 
+    scale = 10.0       
     dtw_flag = False
     
     # Load data
@@ -1020,17 +1057,35 @@ if __name__ == '__main__':
             cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'                
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
             
+
+    #---------------------------------------------------------------------------
+    elif opt.bOnePlot:
+
+        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
+        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
+        idx = 0
+
+        if opt.bAbnormal or opt.bSimAbnormal:
+            # min max scaling
+            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
+            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
+                        
+            plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx)
+            
+        else:
+            plot_one(true_aXData1, true_aXData2, data_idx=idx)            
+
             
     #---------------------------------------------------------------------------
     elif opt.bAllPlot:
 
-        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
-        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
+        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
+        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
 
         if opt.bAbnormal or opt.bSimAbnormal:
             # min max scaling
-            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
-            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)
+            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
+            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
                         
             ## plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
             plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2)
@@ -1076,8 +1131,8 @@ if __name__ == '__main__':
         true_labels = [True]*len(true_aXData1)
 
         # generate simulated data!!
-        false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
-        false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+        false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
+        false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)    
         false_labels = [False]*len(false_aXData1)
         false_dataSet = dm.create_mvpa_dataset(false_aXData1_scaled, false_aXData2_scaled, \
                                                false_chunks, false_labels)
@@ -1096,13 +1151,13 @@ if __name__ == '__main__':
 
         
         for K in range(len(false_labels)):
-                
+
+            # If you want normal likelihood, class 0, data 1
+            # testData 0
+            # false data 0 (comment in below)
             test_dataSet  = false_dataSet[K]
             x_test1 = np.array([test_dataSet.samples[:,0][0]])
             x_test2 = np.array([test_dataSet.samples[:,1][0]])
-                        
-            print false_chunks[K]
-
             
             # Learning
             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
@@ -1135,7 +1190,8 @@ if __name__ == '__main__':
             ## X2 = np.array([aXData2_scaled[idx]])
 
 
-            lhm.likelihood_disp(x_test1, x_test2, 15.0)
+            lhm.likelihood_disp(x_test1, x_test2, 2.0, scale1=[min_c1, max_c1, scale], \
+                                scale2=[min_c2, max_c2, scale])
 
 
 

@@ -852,9 +852,10 @@ class learning_hmm_multi(learning_base):
 
 
 
-    def likelihood_disp(self, X1, X2, ths_mult):
+    def likelihood_disp(self, X1, X2, ths_mult, scale1=None, scale2=None):
 
         n,m = np.shape(X1)
+        print n,m
 
         if self.nEmissionDim == 1:
             X_test = X1
@@ -862,6 +863,7 @@ class learning_hmm_multi(learning_base):
             X_test = self.convert_sequence(X1, X2, emission=False)                
 
         x      = range(m)
+        path_l = np.zeros(m)
         ll     = np.zeros(m)
         ll_mu  = np.zeros(m)
         ll_ths = np.zeros(m)
@@ -871,49 +873,71 @@ class learning_hmm_multi(learning_base):
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
             path,logp    = self.ml.viterbi(final_ts_obj)
 
-            if len(path) == 0: continue
-
+            if len(path) == 0: 
+                path_l[i] = path_l[i-1]
+                continue
+            else: 
+                path_l[i] = path[-1]
+                
             ll[i]     = logp
             ll_mu[i]  = self.ll_mu[path[-1]]
             ll_ths[i] = self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]]
 
-
         l = [0]
-        for p in path:
+        for p in path_l:
             l.append(p%2)
 
-        new_x = np.arange(0.0, float(m)-0.5, 0.5)
+        new_x = np.arange(0.0, float(m)-0.5, 1.0)
         new_l = []
         for i in xrange(len(new_x)):
             ## print round(new_x[i]), len(new_x), i, len(l)
-            new_l.append(l[int(round(new_x[i]))])
+            ## new_l.append(l[int(round(new_x[i]))])
+            new_l.append(l[i]) 
 
+        y1 = (X1[0]/scale1[2])*(scale1[1]-scale1[0])+scale1[0]
+        y2 = (X2[0]/scale2[2])*(scale2[1]-scale2[0])+scale2[0]
+            
         import matplotlib.collections as collections
+
+        ## matplotlib.rcParams['figure.figsize'] = 8,7
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        matplotlib.rcParams['ps.fonttype'] = 42
         
-        plt.figure()
+        fig = plt.figure()
         plt.rc('text', usetex=True)
+        
         ax1 = plt.subplot(311)
-        ax1.plot(x, X1[0])
-        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=10, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        ax1.plot(x, y1)
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=np.amax(y1)*1.1, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
-        ax1.set_ylabel("Force magnitude")
+        ax1.set_ylabel("Force [N]", fontsize=18)
+        ax1.set_xlim([0, x[-1]])
+        ax1.set_ylim([0, np.amax(y1)*1.1])
             
         ax2 = plt.subplot(312)
-        ax2.plot(x, X2[0])
-        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=10, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        ax2.plot(x, y2)
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=np.amax(y2), where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
-        ax2.set_ylabel("Audio [RMS]")
+        ax2.set_ylabel("Sound [RMS]", fontsize=18)
+        ax2.set_xlim([0, x[-1]])
 
         
-        ax3 = plt.subplot(313)
+        ax3 = plt.subplot(313)        
+        ax3.plot(x, ll, 'b', label='Estimation')
+        ax3.plot(x, ll_mu, 'r', label='Expection')
+        ax3.plot(x, ll_ths, 'r--', label='Threshold')
+        ax3.set_ylabel(r'$P({\mathbf{X}}, {\mathbf{Z}}_{best} | {\mathbf{\theta}})$',fontsize=18)
+        ax3.set_xlim([0, x[-1]])
         
-        ax3.plot(x, ll, 'b', label='{log likelihood per current step}')
-        ax3.plot(x, ll_mu, 'r', label=r'$\mu$')
-        ax3.plot(x, ll_ths, 'r--', label=r'$\mu + c \sigma$')
-        ax3.set_ylabel("Log likelihood")
-        
-        ax3.legend(loc='best',prop={'size':10})
+        ## ax3.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
+        ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.3), \
+                   prop={'size':14})
+        ax3.set_xlabel('Time step', fontsize=18)
+
+        plt.subplots_adjust(bottom=0.15)        
         plt.show()
+        
+        fig.savefig('test.pdf')
         
         ## print "----------------------"
         ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)

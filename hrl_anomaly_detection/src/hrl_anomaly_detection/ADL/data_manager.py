@@ -769,6 +769,15 @@ def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
     return X_scaled, min_c, max_c
 
 
+def scaling_reverse(X, min_c, max_c, scale=10.0):
+
+    X_scaled = []
+    for x in X:
+        X_scaled.append( (x/scale)*(max_c-min_c)+min_c )
+
+    return X_scaled
+    
+
 def movingaverage(values,window):
     weigths = np.repeat(1.0, window)/window
     #including valid will REQUIRE there to be enough datapoints.
