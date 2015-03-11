@@ -357,8 +357,8 @@ RFH.CartesianEEControl = function (options) {
 
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
         $('#ctrl-ring').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.ctrlRingInactivate)
-        $('#away-button').on('click.rfh', self.awayCB).text('Away');
-        $('#toward-button').on('click.rfh', self.towardCB).text('Closer');
+        $('#away-button').on('click.rfh', self.awayCB).text('');
+        $('#toward-button').on('click.rfh', self.towardCB).text('');
         $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
     };
 
