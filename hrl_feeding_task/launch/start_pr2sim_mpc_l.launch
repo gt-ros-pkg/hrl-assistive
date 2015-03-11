@@ -3,9 +3,9 @@
   <arg name="arm" default="l"/>
   <arg name="verbose" default="True" />
 
-  <arg name="robot_config" default="$(find RYDS)/params/pr2sim_config_params_l.yaml" />
+  <arg name="robot_config" default="$(find hrl_feeding_task)/params/pr2sim_config_params_l.yaml" />
   <rosparam command="load" file="$(arg robot_config)" />
-  <rosparam command="load" file="$(find RYDS)/params/mpc_params_pr2_yogurt.yaml" />
+  <!--rosparam command="load" file="$(find hrl_feeding_task)/params/mpc_params_pr2_yogurt.yaml" /-->
 
 
   <node name="mpc_teleop" pkg="hrl_haptic_mpc" type="mpc_teleop_rviz.py" args="-r pr2 -a $(arg arm) --orientation" output="screen"/>

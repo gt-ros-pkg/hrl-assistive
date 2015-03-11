@@ -13,9 +13,9 @@
     <depend package="rospy"/>
     <depend package="hrl_lib"/>
 
-    <depend package="modeling_forces"/>
+    <!--depend package="modeling_forces"/-->
     <depend package="sandbox_dpark_darpa_m3"/>
-    <depend package="force_torque"/>
+    <!--depend package="force_torque"/-->
     <!--depend package="hrl_cody_arms"/-->
     <!--depend package="pr2_gripper_reactive_approach"/-->
 
