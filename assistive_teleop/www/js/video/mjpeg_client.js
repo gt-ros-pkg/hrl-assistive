@@ -38,7 +38,7 @@ RFH.MjpegClient = function (options) {
     self.divId = options.divId;
     self.imageId = options.imageId || self.divId + '-image';
     self.server = "http://"+options.host+":"+options.port;
-    self.activeParams = {'quality': options.quality || 80,
+    self.activeParams = {'quality': options.quality || 65,
                          'topic': options.imageTopic}
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
@@ -239,7 +239,7 @@ var initMjpegCanvas = function (divId) {
                                      divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
-                                     quality: 85,
+                                     quality: 35,
                                      tfClient:RFH.tfClient});
     RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
     RFH.mjpeg.cameraModel.updateCameraInfo();
