@@ -6,6 +6,8 @@ import rospy
 import numpy as np, math
 import time
 
+import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
+
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -56,201 +58,26 @@ class armReachAction(mpcBaseAction):
         ##         confirm = True
         ## print self.getJointAngles()        
         
-        #--------------------------------------------------------------        
-        # Microwave or cabinent closing
-        #--------------------------------------------------------------        
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 2.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.67, -0.63, -0.24)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        ## ## raw_input("Enter anything to start: ")
-
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.58, -0.56, -0.24)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 2.0
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## # Front 
-        ## print "MOVES4"
-        ## (pos.x, pos.y, pos.z) = (0.56, -0.59, -0.24)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 3.0
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.39-0.15, -0.65, 0.05)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.525-0.15, -0.65, 0.05)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        ## ## raw_input("Enter anything to start: ")
-
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.39-0.15, -0.65, 0.05)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 2.0
-        ## self.setOrientGoal(pos, quat, timeout)
-
-
-        
-        ## #--------------------------------------------------------------        
-        ## # Staples
-        ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
-        ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
-        ## #--------------------------------------------------------------        
-        ## # Up
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.32, -0.63, -0.29)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 1.5
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.35+0.07, -0.63, -0.29)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 2.0
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## ## # Front 
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.35, -0.63, -0.29)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.0, 0.0, 0.0, 1.0)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-
-        ## #--------------------------------------------------------------        
-        ## # key
-        ## #--------------------------------------------------------------        
-        ## # Up
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.44)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.467)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 0.3
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.44)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 0.3
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## #--------------------------------------------------------------        
-        ## # case
-        ## #--------------------------------------------------------------        
-        ## # Up
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.42, -0.48, -0.35)
-        ## (quat.x, quat.y, quat.z, quat.w) = (-0.146, 0.675, 0.172, 0.702)
-        ## timeout = 4.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        ## ## print self.getEndeffectorPose()
-        ## ## raw_input("Enter anything to start: ")
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.42, -0.48, -0.45)
-        ## (quat.x, quat.y, quat.z, quat.w) = (-0.146, 0.675, 0.172, 0.702)
-        ## timeout = 1.0 
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.44, -0.48, -0.33)
-        ## (quat.x, quat.y, quat.z, quat.w) = (-0.146, 0.675, 0.172, 0.702)
-        ## timeout = 3.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-        ## #--------------------------------------------------------------        
-        ## # Switch
-        ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
-        ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
-        ## #--------------------------------------------------------------        
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.42)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        ## ## print self.getEndeffectorPose()
-        ## ## raw_input("Enter anything to start: ")
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.445)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0 
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.38, -0.59, -0.42)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## #--------------------------------------------------------------        
-        ## # Switch -wall
-        ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
-        ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
-        ## #--------------------------------------------------------------        
         print "MOVES1"
-        (pos.x, pos.y, pos.z) = (0.63-0.15, -0.52, 0.19-0.3)
-        (quat.x, quat.y, quat.z, quat.w) = (0.849, -0.019, 0.526, 0.026)
+        (pos.x, pos.y, pos.z) = (1.0, 0.27, 0.005)
+        (quat.x, quat.y, quat.z, quat.w) = (0.253, -0.141, -0.252, 0.923)
         timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         ## print self.getEndeffectorPose()
-        raw_input("Enter anything to start: ")
         
         print "MOVES2"
-        (pos.x, pos.y, pos.z) = (0.63-0.15, -0.52, 0.225-0.3)
-        (quat.x, quat.y, quat.z, quat.w) = (0.849, -0.019, 0.526, 0.026)
+        (pos.x, pos.y, pos.z) = (1.0, 0.27, 0.005-0.2)
+        (quat.x, quat.y, quat.z, quat.w) = (0.253, -0.141, -0.252, 0.923)
         timeout = 1.0 
         self.setOrientGoal(pos, quat, timeout)
 
         print "MOVES3"
-        (pos.x, pos.y, pos.z) = (0.63-0.15, -0.52, 0.19-0.3)
-        (quat.x, quat.y, quat.z, quat.w) = (0.849, -0.019, 0.526, 0.026)
+        (pos.x, pos.y, pos.z) = (1.0, 0.27, 0.005)
+        (quat.x, quat.y, quat.z, quat.w) = (0.253, -0.141, -0.252, 0.923)
         timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
+        #raw_input("Enter anything to start: ")
         
-        ## #--------------------------------------------------------------        
-        ## # Toaster
-        ## position_step_scaling_radius: 0.05 #0.25 #meters. default=0.25
-        ## goal_velocity_for_hand: 0.60 #meters/sec. default=0.5    
-        ## #--------------------------------------------------------------        
-        ## print "MOVES1"
-        ## (pos.x, pos.y, pos.z) = (0.3, -0.59, -0.36)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-        
-        ## print "MOVES2"
-        ## (pos.x, pos.y, pos.z) = (0.3, -0.59, -0.44)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0 
-        ## self.setOrientGoal(pos, quat, timeout)
-
-        ## print "MOVES3"
-        ## (pos.x, pos.y, pos.z) = (0.3, -0.59, -0.36)
-        ## (quat.x, quat.y, quat.z, quat.w) = (0.745, -0.034, -0.666, -0.011)
-        ## timeout = 1.0
-        ## self.setOrientGoal(pos, quat, timeout)
-
         
         return True
 
@@ -259,14 +86,16 @@ if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-    opt, args = p.parse_args()
+    haptic_mpc_util.initialiseOptParser(p)
+    opt = haptic_mpc_util.getValidInput(p)
 
     # Initial variables
     d_robot    = 'pr2'
     controller = 'static'
     #controller = 'actionlib'
-    arm        = 'r'
+    #arm        = 'l'
+
 
     rospy.init_node('arm_reacher')    
-    ara = armReachAction(d_robot, controller, arm)
+    ara = armReachAction(d_robot, controller, opt.arm)
     rospy.spin()

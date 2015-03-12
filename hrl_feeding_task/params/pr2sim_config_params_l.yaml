@@ -12,6 +12,11 @@ haptic_mpc:
     inertial_frame: '/base_link'
     end_effector_frame: '/l_gripper_spoon_frame'
 
+    # Inposition parameter for action and log
+    ee_motion_threshold: 0.01
+    ee_orient_motion_threshold: 0.01
+    jts_motion_threshold: 0.01
+
     # Joint limits.
     # Should be equal in number and in the same order as the number of links in the arm (eg 7 for the PR2, starting at the shoulder). 
     # Should be specified in DEGREES.

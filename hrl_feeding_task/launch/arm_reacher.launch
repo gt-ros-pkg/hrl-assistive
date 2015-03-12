@@ -1,5 +1,7 @@
 <launch>
 
+    <arg name="arm" default="l"/>
+
     <!-- load planning -->
     <!--include file="$(find move_arm_tutorials2)/launch/ompl_planning.launch"/-->
   
@@ -13,13 +15,18 @@
       <param name="root_name" value="torso_lift_link" />
     </node>
 
-    <group ns="right" >
+
+    <rosparam command="load" file="$(find hrl_feeding_task)/params/mpc_params_pr2.yaml" />
+    <rosparam command="load" file="$(find hrl_feeding_task)/params/pr2_config_params_l.yaml" />
+    <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen"/>
+
+    <!--group ns="right" >
       
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/mpc_params_pr2.yaml" />
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/pr2_config_params_r.yaml" />
 
-      <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="" output="screen"/>
+      <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen"/>
 
-    </group>
+    </group-->
 
 </launch>
