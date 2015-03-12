@@ -86,56 +86,64 @@ class armReachAction(mpcBaseAction):
         print "MOVES1"
         (pos.x, pos.y, pos.z) = (0.471, -0.134, -0.041)
         (quat.x, quat.y, quat.z, quat.w) = (0.573, -0.451, -0.534, 0.428)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
+
+        print "MOVES1"
+        (pos.x, pos.y, pos.z) = (0.471, -0.134, -0.041)
+        (quat.x, quat.y, quat.z, quat.w) = (0.573, -0.451, -0.534, 0.428)
+        timeout = 1.0
+        self.setOrientGoal(pos, quat, timeout)
+        raw_input("Enter anything to start: ")
+
 
         print "MOVES2"
         (pos.x, pos.y, pos.z) = (0.655, 0.451, -0.046)
         (quat.x, quat.y, quat.z, quat.w) = (0.690, -0.092, -0.112, 0.709)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
         print "MOVES3"
         (pos.x, pos.y, pos.z) = (0.671, 0.623, -0.206)
         (quat.x, quat.y, quat.z, quat.w) = (0.713, 0.064, -0.229, 0.659)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
         print "MOVES4"
         (pos.x, pos.y, pos.z) = (0.749, 0.592, -0.292)
         (quat.x, quat.y, quat.z, quat.w) = (0.700, 0.108, -0.321, 0.629)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
         print "MOVES5"
         (pos.x, pos.y, pos.z) = (0.763, 0.592, -0.301)
         (quat.x, quat.y, quat.z, quat.w) = (0.706, 0.068, -0.235, 0.664)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
         print "MOVES6"
         (pos.x, pos.y, pos.z) = (0.775, 0.591, -0.288)
         (quat.x, quat.y, quat.z, quat.w) = (0.672, 0.037, -0.137, 0.727)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
         print "MOVES7"
         (pos.x, pos.y, pos.z) = (0.641, 0.560, -0.001)
         (quat.x, quat.y, quat.z, quat.w) = (0.699, -0.044, -0.085, 0.709)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
         print "MOVES7"
         (pos.x, pos.y, pos.z) = (0.742, 0.540, 0.109)
         (quat.x, quat.y, quat.z, quat.w) = (0.677, -0.058, -0.004, 0.733)
-        timeout = 10.0
+        timeout = 1.0
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
