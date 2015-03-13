@@ -76,7 +76,7 @@
     pointer-events:none;
 }
 
-#ctrl-ring > .arrow.left.default{
+#ctrl-ring.default > .arrow.left{
     top: calc(50% - 10px);
     left: 5%;
     border-top: 10px solid transparent;
@@ -84,7 +84,7 @@
     border-right: 20px solid rgba(76, 48, 19, 0.87);
 }
 
-#ctrl-ring > .arrow.left.active{
+#ctrl-ring.active > .arrow.left{
     top: calc(50% - 10px);
     left: 5%;
     border-top: 10px solid transparent;
@@ -92,7 +92,7 @@
     border-right: 20px solid rgba(0, 116, 199, 0.5);
 }
 
-#ctrl-ring > .arrow.right.default{
+#ctrl-ring.default > .arrow.right{
     top: calc(50% - 10px);
     right: 5%;
     border-top: 10px solid transparent;
@@ -100,7 +100,7 @@
     border-left: 20px solid rgba(76, 48, 19, 0.87);
 }
 
-#ctrl-ring > .arrow.right.active{
+#ctrl-ring.active > .arrow.right{
     top: calc(50% - 10px);
     right: 5%;
     border-top: 10px solid transparent;
@@ -108,7 +108,7 @@
     border-left: 20px solid rgba(0, 116, 199, 0.5);
 }
 
-#ctrl-ring > .arrow.up.default{
+#ctrl-ring.default > .arrow.up{
     top: 5%;
     left: calc(50% - 10px);
     border-right: 10px solid transparent;
@@ -116,7 +116,7 @@
     border-bottom: 20px solid rgba(76, 48, 19, 0.87);
 }
 
-#ctrl-ring > .arrow.up.active{
+#ctrl-ring.active > .arrow.up{
     top: 5%;
     left: calc(50% - 10px);
     border-right: 10px solid transparent;
@@ -124,7 +124,7 @@
     border-bottom: 20px solid rgba(0, 116, 199, 0.5);
 }
 
-#ctrl-ring > .arrow.down.default{
+#ctrl-ring.default > .arrow.down{
     bottom: 5%;
     left: calc(50% - 15px);
     border-right: 10px solid transparent;
@@ -132,7 +132,7 @@
     border-top: 20px solid rgba(76, 48, 19, 0.87);
 }
 
-#ctrl-ring > .arrow.down.active{
+#ctrl-ring.active > .arrow.down{
     bottom: 5%;
     left: calc(50% - 15px);
     border-right: 10px solid transparent;

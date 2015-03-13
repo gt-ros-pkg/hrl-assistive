@@ -7,13 +7,13 @@ RFH.CartesianEEControl = function (options) {
     self.side = self.arm.side[0];
     self.gripper = options.gripper;
     self.posStepSizes = {'tiny': 0.025,
-                         'small': 0.05,
-                         'medium': 0.1,
-                         'large': 0.25};
+        'small': 0.05,
+        'medium': 0.1,
+        'large': 0.25};
     self.rotStepSizes = {'tiny': Math.PI/16,
-                         'small': Math.PI/8,
-                         'medium': Math.PI/6,
-                         'large': Math.PI/4};
+        'small': Math.PI/8,
+        'medium': Math.PI/6,
+        'large': Math.PI/4};
     self.tfClient = options.tfClient;
     self.ros = self.tfClient.ros;
     self.eeTF = null;
@@ -22,30 +22,31 @@ RFH.CartesianEEControl = function (options) {
     self.op2baseMat = null;
     self.orientRot = 0;
     self.camera = options.camera;
+    self.dt = 500; //hold-repeat time in ms
 
     self.focusPoint = new RFH.FocalPoint({camera: self.camera,
-                                          tfClient: self.tfClient,
-                                          ros: self.ros,
-                                          side: self.arm.side,
-                                          divId: self.div,
+        tfClient: self.tfClient,
+        ros: self.ros,
+        side: self.arm.side,
+        divId: self.div,
     });
 
     self.pixel23d = new RFH.Pixel23DClient({
-            ros: self.ros,
-            cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
-            serviceName: '/pixel_2_3d'
+        ros: self.ros,
+        cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+        serviceName: '/pixel_2_3d'
     });
 
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
-   $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
-   $('#speedOptions-buttons, #posrot-set').buttonset();
-   $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
-   $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
+    $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
+    $('#speedOptions-buttons, #posrot-set').buttonset();
+    $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
+    $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
 
-   self.getStepSize = function () {
-     return $('input[name=speedOption]:checked').attr('id');
-   };
+    self.getStepSize = function () {
+        return $('input[name=speedOption]:checked').attr('id');
+    };
 
     self.orientHand = function () {
         if (self.focusPoint.point === null) {
@@ -78,19 +79,19 @@ RFH.CartesianEEControl = function (options) {
     };
 
     self.updateOpFrame = function () {
-    // Define an 'operational frame' at the end effector (ee) aligned with the perspective of the camera
-    // (i.e. z-axis along line from camera center through ee center for z-out optical frames, 
-    //  x- and y-axes rotated accordingly.  Commands will be issued in this frame, so they have the exact
-    // effect that it looks like they should from the flat, 2D camera view at all times.
+        // Define an 'operational frame' at the end effector (ee) aligned with the perspective of the camera
+        // (i.e. z-axis along line from camera center through ee center for z-out optical frames, 
+        //  x- and y-axes rotated accordingly.  Commands will be issued in this frame, so they have the exact
+        // effect that it looks like they should from the flat, 2D camera view at all times.
 
         // Check that we have values for both camera and ee frames
         if (self.eeTF === null || self.cameraTF === null) { return; };
         // Format ee frame as transformation matrix
         var eePosInBase = new THREE.Vector3().copy(self.eeTF.translation);
         var eeQuatInBase = new THREE.Quaternion(self.eeTF.rotation.x, 
-                                                self.eeTF.rotation.y,
-                                                self.eeTF.rotation.z,
-                                                self.eeTF.rotation.w);
+                self.eeTF.rotation.y,
+                self.eeTF.rotation.z,
+                self.eeTF.rotation.w);
         var eeInBase = new THREE.Matrix4();
         eeInBase.makeRotationFromQuaternion(eeQuatInBase);
         eeInBase.setPosition(eePosInBase);
@@ -98,9 +99,9 @@ RFH.CartesianEEControl = function (options) {
         // Format camera frame as transformation matrix
         var camPosInBase = new THREE.Vector3().copy(self.cameraTF.translation);
         var camQuatInBase = new THREE.Quaternion(self.cameraTF.rotation.x,
-                                                 self.cameraTF.rotation.y,
-                                                 self.cameraTF.rotation.z,
-                                                 self.cameraTF.rotation.w);
+                self.cameraTF.rotation.y,
+                self.cameraTF.rotation.z,
+                self.cameraTF.rotation.w);
         var camInBase = new THREE.Matrix4();
         camInBase.makeRotationFromQuaternion(camQuatInBase);
         camInBase.setPosition(camPosInBase);
@@ -137,9 +138,9 @@ RFH.CartesianEEControl = function (options) {
     // Get EE frame updates from TF
     if (self.arm.ee_frame !== '') {
         self.tfClient.subscribe(self.arm.ee_frame, function (tf) {
-                                                       self.eeTF = tf;
-                                                       self.updateOpFrame();
-                                                       });
+            self.eeTF = tf;
+            self.updateOpFrame();
+        });
         console.log("Subscribing to TF Frame: "+self.arm.ee_frame);
     } else {
         console.log("Empty EE Frame for " + self.arm.side + " arm.");
@@ -149,30 +150,30 @@ RFH.CartesianEEControl = function (options) {
     self.checkCameraTF = function () {
         if (self.camera.frame_id !== '') {
             self.tfClient.subscribe(self.camera.frame_id, function (tf) { 
-                                                              self.cameraTF = tf;
-                                                              self.updateOpFrame();
-                                                          }
-                                  );
+                self.cameraTF = tf;
+                self.updateOpFrame();
+            }
+            );
         } else {
             setTimeout(self.checkCameraTF, 500);
         }
     };
     self.checkCameraTF();
 
-//    self.rotX = function(poseInBaseMat, ang) {
-//        ang = (ang) ? ang : self.orientRot;
-//        var wristRotMat = new THREE.Matrix4().makeRotationX(ang);
-//        var goalRotMat = new THREE.Matrix4().extractRotation(poseInBaseMat);
-//        goalRotMat.multiply(wristRotMat);
-//        goalRotMa
-//
-//    }
+    //    self.rotX = function(poseInBaseMat, ang) {
+    //        ang = (ang) ? ang : self.orientRot;
+    //        var wristRotMat = new THREE.Matrix4().makeRotationX(ang);
+    //        var goalRotMat = new THREE.Matrix4().extractRotation(poseInBaseMat);
+    //        goalRotMat.multiply(wristRotMat);
+    //        goalRotMa
+    //
+    //    }
 
     self.eeDeltaCmd = function (xyzrpy) {
         if (self.op2baseMat === null || self.eeInOpMat === null) {
-                console.log("Hand Data not available to send commands.");
-                return;
-                };
+            console.log("Hand Data not available to send commands.");
+            return;
+        };
         // Get default values for unspecified options
         var x = xyzrpy.x || 0.0;
         var y = xyzrpy.y || 0.0;
@@ -202,25 +203,9 @@ RFH.CartesianEEControl = function (options) {
         }
         q = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
         self.arm.sendGoal({position: p,
-                           orientation: q,
-                           frame_id: self.tfClient.fixedFrame});
+            orientation: q,
+            frame_id: self.tfClient.fixedFrame});
     };
-
-    /// POSITION CONTROLS ///
-    //self.posCtrlId = self.side+'posCtrlIcon';
-    //self.targetIcon = new RFH.EECartControlIcon({divId: self.posCtrlId,
-    //                                             parentId: self.div,
-    //                                             arm: self.arm});
-    //var handCtrlCSS = {bottom:"6%"};
-    //handCtrlCSS[self.arm.side] = "7%";
-    //$('#'+self.posCtrlId).css(handCtrlCSS).hide();
-
-    ///// ROTATION CONTROLS ///
-    //self.rotCtrlId = self.side+'rotCtrlIcon';
-    //self.rotIcon = new RFH.EERotControlIcon({divId: self.rotCtrlId,
-    //                                            parentId: self.div,
-    //                                             arm: self.arm});
-    //$('#'+self.rotCtrlId).css(handCtrlCSS).hide();
 
     self.ctrlRingActivate = function (e) {
         $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('default').addClass('active');
@@ -229,37 +214,71 @@ RFH.CartesianEEControl = function (options) {
         var h = $(e.target).height();
         var delX = self.posStepSizes[self.getStepSize()] * (pt[0]-w/2)/w;
         var delY = self.posStepSizes[self.getStepSize()] * (pt[1]-w/2)/h;
-        self.eeDeltaCmd({x: delX, y: delY});
+        var ringMove = function (dX, dY) {
+            if ( !$('#ctrl-ring').hasClass('active') ) { return; }
+            self.eeDeltaCmd({x: dX, y: dY});
+            setTimeout(function() {ringMove(dX, dY);} , self.dt);
+        }
+        ringMove(delX, delY);
     };
 
     self.ctrlRingActivateRot = function (e) {
-        $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('default').addClass('active');
+        $('#ctrl-ring').removeClass('default').addClass('active');
         var pt = RFH.positionInElement(e);
         var w = $(e.target).width();
         var h = $(e.target).height();
         var delX = self.rotStepSizes[self.getStepSize()] * (pt[0]-w/2)/w;
         var delY = self.rotStepSizes[self.getStepSize()] * (pt[1]-w/2)/h;
-        self.eeDeltaCmd({roll:delY, pitch:-delX});
+        var ringMove = function (dX, dY) {
+            if ( !$('#ctrl-ring').hasClass('active') ){ return; }
+            self.eeDeltaCmd({roll: delY, pitch: -delX});
+            setTimeout(function() {ringMove(dX, dY);} , self.dt);
+        }
+        ringMove(delX, delY);
     };
 
-    self.ctrlRingInactivate = function (e) {
-        $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('active').addClass('default');
+    self.Inactivate = function (e) {
+        $(e.target).removeClass('active').addClass('default');
     };
 
     self.awayCB = function (e) {
-        self.eeDeltaCmd({z: self.posStepSizes[self.getStepSize()]});
+        $(e.target).removeClass('default').addClass('active');
+        var moveCB = function() {
+            if ( !$('#away-button').hasClass('active') ) {return};
+            self.eeDeltaCmd({z: self.posStepSizes[self.getStepSize()]});
+            setTimeout(moveCB, self.dt);
+        }
+        moveCB();
     };
 
     self.towardCB = function (e) {
-        self.eeDeltaCmd({z: -self.posStepSizes[self.getStepSize()]});
+        $(e.target).removeClass('default').addClass('active');
+        var moveCB = function() {
+            if ( !$('#toward-button').hasClass('active') ) {return};
+            self.eeDeltaCmd({z: -self.posStepSizes[self.getStepSize()]});
+            setTimeout(moveCB, self.dt);
+        }
+        moveCB();
     };
 
     self.cwCB = function (e) {
-        self.eeDeltaCmd({yaw: self.rotStepSizes[self.getStepSize()]});
+        $(e.target).removeClass('default').addClass('active');
+        var moveCB = function() {
+            if ( !$('#away-button').hasClass('active') ) {return};
+            self.eeDeltaCmd({yaw: self.rotStepSizes[self.getStepSize()]});
+            setTimeout(moveCB, self.dt);
+        }
+        moveCB();
     };
 
     self.ccwCB = function (e) {
-        self.eeDeltaCmd({yaw: -self.rotStepSizes[self.getStepSize()]});
+        $(e.target).removeClass('default').addClass('active');
+        var moveCB = function() {
+            if ( !$('#toward-button').hasClass('active') ) {return};
+            self.eeDeltaCmd({yaw: -self.rotStepSizes[self.getStepSize()]});
+            setTimeout(moveCB, self.dt);
+        }
+        moveCB();
     };
 
     /// TRACK HAND WITH CAMERA ///
@@ -274,12 +293,12 @@ RFH.CartesianEEControl = function (options) {
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplayDiv = self.side+'GripperDisplay';
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
-                                                   parentId: self.div,
-                                                   divId: self.gripperDisplayDiv});
+        parentId: self.div,
+        divId: self.gripperDisplayDiv});
     var gripperCSS = {position: "absolute",
-                      height: "5%",
-                      width: "27%",
-                      bottom: "5%"};
+        height: "5%",
+        width: "27%",
+        bottom: "5%"};
     gripperCSS[self.arm.side] = "2%";
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
@@ -345,9 +364,10 @@ RFH.CartesianEEControl = function (options) {
         $('#toward-button, #away-button').off('click.rfh');
         self.focusPoint.clear();
 
+        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
-        $('#away-button').on('click.rfh', self.cwCB).text('CW');
-        $('#toward-button').on('click.rfh', self.ccwCB).text('CCW');
+        $('#away-button').on('mousedown.rfh', self.cwCB).text('CW');
+        $('#toward-button').on('mousedown.rfh', self.ccwCB).text('CCW');
         $('#select-focus-toggle-label').off('click.rfh').hide();
     };
 
@@ -355,10 +375,10 @@ RFH.CartesianEEControl = function (options) {
         $('#ctrl-ring').off('mousedown.rfh');
         $('#toward-button, #away-button, #touchspot-toggle-label').off('click.rfh');
 
+        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
-        $('#ctrl-ring').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.ctrlRingInactivate)
-        $('#away-button').on('click.rfh', self.awayCB).text('');
-        $('#toward-button').on('click.rfh', self.towardCB).text('');
+        $('#away-button').on('mousedown.rfh', self.awayCB).text('');
+        $('#toward-button').on('mousedown.rfh', self.towardCB).text('');
         $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
     };
 
@@ -377,7 +397,7 @@ RFH.CartesianEEControl = function (options) {
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
         $('#posrot-pos').click();
     };
-    
+
     self.stop = function () {
         clearInterval(RFH.pr2.head.pubInterval);
         $('#armCtrlContainer').hide();
@@ -395,208 +415,3 @@ RFH.CartesianEEControl = function (options) {
         $('#touchspot-toggle-label').off('click.rfh').hide();
     };
 }
-/*
-RFH.EECartControlIcon = function (options) {
-    'use strict';
-    var self = this;
-    self.divId = options.divId;
-    self.parentId = options.parentId;
-    self.arm = options.arm;
-    self.lastDragTime = new Date();
-    self.container = $('<div/>', {id: self.divId,
-                                  class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
-    self.away = $('<div/>', {class: "away-button"}).appendTo('#'+self.divId).button();
-//    self.target = $('<div/>', {class: "target-trans"}).appendTo('#'+self.divId);
-    self.toward = $('<div/>', {class: "toward-button"}).appendTo('#'+self.divId).button();
-    self.left = $('<div/>', {class: "left-button"}).appendTo('#'+self.divId).button().html("<");
-    self.right = $('<div/>', {class: "right-button"}).appendTo('#'+self.divId).button().html(">");
-    self.up = $('<div/>', {class: "up-button"}).appendTo('#'+self.divId).button().html("^");
-    self.down = $('<div/>', {class: "down-button"}).appendTo('#'+self.divId).button().html("v");
-//    $('#'+self.divId+' .target-trans').draggable({containment:"parent",
-//                                 distance: 8,
-//                                 revertDuration: 100,
-//                                 revert: true})
-//                                 .on("dragstart", function (event) { event.stopPropagation() });
-//
-
-    self.leftCB = function (event) {
-        if ($('#'+self.divId+' .left-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({x:-self.arm.stepSize});
-            setTimeout(function () {self.leftCB(event)}, self.arm.dt);
-        } 
-    }
-    $('#'+self.divId+' .left-button').on('mousedown.rfh', self.leftCB);
-
-    self.rightCB = function (event) {
-        if ($('#'+self.divId+' .right-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({x:self.arm.stepSize});
-            setTimeout(function () {self.rightCB(event)}, self.arm.dt);
-        } 
-    }
-    $('#'+self.divId+' .right-button').on('mousedown.rfh', self.rightCB);
-
-    self.upCB = function (event) {
-        if ($('#'+self.divId+' .up-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({y:-self.arm.stepSize});
-            setTimeout(function () {self.upCB(event)}, self.arm.dt);
-        } 
-    }
-    $('#'+self.divId+' .up-button').on('mousedown.rfh', self.upCB);
-
-    self.downCB = function (event) {
-        if ($('#'+self.divId+' .down-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({y:self.arm.stepSize});
-            setTimeout(function () {self.downCB(event)}, self.arm.dt);
-        } 
-    }
-    $('#'+self.divId+' .down-button').on('mousedown.rfh', self.downCB);
-
-    self.awayCB = function (event) {
-        if ($('#'+self.divId+' .away-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({z:self.arm.stepSize});
-            setTimeout(function () {self.awayCB(event)}, self.arm.dt);
-        } 
-    }
-    $('#'+self.divId+' .away-button').on('mousedown.rfh', self.awayCB);
-
-    self.towardCB = function (event) {
-        if ($('#'+self.divId+' .toward-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({z:-self.arm.stepSize});
-            setTimeout(function () {self.towardCB(event)}, self.arm.dt);
-        }
-    }
-    $('#'+self.divId+' .toward-button').on('mousedown.rfh', self.towardCB);
-
-//    self.onDrag = function (event, ui) {
-//        clearTimeout(self.dragTimer);
-//        var time = new Date();
-//        var timeleft = time - self.lastDragTime;
-//        if (timeleft > 100) {
-//            self.lastDragTime = time;
-//            var delX = self.arm.stepSize/30 * (ui.position.left - ui.originalPosition.left);
-//            var delY = self.arm.stepSize/30 * (ui.position.top - ui.originalPosition.top);
-//            self.arm.eeDeltaCmd({x: delX, y: delY});
-//            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, self.arm.dt);
-//        } else {
-//            self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, timeleft);
-//        }
-//
-//    }
-//
-//    self.dragStop = function (event, ui) {
-//        clearTimeout(self.dragTimer);
-//    }
-//    $('#'+self.divId+' .target-trans').on('drag', self.onDrag).on('dragstop', self.dragStop);
-}
-
-RFH.EERotControlIcon = function (options) {
-    'use strict';
-    var self = this;
-    self.divId = options.divId;
-    self.parentId = options.parentId;
-    self.arm = options.arm;
-    self.lastDragTime = new Date();
-    self.container = $('<div/>', {id: self.divId,
-                                  class: "cart-ctrl-container"}).appendTo('#'+self.parentId);
-    self.cwRot = $('<div/>', {class: "cw-button"}).appendTo('#'+self.divId).button();
-    self.rotRight = $('<div/>', {class: "rotRight-button"}).appendTo('#'+self.divId).button().html('>');
-    self.rotLeft = $('<div/>', {class: "rotLeft-button"}).appendTo('#'+self.divId).button().html('<');
-    self.rotUp = $('<div/>', {class: "rotUp-button"}).appendTo('#'+self.divId).button().html('^');
-    self.rotDown = $('<div/>', {class: "rotDown-button"}).appendTo('#'+self.divId).button().html('v');
-//    self.target = $('<div/>', {class: "target-rot"}).appendTo('#'+self.divId);
-    self.ccwRot = $('<div/>', {class: "ccw-button"}).appendTo('#'+self.divId).button();
-    $('#'+self.divId+' .target-rot').on('dragstart', function(event) { event.stopPropagation()})
-                                    .draggable({containment:"parent",
-                                                distance: 8,
-                                                revertDuration: 100,
-                                                revert: true});
-    self.rpy_to_quat = function (roll, pitch, yaw) {
-        // Convert from RPY
-        var phi = roll / 2.0;
-        var the = pitch / 2.0;
-        var psi = yaw / 2.0;
-        var x = Math.sin(phi) * Math.cos(the) * Math.cos(psi) - 
-                Math.cos(phi) * Math.sin(the) * Math.sin(psi);
-        var y = Math.cos(phi) * Math.sin(the) * Math.cos(psi) + 
-                Math.sin(phi) * Math.cos(the) * Math.sin(psi);
-        var z = Math.cos(phi) * Math.cos(the) * Math.sin(psi) - 
-                Math.sin(phi) * Math.sin(the) * Math.cos(psi);
-        var w = Math.cos(phi) * Math.cos(the) * Math.cos(psi) + 
-                Math.sin(phi) * Math.sin(the) * Math.sin(psi);
-        var quaternion = new ROSLIB.Quaternion({x:x, y:y, z:z, w:w});
-        quaternion.normalize();
-        return quaternion;
-        }
-
-    self.ccwCB = function (event) {
-        if ($('#'+self.divId+' .ccw-button').hasClass('ui-state-active')) {
-            self.arm.eeDeltaCmd({yaw: -self.arm.dRot});
-            setTimeout(function () {self.ccwCB(event)}, self.arm.dt);
-        } 
-    }
-    $('#'+self.divId+' .ccw-button').on('mousedown.rfh', self.ccwCB);
-
-    self.cwCB = function (event) {
-        if ($('#'+self.divId+' .cw-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({yaw: self.arm.dRot});
-            setTimeout(function () {self.cwCB(event)}, self.arm.dt);
-        }
-    }
-    $('#'+self.divId+' .cw-button').on('mousedown.rfh', self.cwCB);
-
-    self.rotRightCB = function (event) {
-        if ($('#'+self.divId+' .rotRight-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({pitch: -self.arm.dRot});
-            setTimeout(function () {self.rotRightCB(event)}, self.arm.dt);
-        }
-    }
-    $('#'+self.divId+' .rotRight-button').on('mousedown.rfh', self.rotRightCB);
-
-    self.rotLeftCB = function (event) {
-        if ($('#'+self.divId+' .rotLeft-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({pitch: self.arm.dRot});
-            setTimeout(function () {self.rotLeftCB(event)}, self.arm.dt);
-        }
-    }
-    $('#'+self.divId+' .rotLeft-button').on('mousedown.rfh', self.rotLeftCB);
-
-    self.rotUpCB = function (event) {
-        if ($('#'+self.divId+' .rotUp-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({roll: -self.arm.dRot});
-            setTimeout(function () {self.rotUpCB(event)}, self.arm.dt);
-        }
-    }
-    $('#'+self.divId+' .rotUp-button').on('mousedown.rfh', self.rotUpCB);
-
-    self.rotDownCB = function (event) {
-        if ($('#'+self.divId+' .rotDown-button').hasClass('ui-state-active')){
-            self.arm.eeDeltaCmd({roll: self.arm.dRot});
-            setTimeout(function () {self.rotDownCB(event)}, self.arm.dt);
-        }
-    }
-    $('#'+self.divId+' .rotDown-button').on('mousedown.rfh', self.rotDownCB);
-
-    //self.onDrag = function (event, ui) {
-    //    // x -> rot around Z
-    //    // y -> rot around y
-    //    clearTimeout(self.dragTimer);
-    //    var time = new Date();
-    //    var timeleft = time - self.lastDragTime;
-    //    if (timeleft > 1000) {
-    //        self.lastDragTime = time;
-    //        var stepSize = self.arm.dRot * (ui.position.left - ui.originalPosition.left);
-    //        var dy = self.arm.dRot * (ui.position.top - ui.originalPosition.top);
-    //        self.arm.eeDeltaCmd({pitch: -stepSize, roll: dy});
-    //        self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, self.arm.dt);
-    //    } else {
-    //        self.dragTimer = setTimeout(function () {self.onDrag(event, ui)}, timeleft);
-    //    }
-
-    //}
-
-    //self.dragStop = function (event, ui) {
-    //    clearTimeout(self.dragTimer);
-    //}
-    //$('#'+self.divId+' .target-rot').on('drag', self.onDrag).on('dragstop', self.dragStop);
-}
-*/
