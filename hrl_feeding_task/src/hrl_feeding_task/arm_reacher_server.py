@@ -127,12 +127,12 @@ class armReachAction(mpcBaseAction):
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
-        # print "MOVES7"
-        # (pos.x, pos.y, pos.z) = (0.641, 0.560, -0.001)
-        # (quat.x, quat.y, quat.z, quat.w) = (0.699, -0.044, -0.085, 0.709)
-        # timeout = 1.0
-        # self.setOrientGoal(pos, quat, timeout)
-        # raw_input("Enter anything to start: ")
+        print "MOVES7"
+        (pos.x, pos.y, pos.z) = (0.641, 0.560, -0.001)
+        (quat.x, quat.y, quat.z, quat.w) = (0.699, -0.044, -0.085, 0.709)
+        timeout = 1.0
+        self.setOrientGoal(pos, quat, timeout)
+        raw_input("Enter anything to start: ")
 
         print "MOVES8"
         (pos.x, pos.y, pos.z) = (0.742, 0.540, 0.109)
