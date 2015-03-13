@@ -81,6 +81,8 @@ class armReachAction(mpcBaseAction):
         self.setOrientGoal(pos, quat, timeout)
         raw_input("Enter anything to start: ")
 
+        
+
         #!!---- HYDER TASK 1 BASIC SPOON IN BOWL
 
         # print "MOVES0"
