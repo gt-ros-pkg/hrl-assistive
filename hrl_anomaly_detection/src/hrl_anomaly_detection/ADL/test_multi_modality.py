@@ -25,6 +25,7 @@ import hrl_lib.util as ut
 import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from matplotlib.patches import Polygon
 
 import data_manager as dm
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
@@ -794,7 +795,7 @@ def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, label
     pp.show()
 
     
-def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
+def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, distribution=False):
 
         ## # find init
         ## pp.figure()
@@ -808,42 +809,78 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None):
         
         ## plot_audio(audio_time_cut, audio_data_cut, chunk=CHUNK, rate=RATE, title=names[i])
 
-    pp.figure()
-    plt.rc('text', usetex=True)
-    ax1 = pp.subplot(211)
-    for i, d in enumerate(data1):
-        ## if i==22 or i==27 or i==17: continue
-        ## if i<11: continue
-        if labels is not None and labels[i] == False:
-            pp.plot(d, label=str(i), color='k', linewidth=2.0)
-        else:
-            pp.plot(d, label=str(i))
-
-    # for false data
-    if false_data1 is not None:
-        for i, d in enumerate(false_data1):
-            pp.plot(d, label=str(i), color='k', linewidth=2.0)
-            
-    ## ax1.set_title("Force")
-    ax1.set_ylabel("Force [N]", fontsize=18)
+    def vectors_to_mean_sigma(vecs):
+        data = np.array(vecs)
+        m,n = np.shape(data)
+        mu  = np.zeros(n)
+        sig = np.zeros(n)
+        
+        for i in xrange(n):
+            mu[i]  = np.mean(data[:,i])
+            sig[i] = np.std(data[:,i])
+        
+        return mu, sig
 
         
+    pp.figure()
+    plt.rc('text', usetex=True)
+
+    #-----------------------------------------------------------------
+    ax1 = pp.subplot(211)
+    if distribution:
+
+        x       = range(len(data1[0]))
+        mu, sig = vectors_to_mean_sigma(data1)        
+        ax1.fill_between(x, mu-sig, mu+sig, facecolor='green', edgecolor='1.0', \
+                         alpha=0.5, interpolate=True)
+            
+    else:
+        for i, d in enumerate(data1):
+            if not(labels is not None and labels[i] == False):
+                true_line, = pp.plot(d, label='Normal data')
+
+    # False data
+    if false_data1 is not None:
+        for i, d in enumerate(false_data1):
+            pp.plot(d, color='k', linewidth=1.0)
+                
+    ## # False data
+    ## for i, d in enumerate(data1):
+    ##     if labels is not None and labels[i] == False:
+    ##         pp.plot(d, label=str(i), color='k', linewidth=1.0)
+
+    true_line = ax1.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
+    false_line = ax1.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend
+    
+    ax1.set_ylabel("Force [N]", fontsize=18)
+    ax1.legend()
+
+        
+    #-----------------------------------------------------------------
     ax2 = pp.subplot(212)
-    for i, d in enumerate(data2):
-        if labels is not None and labels[i] == False:
-            pp.plot(d, color='k', linewidth=2.0)
-        else:
-            pp.plot(d)
+    if distribution:
+        x       = range(len(data2[0]))
+        mu, sig = vectors_to_mean_sigma(data2)        
+        ax2.fill_between(x, mu-sig, mu+sig, facecolor='green', edgecolor='1.0', \
+                         alpha=0.5, interpolate=True)            
+    else:        
+        for i, d in enumerate(data2):
+            if not(labels is not None and labels[i] == False):
+                pp.plot(d)
 
     # for false data
     if false_data2 is not None:
         for i, d in enumerate(false_data2):
-            pp.plot(d, color='k', linewidth=2.0)
+            pp.plot(d, color='k', linewidth=1.0)
             
     ax2.set_ylabel("Sound [RMS]", fontsize=18)
     ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+
+    true_line = ax2.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
+    false_line = ax2.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend
+    ax2.legend()
+
     
-    #ax1.legend()
     pp.show()
     
     
@@ -881,8 +918,8 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 0
-    task  = 1
+    class_num = 2
+    task  = 2
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1088,7 +1125,8 @@ if __name__ == '__main__':
             false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
                         
             ## plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
-            plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2)
+            ## plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2)
+            plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2, distribution=True)
             
         else:
             ## plot_all(true_aXData1_scaled, true_aXData2_scaled)            
@@ -1155,9 +1193,9 @@ if __name__ == '__main__':
             # If you want normal likelihood, class 0, data 1
             # testData 0
             # false data 0 (comment in below)
-            test_dataSet  = false_dataSet[K]
-            x_test1 = np.array([test_dataSet.samples[:,0][0]])
-            x_test2 = np.array([test_dataSet.samples[:,1][0]])
+            ## test_dataSet  = false_dataSet[K]
+            ## x_test1 = np.array([test_dataSet.samples[:,0][0]])
+            ## x_test2 = np.array([test_dataSet.samples[:,1][0]])
             
             # Learning
             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)

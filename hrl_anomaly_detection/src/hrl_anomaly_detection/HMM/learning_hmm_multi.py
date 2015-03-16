@@ -908,19 +908,22 @@ class learning_hmm_multi(learning_base):
         
         ax1 = plt.subplot(311)
         ax1.plot(x, y1)
-        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=np.amax(y1)*1.1, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        y_max = 35.0
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=y_max, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
         ax1.set_ylabel("Force [N]", fontsize=18)
         ax1.set_xlim([0, x[-1]])
-        ax1.set_ylim([0, np.amax(y1)*1.1])
-            
+        ## ax1.set_ylim([0, np.amax(y1)*1.1])
+        ax1.set_ylim([0, y_max])
+        
         ax2 = plt.subplot(312)
         ax2.plot(x, y2)
-        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=np.amax(y2), where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        y_max = 0.01
+        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=y_max, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
         ax2.set_ylabel("Sound [RMS]", fontsize=18)
         ax2.set_xlim([0, x[-1]])
-
+        ax2.set_ylim([0, y_max])
         
         ax3 = plt.subplot(313)        
         ax3.plot(x, ll, 'b', label='Estimation')
@@ -938,6 +941,7 @@ class learning_hmm_multi(learning_base):
         plt.show()
         
         fig.savefig('test.pdf')
+        fig.savefig('test.png')
         
         ## print "----------------------"
         ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
