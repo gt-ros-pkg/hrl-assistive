@@ -4,7 +4,6 @@
     <arg name="head_pcs_dir" default="$(arg data_pkg)" />
     <arg name="kinect_points" default="/head_mount_kinect/depth_registered/points" />
     <arg name="kinect_camera" default="/head_mount_kinect/rgb/image" />
-
     
     <node pkg="hrl_head_registration" name="l_head_registration_srv" type="head_registration_srv"
           output="screen" args="$(arg head_pcs_dir)/$(arg subject)_l_face.bag">
