@@ -20,7 +20,6 @@ class armReachAction(mpcBaseAction):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
         
         rospy.Subscriber('bowl_location', Pose, self.bowlPoseCallback)
-	rospy.Subscriber('RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback)	
 
         self.tfListener = tf.TransformListener()
         self.tfBroadcaster = tf.TransformBroadcaster()
@@ -50,16 +49,8 @@ class armReachAction(mpcBaseAction):
             return None_BoolResponse(False)
 
     def bowlPoseCallback(self, data):
-	#Takes in a Pose() type message, contains only Point() and Quaternion(), from manual bowl location publisher
         self.bowl_pos = np.matrix([ [data.position.x], [data.position.y], [data.position.z] ])
         self.bowl_quat = np.matrix([ [data.orientation.x], [data.orientation.y], [data.orientation.z], [data.orientation.w] ])
-
-    def bowlPoseKinectCallback(self, data):
-	#Takes in a PointStamped() type message, contains Header() and Pose(), from Kinect bowl location publisher
-	self.bowl_frame = data.header.frame_id
-	self.bowl_pos = np.matrix([ [data.pose.position.x], [data.pose.position.y], [data.pose.position.z] ])
-        self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
-
 
 	#rospy.loginfo(self.bowl_pos)
 	#rospy.loginfo(self.bowl_quat)	
