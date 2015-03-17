@@ -53,11 +53,7 @@
 #define SQ(x) ((x) * (x))
 typedef pcl::PointXYZRGB PRGB;
 
-<<<<<<< HEAD
 namespace hrl_feeding_task {
-=======
-namespace cup_finder {
->>>>>>> 5dfa30c9ed3bedbe25e8203820020adedf839c60
 
     class CupFinderServer {
         public:
@@ -110,11 +106,7 @@ namespace cup_finder {
         l_click_sub = nh.subscribe("/l_mouse_click", 1, &CupFinderServer::lClickCallback, this);
         confirm_sub = nh.subscribe("/RYDS_Confirm", 1, &CupFinderServer::confirmCallback, this);
         action_sub = nh.subscribe("/RYDS_Action", 1, &CupFinderServer::actionCallback, this);
-<<<<<<< HEAD
         ROS_INFO("[hrl_feeding_task] CupFinderServer loaded");
-=======
-        ROS_INFO("[cup_finder] CupFinderServer loaded");
->>>>>>> 5dfa30c9ed3bedbe25e8203820020adedf839c60
 	cup_found = false;
 	working = false;
 	cup_est = false;
@@ -519,20 +511,12 @@ namespace cup_finder {
 };
 
 
-<<<<<<< HEAD
 using namespace hrl_feeding_task;
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "hrl_feeding_task");
     // note. It might beed to be some differnet name.
-=======
-using namespace cup_finder;
-
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "cup_finder");
->>>>>>> 5dfa30c9ed3bedbe25e8203820020adedf839c60
     CupFinderServer p3d;
     ros::spin();
     return 0;
