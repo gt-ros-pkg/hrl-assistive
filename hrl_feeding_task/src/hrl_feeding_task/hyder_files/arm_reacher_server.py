@@ -28,15 +28,15 @@ class armReachAction(mpcBaseAction):
 	rospy.Subscriber('haptic_mpc/robot_state', haptic_msgs.RobotHapticState, self.robotStateCallback)
 
 	#Be able to publish new data to the robot state, especially new joint angles
-	self.robotState_pub = rospy.Publisher('haptic_mpc/robot_state', haptic_msgs.RobotHapticState)
+	#self.robotState_pub = rospy.Publisher('haptic_mpc/robot_state', haptic_msgs.RobotHapticState)
 
-        self.tfListener = tf.TransformListener()
-        self.tfBroadcaster = tf.TransformBroadcaster()
+        #self.tfListener = tf.TransformListener()
+        #self.tfBroadcaster = tf.TransformBroadcaster()
 
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
-	self.pose1JointAngles = (0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, -1.2799710435005978, 10.952306846165152)
+	self.pose1JointAngles = list(0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, -1.2799710435005978, 10.952306846165152)
 	#These joint angles correspond to 'Pose 1' - See Keep note
 
         rate = rospy.Rate(100) # 25Hz, nominally.                
@@ -104,9 +104,14 @@ class armReachAction(mpcBaseAction):
         
 	print "Setting initial joint angles... "
 	
-	self.robotData.joint_angles = self.pose1JointAngles
-	self.robotState_pub.publish(self.robotData)
+	#BAD DOESN'T WORK BELOW!!!
+	#self.robotData.joint_angles = self.pose1JointAngles
+	#self.robotState_pub.publish(self.robotData)
 	#Publishes initial joint angles to robot_state topic, in theory supposed to make robot left arm go to specified joint angles, but doesn't work well. New method needed...
+
+	jointAnglesList = self.pose1JointAngles
+
+	self.setPostureGoal(jointAnglesList, 1)
 
         #!!---- BASIC SCOOPING MOTION WITH BOWL POSITION OFFSET
 	#Flat Gripper Orientation Values:
