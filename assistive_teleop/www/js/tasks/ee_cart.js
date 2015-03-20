@@ -171,7 +171,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.eeDeltaCmd = function (xyzrpy) {
         if (self.op2baseMat === null || self.eeInOpMat === null) {
-            console.log("Hand Data not available to send commands.");
+            console.warn("Hand Data not available to send commands.");
             return;
         };
         // Get default values for unspecified options
@@ -304,7 +304,7 @@ RFH.CartesianEEControl = function (options) {
 
     /// SELECT FOCUS POINT CONTROLS ///
     self.selectFocusCB = function (e, ui) {
-        if ($('#select-focus-toggle').is(':checked')) {
+        if ($('#select-focus-toggle').prop('checked')) {
             self.focusPoint.clear();
             if (self.focusPoint.point === null) {
                 $('#armCtrlContainer').show();
@@ -313,6 +313,7 @@ RFH.CartesianEEControl = function (options) {
             $('#armCtrlContainer').hide();
             var cb = function () {
                 $('#armCtrlContainer').show();
+                $('#select-focus-toggle').prop('checked', false).button('refresh');
                 self.eeDeltaCmd({}); // Send command at current position to reorient arm
             };
             self.focusPoint.getNewFocusPoint(cb); // Pass in callback to perform cleanup/reversal
@@ -332,20 +333,20 @@ RFH.CartesianEEControl = function (options) {
     };
 
     self.touchSpotCB = function (e) {
-        if ($('#touchspot-toggle').is(':checked')) {
+        if ($('#touchspot-toggle').prop('checked')) {
             $('#armCtrlContainer').show();
+            $('#'+self.div).off('click.rfh');
         } else {
             $('#armCtrlContainer').hide();
             // TODO: Change cursor here?
 
             var onRetCB = function (pose) {
-                var pt = new THREE.Vector3(pose.position);
                 self.arm.sendGoal({
-                    positoin: pt,
-                    orientation: self.eeTF.rotation,
+                    position: pose.position,
+                    orientation: self.eeTF.rotation,//TODO: Fix this
                     frame_id: 'base_link'
                 })
-                $('#touchspot-toggle').prop('checked', false);
+                $('#touchspot-toggle').prop('checked', false).button('refresh');
                 $('#armCtrlContainer').show();
             };
 
@@ -373,7 +374,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.setPositionCtrls = function (e) {
         $('#ctrl-ring').off('mousedown.rfh');
-        $('#toward-button, #away-button, #touchspot-toggle-label').off('click.rfh');
+        $('#toward-button, #away-button').off('click.rfh');
 
         $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
@@ -403,8 +404,8 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('click.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
-        if ($('#select-focus-toggle').is(':checked')) {
-            $('#select-focus-toggle-label').click();
+        if ($('#select-focus-toggle').prop('checked')) {
+            $('#select-focus-toggle').click();
         }
         $("#select-focus-toggle-label").off('click.rfh').hide();
         $('#speedOptions').hide();
@@ -412,6 +413,9 @@ RFH.CartesianEEControl = function (options) {
         $('#wristCW, #wristCCW').off('click.rfh').hide();
         $('#posrot-pos, #posrot-rot').off('click.rfh').hide();
         $('#posrot-set').hide();
+        if ($('#touchspot-toggle').prop('checked')) {
+            $('#touchspot-toggle').click();
+        }
         $('#touchspot-toggle-label').off('click.rfh').hide();
     };
 }

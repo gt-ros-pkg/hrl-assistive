@@ -35,10 +35,12 @@ RFH.Look = function (options) {
     self.start = function () {
         $('#'+self.div + '-image').addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
         $('.map-look').css("display","block");
+        console.log('Looking task started');
     };
 
     self.stop = function () {
         $('#'+self.div + '-image').removeClass("cursor-eyes").off("click.rfh-look");
         $('.map-look').css("display","none");
+        console.log('Looking task stopped');
     };
 }

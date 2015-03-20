@@ -4,7 +4,6 @@ RFH.TaskMenu = function (divId) {
     self.divId = divId;
     self.tasks = {};
     self.activeTask = null;
-    self.waitTimer = null;
 
     self.addTask = function (taskObject) {
         self.tasks[taskObject.name] = taskObject;
@@ -17,43 +16,29 @@ RFH.TaskMenu = function (divId) {
             $('#'+divId).append(checkbox, label);
             $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
             $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item');
-            $('#'+taskObject.buttonText).on('click.rfh', function(event){ self.startTask(taskObject) });
+            $('#'+taskObject.buttonText).on('click.rfh', function(event){ self.buttonCB(taskObject) });
         }
     };
 
-    self.startTask = function (taskObject) {
-        if (self.activeTask) {
-            if (self.activeTask.buttonText) {
-                $("#"+self.activeTask.buttonText).click();
-                $('*').addClass('no-cursor');//TODO: find a better way to do this?
-                self.waitForTaskStop();
-            } else {
-                self.activeTask.stop();
-            }
+    self.buttonCB = function (taskObject) {
+        if (taskObject === self.activeTask) {
+            self.stopTask(taskObject);
+            self.tasks['lookingTask'].start();
+            self.activeTask = self.tasks['lookingTask'];
+        } else {
+            self.stopTask(self.activeTask)
+            taskObject.start();
+            self.activeTask = taskObject;
         }
-        if (taskObject.buttonText) {
-            $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.stopTask(taskObject)});
-        }
-        taskObject.start();
-        self.activeTask = taskObject;
-        $('*').removeClass('no-cursor');
     };
     
     self.stopTask = function (taskObject) {
+        // Stop currently running task
         taskObject.stop();
         if (taskObject.buttonText) {
-            $('#'+taskObject.buttonText).off('click.rfh').on('click.rfh', function(){self.startTask(taskObject)});
+            $('#'+taskObject.buttonText).prop('checked', false).button('refresh');
         }
-        self.startTask(self.tasks['lookingTask']);
-    };
-
-    self.waitForTaskStop = function (task) {
-        task =  (task) ? task : self.activeTask;
-        if (self.activeTask) {
-            self.waitTimer = setTimeout(function(){ self.waitForTaskStop(task) }, 100);
-        } else {
-            return true;
-        }
+        self.activeTask = null;
     };
 
     self.removeTask = function (taskObject) {
@@ -89,5 +74,7 @@ RFH.initTaskMenu = function (divId) {
                                        camera: RFH.mjpeg.cameraModel,
                                        tfClient: RFH.tfClient,
                                        base: RFH.pr2.base}));
-    RFH.taskMenu.startTask(RFH.taskMenu.tasks['lookingTask']);
+    // Start looking task by default
+    RFH.taskMenu.tasks['lookingTask'].start();
+    RFH.taskMenu.activeTask = RFH.taskMenu.tasks['lookingTask'];
 }
