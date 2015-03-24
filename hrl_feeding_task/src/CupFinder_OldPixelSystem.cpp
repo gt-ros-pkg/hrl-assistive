@@ -26,6 +26,9 @@
 #include <pcl_ros/transforms.h>
 
 #include <hrl_feeding_task/CupFinder.h>
+//#include <cup_finder/CupFinder.h>
+//does it need to be here? Why did I add this part?
+//apparently pixel2_3d needs it. So yes. We need this.
 
 #include <iostream>
 #include <pcl/ModelCoefficients.h>
@@ -56,11 +59,11 @@ namespace hrl_feeding_task {
         public:
             ros::NodeHandle nh;
             tf::TransformListener tf_listener;
-            ros::Subscriber pc_sub, l_click_sub, confirm_sub, action_sub, camera_info_sub;
+            ros::Subscriber pc_sub, l_click_sub, confirm_sub, action_sub;
             ros::Publisher pt3d_pub, cupConfirm_pub;
             ros::ServiceServer pix_srv;
-//            image_transport::ImageTransport img_trans;
-//            image_transport::CameraSubscriber camera_sub;
+            image_transport::ImageTransport img_trans;
+            image_transport::CameraSubscriber camera_sub;
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cur_pc;
             double normal_search_radius;
             std::string output_frame;
@@ -71,9 +74,8 @@ namespace hrl_feeding_task {
 
             CupFinderServer();
             void onInit();
-            void cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr& info_msg);
-//            void cameraCallback(const sensor_msgs::ImageConstPtr& img_msg,
-//                                const sensor_msgs::CameraInfoConstPtr& info_msg);
+            void cameraCallback(const sensor_msgs::ImageConstPtr& img_msg,
+                                const sensor_msgs::CameraInfoConstPtr& info_msg);
             void pcCallback(sensor_msgs::PointCloud2::ConstPtr pc_msg);
             bool pixCallback(CupFinder::Request& req, CupFinder::Response& resp);
             void lClickCallback(const geometry_msgs::PointStamped& click_msg);
@@ -83,10 +85,9 @@ namespace hrl_feeding_task {
 
     };
 
-    CupFinderServer::CupFinderServer() : nh("~"),
+    CupFinderServer::CupFinderServer() : nh("~"), img_trans(nh),
                                        cur_pc(new pcl::PointCloud<pcl::PointXYZRGB>),
-                                       cam_called(false),
-				       pc_called(false) {
+                                       cam_called(false), pc_called(false) {
         onInit();
     }
 
@@ -94,11 +95,11 @@ namespace hrl_feeding_task {
         nh.param<double>("normal_radius", normal_search_radius, 0.03);
         nh.param<bool>("use_closest_pixel", use_closest_pixel, false);
         nh.param<std::string>("output_frame", output_frame, "");
-        //camera_sub = img_trans.subscribeCamera<CupFinderServer>
-        //                                      ("/image", 1, 
-        //                                       &CupFinderServer::cameraCallback, this);
-        camera_info_sub = nh.subscribe("/info_topic", 1, &CupFinderServer::cameraInfoCallback, this);
+        camera_sub = img_trans.subscribeCamera<CupFinderServer>
+                                              ("/image", 1, 
+                                               &CupFinderServer::cameraCallback, this);
         pc_sub = nh.subscribe("/point_cloud", 1, &CupFinderServer::pcCallback, this);
+//      TODO Why service activated??? Problem Here?
         pix_srv = nh.advertiseService("/finding_bowl_service", &CupFinderServer::pixCallback, this);
         pt3d_pub = nh.advertise<geometry_msgs::PoseStamped>("/RYDS_CupLocation", 1);
 //	cupConfirm_pub = nh.advertise<std_msgs::String>("/RYDS_CupConfrimation", 1);
@@ -135,15 +136,7 @@ namespace hrl_feeding_task {
 	}
     }
 
-    void CupFinderServer::cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr& info_msg) {
-        img_width = info_msg->width;
-        img_height = info_msg->height;
-        cam_called = true;
-        camera_info_sub.shutdown();
-        ROS_INFO("[hrl_feeding_task] Camera Info Received");
-    }
 
-/*
     void CupFinderServer::cameraCallback(const sensor_msgs::ImageConstPtr& img_msg,
                                          const sensor_msgs::CameraInfoConstPtr& info_msg) {
         if(!info_msg)
@@ -153,8 +146,6 @@ namespace hrl_feeding_task {
         cam_called = true;
         camera_sub.shutdown();
     }
-
-*/
 
     void CupFinderServer::pcCallback(sensor_msgs::PointCloud2::ConstPtr pc_msg) {
         pcl::fromROSMsg(*pc_msg, *cur_pc);
@@ -295,7 +286,6 @@ namespace hrl_feeding_task {
         geometry_msgs::PoseStamped pt3d_pose;
         pt3d_pose.header.frame_id = cur_pc->header.frame_id;
         pt3d_pose.header.stamp = ros::Time(0);
-	//pt3d_pose.header.stamp = ros::Time::now();
         pt3d_pose.pose.position.x = pt3d_trans.point.x;
         pt3d_pose.pose.position.y = pt3d_trans.point.y;
         pt3d_pose.pose.position.z = pt3d_trans.point.z;
@@ -309,21 +299,9 @@ namespace hrl_feeding_task {
 	float centerY = pt3d_trans.point.y;
 	float centerZ = pt3d_trans.point.z;
 
-
-	std::cerr << "Is this where we having trouble?" <<std::endl;
         if(output_frame == "")
             output_frame = cur_pc->header.frame_id;
-
-/*
-        try {
-	    tf_listener.waitForTransform(output_frame, pt3d_pose.header.frame_id, ros::Time(0), ros::Duration(10.0) );
-	    tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
-	} catch (tf::TransformException ex) {
-	    ROS_ERROR("%s",ex.what());
-	}
-*/
-//        tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
-        tf_listener.transformPose(output_frame, ros::Time(0), pt3d_pose, pt3d_pose.header.frame_id, pt3d_pose);
+        tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
         resp.pixel3d.header.frame_id = output_frame;
         resp.pixel3d.header.stamp = ros::Time::now();
         resp.pixel3d.pose.position.x = pt3d_pose.pose.position.x;
@@ -373,7 +351,7 @@ namespace hrl_feeding_task {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cupZone (new pcl::PointCloud<pcl::PointXYZRGB>);
 //	tf_listener.transformPointCloud(output_frame, cur_pc_sample_box, cupZone);
 	pcl_ros::transformPointCloud(output_frame, *filter_pc, *cupZone, tf_listener); //TODO fix const problem. 
-        std::cerr << "Found this many points!   :   " << cupZone->points.size()<< "points" <<std::endl;
+        std::cerr << "Found this many points   :   " << cupZone->points.size()<< "points" <<std::endl;
 
 
 
