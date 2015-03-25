@@ -7,7 +7,6 @@
   <rosparam command="load" file="$(arg robot_config)" />
   <rosparam command="load" file="$(find RYDS)/params/mpc_params_pr2_yogurt.yaml" />
 
-
   <node name="mpc_teleop" pkg="hrl_haptic_mpc" type="mpc_teleop_rviz.py" args="-r pr2 -a $(arg arm) --orientation" output="screen"/>
   <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
    <param name="tip_name" value="l_wrist_roll_link" />
