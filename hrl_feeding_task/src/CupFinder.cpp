@@ -294,8 +294,8 @@ namespace hrl_feeding_task {
 
         geometry_msgs::PoseStamped pt3d_pose;
         pt3d_pose.header.frame_id = cur_pc->header.frame_id;
-        pt3d_pose.header.stamp = ros::Time(0);
-	//pt3d_pose.header.stamp = ros::Time::now();
+        //pt3d_pose.header.stamp = ros::Time(0);
+	pt3d_pose.header.stamp = ros::Time::now();
         pt3d_pose.pose.position.x = pt3d_trans.point.x;
         pt3d_pose.pose.position.y = pt3d_trans.point.y;
         pt3d_pose.pose.position.z = pt3d_trans.point.z;
@@ -314,16 +314,20 @@ namespace hrl_feeding_task {
         if(output_frame == "")
             output_frame = cur_pc->header.frame_id;
 
-/*
+
         try {
-	    tf_listener.waitForTransform(output_frame, pt3d_pose.header.frame_id, ros::Time(0), ros::Duration(10.0) );
-	    tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
+	    tf_listener.waitForTransform(output_frame, pt3d_pose.header.frame_id, pt3d_pose.header.stamp, ros::Duration(10.0) );
+
+            tf_listener.transformPose(output_frame, pt3d_pose.header.stamp, pt3d_pose, pt3d_pose.header.frame_id, pt3d_pose);
+	    //tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
 	} catch (tf::TransformException ex) {
 	    ROS_ERROR("%s",ex.what());
 	}
-*/
-//        tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
-        tf_listener.transformPose(output_frame, ros::Time(0), pt3d_pose, pt3d_pose.header.frame_id, pt3d_pose);
+
+
+
+        //tf_listener.transformPose(output_frame, pt3d_pose, pt3d_pose);
+        //tf_listener.transformPose(output_frame, pt3d_pose.header.stamp , pt3d_pose, pt3d_pose.header.frame_id, pt3d_pose);
         resp.pixel3d.header.frame_id = output_frame;
         resp.pixel3d.header.stamp = ros::Time::now();
         resp.pixel3d.pose.position.x = pt3d_pose.pose.position.x;
@@ -333,6 +337,10 @@ namespace hrl_feeding_task {
         resp.pixel3d.pose.orientation.y = pt3d_pose.pose.orientation.y;
         resp.pixel3d.pose.orientation.z = pt3d_pose.pose.orientation.z;
         resp.pixel3d.pose.orientation.w = pt3d_pose.pose.orientation.w;
+
+
+
+	std::cerr << "After transform?" <<std::endl;
 
 /*
         pt3d_pub.publish(pt3d_pose);
@@ -366,6 +374,13 @@ namespace hrl_feeding_task {
     	// apply filter
     	sample_box_rem.filter (*filter_pc);
 
+
+
+	std::cerr << "Before PC transform" <<std::endl;
+	
+
+	(*filter_pc).header.stamp = ros::Time::now();
+	tf_listener.waitForTransform(output_frame, (*filter_pc).header.frame_id, (*filter_pc).header.stamp, ros::Duration(10.0) );
 
 
 	//Transform PCL

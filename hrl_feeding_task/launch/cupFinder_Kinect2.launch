@@ -6,7 +6,7 @@
         <remap from="l_mouse_click" to="/clickable_display/l_mouse_click"/>
         <remap from="r_mouse_click" to="/clickable_display/r_mouse_click"/>
         <param name="normal_radius" type="double" value="0.035" />
-        <param name="output_frame" value="/base_link"/>
+        <param name="output_frame" value="/torso_lift_link"/>
         <param name="use_closest_pixel" value="True"/>
     </node>
 
