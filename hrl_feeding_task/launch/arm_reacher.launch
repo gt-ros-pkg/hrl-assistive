@@ -4,9 +4,9 @@
 
     <!-- load planning -->
     <!--include file="$(find move_arm_tutorials2)/launch/ompl_planning.launch"/-->
-  
+
     <!-- load move_arm -->
-    <!--include file="$(find pr2_arm_navigation_config)/launch/pr2_planning_environment.launch" /-->  
+    <!--include file="$(find pr2_arm_navigation_config)/launch/pr2_planning_environment.launch" /-->
     <!--include file="$(find pr2_arm_navigation_actions)/launch/move_right_arm.launch"/-->
     <!--include file="$(find planning_environment)/launch/environment_server.launch"/-->
 
@@ -19,13 +19,18 @@
     <rosparam command="load" file="$(find hrl_feeding_task)/params/mpc_params_pr2.yaml" />
     <rosparam command="load" file="$(find hrl_feeding_task)/params/pr2_config_params_l.yaml" />
     <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen"/>
+    <!--Added by Hyder March 26 for testing...-->
+
+    <!-- <node name="bowl_location_publisher" pkg="hrl_feeding_task" type="bowl_location_publisher.py" output="screen"/> -->
 
     <!--group ns="right" >
-      
+
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/mpc_params_pr2.yaml" />
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/pr2_config_params_r.yaml" />
 
       <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen"/>
+
+
 
     </group-->
 
