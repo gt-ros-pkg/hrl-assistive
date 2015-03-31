@@ -139,12 +139,13 @@ class learning_hmm_multi(learning_base):
 
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
                 ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
-                path,logp    = self.ml.viterbi(final_ts_obj)
+                path,temp  = self.ml.viterbi(final_ts_obj)
+                logp       = self.ml.loglikelihood(final_ts_obj)
+                ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
 
                 if len(path) == 0: continue
                 ll_list[path[-1]].append(logp)
         print "Executed viterbi algorithm: ", np.shape(X1)
-
                 
         for i, ll in enumerate(ll_list):
             if len(ll) > 0: 
@@ -648,7 +649,8 @@ class learning_hmm_multi(learning_base):
         n = len(np.squeeze(X1))
         
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-        path,logp    = self.ml.viterbi(final_ts_obj)
+        path,_       = self.ml.viterbi(final_ts_obj)
+        logp         = self.ml.loglikelihood(final_ts_obj)
 
         ## print path, logp, self.ll_mu[path[-1]], logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
         ## raw_input()
@@ -862,7 +864,7 @@ class learning_hmm_multi(learning_base):
         else:        
             X_test = self.convert_sequence(X1, X2, emission=False)                
 
-        x      = range(m)
+        x      = np.arange(0., float(m))
         path_l = np.zeros(m)
         ll     = np.zeros(m)
         ll_mu  = np.zeros(m)
@@ -871,7 +873,8 @@ class learning_hmm_multi(learning_base):
             if i == 0: continue
         
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
-            path,logp    = self.ml.viterbi(final_ts_obj)
+            path,_    = self.ml.viterbi(final_ts_obj)
+            logp      = self.ml.loglikelihood(final_ts_obj)
 
             if len(path) == 0: 
                 path_l[i] = path_l[i-1]
@@ -883,16 +886,39 @@ class learning_hmm_multi(learning_base):
             ll_mu[i]  = self.ll_mu[path[-1]]
             ll_ths[i] = self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]]
 
-        l = [0]
-        for p in path_l:
-            l.append(p%2)
+        # temp to see offline state path
+        ## path_l = path
+            
+        # state blocks
+        block_flag = []
+        block_x    = []
+        block_state= []
+        text_n     = []
+        text_x     = []
+        for i, p in enumerate(path_l):
+            if i is 0: 
+                block_flag.append(0)
+                block_state.append(0)
+                text_x.append(0.0)
+            elif path_l[i] != path_l[i-1]:
+                if block_flag[-1] is 0: block_flag.append(1)
+                else: block_flag.append(0)
+                block_state.append( int(p) )
+                text_x[-1] = (text_x[-1]+float(i-1))/2.0 - 0.5 # 
+                text_x.append(float(i))
+            else:
+                block_flag.append(block_flag[-1])
+            block_x.append(float(i))
+        text_x[-1] = (text_x[-1]+float(m-1))/2.0 - 0.5# 
 
-        new_x = np.arange(0.0, float(m)-0.5, 1.0)
-        new_l = []
-        for i in xrange(len(new_x)):
-            ## print round(new_x[i]), len(new_x), i, len(l)
-            ## new_l.append(l[int(round(new_x[i]))])
-            new_l.append(l[i]) 
+        block_flag_interp = []
+        block_x_interp    = []
+        for i in xrange(len(block_flag)):
+            block_flag_interp.append(block_flag[i])
+            block_flag_interp.append(block_flag[i])
+            block_x_interp.append( float(block_x[i]) )
+            block_x_interp.append(block_x[i]+0.5)
+
 
         y1 = (X1[0]/scale1[2])*(scale1[1]-scale1[0])+scale1[0]
         y2 = (X2[0]/scale2[2])*(scale2[1]-scale2[0])+scale2[0]
@@ -907,35 +933,45 @@ class learning_hmm_multi(learning_base):
         plt.rc('text', usetex=True)
         
         ax1 = plt.subplot(311)
-        ax1.plot(x, y1)
+        ax1.plot(x*(1./43.), y1)
         y_max = 35.0
-        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=y_max, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.), 
+                                                                 ymin=0, ymax=y_max, 
+                                                                 where=np.array(block_flag_interp)>0, 
+                                                                 facecolor='green', 
+                                                                 edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
+        for i in xrange(len(block_state)):
+            ax1.text(text_x[i]*(1./43.), y_max-5.0, str(block_state[i]+1))
         ax1.set_ylabel("Force [N]", fontsize=18)
-        ax1.set_xlim([0, x[-1]])
+        ax1.set_xlim([0, x[-1]*(1./43.)])
         ## ax1.set_ylim([0, np.amax(y1)*1.1])
         ax1.set_ylim([0, y_max])
         
         ax2 = plt.subplot(312)
-        ax2.plot(x, y2)
+        ax2.plot(x*(1./43.), y2)
         y_max = 0.01
-        collection = collections.BrokenBarHCollection.span_where(new_x, ymin=0, ymax=y_max, where=np.array(new_l)>0, facecolor='green', edgecolor='none', alpha=0.3)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.), 
+                                                                 ymin=0, ymax=y_max, 
+                                                                 where=np.array(block_flag_interp)>0, 
+                                                                 facecolor='green', 
+                                                                 edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
         ax2.set_ylabel("Sound [RMS]", fontsize=18)
-        ax2.set_xlim([0, x[-1]])
+        ax2.set_xlim([0, x[-1]*(1./43.)])
         ax2.set_ylim([0, y_max])
         
         ax3 = plt.subplot(313)        
-        ax3.plot(x, ll, 'b', label='Estimation')
-        ax3.plot(x, ll_mu, 'r', label='Expection')
-        ax3.plot(x, ll_ths, 'r--', label='Threshold')
+        ax3.plot(x*(1./43.), ll, 'b', label='Estimation')
+        ax3.plot(x*(1./43.), ll_mu, 'r', label='Expection')
+        ax3.plot(x*(1./43.), ll_ths, 'r--', label='Threshold')
         ax3.set_ylabel(r'$P({\mathbf{X}}, {\mathbf{Z}}_{best} | {\mathbf{\theta}})$',fontsize=18)
-        ax3.set_xlim([0, x[-1]])
+        ax3.set_xlim([0, x[-1]*(1./43.)])
         
         ## ax3.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
         ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.3), \
                    prop={'size':14})
-        ax3.set_xlabel('Time step', fontsize=18)
+        ax3.set_xlabel('Time [sec]', fontsize=18)
 
         plt.subplots_adjust(bottom=0.15)        
         plt.show()
@@ -981,3 +1017,85 @@ class learning_hmm_multi(learning_base):
         ## plt.show()
         ## sys.exit()
         
+    def path_disp(self, X1, X2, scale1=None, scale2=None):
+
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        
+        n,m = np.shape(X1)
+        print n,m
+        x   = np.arange(0., float(m))*(1./43.)
+        path_mat = np.zeros((self.nState, m))
+
+        path_l = []            
+        for i in xrange(n):
+
+            x_test1 = X1[i:i+1,:]
+            x_test2 = X2[i:i+1,:]            
+
+            if self.nEmissionDim == 1:
+                X_test = x_test1
+            else:        
+                X_test = self.convert_sequence(x_test1, x_test2, emission=False)                
+
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            path,_    = self.ml.viterbi(final_ts_obj)        
+            path_l.append(path)
+
+            for j in xrange(m):
+                path_mat[path[j], j] += 1.0
+
+        path_mat /= np.sum(path_mat, axis=0)
+
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        matplotlib.rcParams['ps.fonttype'] = 42
+            
+        fig = plt.figure()
+        plt.rc('text', usetex=True)
+        
+        ax1 = plt.subplot(111)            
+        im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+                         extent=[0,float(m)*(1.0/43.),20,1], aspect=0.1)
+
+        ## divider = make_axes_locatable(ax1)
+        ## cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ax1.set_xlabel("Time [sec]", fontsize=18)
+        ax1.set_ylabel("Hidden State", fontsize=18)
+        
+        ## for p in path_l:
+        ##     ax1.plot(x, p, '*')
+
+        ## ax2 = plt.subplot(312)
+        ## ax3 = plt.subplot(313)
+        plt.grid()            
+        plt.show()
+            
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+
+    def progress_analysis(self, X1, X2, scale1=None, scale2=None):
+
+        n,m = np.shape(X1)
+        if self.nEmissionDim == 1:
+            X_test = X1
+        else:        
+            X_test = self.convert_sequence(X1, X2, emission=False)                
+
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:].tolist())
+        off_progress,_    = self.ml.viterbi(final_ts_obj)            
+        
+        on_progress = np.zeros(m)
+        for i in xrange(m):
+            if i == 0: continue
+        
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
+            path,_    = self.ml.viterbi(final_ts_obj)
+        
+            if len(path) == 0: 
+                on_progress[i] = on_progress[i-1]
+                continue
+            else: 
+                on_progress[i] = path[-1]
+
+        return off_progress, on_progress
