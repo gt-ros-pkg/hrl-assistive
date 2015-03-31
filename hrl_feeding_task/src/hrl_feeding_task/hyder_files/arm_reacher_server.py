@@ -46,9 +46,9 @@ class armReachAction(mpcBaseAction):
         #[0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, -1.2799710435005978, 10.952306846165152]
         #These joint angles correspond to 'Pose 1' - See Keep note
 
-        self.previousGoals = JointTrajectory()
+        #!self.previousGoals = JointTrajectory()
         #NEED TO APPEND A JointTrajectoryPoint to the end!!! FIX THIS!!! NOT FIXED AS OF FRIDAY MARCH 27, 2015
-        self.point = JointTrajectoryPoint() #ATTEMPT AT FIRST FIX!
+        #!self.point = JointTrajectoryPoint() #ATTEMPT AT FIRST FIX!
 
 
         rate = rospy.Rate(100) # 25Hz, nominally.
@@ -153,22 +153,21 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        self.currentAngles = self.getJointAngles()
-        print "Current Angles:"
-        print self.currentAngles
-        self.point.positions = self.currentAngles
-        self.previousGoals.points.append(self.point)
-        print "EVERYTHING:"
-        print self.previousGoals
-        print "resized Points:"
-        print self.previousGoals.points[self.iteration]
-
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[self.iteration].positions[2]
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
-        self.iteration += 1
+        # #Code for storing current joint angles in case of playback...
+        # self.currentAngles = self.getJointAngles()
+        # print "Current Angles:"
+        # print self.currentAngles
+        # self.point.positions = self.currentAngles
+        # self.previousGoals.points.append(self.point)
+        # print "EVERYTHING:"
+        # print self.previousGoals
+        # print "resized Points:"
+        # print self.previousGoals.points[self.iteration]
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[self.iteration].positions[2]
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # self.iteration += 1
 
         #---------------------------------------------------------------------------------------#
 
@@ -179,16 +178,16 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -199,16 +198,16 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -219,16 +218,16 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -239,16 +238,16 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -259,16 +258,16 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -279,16 +278,16 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -299,30 +298,30 @@ class armReachAction(mpcBaseAction):
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
-        #Code for storing current joint angles in case of playback...
-        currentAngles = self.getJointAngles()
-        np.resize(self.previousGoals.points, self.iteration+1)
-        np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        self.previousGoals.points[self.iteration].positions = currentAngles
-        self.iteration += 1
-
-
-        print "Stored joint angles: "
-        print self.previousGoals.points[iteration].positions
-        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        # #Code for storing current joint angles in case of playback...
+        # currentAngles = self.getJointAngles()
+        # np.resize(self.previousGoals.points, self.iteration+1)
+        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+        # self.previousGoals.points[self.iteration].positions = currentAngles
+        # self.iteration += 1
+        #
+        # 
+        # print "Stored joint angles: "
+        # print self.previousGoals.points[iteration].positions
+        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         return True
 
     #Just added this function, stops and reverses motion back over previous points/joint angles
 
-    def reverseMotion(self, msg):
-        self.emergencyMsg = msg
-        self.setPostureGoal(list(self.getJointAngles()), 0.5) #stops posture at current joint angles, stops moving
-
-        for x in range (0, self.iteration - 1):
-            desiredJointAngles = list(self.previousGoals.points[self.iteration].positions)
-            self.setPostureGoal(desiredJointAngles, 1)
-            raw_input("Reversing motion, %d nth point, press Enter to continue :" % (self.iteration - x))
+    # def reverseMotion(self, msg):
+    #     self.emergencyMsg = msg
+    #     self.setPostureGoal(list(self.getJointAngles()), 0.5) #stops posture at current joint angles, stops moving
+    #
+    #     for x in range (0, self.iteration - 1):
+    #         desiredJointAngles = list(self.previousGoals.points[self.iteration].positions)
+    #         self.setPostureGoal(desiredJointAngles, 1)
+    #         raw_input("Reversing motion, %d nth point, press Enter to continue :" % (self.iteration - x))
 
 
 if __name__ == '__main__':
