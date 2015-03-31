@@ -22,6 +22,7 @@ from joblib import Parallel, delayed
 
 # Util
 import hrl_lib.util as ut
+import matplotlib
 import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -910,6 +911,10 @@ if __name__ == '__main__':
                  default=False, help='Plot all data')
     p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
                  default=False, help='Plot one data')
+    p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
+                 default=False, help='Plot all path')
+    p.add_option('--progress_diff', '--prd', action='store_true', dest='bProgressDiff',
+                 default=False, help='Plot progress difference')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
                  default=False, help='Plot')
     opt, args = p.parse_args()
@@ -918,8 +923,8 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 2
-    task  = 2
+    class_num = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1155,8 +1160,8 @@ if __name__ == '__main__':
         
         lhm.simulation(aXData1_scaled[2], aXData2_scaled[2])
 
-    #---------------------------------------------------------------------------           
-    else:
+    #---------------------------------------------------------------------------   
+    elif opt.bPathDisp:
 
         nState   = nState_l[task]
         trans_type= "left_right"
@@ -1168,34 +1173,144 @@ if __name__ == '__main__':
         aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
         true_labels = [True]*len(true_aXData1)
 
+        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+            
+        x_train1  = true_dataSet.samples[:,0,:]
+        x_train2  = true_dataSet.samples[:,1,:]
+
+        # Learning
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
+
+        if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
+        elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
+        else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
+
+        x_test1 = x_train1
+        x_test2 = x_train2
+        lhm.path_disp(x_test1, x_test2, scale1=[min_c1, max_c1, scale], \
+                                scale2=[min_c2, max_c2, scale])
+                
+
+    #---------------------------------------------------------------------------   
+    elif opt.bProgressDiff:
+
+        nState   = nState_l[task]
+        trans_type= "left_right"
+        check_dim = 2
+        if check_dim == 0 or check_dim == 1: nEmissionDim=1
+        else: nEmissionDim=2
+
+        # Get train/test dataset
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+        true_labels = [True]*len(true_aXData1)
+
+        state_diff = None
+            
+        for i in xrange(len(true_labels)):
+                
+            true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+            test_dataSet  = true_dataSet[i:i+1]
+            train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet[0].sa.id] 
+            train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+            train_dataSet = true_dataSet[train_ids]
+
+            x_train1 = train_dataSet.samples[:,0,:]
+            x_train2 = train_dataSet.samples[:,1,:]
+
+            # Learning
+            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
+
+            if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
+            elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
+            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
+
+            x_test1  = test_dataSet.samples[:,0,:]
+            x_test2  = test_dataSet.samples[:,1,:]
+
+            off_progress, online_progress = lhm.progress_analysis(x_test1, x_test2, 
+                                                                  scale1=[min_c1, max_c1, scale], 
+                                                                  scale2=[min_c2, max_c2, scale])
+            if state_diff is None:
+                state_diff = off_progress-online_progress
+            else:
+                state_diff = np.vstack([state_diff, off_progress-online_progress])
+
+
+        mu  = np.mean(state_diff,axis=0)
+        sig = np.std(state_diff,axis=0)
+        x   = np.arange(0., float(len(mu))) * (1./43.)
+
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        matplotlib.rcParams['ps.fonttype'] = 42
+        
+        fig = plt.figure()
+        plt.rc('text', usetex=True)
+        
+        ax1 = plt.subplot(111)
+        ax1.plot(x, mu, '-g')
+        ax1.fill_between(x, mu-sig, mu+sig, facecolor='green', edgecolor='1.0',
+                         alpha=0.5, interpolate=True)
+        
+        ax1.set_ylabel('Estimation Error', fontsize=18)
+        ax1.set_xlabel('Time [sec]', fontsize=18)
+
+        mu_line = ax1.plot([], [], color='green', linewidth=2, 
+                             label=r'$\mu$') #fake for legend
+        bnd_line = ax1.plot([], [], color='green', alpha=0.5, linewidth=10, 
+                             label=r'$\mu+\sigma$') #fake for legend
+        
+        ax1.legend(loc=1,prop={'size':18})       
+        plt.show()
+
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        
+        
+    #---------------------------------------------------------------------------           
+    else:
+
+        nState   = nState_l[task]
+        trans_type= "left_right"
+        check_dim = 2
+        if check_dim == 0 or check_dim == 1: nEmissionDim=1
+        else: nEmissionDim=2
+
+        # Get train/test dataset
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+        true_labels = [True]*len(true_aXData1)
+
+        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+        test_dataSet  = true_dataSet[0:1]
+        train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet[0].sa.id] 
+        train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+        train_dataSet = true_dataSet[train_ids]
+
+        x_train1 = train_dataSet.samples[:,0,:]
+        x_train2 = train_dataSet.samples[:,1,:]
+
         # generate simulated data!!
         false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
         false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)    
         false_labels = [False]*len(false_aXData1)
         false_dataSet = dm.create_mvpa_dataset(false_aXData1_scaled, false_aXData2_scaled, \
                                                false_chunks, false_labels)
-            
 
-        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
-        test_dataSet  = true_dataSet[0]
-        train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
-        train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
-        train_dataSet = true_dataSet[train_ids]
+        # If you want normal likelihood, class 0, data 1
+        # testData 0
+        # false data 0 (comment in below)
+        false_data_flag = False #True
+        ## test_dataSet    = false_dataSet
+                                                               
+        for K in range(len(test_dataSet)):
 
-        x_train1 = train_dataSet.samples[:,0,:]
-        x_train2 = train_dataSet.samples[:,1,:]
-        x_test1  = test_dataSet.samples[:,0,:]
-        x_test2  = test_dataSet.samples[:,1,:]
-
-        
-        for K in range(len(false_labels)):
-
-            # If you want normal likelihood, class 0, data 1
-            # testData 0
-            # false data 0 (comment in below)
-            ## test_dataSet  = false_dataSet[K]
-            ## x_test1 = np.array([test_dataSet.samples[:,0][0]])
-            ## x_test2 = np.array([test_dataSet.samples[:,1][0]])
+            if false_data_flag:
+                x_test1 = np.array([test_dataSet.samples[K:K+1,0][0]])
+                x_test2 = np.array([test_dataSet.samples[K:K+1,1][0]])
+            else:
+                x_test1  = test_dataSet.samples[:,0,:]
+                x_test2  = test_dataSet.samples[:,1,:]
             
             # Learning
             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
