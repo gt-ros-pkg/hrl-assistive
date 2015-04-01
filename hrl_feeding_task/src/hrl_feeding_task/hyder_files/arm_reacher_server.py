@@ -42,7 +42,8 @@ class armReachAction(mpcBaseAction):
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
         #VARIABLES!
-        self.pose1JointAngles = [0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, 0, 45]
+        self.jointAnglesFront = [0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, 0, 45]
+	self.jointAnglesSide = [1.5607891300760723, -0.019056839242125957, 0.08462841743197802, -1.5716040496178354, 3.0047615005230432, -0.09718467633646749, -1.5831090362171292]
         #[0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, -1.2799710435005978, 10.952306846165152]
         #These joint angles correspond to 'Pose 1' - See Keep note
 
@@ -87,8 +88,10 @@ class armReachAction(mpcBaseAction):
         self.bowl_pos = np.matrix([ [data.pose.position.x], [data.pose.position.y], [data.pose.position.z] ])
         self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
 
-        rospy.loginfo(self.bowl_pos)
-        rospy.loginfo(self.bowl_quat)
+	print 'Bowl Pos: '
+	print self.bowl_pos
+	print 'Bowl Quaternions: '
+	print self.bowl_quat
 
     def robotStateCallback(self, data): #Read from RobotState topic and saves the current data, including joint angles, used to create new message containing initialized joint angles to publish to RobotState topic
         self.robotData = data
@@ -116,9 +119,6 @@ class armReachAction(mpcBaseAction):
         #Variables...!
         self.iteration = 0
 
-        self.jointAnglesList = self.pose1JointAngles #the resting/calibration pose!
-
-
         # self.previousPoints = [] #for example... 7 previous points
         # self.previousPoints.angles = list()
 
@@ -127,10 +127,14 @@ class armReachAction(mpcBaseAction):
         #FIX THIS!!!
 
         #self.getJointPlan()
-        calibrateJoints = raw_input("Enter 'calibrate' to calibrate joint angles: ")
-        if calibrateJoints == 'calibrate':
+        calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
+        if calibrateJoints == 'front':
             print "Setting initial joint angles... "
-            self.setPostureGoal(self.jointAnglesList, 3)
+            self.setPostureGoal(self.jointAnglesFront, 5)
+
+	elif calibrateJoints == 'side':
+	    print "Setting initial joint angles..."
+	    self.setPostureGoal(self.jointAnglesSide, 5)
 
             #!!---- BASIC SCOOPING MOTION WITH BOWL POSITION OFFSET
     	#Flat Gripper Orientation Values:
@@ -146,10 +150,21 @@ class armReachAction(mpcBaseAction):
 
         #---------------------------------------------------------------------------------------#
 
+	kinectPose = raw_input('Press k in order to position spoon to Kinect-provided bowl position, used for testing: ')
+	if kinectPose == 'k':
+		#THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
+		print "MOVES_KINECT_BOWL_POSITION"
+        	(pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
+        	(quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
+        	timeout = 7
+        	#self.setPositionGoal(pos, quat, timeout)
+        	self.setOrientGoal(pos, quat, timeout)
+		raw_input('Press Enter to continue: ' )
+
         print "MOVES1"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.2920, self.bowl_pos[1] + -0.7260, self.bowl_pos[2] + 0.2600)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
-        timeout = 1.5
+        timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -166,7 +181,7 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[self.iteration].positions[2]
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
         # self.iteration += 1
 
         #---------------------------------------------------------------------------------------#
@@ -174,7 +189,7 @@ class armReachAction(mpcBaseAction):
         print "MOVES2"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.1080, self.bowl_pos[1] + -0.1410, self.bowl_pos[2] + 0.2550)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.690, -0.092, -0.112, 0.709)
-        timeout = 1.5
+        timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -187,14 +202,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
         print "MOVES3"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0920, self.bowl_pos[1] + 0.0310, self.bowl_pos[2] + 0.0950)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  #  (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.713, 0.064, -0.229, 0.659)
-        timeout = 1.5
+        timeout = 3
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -207,14 +222,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
         print "MOVES4"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0140, self.bowl_pos[1] +  0, self.bowl_pos[2] + 0.00900)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.700, 0.108, -0.321, 0.629)
-        timeout = 1.5
+        timeout = 3
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -227,14 +242,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
         print "MOVES5"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0, self.bowl_pos[1] + 0, self.bowl_pos[2] +  0) #REACHED THE ACTUAL BOWL
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.706, 0.068, -0.235, 0.664)
-        timeout = 1.5
+        timeout = 1
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -247,14 +262,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
         print "MOVES6"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.0120, self.bowl_pos[1] + -0.00100, self.bowl_pos[2] +  0.0130)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.672, 0.037, -0.137, 0.727)
-        timeout = 1.5
+        timeout = 1
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -267,14 +282,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
         print "MOVES7"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.122, self.bowl_pos[1] + -0.0319, self.bowl_pos[2] + 0.300)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.699, -0.044, -0.085, 0.709)
-        timeout = 1.5
+        timeout = 1
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -287,14 +302,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
         print "MOVES8"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0210, self.bowl_pos[1] +  -0.0519, self.bowl_pos[2] +  0.410)
         (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.677, -0.058, -0.004, 0.733)
-        timeout = 1.5
+        timeout = 1
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -308,13 +323,14 @@ class armReachAction(mpcBaseAction):
         # 
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-        # raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         return True
 
     #Just added this function, stops and reverses motion back over previous points/joint angles
 
-    # def reverseMotion(self, msg):
+    def reverseMotion(self, msg):
+	self.testVar = 100
     #     self.emergencyMsg = msg
     #     self.setPostureGoal(list(self.getJointAngles()), 0.5) #stops posture at current joint angles, stops moving
     #

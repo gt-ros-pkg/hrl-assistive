@@ -26,7 +26,7 @@ class bowlPublisher():
 			orientation = Quaternion()
 
 			#Actual bowl location, set manually...
-			position.x, position.y, position.z = 0.692, 0.802, -0.313 #0.300, 0.912, -0.113 #
+			position.x, position.y, position.z = 0.732, 0.197, -0.376 #0.300, 0.912, -0.113 #
 			#ORIGINAL HARD CODED BOWL POSITION: 0.763, 0.592, -0.301
 			orientation.x, orientation.y, orientation.z, orientation.w = 0.528, 0.469, -0.006, 0.708
 			#ORIGINAL HARD CODE BOWL ORIENTATION:  0.706, 0.068, -0.235, 0.664
