@@ -43,7 +43,8 @@ class armReachAction(mpcBaseAction):
 
         #VARIABLES!
         self.jointAnglesFront = [0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, 0, 45]
-	self.jointAnglesSide = [1.5607891300760723, -0.019056839242125957, 0.08462841743197802, -1.5716040496178354, 3.0047615005230432, -0.09718467633646749, -1.5831090362171292]
+        self.jointAnglesSide = [1.5607891300760723, -0.019056839242125957, 0.08462841743197802, -1.5716040496178354, 3.0047615005230432, -0.09718467633646749, -1.5831090362171292]
+        self.jointAnglesSideForward = [1.4861731744547848, -0.18900803975897545, -0.0010010598495409084, -1.2796015247572599, 1.625224170926076, -1.5317317839135611, -1.481043325223495]
         #[0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, -1.2799710435005978, 10.952306846165152]
         #These joint angles correspond to 'Pose 1' - See Keep note
 
@@ -132,9 +133,9 @@ class armReachAction(mpcBaseAction):
             print "Setting initial joint angles... "
             self.setPostureGoal(self.jointAnglesFront, 5)
 
-	elif calibrateJoints == 'side':
-	    print "Setting initial joint angles..."
-	    self.setPostureGoal(self.jointAnglesSide, 5)
+        elif calibrateJoints == 'side':
+            print "Setting initial joint angles..."
+            self.setPostureGoal(self.jointAnglesSideForward, 5)
 
             #!!---- BASIC SCOOPING MOTION WITH BOWL POSITION OFFSET
     	#Flat Gripper Orientation Values:
@@ -150,20 +151,20 @@ class armReachAction(mpcBaseAction):
 
         #---------------------------------------------------------------------------------------#
 
-	kinectPose = raw_input('Press k in order to position spoon to Kinect-provided bowl position, used for testing: ')
-	if kinectPose == 'k':
-		#THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
-		print "MOVES_KINECT_BOWL_POSITION"
-        	(pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
-        	(quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
-        	timeout = 7
-        	#self.setPositionGoal(pos, quat, timeout)
-        	self.setOrientGoal(pos, quat, timeout)
-		raw_input('Press Enter to continue: ' )
+    	kinectPose = raw_input('Press k in order to position spoon to Kinect-provided bowl position, used for testing: ')
+    	if kinectPose == 'k':
+    		#THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
+    		print "MOVES_KINECT_BOWL_POSITION"
+            	(pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
+            	(quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
+            	timeout = 7
+            	#self.setPositionGoal(pos, quat, timeout)
+            	self.setOrientGoal(pos, quat, timeout)
+    		raw_input('Press Enter to continue: ' )
 
-        print "MOVES1"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.2920, self.bowl_pos[1] + -0.7260, self.bowl_pos[2] + 0.2600)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
+    print "MOVES1 - Moving over bowl... "
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.09743569, self.bowl_pos[1] + -0.11179373, self.bowl_pos[2] + 0.18600000)
+        (quat.x, quat.y, quat.z, quat.w) = (0.580, 0.333, 0.050, 0.742)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
         timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -181,14 +182,14 @@ class armReachAction(mpcBaseAction):
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[self.iteration].positions[2]
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
         # self.iteration += 1
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES2"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.1080, self.bowl_pos[1] + -0.1410, self.bowl_pos[2] + 0.2550)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.690, -0.092, -0.112, 0.709)
+    print "MOVES2 - Pointing down into bottom of bowl..."
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.03143569, self.bowl_pos[1] + -0.09879372, self.bowl_pos[2] + 0.02800000)
+        (quat.x, quat.y, quat.z, quat.w) = (0.484, 0.487, -0.164, 0.708)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.690, -0.092, -0.112, 0.709)
         timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -198,17 +199,17 @@ class armReachAction(mpcBaseAction):
         # np.resize(self.previousGoals.points, self.iteration+1)
         # np.resize(self.previousGoals.points[self.iteration].positions, 7)
         # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
+         self.iteration += 1
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES3"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0920, self.bowl_pos[1] + 0.0310, self.bowl_pos[2] + 0.0950)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  #  (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.713, 0.064, -0.229, 0.659)
+    print "MOVES3 - Scooping/pushing down into bottom of bowl..."
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.03543569, self.bowl_pos[1] + -0.09179373, self.bowl_pos[2] + -0.02600000)
+        (quat.x, quat.y, quat.z, quat.w) = (0.505, 0.516, -0.160, 0.673)  #  (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.713, 0.064, -0.229, 0.659)
         timeout = 3
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -218,17 +219,17 @@ class armReachAction(mpcBaseAction):
         # np.resize(self.previousGoals.points, self.iteration+1)
         # np.resize(self.previousGoals.points[self.iteration].positions, 7)
         # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
+         self.iteration += 1
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES4"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0140, self.bowl_pos[1] +  0, self.bowl_pos[2] + 0.00900)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.700, 0.108, -0.321, 0.629)
+    print "MOVES4 - Lifting a little out of bottom of bowl..."
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.00156431, self.bowl_pos[1] +  -0.07279373, self.bowl_pos[2] + 0.04900000)
+        (quat.x, quat.y, quat.z, quat.w) = (0.617, 0.300, -0.035, 0.726)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.700, 0.108, -0.321, 0.629)
         timeout = 3
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -238,17 +239,17 @@ class armReachAction(mpcBaseAction):
         # np.resize(self.previousGoals.points, self.iteration+1)
         # np.resize(self.previousGoals.points[self.iteration].positions, 7)
         # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
+         self.iteration += 1
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES5"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0, self.bowl_pos[1] + 0, self.bowl_pos[2] +  0) #REACHED THE ACTUAL BOWL
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.706, 0.068, -0.235, 0.664)
+    print "MOVES5 - Lifting above bowl..."
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.00756431, self.bowl_pos[1] + -0.13179373, self.bowl_pos[2] +  0.59400000)
+        (quat.x, quat.y, quat.z, quat.w) = (0.702, 0.168, 0.132, 0.679)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.706, 0.068, -0.235, 0.664)
         timeout = 1
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -258,72 +259,11 @@ class armReachAction(mpcBaseAction):
         # np.resize(self.previousGoals.points, self.iteration+1)
         # np.resize(self.previousGoals.points[self.iteration].positions, 7)
         # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
+         self.iteration += 1
         #
         # print "Stored joint angles: "
         # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
-
-        #---------------------------------------------------------------------------------------#
-
-        print "MOVES6"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.0120, self.bowl_pos[1] + -0.00100, self.bowl_pos[2] +  0.0130)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.672, 0.037, -0.137, 0.727)
-        timeout = 1
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
-
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, self.iteration+1)
-        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
-        #
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
-
-        #---------------------------------------------------------------------------------------#
-
-        print "MOVES7"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.122, self.bowl_pos[1] + -0.0319, self.bowl_pos[2] + 0.300)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.699, -0.044, -0.085, 0.709)
-        timeout = 1
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
-
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, self.iteration+1)
-        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
-        #
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
-
-        #---------------------------------------------------------------------------------------#
-
-        print "MOVES8"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0210, self.bowl_pos[1] +  -0.0519, self.bowl_pos[2] +  0.410)
-        (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.677, -0.058, -0.004, 0.733)
-        timeout = 1
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
-
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, self.iteration+1)
-        # np.resize(self.previousGoals.points[self.iteration].positions, 7)
-        # self.previousGoals.points[self.iteration].positions = currentAngles
-        # self.iteration += 1
-        #
-        # 
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
-	raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+        raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
 
         return True
 
@@ -365,3 +305,169 @@ if __name__ == '__main__':
     #             input = sys.stdin.readline()
     #             return True
     #         return False
+
+#ORIGINAL SCOOPING CODE BEFORE CONSIDERING ANY KINECT STUFF!!!
+
+# print "MOVES1"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.2920, self.bowl_pos[1] + -0.7260, self.bowl_pos[2] + 0.2600)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
+# timeout = 4
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # self.currentAngles = self.getJointAngles()
+# # print "Current Angles:"
+# # print self.currentAngles
+# # self.point.positions = self.currentAngles
+# # self.previousGoals.points.append(self.point)
+# # print "EVERYTHING:"
+# # print self.previousGoals
+# # print "resized Points:"
+# # print self.previousGoals.points[self.iteration]
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[self.iteration].positions[2]
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+# # self.iteration += 1
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES2"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.1080, self.bowl_pos[1] + -0.1410, self.bowl_pos[2] + 0.2550)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.690, -0.092, -0.112, 0.709)
+# timeout = 4
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES3"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0920, self.bowl_pos[1] + 0.0310, self.bowl_pos[2] + 0.0950)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  #  (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.713, 0.064, -0.229, 0.659)
+# timeout = 3
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES4"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0140, self.bowl_pos[1] +  0, self.bowl_pos[2] + 0.00900)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.700, 0.108, -0.321, 0.629)
+# timeout = 3
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES5"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0, self.bowl_pos[1] + 0, self.bowl_pos[2] +  0) #REACHED THE ACTUAL BOWL
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.706, 0.068, -0.235, 0.664)
+# timeout = 1
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES6"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.0120, self.bowl_pos[1] + -0.00100, self.bowl_pos[2] +  0.0130)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.672, 0.037, -0.137, 0.727)
+# timeout = 1
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES7"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.122, self.bowl_pos[1] + -0.0319, self.bowl_pos[2] + 0.300)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.699, -0.044, -0.085, 0.709)
+# timeout = 1
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
+#
+# #---------------------------------------------------------------------------------------#
+#
+# print "MOVES8"
+# (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.0210, self.bowl_pos[1] +  -0.0519, self.bowl_pos[2] +  0.410)
+# (quat.x, quat.y, quat.z, quat.w) = (0.696, 0.035, -0.008, 0.717)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.677, -0.058, -0.004, 0.733)
+# timeout = 1
+# #self.setPositionGoal(pos, quat, timeout)
+# self.setOrientGoal(pos, quat, timeout)
+#
+# # #Code for storing current joint angles in case of playback...
+# # currentAngles = self.getJointAngles()
+# # np.resize(self.previousGoals.points, self.iteration+1)
+# # np.resize(self.previousGoals.points[self.iteration].positions, 7)
+# # self.previousGoals.points[self.iteration].positions = currentAngles
+# # self.iteration += 1
+# #
+# #
+# # print "Stored joint angles: "
+# # print self.previousGoals.points[iteration].positions
+# raw_input("Iteration # %d. Enter anything to continue: " % self.iteration)
