@@ -231,15 +231,15 @@ var initMjpegCanvas = function (divId) {
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
                                      //imageTopic: '/head_mount_kinect/rgb/image_color',
                                      //infoTopic: '/head_mount_kinect/rgb/camera_info',
-                                     imageTopic: '/head_mount_kinect/rgb_lowres/image',
-                                     infoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+                                     imageTopic: '/head_mount_kinect/rgb/image',
+                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
                                      //imageTopic: '/head_wfov_camera/image_rect_color',
                                      //infoTopic: '/head_wfov_camera/camera_info',
                                      containerId: 'video-main',
                                      divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
-                                     quality: 35,
+                                     quality: 85,
                                      tfClient:RFH.tfClient});
     RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
     RFH.mjpeg.cameraModel.updateCameraInfo();

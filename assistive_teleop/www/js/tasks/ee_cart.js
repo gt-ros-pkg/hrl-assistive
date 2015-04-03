@@ -23,6 +23,25 @@ RFH.CartesianEEControl = function (options) {
     self.orientRot = 0;
     self.camera = options.camera;
     self.dt = 500; //hold-repeat time in ms
+    self.mode = "table" // "wall", "free"
+
+    self.headTableCB = function (msg) {
+        var ang
+        switch (self.mode) {
+            case 'table':
+                ang = Math.PI/2 - msg.actual.positions[1]
+                break;
+            case 'wall':
+                ang = -msg.actual.positions[1]
+                break;
+            case 'free':
+            default:
+                ang = 0;
+                break;
+        }
+        $('#armCtrlContainer').css({'transform':'rotateX('+ang.toString()+'rad)'});
+    }
+    RFH.pr2.head.stateCBList.push(self.headTableCB);
 
     self.focusPoint = new RFH.FocalPoint({camera: self.camera,
         tfClient: self.tfClient,
@@ -40,7 +59,7 @@ RFH.CartesianEEControl = function (options) {
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
     $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
-    $('#speedOptions-buttons, #posrot-set').buttonset();
+    $('#speedOptions-buttons, #posrot-set, #ee-mode-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
 
@@ -170,10 +189,6 @@ RFH.CartesianEEControl = function (options) {
     //    }
 
     self.eeDeltaCmd = function (xyzrpy) {
-        if (self.op2baseMat === null || self.eeInOpMat === null) {
-            console.warn("Hand Data not available to send commands.");
-            return;
-        };
         // Get default values for unspecified options
         var x = xyzrpy.x || 0.0;
         var y = xyzrpy.y || 0.0;
@@ -181,105 +196,173 @@ RFH.CartesianEEControl = function (options) {
         var roll = xyzrpy.roll || 0.0;
         var pitch = xyzrpy.pitch || 0.0;
         var yaw = xyzrpy.yaw || 0.0;
-        // Convert to Matrix4
-        var cmdDelPos = new THREE.Vector3(x, y, z);
-        var cmdDelRot = new THREE.Euler(roll, pitch, yaw);
-        var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
-        cmd.setPosition(cmdDelPos);
-        // Apply delta to current ee position
-        var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
-        //Transform goal back to base frame
-        var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
-        // Compose and send ros msg
-        var p = new THREE.Vector3();
-        var q = new THREE.Quaternion();
-        var s = new THREE.Vector3();
-        goalInBaseMat.decompose(p,q,s);
-        try {
-            q = self.orientHand();
-        }
-        catch (e) {
-            console.log(e); // log error and keep moving
-        }
-        q = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
-        self.arm.sendGoal({position: p,
-            orientation: q,
-            frame_id: self.tfClient.fixedFrame});
+        var posStep = self.posStepSizes[self.getStepSize()]
+        var rotStep = self.rotStepSizes[self.getStepSize()]
+
+        switch (self.mode) {
+            case 'table':
+                if (self.eeTF === null) {
+                    console.warn("Hand Data not available to send commands.");
+                    return;
+                }
+                var handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
+                var clickAng = Math.atan2(y,x) - Math.PI/2;
+                var goalAng = handAng + clickAng;
+                var dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
+                var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
+                var dz = posStep * z;
+
+                var frame = self.tfClient.fixedFrame;
+                
+                var pos = {x: self.eeTF.translation.x + dx,
+                           y: self.eeTF.translation.y + dy,
+                           z: self.eeTF.translation.z - dz}
+                var quat = {x: self.eeTF.rotation.x,
+                        y: self.eeTF.rotation.y,
+                        z: self.eeTF.rotation.z,
+                        w: self.eeTF.rotation.w}
+                break;
+            case 'wall':
+                //TODO: Check this out, it's not quite right yet!
+                var handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
+                var clickAng = Math.atan2(y,x) - Math.PI/2;
+                var goalAng = handAng + clickAng;
+                var dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
+                var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
+                var dz = posStep * z;
+
+                var frame = self.tfClient.fixedFrame;
+                var pos = {x: self.eeTF.translation.x + dz,
+                           y: self.eeTF.translation.y + dy,
+                           z: self.eeTF.translation.z + dx}
+                var quat = {x: self.eeTF.rotation.x,
+                        y: self.eeTF.rotation.y,
+                        z: self.eeTF.rotation.z,
+                        w: self.eeTF.rotation.w}
+                break;
+            case 'free':
+                if (self.op2baseMat === null || self.eeInOpMat === null) {
+                    console.warn("Hand Data not available to send commands.");
+                    return;
+                };
+                // Convert to Matrix4
+                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
+                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
+                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
+                cmd.setPosition(cmdDelPos);
+                // Apply delta to current ee position
+                var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
+                //Transform goal back to base frame
+                var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
+                // Compose and send ros msg
+                var pos = new THREE.Vector3();
+                var quat = new THREE.Quaternion();
+                var scale = new THREE.Vector3();
+                goalInBaseMat.decompose(pos, quat, scale);
+                try {
+                    quat = self.orientHand();
+                }
+                catch (e) {
+                    console.log(e); // log error and keep moving
+                }
+                var frame = self.tfClient.fixedFrame;
+                break;
+            default:
+                console.warn("Unknown arm control mode.");
+                return;
+        } // End mode switch-case
+
+        quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
+        self.arm.sendGoal({position: pos,
+            orientation: quat,
+            frame_id: frame});
     };
 
-    self.ctrlRingActivate = function (e) {
+    self.checkMouseButtonDecorator = function (f) {
+        return function (e) {
+            if (e.which === 1) {
+                f(e);
+            } else {
+                e.stopPropagation();
+                return;
+            }
+        }
+    };
+     
+    self.ctrlRingActivate = self.checkMouseButtonDecorator(function (e) {
         $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('default').addClass('active');
         var pt = RFH.positionInElement(e);
         var w = $(e.target).width();
         var h = $(e.target).height();
-        var delX = self.posStepSizes[self.getStepSize()] * (pt[0]-w/2)/w;
-        var delY = self.posStepSizes[self.getStepSize()] * (pt[1]-w/2)/h;
+        var ang = Math.atan2(-(pt[1]-h/2)/h, (pt[0]-w/2)/w);
+        var delX = Math.cos(ang);
+        var delY = Math.sin(ang)
         var ringMove = function (dX, dY) {
             if ( !$('#ctrl-ring').hasClass('active') ) { return; }
             self.eeDeltaCmd({x: dX, y: dY});
             setTimeout(function() {ringMove(dX, dY);} , self.dt);
         }
         ringMove(delX, delY);
-    };
+    });
 
-    self.ctrlRingActivateRot = function (e) {
+    self.ctrlRingActivateRot = self.checkMouseButtonDecorator(function (e) {
         $('#ctrl-ring').removeClass('default').addClass('active');
         var pt = RFH.positionInElement(e);
         var w = $(e.target).width();
         var h = $(e.target).height();
-        var delX = self.rotStepSizes[self.getStepSize()] * (pt[0]-w/2)/w;
-        var delY = self.rotStepSizes[self.getStepSize()] * (pt[1]-w/2)/h;
+        var delX = (pt[0]-w/2)/w;
+        var delY = -(pt[1]-w/2)/h;
         var ringMove = function (dX, dY) {
             if ( !$('#ctrl-ring').hasClass('active') ){ return; }
-            self.eeDeltaCmd({roll: delY, pitch: -delX});
+            self.eeDeltaCmd({roll: delY, pitch: delX});
             setTimeout(function() {ringMove(dX, dY);} , self.dt);
         }
         ringMove(delX, delY);
-    };
+    });
 
     self.Inactivate = function (e) {
         $(e.target).removeClass('active').addClass('default');
     };
 
-    self.awayCB = function (e) {
+    self.awayCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
             if ( !$('#away-button').hasClass('active') ) {return};
-            self.eeDeltaCmd({z: self.posStepSizes[self.getStepSize()]});
+            self.eeDeltaCmd({z: 1});
             setTimeout(moveCB, self.dt);
         }
         moveCB();
-    };
+    });
 
-    self.towardCB = function (e) {
+    self.towardCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
             if ( !$('#toward-button').hasClass('active') ) {return};
-            self.eeDeltaCmd({z: -self.posStepSizes[self.getStepSize()]});
+            self.eeDeltaCmd({z: -1});
             setTimeout(moveCB, self.dt);
         }
         moveCB();
-    };
+    });
 
-    self.cwCB = function (e) {
+    self.cwCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
             if ( !$('#away-button').hasClass('active') ) {return};
-            self.eeDeltaCmd({yaw: self.rotStepSizes[self.getStepSize()]});
+            self.eeDeltaCmd({yaw: 1});
             setTimeout(moveCB, self.dt);
         }
         moveCB();
-    };
+    });
 
-    self.ccwCB = function (e) {
+    self.ccwCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
             if ( !$('#toward-button').hasClass('active') ) {return};
-            self.eeDeltaCmd({yaw: -self.rotStepSizes[self.getStepSize()]});
+            self.eeDeltaCmd({yaw: -1});
             setTimeout(moveCB, self.dt);
         }
         moveCB();
-    };
+    });
 
     /// TRACK HAND WITH CAMERA ///
     self.trackHand = function () {
@@ -341,9 +424,24 @@ RFH.CartesianEEControl = function (options) {
             // TODO: Change cursor here?
 
             var onRetCB = function (pose) {
+                var quat = new THREE.Quaternion(pose.orientation.x,
+                                             pose.orientation.y,
+                                             pose.orientation.z,
+                                             pose.orientation.w);
+                var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
+                var offset = new THREE.Vector3(0.03, 0, 0) //Get to 10cm from point along normal
+                offset.applyMatrix4(poseRotMat);
+                var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
+                poseRotMat.multiply(desRotMat);
+                poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
+                                                         pose.position.y + offset.y,
+                                                         pose.position.z + offset.z));
+                var trans = new THREE.Matrix4(); 
+                var scale = new THREE.Vector3();
+                poseRotMat.decompose(trans, quat, scale);
                 self.arm.sendGoal({
-                    position: pose.position,
-                    orientation: self.eeTF.rotation,//TODO: Fix this
+                    position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
+                    orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
                     frame_id: 'base_link'
                 })
                 $('#touchspot-toggle').prop('checked', false).button('refresh');
@@ -383,6 +481,10 @@ RFH.CartesianEEControl = function (options) {
         $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
     };
 
+    self.setEEMode = function (e) {
+        self.mode = e.target.id.split("-")[2]; // Will break with different naming convention
+    };
+
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
         self.trackHand();
@@ -395,6 +497,8 @@ RFH.CartesianEEControl = function (options) {
         $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
         $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
         $('#posrot-set').show();
+        $('#ee-mode-set input').on('click.rfh', self.setEEMode);
+        $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
         $('#posrot-pos').click();
     };
