@@ -1038,11 +1038,20 @@ class learning_hmm_multi(learning_base):
                 X_test = self.convert_sequence(x_test1, x_test2, emission=False)                
 
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-            path,_    = self.ml.viterbi(final_ts_obj)        
-            path_l.append(path)
+            #path,_    = self.ml.viterbi(final_ts_obj)        
+            post = self.ml.posterior(final_ts_obj)
 
+            print np.shape(post), np.shape(path_mat)
+            
             for j in xrange(m):
-                path_mat[path[j], j] += 1.0
+                path_mat[:, j] += np.array(post[j*2+1])/float(n)
+                print post[j*2+1]
+
+            sys.exit()
+            
+            ## path_l.append(path)
+            ## for j in xrange(m):
+            ##     path_mat[path[j], j] += 1.0
 
         path_mat /= np.sum(path_mat, axis=0)
 
