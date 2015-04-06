@@ -24,25 +24,46 @@ RFH.CartesianEEControl = function (options) {
     self.camera = options.camera;
     self.dt = 500; //hold-repeat time in ms
     self.mode = "table" // "wall", "free"
+    self.active = false;
 
-    self.headTableCB = function (msg) {
-        var ang
-        switch (self.mode) {
-            case 'table':
-                ang = Math.PI/2 - msg.actual.positions[1]
-                break;
-            case 'wall':
-                ang = -msg.actual.positions[1]
-                break;
-            case 'free':
-            default:
-                ang = 0;
-                break;
+    self.updateCtrlRingViz = function () {
+        // Check that we have values for both camera and ee frames
+        if (!self.active) { return; };
+        if (self.mode === 'free') {
+            $('#armCtrlContainer').css({'transform':'none'});
+            return;
         }
-        $('#armCtrlContainer').css({'transform':'rotateX('+ang.toString()+'rad)'});
-    }
-    RFH.pr2.head.stateCBList.push(self.headTableCB);
+        if (self.eeTF === null || self.cameraTF === null) { return; };
+        var eePos =  self.eeTF.translation.clone(); // 3D Hand position in /base_link
+        var camPos = self.cameraTF.translation.clone(); // 3D camera position in /base_link
 
+        if (self.mode !== 'free') {
+            var camQuat = self.cameraTF.rotation.clone();
+            camQuat = new THREE.Quaternion(camQuat.x, camQuat.y, camQuat.z, camQuat.w);
+            camQuat.multiply(new THREE.Quaternion(0.5, -0.5, 0.5, 0.5));//Rotate from optical frame to link
+            var camEuler = new THREE.Euler().setFromQuaternion(camQuat, 'ZYX');// NO IDEA, but it works with this order...
+            var rot = camEuler.z;//Rotation around Z -- counter rotate icon to keep arrow pointed forward.
+            var dx = eePos.x - camPos.x;
+            var dy = eePos.y - camPos.y;
+            var dz = eePos.z - camPos.z;
+            var dxy = Math.sqrt(dx*dx + dy*dy);
+            var phi = Math.atan2(dxy, dz) - Math.PI/2; // Angle from horizontal
+            // TODO: Scale up to keep full size;
+            switch (self.mode) {
+                case 'table':
+                    var rotX = phi - Math.PI/2;
+                    var transformStr = "rotateX("+rotX.toString()+"rad) rotate("+rot.toString()+"rad";
+                    break;
+                case 'wall':
+                    var transformStr = "rotateX("+phi.toString()+"rad) rotateY("+rot.toString()+"rad";
+                    break;
+            }
+        } else {
+            transformStr = 'none';
+        };
+        $('#armCtrlContainer').css({'transform':transformStr});
+    }
+    
     self.focusPoint = new RFH.FocalPoint({camera: self.camera,
         tfClient: self.tfClient,
         ros: self.ros,
@@ -159,6 +180,7 @@ RFH.CartesianEEControl = function (options) {
         self.tfClient.subscribe(self.arm.ee_frame, function (tf) {
             self.eeTF = tf;
             self.updateOpFrame();
+            self.updateCtrlRingViz();
         });
         console.log("Subscribing to TF Frame: "+self.arm.ee_frame);
     } else {
@@ -171,6 +193,7 @@ RFH.CartesianEEControl = function (options) {
             self.tfClient.subscribe(self.camera.frame_id, function (tf) { 
                 self.cameraTF = tf;
                 self.updateOpFrame();
+                self.updateCtrlRingViz();
             }
             );
         } else {
@@ -483,6 +506,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.setEEMode = function (e) {
         self.mode = e.target.id.split("-")[2]; // Will break with different naming convention
+        self.updateCtrlRingViz();
     };
 
     /// TASK START/STOP ROUTINES ///
@@ -501,6 +525,8 @@ RFH.CartesianEEControl = function (options) {
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
         $('#posrot-pos').click();
+        self.updateCtrlRingViz();
+        self.active = true;
     };
 
     self.stop = function () {
@@ -521,5 +547,6 @@ RFH.CartesianEEControl = function (options) {
             $('#touchspot-toggle').click();
         }
         $('#touchspot-toggle-label').off('click.rfh').hide();
+        self.active = false;
     };
 }

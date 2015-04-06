@@ -110,18 +110,18 @@
 
 #ctrl-ring.default > .arrow.up{
     top: 5%;
-    left: calc(50% - 10px);
-    border-right: 10px solid transparent;
-    border-left: 10px solid transparent;
-    border-bottom: 20px solid rgba(76, 48, 19, 0.87);
+    left: calc(50% - 15px);
+    border-right: 15px solid transparent;
+    border-left: 15px solid transparent;
+    border-bottom: 30px solid rgba(76, 48, 19, 0.87);
 }
 
 #ctrl-ring.active > .arrow.up{
     top: 5%;
-    left: calc(50% - 10px);
-    border-right: 10px solid transparent;
-    border-left: 10px solid transparent;
-    border-bottom: 20px solid rgba(0, 116, 199, 0.5);
+    left: calc(50% - 15px);
+    border-right: 15px solid transparent;
+    border-left: 15px solid transparent;
+    border-bottom: 30px solid rgba(0, 116, 199, 0.5);
 }
 
 #ctrl-ring.default > .arrow.down{
@@ -155,9 +155,9 @@
     box-shadow: inset 0px 2px 0px #888888;
     background: radial-gradient(closest-side, 
     rgba(0,0,0,0) 70%,
-    rgba(0, 0, 0, 0.45) 70%,
-    rgba(255, 245, 206, 0.60) 71%,
-    rgba(255, 2250, 245, 0.60) 100%);    
+    rgba(0, 0, 0, 0.25) 70%,
+    rgba(255, 245, 206, 0.30) 71%,
+    rgba(255, 2250, 245, 0.30) 100%);    
 }
 
 #ctrl-ring:hover {
@@ -165,9 +165,9 @@
     box-shadow: 0px 2px 0px  #888888;
     background: radial-gradient(closest-side, 
     rgba(0,0,0,0) 70%,
-    rgba(209, 148, 5, 0.4) 0%,
-    rgba(255, 233, 146, 0.55) 71%,
-    rgba(255, 226, 111, 0.58) 100%);   
+    rgba(209, 148, 5, 0.2) 0%,
+    rgba(255, 233, 146, 0.35) 71%,
+    rgba(255, 226, 111, 0.38) 100%);   
 }
 
 #ctrl-ring {
@@ -175,9 +175,9 @@
     box-shadow: 0px 2px 0px  #888888;
     background: radial-gradient(closest-side, 
     rgba(0,0,0,0) 70%,
-    rgba(209, 148, 5, 0.4) 0%,
-    rgba(254, 206, 47, 0.55) 71%,
-    rgba(255, 226, 111, 0.58) 100%);   
+    rgba(209, 148, 5, 0.2) 0%,
+    rgba(254, 206, 47, 0.35) 71%,
+    rgba(255, 226, 111, 0.38) 100%);   
 }
 
 #ctrl-ring {
@@ -196,6 +196,7 @@
     position: absolute;
     left: 21.875%;    
     bottom: 0%;
+    transition: transform 0.2s ease;
 }
 
 .cart-ctrl-container {
