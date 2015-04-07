@@ -141,6 +141,7 @@ class learning_hmm_multi(learning_base):
                 ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
                 path,temp  = self.ml.viterbi(final_ts_obj)
                 logp       = self.ml.loglikelihood(final_ts_obj)
+                post       = self.ml.posterior(final_ts_obj)
                 ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
 
                 if len(path) == 0: continue
@@ -1024,7 +1025,8 @@ class learning_hmm_multi(learning_base):
         n,m = np.shape(X1)
         print n,m
         x   = np.arange(0., float(m))*(1./43.)
-        path_mat = np.zeros((self.nState, m))
+        path_mat  = np.zeros((self.nState, m))
+        zbest_mat = np.zeros((self.nState, m))
 
         path_l = []            
         for i in xrange(n):
@@ -1038,22 +1040,24 @@ class learning_hmm_multi(learning_base):
                 X_test = self.convert_sequence(x_test1, x_test2, emission=False)                
 
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-            #path,_    = self.ml.viterbi(final_ts_obj)        
+            path,_    = self.ml.viterbi(final_ts_obj)        
             post = self.ml.posterior(final_ts_obj)
 
-            print np.shape(post), np.shape(path_mat)
-            
+            use_last = False
             for j in xrange(m):
-                path_mat[:, j] += np.array(post[j*2+1])/float(n)
-                print post[j*2+1]
+                ## sum_post = np.sum(post[j*2+1])
+                ## if sum_post <= 0.1 or sum_post > 1.1 or sum_post == float('Inf') or use_last == True:
+                ##     use_last = True
+                ## else:
+                add_post = np.array(post[j])/float(n)    
+                path_mat[:, j] += add_post 
 
-            sys.exit()
-            
-            ## path_l.append(path)
-            ## for j in xrange(m):
-            ##     path_mat[path[j], j] += 1.0
+            path_l.append(path)
+            for j in xrange(m):
+                zbest_mat[path[j], j] += 1.0
 
         path_mat /= np.sum(path_mat, axis=0)
+        zbest_mat /= np.sum(zbest_mat, axis=0)
 
         matplotlib.rcParams['pdf.fonttype'] = 42
         matplotlib.rcParams['ps.fonttype'] = 42
@@ -1074,7 +1078,14 @@ class learning_hmm_multi(learning_base):
         ## for p in path_l:
         ##     ax1.plot(x, p, '*')
 
-        ## ax2 = plt.subplot(312)
+        ## ax2 = plt.subplot(212)
+        ## im2 = ax2.imshow(zbest_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+        ##                  extent=[0,float(m)*(1.0/43.),20,1], aspect=0.1)
+        ## plt.colorbar(im2, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ## ax2.set_xlabel("Time [sec]", fontsize=18)
+        ## ax2.set_ylabel("Hidden State", fontsize=18)
+        
+        
         ## ax3 = plt.subplot(313)
         plt.grid()            
         plt.show()
