@@ -26,6 +26,12 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table" // "wall", "free"
     self.active = false;
 
+    self.rotCtrls = new RFH.EERotation({div: self.side+'-rot-ctrls',
+                                        arm: self.arm,
+                                        tfClient: self.tfClient,
+                                        eeFrame: self.side+'_gripper_tool_frame'});
+    $('#'+self.rotCtrls.div).hide();
+
     self.updateCtrlRingViz = function () {
         // Check that we have values for both camera and ee frames
         if (!self.active) { return; };
@@ -79,9 +85,10 @@ RFH.CartesianEEControl = function (options) {
 
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
-    $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button, #wristCW, #wristCCW').button();
-    $('#speedOptions-buttons, #posrot-set, #ee-mode-set').buttonset();
-    $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer, #wristCW, #wristCCW').hide();
+    $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button').button();
+    $('#speedOptions-buttons, #ee-mode-set').buttonset();
+    //$('#speedOptions-buttons, #posrot-set, #ee-mode-set').buttonset();
+    $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer').hide();
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
 
     self.getStepSize = function () {
@@ -202,15 +209,6 @@ RFH.CartesianEEControl = function (options) {
     };
     self.checkCameraTF();
 
-    //    self.rotX = function(poseInBaseMat, ang) {
-    //        ang = (ang) ? ang : self.orientRot;
-    //        var wristRotMat = new THREE.Matrix4().makeRotationX(ang);
-    //        var goalRotMat = new THREE.Matrix4().extractRotation(poseInBaseMat);
-    //        goalRotMat.multiply(wristRotMat);
-    //        goalRotMa
-    //
-    //    }
-
     self.eeDeltaCmd = function (xyzrpy) {
         // Get default values for unspecified options
         var x = xyzrpy.x || 0.0;
@@ -234,34 +232,18 @@ RFH.CartesianEEControl = function (options) {
                 var dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
                 var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
                 var dz = posStep * z;
-
-                var frame = self.tfClient.fixedFrame;
-                
-                var pos = {x: self.eeTF.translation.x + dx,
-                           y: self.eeTF.translation.y + dy,
-                           z: self.eeTF.translation.z - dz}
-                var quat = {x: self.eeTF.rotation.x,
-                        y: self.eeTF.rotation.y,
-                        z: self.eeTF.rotation.z,
-                        w: self.eeTF.rotation.w}
                 break;
             case 'wall':
-                //TODO: Check this out, it's not quite right yet!
+                if (self.eeTF === null) {
+                    console.warn("Hand Data not available to send commands.");
+                    return;
+                }
                 var handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
                 var clickAng = Math.atan2(y,x) - Math.PI/2;
-                var goalAng = handAng + clickAng;
-                var dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
+                var goalAng = clickAng;
+                var dx = posStep * z;
+                var dz = (x === 0.0) ? 0.0 : -posStep * Math.cos(goalAng);
                 var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
-                var dz = posStep * z;
-
-                var frame = self.tfClient.fixedFrame;
-                var pos = {x: self.eeTF.translation.x + dz,
-                           y: self.eeTF.translation.y + dy,
-                           z: self.eeTF.translation.z + dx}
-                var quat = {x: self.eeTF.rotation.x,
-                        y: self.eeTF.rotation.y,
-                        z: self.eeTF.rotation.z,
-                        w: self.eeTF.rotation.w}
                 break;
             case 'free':
                 if (self.op2baseMat === null || self.eeInOpMat === null) {
@@ -295,6 +277,14 @@ RFH.CartesianEEControl = function (options) {
                 return;
         } // End mode switch-case
 
+        var frame = self.tfClient.fixedFrame;
+        var pos = {x: self.eeTF.translation.x + dx,
+                   y: self.eeTF.translation.y + dy,
+                   z: self.eeTF.translation.z - dz}
+        var quat = {x: self.eeTF.rotation.x,
+                y: self.eeTF.rotation.y,
+                z: self.eeTF.rotation.z,
+                w: self.eeTF.rotation.w}
         quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
         self.arm.sendGoal({position: pos,
             orientation: quat,
@@ -409,34 +399,34 @@ RFH.CartesianEEControl = function (options) {
     $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
 
     /// SELECT FOCUS POINT CONTROLS ///
-    self.selectFocusCB = function (e, ui) {
-        if ($('#select-focus-toggle').prop('checked')) {
-            self.focusPoint.clear();
-            if (self.focusPoint.point === null) {
-                $('#armCtrlContainer').show();
-            }
-        } else {
-            $('#armCtrlContainer').hide();
-            var cb = function () {
-                $('#armCtrlContainer').show();
-                $('#select-focus-toggle').prop('checked', false).button('refresh');
-                self.eeDeltaCmd({}); // Send command at current position to reorient arm
-            };
-            self.focusPoint.getNewFocusPoint(cb); // Pass in callback to perform cleanup/reversal
-        }
-    };
-
-    self.wristCWCB = function (e) {
-        self.orientRot += Math.Pi/12;
-        self.orientRot = self.orientRot % 2*Math.PI;
-        self.eeDeltaCmd({});
-    };
-
-    self.wristCCWCB = function (e) {
-        self.orientRot -= Math.Pi/12;
-        self.orientRot = self.orientRot % 2*Math.PI;
-        self.eeDeltaCmd({});
-    };
+//    self.selectFocusCB = function (e, ui) {
+//        if ($('#select-focus-toggle').prop('checked')) {
+//            self.focusPoint.clear();
+//            if (self.focusPoint.point === null) {
+//                $('#armCtrlContainer').show();
+//            }
+//        } else {
+//            $('#armCtrlContainer').hide();
+//            var cb = function () {
+//                $('#armCtrlContainer').show();
+//                $('#select-focus-toggle').prop('checked', false).button('refresh');
+//                self.eeDeltaCmd({}); // Send command at current position to reorient arm
+//            };
+//            self.focusPoint.getNewFocusPoint(cb); // Pass in callback to perform cleanup/reversal
+//        }
+//    };
+//
+//    self.wristCWCB = function (e) {
+//        self.orientRot += Math.Pi/12;
+//        self.orientRot = self.orientRot % 2*Math.PI;
+//        self.eeDeltaCmd({});
+//    };
+//
+//    self.wristCCWCB = function (e) {
+//        self.orientRot -= Math.Pi/12;
+//        self.orientRot = self.orientRot % 2*Math.PI;
+//        self.eeDeltaCmd({});
+//    };
 
     self.touchSpotCB = function (e) {
         if ($('#touchspot-toggle').prop('checked')) {
@@ -481,27 +471,27 @@ RFH.CartesianEEControl = function (options) {
         }
     };
 
-    self.setRotationCtrls = function (e) {
-        $('#ctrl-ring').off('mousedown.rfh');
-        $('#toward-button, #away-button').off('click.rfh');
-        self.focusPoint.clear();
-
-        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
-        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
-        $('#away-button').on('mousedown.rfh', self.cwCB).text('CW');
-        $('#toward-button').on('mousedown.rfh', self.ccwCB).text('CCW');
-        $('#select-focus-toggle-label').off('click.rfh').hide();
-    };
-
+//    self.setRotationCtrls = function (e) {
+//        $('#ctrl-ring').off('mousedown.rfh');
+//        $('#toward-button, #away-button').off('click.rfh');
+//        self.focusPoint.clear();
+//
+//        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
+//        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
+//        $('#away-button').on('mousedown.rfh', self.cwCB).text('CW');
+//        $('#toward-button').on('mousedown.rfh', self.ccwCB).text('CCW');
+//        $('#select-focus-toggle-label').off('click.rfh').hide();
+//    };
+//
     self.setPositionCtrls = function (e) {
         $('#ctrl-ring').off('mousedown.rfh');
-        $('#toward-button, #away-button').off('click.rfh');
+        $('#toward-button, #away-button').off('mousedown.rfh');
 
         $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
         $('#away-button').on('mousedown.rfh', self.awayCB).text('');
         $('#toward-button').on('mousedown.rfh', self.towardCB).text('');
-        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
+//        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
     };
 
     self.setEEMode = function (e) {
@@ -516,15 +506,15 @@ RFH.CartesianEEControl = function (options) {
         $("#select-focus-toggle-label").show();
         $('#speedOptions').show();
         $("#"+self.gripperDisplayDiv).show();
-        $('#wristCW').on('click.rfh', self.wristCWCB).show();
-        $('#wristCCW').on('click.rfh', self.wristCCWCB).show();
-        $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
-        $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
-        $('#posrot-set').show();
+//        $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
+//        $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
+//        $('#posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
-        $('#posrot-pos').click();
+//        $('#posrot-pos').click();
+        $('#'+self.rotCtrls.div).show();
+        self.setPositionCtrls();
         self.updateCtrlRingViz();
         self.active = true;
     };
@@ -532,21 +522,21 @@ RFH.CartesianEEControl = function (options) {
     self.stop = function () {
         clearInterval(RFH.pr2.head.pubInterval);
         $('#armCtrlContainer').hide();
-        $('#away-button, #toward-button').off('click.rfh').hide();
+        $('#away-button, #toward-button').off('mousedown.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
-        if ($('#select-focus-toggle').prop('checked')) {
-            $('#select-focus-toggle').click();
-        }
-        $("#select-focus-toggle-label").off('click.rfh').hide();
+//        if ($('#select-focus-toggle').prop('checked')) {
+//            $('#select-focus-toggle').click();
+//        }
+//        $("#select-focus-toggle-label").off('click.rfh').hide();
         $('#speedOptions').hide();
         $("#"+self.gripperDisplayDiv).hide();
-        $('#wristCW, #wristCCW').off('click.rfh').hide();
-        $('#posrot-pos, #posrot-rot').off('click.rfh').hide();
-        $('#posrot-set').hide();
+//        $('#posrot-pos, #posrot-rot').off('click.rfh').hide();
+//        $('#posrot-set').hide();
         if ($('#touchspot-toggle').prop('checked')) {
             $('#touchspot-toggle').click();
         }
         $('#touchspot-toggle-label').off('click.rfh').hide();
+        $('#'+self.rotCtrls.div).hide();
         self.active = false;
     };
 }

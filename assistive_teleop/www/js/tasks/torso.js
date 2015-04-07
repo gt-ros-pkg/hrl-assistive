@@ -29,4 +29,5 @@ RFH.Torso = function (options) {
     };
     self.torso.stateCBList.push(self.torsoStateDisplay);
 
+
 }
