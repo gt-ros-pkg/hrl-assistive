@@ -125,37 +125,84 @@ class learning_hmm_multi(learning_base):
         self.B = np.array(self.B)
 
         # Get average loglikelihood threshold
-        ## print "Compute loglikihood threshold"
         n,m = np.shape(X1)
-        ll_list = []
-        for i in xrange(self.nState):
-            ll_list.append([])
-        self.ll_mu  = np.zeros(self.nState)
-        self.ll_std = np.zeros(self.nState)
 
-        for i in xrange(n):                                                          
-            for j in xrange(m):
-                if j==0: continue
+        self.std_coff  = 1.0
+        self.nGaussian = self.nState 
+        g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
+        g_sig     = float(m) / float(self.nGaussian) * self.std_coff
+        
+        self.l_likelihood = np.zeros(self.nGaussian)
+        self.l_statePosterior = np.zeros((self.nGaussian,self.nState)) # state x time division
 
-                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
-                ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
-                path,temp  = self.ml.viterbi(final_ts_obj)
-                logp       = self.ml.loglikelihood(final_ts_obj)
-                post       = self.ml.posterior(final_ts_obj)
-                ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
 
-                if len(path) == 0: continue
-                ll_list[path[-1]].append(logp)
-        print "Executed viterbi algorithm: ", np.shape(X1)
+        n =2 
+        
+        for i in xrange(self.nGaussian):                   
+            print "Gaussian #: ", i
+            for j in xrange(n):  
+
+                g_post   = np.zeros(self.nState)
+                g_lhood  = 0.0
+                prop_sum = 0.0
+
+
+                n_jobs = 2
+                r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods)(k, copy.deepcopy(self.ml), \
+                                                                       self.F, X_train[j], \
+                                                                       self.nEmissionDim) \
+                                                                       for k in xrange(1,m))
+                k, l_logp, l_post = zip(*r)
+
+
+                print np.shape(l_logp), np.shape(l_post)
                 
-        for i, ll in enumerate(ll_list):
-            if len(ll) > 0: 
-                self.ll_mu[i]  = np.array(ll).mean()
-                self.ll_std[i] = np.sqrt(np.array(ll).var())
-            else:
-                self.ll_mu[i]  = self.ll_mu[i-1]
-                self.ll_std[i] = self.ll_std[i-1]
+                ## for k in xrange(m):
+                ##     if k==0: continue
+                    
+                ##     final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
+                ##     logp         = self.ml.loglikelihoods(final_ts_obj)[0]
+                ##     post         = np.array(self.ml.posterior(final_ts_obj))
+                    
+                ##     k_prop       = norm(loc=g_mu_list[i],scale=g_sig).pdf(k)
+                ##     g_post      += post[k-1] * k_prop
+                ##     g_lhood     += logp * k_prop                    
+                    
+                ##     prop_sum  += k_prop
 
+                self.l_statePosterior[i] += g_post / prop_sum / float(n)
+                self.l_likelihood[i] += g_lhood / prop_sum / float(n)
+                           
+        ## ll_list = []
+        ## for i in xrange(self.nState):
+        ##     ll_list.append([])
+        ## self.ll_mu  = np.zeros(self.nState)
+        ## self.ll_std = np.zeros(self.nState)
+
+        ## for i in xrange(n):                                                          
+        ##     for j in xrange(m):
+        ##         if j==0: continue
+
+        ##         final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
+        ##         ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
+        ##         path,temp  = self.ml.viterbi(final_ts_obj)
+        ##         logp       = self.ml.loglikelihood(final_ts_obj)
+        ##         post       = self.ml.posterior(final_ts_obj)
+        ##         ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
+
+        ##         if len(path) == 0: continue
+        ##         ll_list[path[-1]].append(logp)
+        ## print "Executed viterbi algorithm: ", np.shape(X1)
+                
+        ## for i, ll in enumerate(ll_list):
+        ##     if len(ll) > 0: 
+        ##         self.ll_mu[i]  = np.array(ll).mean()
+        ##         self.ll_std[i] = np.sqrt(np.array(ll).var())
+        ##     else:
+        ##         self.ll_mu[i]  = self.ll_mu[i-1]
+        ##         self.ll_std[i] = self.ll_std[i-1]
+
+        ##############################################################################################3
         ## print "---------------------"                
         ## print "Avg log likelihoods"
         ## print "---------------------"
@@ -1119,3 +1166,14 @@ class learning_hmm_multi(learning_base):
                 on_progress[i] = path[-1]
 
         return off_progress, on_progress
+
+
+def learn_likelihoods(k, ml, F, X_train, nEmissionDim):
+
+    print k
+    final_ts_obj = ghmm.EmissionSequence(F, X_train[:k*nEmissionDim])
+    logp         = ml.loglikelihoods(final_ts_obj)[0]
+    post         = np.array(ml.posterior(final_ts_obj))
+
+    return k, logp, post
+    
