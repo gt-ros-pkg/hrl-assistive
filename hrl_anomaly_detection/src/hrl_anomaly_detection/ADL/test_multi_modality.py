@@ -1282,7 +1282,7 @@ if __name__ == '__main__':
         true_labels = [True]*len(true_aXData1)
 
         true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
-        test_dataSet  = true_dataSet[0:1]
+        test_dataSet  = true_dataSet[0:10]
         train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet[0].sa.id] 
         train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
         train_dataSet = true_dataSet[train_ids]
@@ -1300,8 +1300,8 @@ if __name__ == '__main__':
         # If you want normal likelihood, class 0, data 1
         # testData 0
         # false data 0 (comment in below)
-        false_data_flag = False #True
-        ## test_dataSet    = false_dataSet
+        false_data_flag = True
+        test_dataSet    = false_dataSet
                                                                
         for K in range(len(test_dataSet)):
 
@@ -1317,7 +1317,7 @@ if __name__ == '__main__':
             
             if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
             elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
-            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
+            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task], ml_pkl=str(K)+'_likelihood.pkl')
 
 
             ## # TEST
