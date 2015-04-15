@@ -77,13 +77,14 @@ class HeadPoseRecorder(object):
                                            rospy.Duration(20))
             (trans_d, rot_d) = self.listener.lookupTransform('/torso_lift_link',
                                                              '/head_mount_kinect_depth_optical_frame', now)
-            now = rospy.Time.now()
-            self.listener.waitForTransform('/torso_lift_link', '/head_mount_kinect_rgb_optical_frame', now,
-                                           rospy.Duration(20))
-            (trans_r, rot_r) = self.listener.lookupTransform('/torso_lift_link',
-                                                             '/head_mount_kinect_rgb_optical_frame', now)
+            # now = rospy.Time.now()
+            # self.listener.waitForTransform('/torso_lift_link', '/head_mount_kinect_rgb_optical_frame', now,
+            #                                rospy.Duration(20))
+            # (trans_r, rot_r) = self.listener.lookupTransform('/torso_lift_link',
+            #                                                  '/head_mount_kinect_rgb_optical_frame', now)
 
             pos_out_d, ori_out_d = Bmat_to_pos_quat(createBMatrix(trans_d, rot_d).I*createBMatrix(pos, ori))
+            # pos_out_d, ori_out_d = Bmat_to_pos_quat(createBMatrix(pos, ori))
 
             record_file_gt_d = open(''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number),
                                              '_img_', str(self.file_number), '_gt_depth', '.txt']), 'w')
@@ -91,13 +92,13 @@ class HeadPoseRecorder(object):
                                                                           ori_out_d[0], ori_out_d[1], ori_out_d[2],
                                                                           ori_out_d[3])]))
             record_file_gt_d.close()
-            pos_out_r, ori_out_r = Bmat_to_pos_quat(createBMatrix(trans_r, rot_r).I*createBMatrix(pos, ori))
-            record_file_gt_r = open(''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number),
-                                             '_img_', str(self.file_number), '_gt_rgb', '.txt']), 'w')
-            record_file_gt_r.write(''.join([' %f %f %f %f %f %f %f \n' % (pos_out_r[0], pos_out_r[1], pos_out_r[2],
-                                                                          ori_out_r[0], ori_out_r[1], ori_out_r[2],
-                                                                          ori_out_r[3])]))
-            record_file_gt_r.close()
+            # pos_out_r, ori_out_r = Bmat_to_pos_quat(createBMatrix(trans_r, rot_r).I*createBMatrix(pos, ori))
+            # record_file_gt_r = open(''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number),
+            #                                  '_img_', str(self.file_number), '_gt_rgb', '.txt']), 'w')
+            # record_file_gt_r.write(''.join([' %f %f %f %f %f %f %f \n' % (pos_out_r[0], pos_out_r[1], pos_out_r[2],
+            #                                                               ori_out_r[0], ori_out_r[1], ori_out_r[2],
+            #                                                               ori_out_r[3])]))
+            # record_file_gt_r.close()
             print 'Did all the tf things successfully'
             self.img_save()
             print 'Just saved file # ', self.file_number, 'for subject ', self.subject_number
@@ -105,9 +106,9 @@ class HeadPoseRecorder(object):
             if self.video:
                 print 'Starting to collect video!'
                 start_time = time.time()
-                while self.count < 400:
+                while self.count < 100:
                     # print time.time()-start_time
-                    if time.time()-start_time >= .15:
+                    if time.time()-start_time >= .5:
                         self.file_number += 1
                         self.vid_save()
                         start_time = time.time()
@@ -127,15 +128,17 @@ class HeadPoseRecorder(object):
                 # Convert the depth image to a Numpy array since most cv2 functions
                 # require Numpy arrays.
                 depth_array = np.array(depth_image, dtype=np.float32)
+                # print depth_array[60:65,105:110]
                 # Normalize the depth image to fall between 0 (black) and 1 (white)
-                cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+                #cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
                 # At this point you can display the result properly:
                 # cv2.imshow('Depth Image', depth_display_image)
                 # If you write it as it si, the result will be a image with only 0 to 1 values.
                 # To actually store in a this a image like the one we are showing its needed
                 # to reescale the otuput to 255 gray scale.
-                cv2.imwrite(path, np.uint16(depth_array*65535))
-
+                cv2.imwrite(path, np.uint16(depth_array*1000))
+                # thing = np.uint16(depth_array*1000)
+                # print thing[60:65,105:110]
                 # cv2.imwrite(path, frame)
             except CvBridgeError, e:
                 print e
@@ -180,13 +183,13 @@ class HeadPoseRecorder(object):
                 # require Numpy arrays.
                 depth_array = np.array(depth_image, dtype=np.float32)
                 # Normalize the depth image to fall between 0 (black) and 1 (white)
-                cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+                #cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
                 # At this point you can display the result properly:
                 # cv2.imshow('Depth Image', depth_display_image)
                 # If you write it as it si, the result will be a image with only 0 to 1 values.
                 # To actually store in a this a image like the one we are showing its needed
                 # to reescale the output to 255 gray scale.
-                cv2.imwrite(path, np.uint16(depth_array*65535))
+                cv2.imwrite(path, np.uint16(depth_array*1000))
 
                 # cv2.imwrite(path, frame)
             except CvBridgeError, e:
@@ -282,7 +285,7 @@ if __name__ == "__main__":
     rospy.init_node('head_pose_recorder')
 
     file_number = 0
-    subject_number = 12
+    subject_number = 0
     video = True
     recorder = HeadPoseRecorder(file_number, subject_number, video)
     rospy.spin()

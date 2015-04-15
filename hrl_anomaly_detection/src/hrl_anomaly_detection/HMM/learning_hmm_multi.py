@@ -1,10 +1,10 @@
 #!/usr/local/bin/python
 
-import sys, os, copy
+import sys, os, copy, time
 import numpy as np, math
 import scipy as scp
 from scipy import optimize, interpolate
-from scipy.stats import norm
+from scipy.stats import norm, entropy
 
 import roslib; roslib.load_manifest('hrl_anomaly_detection')
 import rospy
@@ -68,7 +68,7 @@ class learning_hmm_multi(learning_base):
     #----------------------------------------------------------------------        
     #
     def fit(self, aXData1, aXData2=None, A=None, B=None, pi=None, cov_mult=[1.0, 1.0, 1.0, 1.0], \
-            B_dict=None, verbose=False):
+            B_dict=None, verbose=False, ml_pkl='ml_temp.pkl'):
 
         X1 = np.array(aXData1)
         X2 = np.array(aXData2)
@@ -125,36 +125,74 @@ class learning_hmm_multi(learning_base):
         self.B = np.array(self.B)
 
         # Get average loglikelihood threshold
-        ## print "Compute loglikihood threshold"
         n,m = np.shape(X1)
-        ll_list = []
-        for i in xrange(self.nState):
-            ll_list.append([])
-        self.ll_mu  = np.zeros(self.nState)
-        self.ll_std = np.zeros(self.nState)
 
-        for i in xrange(n):                                                          
-            for j in xrange(m):
-                if j==0: continue
+        self.std_coff  = 1.0
+        self.nGaussian = self.nState
+        g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
+        g_sig     = float(m) / float(self.nGaussian) * self.std_coff
+        
+        self.l_lmu  = np.zeros(self.nGaussian)
+        self.l_lstd = np.zeros(self.nGaussian)
+        self.l_statePosterior = np.zeros((self.nGaussian,self.nState)) # state x time division
 
-                final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
-                ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
-                path,temp  = self.ml.viterbi(final_ts_obj)
-                logp       = self.ml.loglikelihood(final_ts_obj)
-                ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
 
-                if len(path) == 0: continue
-                ll_list[path[-1]].append(logp)
-        print "Executed viterbi algorithm: ", np.shape(X1)
+        [A, B, pi] = self.ml.asMatrices()
+
+
+        ######################################################################################
+        if os.path.isfile(ml_pkl):
+            d = ut.load_pickle(ml_pkl)
+            self.l_statePosterior = d['state_post']
+            self.l_lmu            = d['lmu']
+            
+        else:        
+            n_jobs = 4
+            start_time = time.time() 
+            r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods)(i, n, m, A, B, pi, \
+                                                                   self.F, X_train, \
+                                                                   self.nEmissionDim, g_mu_list[i], g_sig, \
+                                                                   self.nState) \
+                                                                   for i in xrange(self.nGaussian))
+            print "Time elapsed: ", time.time() - start_time, "s" 
+            l_i, self.l_statePosterior, self.l_lmu, self.l_lstd = zip(*r)
+
+            d = {}
+            d['state_post'] = self.l_statePosterior
+            d['lmu'] = self.l_lmu
+            ut.save_pickle(d, ml_pkl)
+
+        ######################################################################################
+        ## ll_list = []
+        ## for i in xrange(self.nState):
+        ##     ll_list.append([])
+        ## self.ll_mu  = np.zeros(self.nState)
+        ## self.ll_std = np.zeros(self.nState)
+
+        ## for i in xrange(n):                                                          
+        ##     for j in xrange(m):
+        ##         if j==0: continue
+
+        ##         final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
+        ##         ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
+        ##         path,temp  = self.ml.viterbi(final_ts_obj)
+        ##         logp       = self.ml.loglikelihood(final_ts_obj)
+        ##         post       = self.ml.posterior(final_ts_obj)
+        ##         ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
+
+        ##         if len(path) == 0: continue
+        ##         ll_list[path[-1]].append(logp)
+        ## print "Executed viterbi algorithm: ", np.shape(X1)
                 
-        for i, ll in enumerate(ll_list):
-            if len(ll) > 0: 
-                self.ll_mu[i]  = np.array(ll).mean()
-                self.ll_std[i] = np.sqrt(np.array(ll).var())
-            else:
-                self.ll_mu[i]  = self.ll_mu[i-1]
-                self.ll_std[i] = self.ll_std[i-1]
+        ## for i, ll in enumerate(ll_list):
+        ##     if len(ll) > 0: 
+        ##         self.ll_mu[i]  = np.array(ll).mean()
+        ##         self.ll_std[i] = np.sqrt(np.array(ll).var())
+        ##     else:
+        ##         self.ll_mu[i]  = self.ll_mu[i-1]
+        ##         self.ll_std[i] = self.ll_std[i-1]
 
+        ##############################################################################################3
         ## print "---------------------"                
         ## print "Avg log likelihoods"
         ## print "---------------------"
@@ -873,18 +911,23 @@ class learning_hmm_multi(learning_base):
             if i == 0: continue
         
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
-            path,_    = self.ml.viterbi(final_ts_obj)
-            logp      = self.ml.loglikelihood(final_ts_obj)
+            logp         = self.ml.loglikelihood(final_ts_obj)
+            post         = np.array(self.ml.posterior(final_ts_obj))
+            
 
-            if len(path) == 0: 
-                path_l[i] = path_l[i-1]
-                continue
-            else: 
-                path_l[i] = path[-1]
+            # Find the best posterior distribution
+            min_dist  = 100000000
+            min_index = 0
+            for j in xrange(self.nGaussian):
+                dist = entropy(post[i-1], self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist 
+
                 
             ll[i]     = logp
-            ll_mu[i]  = self.ll_mu[path[-1]]
-            ll_ths[i] = self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]]
+            ll_mu[i]  = self.l_lmu[min_index]
+            ll_ths[i] = self.l_lmu[min_index] - ths_mult*self.l_lstd[min_index]
 
         # temp to see offline state path
         ## path_l = path
@@ -1024,7 +1067,8 @@ class learning_hmm_multi(learning_base):
         n,m = np.shape(X1)
         print n,m
         x   = np.arange(0., float(m))*(1./43.)
-        path_mat = np.zeros((self.nState, m))
+        path_mat  = np.zeros((self.nState, m))
+        zbest_mat = np.zeros((self.nState, m))
 
         path_l = []            
         for i in xrange(n):
@@ -1039,12 +1083,23 @@ class learning_hmm_multi(learning_base):
 
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
             path,_    = self.ml.viterbi(final_ts_obj)        
-            path_l.append(path)
+            post = self.ml.posterior(final_ts_obj)
 
+            use_last = False
             for j in xrange(m):
-                path_mat[path[j], j] += 1.0
+                ## sum_post = np.sum(post[j*2+1])
+                ## if sum_post <= 0.1 or sum_post > 1.1 or sum_post == float('Inf') or use_last == True:
+                ##     use_last = True
+                ## else:
+                add_post = np.array(post[j])/float(n)    
+                path_mat[:, j] += add_post 
+
+            path_l.append(path)
+            for j in xrange(m):
+                zbest_mat[path[j], j] += 1.0
 
         path_mat /= np.sum(path_mat, axis=0)
+        zbest_mat /= np.sum(zbest_mat, axis=0)
 
         matplotlib.rcParams['pdf.fonttype'] = 42
         matplotlib.rcParams['ps.fonttype'] = 42
@@ -1065,7 +1120,14 @@ class learning_hmm_multi(learning_base):
         ## for p in path_l:
         ##     ax1.plot(x, p, '*')
 
-        ## ax2 = plt.subplot(312)
+        ## ax2 = plt.subplot(212)
+        ## im2 = ax2.imshow(zbest_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+        ##                  extent=[0,float(m)*(1.0/43.),20,1], aspect=0.1)
+        ## plt.colorbar(im2, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ## ax2.set_xlabel("Time [sec]", fontsize=18)
+        ## ax2.set_ylabel("Hidden State", fontsize=18)
+        
+        
         ## ax3 = plt.subplot(313)
         plt.grid()            
         plt.show()
@@ -1099,3 +1161,41 @@ class learning_hmm_multi(learning_base):
                 on_progress[i] = path[-1]
 
         return off_progress, on_progress
+
+
+def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
+
+    if nEmissionDim is not 2: 
+        print "Not available dimension!!"
+        sys.exit()
+        
+    ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    l_likelihood_mean  = 0.0
+    l_likelihood_mean2 = 0.0
+    l_statePosterior = np.zeros(nState)
+    
+    for j in xrange(n):    
+
+        g_post   = np.zeros(nState)
+        g_lhood  = 0.0
+        g_lhood2 = 0.0
+        prop_sum = 0.0
+
+        for k in xrange(1,m):
+            final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
+            logp         = ml.loglikelihoods(final_ts_obj)[0]
+            post         = np.array(ml.posterior(final_ts_obj))
+
+            k_prop       = norm(loc=g_mu, scale=g_sig).pdf(k)
+            g_post      += post[k-1] * k_prop
+            g_lhood     += logp * k_prop                    
+            g_lhood2    += logp * logp * k_prop                    
+                    
+            prop_sum  += k_prop
+
+        l_statePosterior  += g_post / prop_sum / float(n)
+        l_likelihood_mean += g_lhood / prop_sum / float(n)
+        l_likelihood_mean2+= g_lhood2 / prop_sum / float(n)
+            
+    return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+    
