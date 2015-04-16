@@ -1020,6 +1020,7 @@ if __name__ == '__main__':
       
     #---------------------------------------------------------------------------           
     if opt.bRocHuman:
+        # not used for a while
 
         cross_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/human/multi_'+\
                           task_names[task]

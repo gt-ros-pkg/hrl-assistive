@@ -797,8 +797,10 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
     '''
     
     an_types = ['force', 'sound', 'both']
-    force_an = ['normal', 'magnified', 'shrinked', 'amplified', 'weaken']
-    sound_an = ['normal', 'weaken', 'rndimpulse']
+    force_an = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue', 'weaken']
+    ## force_an = ['normal', 'magnified', 'shrinked', 'amplified', 'weaken']
+    sound_an = ['normal', 'rndrigid', 'rndsoft', 'weaken']
+    ## sound_an = ['normal', 'weaken', 'rndimpulse']
 
     length = len(true_aXData1[0])
 
@@ -844,7 +846,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             if an1 == 'normal':
                 print "normal force"
                 x1_anomaly = true_aXData1[x_idx]
-            
+
             elif an1 == 'magnified':
                 print "magnified force"
 
@@ -879,8 +881,9 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 mag = random.uniform(0.1, 0.9)                
                 x1_anomaly = true_aXData1[x_idx]*mag
                                 
-            elif an1 == 'rndimpulse':
-                print "Random impulse force"
+            elif an1 == 'rndimpulse' or an1 == 'inelastic' or an1 == 'inelastic_continue':
+                print "Random impulse force which is inelastic collision force: ", an1
+                #http://www.vernier.com/innovate/impulse-comparison-for-elastic-and-inelastic-collisions/
 
                 peak  = max_c1 * random.uniform(0.2, 1.5)
                 width = random.randint(3,6)
@@ -895,7 +898,29 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     if i < width/2:
                         impulse[i] = (i+1)*peak/float(width/2)
                     else:
-                        impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+                        if an1 == 'inelastic_continue': 
+                            impulse[i] = peak
+                        else:
+                            impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+
+                    x1_anomaly[loc+i] += impulse[i] 
+
+            elif an1 == 'elastic' or an1 == 'elastic_continue':
+                print "elastic collision with continuous force"
+
+                peak  = max_c1 * random.uniform(0.2, 1.5)
+                width = random.randint(3,6)
+                loc   = random.randint(1+width,length-1-width)
+
+                xnew    = range(width)
+                impulse = np.zeros(width)
+                impulse[width/2] = peak
+                x1_anomaly = true_aXData1[x_idx]
+
+                for i in xrange(width):
+                    impulse[i] = peak * (1.0 - ( (i-float(width/2))/float(width/2) )**2)
+                    if i >= width/2 and an1 == 'elastic_continue': 
+                        impulse[i] = peak
 
                     x1_anomaly[loc+i] += impulse[i] 
             else:
@@ -916,7 +941,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 mag = random.uniform(0.05, 0.3)                
                 x2_anomaly = true_aXData2[x_idx] *mag
 
-            elif an2 == 'rndimpulse':
+            elif an2 == 'rndimpulse' or an2 == 'rndrigid':
                 print "Random impulse sound"
 
                 peak  = max_c2 * random.uniform(0.2, 1.5)
@@ -943,6 +968,31 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                         impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
 
                     x2_anomaly[loc+i-width/2] += impulse[i] 
+
+            elif an2 == 'rndsoft':
+                print "Random impulse sound"
+
+                peak  = max_c2 * random.uniform(0.2, 1.5)
+                
+                while True:
+                    width = random.randint(2,3)
+
+                    if len(x1_anomaly) <= 20+width: block_size = 4
+                    else: block_size = 10
+                        
+                    loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)                        
+                    if loc < max_y2_idx - block_size or loc > max_y2_idx + block_size:                        
+                        break
+
+                xnew    = range(width)
+                impulse = np.zeros(width)
+                x2_anomaly = np.ones(np.shape(x1_anomaly)) * true_aXData2[x_idx][0]
+                #x2_anomaly = true_aXData2[x_idx]
+
+                for i in xrange(width):
+                    impulse[i] = peak * (1.0 - ( (i-float(width/2))/float(width/2) )**2)
+                    x2_anomaly[loc+i-width/2] += impulse[i] 
+                    
             else:
                 print "Not implemented type of sound anomaly : ", an2
                     
