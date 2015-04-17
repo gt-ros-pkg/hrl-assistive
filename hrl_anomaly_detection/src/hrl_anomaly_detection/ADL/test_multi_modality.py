@@ -1002,7 +1002,7 @@ if __name__ == '__main__':
         if os.path.isfile(pkl_file) and opt.bRenew is False:
             dd = ut.load_pickle(pkl_file)
         else:
-            n_false_data = 100
+            n_false_data = 5 #100
             dd = dm.generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data)
             ut.save_pickle(dd, pkl_file)
 
@@ -1106,17 +1106,18 @@ if __name__ == '__main__':
 
         true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
         true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
-        idx = 0
 
         if opt.bAbnormal or opt.bSimAbnormal:
-            # min max scaling
-            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
-            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
-                        
-            plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx)
-            
+            for idx in xrange(len(false_aXData1)):
+                # min max scaling
+                false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
+                false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
+
+                plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx)
+
         else:
-            plot_one(true_aXData1, true_aXData2, data_idx=idx)            
+            for idx in xrange(len(true_aXData1)):
+                plot_one(true_aXData1, true_aXData2, data_idx=idx)            
 
             
     #---------------------------------------------------------------------------
