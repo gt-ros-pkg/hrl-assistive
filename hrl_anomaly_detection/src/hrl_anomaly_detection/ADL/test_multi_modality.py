@@ -63,7 +63,7 @@ def fig_roc_offline_sim(cross_data_path, \
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
 
     # K random training-test set
-    K = len(true_aXData1)/4
+    K = len(true_aXData1)/4 # the number of test data
     M = 30
     splits = []
     for i in xrange(M):
@@ -99,6 +99,8 @@ def fig_roc_offline_sim(cross_data_path, \
             
     ## Multi dimension
     for i in xrange(3):
+        if i < 2: continue #temp
+        
         count = 0
         for ths in threshold_mult:
 
@@ -120,16 +122,17 @@ def fig_roc_offline_sim(cross_data_path, \
             print "---------------------------------"
             print "Total splits: ", len(splits)
 
-            ## fn_ll = []
-            ## tn_ll = []
-            ## fn_err_ll = []
-            ## tn_err_ll = []
-            ## for j, (l_wdata, l_vdata) in enumerate(splits):
-            ##     fn_ll, tn_ll, fn_err_ll, tn_err_ll = anomaly_check_offline(j, l_wdata, l_vdata, nState, \
-            ##                                                            trans_type, ths, false_dataSet, \
-            ##                                                            check_dim=i)
-            ##     print np.mean(fn_ll), np.mean(tn_ll)
-            ## sys.exit()
+            # temp
+            fn_ll = []
+            tn_ll = []
+            fn_err_ll = []
+            tn_err_ll = []
+            for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
+                fn_ll, tn_ll, fn_err_ll, tn_err_ll = anomaly_check_offline(j, l_wdata, l_vdata, nState, \
+                                                                       trans_type, ths, l_zdata, \
+                                                                       cov_mult=cov_mult, check_dim=i)
+                print np.mean(fn_ll), np.mean(tn_ll)
+            sys.exit()
                                   
             n_jobs = 4
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
@@ -1002,13 +1005,14 @@ if __name__ == '__main__':
         if os.path.isfile(pkl_file) and opt.bRenew is False:
             dd = ut.load_pickle(pkl_file)
         else:
-            n_false_data = 5 #100
+            n_false_data = 100
             dd = dm.generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data)
             ut.save_pickle(dd, pkl_file)
 
         false_aXData1 = dd['ft_force_mag_sim_false_l']
         false_aXData2 = dd['audio_rms_sim_false_l'] 
         false_chunks  = dd['sim_false_chunks']
+        false_anomaly_start = dd['anomaly_start_idx']
     else:
         false_aXData1 = d['ft_force_mag_false_l']
         false_aXData2 = d['audio_rms_false_l'] 

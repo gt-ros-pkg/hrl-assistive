@@ -132,8 +132,8 @@ class learning_hmm_multi(learning_base):
         g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
         g_sig     = float(m) / float(self.nGaussian) * self.std_coff
         
-        self.l_lmu  = np.zeros(self.nGaussian)
-        self.l_lstd = np.zeros(self.nGaussian)
+        self.ll_mu  = np.zeros(self.nGaussian)
+        self.ll_std = np.zeros(self.nGaussian)
         self.l_statePosterior = np.zeros((self.nGaussian,self.nState)) # state x time division
 
 
@@ -144,7 +144,8 @@ class learning_hmm_multi(learning_base):
         if os.path.isfile(ml_pkl):
             d = ut.load_pickle(ml_pkl)
             self.l_statePosterior = d['state_post']
-            self.l_lmu            = d['lmu']
+            self.ll_mu            = d['ll_mu']
+            self.ll_std           = d['ll_std']
             
         else:        
             n_jobs = 4
@@ -155,11 +156,12 @@ class learning_hmm_multi(learning_base):
                                                                    self.nState) \
                                                                    for i in xrange(self.nGaussian))
             print "Time elapsed: ", time.time() - start_time, "s" 
-            l_i, self.l_statePosterior, self.l_lmu, self.l_lstd = zip(*r)
+            l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
             d = {}
             d['state_post'] = self.l_statePosterior
-            d['lmu'] = self.l_lmu
+            d['ll_mu'] = self.ll_mu
+            d['ll_std'] = self.ll_std
             ut.save_pickle(d, ml_pkl)
 
         ######################################################################################
@@ -680,26 +682,54 @@ class learning_hmm_multi(learning_base):
     #
     def anomaly_check(self, X1, X2=None, ths_mult=None):
 
+        print "-----------------------------------------------"
+        
         if self.nEmissionDim == 1:
             X_test = X1
         else:
             X_test = self.convert_sequence(X1, X2, emission=False)                
         n = len(np.squeeze(X1))
-        
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-        path,_       = self.ml.viterbi(final_ts_obj)
-        logp         = self.ml.loglikelihood(final_ts_obj)
 
-        ## print path, logp, self.ll_mu[path[-1]], logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+        logp         = self.ml.loglikelihood(final_ts_obj)
+        try:
+            post = np.array(self.ml.posterior(final_ts_obj))            
+        except:
+            print X1
+            print X2
+            
+            import matplotlib.pyplot as pp
+            import matplotlib.pyplot as plt
+
+            pp.figure(1)
+            pp.plot(X1[0])
+            pp.figure(2)
+            pp.plot(X2[0])
+            pp.show()
+
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        
+        # Find the best posterior distribution
+        min_dist  = 100000000
+        min_index = 0
+        for j in xrange(self.nGaussian):
+            dist = entropy(post[n-1], self.l_statePosterior[j])
+            if min_dist > dist:
+                min_index = j
+                min_dist  = dist 
+
+        print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+        ## sys.exit()
         ## raw_input()
 
-        if len(path) == 0: 
-            print "zero path: ", logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
-            ## print X_test[0]
-            ## print "----------------------------------------------------------------------------------"
-            ## sys.exit() 
-            return 1.0, 0.0 # anomaly
-        err = logp - (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
+        ## if len(path) == 0: 
+        ##     print "zero path: ", logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
+        ##     ## print X_test[0]
+        ##     ## print "----------------------------------------------------------------------------------"
+        ##     ## sys.exit() 
+        ##     return 1.0, 0.0 # anomaly
+        err = logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
 
         ## print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
         
@@ -926,8 +956,8 @@ class learning_hmm_multi(learning_base):
 
                 
             ll[i]     = logp
-            ll_mu[i]  = self.l_lmu[min_index]
-            ll_ths[i] = self.l_lmu[min_index] - ths_mult*self.l_lstd[min_index]
+            ll_mu[i]  = self.ll_mu[min_index]
+            ll_ths[i] = self.ll_mu[min_index] - ths_mult*self.ll_std[min_index]
 
         # temp to see offline state path
         ## path_l = path
@@ -1165,11 +1195,11 @@ class learning_hmm_multi(learning_base):
 
 def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
 
-    if nEmissionDim is not 2: 
-        print "Not available dimension!!"
-        sys.exit()
+    if nEmissionDim ==2:
+        ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    else:
+        ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
         
-    ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
     l_likelihood_mean  = 0.0
     l_likelihood_mean2 = 0.0
     l_statePosterior = np.zeros(nState)
