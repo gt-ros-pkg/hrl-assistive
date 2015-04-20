@@ -147,7 +147,7 @@ class learning_hmm_multi(learning_base):
             self.ll_mu            = d['ll_mu']
             self.ll_std           = d['ll_std']            
         else:        
-            n_jobs = 4
+            n_jobs = -1
             start_time = time.time() 
             r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods)(i, n, m, A, B, pi, \
                                                                    self.F, X_train, \

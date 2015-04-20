@@ -132,7 +132,7 @@ def fig_roc_offline_sim(cross_data_path, \
             ##     print np.mean(fn_ll), np.mean(tn_ll)
             ## sys.exit()
                                   
-            n_jobs = 4
+            n_jobs = -1
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
                                                                        trans_type, ths, l_zdata, \
                                                                        cov_mult=cov_mult, check_dim=i) \
@@ -310,7 +310,7 @@ def fig_roc_offline(cross_data_path, \
             ##     print np.mean(fn_ll), np.mean(tn_ll)
             ## sys.exit()
                                   
-            n_jobs = 4
+            n_jobs = -1
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \
                                                                        trans_type, ths, false_dataSet, \
                                                                        cov_mult=cov_mult, check_dim=i) \
@@ -449,7 +449,7 @@ def fig_roc(cross_data_path, aXData1, aXData2, chunks, labels, prefix, nState=20
         print "---------------------------------"
         print "Total splits: ", len(splits)
 
-        n_jobs = 4
+        n_jobs = -1
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check)(i, l_wdata, l_vdata, nState, trans_type, ths) \
                                     for i, (l_wdata, l_vdata) in enumerate(splits)) 
         fp_ll, err_ll = zip(*r)
