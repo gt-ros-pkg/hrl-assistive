@@ -98,9 +98,7 @@ def fig_roc_offline_sim(cross_data_path, \
 
             
     ## Multi dimension
-    for i in xrange(3):
-        if i < 2: continue #temp
-        
+    for i in xrange(3):        
         count = 0
         for ths in threshold_mult:
 
@@ -122,17 +120,17 @@ def fig_roc_offline_sim(cross_data_path, \
             print "---------------------------------"
             print "Total splits: ", len(splits)
 
-            # temp
-            fn_ll = []
-            tn_ll = []
-            fn_err_ll = []
-            tn_err_ll = []
-            for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
-                fn_ll, tn_ll, fn_err_ll, tn_err_ll = anomaly_check_offline(j, l_wdata, l_vdata, nState, \
-                                                                       trans_type, ths, l_zdata, \
-                                                                       cov_mult=cov_mult, check_dim=i)
-                print np.mean(fn_ll), np.mean(tn_ll)
-            sys.exit()
+            ## # temp
+            ## fn_ll = []
+            ## tn_ll = []
+            ## fn_err_ll = []
+            ## tn_err_ll = []
+            ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
+            ##     fn_ll, tn_ll, fn_err_ll, tn_err_ll = anomaly_check_offline(j, l_wdata, l_vdata, nState, \
+            ##                                                            trans_type, ths, l_zdata, \
+            ##                                                            cov_mult=cov_mult, check_dim=i)
+            ##     print np.mean(fn_ll), np.mean(tn_ll)
+            ## sys.exit()
                                   
             n_jobs = 4
             r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_offline)(j, l_wdata, l_vdata, nState, \

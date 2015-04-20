@@ -890,7 +890,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                 peak  = max_c1 * random.uniform(0.2, 1.5)
                 width = random.randint(3,6)
-                loc   = random.randint(1+width,length-1-width)
+                loc   = random.randint(1,length-1-width)
                 an_idx = loc
 
                 xnew    = range(width)
@@ -914,7 +914,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                 peak  = max_c1 * random.uniform(0.2, 1.5)
                 width = random.randint(5,20)
-                loc   = random.randint(1+width,length-1-width)
+                loc   = random.randint(1,length-1-width)
                 an_idx = loc
 
                 xnew    = range(width)
@@ -957,8 +957,10 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     if len(x1_anomaly) <= 20+width: block_size = 4
                     else: block_size = 10
                         
-                    loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)                        
-                    if loc < max_y2_idx - block_size or loc > max_y2_idx + block_size:                        
+                    loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)            
+                    if loc+width > length-1:
+                        continue            
+                    if loc+width < max_y2_idx - block_size or loc > max_y2_idx + block_size:                     
                         break
 
                 xnew    = range(width)
@@ -987,7 +989,9 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     else: block_size = 10
                         
                     loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)                        
-                    if loc < max_y2_idx - block_size or loc > max_y2_idx + block_size:                        
+                    if loc+width > length-1:
+                        continue                                
+                    if loc+width < max_y2_idx - block_size or loc > max_y2_idx + block_size:
                         break
 
                 xnew    = range(width)

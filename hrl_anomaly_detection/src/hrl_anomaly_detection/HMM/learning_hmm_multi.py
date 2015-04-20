@@ -141,12 +141,11 @@ class learning_hmm_multi(learning_base):
 
 
         ######################################################################################
-        if os.path.isfile(ml_pkl):
+        if os.path.isfile(ml_pkl) and False:
             d = ut.load_pickle(ml_pkl)
             self.l_statePosterior = d['state_post']
             self.ll_mu            = d['ll_mu']
-            self.ll_std           = d['ll_std']
-            
+            self.ll_std           = d['ll_std']            
         else:        
             n_jobs = 4
             start_time = time.time() 
@@ -682,8 +681,6 @@ class learning_hmm_multi(learning_base):
     #
     def anomaly_check(self, X1, X2=None, ths_mult=None):
 
-        print "-----------------------------------------------"
-        
         if self.nEmissionDim == 1:
             X_test = X1
         else:
@@ -696,19 +693,9 @@ class learning_hmm_multi(learning_base):
         try:
             post = np.array(self.ml.posterior(final_ts_obj))            
         except:
-            print X1
-            print X2
+            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+            return 1.0, 0.0 # anomaly
             
-            import matplotlib.pyplot as pp
-            import matplotlib.pyplot as plt
-
-            pp.figure(1)
-            pp.plot(X1[0])
-            pp.figure(2)
-            pp.plot(X2[0])
-            pp.show()
-
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         
         # Find the best posterior distribution
         min_dist  = 100000000
@@ -719,7 +706,7 @@ class learning_hmm_multi(learning_base):
                 min_index = j
                 min_dist  = dist 
 
-        print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+        ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
         ## sys.exit()
         ## raw_input()
 
