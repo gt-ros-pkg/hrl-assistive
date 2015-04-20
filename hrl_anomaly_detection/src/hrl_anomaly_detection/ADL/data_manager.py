@@ -898,14 +898,14 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                 if an1 == 'inelastic_continue':                    
                     for i in xrange(width/2):
-                        x1_anomaly[loc+i] += (i+1)*peak/float(width/2)
+                        x1_anomaly[loc+i] += (i+1)*peak/(float(width)/2.0)
                     x1_anomaly[loc+width/2:] += peak
                 else:
                     for i in xrange(width):
                         if i < width/2:
-                            impulse[i] = (i+1)*peak/float(width/2)
+                            impulse[i] = (i+1)*peak/(float(width)/2.0)
                         else:
-                            impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+                            impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
 
                         x1_anomaly[loc+i] += impulse[i] 
 
@@ -923,11 +923,11 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                 if an1 == 'elastic_continue':                    
                     for i in xrange(width/2):
-                        x1_anomaly[loc+i] += peak * (1.0 - ( (i-float(width/2))/float(width/2) )**2)
+                        x1_anomaly[loc+i] += peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
                     x1_anomaly[loc+width/2:] += peak
                 else:                
                     for i in xrange(width):
-                        impulse[i] = peak * (1.0 - ( (i-float(width/2))/float(width/2) )**2)
+                        impulse[i] = peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
                         x1_anomaly[loc+i] += impulse[i] 
             else:
                 print "Not implemented type of force anomaly : ", an1
@@ -971,9 +971,9 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 
                 for i in xrange(width):
                     if i < width/2:
-                        impulse[i] = (i+1)*peak/float(width/2)
+                        impulse[i] = (i+1)*peak/(float(width)/2.)
                     else:
-                        impulse[i] = -(i-float(width/2))*peak/float(width/2) + peak
+                        impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
 
                     x2_anomaly[loc+i] += impulse[i] 
 
@@ -1001,7 +1001,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 an_idx = loc
 
                 for i in xrange(width):
-                    impulse[i] = peak * (1.0 - ( (i+1-float(width/2))/float(width/2) )**2)
+                    impulse[i] = peak * (1.0 - ( (i+1-(float(width)/2.0))/(float(width)/2.0) )**2)
                     x2_anomaly[loc+i] += impulse[i] 
                     
             else:
