@@ -971,6 +971,7 @@ if __name__ == '__main__':
         sys.exit()
 
     scale = 10.0       
+    freq  = 43.0 #Hz
     dtw_flag = False
     
     # Load data
@@ -1115,7 +1116,7 @@ if __name__ == '__main__':
                 false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
                 false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
 
-                plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx)
+                plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx, freq=freq)
 
         else:
             for idx in xrange(len(true_aXData1)):
@@ -1243,7 +1244,7 @@ if __name__ == '__main__':
 
         mu  = np.mean(state_diff,axis=0)
         sig = np.std(state_diff,axis=0)
-        x   = np.arange(0., float(len(mu))) * (1./43.)
+        x   = np.arange(0., float(len(mu))) * (1./freq)
 
         matplotlib.rcParams['pdf.fonttype'] = 42
         matplotlib.rcParams['ps.fonttype'] = 42
