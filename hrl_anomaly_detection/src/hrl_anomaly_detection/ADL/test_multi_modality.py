@@ -89,10 +89,13 @@ def fig_roc_offline_sim(cross_data_path, \
             Dataset.save(test_false_dataSet, os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
 
         else:
-
-            train_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
-            test_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
-            test_false_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
+            try:
+                train_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
+                test_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
+                test_false_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
+            except:
+                print cross_data_path
+                print "test_dataSet_"+str(i)
             
         splits.append([train_dataSet, test_dataSet, test_false_dataSet])
 
@@ -933,7 +936,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 1
+    task  = 2
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
