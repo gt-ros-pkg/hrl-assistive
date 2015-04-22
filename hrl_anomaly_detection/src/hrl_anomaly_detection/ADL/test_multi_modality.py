@@ -763,9 +763,9 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     pp.show()
 
 
-def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, labels=None):
+def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, labels=None, freq=43.0):
 
-    pp.figure()
+    fig = pp.figure()
     plt.rc('text', usetex=True)
     
     ax1 = pp.subplot(211)
@@ -773,8 +773,11 @@ def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, label
         data = data1[data_idx]
     else:
         data = false_data1[data_idx]        
-    pp.plot(data, 'b', linewidth=1.5, label='Force')
-    ax1.set_xlim([0, len(data)])
+
+    x   = np.arange(0., float(len(data))) * (1./freq)
+        
+    pp.plot(x, data, 'b', linewidth=1.5, label='Force')
+    #ax1.set_xlim([0, len(data)])
     ax1.set_ylim([0, np.amax(data)*1.1])
     pp.grid()
     ax1.set_ylabel("Magnitude [N]", fontsize=18)
@@ -786,15 +789,20 @@ def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, label
     else:
         data = false_data2[data_idx]
     
-    pp.plot(data, 'b', linewidth=1.5, label='Sound')
-    ax2.set_xlim([0, len(data)])
+    pp.plot(x, data, 'b', linewidth=1.5, label='Sound')
+    #ax2.set_xlim([0, len(data)])
     pp.grid()
     ax2.set_ylabel("RMS", fontsize=18)
-    ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+    ax2.set_xlabel("Time step [sec]", fontsize=18)
     
     ax1.legend(prop={'size':18})
     ax2.legend(prop={'size':18})
+    
+    fig.savefig('test.pdf')
+    fig.savefig('test.png')
     pp.show()
+
+    
 
     
 def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, distribution=False):
@@ -925,7 +933,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1120,7 +1128,7 @@ if __name__ == '__main__':
 
         else:
             for idx in xrange(len(true_aXData1)):
-                plot_one(true_aXData1, true_aXData2, data_idx=idx)            
+                plot_one(true_aXData1, true_aXData2, data_idx=idx, freq=freq)            
 
             
     #---------------------------------------------------------------------------
