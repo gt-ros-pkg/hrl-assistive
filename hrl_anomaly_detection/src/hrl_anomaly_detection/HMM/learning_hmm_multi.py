@@ -1202,7 +1202,7 @@ def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, 
     l_likelihood_mean2 = 0.0
     l_statePosterior = np.zeros(nState)
 
-    print "Progress: ", i, "/", 20
+    ## print "Progress: ", i, "/", 20
     
     for j in xrange(n):    
 
