@@ -916,8 +916,10 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
                  default=False, help='Plot by a figure of ROC human')
-    p.add_option('--roc_offline_simulated_robot', '--roffsim', action='store_true', dest='bRocOfflineSimRobot',
-                 default=False, help='Plot by a figure of ROC robot')    
+    p.add_option('--roc_offline_simulated_anomaly', '--roffsim', action='store_true', \
+                 dest='bRocOfflineSimAnomaly', default=False, help='Plot offline ROC by simulated anomaly')    
+    p.add_option('--roc_online_simulated_anomaly', '--ronsim', action='store_true', dest='bRocOnlineSimAnomaly',
+                 default=False, help='Plot online ROC by simulated anomaly')    
     p.add_option('--roc_online_robot', '--ron', action='store_true', dest='bRocOnlineRobot',
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
@@ -973,7 +975,7 @@ if __name__ == '__main__':
         f_thres     = [1.0, 1.5, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult    = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
-        nState_l    = [20, 20, 20] #glass 10?
+        nState_l    = [20, 10, 20] #glass 10?
     elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
@@ -1015,7 +1017,7 @@ if __name__ == '__main__':
     true_chunks  = d['true_chunks']
 
     # Load simulated anomaly
-    if opt.bSimAbnormal or opt.bRocOfflineSimRobot:
+    if opt.bSimAbnormal or opt.bRocOfflineSimAnomaly:
         pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
         if os.path.isfile(pkl_file) and opt.bRenew is False:
             dd = ut.load_pickle(pkl_file)
@@ -1056,7 +1058,7 @@ if __name__ == '__main__':
 
 
     #---------------------------------------------------------------------------           
-    elif opt.bRocOfflineSimRobot:
+    elif opt.bRocOfflineSimAnomaly:
         
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
