@@ -271,23 +271,18 @@ def fig_roc_online_sim(cross_data_path, \
     aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
     labels = [False]*len(false_aXData1)
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
-
+    false_dataSet.sa['anomaly_idx'] = false_anomaly_start
+    
     # K random training-test set
     K = len(true_aXData1)/4 # the number of test data
     M = 30
     splits = []
     for i in xrange(M):
-    ## for i in xrange(len(true_aXData1)):
+    ## for i in xrange(len(true_aXData1)): # should we try leave-one-out??
         print "(",K,",",K,") pairs in ", M, "iterations"
         
         if os.path.isfile(os.path.join(cross_data_path,"train_dataSet_"+str(i))) is False:
 
-            ## test_dataSet = true_dataSet[i]
-            ## train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
-            ## train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
-            ## train_dataSet = true_dataSet[train_ids]
-            ## test_false_dataSet = false_dataSet[K]
-            
             test_dataSet  = Dataset.random_samples(true_dataSet, K)
             train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
             train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
@@ -311,7 +306,7 @@ def fig_roc_online_sim(cross_data_path, \
 
             
     ## only dimension 2
-    i = 2
+    i = 2 # dim
     count = 0
     for ths in threshold_mult:
 
@@ -338,19 +333,21 @@ def fig_roc_online_sim(cross_data_path, \
         ## tn_ll = []
         ## fn_err_ll = []
         ## tn_err_ll = []
+        ## delay_ll = []
         ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
-        ##     fn_ll, tn_ll, fn_err_ll, tn_err_ll = anomaly_check_offline(j, l_wdata, l_vdata, nState, \
-        ##                                                            trans_type, ths, l_zdata, \
-        ##                                                            cov_mult=cov_mult, check_dim=i)
-        ##     print np.mean(fn_ll), np.mean(tn_ll)
+        ##         fn_ll, tn_ll, _, _, delay_ll = anomaly_check_online(j, l_wdata, l_vdata, nState, \
+        ##                                                             trans_type, ths, l_zdata, \
+        ##                                                             cov_mult=cov_mult, check_dim=i)
+        ## print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
         ## sys.exit()
+        ## ###########
 
         n_jobs = -1
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online)(j, l_wdata, l_vdata, nState, \
                                                                    trans_type, ths, l_zdata, \
                                                                    cov_mult=cov_mult, check_dim=i) \
                                     for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
-        fn_ll, tn_ll, fn_err_ll, tn_err_ll = zip(*r)
+        fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll = zip(*r)
 
         import operator
         fn_l = reduce(operator.add, fn_ll)
@@ -363,6 +360,7 @@ def fig_roc_online_sim(cross_data_path, \
         d['tp']  = 1.0 - np.mean(fn_l)
         d['tn']  = np.mean(tn_l)
         d['fp']  = 1.0 - np.mean(tn_l)
+        d['delay'] = np.mean(delay_ll)
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -783,28 +781,29 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
     
 
 def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None, 
-                          cov_mult=[1.0, 1.0, 1.0, 1.0], check_dim=2):
+                          cov_mult=[1.0, 1.0, 1.0, 1.0], check_dim=2, use_ml_pkl=False):
 
     # Cross validation
     if check_dim is not 2:
         x_train1 = l_wdata.samples[:,check_dim,:]
 
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1)
-        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4)
-        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4)
+        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
+        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
     else:
         x_train1 = l_wdata.samples[:,0,:]
         x_train2 = l_wdata.samples[:,1,:]
 
         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
-        lhm.fit(x_train1, x_train2, cov_mult=cov_mult)
+        lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)
        
     fn_l  = []
     tn_l  = []
     fn_err_l = []
     tn_err_l = []
+    delay_l = []
 
-    # True data
+    # 1) Use True data first to get false negative rate
     if check_dim == 2:
         x_test1 = l_vdata.samples[:,0]
         x_test2 = l_vdata.samples[:,1]
@@ -813,35 +812,48 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
 
     n,_ = np.shape(x_test1)
     for i in range(n):
-        m = x_test1[i:i+1]
+        m = len(x_test1[i])
 
-        for j in range(2,m):
+        # anomaly_check only returns anomaly cases only
+        for j in range(2,m):            
             if check_dim == 2:
-                fn, err = lhm.anomaly_check(x_test1[i:i+1,:j], x_test2[i:i+1,:j], ths_mult=ths)           
+                fn, err = lhm.anomaly_check(x_test1[i,:j], x_test2[i,:j], ths_mult=ths)           
             else:
-                fn, err = lhm.anomaly_check(x_test1[i:i+1,:j], ths_mult=ths)           
+                fn, err = lhm.anomaly_check(x_test1[i,:j], ths_mult=ths)           
 
+            # if anomaly is detected, break
+            if fn is 1.0: break
+           
         fn_l.append(fn)
         if err != 0.0: fn_err_l.append(err)
 
-    # False data
+    # 2) Use False data to get true negative rate
     if check_dim == 2:
         x_test1 = false_dataSet.samples[:,0]
         x_test2 = false_dataSet.samples[:,1]
     else:
         x_test1 = false_dataSet.samples[:,check_dim]
+    anomaly_idx = false_dataSet.sa['anomaly_idx']
         
     n = len(x_test1)
     for i in range(n):
-        if check_dim == 2:            
-            tn, err = lhm.anomaly_check(np.array([x_test1[i]]), np.array([x_test2[i]]), ths_mult=ths)           
-        else:
-            tn, err = lhm.anomaly_check(np.array([x_test1[i]]), ths_mult=ths)           
-            
+        m = len(x_test1[i])
+
+        # anomaly_check only returns anomaly cases only
+        for j in range(2,m):                    
+            if check_dim == 2:            
+                tn, err = lhm.anomaly_check(np.array([x_test1[i][:j]]), np.array([x_test2[i][:j]]), ths_mult=ths)   
+            else:
+                tn, err = lhm.anomaly_check(np.array([x_test1[i][:j]]), ths_mult=ths)           
+
+            # if anomaly is detected, break
+            if tn is 1.0: break
+                
         tn_l.append(tn)
         if err != 0.0: tn_err_l.append(err)
+        delay_l.append(j-anomaly_idx[i])
 
-    return fn_l, tn_l, fn_err_l, tn_err_l
+    return fn_l, tn_l, fn_err_l, tn_err_l, delay_l
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
@@ -1216,7 +1228,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 3
+    class_num = 0
     task  = 1
     if class_num == 0:
         class_name = 'door'

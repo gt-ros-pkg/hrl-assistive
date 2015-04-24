@@ -644,9 +644,27 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def convert_sequence(self, X1, X2, emission=False):
-        
-        n,m = np.array(X1).shape
+    def convert_sequence(self, data1, data2, emission=False):
+
+        # change into array from other types
+        if type(data1) is not np.ndarray:
+            X1 = copy.copy(np.array(data1))
+        else:
+            X1 = copy.copy(data1)
+        if type(data2) is not np.ndarray:
+            X2 = copy.copy(np.array(data2))
+        else:
+            X2 = copy.copy(data2)
+
+        # Change into 2dimensional array
+        dim = np.shape(X1)
+        if len(dim) == 1:
+            X1 = np.reshape(X1, (1,len(X1)))            
+        dim = np.shape(X2)
+        if len(dim) == 1:
+            X2 = np.reshape(X2, (1,len(X2)))            
+
+        n,m = np.shape(X1)
 
         X = []
         for i in xrange(n):
