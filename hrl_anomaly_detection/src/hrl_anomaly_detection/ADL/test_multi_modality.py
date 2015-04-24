@@ -248,7 +248,7 @@ def fig_roc_online_sim(cross_data_path, \
                        false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
                        prefix, nState=20, \
                        threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-                       cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False):
+                       cov_mult=[1.0, 1.0, 1.0, 1.0], freq=43.0, renew=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -335,10 +335,11 @@ def fig_roc_online_sim(cross_data_path, \
         ## tn_err_ll = []
         ## delay_ll = []
         ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
-        ##         fn_ll, tn_ll, _, _, delay_ll = anomaly_check_online(j, l_wdata, l_vdata, nState, \
-        ##                                                             trans_type, ths, l_zdata, \
-        ##                                                             cov_mult=cov_mult, check_dim=i)
-        ## print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
+        ##     fn_ll, tn_ll, _, _, delay_ll = anomaly_check_online(j, l_wdata, l_vdata, nState, \
+        ##                                                         trans_type, ths, l_zdata, \
+        ##                                                         cov_mult=cov_mult, check_dim=i)
+        ##     print delay_ll
+        ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
         ## sys.exit()
         ## ###########
 
@@ -354,13 +355,14 @@ def fig_roc_online_sim(cross_data_path, \
         tn_l = reduce(operator.add, tn_ll)
         fn_err_l = reduce(operator.add, fn_err_ll)
         tn_err_l = reduce(operator.add, tn_err_ll)
+        delay_l  = reduce(operator.add, delay_ll)
 
         d = {}
-        d['fn']  = np.mean(fn_l)
-        d['tp']  = 1.0 - np.mean(fn_l)
-        d['tn']  = np.mean(tn_l)
-        d['fp']  = 1.0 - np.mean(tn_l)
-        d['delay'] = np.mean(delay_ll)
+        d['fn']    = np.mean(fn_l)
+        d['tp']    = 1.0 - np.mean(fn_l)
+        d['tn']    = np.mean(tn_l)
+        d['fp']    = 1.0 - np.mean(tn_l)
+        d['delay'] = np.mean(delay_l)
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -391,9 +393,10 @@ def fig_roc_online_sim(cross_data_path, \
         fig = pp.figure()
         
         for i in xrange(3):
-            fp_l = []
-            tp_l = []
-            err_l = []
+            if i<2: continue
+                
+            fn_l = []
+            delay_l = []
             for ths in threshold_mult:
                 res_file   = prefix+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
                 res_file   = os.path.join(cross_test_path, res_file)
@@ -405,17 +408,16 @@ def fig_roc_online_sim(cross_data_path, \
                 tn  = d['tn'] 
                 fn_err = d['fn_err']         
                 tn_err = d['tn_err']         
+                delay = d['delay']
 
-                fp_l.append([fp])
-                tp_l.append([tp])
-                err_l.append([fn_err])
+                fn_l.append([fp])
+                delay_l.append([delay])
 
-            fp_l  = np.array(fp_l)*100.0
-            tp_l  = np.array(tp_l)*100.0
+            fn_l  = np.array(fn_l)*100.0
 
-            idx_list = sorted(range(len(fp_l)), key=lambda k: fp_l[k])
-            sorted_fp_l = [fp_l[j] for j in idx_list]
-            sorted_tp_l = [tp_l[j] for j in idx_list]
+            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
+            sorted_fn_l    = [fn_l[j] for j in idx_list]
+            sorted_delay_l = [delay_l[j] for j in idx_list]
             
             color = colors.next()
             shape = shapes.next()
@@ -423,7 +425,7 @@ def fig_roc_online_sim(cross_data_path, \
             if i==0: semantic_label='Force only'
             elif i==1: semantic_label='Sound only'
             else: semantic_label='Force and sound'
-            pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
 
 
@@ -437,10 +439,10 @@ def fig_roc_online_sim(cross_data_path, \
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
         
-        pp.xlabel('False positive rate (percentage)', fontsize=16)
-        pp.ylabel('True positive rate (percentage)', fontsize=16)    
+        pp.xlabel('False negative rate (percentage)', fontsize=16)
+        pp.ylabel('Detection delay (sec)', fontsize=16)    
         pp.xlim([-1, 100])
-        pp.ylim([-1, 101])
+        ## pp.ylim([-1, 101])
         pp.legend(loc=4,prop={'size':16})
         
         pp.show()
@@ -1373,7 +1375,7 @@ if __name__ == '__main__':
                            true_aXData1, true_aXData2, true_chunks, \
                            false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
                            task_names[task], nState, threshold_mult, \
-                           opr='robot', attr='id', bPlot=opt.bPlot, renew=False)
+                           opr='robot', attr='id', bPlot=opt.bPlot, freq=freq, renew=False)
 
             
     #---------------------------------------------------------------------------           
