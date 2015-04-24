@@ -68,7 +68,7 @@ class learning_hmm_multi(learning_base):
     #----------------------------------------------------------------------        
     #
     def fit(self, aXData1, aXData2=None, A=None, B=None, pi=None, cov_mult=[1.0, 1.0, 1.0, 1.0], \
-            B_dict=None, verbose=False, ml_pkl='ml_temp.pkl'):
+            B_dict=None, verbose=False, ml_pkl='ml_temp.pkl', use_pkl=False):
 
         X1 = np.array(aXData1)
         X2 = np.array(aXData2)
@@ -134,14 +134,14 @@ class learning_hmm_multi(learning_base):
         
         self.ll_mu  = np.zeros(self.nGaussian)
         self.ll_std = np.zeros(self.nGaussian)
-        self.l_statePosterior = np.zeros((self.nGaussian,self.nState)) # state x time division
+        self.l_statePosterior = np.zeros((self.nGaussian,self.nState)) # time x state division
 
 
         [A, B, pi] = self.ml.asMatrices()
 
 
         ######################################################################################
-        if os.path.isfile(ml_pkl) and False:
+        if os.path.isfile(ml_pkl) and use_pkl:
             d = ut.load_pickle(ml_pkl)
             self.l_statePosterior = d['state_post']
             self.ll_mu            = d['ll_mu']
@@ -912,18 +912,18 @@ class learning_hmm_multi(learning_base):
     def likelihood_disp(self, X1, X2, ths_mult, scale1=None, scale2=None):
 
         n,m = np.shape(X1)
-        print n,m
+        print "Input sequence X1: ", n,m
 
         if self.nEmissionDim == 1:
             X_test = X1
         else:        
             X_test = self.convert_sequence(X1, X2, emission=False)                
 
-        x      = np.arange(0., float(m))
-        path_l = np.zeros(m)
-        ll     = np.zeros(m)
-        ll_mu  = np.zeros(m)
-        ll_ths = np.zeros(m)
+        x        = np.arange(0., float(m))
+        ll_likelihood = np.zeros(m)
+        ll_state_idx  = np.zeros(m)
+        ll_likelihood_mu  = np.zeros(m)
+        ll_likelihood_std = np.zeros(m)
         for i in xrange(m):
             if i == 0: continue
         
@@ -931,7 +931,6 @@ class learning_hmm_multi(learning_base):
             logp         = self.ml.loglikelihood(final_ts_obj)
             post         = np.array(self.ml.posterior(final_ts_obj))
             
-
             # Find the best posterior distribution
             min_dist  = 100000000
             min_index = 0
@@ -940,11 +939,11 @@ class learning_hmm_multi(learning_base):
                 if min_dist > dist:
                     min_index = j
                     min_dist  = dist 
-
                 
-            ll[i]     = logp
-            ll_mu[i]  = self.ll_mu[min_index]
-            ll_ths[i] = self.ll_mu[min_index] - ths_mult*self.ll_std[min_index]
+            ll_likelihood[i] = logp
+            ll_state_idx[i]  = min_index
+            ll_likelihood_mu[i]  = self.ll_mu[min_index]
+            ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] - ths_mult*self.ll_std[min_index]
 
         # temp to see offline state path
         ## path_l = path
@@ -955,12 +954,12 @@ class learning_hmm_multi(learning_base):
         block_state= []
         text_n     = []
         text_x     = []
-        for i, p in enumerate(path_l):
+        for i, p in enumerate(ll_state_idx):
             if i is 0: 
                 block_flag.append(0)
                 block_state.append(0)
                 text_x.append(0.0)
-            elif path_l[i] != path_l[i-1]:
+            elif ll_state_idx[i] != ll_state_idx[i-1]:
                 if block_flag[-1] is 0: block_flag.append(1)
                 else: block_flag.append(0)
                 block_state.append( int(p) )
@@ -969,7 +968,7 @@ class learning_hmm_multi(learning_base):
             else:
                 block_flag.append(block_flag[-1])
             block_x.append(float(i))
-        text_x[-1] = (text_x[-1]+float(m-1))/2.0 - 0.5# 
+        text_x[-1] = (text_x[-1]+float(m-1))/2.0 - 0.5 # 
 
         block_flag_interp = []
         block_x_interp    = []
@@ -996,17 +995,28 @@ class learning_hmm_multi(learning_base):
         ax1.plot(x*(1./43.), y1)
         y_max = 35.0
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.), 
-                                                                 ymin=0, ymax=y_max, 
+                                                                 ymin=0, ymax=y_max+4.0, 
                                                                  where=np.array(block_flag_interp)>0, 
                                                                  facecolor='green', 
                                                                  edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
+        # Text for progress
         for i in xrange(len(block_state)):
-            ax1.text(text_x[i]*(1./43.), y_max-5.0, str(block_state[i]+1))
+            if i%2 is 0:
+                if i<10:
+                    ax1.text((text_x[i])*(1./43.), y_max-0.0, str(block_state[i]+1))
+                else:
+                    ax1.text((text_x[i]-1.0)*(1./43.), y_max-0.0, str(block_state[i]+1))
+            else:
+                if i<10:
+                    ax1.text((text_x[i])*(1./43.), y_max-4.0, str(block_state[i]+1))
+                else:
+                    ax1.text((text_x[i]-1.0)*(1./43.), y_max-4.0, str(block_state[i]+1))
+                        
         ax1.set_ylabel("Force [N]", fontsize=18)
         ax1.set_xlim([0, x[-1]*(1./43.)])
         ## ax1.set_ylim([0, np.amax(y1)*1.1])
-        ax1.set_ylim([0, y_max])
+        ax1.set_ylim([0, y_max+4.0])
         
         ax2 = plt.subplot(312)
         ax2.plot(x*(1./43.), y2)
@@ -1022,22 +1032,23 @@ class learning_hmm_multi(learning_base):
         ax2.set_ylim([0, y_max])
         
         ax3 = plt.subplot(313)        
-        ax3.plot(x*(1./43.), ll, 'b', label='Estimation')
-        ax3.plot(x*(1./43.), ll_mu, 'r', label='Expection')
-        ax3.plot(x*(1./43.), ll_ths, 'r--', label='Threshold')
-        ax3.set_ylabel(r'$P({\mathbf{X}}, {\mathbf{Z}}_{best} | {\mathbf{\theta}})$',fontsize=18)
+        ax3.plot(x*(1./43.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
+        ax3.plot(x*(1./43.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
+        ax3.plot(x*(1./43.), ll_likelihood_mu - ths_mult*ll_likelihood_std, 'r--', label='Threshold')
+        ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
+        ax3.set_ylabel('Log-likelihood',fontsize=18)
         ax3.set_xlim([0, x[-1]*(1./43.)])
         
         ## ax3.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
-        ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.3), \
+        lgd = ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.3), \
                    prop={'size':14})
         ax3.set_xlabel('Time [sec]', fontsize=18)
 
         plt.subplots_adjust(bottom=0.15)        
         plt.show()
         
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
+        fig.savefig('test.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        fig.savefig('test.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
         
         ## print "----------------------"
         ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
@@ -1190,6 +1201,8 @@ def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, 
     l_likelihood_mean  = 0.0
     l_likelihood_mean2 = 0.0
     l_statePosterior = np.zeros(nState)
+
+    print "Progress: ", i, "/", 20
     
     for j in xrange(n):    
 

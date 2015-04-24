@@ -180,7 +180,7 @@ def fig_roc_offline_sim(cross_data_path, \
         colors = itertools.cycle(['g', 'm', 'c', 'k'])
         shapes = itertools.cycle(['x','v', 'o', '+'])
         
-        pp.figure()
+        fig = pp.figure()
         
         for i in xrange(3):
             fp_l = []
@@ -231,12 +231,15 @@ def fig_roc_offline_sim(cross_data_path, \
         
         pp.xlabel('False positive rate (percentage)', fontsize=16)
         pp.ylabel('True positive rate (percentage)', fontsize=16)    
-        ## pp.xlim([0, 70])
-        pp.ylim([0, 101])
+        pp.xlim([-1, 100])
+        pp.ylim([-1, 101])
         pp.legend(loc=4,prop={'size':16})
         
         pp.show()
-                            
+
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        
     return
 
 
@@ -358,7 +361,7 @@ def fig_roc_offline(cross_data_path, \
         colors = itertools.cycle(['g', 'm', 'c', 'k'])
         shapes = itertools.cycle(['x','v', 'o', '+'])
         
-        pp.figure()
+        fig = pp.figure()
         
         for i in xrange(3):
             fp_l = []
@@ -929,14 +932,16 @@ if __name__ == '__main__':
                  default=False, help='Plot progress difference')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
                  default=False, help='Plot')
+    p.add_option('--use_ml_pkl', '--mp', action='store_true', dest='bUseMLObspickle',
+                 default=False, help='Use pre-trained object file')
     opt, args = p.parse_args()
 
 
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 0
-    task  = 2
+    class_num = 3
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1315,12 +1320,14 @@ if __name__ == '__main__':
 
         # If you want normal likelihood, class 0, data 1
         # testData 0
-        # false data 0 (comment in below)
+        # false data 0 (make it false)
         false_data_flag = True
-        test_dataSet    = false_dataSet
+        if false_data_flag:
+            test_dataSet    = false_dataSet
                                                                
         for K in range(len(test_dataSet)):
-
+            print "Test number : ", K
+            
             if false_data_flag:
                 x_test1 = np.array([test_dataSet.samples[K:K+1,0][0]])
                 x_test2 = np.array([test_dataSet.samples[K:K+1,1][0]])
@@ -1333,7 +1340,8 @@ if __name__ == '__main__':
             
             if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
             elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
-            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task], ml_pkl=str(K)+'_likelihood.pkl')
+            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task], ml_pkl=str(K)+'_likelihood.pkl', \
+                          use_pkl=opt.bUseMLObspickle)
 
 
             ## # TEST
@@ -1361,7 +1369,7 @@ if __name__ == '__main__':
 
             lhm.likelihood_disp(x_test1, x_test2, 2.0, scale1=[min_c1, max_c1, scale], \
                                 scale2=[min_c2, max_c2, scale])
-
+            print "-------------------------------------------------------------------"
 
 
             ## lhm.data_plot(X_test1, X_test2, color = 'r')
