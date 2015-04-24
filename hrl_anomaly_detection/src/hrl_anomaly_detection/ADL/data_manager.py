@@ -913,7 +913,11 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 print "elastic collision with continuous force"
 
                 peak  = max_c1 * random.uniform(0.2, 1.5)
-                width = random.randint(5,20)
+                if len(x1_anomaly) <= 25: 
+                    width = random.randint(5,10)
+                else:
+                    width = random.randint(5,20)
+                    
                 loc   = random.randint(1,length-1-width)
                 an_idx = loc
 
@@ -957,7 +961,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     if len(x1_anomaly) <= 20+width: block_size = 4
                     else: block_size = 10
                         
-                    loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)            
+                    loc   = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)            
                     if loc+width > length-1:
                         continue            
                     if loc+width < max_y2_idx - block_size or loc > max_y2_idx + block_size:                     
@@ -978,17 +982,25 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     x2_anomaly[loc+i] += impulse[i] 
 
             elif an2 == 'rnddull':
-                print "Random impulse sound"
+                print "Random dull sound"
 
                 peak  = max_c2 * random.uniform(0.2, 1.0)
                 
                 while True:
-                    width = random.randint(5,20)
 
-                    if len(x1_anomaly) <= 20+width: block_size = 4
-                    else: block_size = 10
-                        
-                    loc   = random.randint(1+width/2,len(x1_anomaly)-1-width/2)                        
+                    if len(x1_anomaly) <= 25: 
+                        width = random.randint(5,10)
+                        block_size = 4
+                    else: 
+                        width = random.randint(5,20)
+                        block_size = 10
+
+                    try:
+                        loc   = random.randint(1,len(x1_anomaly)-width-1)                        
+                    except:
+                        print len(x1_anomaly), width
+                        continue
+                    
                     if loc+width > length-1:
                         continue                                
                     if loc+width < max_y2_idx - block_size or loc > max_y2_idx + block_size:

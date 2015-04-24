@@ -973,7 +973,7 @@ if __name__ == '__main__':
         f_thres     = [1.0, 1.5, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult    = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
-        nState_l    = [20, 10, 20]
+        nState_l    = [20, 20, 20] #glass 10?
     elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
