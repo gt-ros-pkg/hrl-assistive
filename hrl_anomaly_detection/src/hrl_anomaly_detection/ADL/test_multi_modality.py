@@ -275,7 +275,7 @@ def fig_roc_online_sim(cross_data_path, \
     
     # K random training-test set
     K = len(true_aXData1)/4 # the number of test data
-    M = 1 #30
+    M = 3 #30
     splits = []
     for i in xrange(M):
     ## for i in xrange(len(true_aXData1)): # should we try leave-one-out??
@@ -301,9 +301,8 @@ def fig_roc_online_sim(cross_data_path, \
             except:
                 print cross_data_path
                 print "test_dataSet_"+str(i)
-            
-        splits.append([train_dataSet, test_dataSet, test_false_dataSet])
 
+        splits.append([train_dataSet, test_dataSet, test_false_dataSet])
             
     ## only dimension 2
     i = 2 # dim
@@ -349,7 +348,8 @@ def fig_roc_online_sim(cross_data_path, \
                                                                    cov_mult=cov_mult, check_dim=i) \
                                     for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
         fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll = zip(*r)
-
+        print delay_ll
+        
         import operator
         fn_l = reduce(operator.add, fn_ll)
         tn_l = reduce(operator.add, tn_ll)
@@ -836,7 +836,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
         x_test2 = false_dataSet.samples[:,1]
     else:
         x_test1 = false_dataSet.samples[:,check_dim]
-    anomaly_idx = false_dataSet.sa['anomaly_idx']
+    anomaly_idx = false_dataSet.sa.anomaly_idx
         
     n = len(x_test1)
     for i in range(n):
