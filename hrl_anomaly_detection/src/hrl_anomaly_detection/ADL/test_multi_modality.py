@@ -328,12 +328,12 @@ def fig_roc_online_sim(cross_data_path, \
         print "---------------------------------"
         print "Total splits: ", len(splits)
 
-        ## # temp
-        fn_ll = []
-        tn_ll = []
-        fn_err_ll = []
-        tn_err_ll = []
-        delay_ll = []
+        # temp
+        ## fn_ll = []
+        ## tn_ll = []
+        ## fn_err_ll = []
+        ## tn_err_ll = []
+        ## delay_ll = []
         ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
         ##     fn_ll, tn_ll, _, _, delay_ll = anomaly_check_online(j, l_wdata, l_vdata, nState, \
         ##                                                         trans_type, ths, l_zdata, \
@@ -341,7 +341,7 @@ def fig_roc_online_sim(cross_data_path, \
         ##     print delay_ll
         ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
         ## sys.exit()
-        ## ###########
+        ###########
 
         n_jobs = -1
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online)(j, l_wdata, l_vdata, nState, \
@@ -362,7 +362,7 @@ def fig_roc_online_sim(cross_data_path, \
         d['tp']    = 1.0 - np.mean(fn_l)
         d['tn']    = np.mean(tn_l)
         d['fp']    = 1.0 - np.mean(tn_l)
-        d['delay'] = delay_l
+        d['delay'] = np.mean(delay_l)
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -843,6 +843,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
+        count = 0
         for j in range(2,m):                    
             if check_dim == 2:            
                 tn, err = lhm.anomaly_check(np.array([x_test1[i][:j]]), np.array([x_test2[i][:j]]), ths_mult=ths)   
@@ -850,11 +851,13 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
                 tn, err = lhm.anomaly_check(np.array([x_test1[i][:j]]), ths_mult=ths)           
 
             # if anomaly is detected, break
-            if tn is 1.0: break
+            if tn is 1.0: 
+                count = j
+                break
                 
         tn_l.append(tn)
         if err != 0.0: tn_err_l.append(err)
-        delay_l.append(j-anomaly_idx[i])
+        delay_l.append(count-anomaly_idx[i])
 
     return fn_l, tn_l, fn_err_l, tn_err_l, delay_l
     
