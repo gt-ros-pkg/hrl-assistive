@@ -329,11 +329,11 @@ def fig_roc_online_sim(cross_data_path, \
         print "Total splits: ", len(splits)
 
         ## # temp
-        ## fn_ll = []
-        ## tn_ll = []
-        ## fn_err_ll = []
-        ## tn_err_ll = []
-        ## delay_ll = []
+        fn_ll = []
+        tn_ll = []
+        fn_err_ll = []
+        tn_err_ll = []
+        delay_ll = []
         ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
         ##     fn_ll, tn_ll, _, _, delay_ll = anomaly_check_online(j, l_wdata, l_vdata, nState, \
         ##                                                         trans_type, ths, l_zdata, \
@@ -400,7 +400,7 @@ def fig_roc_online_sim(cross_data_path, \
             for ths in threshold_mult:
                 res_file   = prefix+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
                 res_file   = os.path.join(cross_test_path, res_file)
-
+                
                 d = ut.load_pickle(res_file)
                 tp  = d['tp'] 
                 fn  = d['fn'] 
@@ -414,7 +414,7 @@ def fig_roc_online_sim(cross_data_path, \
                 delay_l.append([delay])
 
             fn_l  = np.array(fn_l)*100.0
-
+            
             idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
             sorted_fn_l    = [fn_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
