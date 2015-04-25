@@ -362,7 +362,7 @@ def fig_roc_online_sim(cross_data_path, \
         d['tp']    = 1.0 - np.mean(fn_l)
         d['tn']    = np.mean(tn_l)
         d['fp']    = 1.0 - np.mean(tn_l)
-        d['delay'] = np.mean(delay_l)
+        d['delay'] = delay_l
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -1369,7 +1369,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 20.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
+        threshold_mult  = np.logspace(0.1, 20.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    #temp
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
