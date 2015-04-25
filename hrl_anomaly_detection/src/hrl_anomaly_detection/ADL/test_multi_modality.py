@@ -275,7 +275,7 @@ def fig_roc_online_sim(cross_data_path, \
     
     # K random training-test set
     K = len(true_aXData1)/4 # the number of test data
-    M = 30
+    M = 1 #30
     splits = []
     for i in xrange(M):
     ## for i in xrange(len(true_aXData1)): # should we try leave-one-out??
@@ -445,10 +445,11 @@ def fig_roc_online_sim(cross_data_path, \
         ## pp.ylim([-1, 101])
         pp.legend(loc=4,prop={'size':16})
         
-        pp.show()
-
         fig.savefig('test.pdf')
         fig.savefig('test.png')
+        os.system('cp test.pdf ~/Dropbox/')
+        ## pp.show()
+
         
     return
 
@@ -1368,7 +1369,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
+        threshold_mult  = np.logspace(0.1, 20.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
