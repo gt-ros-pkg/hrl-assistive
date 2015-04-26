@@ -275,7 +275,7 @@ def fig_roc_online_sim(cross_data_path, \
     
     # K random training-test set
     K = len(true_aXData1)/4 # the number of test data
-    M = 3 #30
+    M = 30
     splits = []
     for i in xrange(M):
     ## for i in xrange(len(true_aXData1)): # should we try leave-one-out??
@@ -362,9 +362,7 @@ def fig_roc_online_sim(cross_data_path, \
         d['tp']    = 1.0 - np.mean(fn_l)
         d['tn']    = np.mean(tn_l)
         d['fp']    = 1.0 - np.mean(tn_l)
-        d['delay'] = np.mean(delay_l)
-        d['delay_l'] = delay_l
-        d['anomaly_l'] = anomaly_ll
+        d['delay'] = delay_l
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -411,12 +409,12 @@ def fig_roc_online_sim(cross_data_path, \
                 fn_err = d['fn_err']         
                 tn_err = d['tn_err']         
                 delay = d['delay']
-                delay_l = d['delay_l']
-                anomaly_ll = d['anomaly_l'] 
-                print anomaly_ll
+
+                # Exclude wrong detection cases
+                if delay == []: continue
 
                 fn_l.append([fp])
-                delay_l.append([delay])
+                delay_l+=delay
 
             fn_l  = np.array(fn_l)*100.0
             
@@ -1383,7 +1381,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 20.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    #temp
+        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5) 
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
