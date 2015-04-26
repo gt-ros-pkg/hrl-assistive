@@ -736,7 +736,7 @@ class learning_hmm_multi(learning_base):
         ##     return 1.0, 0.0 # anomaly
         err = logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
 
-        ## print path, logp, (self.ll_mu[path[-1]] - ths_mult*self.ll_std[path[-1]])
+        ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
         
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    

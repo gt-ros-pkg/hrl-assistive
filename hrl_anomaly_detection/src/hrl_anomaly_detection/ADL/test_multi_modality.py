@@ -333,14 +333,15 @@ def fig_roc_online_sim(cross_data_path, \
         ## fn_err_ll = []
         ## tn_err_ll = []
         ## delay_ll = []
+                
         ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
-        ##     fn_ll, tn_ll, _, _, delay_ll = anomaly_check_online(j, l_wdata, l_vdata, nState, \
+        ##     fn_ll, tn_ll, _, _, delay_ll,_ = anomaly_check_online(j, l_wdata, l_vdata, nState, \
         ##                                                         trans_type, ths, l_zdata, \
         ##                                                         cov_mult=cov_mult, check_dim=i)
         ##     print delay_ll
         ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
-        ## sys.exit()
-        ###########
+        ##     sys.exit()
+        
 
         n_jobs = -1
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online)(j, l_wdata, l_vdata, nState, \
@@ -410,6 +411,9 @@ def fig_roc_online_sim(cross_data_path, \
                 fn_err = d['fn_err']         
                 tn_err = d['tn_err']         
                 delay = d['delay']
+                delay_l = d['delay_l']
+                anomaly_ll = d['anomaly_l'] 
+                print anomaly_ll
 
                 fn_l.append([fp])
                 delay_l.append([delay])
@@ -846,19 +850,25 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
         # anomaly_check only returns anomaly cases only
         count = 0
         for j in range(2,m):                    
+    
             if check_dim == 2:            
-                tn, err = lhm.anomaly_check(np.array([x_test1[i][:j]]), np.array([x_test2[i][:j]]), ths_mult=ths)   
+                tn, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
             else:
-                tn, err = lhm.anomaly_check(np.array([x_test1[i][:j]]), ths_mult=ths)           
-
+                tn, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+                
             # if anomaly is detected, break
-            if tn is 1.0: 
+            if tn == 1.0: 
                 count = j
                 break
-                
+
         tn_l.append(tn)
         if err != 0.0: tn_err_l.append(err)
-        delay_l.append(count-anomaly_idx[i])
+
+        delay = count-anomaly_idx[i]
+        if delay < 0:
+            print "negative delay: ", count-anomaly_idx[i]
+        else:
+            delay_l.append(delay)
 
     return fn_l, tn_l, fn_err_l, tn_err_l, delay_l, anomaly_idx
     
