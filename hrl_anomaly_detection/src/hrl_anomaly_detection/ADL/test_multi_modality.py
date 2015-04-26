@@ -859,14 +859,16 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
                 count = j
                 break
 
-        tn_l.append(tn)
-        if err != 0.0: tn_err_l.append(err)
-
         delay = count-anomaly_idx[i]
         if delay < 0:
             print "negative delay: ", count-anomaly_idx[i]
+            fn = tn
+            fn_l.append(fn)
+            if err != 0.0: fn_err_l.append(er)
         else:
             delay_l.append(delay)
+            tn_l.append(tn)
+            if err != 0.0: tn_err_l.append(err)
 
     return fn_l, tn_l, fn_err_l, tn_err_l, delay_l, anomaly_idx
     
@@ -1381,7 +1383,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5) 
+        threshold_mult  = np.logspace(0.5, 2.0, 30, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
