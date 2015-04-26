@@ -347,8 +347,7 @@ def fig_roc_online_sim(cross_data_path, \
                                                                    trans_type, ths, l_zdata, \
                                                                    cov_mult=cov_mult, check_dim=i) \
                                     for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
-        fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll = zip(*r)
-        print delay_ll
+        fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll, anomaly_ll = zip(*r)
         
         import operator
         fn_l = reduce(operator.add, fn_ll)
@@ -363,6 +362,8 @@ def fig_roc_online_sim(cross_data_path, \
         d['tn']    = np.mean(tn_l)
         d['fp']    = 1.0 - np.mean(tn_l)
         d['delay'] = np.mean(delay_l)
+        d['delay_l'] = delay_l
+        d['anomaly_l'] = anomaly_ll
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -859,7 +860,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
         if err != 0.0: tn_err_l.append(err)
         delay_l.append(count-anomaly_idx[i])
 
-    return fn_l, tn_l, fn_err_l, tn_err_l, delay_l
+    return fn_l, tn_l, fn_err_l, tn_err_l, delay_l, anomaly_idx
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
