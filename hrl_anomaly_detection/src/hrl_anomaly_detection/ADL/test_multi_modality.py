@@ -864,7 +864,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
             print "negative delay: ", count-anomaly_idx[i]
             fn = tn
             fn_l.append(fn)
-            if err != 0.0: fn_err_l.append(er)
+            if err != 0.0: fn_err_l.append(err)
         else:
             delay_l.append(delay)
             tn_l.append(tn)
