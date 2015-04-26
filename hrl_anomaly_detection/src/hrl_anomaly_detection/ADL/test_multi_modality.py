@@ -417,7 +417,7 @@ def fig_roc_online_sim(cross_data_path, \
                 delay_l+=delay
 
             fn_l  = np.array(fn_l)*100.0
-            
+
             idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
             sorted_fn_l    = [fn_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
@@ -821,6 +821,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
+        fn = 0.0
         for j in range(2,m):            
             if check_dim == 2:
                 fn, err = lhm.anomaly_check(x_test1[i,:j], x_test2[i,:j], ths_mult=ths)           
@@ -828,7 +829,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dat
                 fn, err = lhm.anomaly_check(x_test1[i,:j], ths_mult=ths)           
 
             # if anomaly is detected, break
-            if fn is 1.0: break
+            if fn == 1.0: break
            
         fn_l.append(fn)
         if err != 0.0: fn_err_l.append(err)
