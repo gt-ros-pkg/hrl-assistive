@@ -697,7 +697,7 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def anomaly_check(self, X1, X2=None, ths_mult=None):
+    def anomaly_check(self, X1, X2=None, ths_mult=None, check_method='progress'):
 
         if self.nEmissionDim == 1:
             X_test = X1

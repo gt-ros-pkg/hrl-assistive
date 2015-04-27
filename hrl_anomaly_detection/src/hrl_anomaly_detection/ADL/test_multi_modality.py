@@ -341,11 +341,11 @@ def fig_roc_online_sim(cross_data_path, \
         ##     print delay_ll
         ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
         ##     sys.exit()
-        
+        check_method = ['global', 'progress']
 
         n_jobs = -1
         r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online)(j, l_wdata, l_vdata, nState, \
-                                                                   trans_type, ths, l_zdata, \
+                                                                   trans_type, ths, check_method, l_zdata, \
                                                                    cov_mult=cov_mult, check_dim=i) \
                                     for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
         fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll, anomaly_ll = zip(*r)
@@ -362,7 +362,7 @@ def fig_roc_online_sim(cross_data_path, \
         d['tp']    = 1.0 - np.mean(fn_l)
         d['tn']    = np.mean(tn_l)
         d['fp']    = 1.0 - np.mean(tn_l)
-        d['delay'] = delay_l
+        d['delay'] = np.mean(delay_l)
 
         if fn_err_l == []:         
             d['fn_err'] = 0.0
@@ -413,14 +413,16 @@ def fig_roc_online_sim(cross_data_path, \
                 # Exclude wrong detection cases
                 if delay == []: continue
 
-                fn_l.append([fp])
-                delay_l+=delay
+                fn_l.append(fn)
+                delay_l.append(delay)
 
             fn_l  = np.array(fn_l)*100.0
 
             idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
+            #idx_list = sorted(range(len(delay_l)), key=lambda k: fn_l[k])
             sorted_fn_l    = [fn_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
+            sorted_ths_l   = [threshold_mult[j] for j in idx_list]
             
             color = colors.next()
             shape = shapes.next()
@@ -429,6 +431,8 @@ def fig_roc_online_sim(cross_data_path, \
             elif i==1: semantic_label='Sound only'
             else: semantic_label='Force and sound'
             pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+            ## pp.plot(sorted_ths_l, sorted_fn_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+            ## pp.plot(sorted_delay_l, sorted_fn_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
 
 
@@ -786,7 +790,7 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
     return fn_l, tn_l, fn_err_l, tn_err_l
     
 
-def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, false_dataSet=None, 
+def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_method, false_dataSet=None, 
                           cov_mult=[1.0, 1.0, 1.0, 1.0], check_dim=2, use_ml_pkl=False):
 
     # Cross validation
