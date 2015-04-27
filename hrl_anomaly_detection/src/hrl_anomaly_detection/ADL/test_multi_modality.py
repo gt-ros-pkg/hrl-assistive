@@ -249,7 +249,7 @@ def fig_roc_online_sim(cross_data_path, \
                        prefix, nState=20, \
                        threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
                        cov_mult=[1.0, 1.0, 1.0, 1.0], freq=43.0, renew=False):
-
+                       
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
     trans_type = "left_right"
@@ -303,88 +303,93 @@ def fig_roc_online_sim(cross_data_path, \
                 print "test_dataSet_"+str(i)
 
         splits.append([train_dataSet, test_dataSet, test_false_dataSet])
-            
-    ## only dimension 2
-    i = 2 # dim
+
+
+    # anomaly check method list
+    check_method = ['global', 'progress']
     count = 0
-    for ths in threshold_mult:
-
-        # save file name
-        res_file = prefix+'_roc_'+opr+'_dim_'+str(i)+'_ths_'+str(ths)+'.pkl'
-        res_file = os.path.join(cross_test_path, res_file)
-
-        mutex_file_part = 'running_dim_'+str(i)+'_ths_'+str(ths)
-        mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
-        mutex_file      = os.path.join(cross_test_path, mutex_file_full)
-
-        if os.path.isfile(res_file): 
-            count += 1            
-            continue
-        elif hcu.is_file(cross_test_path, mutex_file_part): continue
-        elif os.path.isfile(mutex_file): continue
-        os.system('touch '+mutex_file)
-
-        print "---------------------------------"
-        print "Total splits: ", len(splits)
-
-        # temp
-        ## fn_ll = []
-        ## tn_ll = []
-        ## fn_err_ll = []
-        ## tn_err_ll = []
-        ## delay_ll = []
-                
-        ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
-        ##     fn_ll, tn_ll, _, _, delay_ll,_ = anomaly_check_online(j, l_wdata, l_vdata, nState, \
-        ##                                                         trans_type, ths, l_zdata, \
-        ##                                                         cov_mult=cov_mult, check_dim=i)
-        ##     print delay_ll
-        ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
-        ##     sys.exit()
-        check_method = ['global', 'progress']
-
-        n_jobs = -1
-        r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online)(j, l_wdata, l_vdata, nState, \
-                                                                   trans_type, ths, check_method, l_zdata, \
-                                                                   cov_mult=cov_mult, check_dim=i) \
-                                    for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
-        fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll, anomaly_ll = zip(*r)
         
-        import operator
-        fn_l = reduce(operator.add, fn_ll)
-        tn_l = reduce(operator.add, tn_ll)
-        fn_err_l = reduce(operator.add, fn_err_ll)
-        tn_err_l = reduce(operator.add, tn_err_ll)
-        delay_l  = reduce(operator.add, delay_ll)
+    for method in check_method:
+        ## only dimension 2
+        i = 2 # dim
+        for ths in threshold_mult:
 
-        d = {}
-        d['fn']    = np.mean(fn_l)
-        d['tp']    = 1.0 - np.mean(fn_l)
-        d['tn']    = np.mean(tn_l)
-        d['fp']    = 1.0 - np.mean(tn_l)
-        d['delay'] = np.mean(delay_l)
+            # save file name
+            res_file = prefix+'_'+method+'_roc_'+opr+'_dim_'+str(i)+'_ths_'+str(ths)+'.pkl'
+            res_file = os.path.join(cross_test_path, res_file)
 
-        if fn_err_l == []:         
-            d['fn_err'] = 0.0
-        else:
-            d['fn_err'] = np.mean(fn_err_l)
+            mutex_file_part = 'running_dim_'+str(i)+'_ths_'+str(ths)+'_'+method
+            mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+            mutex_file      = os.path.join(cross_test_path, mutex_file_full)
 
-        if tn_err_l == []:         
-            d['tn_err'] = 0.0
-        else:
-            d['tn_err'] = np.mean(tn_err_l)
+            if os.path.isfile(res_file): 
+                count += 1            
+                continue
+            elif hcu.is_file(cross_test_path, mutex_file_part): continue
+            elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
 
-        ut.save_pickle(d,res_file)        
-        os.system('rm '+mutex_file)
-        print "-----------------------------------------------"
+            print "---------------------------------"
+            print "Total splits: ", len(splits)
 
-    if count == len(threshold_mult):
+            # temp
+            ## fn_ll = []
+            ## tn_ll = []
+            ## fn_err_ll = []
+            ## tn_err_ll = []
+            ## delay_ll = []
+
+            ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
+            ##     fn_ll, tn_ll, _, _, delay_ll,_ = anomaly_check_online(j, l_wdata, l_vdata, nState, \
+            ##                                                         trans_type, ths, l_zdata, \
+            ##                                                         cov_mult=cov_mult, check_dim=i)
+            ##     print delay_ll
+            ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
+            ##     sys.exit()
+
+            n_jobs = -1
+            r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online) \
+                                        (j, l_wdata, l_vdata, nState, \
+                                         trans_type, ths, method, l_zdata, \
+                                         cov_mult=cov_mult, check_dim=i) \
+                                         for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
+            fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll, anomaly_ll = zip(*r)
+
+            import operator
+            fn_l = reduce(operator.add, fn_ll)
+            tn_l = reduce(operator.add, tn_ll)
+            fn_err_l = reduce(operator.add, fn_err_ll)
+            tn_err_l = reduce(operator.add, tn_err_ll)
+            delay_l  = reduce(operator.add, delay_ll)
+
+            d = {}
+            d['fn']    = np.mean(fn_l)
+            d['tp']    = 1.0 - np.mean(fn_l)
+            d['tn']    = np.mean(tn_l)
+            d['fp']    = 1.0 - np.mean(tn_l)
+            d['delay'] = np.mean(delay_l)
+
+            if fn_err_l == []:         
+                d['fn_err'] = 0.0
+            else:
+                d['fn_err'] = np.mean(fn_err_l)
+
+            if tn_err_l == []:         
+                d['tn_err'] = 0.0
+            else:
+                d['tn_err'] = np.mean(tn_err_l)
+
+            ut.save_pickle(d,res_file)        
+            os.system('rm '+mutex_file)
+            print "-----------------------------------------------"
+
+    if count == len(threshold_mult)*len(check_method):
         print "#############################################################################"
         print "All file exist ", count
         print "#############################################################################"        
 
         
-    if count == len(threshold_mult) and bPlot:
+    if count == len(threshold_mult)*len(check_method) and bPlot:
 
         import itertools
         colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -392,13 +397,14 @@ def fig_roc_online_sim(cross_data_path, \
         
         fig = pp.figure()
         
-        for i in xrange(3):
-            if i<2: continue
-                
+        for method in check_method:
+            ## only dimension 2
+            i = 2 # dim
+            
             fn_l = []
             delay_l = []
             for ths in threshold_mult:
-                res_file   = prefix+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
+                res_file   = prefix+'_'+method+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
                 res_file   = os.path.join(cross_test_path, res_file)
                 
                 d = ut.load_pickle(res_file)
@@ -430,9 +436,7 @@ def fig_roc_online_sim(cross_data_path, \
             if i==0: semantic_label='Force only'
             elif i==1: semantic_label='Sound only'
             else: semantic_label='Force and sound'
-            pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
-            ## pp.plot(sorted_ths_l, sorted_fn_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
-            ## pp.plot(sorted_delay_l, sorted_fn_l, '-'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 

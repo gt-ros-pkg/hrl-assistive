@@ -40,7 +40,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class learning_hmm_multi(learning_base):
     def __init__(self, nState, nFutureStep=5, nCurrentStep=10, \
-                 trans_type="left_right", nEmissionDim=2):
+                 trans_type="left_right", nEmissionDim=2, check_method='progress'):
 
         learning_base.__init__(self, trans_type)
 
@@ -54,6 +54,7 @@ class learning_hmm_multi(learning_base):
         self.trans_type = trans_type #"left_right" #"full"
         self.A = None # transition matrix        
         self.B = None # emission matrix        
+        self.check_method = check_method # ['global', 'progress']
                 
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -124,84 +125,52 @@ class learning_hmm_multi(learning_base):
         self.A = np.array(self.A)
         self.B = np.array(self.B)
 
-        # Get average loglikelihood threshold
-        n,m = np.shape(X1)
-
-        self.std_coff  = 1.0
-        self.nGaussian = self.nState
-        g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
-        g_sig     = float(m) / float(self.nGaussian) * self.std_coff
-        
-        self.ll_mu  = np.zeros(self.nGaussian)
-        self.ll_std = np.zeros(self.nGaussian)
-        self.l_statePosterior = np.zeros((self.nGaussian,self.nState)) # time x state division
-
-
+        #--------------- learning for anomaly detection ----------------------------
         [A, B, pi] = self.ml.asMatrices()
-
-
-        ######################################################################################
-        if os.path.isfile(ml_pkl) and use_pkl:
-            d = ut.load_pickle(ml_pkl)
-            self.l_statePosterior = d['state_post']
-            self.ll_mu            = d['ll_mu']
-            self.ll_std           = d['ll_std']            
-        else:        
-            n_jobs = -1
-            start_time = time.time() 
-            r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods)(i, n, m, A, B, pi, \
-                                                                   self.F, X_train, \
-                                                                   self.nEmissionDim, g_mu_list[i], g_sig, \
-                                                                   self.nState) \
-                                                                   for i in xrange(self.nGaussian))
-            print "Time elapsed: ", time.time() - start_time, "s" 
-            l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
-
-            d = {}
-            d['state_post'] = self.l_statePosterior
-            d['ll_mu'] = self.ll_mu
-            d['ll_std'] = self.ll_std
-            ut.save_pickle(d, ml_pkl)
-
-        ######################################################################################
-        ## ll_list = []
-        ## for i in xrange(self.nState):
-        ##     ll_list.append([])
-        ## self.ll_mu  = np.zeros(self.nState)
-        ## self.ll_std = np.zeros(self.nState)
-
-        ## for i in xrange(n):                                                          
-        ##     for j in xrange(m):
-        ##         if j==0: continue
-
-        ##         final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i][:j*self.nEmissionDim])
-        ##         ## final_ts_obj = ghmm.EmissionSequence(self.F, X_train[i,:j*self.nEmissionDim].tolist())
-        ##         path,temp  = self.ml.viterbi(final_ts_obj)
-        ##         logp       = self.ml.loglikelihood(final_ts_obj)
-        ##         post       = self.ml.posterior(final_ts_obj)
-        ##         ## print j, " - ", logp, math.exp(logp), temp, math.exp(temp)
-
-        ##         if len(path) == 0: continue
-        ##         ll_list[path[-1]].append(logp)
-        ## print "Executed viterbi algorithm: ", np.shape(X1)
-                
-        ## for i, ll in enumerate(ll_list):
-        ##     if len(ll) > 0: 
-        ##         self.ll_mu[i]  = np.array(ll).mean()
-        ##         self.ll_std[i] = np.sqrt(np.array(ll).var())
-        ##     else:
-        ##         self.ll_mu[i]  = self.ll_mu[i-1]
-        ##         self.ll_std[i] = self.ll_std[i-1]
-
-        ##############################################################################################3
-        ## print "---------------------"                
-        ## print "Avg log likelihoods"
-        ## print "---------------------"
-        ## print self.ll_std
-        ## print self.ll_mu
-        ## print "---------------------"
+        n,m = np.shape(X1)
         
+        if self.check_method == 'global':
+            # Get average loglikelihood threshold over whole time
+            n_jobs = -1
+            r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods_global)(i, n, m, A, B, pi, \
+                                                                   self.F, X_train, \
+                                                                   self.nEmissionDim) \
+                                                                   for i in xrange(self.nGaussian))
+            l_i, l_mu, l_std = zip(*r)
+
             
+        elif self.check_method == 'progress':
+            # Get average loglikelihood threshold wrt progress
+            self.std_coff  = 1.0
+            self.nGaussian = self.nState
+            g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
+            g_sig     = float(m) / float(self.nGaussian) * self.std_coff
+
+            ######################################################################################
+            if os.path.isfile(ml_pkl) and use_pkl:
+                d = ut.load_pickle(ml_pkl)
+                self.l_statePosterior = d['state_post'] # time x state division
+                self.ll_mu            = d['ll_mu']
+                self.ll_std           = d['ll_std']            
+            else:        
+                n_jobs = -1
+                r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, \
+                                                                       self.F, X_train, \
+                                                                       self.nEmissionDim, g_mu_list[i], g_sig, \
+                                                                       self.nState) \
+                                                                       for i in xrange(self.nGaussian))
+                l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+
+                d = {}
+                d['state_post'] = self.l_statePosterior
+                d['ll_mu'] = self.ll_mu
+                d['ll_std'] = self.ll_std
+                ut.save_pickle(d, ml_pkl)
+        else:
+            print "Not available anomaly ckeck method"
+            sys.exit()
+
+            ##########################################################################
             ## path          = self.ml.viterbi(final_ts_obj)
             ## (alpha,scale) = self.ml.forward(final_ts_obj)
             ## alpha         = np.array(alpha)
@@ -220,11 +189,6 @@ class learning_hmm_multi(learning_base):
             ## a = np.log(np.sum(alpha[:temp/2],axis=1)*scale[:temp/2])
             ## print np.sum(a)
 
-
-        # state range
-        ## self.state_range = np.arange(0, self.nState, 1)
-        ## self.x1_range = np.linspace(np.min(aXData1), np.max(aXData1), 100)
-        ## self.x2_range = np.linspace(np.min(X2), np.max(aXData2), 100)
         return
 
 
@@ -697,7 +661,7 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def anomaly_check(self, X1, X2=None, ths_mult=None, check_method='progress'):
+    def anomaly_check(self, X1, X2=None, ths_mult=None):
 
         if self.nEmissionDim == 1:
             X_test = X1
@@ -705,39 +669,37 @@ class learning_hmm_multi(learning_base):
             X_test = self.convert_sequence(X1, X2, emission=False)                
         n = len(np.squeeze(X1))
 
-
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
         logp         = self.ml.loglikelihood(final_ts_obj)
-        try:
-            post = np.array(self.ml.posterior(final_ts_obj))            
-        except:
-            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            return 1.0, 0.0 # anomaly
+
+        if self.check_method == 'global':
+            err = logp - (self.l_mu - ths_mult*self.l_std)
             
-        
-        # Find the best posterior distribution
-        min_dist  = 100000000
-        min_index = 0
-        for j in xrange(self.nGaussian):
-            dist = entropy(post[n-1], self.l_statePosterior[j])
-            if min_dist > dist:
-                min_index = j
-                min_dist  = dist 
+        elif self.check_method == 'progress':
+            try:
+                post = np.array(self.ml.posterior(final_ts_obj))            
+            except:
+                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                return 1.0, 0.0 # anomaly
 
-        ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
-        ## sys.exit()
-        ## raw_input()
 
-        ## if len(path) == 0: 
-        ##     print "zero path: ", logp - (self.ll_mu[0] + ths_mult*self.ll_std[0])
-        ##     ## print X_test[0]
-        ##     ## print "----------------------------------------------------------------------------------"
-        ##     ## sys.exit() 
-        ##     return 1.0, 0.0 # anomaly
-        err = logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+            # Find the best posterior distribution
+            min_dist  = 100000000
+            min_index = 0
+            for j in xrange(self.nGaussian):
+                dist = entropy(post[n-1], self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist 
 
-        ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
-        
+            ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+            ## raw_input()
+
+            err = logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+            ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+        else:
+            print "Not available anomaly check method"
+
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
 
@@ -1208,8 +1170,34 @@ class learning_hmm_multi(learning_base):
 
         return off_progress, on_progress
 
+####################################################################
+# functions for paralell computation
+####################################################################
+def learn_likelihoods_global(i, n, m, A, B, pi, F, X_train, nEmissionDim):
 
-def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
+    if nEmissionDim ==2:
+        ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    else:
+        ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+        
+
+    l_likelihood_mean  = 0.0
+    l_likelihood_mean2 = 0.0
+
+    for j in xrange(n):    
+        for k in xrange(1,m):
+            final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
+            logp         = ml.loglikelihoods(final_ts_obj)[0]
+
+            l_likelihood_mean  += logp
+            l_likelihood_mean2 += logp**2
+    l_likelihood_mean  /= (float(n)*float(m-1))
+    l_likelihood_mean2 /= (float(n)*float(m-1))
+
+    return i, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+        
+
+def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
 
     if nEmissionDim ==2:
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
@@ -1220,8 +1208,6 @@ def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, 
     l_likelihood_mean2 = 0.0
     l_statePosterior = np.zeros(nState)
 
-    ## print "Progress: ", i, "/", 20
-    
     for j in xrange(n):    
 
         g_post   = np.zeros(nState)
@@ -1238,12 +1224,12 @@ def learn_likelihoods(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, 
             g_post      += post[k-1] * k_prop
             g_lhood     += logp * k_prop                    
             g_lhood2    += logp * logp * k_prop                    
-                    
+
             prop_sum  += k_prop
 
         l_statePosterior  += g_post / prop_sum / float(n)
         l_likelihood_mean += g_lhood / prop_sum / float(n)
         l_likelihood_mean2+= g_lhood2 / prop_sum / float(n)
-            
+
     return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
     
