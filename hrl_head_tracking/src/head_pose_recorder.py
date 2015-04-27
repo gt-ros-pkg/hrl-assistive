@@ -43,25 +43,25 @@ class HeadPoseRecorder(object):
 
         # depth_img_path = '/head_mount_kinect/depth/points'
         # self.depth_img_sub = rospy.Subscriber(depth_img_path, PointCloud2, self.depth_img_cb)
-        depth_img_path = '/head_mount_kinect/depth_registered/image_rect'
-        self.depth_img_sub = rospy.Subscriber(depth_img_path, Image, self.depth_img_cb)
+        # depth_img_path = '/head_mount_kinect/depth_registered/image_rect'
+        # self.depth_img_sub = rospy.Subscriber(depth_img_path, Image, self.depth_img_cb)
         # depth_img_path = '/head_mount_kinect/depth_registered/image_raw'
         # self.depth_img_sub = rospy.Subscriber(depth_img_path, Image, self.depth_img_cb)
         # depth_img_path = '/head_mount_kinect/depth/image/compressed'
         # self.depth_img_sub = rospy.Subscriber(depth_img_path, CompressedImage, self.depth_img_cb)
         # rgb_img_path = '/head_mount_kinect/rgb/image_color/compressed'
         # self.rgb_img_sub = rospy.Subscriber(rgb_img_path, CompressedImage, self.rgb_img_cb)
-        rgb_imgpath = '/head_mount_kinect/rgb/image_rect_color'
+        rgb_imgpath = '/head_mount_kinect/rgb_rect/image'
         self.rgb_img_sub = rospy.Subscriber(rgb_imgpath, Image, self.rgb_img_cb)
-        rgb_infopath = '/head_mount_kinect/rgb/camera_info'
+        rgb_infopath = '/head_mount_kinect/rgb_rect/camera_info'
         self.camera_rgb_info_sub = rospy.Subscriber(rgb_infopath, CameraInfo, self.camera_rgb_info_cb)
-        depth_infopath = '/head_mount_kinect/depth/camera_info'
-        self.camera_depth_info_sub = rospy.Subscriber(depth_infopath, CameraInfo, self.camera_depth_info_cb)
+        # depth_infopath = '/head_mount_kinect/depth/camera_info'
+        # self.camera_depth_info_sub = rospy.Subscriber(depth_infopath, CameraInfo, self.camera_depth_info_cb)
         rospy.sleep(3)
-        if self.camera_depth_info is not None:
-            save_pickle(self.camera_depth_info, ''.join([self.pkg_path, '/data/', 'camera_depth_info.pkl']))
-        else:
-            print 'Depth camera info was not ready yet. Should probably try to get it later'
+        # if self.camera_depth_info is not None:
+        #     save_pickle(self.camera_depth_info, ''.join([self.pkg_path, '/data/', 'camera_depth_info.pkl']))
+        # else:
+        #     print 'Depth camera info was not ready yet. Should probably try to get it later'
         if self.camera_rgb_info is not None:
             save_pickle(self.camera_rgb_info, ''.join([self.pkg_path, '/data/', 'camera_rgb_info.pkl']))
         else:
@@ -106,7 +106,7 @@ class HeadPoseRecorder(object):
             if self.video:
                 print 'Starting to collect video!'
                 start_time = time.time()
-                while self.count < 100:
+                while self.count < 9000:
                     # print time.time()-start_time
                     if time.time()-start_time >= .5:
                         self.file_number += 1
@@ -119,33 +119,45 @@ class HeadPoseRecorder(object):
 
     def vid_save(self):
         with self.lock:
-            try:
-                path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
-                                str(self.file_number), '_depth', '.png'])
-                # The depth image is a single-channel float32 image
-                # the values is the distance in mm in z axis
-                depth_image = self.bridge.imgmsg_to_cv(self.depth_img, '32FC1')
-                # Convert the depth image to a Numpy array since most cv2 functions
-                # require Numpy arrays.
-                depth_array = np.array(depth_image, dtype=np.float32)
-                # print depth_array[60:65,105:110]
-                # Normalize the depth image to fall between 0 (black) and 1 (white)
-                #cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
-                # At this point you can display the result properly:
-                # cv2.imshow('Depth Image', depth_display_image)
-                # If you write it as it si, the result will be a image with only 0 to 1 values.
-                # To actually store in a this a image like the one we are showing its needed
-                # to reescale the otuput to 255 gray scale.
-                cv2.imwrite(path, np.uint16(depth_array*1000))
-                # thing = np.uint16(depth_array*1000)
-                # print thing[60:65,105:110]
-                # cv2.imwrite(path, frame)
-            except CvBridgeError, e:
-                print e
+            # try:
+            #     path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
+            #                     str(self.file_number), '_depth', '.png'])
+            #     # The depth image is a single-channel float32 image
+            #     # the values is the distance in mm in z axis
+            #     depth_image = self.bridge.imgmsg_to_cv(self.depth_img, '32FC1')
+            #     # Convert the depth image to a Numpy array since most cv2 functions
+            #     # require Numpy arrays.
+            #     depth_array = np.array(depth_image, dtype=np.float32)
+            #     # print depth_array[60:65,105:110]
+            #     # Normalize the depth image to fall between 0 (black) and 1 (white)
+            #     #cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+            #     # At this point you can display the result properly:
+            #     # cv2.imshow('Depth Image', depth_display_image)
+            #     # If you write it as it si, the result will be a image with only 0 to 1 values.
+            #     # To actually store in a this a image like the one we are showing its needed
+            #     # to reescale the otuput to 255 gray scale.
+            #     cv2.imwrite(path, np.uint16(depth_array*1000))
+            #     # thing = np.uint16(depth_array*1000)
+            #     # print thing[60:65,105:110]
+            #     # cv2.imwrite(path, frame)
+            # except CvBridgeError, e:
+            #     print e
 
             try:
-                path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
-                                str(self.file_number), '_rgb', '.png'])
+                if self.subject_number < 10:
+                    path = ''.join([self.pkg_path, '/data/', 'subj_000', str(self.subject_number), '_img_',
+                                    str(self.file_number), '_rgb', '.png'])
+                elif self.subject_number < 100:
+                    path = ''.join([self.pkg_path, '/data/', 'subj_00', str(self.subject_number), '_img_',
+                                    str(self.file_number), '_rgb', '.png'])
+                elif self.subject_number < 1000:
+                    path = ''.join([self.pkg_path, '/data/', 'subj_0', str(self.subject_number), '_img_',
+                                    str(self.file_number), '_rgb', '.png'])
+                elif self.subject_number < 10000:
+                    path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
+                                    str(self.file_number), '_rgb', '.png'])
+                else:
+                    print 'TOO MANY DATA POINTS, THE FORMATTING FOR RESULTS WON\'T WORK!!'
                 # The depth image is a single-channel float32 image
                 # the values is the distance in mm in z axis
                 rgb_image = self.bridge.imgmsg_to_cv(self.rgb_img, 'bgr8')
@@ -171,29 +183,29 @@ class HeadPoseRecorder(object):
         #                                str(self.file_number), '.jpeg']), 'w')
         # print self.depth_img
         with self.lock:
-            save_pickle(self.depth_img, ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number),
-                                                 '_img_', str(self.file_number), '_depth', '.pkl']))
-            try:
-                path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
-                                str(self.file_number), '_depth', '.png'])
-                # The depth image is a single-channel float32 image
-                # the values is the distance in mm in z axis
-                depth_image = self.bridge.imgmsg_to_cv(self.depth_img, '32FC1')
-                # Convert the depth image to a Numpy array since most cv2 functions
-                # require Numpy arrays.
-                depth_array = np.array(depth_image, dtype=np.float32)
-                # Normalize the depth image to fall between 0 (black) and 1 (white)
-                #cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
-                # At this point you can display the result properly:
-                # cv2.imshow('Depth Image', depth_display_image)
-                # If you write it as it si, the result will be a image with only 0 to 1 values.
-                # To actually store in a this a image like the one we are showing its needed
-                # to reescale the output to 255 gray scale.
-                cv2.imwrite(path, np.uint16(depth_array*1000))
-
-                # cv2.imwrite(path, frame)
-            except CvBridgeError, e:
-                print e
+            # save_pickle(self.depth_img, ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number),
+            #                                      '_img_', str(self.file_number), '_depth', '.pkl']))
+            # try:
+            #     path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
+            #                     str(self.file_number), '_depth', '.png'])
+            #     # The depth image is a single-channel float32 image
+            #     # the values is the distance in mm in z axis
+            #     depth_image = self.bridge.imgmsg_to_cv(self.depth_img, '32FC1')
+            #     # Convert the depth image to a Numpy array since most cv2 functions
+            #     # require Numpy arrays.
+            #     depth_array = np.array(depth_image, dtype=np.float32)
+            #     # Normalize the depth image to fall between 0 (black) and 1 (white)
+            #     #cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+            #     # At this point you can display the result properly:
+            #     # cv2.imshow('Depth Image', depth_display_image)
+            #     # If you write it as it si, the result will be a image with only 0 to 1 values.
+            #     # To actually store in a this a image like the one we are showing its needed
+            #     # to reescale the output to 255 gray scale.
+            #     cv2.imwrite(path, np.uint16(depth_array*1000))
+            #
+            #     # cv2.imwrite(path, frame)
+            # except CvBridgeError, e:
+            #     print e
 
             try:
                 path = ''.join([self.pkg_path, '/data/', 'subj_', str(self.subject_number), '_img_',
@@ -285,7 +297,7 @@ if __name__ == "__main__":
     rospy.init_node('head_pose_recorder')
 
     file_number = 0
-    subject_number = 0
+    subject_number = 2
     video = True
     recorder = HeadPoseRecorder(file_number, subject_number, video)
     rospy.spin()
