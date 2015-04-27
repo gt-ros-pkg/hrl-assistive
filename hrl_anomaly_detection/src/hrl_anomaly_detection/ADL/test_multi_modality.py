@@ -404,6 +404,7 @@ def fig_roc_online_sim(cross_data_path, \
             tp_l = []
             fn_l = []
             fp_l = []
+            tn_l = []
             delay_l = []
                 
             for ths in threshold_mult:
@@ -425,17 +426,20 @@ def fig_roc_online_sim(cross_data_path, \
                 tp_l.append(tp)
                 fn_l.append(fn)
                 fp_l.append(fp)
+                tn_l.append(tn)
                 delay_l.append(delay)
 
             tp_l  = np.array(tp_l)*100.0
             fn_l  = np.array(fn_l)*100.0
             fp_l  = np.array(fp_l)*100.0
+            tn_l  = np.array(tn_l)*100.0
 
-            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
-            #idx_list = sorted(range(len(delay_l)), key=lambda k: fn_l[k])
+            #idx_list = sorted(range(len(tn_l)), key=lambda k: fn_l[k])
+            idx_list = sorted(range(len(delay_l)), key=lambda k: delay_l[k])
             sorted_tp_l    = [tp_l[j] for j in idx_list]
             sorted_fn_l    = [fn_l[j] for j in idx_list]
             sorted_fp_l    = [fp_l[j] for j in idx_list]
+            sorted_tn_l    = [tn_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
             sorted_ths_l   = [threshold_mult[j] for j in idx_list]
 
@@ -446,7 +450,7 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fp_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -879,14 +883,18 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
                 break
 
         delay = count-anomaly_idx[i]
-        if delay < 0:
-            print "negative delay: ", count-anomaly_idx[i]
-            tn_l.append(0.0)
-            if err != 0.0: tn_err_l.append(err)
+
+        if tn == 1.0:        
+            if delay < 0:
+                print "negative delay: ", count-anomaly_idx[i]
+                tn_l.append(0.0)
+            else:                
+                delay_l.append(delay)
+                tn_l.append(tn)
         else:
-            delay_l.append(delay)
-            tn_l.append(tn)
-            if err != 0.0: tn_err_l.append(err)
+            tn_l.append(0.0)
+        if err != 0.0: tn_err_l.append(err)
+                
 
     return fn_l, tn_l, fn_err_l, tn_err_l, delay_l, anomaly_idx
     
