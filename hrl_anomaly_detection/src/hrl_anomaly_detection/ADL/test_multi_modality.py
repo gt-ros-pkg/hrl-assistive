@@ -245,6 +245,7 @@ def fig_roc_offline_sim(cross_data_path, \
 
 def fig_roc_online_sim(cross_data_path, \
                        train_aXData1, train_aXData2, train_chunks, \
+                       test_aXData1, test_aXData2, test_chunks, \
                        false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
                        prefix, nState=20, \
                        threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
@@ -259,11 +260,17 @@ def fig_roc_online_sim(cross_data_path, \
     if os.path.isdir(cross_test_path) == False:
         os.system('mkdir -p '+cross_test_path)
 
-    # min max scaling for true data
+    # min max scaling for training data
     aXData1_scaled, min_c1, max_c1 = dm.scaling(train_aXData1, scale=10.0)
     aXData2_scaled, min_c2, max_c2 = dm.scaling(train_aXData2, scale=10.0)    
     labels = [True]*len(train_aXData1)
     train_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, train_chunks, labels)
+
+    # test data!!
+    aXData1_scaled, _, _ = dm.scaling(test_aXData1, min_c1, max_c1, scale=10.0)
+    aXData2_scaled, _, _ = dm.scaling(test_aXData2, min_c2, max_c2, scale=10.0)    
+    labels = [False]*len(test_aXData1)
+    test_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, test_chunks, labels)
     
     # generate simulated data!!
     aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
@@ -314,7 +321,8 @@ def fig_roc_online_sim(cross_data_path, \
                     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                     lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
-            tn_l, err_l, delay_l, _ = anomaly_check_online(lhm, false_dataSet, ths, method, check_dim=check_dim)
+            fn_l, tn_l, err_l, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
+                                                           ths, method, check_dim=check_dim)
             
             ## import operator
             ## fn_l = reduce(operator.add, fn_ll)
@@ -324,11 +332,11 @@ def fig_roc_online_sim(cross_data_path, \
             ## delay_l  = reduce(operator.add, delay_ll)
 
             d = {}
-            ## d['fn']    = np.mean(fn_l)
-            ## d['tp']    = 1.0 - np.mean(fn_l)
-            d['ths']   = ths
+            d['fn']    = np.mean(fn_l)
+            d['tp']    = 1.0 - np.mean(fn_l)
             d['tn']    = np.mean(tn_l)
             d['fp']    = 1.0 - np.mean(tn_l)
+            d['ths']   = ths
             d['delay'] = np.mean(delay_l)
 
             if err_l == []:         
@@ -370,6 +378,8 @@ def fig_roc_online_sim(cross_data_path, \
                 res_file   = os.path.join(cross_test_path, res_file)
                 
                 d = ut.load_pickle(res_file)
+                fn  = d['fn'] 
+                tp  = d['tp'] 
                 tn  = d['tn'] 
                 fp  = d['fp'] 
                 err = d['err']         
@@ -764,12 +774,40 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
     return fn_l, tn_l, fn_err_l, tn_err_l
     
 
-def anomaly_check_online(lhm, false_dataSet, ths, check_method, check_dim=2):
+def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, check_dim=2):
 
+    fn_l  = []
     tn_l  = []
     err_l = []
     delay_l = []
 
+    # 1) Use True data to get true negative rate
+    if check_dim == 2:
+        x_test1 = test_dataSet.samples[:,0]
+        x_test2 = test_dataSet.samples[:,1]
+    else:
+        x_test1 = test_dataSet.samples[:,check_dim]
+
+    n = len(x_test1)
+    for i in range(n):
+        m = len(x_test1[i])
+
+        # anomaly_check only returns anomaly cases only
+        for j in range(2,m):                    
+    
+            if check_dim == 2:            
+                fn, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+            else:
+                fn, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+                
+            if fn == 1.0:        
+                fn_l.append(1.0)
+                break
+            if j == m-1 and fn == 0.0:            
+                fn_l.append(0.0)
+                ## err_l.append(err)
+        
+        
     # 2) Use False data to get true negative rate
     if check_dim == 2:
         x_test1 = false_dataSet.samples[:,0]
@@ -806,7 +844,7 @@ def anomaly_check_online(lhm, false_dataSet, ths, check_method, check_dim=2):
                 ## err_l.append(err)
                         
 
-    return tn_l, err_l, delay_l, anomaly_idx
+    return fn_l, tn_l, err_l, delay_l, anomaly_idx
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
@@ -1355,6 +1393,7 @@ if __name__ == '__main__':
 
         fig_roc_online_sim(cross_data_path, \
                            train_aXData1, train_aXData2, train_chunks, \
+                           test_aXData1, test_aXData2, test_chunks, \
                            false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
                            task_names[task], nState, threshold_mult, \
                            opr='robot', attr='id', bPlot=opt.bPlot, freq=freq, renew=False)
