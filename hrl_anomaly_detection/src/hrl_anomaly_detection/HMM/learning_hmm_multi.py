@@ -132,13 +132,18 @@ class learning_hmm_multi(learning_base):
         
         if self.check_method == 'global':
             # Get average loglikelihood threshold over whole time
-            n_jobs = -1
-            r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods_global)(i, n, m, A, B, pi, \
-                                                                   self.F, X_train, \
-                                                                   self.nEmissionDim) \
-                                                                   for i in xrange(self.nGaussian))
-            l_i, self.l_mu, self.l_std = zip(*r)
 
+            l_logp = []
+            for j in xrange(n):    
+                for k in xrange(1,m):
+                    final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
+                    logp         = self.ml.loglikelihoods(final_ts_obj)[0]
+
+                    l_logp.append(logp)
+            
+            self.l_mu = np.mean(l_logp)
+            self.l_std = np.std(l_logp)
+            
             
         elif self.check_method == 'progress':
             # Get average loglikelihood threshold wrt progress
@@ -1173,30 +1178,7 @@ class learning_hmm_multi(learning_base):
 ####################################################################
 # functions for paralell computation
 ####################################################################
-def learn_likelihoods_global(i, n, m, A, B, pi, F, X_train, nEmissionDim):
-
-    if nEmissionDim ==2:
-        ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
-    else:
-        ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
         
-
-    likelihood_mean  = 0.0
-    likelihood_mean2 = 0.0
-
-    for j in xrange(n):    
-        for k in xrange(1,m):
-            final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
-            logp         = ml.loglikelihoods(final_ts_obj)[0]
-
-            likelihood_mean  += logp
-            likelihood_mean2 += logp**2
-    likelihood_mean  /= (float(n)*float(m-1))
-    likelihood_mean2 /= (float(n)*float(m-1))
-
-    return i, likelihood_mean, np.sqrt(likelihood_mean2 - likelihood_mean**2)
-        
-
 def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
 
     if nEmissionDim ==2:
