@@ -388,7 +388,7 @@ def fig_roc_online_sim(cross_data_path, \
             fp_l  = np.array(fp_l)*100.0
             tn_l  = np.array(tn_l)*100.0
 
-            idx_list = sorted(range(len(ths_l)), key=lambda k: ths_l[k])
+            idx_list = sorted(range(len(tn_l)), key=lambda k: tn_l[k])
             sorted_fp_l    = [fp_l[j] for j in idx_list]
             sorted_tn_l    = [tn_l[j] for j in idx_list]
             sorted_err_l   = [err_l[j] for j in idx_list]
@@ -406,8 +406,8 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            #pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_tn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -800,9 +800,10 @@ def anomaly_check_online(lhm, false_dataSet, ths, check_method, check_dim=2):
                     delay_l.append(delay)
                     tn_l.append(1.0)
                 break
-            ## if j == m-1 and tn == 0.0:            
-            ##     tn_l.append(0.0)
-            ##     ## err_l.append(err)
+            if j == m-1 and tn == 0.0:            
+                delay_l.append(delay)
+                tn_l.append(0.0)
+                ## err_l.append(err)
                         
 
     return tn_l, err_l, delay_l, anomaly_idx
