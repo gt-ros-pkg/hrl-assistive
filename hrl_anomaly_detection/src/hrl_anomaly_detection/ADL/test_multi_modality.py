@@ -299,7 +299,7 @@ def fig_roc_online_sim(cross_data_path, \
             elif os.path.isfile(mutex_file): continue
             os.system('touch '+mutex_file)
 
-            if lhm is not None:
+            if lhm is None:
                 if check_dim is not 2:
                     x_train1 = true_dataSet.samples[:,check_dim,:]
 
