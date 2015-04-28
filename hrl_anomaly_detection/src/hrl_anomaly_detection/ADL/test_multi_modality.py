@@ -1261,13 +1261,32 @@ if __name__ == '__main__':
             train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
             train_dataSet = true_dataSet[train_ids]
 
-            x_test1 = test_dataSet.samples[:,0,:]
-            x_test2 = test_dataSet.samples[:,1,:]
+            train_aXData1 = train_dataSet.samples[:,0,:]
+            train_aXData2 = train_dataSet.samples[:,1,:]
+            train_chunks  = train_dataSet.sa.chunks 
+            
+            test_aXData1 = test_dataSet.samples[:,0,:]
+            test_aXData2 = test_dataSet.samples[:,1,:]
+            test_chunks = test_dataSet.sa.chunks
                         
             n_false_data = 100
-            dd = dm.generate_sim_anomaly(x_test1, x_test2, n_false_data)
+            dd = dm.generate_sim_anomaly(test_aXData1, test_aXData2, n_false_data)
+            dd['ft_force_mag_train_l'] = train_aXData1 
+            dd['audio_rms_train_l'] = train_aXData2 
+            dd['train_chunks'] = train_chunks
+            dd['ft_force_mag_test_l'] = test_aXData1 
+            dd['audio_rms_test_l'] = test_aXData2 
+            dd['test_chunks'] = test_chunks
+            
             ut.save_pickle(dd, pkl_file)
 
+        train_aXData1 = dd['ft_force_mag_train_l']
+        train_aXData2 = dd['audio_rms_train_l'] 
+        train_chunks  = dd['train_chunks']
+        test_aXData1 = dd['ft_force_mag_test_l']
+        test_aXData2 = dd['audio_rms_test_l'] 
+        test_chunks  = dd['test_chunks']
+            
         false_aXData1 = dd['ft_force_mag_sim_false_l']
         false_aXData2 = dd['audio_rms_sim_false_l'] 
         false_chunks  = dd['sim_false_chunks']
