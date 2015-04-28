@@ -450,7 +450,8 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -472,8 +473,8 @@ def fig_roc_online_sim(cross_data_path, \
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.pdf ~/Dropbox/')
-        ## pp.show()
+        #os.system('cp test.pdf ~/Dropbox/')
+        pp.show()
 
         
     return
@@ -838,23 +839,23 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
     else:
         x_test1 = l_vdata.samples[:,check_dim]
 
-    ## n,_ = np.shape(x_test1)
-    ## for i in range(n):
-    ##     m = len(x_test1[i])
+    n,_ = np.shape(x_test1)
+    for i in range(n):
+        m = len(x_test1[i])
 
-    ##     # anomaly_check only returns anomaly cases only
-    ##     fn = 0.0
-    ##     for j in range(2,m):            
-    ##         if check_dim == 2:
-    ##             fn, err = lhm.anomaly_check(x_test1[i,:j], x_test2[i,:j], ths_mult=ths)           
-    ##         else:
-    ##             fn, err = lhm.anomaly_check(x_test1[i,:j], ths_mult=ths)           
+        # anomaly_check only returns anomaly cases only
+        fn = 0.0
+        for j in range(2,m):            
+            if check_dim == 2:
+                fn, err = lhm.anomaly_check(x_test1[i,:j], x_test2[i,:j], ths_mult=ths)           
+            else:
+                fn, err = lhm.anomaly_check(x_test1[i,:j], ths_mult=ths)           
 
-    ##         # if anomaly is detected, break
-    ##         if fn == 1.0: break
+            # if anomaly is detected, break
+            if fn == 1.0: break
            
-    ##     fn_l.append(fn)
-    ##     if err != 0.0: fn_err_l.append(err)
+        fn_l.append(fn)
+        if err != 0.0: fn_err_l.append(err)
 
     # 2) Use False data to get true negative rate
     if check_dim == 2:
@@ -888,13 +889,13 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
             if delay < 0:
                 print "negative delay: ", count-anomaly_idx[i]
                 tn_l.append(0.0)
-                fn_l.append(1.0)
+                ## fn_l.append(1.0)
             else:                
                 delay_l.append(delay)
                 tn_l.append(1.0)
-                fn_l.append(0.0)
-        ## else:            
-        ##     tn_l.append(0.0)
+                ## fn_l.append(0.0)
+        else:            
+            tn_l.append(0.0)
         
         if err != 0.0: tn_err_l.append(err)
                 
