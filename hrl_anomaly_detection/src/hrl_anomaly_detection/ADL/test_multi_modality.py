@@ -280,21 +280,8 @@ def fig_roc_online_sim(cross_data_path, \
         ## only dimension 2
         check_dim = i = 2 # dim
         use_ml_pkl = False
-
-        if check_dim is not 2:
-            x_train1 = true_dataSet.samples[:,check_dim,:]
-
-            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
-                                     check_method=method)
-            if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
-            elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
-        else:
-            x_train1 = true_dataSet.samples[:,0,:]
-            x_train2 = true_dataSet.samples[:,1,:]
-
-            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
-            lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)
-        
+        lhm = None
+            
         for ths in threshold_mult:
 
             # save file name
@@ -311,6 +298,21 @@ def fig_roc_online_sim(cross_data_path, \
             elif hcu.is_file(cross_test_path, mutex_file_part): continue
             elif os.path.isfile(mutex_file): continue
             os.system('touch '+mutex_file)
+
+            if lhm is not None:
+                if check_dim is not 2:
+                    x_train1 = true_dataSet.samples[:,check_dim,:]
+
+                    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
+                                             check_method=method)
+                    if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
+                    elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
+                else:
+                    x_train1 = true_dataSet.samples[:,0,:]
+                    x_train2 = true_dataSet.samples[:,1,:]
+
+                    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
+                    lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
             tn_l, err_l, delay_l, _ = anomaly_check_online(lhm, false_dataSet, ths, method, check_dim=check_dim)
             
@@ -355,11 +357,9 @@ def fig_roc_online_sim(cross_data_path, \
             ## only dimension 2
             i = 2 # dim
             
-            tp_l = []
-            fn_l = []
             fp_l = []
             tn_l = []
-            fn_err_l = []
+            err_l = []
             tn_err_l = []
             delay_l = []
                 
@@ -1311,7 +1311,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.5, 5.0, 20, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
+        threshold_mult  = np.logspace(0.5, 2.0, 5, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
