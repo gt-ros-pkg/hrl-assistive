@@ -815,14 +815,14 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
     if check_dim is not 2:
         x_train1 = l_wdata.samples[:,check_dim,:]
 
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1)
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, check_method=check_method)
         if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
         elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
     else:
         x_train1 = l_wdata.samples[:,0,:]
         x_train2 = l_wdata.samples[:,1,:]
 
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type)
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=check_method)
         lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)
        
     fn_l  = []
