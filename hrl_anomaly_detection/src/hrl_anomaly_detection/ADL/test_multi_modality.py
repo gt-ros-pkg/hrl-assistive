@@ -800,9 +800,9 @@ def anomaly_check_online(lhm, false_dataSet, ths, check_method, check_dim=2):
                     delay_l.append(delay)
                     tn_l.append(1.0)
                 break
-            if j == m-1 and tn == 0.0:            
-                tn_l.append(0.0)
-                ## err_l.append(err)
+            ## if j == m-1 and tn == 0.0:            
+            ##     tn_l.append(0.0)
+            ##     ## err_l.append(err)
                         
 
     return tn_l, err_l, delay_l, anomaly_idx
