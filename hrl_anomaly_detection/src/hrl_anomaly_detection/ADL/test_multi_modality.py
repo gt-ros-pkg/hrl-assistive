@@ -366,8 +366,10 @@ def fig_roc_online_sim(cross_data_path, \
             ## only dimension 2
             i = 2 # dim
             
-            fp_l = []
+            fn_l = []
+            tp_l = []
             tn_l = []
+            fp_l = []
             err_l = []
             tn_err_l = []
             delay_l = []
@@ -389,26 +391,32 @@ def fig_roc_online_sim(cross_data_path, \
                 # Exclude wrong detection cases
                 if delay == []: continue
 
-                fp_l.append(fp)
+                fn_l.append(fn)
+                tp_l.append(tp)
                 tn_l.append(tn)
+                fp_l.append(fp)
                 err_l.append(err)
                 delay_l.append(delay)
                 ths_l.append(ths)
 
-            fp_l  = np.array(fp_l)*100.0
+            fn_l  = np.array(fn_l)*100.0
+            tp_l  = np.array(tp_l)*100.0
             tn_l  = np.array(tn_l)*100.0
+            fp_l  = np.array(fp_l)*100.0
 
-            idx_list = sorted(range(len(delay_l)), key=lambda k: delay_l[k])
-            sorted_fp_l    = [fp_l[j] for j in idx_list]
+            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
+            sorted_fn_l    = [fn_l[j] for j in idx_list]
+            sorted_tp_l    = [tp_l[j] for j in idx_list]
             sorted_tn_l    = [tn_l[j] for j in idx_list]
+            sorted_fp_l    = [fp_l[j] for j in idx_list]
             sorted_err_l   = [err_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
             sorted_ths_l   = [ths_l[j] for j in idx_list]
 
-            print sorted_tn_l
-            print sorted_delay_l
-            print sorted_ths_l
-            print "                 "
+            ## print sorted_tn_l
+            ## print sorted_delay_l
+            ## print sorted_ths_l
+            ## print "                 "
             color = colors.next()
             shape = shapes.next()
 
@@ -416,7 +424,7 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_delay_l[1:], sorted_tn_l[1:], '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fn_l[1:], sorted_tn_l[1:], '-'+shape+color, label=method, mec=color, ms=8, mew=2)
             #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
@@ -1219,8 +1227,8 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 1
-    task  = 0
+    class_num = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
