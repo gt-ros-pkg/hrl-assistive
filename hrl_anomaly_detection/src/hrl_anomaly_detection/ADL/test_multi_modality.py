@@ -264,7 +264,6 @@ def fig_roc_online_sim(cross_data_path, \
     aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
     labels = [True]*len(true_aXData1)
     true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
-    ## print "Scaling data: ", np.shape(true_aXData1), " => ", np.shape(aXData1_scaled)
     
     # generate simulated data!!
     aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
@@ -273,45 +272,29 @@ def fig_roc_online_sim(cross_data_path, \
     false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
     false_dataSet.sa['anomaly_idx'] = false_anomaly_start
     
-    # K random training-test set
-    K = len(true_aXData1)/4 # the number of test data
-    M = 30
-    splits = []
-    for i in xrange(M):
-    ## for i in xrange(len(true_aXData1)): # should we try leave-one-out??
-        print "(",K,",",K,") pairs in ", M, "iterations"
-        
-        if os.path.isfile(os.path.join(cross_data_path,"train_dataSet_"+str(i))) is False:
-
-            test_dataSet  = Dataset.random_samples(true_dataSet, K)
-            train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
-            train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
-            train_dataSet = true_dataSet[train_ids]
-            test_false_dataSet  = Dataset.random_samples(false_dataSet, K)        
-
-            Dataset.save(train_dataSet, os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
-            Dataset.save(test_dataSet, os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
-            Dataset.save(test_false_dataSet, os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
-
-        else:
-            try:
-                train_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"train_dataSet_"+str(i)) )
-                test_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_dataSet_"+str(i)) )
-                test_false_dataSet = Dataset.from_hdf5( os.path.join(cross_data_path,"test_false_dataSet_"+str(i)) )
-            except:
-                print cross_data_path
-                print "test_dataSet_"+str(i)
-
-        splits.append([train_dataSet, test_dataSet, test_false_dataSet])
-
-
     # anomaly check method list
     check_method = ['global', 'progress']
     count = 0
         
     for method in check_method:
         ## only dimension 2
-        i = 2 # dim
+        check_dim = i = 2 # dim
+        use_ml_pkl = False
+
+        if check_dim is not 2:
+            x_train1 = true_dataSet.samples[:,check_dim,:]
+
+            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
+                                     check_method=method)
+            if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
+            elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
+        else:
+            x_train1 = true_dataSet.samples[:,0,:]
+            x_train2 = true_dataSet.samples[:,1,:]
+
+            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
+            lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)
+        
         for ths in threshold_mult:
 
             # save file name
@@ -329,55 +312,26 @@ def fig_roc_online_sim(cross_data_path, \
             elif os.path.isfile(mutex_file): continue
             os.system('touch '+mutex_file)
 
-            print "---------------------------------"
-            print "Total splits: ", len(splits)
-
-            # temp
-            ## fn_ll = []
-            ## tn_ll = []
-            ## fn_err_ll = []
-            ## tn_err_ll = []
-            ## delay_ll = []
-
-            ## for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits):
-            ##     fn_ll, tn_ll, _, _, delay_ll,_ = anomaly_check_online(j, l_wdata, l_vdata, nState, \
-            ##                                                         trans_type, ths, l_zdata, \
-            ##                                                         cov_mult=cov_mult, check_dim=i)
-            ##     print delay_ll
-            ##     print np.mean(fn_ll), np.mean(tn_ll), np.mean(delay_ll)
-            ##     sys.exit()
-
-            n_jobs = -1
-            r = Parallel(n_jobs=n_jobs)(delayed(anomaly_check_online) \
-                                        (j, l_wdata, l_vdata, nState, \
-                                         trans_type, ths, method, l_zdata, \
-                                         cov_mult=cov_mult, check_dim=i) \
-                                         for j, (l_wdata, l_vdata, l_zdata) in enumerate(splits))
-            fn_ll, tn_ll, fn_err_ll, tn_err_ll, delay_ll, anomaly_ll = zip(*r)
-
-            import operator
-            fn_l = reduce(operator.add, fn_ll)
-            tn_l = reduce(operator.add, tn_ll)
-            fn_err_l = reduce(operator.add, fn_err_ll)
-            tn_err_l = reduce(operator.add, tn_err_ll)
-            delay_l  = reduce(operator.add, delay_ll)
+            tn_l, err_l, delay_l, _ = anomaly_check_online(lhm, false_dataSet, ths, method, check_dim=check_dim)
+            
+            ## import operator
+            ## fn_l = reduce(operator.add, fn_ll)
+            ## tn_l = reduce(operator.add, tn_ll)
+            ## fn_err_l = reduce(operator.add, fn_err_ll)
+            ## tn_err_l = reduce(operator.add, tn_err_ll)
+            ## delay_l  = reduce(operator.add, delay_ll)
 
             d = {}
-            d['fn']    = np.mean(fn_l)
-            d['tp']    = 1.0 - np.mean(fn_l)
+            ## d['fn']    = np.mean(fn_l)
+            ## d['tp']    = 1.0 - np.mean(fn_l)
             d['tn']    = np.mean(tn_l)
             d['fp']    = 1.0 - np.mean(tn_l)
             d['delay'] = np.mean(delay_l)
 
-            if fn_err_l == []:         
-                d['fn_err'] = 0.0
+            if err_l == []:         
+                d['err'] = 0.0
             else:
-                d['fn_err'] = np.mean(fn_err_l)
-
-            if tn_err_l == []:         
-                d['tn_err'] = 0.0
-            else:
-                d['tn_err'] = np.mean(tn_err_l)
+                d['err'] = np.mean(err_l)
 
             ut.save_pickle(d,res_file)        
             os.system('rm '+mutex_file)
@@ -405,6 +359,8 @@ def fig_roc_online_sim(cross_data_path, \
             fn_l = []
             fp_l = []
             tn_l = []
+            fn_err_l = []
+            tn_err_l = []
             delay_l = []
                 
             for ths in threshold_mult:
@@ -427,6 +383,8 @@ def fig_roc_online_sim(cross_data_path, \
                 fn_l.append(fn)
                 fp_l.append(fp)
                 tn_l.append(tn)
+                fn_err_l.append(fn_err)
+                tn_err_l.append(tn_err)
                 delay_l.append(delay)
 
             tp_l  = np.array(tp_l)*100.0
@@ -434,12 +392,14 @@ def fig_roc_online_sim(cross_data_path, \
             fp_l  = np.array(fp_l)*100.0
             tn_l  = np.array(tn_l)*100.0
 
-            #idx_list = sorted(range(len(tn_l)), key=lambda k: fn_l[k])
-            idx_list = sorted(range(len(delay_l)), key=lambda k: delay_l[k])
+            idx_list = sorted(range(len(tn_l)), key=lambda k: tn_l[k])
+            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
             sorted_tp_l    = [tp_l[j] for j in idx_list]
             sorted_fn_l    = [fn_l[j] for j in idx_list]
             sorted_fp_l    = [fp_l[j] for j in idx_list]
             sorted_tn_l    = [tn_l[j] for j in idx_list]
+            sorted_fn_err_l= [fn_err_l[j] for j in idx_list]
+            sorted_tn_err_l= [tn_err_l[j] for j in idx_list] 
             sorted_delay_l = [delay_l[j] for j in idx_list]
             sorted_ths_l   = [threshold_mult[j] for j in idx_list]
 
@@ -450,8 +410,8 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            #pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            #pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_tp_l, sorted_fn_err_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -475,7 +435,6 @@ def fig_roc_online_sim(cross_data_path, \
         fig.savefig('test.png')
         #os.system('cp test.pdf ~/Dropbox/')
         pp.show()
-
         
     return
 
@@ -809,55 +768,13 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
     return fn_l, tn_l, fn_err_l, tn_err_l
     
 
-def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_method, false_dataSet=None, 
-                          cov_mult=[1.0, 1.0, 1.0, 1.0], check_dim=2, use_ml_pkl=False):
+def anomaly_check_online(lhm, false_dataSet, ths, check_method, check_dim=2):
 
     # Cross validation
-    if check_dim is not 2:
-        x_train1 = l_wdata.samples[:,check_dim,:]
-
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, check_method=check_method)
-        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
-        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
-    else:
-        x_train1 = l_wdata.samples[:,0,:]
-        x_train2 = l_wdata.samples[:,1,:]
-
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=check_method)
-        lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)
        
-    fn_l  = []
     tn_l  = []
-    fn_err_l = []
-    tn_err_l = []
+    err_l = []
     delay_l = []
-
-    # 1) Use True data first to get false negative rate
-    if check_dim == 2:
-        x_test1 = l_vdata.samples[:,0]
-        x_test2 = l_vdata.samples[:,1]
-    else:
-        x_test1 = l_vdata.samples[:,check_dim]
-
-    n,_ = np.shape(x_test1)
-    for i in range(n):
-        m = len(x_test1[i])
-
-        # anomaly_check only returns anomaly cases only
-        count = 0
-        for j in range(2,m):            
-            if check_dim == 2:
-                fn, err = lhm.anomaly_check(x_test1[i,:j], x_test2[i,:j], ths_mult=ths)           
-            else:
-                fn, err = lhm.anomaly_check(x_test1[i,:j], ths_mult=ths)           
-
-            # if anomaly is detected, break
-            if fn == 1.0: 
-                count = j
-                break
-            else: fn_err_l.append(err)
-           
-        fn_l.append(fn)
 
     # 2) Use False data to get true negative rate
     if check_dim == 2:
@@ -872,7 +789,6 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
-        count = 0
         for j in range(2,m):                    
     
             if check_dim == 2:            
@@ -880,29 +796,21 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
             else:
                 tn, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
                 
-            # if anomaly is detected, break
-            if tn == 1.0: 
-                count = j
-                break
-            else:
-                tn_err_l.append(err)
+            delay = j-anomaly_idx[i]
 
-        delay = count-anomaly_idx[i]
-
-        if tn == 1.0:        
-            if delay < 0:
-                print "negative delay: ", count-anomaly_idx[i]
+            if tn == 1.0:        
+                if delay < 0:
+                    print "negative delay: ", j-anomaly_idx[i]
+                    tn_l.append(0.0)
+                else:                
+                    delay_l.append(delay)
+                    tn_l.append(1.0)
+            else:            
                 tn_l.append(0.0)
-                ## fn_l.append(1.0)
-            else:                
-                delay_l.append(delay)
-                tn_l.append(1.0)
-                ## fn_l.append(0.0)
-        else:            
-            tn_l.append(0.0)
+                err_l.append(err)
                         
 
-    return fn_l, tn_l, fn_err_l, tn_err_l, delay_l, anomaly_idx
+    return tn_l, err_l, delay_l, anomaly_idx
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
@@ -1415,7 +1323,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.5, 2.0, 30, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
+        threshold_mult  = np.logspace(0.5, 5.0, 20, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
