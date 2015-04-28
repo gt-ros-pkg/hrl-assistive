@@ -1197,7 +1197,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 18, 7]
         f_thres     = [0.7, 0.5, 1.0]
         audio_thres = [1.0, 0.7, 0.0015]
-        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult = [[1.5, 1.5, 1.5, 2.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 2:        
         class_name = 'lock'
@@ -1609,7 +1609,7 @@ if __name__ == '__main__':
         # If you want normal likelihood, class 0, data 1
         # testData 0
         # false data 0 (make it false)
-        false_data_flag = True
+        false_data_flag = False #True
         if false_data_flag:
             test_dataSet    = false_dataSet
                                                                
