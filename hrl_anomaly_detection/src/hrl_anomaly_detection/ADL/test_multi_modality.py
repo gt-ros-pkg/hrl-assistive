@@ -244,7 +244,7 @@ def fig_roc_offline_sim(cross_data_path, \
 
 
 def fig_roc_online_sim(cross_data_path, \
-                       true_aXData1, true_aXData2, true_chunks, \
+                       train_aXData1, train_aXData2, train_chunks, \
                        false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
                        prefix, nState=20, \
                        threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
@@ -260,10 +260,10 @@ def fig_roc_online_sim(cross_data_path, \
         os.system('mkdir -p '+cross_test_path)
 
     # min max scaling for true data
-    aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=10.0)
-    aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=10.0)    
-    labels = [True]*len(true_aXData1)
-    true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, labels)
+    aXData1_scaled, min_c1, max_c1 = dm.scaling(train_aXData1, scale=10.0)
+    aXData2_scaled, min_c2, max_c2 = dm.scaling(train_aXData2, scale=10.0)    
+    labels = [True]*len(train_aXData1)
+    train_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, train_chunks, labels)
     
     # generate simulated data!!
     aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
@@ -301,15 +301,15 @@ def fig_roc_online_sim(cross_data_path, \
 
             if lhm is None:
                 if check_dim is not 2:
-                    x_train1 = true_dataSet.samples[:,check_dim,:]
+                    x_train1 = train_dataSet.samples[:,check_dim,:]
 
                     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
                                              check_method=method)
                     if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
                     elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
                 else:
-                    x_train1 = true_dataSet.samples[:,0,:]
-                    x_train2 = true_dataSet.samples[:,1,:]
+                    x_train1 = train_dataSet.samples[:,0,:]
+                    x_train2 = train_dataSet.samples[:,1,:]
 
                     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                     lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
@@ -413,7 +413,7 @@ def fig_roc_online_sim(cross_data_path, \
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
         
-        pp.xlabel('False negative rate (percentage)', fontsize=16)
+        pp.xlabel('Detection rate (percentage)', fontsize=16)
         pp.ylabel('Detection delay (sec)', fontsize=16)    
         pp.xlim([-1, 100])
         ## pp.ylim([-1, 101])
@@ -1252,8 +1252,20 @@ if __name__ == '__main__':
         if os.path.isfile(pkl_file) and opt.bRenew is False:
             dd = ut.load_pickle(pkl_file)
         else:
+            K = len(true_aXData1)/4 # the number of test data
+
+            labels = [True]*len(true_aXData1)
+            true_dataSet = dm.create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)            
+            test_dataSet  = Dataset.random_samples(true_dataSet, K)
+            train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+            train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+            train_dataSet = true_dataSet[train_ids]
+
+            x_test1 = test_dataSet.samples[:,0,:]
+            x_test2 = test_dataSet.samples[:,1,:]
+                        
             n_false_data = 100
-            dd = dm.generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data)
+            dd = dm.generate_sim_anomaly(x_test1, x_test2, n_false_data)
             ut.save_pickle(dd, pkl_file)
 
         false_aXData1 = dd['ft_force_mag_sim_false_l']
@@ -1314,7 +1326,7 @@ if __name__ == '__main__':
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
-                           true_aXData1, true_aXData2, true_chunks, \
+                           train_aXData1, train_aXData2, train_chunks, \
                            false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
                            task_names[task], nState, threshold_mult, \
                            opr='robot', attr='id', bPlot=opt.bPlot, freq=freq, renew=False)
