@@ -1189,8 +1189,8 @@ def learn_likelihoods_global(i, n, m, A, B, pi, F, X_train, nEmissionDim):
             final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
             logp         = ml.loglikelihoods(final_ts_obj)[0]
 
-            l_likelihood_mean  += logp
-            l_likelihood_mean2 += logp**2
+            likelihood_mean  += logp
+            likelihood_mean2 += logp**2
     likelihood_mean  /= (float(n)*float(m-1))
     likelihood_mean2 /= (float(n)*float(m-1))
 
