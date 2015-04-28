@@ -368,38 +368,26 @@ def fig_roc_online_sim(cross_data_path, \
                 res_file   = os.path.join(cross_test_path, res_file)
                 
                 d = ut.load_pickle(res_file)
-                tp  = d['tp'] 
-                fn  = d['fn'] 
-                fp  = d['fp'] 
                 tn  = d['tn'] 
-                fn_err = d['fn_err']         
-                tn_err = d['tn_err']         
+                fp  = d['fp'] 
+                err = d['err']         
                 delay = d['delay']
 
                 # Exclude wrong detection cases
                 if delay == []: continue
 
-                tp_l.append(tp)
-                fn_l.append(fn)
                 fp_l.append(fp)
                 tn_l.append(tn)
-                fn_err_l.append(fn_err)
-                tn_err_l.append(tn_err)
+                err_l.append(err)
                 delay_l.append(delay)
 
-            tp_l  = np.array(tp_l)*100.0
-            fn_l  = np.array(fn_l)*100.0
             fp_l  = np.array(fp_l)*100.0
             tn_l  = np.array(tn_l)*100.0
 
-            idx_list = sorted(range(len(tn_l)), key=lambda k: tn_l[k])
-            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
-            sorted_tp_l    = [tp_l[j] for j in idx_list]
-            sorted_fn_l    = [fn_l[j] for j in idx_list]
+            idx_list = sorted(range(len(fp_l)), key=lambda k: fp_l[k])
             sorted_fp_l    = [fp_l[j] for j in idx_list]
             sorted_tn_l    = [tn_l[j] for j in idx_list]
-            sorted_fn_err_l= [fn_err_l[j] for j in idx_list]
-            sorted_tn_err_l= [tn_err_l[j] for j in idx_list] 
+            sorted_err_l   = [err_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
             sorted_ths_l   = [threshold_mult[j] for j in idx_list]
 
@@ -411,7 +399,7 @@ def fig_roc_online_sim(cross_data_path, \
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
             #pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_tp_l, sorted_fn_err_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_tn_l, sorted_err_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
