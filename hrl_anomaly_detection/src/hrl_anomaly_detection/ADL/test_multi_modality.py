@@ -388,13 +388,17 @@ def fig_roc_online_sim(cross_data_path, \
             fp_l  = np.array(fp_l)*100.0
             tn_l  = np.array(tn_l)*100.0
 
-            idx_list = sorted(range(len(tn_l)), key=lambda k: tn_l[k])
+            idx_list = sorted(range(len(ths_l)), key=lambda k: ths_l[k])
             sorted_fp_l    = [fp_l[j] for j in idx_list]
             sorted_tn_l    = [tn_l[j] for j in idx_list]
             sorted_err_l   = [err_l[j] for j in idx_list]
             sorted_delay_l = [delay_l[j] for j in idx_list]
             sorted_ths_l   = [ths_l[j] for j in idx_list]
 
+            print sorted_tn_l
+            print sorted_delay_l
+            print sorted_ths_l
+            print "                 "
             color = colors.next()
             shape = shapes.next()
 
@@ -403,7 +407,7 @@ def fig_roc_online_sim(cross_data_path, \
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
             #pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_tn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -419,7 +423,7 @@ def fig_roc_online_sim(cross_data_path, \
         
         pp.xlabel('Detection rate (percentage)', fontsize=16)
         pp.ylabel('Detection delay (sec)', fontsize=16)    
-        pp.xlim([-1, 100])
+        ## pp.xlim([-1, 100])
         ## pp.ylim([-1, 101])
         pp.legend(loc=4,prop={'size':16})
         
@@ -1345,7 +1349,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(0.0, 20.001, 1.0) #np.logspace(0.0001, 1.0, 8, endpoint=True) # 
+        threshold_mult  = np.arange(0.0, 80.001, 3.0) #np.logspace(0.0001, 1.0, 8, endpoint=True) # 
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
