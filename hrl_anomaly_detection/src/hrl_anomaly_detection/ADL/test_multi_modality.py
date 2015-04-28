@@ -472,8 +472,8 @@ def fig_roc_online_sim(cross_data_path, \
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        ## os.system('cp test.pdf ~/Dropbox/')
-        pp.show()
+        os.system('cp test.pdf ~/Dropbox/')
+        ## pp.show()
 
         
     return

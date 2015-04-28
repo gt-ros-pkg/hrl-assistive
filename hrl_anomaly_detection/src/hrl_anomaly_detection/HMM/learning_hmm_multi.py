@@ -136,7 +136,7 @@ class learning_hmm_multi(learning_base):
                                                                    self.F, X_train, \
                                                                    self.nEmissionDim) \
                                                                    for i in xrange(self.nGaussian))
-            l_i, l_mu, l_std = zip(*r)
+            l_i, self.l_mu, self.l_std = zip(*r)
 
             
         elif self.check_method == 'progress':
