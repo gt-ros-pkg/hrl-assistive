@@ -128,6 +128,7 @@ class learning_hmm_multi(learning_base):
         #--------------- learning for anomaly detection ----------------------------
         [A, B, pi] = self.ml.asMatrices()
         n,m = np.shape(X1)
+        self.nGaussian = self.nState
         
         if self.check_method == 'global':
             # Get average loglikelihood threshold over whole time
@@ -142,7 +143,6 @@ class learning_hmm_multi(learning_base):
         elif self.check_method == 'progress':
             # Get average loglikelihood threshold wrt progress
             self.std_coff  = 1.0
-            self.nGaussian = self.nState
             g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
             g_sig     = float(m) / float(self.nGaussian) * self.std_coff
 
@@ -1181,8 +1181,8 @@ def learn_likelihoods_global(i, n, m, A, B, pi, F, X_train, nEmissionDim):
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
         
 
-    l_likelihood_mean  = 0.0
-    l_likelihood_mean2 = 0.0
+    likelihood_mean  = 0.0
+    likelihood_mean2 = 0.0
 
     for j in xrange(n):    
         for k in xrange(1,m):
@@ -1191,10 +1191,10 @@ def learn_likelihoods_global(i, n, m, A, B, pi, F, X_train, nEmissionDim):
 
             l_likelihood_mean  += logp
             l_likelihood_mean2 += logp**2
-    l_likelihood_mean  /= (float(n)*float(m-1))
-    l_likelihood_mean2 /= (float(n)*float(m-1))
+    likelihood_mean  /= (float(n)*float(m-1))
+    likelihood_mean2 /= (float(n)*float(m-1))
 
-    return i, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+    return i, likelihood_mean, np.sqrt(likelihood_mean2 - likelihood_mean**2)
         
 
 def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
