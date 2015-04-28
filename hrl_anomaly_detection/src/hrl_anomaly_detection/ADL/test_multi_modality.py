@@ -450,8 +450,8 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            #pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -844,7 +844,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
-        fn = 0.0
+        count = 0
         for j in range(2,m):            
             if check_dim == 2:
                 fn, err = lhm.anomaly_check(x_test1[i,:j], x_test2[i,:j], ths_mult=ths)           
@@ -852,10 +852,12 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
                 fn, err = lhm.anomaly_check(x_test1[i,:j], ths_mult=ths)           
 
             # if anomaly is detected, break
-            if fn == 1.0: break
+            if fn == 1.0: 
+                count = j
+                break
+            else: fn_err_l.append(err)
            
         fn_l.append(fn)
-        if err != 0.0: fn_err_l.append(err)
 
     # 2) Use False data to get true negative rate
     if check_dim == 2:
@@ -882,6 +884,8 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
             if tn == 1.0: 
                 count = j
                 break
+            else:
+                tn_err_l.append(err)
 
         delay = count-anomaly_idx[i]
 
@@ -896,9 +900,7 @@ def anomaly_check_online(i, l_wdata, l_vdata, nState, trans_type, ths, check_met
                 ## fn_l.append(0.0)
         else:            
             tn_l.append(0.0)
-        
-        if err != 0.0: tn_err_l.append(err)
-                
+                        
 
     return fn_l, tn_l, fn_err_l, tn_err_l, delay_l, anomaly_idx
     
@@ -1691,7 +1693,7 @@ if __name__ == '__main__':
             
             if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
             elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
-            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task], ml_pkl=str(K)+'_likelihood.pkl', \
+            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task], ml_pkl='likelihood.pkl', \
                           use_pkl=opt.bUseMLObspickle)
 
 
