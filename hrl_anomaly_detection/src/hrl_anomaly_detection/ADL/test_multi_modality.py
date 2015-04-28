@@ -758,8 +758,6 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
 
 def anomaly_check_online(lhm, false_dataSet, ths, check_method, check_dim=2):
 
-    # Cross validation
-       
     tn_l  = []
     err_l = []
     delay_l = []
@@ -1311,7 +1309,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.5, 2.0, 5, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
+        threshold_mult  = np.logspace(0.005, 1.0, 5, endpoint=True) #np.arange(0.0, 25.001, 0.5) 
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
