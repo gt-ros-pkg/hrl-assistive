@@ -1350,7 +1350,7 @@ if __name__ == '__main__':
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.arange(0.0, 30.001, 3.0) #np.logspace(0.0001, 1.0, 8, endpoint=True) # 
+        threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) # np.arange(0.0, 30.001, 2.0) #
         attr            = 'id'
 
         fig_roc_online_sim(cross_data_path, \
