@@ -1301,7 +1301,7 @@ if __name__ == '__main__':
     # Load simulated anomaly
     if opt.bRocOnlineSimAnomaly:
         K = len(true_aXData1)/4 # the number of test data
-        nDataSet = 30
+        nDataSet = 10 #30
         n_false_data = K
         for i in xrange(nDataSet):
         ## for i in xrange(len(true_aXData1)):
