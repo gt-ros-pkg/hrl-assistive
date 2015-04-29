@@ -347,17 +347,17 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
                 ## delay_l  = reduce(operator.add, delay_ll)
 
                 d = {}
-                d['fn']    = np.mean(fn_l)
-                d['tp']    = 1.0 - np.mean(fn_l)
-                d['tn']    = np.mean(tn_l)
-                d['fp']    = 1.0 - np.mean(tn_l)
+                d['fn_l']    = fn_l
+                d['tn_l']    = tn_l
+                ## d['tp']    = 1.0 - np.mean(fn_l)
+                ## d['fp']    = 1.0 - np.mean(tn_l)
                 d['ths']   = ths
-                d['delay'] = np.mean(delay_l)
+                d['delay_l'] = delay_l
 
                 if err_l == []:         
-                    d['err'] = 0.0
+                    d['err_l'] = 0.0
                 else:
-                    d['err'] = np.mean(err_l)
+                    d['err_l'] = err_l
 
                 ut.save_pickle(d,res_file)        
                 os.system('rm '+mutex_file)
@@ -1434,9 +1434,6 @@ if __name__ == '__main__':
                            task_names[task], nState, threshold_mult, \
                            opr='robot', attr='id', bPlot=opt.bPlot, freq=freq, renew=False)
 
-                           ## train_aXData1, train_aXData2, train_chunks, \
-                           ## test_aXData1, test_aXData2, test_chunks, \
-                           ## false_aXData1, false_aXData2, false_chunks, false_anomaly_start, \
             
     #---------------------------------------------------------------------------           
     elif opt.bRocOnlineRobot:
