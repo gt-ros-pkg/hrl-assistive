@@ -1321,9 +1321,9 @@ if __name__ == '__main__':
     # Load simulated anomaly
     if opt.bRocOnlineSimAnomaly:
         K = len(true_aXData1)/4 # the number of test data
-        M = 30
+        nDataSet = 30
         n_false_data = K
-        for i in xrange(M):
+        for i in xrange(nDataSet):
         ## for i in xrange(len(true_aXData1)):
 
             cross_data_path = os.path.join(cross_root_path,'multi_sim_'+task_names[task])
@@ -1430,7 +1430,7 @@ if __name__ == '__main__':
         threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) # np.arange(0.0, 30.001, 2.0) #
         attr            = 'id'
 
-        fig_roc_online_sim(cross_data_path, \
+        fig_roc_online_sim(cross_data_path, nDataSet, \
                            task_names[task], nState, threshold_mult, \
                            opr='robot', attr='id', bPlot=opt.bPlot, freq=freq, renew=False)
 
