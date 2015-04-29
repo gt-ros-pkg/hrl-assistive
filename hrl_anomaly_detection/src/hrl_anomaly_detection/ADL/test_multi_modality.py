@@ -354,10 +354,10 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
                 d['ths']   = ths
                 d['delay_l'] = delay_l
 
-                if err_l == []:         
-                    d['err_l'] = 0.0
-                else:
-                    d['err_l'] = err_l
+                ## if err_l == []:         
+                ##     d['err_l'] = 0.0
+                ## else:
+                ##     d['err_l'] = err_l
 
                 ut.save_pickle(d,res_file)        
                 os.system('rm '+mutex_file)
