@@ -336,8 +336,8 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
                         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                         lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
-                fn_l, tn_l, err_l, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
-                                                               ths, method, check_dim=check_dim)
+                tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
+                                                                  ths, method, check_dim=check_dim)
 
                 ## import operator
                 ## fn_l = reduce(operator.add, fn_ll)
@@ -347,10 +347,10 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
                 ## delay_l  = reduce(operator.add, delay_ll)
 
                 d = {}
-                d['fn_l']    = fn_l
-                d['tn_l']    = tn_l
-                ## d['tp']    = 1.0 - np.mean(fn_l)
-                ## d['fp']    = 1.0 - np.mean(tn_l)
+                d['fn']    = fn
+                d['tn']    = tn
+                d['tp']    = tp
+                d['fp']    = fp
                 d['ths']   = ths
                 d['delay_l'] = delay_l
 
@@ -781,8 +781,11 @@ def anomaly_check_offline(i, l_wdata, l_vdata, nState, trans_type, ths, false_da
 
 def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, check_dim=2):
 
-    fn_l  = []
-    tn_l  = []
+    tp = 0.0
+    fn = 0.0
+    fp = 0.0
+    tn = 0.0
+    
     err_l = []
     delay_l = []
 
@@ -798,20 +801,17 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
-        fn = 0.0
         for j in range(2,m):                    
     
             if check_dim == 2:            
-                fn, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+                an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
             else:
-                fn, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
-                
-            if fn == 1.0:        
-                break
+                an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
 
-        fn_l.append(fn)            
-        ## err_l.append(err)
-        
+            if an == 1.0:
+                fn += 1.0
+            else:
+                tp += 1.0
         
     # 2) Use False data to get true negative rate
     if check_dim == 2:
@@ -826,33 +826,30 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
-        tn = 0.0
         delay = 0
         for j in range(2,m):                    
     
             if check_dim == 2:            
-                tn, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+                an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
             else:
-                tn, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+                an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
                 
             delay = j-anomaly_idx[i]
-
-            if tn == 1.0:        
-                break
-
-        if tn == 1.0 and delay >= 0:
-            delay_l.append(delay)
-            tn_l.append(1.0)
-        else:
-            if delay < 0:
-                print "negative delay: ", delay
-                fn_l.append(fn)                            
+            
+            if delay >= 0:
+                if an == 1.0:
+                    tn += 1.0
+                    delay_l.append(delay)
+                else:
+                    fp += 1.0
             else:
-                delay_l.append(delay)
-                tn_l.append(0.0)
-            ## err_l.append(err)
+                if an == 1.0:
+                    fn += 1.0
+                else:
+                    tp += 1.0    
+                ## err_l.append(err)
                         
-    return fn_l, tn_l, err_l, delay_l, anomaly_idx
+    return tp, fn, fp, tn, delay_l, anomaly_idx
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
