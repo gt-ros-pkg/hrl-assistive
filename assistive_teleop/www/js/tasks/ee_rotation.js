@@ -9,20 +9,20 @@ RFH.EERotation = function (options) {
     self.rotSlider = $('#'+self.div+' .wrist-rot-slider').slider({min:-Math.PI,
                                                  max:Math.PI,
                                                  value:0.0,
-                                                 step:Math.PI/200}).on('slidestop.rfh',
+                                                 step:Math.PI/36}).on('slidestop.rfh',
                                                     function(event, ui) {
                                                         self.sendRotation(); 
                                                     });;
     self.latSlider = $('#'+self.div+' .wrist-lat-slider').slider({min:-Math.PI/2,
                                                  max:Math.PI/2,
-                                                 step:Math.PI/100,
+                                                 step:Math.PI/36,
                                                  value:0.0}).on('slidestop.rfh',
                                                     function(event, ui) {
                                                         self.sendRotation();
                                                     });
     self.lonSlider = $('#'+self.div+' .wrist-lon-slider').slider({min:0.0,
                                                  max:Math.PI/2,
-                                                 step:Math.PI/200,
+                                                 step:Math.PI/18,
                                                  value: Math.PI/4, 
                                                  orientation: 'vertical'}).on('slidestop.rfh',
                                                     function(event, ui) {

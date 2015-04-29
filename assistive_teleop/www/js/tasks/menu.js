@@ -72,7 +72,7 @@ RFH.initTaskMenu = function (divId) {
     RFH.taskMenu.addTask(new RFH.Drive({ros: RFH.ros, 
                                        targetDiv: 'mjpeg-image',
                                        camera: RFH.mjpeg.cameraModel,
-                                       tfClient: RFH.tfClient,
+                                       head: RFH.pr2.head,
                                        base: RFH.pr2.base}));
     // Start looking task by default
     RFH.taskMenu.tasks['lookingTask'].start();

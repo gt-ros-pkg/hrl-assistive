@@ -220,8 +220,8 @@ RFH.ROSCameraModel = function (options) {
         var pixel_hom = numeric.dot(self.P, [[px],[py],[pz],[1]]);
         var pix_x = pixel_hom[0]/pixel_hom[2];
         var pix_y = pixel_hom[1]/pixel_hom[2];
-        return [pix_x, pix_y];
-        //return [pix_x/self.width, pix_y/self.height];
+        //return [pix_x, pix_y];
+        return [pix_x/self.width, pix_y/self.height];
     }
 };
 

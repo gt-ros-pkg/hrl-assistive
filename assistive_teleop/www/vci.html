@@ -28,7 +28,7 @@
   <script type="text/javascript" src="js/battery_monitor.js"></script>
   <script type="text/javascript" src="js/teleop/pr2.js"></script>
   <script type="text/javascript" src="js/tasks/look.js"></script>
-  <script type="text/javascript" src="js/tasks/drive.js"></script>
+  <script type="text/javascript" src="js/tasks/drive2.js"></script>
   <script type="text/javascript" src="js/tasks/torso.js"></script>
   <script type="text/javascript" src="js/tasks/gripper.js"></script>
   <script type="text/javascript" src="js/tasks/ee_cart.js"></script>
@@ -42,6 +42,7 @@
   <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
   <link type="text/css" href="css/look.css" rel="stylesheet" />
   <link type="text/css" href="css/torso.css" rel="stylesheet" />
+  <link type="text/css" href="css/drive.css" rel="stylesheet" />
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
   <link type="text/css" href="css/focus.css" rel="stylesheet" />
@@ -70,8 +71,8 @@
      <div id="controls">
         <h3>Controls</h3>
         <!-- Driving Controls -->
-        <button class="drive up">Camera Up</button>
-        <button class="drive down">Camera Down</button>
+<!--        <button class="drive up">Camera Up</button>
+            <button class="drive down">Camera Down</button>-->
         <!-- EE Cart Controls -->
         <input type="checkbox" id="touchspot-toggle"/>
         <label id="touchspot-toggle-label" for="touchspot-toggle">Touch Spot</label>
@@ -132,6 +133,12 @@
          <div class="map-look bottom left cursor-eyes-down-left"></div>
          <div class="map-look bottom center cursor-eyes-down"></div>
          <div class="map-look bottom right cursor-eyes-down-right"></div>
+         <!-- divs for driving controls -->
+         <div class="drive-ctrl drive-look left cursor-eyes-left"></div>
+         <div class="drive-ctrl drive-look right cursor-eyes-right"></div>
+         <div class="drive-ctrl linear-ring"></div>
+         <div class="drive-ctrl drive-guide left"></div>
+         <div class="drive-ctrl drive-guide right"></div>
          <!-- divs for torso controls -->
          <img id="tallIcon" src="./css/icons/tall.png"></img>
          <img id="shortIcon" src="./css/icons/short.png"></img>

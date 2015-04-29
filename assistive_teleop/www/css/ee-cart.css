@@ -196,7 +196,7 @@
     position: absolute;
     left: 21.875%;    
     bottom: 0%;
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
 }
 
 .cart-ctrl-container {

@@ -54,19 +54,25 @@ RFH.CartesianEEControl = function (options) {
             var dz = eePos.z - camPos.z;
             var dxy = Math.sqrt(dx*dx + dy*dy);
             var phi = Math.atan2(dxy, dz) - Math.PI/2; // Angle from horizontal
-            // TODO: Scale up to keep full size;
+
             switch (self.mode) {
                 case 'table':
                     var rotX = phi - Math.PI/2;
-                    var transformStr = "rotateX("+rotX.toString()+"rad) rotate("+rot.toString()+"rad";
+                    var transformStr = "rotateX("+rotX.toString()+"rad) rotate("+rot.toString()+"rad)";
                     break;
                 case 'wall':
-                    var transformStr = "rotateX("+phi.toString()+"rad) rotateY("+rot.toString()+"rad";
+                    var transformStr = "rotateX("+phi.toString()+"rad) rotateY("+rot.toString()+"rad)";
                     break;
             }
         } else {
             transformStr = 'none';
         };
+        //TODO: Clean up scaling so that it is useful.  See if it worsens visual understanding...
+        var rect = $('#armCtrlContainer')[0].getBoundingClientRect();
+        var videoHeight = $('#armCtrlContainer').parent().height();
+        var videoWidth = $('#armCtrlContainer').parent().width();
+        var ratio = Math.max(rect.height/videoHeight, rect.width/videoWidth);
+//        transformStr += " scale("+1/ratio+")";
         $('#armCtrlContainer').css({'transform':transformStr});
     }
     
