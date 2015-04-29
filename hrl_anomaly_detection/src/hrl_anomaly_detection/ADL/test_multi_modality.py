@@ -367,9 +367,10 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
         print "#############################################################################"
         print "All file exist ", count
         print "#############################################################################"        
-
+    else:
+        return
         
-    if count == len(threshold_mult)*len(check_method)*nDataSet and bPlot:
+    if bPlot:
 
         import itertools
         colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -378,60 +379,41 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
         fig = pp.figure()
         
         for method in check_method:
-            ## only dimension 2
-            i = 2 # dim
-            
-            fn_l = []
-            tp_l = []
-            tn_l = []
-            fp_l = []
-            err_l = []
-            tn_err_l = []
-            delay_l = []
-            ths_l = []
+            fn_l = np.zeros(len(threshold_mult)); fn_cnt = np.zeros(len(threshold_mult))
+            tp_l = np.zeros(len(threshold_mult)); tp_cnt = np.zeros(len(threshold_mult))
+            tn_l = np.zeros(len(threshold_mult)); tn_cnt = np.zeros(len(threshold_mult))
+            fp_l = np.zeros(len(threshold_mult)); fp_cnt = np.zeros(len(threshold_mult))
+
+            delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
+            err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
                 
-            for ths in threshold_mult:
-                res_file   = prefix+'_'+method+'_roc_'+opr+'_dim_'+str(i)+'_'+'ths_'+str(ths)+'.pkl'
-                res_file   = os.path.join(cross_test_path, res_file)
-                
-                d = ut.load_pickle(res_file)
-                fn  = d['fn'] 
-                tp  = d['tp'] 
-                tn  = d['tn'] 
-                fp  = d['fp'] 
-                err = d['err']         
-                delay = d['delay']
-                ths = d['ths']
+            for i in xrange(nDataSet):
+                            
+                for j, ths in enumerate(threshold_mult):
+                    # save file name
+                    res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'_ths_'+ \
+                      str(ths)+'.pkl'
+                    res_file = os.path.join(cross_test_path, res_file)
 
-                # Exclude wrong detection cases
-                if delay == []: continue
+                    d = ut.load_pickle(res_file)
+                    fn_l[j] += np.sum(d['fn_l']); fn_cnt[j] += float(len(d['fn_l']))
+                    tn_l[j] += np.sum(d['tn_l']); tn_cnt[j] += float(len(d['tn_l']))  
+                    delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
 
-                fn_l.append(fn)
-                tp_l.append(tp)
-                tn_l.append(tn)
-                fp_l.append(fp)
-                err_l.append(err)
-                delay_l.append(delay)
-                ths_l.append(ths)
+                    ## # Exclude wrong detection cases
+                    ## if delay == []: continue
 
-            fn_l  = np.array(fn_l)*100.0
-            tp_l  = np.array(tp_l)*100.0
-            tn_l  = np.array(tn_l)*100.0
-            fp_l  = np.array(fp_l)*100.0
+            fn_l  = fn_l/fn_cnt
+            tn_l  = tn_l/tn_cnt
+            delay_l = delay_l/delay_cnt
 
-            idx_list = sorted(range(len(fp_l)), key=lambda k: fp_l[k])
-            sorted_fn_l    = [fn_l[j] for j in idx_list]
-            sorted_tp_l    = [tp_l[j] for j in idx_list]
-            sorted_tn_l    = [tn_l[j] for j in idx_list]
-            sorted_fp_l    = [fp_l[j] for j in idx_list]
-            sorted_err_l   = [err_l[j] for j in idx_list]
-            sorted_delay_l = [delay_l[j] for j in idx_list]
-            sorted_ths_l   = [ths_l[j] for j in idx_list]
+            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
+            sorted_fn_l    = np.array([fn_l[k] for k in idx_list])
+            sorted_tp_l    = 1.0 - sorted_fn_l
+            sorted_tn_l    = np.array([tn_l[k] for k in idx_list])
+            sorted_fp_l    = 1.0 - sorted_tn_l
+            sorted_delay_l = [delay_l[k] for k in idx_list]
 
-            ## print sorted_tn_l
-            ## print sorted_delay_l
-            ## print sorted_ths_l
-            ## print "                 "
             color = colors.next()
             shape = shapes.next()
 
@@ -462,8 +444,8 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        #os.system('cp test.pdf ~/Dropbox/')
-        pp.show()
+        os.system('cp test.pdf ~/Dropbox/')
+        ## pp.show()
         
     return
 
@@ -864,9 +846,10 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
         else:
             if delay < 0:
                 print "negative delay: ", delay
+                fn_l.append(fn)                            
             else:
                 delay_l.append(delay)
-            tn_l.append(0.0)
+                tn_l.append(0.0)
             ## err_l.append(err)
                         
     return fn_l, tn_l, err_l, delay_l, anomaly_idx
