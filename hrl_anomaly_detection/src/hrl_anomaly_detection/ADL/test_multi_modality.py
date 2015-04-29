@@ -424,7 +424,7 @@ def fig_roc_online_sim(cross_data_path, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_fn_l[1:], sorted_tn_l[1:], '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            pp.plot(sorted_fn_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
             #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
@@ -801,6 +801,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
+        fn = 0.0
         for j in range(2,m):                    
     
             if check_dim == 2:            
@@ -809,11 +810,10 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
                 fn, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
                 
             if fn == 1.0:        
-                fn_l.append(1.0)
                 break
-            if j == m-1 and fn == 0.0:            
-                fn_l.append(0.0)
-                ## err_l.append(err)
+
+        fn_l.append(fn)            
+        ## err_l.append(err)
         
         
     # 2) Use False data to get true negative rate
@@ -829,6 +829,8 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
         m = len(x_test1[i])
 
         # anomaly_check only returns anomaly cases only
+        tn = 0.0
+        delay = 0
         for j in range(2,m):                    
     
             if check_dim == 2:            
@@ -839,19 +841,19 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_method, ch
             delay = j-anomaly_idx[i]
 
             if tn == 1.0:        
-                if delay < 0:
-                    print "negative delay: ", j-anomaly_idx[i]
-                    tn_l.append(0.0)
-                else:                
-                    delay_l.append(delay)
-                    tn_l.append(1.0)
                 break
-            if j == m-1 and tn == 0.0:            
-                delay_l.append(delay)
-                tn_l.append(0.0)
-                ## err_l.append(err)
-                        
 
+        if tn == 1.0 and delay >= 0:
+            delay_l.append(delay)
+            tn_l.append(1.0)
+        else:
+            if delay < 0:
+                print "negative delay: ", delay
+            else:
+                delay_l.append(delay)
+            tn_l.append(0.0)
+            ## err_l.append(err)
+                        
     return fn_l, tn_l, err_l, delay_l, anomaly_idx
     
     
@@ -1319,19 +1321,19 @@ if __name__ == '__main__':
             train_aXData1 = train_dataSet.samples[:,0,:]
             train_aXData2 = train_dataSet.samples[:,1,:]
             train_chunks  = train_dataSet.sa.chunks 
+            dd['ft_force_mag_train_l'] = train_aXData1 
+            dd['audio_rms_train_l'] = train_aXData2 
+            dd['train_chunks'] = train_chunks
             
             test_aXData1 = test_dataSet.samples[:,0,:]
             test_aXData2 = test_dataSet.samples[:,1,:]
             test_chunks = test_dataSet.sa.chunks
-                        
-            n_false_data = 100
-            dd = dm.generate_sim_anomaly(test_aXData1, test_aXData2, n_false_data)
-            dd['ft_force_mag_train_l'] = train_aXData1 
-            dd['audio_rms_train_l'] = train_aXData2 
-            dd['train_chunks'] = train_chunks
             dd['ft_force_mag_test_l'] = test_aXData1 
             dd['audio_rms_test_l'] = test_aXData2 
             dd['test_chunks'] = test_chunks
+                        
+            n_false_data = 100
+            dd = dm.generate_sim_anomaly(test_aXData1, test_aXData2, n_false_data)
             
             ut.save_pickle(dd, pkl_file)
 
