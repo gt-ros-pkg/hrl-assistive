@@ -502,8 +502,7 @@ class ScoreGenerator(object):
         start_time = time.time()
         print 'Now starting to look at multiple base location combinations. Checking ', max_base_locations-1, ' max ' \
               'number of bases in combination. This may take a long time as well.'
-        self.best_score = []
-        # self.best_score.append([self.sorted_scores[hx, hz][0][9], self.sorted_scores[hx, hz][0][10]])
+
 
         mult_base_scores = {}
 
@@ -554,10 +553,7 @@ class ScoreGenerator(object):
                              ])
         if len(config_selections) == 1:
             return [this_personal_space, np.sum(this_reachable), np.sum(this_manipulable)]
-        elif np.sum(this_manipulable) >= 1.01*self.best_score[len(config_selections-2)][1] and np.sum(this_reachable) >= .98*self.best_score[len(config_selections-2)][0] and np.sum(this_manipulable) >= comparison*1.01:
-            if np.sum(this_manipulable) >= 1.01*self.best_score[len(config_selections-1)][1] and np.sum(this_reachable) >= .98*self.best_score[len(config_selections-1)][0]:
-                self.best_score[len(config_selections-1)] = [np.sum(this_reachable), np.sum(this_manipulable)]
-
+        elif np.sum(this_manipulable) >= 1.01*self.best_score[0][1] and np.sum(this_reachable) >= .98*self.best_score[0][0] and np.sum(this_manipulable) >= comparison*1.01:
             return [this_personal_space, np.sum(this_reachable), np.sum(this_manipulable)]
         else:
             return None
@@ -1370,9 +1366,9 @@ class ScoreGenerator(object):
             marker.pose.orientation.y = ori[1]
             marker.pose.orientation.z = ori[2]
             marker.pose.orientation.w = ori[3]
-            marker.scale.x = .09
-            marker.scale.y = .09
-            marker.scale.z = .025
+            marker.scale.x = .05*3
+            marker.scale.y = .05*3
+            marker.scale.z = .01*3
             marker.color.a = 1.
             marker.color.r = 1.0
             marker.color.g = 0.0
