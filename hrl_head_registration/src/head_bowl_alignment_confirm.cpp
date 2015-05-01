@@ -156,14 +156,16 @@ int main(int argc, char **argv)
     bowl_sub = nh.subscribe("/RYDS_CupLocation", 1, &subBowlCallback);
     bowlconfirm_sub = nh.subscribe("/RYDS_Confirm", 1, &subBowlConfirmCallback);
 
-    camera_sub = img_trans.subscribeCamera("/kinect_camera", 1, 
+    sleep(5);
+    cout << "If the Imager_transport warning shows, change the buffer size in the head_bowl_confirm program to 3." << endl;
+    camera_sub = img_trans.subscribeCamera("/kinect_camera", 10, 
                                            &doOverlay);
 
     overlay_pub = img_trans.advertise("/head_registration/confirmation", 1);
 
     ros::Rate r(5);
     while(ros::ok()) {
-        cv::Mat image(480, 640, CV_8UC3);
+        cv::Mat image(540, 960, CV_8UC3);
         ros::spinOnce();
         r.sleep();
     }
