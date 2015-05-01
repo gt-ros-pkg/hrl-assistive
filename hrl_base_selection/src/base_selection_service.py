@@ -35,25 +35,18 @@ import pickle
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
 import joblib
-
+from os.path import expanduser
 
 
 class BaseSelector(object):
-    joint_names = ['l_shoulder_pan_joint',
-                   'l_shoulder_lift_joint',
-                   'l_upper_arm_roll_joint',
-                   'l_elbow_flex_joint',
-                   'l_forearm_roll_joint',
-                   'l_wrist_flex_joint',
-                   'l_wrist_roll_joint']
-
-    def __init__(self, transform_listener=None, model='chair', mode='normal'):
+    def __init__(self, transform_listener=None, mode='normal', model='chair', load='shaving'):
         if transform_listener is None:
             self.listener = tf.TransformListener()
         else:
             self.listener = transform_listener
-        # self.mode = mode
+        self.mode = mode
         self.model = model
+        self.load = load
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, latch=True)
 
         self.bed_state_z = 0.
@@ -70,7 +63,6 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.mode = mode
         if self.mode == 'test':
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
@@ -88,17 +80,57 @@ class BaseSelector(object):
                                        [   m.sin(angle),   m.cos(angle),          0.,       0.],
                                        [             0.,             0.,          1.,       .5],
                                        [             0.,             0.,          0.,       1.]])
+
+        # When in sim mode, the ar tag is at the robot's base
         if self.mode == 'sim':
             self.pr2_B_ar = np.eye(4)
 
-
+        # Here is where the data is loaded.
         start_time = time.time()
         print 'Loading data, please wait.'
+
+        # First initializing the data as None
+        self.scores_dict = {}
+        self.scores_dict['chair', 'shaving'] = None
+        self.scores_dict['autobed', 'shaving'] = None
+        self.scores_dict['chair', 'feeding'] = None
+        self.scores_dict['autobed', 'feeding'] = None
+        self.scores_dict['chair', 'brushing'] = None
+        self.scores_dict['autobed', 'bathing'] = None
+        self.scores_dict['autobed', 'scratching_chest'] = None
+        self.scores_dict['autobed', 'scratching_thigh_left'] = None
+        self.scores_dict['autobed', 'scratching_thigh_right'] = None
+        self.scores_dict['autobed', 'scratching_forearm_left'] = None
+        self.scores_dict['autobed', 'scratching_forearm_right'] = None
+        self.scores_dict['autobed', 'scratching_upper_arm_left'] = None
+        self.scores_dict['autobed', 'scratching_upper_arm_right'] = None
+
+        # Now load the desired files
+        if load == 'all':
+            if model == 'chair':
+                self.scores_dict[model, 'shaving'] = self.load_task('shaving', model, 0)
+                self.scores_dict[model, 'feeding'] = self.load_task('feeding', model, 0)
+                self.scores_dict[model, 'brushing'] = self.load_task('brushing', model, 0)
+            elif model == 'autobed':
+                self.scores_dict['autobed', 'shaving'] = self.load_task('shaving', model, 0)
+                self.scores_dict['autobed', 'feeding'] = self.load_task('feeding', model, 0)
+                self.scores_dict['autobed', 'bathing'] = self.load_task('bathing', model, 0)
+                self.scores_dict['autobed', 'scratching_chest'] = self.load_task('scratching_chest', model, 0)
+                self.scores_dict['autobed', 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model, 0)
+                self.scores_dict['autobed', 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model, 0)
+                self.scores_dict['autobed', 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model, 0)
+                self.scores_dict['autobed', 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model, 0)
+                self.scores_dict['autobed', 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model, 0)
+                self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
+        else:
+            self.scores_dict[model, load] = self.load_task(load, model, 0)
+
         # self.chair_scores = self.load_task('yogurt', 'chair')
-        self.autobed_scores = self.load_task('feeding_quick', 'autobed', 0)
+        # self.autobed_scores = self.load_task('feeding_quick', 'autobed', 0)
         # self.shaving_scores = self.load_task('shaving', 'chair')
-        print 'Time to receive load data: %fs' % (time.time()-start_time)
-        # Service
+        print 'Time to load all requested data: %fs' % (time.time()-start_time)
+
+        # Initialize the service
         self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
         
         # Subscriber to update robot joint state
@@ -106,146 +138,45 @@ class BaseSelector(object):
         
         print "Ready to select base."
 
-        '''
-        self.joint_names = []
-        self.joint_angles = []
-        self.selection_mat = np.zeros(11)
-
-
-        self.setup_openrave()
-        
-        self.POSES = []
-        TARGETS =  np.array([[[0.252, -0.067, -0.021], [0.102, 0.771, 0.628, -0.002]],    #Face area
-                             [[0.252, -0.097, -0.021], [0.102, 0.771, 0.628, -0.002]],    #Face area
-                             [[0.252, -0.097, -0.061], [0.102, 0.771, 0.628, -0.002]],    #Face area
-                             [[0.252,  0.067, -0.021], [0.102, 0.771, 0.628, -0.002]],    #Face area
-                             [[0.252,  0.097, -0.061], [0.102, 0.771, 0.628, -0.002]],    #Face area
-                             [[0.252,  0.097, -0.021], [0.102, 0.771, 0.628, -0.002]],    #Face area
-                             [[0.108, -0.236, -0.105], [0.346, 0.857, 0.238,  0.299]],    #Shoulder area
-                             [[0.108, -0.256, -0.105], [0.346, 0.857, 0.238,  0.299]],    #Shoulder area
-                             [[0.443, -0.032, -0.716], [0.162, 0.739, 0.625,  0.195]],    #Knee area
-                             [[0.443, -0.032, -0.716], [0.162, 0.739, 0.625,  0.195]],    #Knee area
-                             [[0.337, -0.228, -0.317], [0.282, 0.850, 0.249,  0.370]],    #Arm area
-                             [[0.367, -0.228, -0.317], [0.282, 0.850, 0.249,  0.370]]])   #Arm area
-
-                             
-        #self.pr2_B_wc = []
-        self.Tgrasps = []
-        #self.weights = []
-        self.best_score = 0
-        self.goals = []
-        for target in TARGETS:
-            self.POSES.append(createBMatrix(target[0],target[1]))
-        '''
-
-    def setup_openrave(self):
-        '''
-        # Setup Openrave ENV
-        self.env = op.Environment()
-
-        # Lets you visualize openrave. Uncomment to see visualization. Does not work through ssh.
-        #self.env.SetViewer('qtcoin')
-
-
-
-        ## Load PR2 Model
-        self.env.Load('robots/pr2-beta-static.zae')
-        self.robot = self.env.GetRobots()[0]
-        v = self.robot.GetActiveDOFValues()
-        v[self.robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()]= 3.14/2
-        v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
-        v[self.robot.GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
-        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = .3
-        self.robot.SetActiveDOFValues(v)
-        robot_start = np.matrix([[m.cos(0.), -m.sin(0.), 0., 0.],
-                                 [m.sin(0.),  m.cos(0.), 0., 0.],
-                                 [0.       ,         0., 1., 0.],
-                                 [0.       ,         0., 0., 1.]])
-        self.robot.SetTransform(np.array(robot_start))
-
-        ## Set robot manipulators, ik, planner
-        self.robot.SetActiveManipulator('leftarm')
-        self.manip = self.robot.GetActiveManipulator()
-        ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)
-        if not ikmodel.load():
-            ikmodel.autogenerate()
-        # create the interface for basic manipulation programs
-        self.manipprob = op.interfaces.BaseManipulation(self.robot)
-
-        v = self.robot.GetActiveDOFValues()
-        for name in self.joint_names:
-            v[self.robot.GetJoint(name).GetDOFIndex()] = self.joint_angles[self.joint_names.index(name)]
-        self.robot.SetActiveDOFValues(v)
-
-        # Set up inverse reachability
-        #self.irmodel = op.databases.inversereachability.InverseReachabilityModel(robot=self.robot)
-        #print 'loading irmodel'
-        #starttime = time.time()
-        #if not self.irmodel.load():
-        #    print 'do you want to generate irmodel for your robot? it might take several hours'
-        #    print 'or you can go to http://people.csail.mit.edu/liuhuan/pr2/openrave/openrave_database/ to get the database for PR2'
-        #    input = raw_input('[Y/n]\n')
-        #    if input == 'y' or input == 'Y' or input == '\n' or input == '':
-        #        self.irmodel.autogenerate()
-       #         self.irmodel.load()
-       #     else:
-       #         raise ValueError('')
-       # print 'time to load inverse-reachability model: %fs'%(time.time()-starttime)
-        # make sure the robot and manipulator match the database
-       # assert self.irmodel.robot == self.robot and self.irmodel.manip == self.robot.GetActiveManipulator()
-
-        ## Find and load Wheelchair Model
-        rospack = rospkg.RosPack()
-        pkg_path = rospack.get_path('hrl_base_selection')
-        self.env.Load(''.join([pkg_path, '/models/ADA_Wheelchair.dae']))
-        self.wheelchair = self.env.GetBodies()[1]
-        '''
-        print 'I ran openrave setup despite it not doing anything'
-
+    # This gets the joint states of the entire robot and saves only the robot's z-axis state.
     def joint_state_cb(self, msg):
-        #This gets the joint states of the entire robot.
         for num, name in enumerate(msg.name):
             if name == 'torso_lift_joint':
                 self.robot_z = msg.position[num]
 
     # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real
-    # wheelchair
-    def publish_subject_marker(self, pos, ori):
+    # wheelchair. This is for visualization, serves no vital purpose.
+    def publish_sub_marker(self, pos, ori):
         marker = Marker()
+        #marker.header.frame_id = "/base_footprint"
         marker.header.frame_id = "/base_link"
         marker.header.stamp = rospy.Time()
-        marker.ns = "base_service_subject_model"
         marker.id = 0
-        marker.type = Marker.MESH_RESOURCE;
+        marker.type = Marker.MESH_RESOURCE
         marker.action = Marker.ADD
         marker.pose.position.x = pos[0]
         marker.pose.position.y = pos[1]
-        marker.pose.position.z = 0
+        marker.pose.position.z = pos[2]
         marker.pose.orientation.x = ori[0]
         marker.pose.orientation.y = ori[1]
         marker.pose.orientation.z = ori[2]
         marker.pose.orientation.w = ori[3]
-        marker.scale.x = .0254
-        marker.scale.y = .0254
-        marker.scale.z = .0254
         marker.color.a = 1.
         marker.color.r = 0.0
-        marker.color.g = 0.0
-        marker.color.b = 1.0
-        if self.model=='chair':
-            name = 'wc_model'
-            marker.mesh_resource = "package://hrl_base_selection/models/ADA_Wheelchair.dae"
-            marker.scale.x = .0254
-            marker.scale.y = .0254
-            marker.scale.z = .0254
-        elif self.model=='bed':
-            name = 'bed_model'
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        name = 'BSS_subject_model'
+        if self.model == 'chair':
+            marker.mesh_resource = "package://hrl_base_selection/models/wheelchair_and_body_assembly_rviz.STL"
+            marker.scale.x = 1.0
+            marker.scale.y = 1.0
+            marker.scale.z = 1.0
+        elif self.model == 'bed':
             marker.mesh_resource = "package://hrl_base_selection/models/head_bed.dae"
             marker.scale.x = 1.0
-            marker.scale.y = 1.
+            marker.scale.y = 1.0
             marker.scale.z = 1.0
-        elif self.model=='autobed':
-            name = 'autobed_model'
+        elif self.model == 'autobed':
             marker.mesh_resource = "package://hrl_base_selection/models/bed_and_body_v3_rviz.dae"
             marker.scale.x = 1.0
             marker.scale.y = 1.0
@@ -253,13 +184,20 @@ class BaseSelector(object):
         else:
             print 'I got a bad model. What is going on???'
             return None
-        self.vis_pub.publish(marker)
+        vis_pub = rospy.Publisher(''.join(['~', name]), Marker, latch=True)
+        marker.ns = ''.join(['base_service_', name])
+        vis_pub.publish(marker)
+        print 'Published a model of the subject to rviz'
 
+    # When we are using the autobed, we probably need to know the state of the autobed. This records the current
+    # state of the autobed.
     def bed_state_cb(self, data):
         self.bed_state_z = data.data[1]
         self.bed_state_head_theta = data.data[0]
         self.bed_state_leg_theta = data.data[2]
 
+    # Used only in sim mode. This keeps track of the pose of the head when it is just being published, instead of
+    # getting it from tf.
     def head_pose_cb(self, data):
         trans = [data.pose.position.x,
                  data.pose.position.y,
@@ -275,6 +213,8 @@ class BaseSelector(object):
                         0.]
             self.pr2_B_ar = createBMatrix(ar_trans, rot)
 
+    # Used only in sim mode. This keeps track of the location of the bed when it is just being published, instead of
+    # getting it from tf.
     def bed_pose_cb(self, data):
         trans = [data.pose.position.x,
                  data.pose.position.y,
@@ -285,30 +225,31 @@ class BaseSelector(object):
                data.pose.orientation.w]
         self.pr2_B_ar = createBMatrix(trans, rot)
 
-     # Function that determines a good base location to be able to reach the goal location.
-    #def handle_select_base(self, req):#, task):
+    # The service call function that determines a good base location to be able to reach the goal location.
+    # Takes as input the service's inputs. Outputs lists with initial configurations.
     def handle_select_base(self, req):
+        service_initial_time = time.time()
+        start_time = time.time()
+        print 'The initial configuration selection service has been called!'
         model = req.model
-        self.model = model
         task = req.task
         self.task = task
+
+        # Check if we have previously loaded this task/model (assuming the data file exists).
+        if self.model != model:
+            print 'The model in the service request differs from what was given to the service on initialization. As' \
+                  'a result, data for a user in that location (autobed/chair) has not been loaded!'
+        if self.load != 'all':
+            if self.load != task:
+                print 'The task asked of the service request differs from what was given to the service on ' \
+                      'initialization. As a result, data for that task has not been loaded!'
+
+        # Subscribe to the autobed state if we are using autobed
         if model == 'autobed':
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-        print 'I have received inputs!'
-        start_time = time.time()
-        #print 'My given inputs were: \n'
-        #print 'head is: \n', req.head
 
-        # The head location is received as a posestamped message and is converted and used as the head location.
-        # pos_temp = [req.head.pose.position.x,
-        #             req.head.pose.position.y,
-        #             req.head.pose.position.z]
-        # ori_temp = [req.head.pose.orientation.x,
-        #             req.head.pose.orientation.y,
-        #             req.head.pose.orientation.z,
-        #             req.head.pose.orientation.w]
-        # self.pr2_B_head = createBMatrix(pos_temp, ori_temp)
-        # #print 'head from input: \n', head
+        # In normal mode, gets locations of things from tf. Intended to use head registration for head pose, AR tag
+        # detection, and servoing.
         if self.task == 'shaving_test':
             self.mode = 'test'
         elif self.mode == 'normal':
@@ -327,6 +268,12 @@ class BaseSelector(object):
                     self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
+
+                    # Here I do some manual conversion to covert between the coordinate frame of the bed, which should
+                    # be located in the center of the headboard of the bed on the floor, to the AR tag's coordinate
+                    # frame. To make the manual transformation calculation easier, I split it into 3 homogeneous
+                    # transforms, one translation, one rotation about Z, one rotation about x. This should be adjusted
+                    # depending on the actual location of the AR tag.
                     ar_trans_B = np.eye(4)
                     # -.445 if right side of body. .445 if left side.
                     # This is the translational transform from bed origin to the ar tag tf.
@@ -344,16 +291,18 @@ class BaseSelector(object):
                     # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
                     # (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
                     # self.ar_B_model = createBMatrix(trans, rot)
+                # Probably for the best to not try to do things from too far away. Also, if the AR tag is more than 4m
+                # away, it is likely that an error is occurring with its detection.
                 if np.linalg.norm(trans) > 4:
                     rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
                                   'tag. Or just move it closer via other means. Alternatively, the PR2 may have lost '
                                   'sight of the AR tag or it is having silly issues recognizing it. ')
-                    return None
-
+                    return None, None
             except Exception as e:
                 rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
                               "head location:\r\n%s" % e)
-                return None
+                return None, None
+        # Demo mode is to use motion capture to get locations. In this case, some things simplify out.
         elif self.mode == 'demo':
             try:
                 now = rospy.Time.now()
@@ -392,19 +341,22 @@ class BaseSelector(object):
                     rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
                                   'tag. Or just move it closer via other means. Alternatively, the PR2 may have lost '
                                   'sight of the AR tag or it is having silly issues recognizing it. ')
-                    return None
-
+                    return None, None
             except Exception as e:
                 rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
                               "head location:\r\n%s" % e)
-                return None
+                return None, None
+        # In sim mode, we expect that the head and bed pose (if using autobed) are being published.
         elif self.mode == 'sim':
             self.head_pose_sub = rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.head_pose_cb)
             if self.model == 'autobed':
                 self.bed_pose_sub = rospy.Subscriber('/haptic_mpc/bed_pose', PoseStamped, self.bed_pose_cb)
             self.model_B_ar = np.eye(4)
 
-        print 'The homogeneous transfrom from PR2 base link to head: \n', self.pr2_B_head
+        # print 'The homogeneous transform from PR2 base link to head: \n', self.pr2_B_head
+
+        # I now project the head pose onto the ground plane to mitigate potential problems with poorly registered head
+        # pose.
         z_origin = np.array([0, 0, 1])
         x_head = np.array([self.pr2_B_head[0, 0], self.pr2_B_head[1, 0], self.pr2_B_head[2, 0]])
         y_head_project = np.cross(z_origin, x_head)
@@ -416,35 +368,19 @@ class BaseSelector(object):
             self.pr2_B_head_project[i, 0] = x_head_project[i]
             self.pr2_B_head_project[i, 1] = y_head_project[i]
             self.pr2_B_head_project[i, 3] = self.pr2_B_head[i, 3]
-
         self.pr2_B_headfloor = copy.copy(np.matrix(self.pr2_B_head_project))
         self.pr2_B_headfloor[2, 3] = 0.
-        print 'The homogeneous transform from PR2 base link to the head location projected onto the ground plane: \n', \
-            self.pr2_B_headfloor
+        # print 'The homogeneous transform from PR2 base link to the head location projected onto the ground plane: \n', \
+        #     self.pr2_B_headfloor
 
-
-
-
-        print 'I will now determine a good base location.'
         headx = 0
         heady = 0
-        # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
+        # Sets the location of the robot with respect to the person based using a few homogeneous transforms.
         if model == 'chair':
-            # self.pr2_B_headfloor = copy.copy(np.matrix(self.pr2_B_head_project))
-            # self.pr2_B_headfloor[2, 3] = 0.
-
-
-            # Transform from the coordinate frame of the wc model in the back right bottom corner, to the head location
-            originsubject_B_headfloor = np.matrix([[m.cos(0.), -m.sin(0.),  0., .442603], #.45 #.438
-                                                   [m.sin(0.),  m.cos(0.),  0., .384275], #0.34 #.42
-                                                   [       0.,         0.,  1.,      0.],
-                                                   [       0.,         0.,  0.,      1.]])
             self.origin_B_pr2 = copy.copy(self.pr2_B_headfloor.I)
-            # self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
-            # reference_floor_B_pr2 = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
 
-        # Regular bed is now deprecated. To use need to fix to be similar to chair.
-        if model =='bed':
+        # Regular bed is now deprecated. Do not use this unless you fix it first.
+        elif model =='bed':
             an = -m.pi/2
             self.headfloor_B_head = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.], #.45 #.438
                                                [         0.,   1.,         0.,       0.], #0.34 #.42
@@ -456,19 +392,9 @@ class BaseSelector(object):
                                                    [-m.sin(an2),  0., m.cos(an2),     0.],
                                                    [         0.,  0.,         0.,     1.]])
             self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
-            # subject_location = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
 
-        if model == 'autobed':
-            # an = -m.pi/2
-            # self.headfloor_B_head = np.matrix([[  m.cos(an),   0.,  m.sin(an),       0.], #.45 #.438
-            #                                    [         0.,   1.,         0.,       0.], #0.34 #.42
-            #                                    [ -m.sin(an),   0.,  m.cos(an),   1.1546],
-            #                                    [         0.,   0.,         0.,       1.]])
-            # an2 = 0
-            # self.origin_B_model = np.matrix([[       1.,        0.,   0.,              0.0],
-            #                                  [       0.,        1.,   0.,              0.0],
-            #                                  [       0.,        0.,   1., self.bed_state_z],
-            #                                  [       0.,        0.,   0.,              1.0]])
+        # Slightly more complicated for autobed because the person can move around on the bed.
+        elif model == 'autobed':
             self.model_B_pr2 = self.model_B_ar * self.pr2_B_ar.I
             self.origin_B_pr2 = copy.copy(self.model_B_pr2)
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
@@ -477,7 +403,6 @@ class BaseSelector(object):
             # with respect to the bed model. Currently it just selects the dictionary entry with the closest relative
             # head location. Ultimately it should use a gaussian to get scores from the dictionary based on the actual
             # head location.
-
             if model_B_head[0, 3] > -.025 and model_B_head[0, 3] < .025:
                 headx = 0.
             elif model_B_head[0, 3] >= .025 and model_B_head[0, 3] < .75:
@@ -500,113 +425,71 @@ class BaseSelector(object):
             elif model_B_head[1, 3] <= -.075:
                 heady = -.1
 
-            # subject_location = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
-
-        # subject_location = self.pr2_B_head * self.headfloor_B_head.I * originsubject_B_headfloor.I
+        # subject_location is the transform from the robot to the origin of the model that was used in creating the
+        # databases for base selection
         subject_location = self.origin_B_pr2.I
-        #self.subject.SetTransform(np.array(subject_location))
 
+        print 'Now finished getting poses of the head, etc. Proceeding!'
+        print 'Time to receive locations and start things off: %fs' % (time.time()-start_time)
 
-        # Get score data and convert to goal locations
-        print 'Time to receive head location and start things off: %fs' % (time.time()-start_time)
+        # Now check that we have the data loaded for the desired task. Load the data if it has not yet been loaded.
         start_time = time.time()
-        if self.model == 'chair':
-            all_scores = self.chair_scores
-        elif self.model == 'autobed':
-            all_scores = self.autobed_scores
-        # all_scores = self.load_task(task, model)
+        if self.scores_dict[model, task] is None:
+            print 'For whatever reason, the data for this task was not previously loaded. I will now try to load it.'
+            all_scores = self.load_task(task, model)
+            if all_scores is None:
+                print 'Failed to load precomputed reachability data. That is a problem. Abort!'
+                return None, None
+        else:
+            all_scores = self.scores_dict[model, task]
         scores = all_scores[headx, heady]
-        if scores == None:
-            print 'Failed to load precomputed reachability data. That is a problem. Abort!'
-            return None, None
-#        for score in scores:
-#            if score[0][4]!=0:
-#                print score[0]
-        
-        # print 'Time to load pickle: %fs' % (time.time()-start_time)
-        start_time = time.time()
 
         ## Set the weights for the different scores.
         alpha = 0.0001  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = .0007  # Weight on distance to move to get to that goal location
-        # pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
-        # headfloor_B_pr2 = pr2_B_headfloor.I
+
+        # For the optimization, we currently only care about x-y distance moved by the base and rotation of the base
+        # This should be updated to have a normalized range of values and to saturate at some distance. If the robot
+        # if 3m away, it probably doesn't matter if it has to move 0.5m more or less.
         pr2_loc = np.array([self.origin_B_pr2[0, 3], self.origin_B_pr2[1, 3]])
         length = len(scores)
         temp_scores = np.zeros([length, 1])
         temp_locations = scores[:, 0]
-        print 'Original number of scores: ', length
-        print 'Time to start data processing: %fs' % (time.time()-start_time)
+        # print 'Original number of scores: ', length
+        print 'Time to prepare data for processing: %fs' % (time.time()-start_time)
+        start_time = time.time()
         for j in xrange(length):
-            #print 'score: \n',score
             dist_score = 0
             for i in xrange(len(scores[j, 0][0])):
-                #headfloor_B_goal = createBMatrix([scores[j,0][i],scores[j,1][i],0],tr.matrix_to_quaternion(tr.rotZ(scores[j,2][i])))
-                #print 'from createbmatrix: \n', headfloor_B_goal
-                #headfloor_B_goal = np.matrix([[  m.cos(scores[j,2][i]), -m.sin(scores[j,2][i]),                0.,        scores[j,0][i]],
-                #                              [  m.sin(scores[j,2][i]),  m.cos(scores[j,2][i]),                0.,        scores[j,1][i]],
-                #                              [                  0.,                  0.,                1.,                 0.],
-                #                              [                  0.,                  0.,                0.,                 1.]]) 
-                #dist = np.linalg.norm(pr2_loc-scores[j,0:2][i])
-                #headfloor_B_goal = np.diag([1.,1.,1.,1.])
-                #headfloor_B_goal[0,3] = scores[j,0][i]
-                #headfloor_B_goal[1,3] = scores[j,1][i]
-                #th = scores[j,2][i]
-                #ct=m.cos(th)
-                #st = m.sin(th)
-                #headfloor_B_goal[0,0] = ct
-                #headfloor_B_goal[0,1] = -st
-                #headfloor_B_goal[1,0] = st
-                #headfloor_B_goal[1,1] = ct
-                #headfloor_B_goal[0:2,0:2] = np.array([[m.cos(scores[j,2][i]),-m.sin(scores[j,2][i])],[m.sin(scores[j,2][i]),m.cos(scores[j,2][i])]])
-                #print 'from manual: \n', headfloor_B_goal
-                #dist_score += np.linalg.norm((pr2_B_headfloor*headfloor_B_goal)[0:2,3])
-                # print pr2_loc
-                # print scores[0, 0]
-                # print 'i ', i
                 current_x = np.array([self.origin_B_pr2[0, 0], self.origin_B_pr2[1, 0], self.origin_B_pr2[2, 0]])
                 des_x = np.array([m.cos(scores[j, 0][2][i]), m.sin(scores[j, 0][2][i]), 0])
                 angle_change = m.acos(np.dot(current_x, des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
                 dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
-                # if np.round(scores[j, 0][2][i],3) == 2.356:
-                #     print 'using 3/4 pi'
-                #     angle_change = 0
                 dist_score += angle_change
                 # I should eventually use the following line instead, because it normalizes to 0-1 range. This way the
                 # weights can be compared better.
                 # dist_score += angle_change/(2*m.pi)
-
             # This adds to dist score a cost for moving the robot in the z axis. Commented out currently.
             # dist_score += np.max([t for t in ((np.linalg.norm(self.robot_z - scores[j, 0][3][i]))
             #                                   for i in xrange(len(scores[j, 0][0]))
             #                                   )
             #                       ])
 
-
+            # Summing the scores
             thisScore = -alpha*scores[j, 1][0]+beta*scores[j, 1][1]+gamma*scores[j, 1][2]-zeta*dist_score
+
+            # Don't want scores less than 0.
             if thisScore < 0:
                 thisScore = 0
-            #print 'This score: ',thisScore
-            # temp_scores[j,0] = 0
             temp_scores[j, 0] = copy.copy(thisScore)
-            #if thisScore>0:
-            #    temp_scores[j] = copy.copy(thisScore)
-                #temp_locations[num] = np.vstack([temp_locations,score[0]])
-            #else: 
-            #    temp_scores = np.delete(temp_scores,j,0)
-            #    temp_locations = np.delete(temp_locations,j,0)
-        #print 'Time to run through data: %fs'%(time.time()-start_time)
-        #temp_locations = np.delete(temp_scores,0,0)
-        # temp_scores = np.hstack([list(temp_locations), temp_scores])
+
         out_score = []
         for i in xrange(length):
             out_score.append([temp_locations[i], temp_scores[i]])
         out_score = np.array(out_score)
 
-                #reachable.append(score[1])
-                #manipulable.append(score[2])
         print 'Final version of scores is: \n', out_score[0]
         self.score_sheet = np.array(sorted(out_score, key=lambda t:t[1], reverse=True))
         self.score_length = len(self.score_sheet)
@@ -614,42 +497,59 @@ class BaseSelector(object):
         print 'Number of scores in score sheet: ', self.score_length
 
         print 'I have finished preparing the data for the task!'
+        print 'Time to perform optimization: %fs' % (time.time()-start_time)
 
         if self.score_sheet[0, 1] == 0:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return None, None
-                          
-        print 'Time to adjust base scores: %fs' % (time.time()-start_time)
-        
+
         # Published the wheelchair location to create a marker in rviz for visualization to compare where the service believes the wheelchair is to
         # where the person is (seen via kinect).
         pos_goal, ori_goal = Bmat_to_pos_quat(subject_location)
         self.publish_subject_marker(pos_goal, ori_goal)
+
+        # Visualize plot is a function to return a 2-D plot showing the best scores for each robot X-Y base location
+        # after the updates to the score from above. Currently deprecated, so don't use it.
         visualize_plot = False
         if visualize_plot:
             self.plot_final_score_sheet()
 
+        # This is the end of this function. The return calls a function that creates an output that is appropriate for
+        # whatever the system calling base selection wants.
+        print 'Time for service to run start to finish: %fs' % (time.time()-service_initial_time)
         return self.handle_returning_base_goals()
-        
+
+    # Function for handling the output of base selection. If given no input, uses data calculated previously. Can also
+    # be given a set of data as input. This is usually done just for testing. Outputs the best location for the pr2
+    # base and the best "other" configurations in two separate lists.
+    # Format of output is:
+    # [x (m), y (m), theta (radians)], [pr2_z_axis (cm), autobed_height (cm), autobed_headrest_angle (radians)]
+    # The current output for the robot base location is the transformation from the goal position for the robot base
+    # to the AR tag.
+    # For a task with a solution of multiple configurations, each configuration will be appended to the previous list.
+    # E.g. [x1, y1, th1, x2, y2, th2] where the first three entries correspond to the first configuration.
     def handle_returning_base_goals(self, data=None):
+        # If input is received, use it. Otherwise, use data from above.
         if data != None:
             score_sheet = copy.copy(data)
         else:
             score_sheet = copy.copy(self.score_sheet)
 
-        # now = rospy.Time.now() + rospy.Duration(1.0)
-        # self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
-        # (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
-        # odom_B_pr2 = createBMatrix(trans, rot)
-
+        # I only want to output the configuration with the best score, so first I grab it from the score sheet.
         best_score_cfg = score_sheet[0, 0]
         best_score_score = score_sheet[0, 1]
 
         pr2_base_output = []
         configuration_output = []
 
-        # The output is a list of floats that are the position and quaternions for the transform from the goal location
-        # to the ar tag. It also outputs a list of floats that is [robot z axis, bed height, head rest angle (degrees)].
+        # Outputs the best location for the pr2
+        # base and the best "other" configurations in two separate lists.
+        # Format of output is:
+        # [x (m), y (m), theta (radians)], [pr2_z_axis (cm), autobed_height (cm), autobed_headrest_angle (radians)]
+        # The current output for the robot base location is the transformation from the goal position for the robot base
+        # to the AR tag.
+        # For a task with a solution of multiple configurations, each configuration will be appended to the previous list.
+        # E.g. [x1, y1, th1, x2, y2, th2] where the first three entries correspond to the first configuration.
         for i in xrange(len(best_score_cfg[0])):
             origin_B_goal = np.matrix([[m.cos(best_score_cfg[2][i]), -m.sin(best_score_cfg[2][i]), 0., best_score_cfg[0][i]],
                                        [m.sin(best_score_cfg[2][i]),  m.cos(best_score_cfg[2][i]), 0., best_score_cfg[1][i]],
@@ -658,91 +558,13 @@ class BaseSelector(object):
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
             goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
             pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
-            # odom_B_goal = odom_B_pr2 * self.origin_B_pr2.I * origin_B_goal
-            # pos_goal, ori_goal = Bmat_to_pos_quat(odom_B_goal)
             pr2_base_output.append([pos_goal[0], pos_goal[1], m.acos(pr2_B_goal[0, 0])])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
-
-            ## I no longer return posestamped messages. Now I return a list of floats.
-            # psm = PoseStamped()
-            # psm.header.frame_id = '/odom_combined'
-            # psm.pose.position.x=pos_goal[0]
-            # psm.pose.position.y=pos_goal[1]
-            # psm.pose.position.z=pos_goal[2]
-            # psm.pose.orientation.x=ori_goal[0]
-            # psm.pose.orientation.y=ori_goal[1]
-            # psm.pose.orientation.z=ori_goal[2]
-            # psm.pose.orientation.w=ori_goal[3]
-            # #print 'The quaternion to the goal location #',i,' is: \n',psm
-            # output.append(psm)
-        print 'Base selection service is done and has output a result.'
-        ## Format of output is a list. Output is position [x,y,z] then quaternion [x,y,z,w] for each base location
-        # (could output multiple base locations). So each set of 7 values is for one base location.
+        print 'Base selection service is done and has completed preparing its result.'
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))
-            
-        # Visualize the solutions
-        #with self.robot:
-            #print 'checking goal base location: \n' , np.array(base_position)
-            #sol = None
-            #if not self.manip.CheckIndependentCollision(op.CollisionReport()):
-                #for Tgrasp in self.Tgrasps:
-                    #sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-                    #if sol is not None:
-                        #self.robot.SetDOFValues(sol,self.manip.GetArmIndices())
-                        #print 'displaying an IK solution!'
-                #rospy.sleep(1.5)
 
- 
-
-            
-            
-            # Visualize the solutions
-            #for Tgrasp in self.Tgrasps:
-            #    sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-            #    if sol is not None:
-            #        self.robot.SetDOFValues(sol,self.manip.GetArmIndices())
-            #        print 'displaying an IK solution!'
-            #    rospy.sleep(1.5)
-            
-       
-            # Commented out for testing. Uncomment FOR IT TO WORK!!!
-            #now = rospy.Time.now() + rospy.Duration(1.0)
-            #self.listener.waitForTransform('/odom_combined', '/base_link', now, rospy.Duration(10))
-            #(trans,rot) = self.listener.lookupTransform('/odom_combined', '/base_link', now)
-
-            #odom_goal = createBMatrix(trans, rot) * base_location
-            #pos_goal = odom_goal[:3,3]
-            #ori_goal = tr.matrix_to_quaternion(odom_goal[0:3,0:3])
-            #print 'Got an iksolution! \n', sol
-            #psm = PoseStamped()
-            #psm.header.frame_id = '/odom_combined'
-            #psm.pose.position.x=pos_goal[0]
-            #psm.pose.position.y=pos_goal[1]
-            #psm.pose.position.z=pos_goal[2]
-            #psm.pose.orientation.x=ori_goal[0]
-            #psm.pose.orientation.y=ori_goal[1]
-            #psm.pose.orientation.z=ori_goal[2]
-            #psm.pose.orientation.w=ori_goal[3]
-
-                            # This is to publish WC position w.r.t. PR2 after the PR2 reaches goal location.
-                            # Only necessary for testing in simulation to set the wheelchair in reach of PR2.
-                            #goalpr2_B_wc = wc_B_goalpr2.I
-                            #print 'pr2_B_wc is: \n',goalpr2_B_wc
-                            #pos_goal = goalpr2_B_wc[:3,3]
-                            #ori_goal = tr.matrix_to_quaternion(goalpr2_B_wc[0:3,0:3])
-                            #psm_wc = PoseStamped()
-                            #psm_wc.header.frame_id = '/odom_combined'
-                            #psm_wc.pose.position.x=pos_goal[0]
-                            #psm_wc.pose.position.y=pos_goal[1]
-                            #psm_wc.pose.position.z=pos_goal[2]
-                            #psm_wc.pose.orientation.x=ori_goal[0]
-                            #psm_wc.pose.orientation.y=ori_goal[1]
-                            #psm_wc.pose.orientation.z=ori_goal[2]
-                            #psm_wc.pose.orientation.w=ori_goal[3]
-                            #self.wc_position.publish(psm_wc)
-
-        #print 'The quaternion to the goal location is: \n',psm
-
+    # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
+    # with the current state of the environment
     def plot_final_score_sheet(self):
         visualize_plot = True
         if visualize_plot:
@@ -847,9 +669,20 @@ class BaseSelector(object):
         #print 'I found nothing! My given inputs were: \n', req.task, req.head
         return None
 
+    # Function to load task data. Currently uses joblib. Returns the data in the file if successful. Returns None if
+    # unsuccessful. Takes as input strings for the task (shaving, feeding, etc) and for the model (chair or autobed).
+    # Takes as input subj, which is the subject number. This is typically 0. Could use other numbers to differentiate
+    # between users or user preference.
+    # Set to load from svn now, where I have put the data files.
     def load_task(self, task, model, subj):
-        # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data.pkl'])
-        file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
+        home = expanduser("~")
+        if 'scratching' not in task:
+            # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+        else:
+            task_name = 'scratching'
+            task_location = task.replace('scratching_', '')
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
         try:
@@ -859,10 +692,32 @@ class BaseSelector(object):
             return None
 
 if __name__ == "__main__":
-    # model = 'bed'
-    mode = 'demo'  # Mode options are: 'normal' 'test' 'sim' 'demo'
-    rospy.init_node('select_base_server')
-    selector = BaseSelector(mode=mode)
+    import optparse
+    p = optparse.OptionParser()
+
+    # Option to select what mode to run the service in. Normal is for typical use. Test
+    # is for development testing. Sim is to let you publish reference frames (e.g. head, AR tag)
+    # manually for the service to use. Demo is to use frames from the motion capture room.
+    p.add_option('--mode', action='store', dest='mode', default='normal', type='string',
+                 help='Select mode of use (normal, test, sim, or demo)')
+
+    # Option to select if the user is in a wheelchair or bed. Helps select the data files to
+    # load. Some tasks do not have data for chair or bed.
+    p.add_option('--user', action='store', dest='user', default='chair', type='string',
+                 help='Select if the user is in a wheelchair or autobed (wheelchair or autobed)')
+
+    # Option to select what data files to load when the service starts. If you want full functionality
+    # you can just do all, but it will take a while to initialize (30 seconds).
+    p.add_option('--load', action='store', dest='load', default='shaving', type='string',
+                 help='Select tasks to load (all, shaving, brushing, '
+                      'feeding, feeding, bathing, scratching_chest, scratching_thigh_left,'
+                      'scratching_thigh_right, scratching_forearm_left, scratching_forearm_right,'
+                      'scratching_upper_arm_left, scratching_upper_arm_right)')
+
+    opt, args = p.parse_args()
+
+    rospy.init_node('base_selection_server')
+    selector = BaseSelector(mode=opt.mode, model=opt.user, load=opt.load)
     rospy.spin()
 
 
