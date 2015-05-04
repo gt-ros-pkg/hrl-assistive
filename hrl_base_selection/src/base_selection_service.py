@@ -704,7 +704,7 @@ if __name__ == "__main__":
     # Option to select if the user is in a wheelchair or bed. Helps select the data files to
     # load. Some tasks do not have data for chair or bed.
     p.add_option('--user', action='store', dest='user', default='chair', type='string',
-                 help='Select if the user is in a wheelchair or autobed (wheelchair or autobed)')
+                 help='Select if the user is in a chair or autobed (chair or autobed)')
 
     # Option to select what data files to load when the service starts. If you want full functionality
     # you can just do all, but it will take a while to initialize (30 seconds).
