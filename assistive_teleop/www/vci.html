@@ -10,7 +10,7 @@
   <script type="text/javascript" src="jqueryui/jquery-1.10.2.js"></script>
   <script type="text/javascript" src="jqueryui/ui/minified/jquery-ui.min.js"></script>
   <script type="text/javascript" src="js/numeric-1.2.6.js"></script>
-  <script type="text/javascript" src="js/snap/snap.svg-min.js"></script>
+  <script type="text/javascript" src="js/snap/snap.svg.js"></script>
   <link type="text/css" href="js/circular-slider-master/circular-slider.min.css" rel="stylesheet" />
   <script type="text/javascript" src="js/circular-slider-master/circular-slider.js"></script>
 
@@ -135,11 +135,11 @@
          <div class="map-look bottom center cursor-eyes-down"></div>
          <div class="map-look bottom right cursor-eyes-down-right"></div>
          <!-- divs for driving controls -->
+         <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+         </svg>
          <div class="drive-ctrl drive-look left cursor-eyes-left"></div>
          <div class="drive-ctrl drive-look right cursor-eyes-right"></div>
-         <div class="drive-ctrl linear-ring"></div>
-         <div class="drive-ctrl drive-guide left"></div>
-         <div class="drive-ctrl drive-guide right"></div>
+         <!--<div class="drive-ctrl linear-ring"></div>-->
          <!-- divs for torso controls -->
          <img id="tallIcon" src="./css/icons/tall.png"></img>
          <img id="shortIcon" src="./css/icons/short.png"></img>

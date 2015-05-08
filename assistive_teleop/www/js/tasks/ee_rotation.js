@@ -45,7 +45,7 @@ RFH.EERotation = function (options) {
         var euler = new THREE.Euler(rx, ry, rz, 'ZYX');
         var q = new THREE.Quaternion().setFromEuler(euler);
         var quat = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
-        console.log("Sending RPY: "+euler.x+", "+euler.y+", "+euler.z);
+//        console.log("Sending RPY: "+euler.x+", "+euler.y+", "+euler.z);
 //        console.log("Sending Quat: "+q.x+", "+q.y+", "+q.z+", "+q.w);
         self.arm.sendGoal({orientation: quat});
     };
@@ -56,7 +56,7 @@ RFH.EERotation = function (options) {
                                           eeTF.rotation.z,
                                           eeTF.rotation.w);
         var eeEuler = new THREE.Euler().setFromQuaternion(eeQuat, 'ZYX'); 
-        console.log("RPY: "+eeEuler.x+", "+eeEuler.y+", "+eeEuler.z);
+//        console.log("RPY: "+eeEuler.x+", "+eeEuler.y+", "+eeEuler.z);
         self.rotSlider.slider('option','value', eeEuler.x);
         self.lonSlider.slider('option','value', eeEuler.y);
         self.latSlider.slider('option','value', eeEuler.z);

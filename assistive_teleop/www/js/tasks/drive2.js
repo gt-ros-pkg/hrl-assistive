@@ -11,13 +11,112 @@ RFH.Drive = function (options) {
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
     self.timer = null;
+    self.lines = {'left':null,
+                  'center':null,
+                  'right':null};
+    self.lineCenterOffset = 0; //5% image width offset between lines
+    self.lineWidthOffset = 0; //5% image width offset between lines
     self.clamp = function (x,a,b) {
         return ( x < a ) ? a : ( ( x > b ) ? b : x );
     }
     self.sign = function (x) { 
         return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
     }
-    
+   
+    self.driveSVG = Snap('#drive-lines');
+
+    self.getLineParams = function (event) {
+        var target = RFH.positionInElement(event); 
+        var originX = $('#drive-lines').width()/2 + self.lineCenterOffset;
+        var originY = $('#drive-lines').height();
+        var tx = -(target[0]-originX);
+        var ty = -(target[1]-originY);
+        var ang = Math.atan2(tx, ty);
+        var mag = Math.sqrt(tx*tx+ty*ty);
+        var pathRad = 0.5*Math.abs(mag/Math.sin(ang));
+        var cx = originX + ((ang >= 0 ) ? -pathRad : pathRad) ;
+        return {'cx':cx, 'originX':originX, 'originY':originY, 'rad':pathRad};
+    };
+
+    self.createLinesCB = function (event) {
+        var lp = self.getLineParams(event); 
+        if (lp.rad === Infinity) {
+            lp.rad = 10000
+            lp.cx = lp.rad + lp.originX;
+            }
+        self.lines['center'] = self.driveSVG.circle(lp.cx, lp.originY, lp.rad).attr({
+                                    "id":"dl-circle-center",
+                                    "stroke-width": 10,
+                                    "stroke-opacity":0.6,
+                                    "fill":"none"}).transform('s1,0.84,0,'+lp.originY.toString());
+        self.lines['left'] = self.lines['center'].clone().attr({
+                                    'id':'dl-circle-left',
+                                    'rad':(lp.rad - self.lineWidthOffset),
+                                    'cx':lp.cx});
+        self.lines['right'] = self.lines['center'].clone().attr({
+                                    'id':'dl-circle-right',
+                                    'rad':(lp.rad + self.lineWidthOffset),
+                                    'cx':lp.cx});
+    };
+    self.driveSVG.node.onmouseenter = self.createLinesCB;
+
+    self.removeLinesCB = function (event) {
+        self.lines['center'].remove();
+        self.lines['left'].remove();
+        self.lines['right'].remove();
+        self.lines = {};
+    };
+    self.driveSVG.node.onmouseleave = self.removeLinesCB;
+
+    self.updateLinesCB = function (event) {
+        var lp = self.getLineParams(event);
+        if (lp.rad === Infinity) { return }
+        self.lines['center'].attr({'cx':lp.cx, 'cy':lp.originY, 'r': lp.rad});
+        self.lines['left'].attr({'cx':lp.cx, 'cy':lp.originY, 'r': Math.max((lp.rad-self.lineWidthOffset), 0)});
+        self.lines['right'].attr({'cx':lp.cx, 'cy':lp.originY, 'r': Math.max((lp.rad+self.lineWidthOffset), 0)});
+    };
+//    self.driveSVG.node.onmousemove = self.updateLinesCB;
+
+ 
+    self.getWorldPath = function (event) {
+        var rtxy = self.getRTheta(event); //Get real-world point in base frame
+        var qx = rtxy[2];
+        var qy = rtxy[3];
+        //Find Center of circle (tangent to base center, through clicked point) in world
+        // Px,Py = (0,0) (base frame origin)
+        // Cy = Py = 0 (forward motion is tangent to circle)
+        // Distance from Center to P, Q (clicked point) must be equal
+        var Cy = (qx*qx + qy*qy) / (2*qy);
+        var Cx = 0;
+        var Rworld = Math.abs(Cy);
+        console.log(Cx, Cy, Rworld);
+        // Solve for circle matrix parameters.
+        // Ref: http://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections
+        // For circle: B = 0, A = C;
+        // A(Px*Px+Py*Py) + DPx + EPy + F = 0 (Px=Py=0 --> F=0) Solve remaining 3 params:
+        // A(qx*qz+qy*qy) + Dqx + Eqy (+F=0) = 0
+        // -0.5D = Cx (from equation for center points, reduced, with B/A/C subs above).
+        // -0.5E = Cy
+        var D = -2*Cx;
+        var E = -2*Cy;
+        var A = -(D*qx + E*qy) / (qx*qx + qy*qy)
+        var circleMat = [[A,   0,   D/2],
+                         [0,   A,   E/2],
+                         [D/2, E/2, 0]];
+
+        
+                        
+
+
+    }
+    self.driveSVG.node.onclick = self.getWorldPath;
+
+    self.updateLineOffsets = function (event) {
+        var width =$('#drive-lines').width();
+        self.lineCenterOffset = 0;//-0.08*width;
+        self.lineWidthOffset = 0.18*width;
+    };
+
     self.headStops = ['back-left', 'left','forward','right','back-right'];
     self.headStopAngles = {'back-right':[-2.85, 1.35],
                            'right':[-Math.PI/2, 1.35],
@@ -81,12 +180,14 @@ RFH.Drive = function (options) {
     self.start = function () {
         // everything i can think of to not get stuck driving...
         $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
-        $('#'+self.div).on('mouseleave.rfh mouseout.rfh', self.setUnsafe)
-        $('#'+self.div).on('mousedown.rfh', self.driveGo);
-        $('#'+self.div).on('mouseup.rfh', self.driveStop);
-        $('#'+self.div).on('blur.rfh', self.driveStop);
+        $('#drive-lines').on('mouseleave.rfh mouseout.rfh', self.setUnsafe)
+//        $('#drive-lines').on('mousedown.rfh', self.driveGo);
+        $('#drive-lines').on('mouseup.rfh', self.driveStop);
+        $('#drive-lines').on('blur.rfh', self.driveStop);
         $('.drive-ctrl').show();
         self.moveToStop(self.getNearestStop());
+        self.updateLineOffsets();
+        $('#drive-lines').on('resize.rfh', self.updateLineOffsets)
     }
 
     self.stop = function () {
