@@ -10,7 +10,7 @@ import std_msgs.msg
 
 class bowlPublisher():
 	def __init__(self):
-		self.bowl_pub = rospy.Publisher('bowl_location', PoseStamped, latch = True)
+		self.bowl_pub = rospy.Publisher('hrl_feeding_task/manual_bowl_location', PoseStamped, latch = True)
 		rospy.init_node('bowl_location_publisher', anonymous = True)
 		self.rate = rospy.Rate(10)
 		self.i = 0

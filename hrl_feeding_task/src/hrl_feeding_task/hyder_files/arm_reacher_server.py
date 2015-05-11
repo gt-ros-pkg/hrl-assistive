@@ -24,10 +24,10 @@ class armReachAction(mpcBaseAction):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Subscribers to publishers of bowl location data
-        rospy.Subscriber('bowl_location', PoseStamped, self.bowlPoseCallback)  # hrl_feeding/bowl_location
-        rospy.Subscriber('RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback) # launch you can remap the topic name (ros wiki)
+        rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseCallback)  # hrl_feeding/bowl_location
+        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback) # launch you can remap the topic name (ros wiki)
 
-        rospy.Subscriber('emergency_arm_stop', String, self.reverseMotion)
+        rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.reverseMotion)
 
         #Be able to read the current state of the robot, used for setting new joint angles for init
         rospy.Subscriber('haptic_mpc/robot_state', haptic_msgs.RobotHapticState, self.robotStateCallback) # remove!!!!
@@ -43,8 +43,8 @@ class armReachAction(mpcBaseAction):
 
         #VARIABLES! # better variable name
         self.jointAnglesFront = [0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, 0, 45] # radian, simple values
-        self.jointAnglesSide = list([1.5607891300760723, -0.019056839242125957, 0.08462841743197802, -1.5716040496178354, 3.0047615005230432, -0.09718467633646749, -1.5831090362171292]) # remove list
-        self.jointAnglesSideForward = list([1.4861731744547848, -0.18900803975897545, -0.0010010598495409084, -1.2796015247572599, 1.625224170926076, -1.5317317839135611, -1.481043325223495])
+        self.jointAnglesSide = [1.5607891300760723, -0.019056839242125957, 0.08462841743197802, -1.5716040496178354, 3.0047615005230432, -0.09718467633646749, -1.5831090362171292]
+        self.jointAnglesSideForward = [1.4861731744547848, -0.18900803975897545, -0.0010010598495409084, -1.2796015247572599, 1.625224170926076, -1.5317317839135611, -1.481043325223495]
         #[0.02204231193041639, 0.72850849623194, 0.08302486916827911, -2.051374187142846, -3.1557218713638484, -1.2799710435005978, 10.952306846165152]
         #These joint angles correspond to 'Pose 1' - See Keep note
 
@@ -56,8 +56,18 @@ class armReachAction(mpcBaseAction):
         self.iteration = 0 # armReachAction.iteration
 
         # offset variable
-        #bowlOffsetPos = [] 
-        
+        bowlPosOffsets = np.array([[-0.09743569,    -0.11179373,    0.18600000],
+                                   [-0.03143569,    -0.09879372,    0.02800000],
+                                   [-0.03543569,    -0.09179373,    -0.02600000],
+                                   [0.00156431,     -0.07279373,    0.04900000],
+                                   [0.00756431,     -0.13179373,    0.59400000]])
+
+        bowlQuatOffsets = np.array([[0.580, 0.333, 0.050, 0.742],
+                                   [0.484, 0.487, -0.164, 0.708],
+                                   [0.505, 0.516, -0.160, 0.673],
+                                   [0.617, 0.300, -0.035, 0.726],
+                                   [0.702, 0.168, 0.132, 0.679]])
+
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             if self.getJointAngles() != []:
@@ -126,8 +136,8 @@ class armReachAction(mpcBaseAction):
 
         #Variables...! # local
         self.iteration = 0 # armReachAction.iteration
-        
-        
+
+
         # self.previousPoints = [] #for example... 7 previous points
         # self.previousPoints.angles = list()
 
@@ -171,8 +181,8 @@ class armReachAction(mpcBaseAction):
     		raw_input('Press Enter to continue: ' )
 
         print "MOVES1 - Moving over bowl... "
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.09743569, self.bowl_pos[1] + -0.11179373, self.bowl_pos[2] + 0.18600000)
-        (quat.x, quat.y, quat.z, quat.w) = (0.580, 0.333, 0.050, 0.742)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[0][0], self.bowl_pos[1] + bowlPosOffsets[0][1], self.bowl_pos[2] + bowlPosOffsets[0][2])
+        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[0][0], bowlQuatOffsets[0][1], bowlQuatOffsets[0][2], bowlQuatOffsets[0][3])  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) # (0.573, -0.451, -0.534, 0.428)
         timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -196,8 +206,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES2 - Pointing down into bottom of bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.03143569, self.bowl_pos[1] + -0.09879372, self.bowl_pos[2] + 0.02800000)
-        (quat.x, quat.y, quat.z, quat.w) = (0.484, 0.487, -0.164, 0.708)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.690, -0.092, -0.112, 0.709)
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[1][0], self.bowl_pos[1] + bowlPosOffsets[1][1], self.bowl_pos[2] + bowlPosOffsets[1][2])
+        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[1][0], bowlQuatOffsets[1][1], bowlQuatOffsets[1][2], bowlQuatOffsets[1][3])  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.690, -0.092, -0.112, 0.709)
         timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -216,8 +226,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES3 - Scooping/pushing down into bottom of bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + -0.03543569, self.bowl_pos[1] + -0.09179373, self.bowl_pos[2] + -0.02600000)
-        (quat.x, quat.y, quat.z, quat.w) = (0.505, 0.516, -0.160, 0.673)  #  (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.713, 0.064, -0.229, 0.659)
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[2][0], self.bowl_pos[1] + bowlPosOffsets[2][1], self.bowl_pos[2] + bowlPosOffsets[2][2])
+        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[2][0], bowlQuatOffsets[2][1], bowlQuatOffsets[2][2], bowlQuatOffsets[2][3])  #  (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.713, 0.064, -0.229, 0.659)
         timeout = 3
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -236,8 +246,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES4 - Lifting a little out of bottom of bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.00156431, self.bowl_pos[1] +  -0.07279373, self.bowl_pos[2] + 0.04900000)
-        (quat.x, quat.y, quat.z, quat.w) = (0.617, 0.300, -0.035, 0.726)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.700, 0.108, -0.321, 0.629)
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[3][0], self.bowl_pos[1] +  bowlPosOffsets[3][1], self.bowl_pos[2] + bowlPosOffsets[3][2])
+        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[3][0], bowlQuatOffsets[3][1], bowlQuatOffsets[3][2], bowlQuatOffsets[3][3])  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.700, 0.108, -0.321, 0.629)
         timeout = 3
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -256,8 +266,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES5 - Lifting above bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + 0.00756431, self.bowl_pos[1] + -0.13179373, self.bowl_pos[2] +  0.59400000)
-        (quat.x, quat.y, quat.z, quat.w) = (0.702, 0.168, 0.132, 0.679)  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.706, 0.068, -0.235, 0.664)
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[4][0], self.bowl_pos[1] + bowlPosOffsets[4][1], self.bowl_pos[2] + bowlPosOffsets[4][2])
+        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[4][0], bowlQuatOffsets[4][1], bowlQuatOffsets[4][2], bowlQuatOffsets[4][3])  # (self.bowl_quat[0], self.bowl_quat[1], self.bowl_quat[2], self.bowl_quat[3]) #  (0.706, 0.068, -0.235, 0.664)
         timeout = 1
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
