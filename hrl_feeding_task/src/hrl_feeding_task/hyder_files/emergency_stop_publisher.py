@@ -9,7 +9,7 @@ from std_msgs.msg import String, Bool
 
 class emergencyArmStop():
     def __init__(self):
-        self.stopPub = rospy.Publisher('emergency_arm_stop', String, latch = False)
+        self.stopPub = rospy.Publisher('hrl_feeding_task/emergency_arm_stop', String, latch = False)
         rospy.init_node('emergency_arm_stop_publisher', anonymous = False)
         self.rate = rospy.Rate(10)
 
