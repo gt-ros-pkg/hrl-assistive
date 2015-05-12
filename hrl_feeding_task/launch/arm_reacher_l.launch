@@ -11,7 +11,7 @@
     <!--include file="$(find planning_environment)/launch/environment_server.launch"/-->
 
     <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
-      <param name="tip_name" value="l_gripper_tool_frame" />
+      <param name="tip_name" value="l_gripper_spoon_frame" />
       <param name="root_name" value="torso_lift_link" />
     </node>
 
