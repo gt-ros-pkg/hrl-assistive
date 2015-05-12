@@ -275,7 +275,7 @@ class armReachAction(mpcBaseAction):
         self.setOrientGoal(posStop, quatStop, timeout)
 
         print "Moving to safe position 2"
-        (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682])
+        (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
         self.setOrientGoal(posStop, quatStop, timeout)
 
