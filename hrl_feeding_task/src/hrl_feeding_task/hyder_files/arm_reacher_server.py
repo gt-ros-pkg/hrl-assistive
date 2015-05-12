@@ -19,7 +19,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm = 'l'):
+    def __init__(self, d_robot, controller, arm): #removed arm= 'l' so I can use right arm as well as an option
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
@@ -279,7 +279,7 @@ class armReachAction(mpcBaseAction):
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
         self.setOrientGoal(posStop, quatStop, timeout)
 
-        
+
 
 if __name__ == '__main__':
 
