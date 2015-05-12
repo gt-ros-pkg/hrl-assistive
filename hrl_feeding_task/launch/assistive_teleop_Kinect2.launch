@@ -11,7 +11,7 @@
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
       <param name="port" type="int" value="9091" />
   </node>
-  
+
   <node name="rosapi" pkg="rosapi" type="rosapi.py" output="screen"/>
 
   <rosparam> 'http/default': 8000 </rosparam>
@@ -47,7 +47,7 @@
   <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /r_gripper_controller/state 1 /r_gripper_controller/state_throttled" />
 
-  <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
+  <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
 
 </launch>
