@@ -47,13 +47,13 @@ class armReachAction(mpcBaseAction):
         armReachAction.iteration = -1 # armReachAction.iteration
 
         # offset variable
-        bowlPosOffsets = np.array([[-0.09743569,    -0.11179373,    0.18600000], #Row 1 = Move 1
+        self.bowlPosOffsets = np.array([[-0.09743569,    -0.11179373,    0.18600000], #Row 1 = Move 1
                                    [-0.03143569,    -0.09879372,    0.02800000], #Row 2 = Move 2
                                    [-0.03543569,    -0.09179373,    -0.02600000], # ...
                                    [0.00156431,     -0.07279373,    0.04900000],
                                    [0.00756431,     -0.13179373,    0.59400000]])
 
-        bowlQuatOffsets = np.array([[0.580, 0.333, 0.050, 0.742],
+        self.bowlQuatOffsets = np.array([[0.580, 0.333, 0.050, 0.742],
                                    [0.484, 0.487, -0.164, 0.708],
                                    [0.505, 0.516, -0.160, 0.673],
                                    [0.617, 0.300, -0.035, 0.726],
@@ -148,8 +148,8 @@ class armReachAction(mpcBaseAction):
     		raw_input('Press Enter to continue: ' )
 
         print "MOVES1 - Moving over bowl... "
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[0][0], self.bowl_pos[1] + bowlPosOffsets[0][1], self.bowl_pos[2] + bowlPosOffsets[0][2])
-        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[0][0], bowlQuatOffsets[0][1], bowlQuatOffsets[0][2], bowlQuatOffsets[0][3])
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
+        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
         timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -175,8 +175,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES2 - Pointing down into bottom of bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[1][0], self.bowl_pos[1] + bowlPosOffsets[1][1], self.bowl_pos[2] + bowlPosOffsets[1][2])
-        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[1][0], bowlQuatOffsets[1][1], bowlQuatOffsets[1][2], bowlQuatOffsets[1][3])
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
+        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
         timeout = 4
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -195,8 +195,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES3 - Scooping/pushing down into bottom of bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[2][0], self.bowl_pos[1] + bowlPosOffsets[2][1], self.bowl_pos[2] + bowlPosOffsets[2][2])
-        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[2][0], bowlQuatOffsets[2][1], bowlQuatOffsets[2][2], bowlQuatOffsets[2][3])
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
+        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], bowlQuatOffsets[2][3])
         timeout = 2
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -215,8 +215,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES4 - Lifting a little out of bottom of bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[3][0], self.bowl_pos[1] +  bowlPosOffsets[3][1], self.bowl_pos[2] + bowlPosOffsets[3][2])
-        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[3][0], bowlQuatOffsets[3][1], bowlQuatOffsets[3][2], bowlQuatOffsets[3][3])
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
+        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
         timeout = 2
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -235,8 +235,8 @@ class armReachAction(mpcBaseAction):
         #---------------------------------------------------------------------------------------#
 
         print "MOVES5 - Lifting above bowl..."
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + bowlPosOffsets[4][0], self.bowl_pos[1] + bowlPosOffsets[4][1], self.bowl_pos[2] + bowlPosOffsets[4][2])
-        (quat.x, quat.y, quat.z, quat.w) = (bowlQuatOffsets[4][0], bowlQuatOffsets[4][1], bowlQuatOffsets[4][2], bowlQuatOffsets[4][3])
+        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
+        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
         timeout = 2
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
@@ -260,9 +260,9 @@ class armReachAction(mpcBaseAction):
         posStop = Point()
         quatStop = Quaternion()
         #Sets goal positions and quaternions to match previously reached end effector position, go to last step
-        (posStop.x, posStop.y, posStop.z) = (self.bowl_pos[0] + bowlPosOffsets[armReachAction.iteration][0], self.bowl_pos[1] + bowlPosOffsets[armReachAction.iteration][1], self.bowl_pos[2] + bowlPosOffsets[armReachAction.iteration][2])
+        (posStop.x, posStop.y, posStop.z) = (self.bowl_pos[0] + self.bowlPosOffsets[armReachAction.iteration][0], self.bowl_pos[1] + self.bowlPosOffsets[armReachAction.iteration][1], self.bowl_pos[2] + self.bowlPosOffsets[armReachAction.iteration][2])
 
-        (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (bowlQuatOffsets[armReachAction.iteration][0], bowlQuatOffsets[armReachAction.iteration][1], bowlQuatOffsets[armReachAction.iteration][2], bowlQuatOffsets[armReachAction.iteration][3])
+        (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
 
         timeout = 4
         print "Moving to previous position..."
