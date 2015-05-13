@@ -32,12 +32,16 @@ class armReachAction(mpcBaseAction):
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
-        #VARIABLES! # better variable name
+        #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
 
-        self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+        if arm == 'r': 
+		self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+		self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
 
-        self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -1.481043325223495]
+	else:
+		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
+		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
 
         #!self.previousGoals = JointTrajectory()
         #NEED TO APPEND A JointTrajectoryPoint to the end!!! FIX THIS!!! NOT FIXED AS OF FRIDAY MARCH 27, 2015
@@ -122,17 +126,16 @@ class armReachAction(mpcBaseAction):
         calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
         if calibrateJoints == 'front':
             print "Setting initial joint angles... "
-            self.setPostureGoal(self.jointAnglesFront, 5)
+            self.setPostureGoal(self.initialJointAnglesFrontOfBody, 5)
 
         elif calibrateJoints == 'side':
             print "Setting initial joint angles..."
-            self.setPostureGoal(self.jointAnglesSideForward, 5)
+            self.setPostureGoal(self.initialJointAnglesSideOfBody, 5)
 
             #!!---- BASIC SCOOPING MOTION WITH BOWL POSITION OFFSET
     	#Flat Gripper Orientation Values:
     	#(0.642, 0.150, 0.154, 0.736)
 
-        raw_input("Iteration # %d. Enter anything to start: " % armReachAction.iteration)
 
         #---------------------------------------------------------------------------------------#
 
@@ -150,7 +153,7 @@ class armReachAction(mpcBaseAction):
         print "MOVES1 - Moving over bowl... "
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
-        timeout = 4
+        timeout = 2
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -177,7 +180,7 @@ class armReachAction(mpcBaseAction):
         print "MOVES2 - Pointing down into bottom of bowl..."
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
-        timeout = 4
+        timeout = 2
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
 
@@ -255,8 +258,9 @@ class armReachAction(mpcBaseAction):
         return True
 
     def stopCallback(self, msg):
-        print "Stopping Motion..."
-        self.setStop() #Stops Current Motion
+        
+	print "Stopping Motion..."
+       	self.setStop() #Stops Current Motion
         posStop = Point()
         quatStop = Quaternion()
         #Sets goal positions and quaternions to match previously reached end effector position, go to last step
@@ -264,9 +268,9 @@ class armReachAction(mpcBaseAction):
 
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
 
-        timeout = 4
+        timeout = 3
         print "Moving to previous position..."
-        self.setOrientGoal(posStop, quatStop, timeout) #go to previously reached position, last step
+        #self.setOrientGoal(posStop, quatStop, timeout) #go to previously reached position, last step
 
         #Safe reversed position 1
         (posStop.x, posStop.y, posStop.z) = (0.967, 0.124, 0.525)
@@ -278,8 +282,6 @@ class armReachAction(mpcBaseAction):
         (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
         self.setOrientGoal(posStop, quatStop, timeout)
-
-
 
 if __name__ == '__main__':
 
