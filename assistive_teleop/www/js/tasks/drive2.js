@@ -15,7 +15,8 @@ RFH.Drive = function (options) {
                   'center':null,
                   'right':null};
     self.lineCenterOffset = 0; //5% image width offset between lines
-    self.lineWidthOffset = 0; //5% image width offset between lines
+    self.baseWidth = 0.35; //Half-width of PR2 Base
+    self.lineWidthOffset = 0.18; //5% image width offset between lines
     self.clamp = function (x,a,b) {
         return ( x < a ) ? a : ( ( x > b ) ? b : x );
     }
@@ -27,35 +28,63 @@ RFH.Drive = function (options) {
 
     self.getLineParams = function (event) {
         var target = RFH.positionInElement(event); 
-        var originX = $('#drive-lines').width()/2 + self.lineCenterOffset;
-        var originY = $('#drive-lines').height();
-        var tx = -(target[0]-originX);
-        var ty = -(target[1]-originY);
+        var w = $(self.driveSVG.node).width();
+        var h = $(self.driveSVG.node).height();
+        var deadAhead = self.camera.projectPoint(1,0,0,'base_link');
+        deadAhead[0] *= w;
+        deadAhead[1] *= h;
+        var originC = self.camera.projectPoint(0,0,0,'base_link');
+        originC[0] *= w;
+        originC[1] *= h;
+        var fwdVec = [deadAhead[0] - originC[0], deadAhead[1] - originC[1]];
+        var baselineVec = [-fwdVec[1], fwdVec[0]];
+        var originL = self.camera.projectPoint(0,0.332,0,'base_link');
+        originL[0] *= w;
+        originL[1] *= h;
+        var originR = self.camera.projectPoint(0,-0.332,0,'base_link');
+        originR[0] *= w;
+        originR[1] *= h;
+        var tx = -(target[0]-originC[0]);
+        var ty = -(target[1]-originC[1]);
         var ang = Math.atan2(tx, ty);
         var mag = Math.sqrt(tx*tx+ty*ty);
         var pathRad = 0.5*Math.abs(mag/Math.sin(ang));
-        var cx = originX + ((ang >= 0 ) ? -pathRad : pathRad) ;
-        return {'cx':cx, 'originX':originX, 'originY':originY, 'rad':pathRad};
+        var cx = originC[0] + ((ang >= 0 ) ? -pathRad : pathRad) ;
+        return {'cx':cx, 'originC':originC, 'originL':originL, 'originR':originR, 'rad':pathRad};
     };
+
+//    self.getLineParams = function (event) {
+//        var target = RFH.positionInElement(event); 
+//        var originX = $('#drive-lines').width()/2 + self.lineCenterOffset;
+//        var originY = $('#drive-lines').height();
+//        var tx = -(target[0]-originX);
+//        var ty = -(target[1]-originY);
+//        var ang = Math.atan2(tx, ty);
+//        var mag = Math.sqrt(tx*tx+ty*ty);
+//        var pathRad = 0.5*Math.abs(mag/Math.sin(ang));
+//        var cx = originX + ((ang >= 0 ) ? -pathRad : pathRad) ;
+//        return {'cx':cx, 'originX':originX, 'originY':originY, 'rad':pathRad};
+//    };
 
     self.createLinesCB = function (event) {
         var lp = self.getLineParams(event); 
         if (lp.rad === Infinity) {
             lp.rad = 10000
-            lp.cx = lp.rad + lp.originX;
+            lp.cx = lp.rad + lp.originC[0];
             }
-        self.lines['center'] = self.driveSVG.circle(lp.cx, lp.originY, lp.rad).attr({
-                                    "id":"dl-circle-center",
+        //self.lines['center'] = self.driveSVG.path('M0,0').attr({
+        self.lines['center'] = self.driveSVG.circle(lp.cx, lp.originC[1], lp.rad).attr({
+                                    "id":"dl-line-center",
                                     "stroke-width": 10,
                                     "stroke-opacity":0.6,
-                                    "fill":"none"}).transform('s1,0.84,0,'+lp.originY.toString());
+                                    "fill":"none"});
         self.lines['left'] = self.lines['center'].clone().attr({
-                                    'id':'dl-circle-left',
-                                    'rad':(lp.rad - self.lineWidthOffset),
+                                    'id':'dl-line-left',
+                                    'rad':(lp.rad - lp.originL[0]-lp.originC[0]),
                                     'cx':lp.cx});
         self.lines['right'] = self.lines['center'].clone().attr({
-                                    'id':'dl-circle-right',
-                                    'rad':(lp.rad + self.lineWidthOffset),
+                                    'id':'dl-line-right',
+                                    'rad':(lp.rad + lp.originR[0]-lp.originC[0]),
                                     'cx':lp.cx});
     };
     self.driveSVG.node.onmouseenter = self.createLinesCB;
@@ -71,14 +100,15 @@ RFH.Drive = function (options) {
     self.updateLinesCB = function (event) {
         var lp = self.getLineParams(event);
         if (lp.rad === Infinity) { return }
-        self.lines['center'].attr({'cx':lp.cx, 'cy':lp.originY, 'r': lp.rad});
-        self.lines['left'].attr({'cx':lp.cx, 'cy':lp.originY, 'r': Math.max((lp.rad-self.lineWidthOffset), 0)});
-        self.lines['right'].attr({'cx':lp.cx, 'cy':lp.originY, 'r': Math.max((lp.rad+self.lineWidthOffset), 0)});
+        self.lines['center'].attr({'cx':lp.cx, 'cy':lp.originC[1], 'r': lp.rad});
+        self.lines['left'].attr({'cx':lp.cx, 'cy':lp.originC[1], 'r': Math.max((lp.rad-lp.originL[0]-lp.originC[0]), 0)});
+        self.lines['right'].attr({'cx':lp.cx, 'cy':lp.originC[1], 'r': Math.max((lp.rad+lp.originR[0]-lp.originC[0]), 0)});
     };
-//    self.driveSVG.node.onmousemove = self.updateLinesCB;
+    self.driveSVG.node.onmousemove = self.updateLinesCB;
 
  
     self.getWorldPath = function (event) {
+//        self.driveSVG.paper.clear(); 
         var rtxy = self.getRTheta(event); //Get real-world point in base frame
         var qx = rtxy[2];
         var qy = rtxy[3];
@@ -88,28 +118,94 @@ RFH.Drive = function (options) {
         // Distance from Center to P, Q (clicked point) must be equal
         var Cy = (qx*qx + qy*qy) / (2*qy);
         var Cx = 0;
-        var Rworld = Math.abs(Cy);
-        console.log(Cx, Cy, Rworld);
-        // Solve for circle matrix parameters.
-        // Ref: http://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections
-        // For circle: B = 0, A = C;
-        // A(Px*Px+Py*Py) + DPx + EPy + F = 0 (Px=Py=0 --> F=0) Solve remaining 3 params:
-        // A(qx*qz+qy*qy) + Dqx + Eqy (+F=0) = 0
-        // -0.5D = Cx (from equation for center points, reduced, with B/A/C subs above).
-        // -0.5E = Cy
-        var D = -2*Cx;
-        var E = -2*Cy;
-        var A = -(D*qx + E*qy) / (qx*qx + qy*qy)
-        var circleMat = [[A,   0,   D/2],
-                         [0,   A,   E/2],
-                         [D/2, E/2, 0]];
+        var rad = Math.abs(Cy);
+        var leftRad = (Cy < 0) ? rad + self.baseWidth : rad - self.baseWidth;
+        var rightRad = (Cy < 0) ? rad - self.baseWidth : rad + self.baseWidth;
+        // Find points around the circle from start to target location.
+        var pts = [];
+        var ang = Math.PI * Math.sin(1/rad)
+        var minAng = -Math.PI/2;//(Cy > 0) ? -ang : 0; 
+        var maxAng = (Cy > 0) ? 0 : ang;
+        var angs = numeric.linspace(minAng, maxAng, 8);
+        for (var i in angs) {
+            pts.push([Cx + rad*Math.cos(angs[i]), Cy + rad*Math.sin(angs[i]), 0]);
+        }
+        //if (leftRad > 0 ) {
+        //    for (var i in angs) {
+        //        pts.push([Cx + leftRad*Math.cos(angs[i]), Cy + leftRad*Math.sin(angs[i]), 0]);
+        //    }
+        //}
+        //if (rightRad > 0 ) {
+        //    for (var i in angs) {
+        //        pts.push([Cx + rightRad*Math.cos(angs[i]), Cy + rightRad*Math.sin(angs[i]), 0]);
+        //    }
+        //}
+        var imgpts = self.camera.projectPoints(pts, 'base_link');
+        var w = $(self.driveSVG.node).width();
+        var h = $(self.driveSVG.node).height();
+        var filt = function(el, i, arr) {
+            return (el[0] < -0.25 || el[1] < -0.25 || el[0] > 1.5 || el[1] > 1.5 ) ? false : true;
+            }
+        var p1 = imgpts.shift();
+        imgpts = imgpts.filter(filt);
+        imgpts.unshift(p1);
+        for (var i=0; i<imgpts.length; i += 1) {
+            imgpts[i][0] *= w;
+            imgpts[i][1] *= h;
+            self.driveSVG.paper.circle(imgpts[i][0], imgpts[i][1], 4).attr({'fill-color':'red'});
+        }
 
-        
-                        
+        var path = "M"+imgpts[0][0].toString()+','+imgpts[0][1].toString()+"R";
+        imgpts.shift();
+        for (var pt in imgpts) {
+            path += imgpts[pt][0].toString() + ',' + imgpts[pt][1].toString()+' ';
+        }
+        self.lines['center'].attr({'d':path,
+                                   'stroke':'blue',
+                                   'stroke-width':5,
+                                   'id':'drivePath'});
+
+       // Given 5 points in image, solve for matrix parameters of fitting conic through points.
+       // Ref: http://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections
+        // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0 --> Must be true for each of 5 pts, assume F=1
+//        var b = [100,100,100,100,100];  
+//        var Amat = [];
+//        for (var i=0; i<imgpts.length; i += 1) {
+//            var x = imgpts[i][0];
+//            var y = imgpts[i][1];
+//            Amat.push([x*x, x*y, y*y, x, y]);
+//        }
+//        // Solve Ax=b for x
+//        var ellMatParams = numeric.solve(Amat, b);
+//        var A = ellMatParams[0];
+//        var B = ellMatParams[1];
+//        var C = ellMatParams[2];
+//        var D = ellMatParams[3];
+//        var E = ellMatParams[4];
+//        var F = -100;
+//        var det = B*B - 4*A*C;
+//        if (det < 0) { console.log("Fit: Ellipse")};
+//        if (det === 0) { console.log("Fit: Parabola")};
+//        if (det > 0)  { console.log("Fit: Hyperbola")};
 
 
+
+       // var Rworld = Math.abs(Cy);
+       // console.log(Cx, Cy, Rworld);
+       // // For circle: B = 0, A = C;
+       // // A(Px*Px+Py*Py) + DPx + EPy + F = 0 (Px=Py=0 --> F=0) Solve remaining 3 params:
+       // // A(qx*qz+qy*qy) + Dqx + Eqy (+F=0) = 0
+       // // -0.5D = Cx (from equation for center points, reduced, with B/A/C subs above).
+       // // -0.5E = Cy
+       // var D = -2*Cx;
+       // var E = -2*Cy;
+       // var A = -(D*qx + E*qy) / (qx*qx + qy*qy)
+       // var circleMat = [[A,   0,   D/2],
+       //                  [0,   A,   E/2],
+       //                  [D/2, E/2, 0]];
     }
-    self.driveSVG.node.onclick = self.getWorldPath;
+    //self.driveSVG.node.onmousemove = self.getWorldPath;
+//    self.driveSVG.node.onclick = self.getWorldPath;
 
     self.updateLineOffsets = function (event) {
         var width =$('#drive-lines').width();
@@ -120,7 +216,8 @@ RFH.Drive = function (options) {
     self.headStops = ['back-left', 'left','forward','right','back-right'];
     self.headStopAngles = {'back-right':[-2.85, 1.35],
                            'right':[-Math.PI/2, 1.35],
-                           'forward':[0.0, 1.0],
+                           'forward':[0.0, 1.35],
+                        //   'forward':[0.0, 1.0],
                            'left':[Math.PI/2, 1.35],
                            'back-left': [2.85, 1.35]}
 
@@ -258,7 +355,7 @@ RFH.Drive = function (options) {
         gnd_pt[1] = self.camera.transform.translation.y + (pose.position.y - self.camera.transform.translation.y) * dist; 
         var r = Math.sqrt(gnd_pt[0]*gnd_pt[0] + gnd_pt[1]*gnd_pt[1]);
         var theta = Math.atan2(gnd_pt[1], gnd_pt[0]);
-        console.log("R: "+r+", Theta: "+theta);
+//        console.log("R: "+r+", Theta: "+theta);
         return [r, theta, gnd_pt[0], gnd_pt[1]];
     }
 

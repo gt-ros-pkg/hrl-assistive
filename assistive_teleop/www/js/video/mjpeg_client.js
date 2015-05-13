@@ -191,17 +191,55 @@ RFH.ROSCameraModel = function (options) {
        return numeric.mul(d/mag, vec);
     }
 
-    self.projectPoint = function (px, py, pz, frame_id) {
-        frame_id = typeof frame_id !== 'undefined' ? frame_id : self.frame_id;
+    self.checkFrameId = function (frame_id) {
+        if (frame_id[0] === '/') { frame_id = frame_id.substring(1); }
         var fixedFrame = self.tfClient.fixedFrame.substring(1);
-        if (frame_id[0] === '/') {
-          frame_id = frame_id.substring(1);
-        }
-        if (frame_id !== fixedFrame && frame_id !== self.frame_id) {
-            throw "cameraModel.projectPoint - Unknown frame_id"
+        return (frame_id !== fixedFrame && frame_id !== self.frame_id) ? false : true;
+    }
+
+    self.projectPoints = function (pts, frame_id) {
+        if (typeof frame_id === 'undefined') {
+            frame_id = self.frame_id;
+        } else if (!self.checkFrameId(frame_id)) {
+            console.log("cameraModel -- Unknown Frame Id: ", frame_id);
             return;
         }
-        if (frame_id === fixedFrame) {
+        var ptsFlat = pts.reduce(function(a,b){return a.concat(b)});
+        if (frame_id === self.tfClient.fixedFrame.substring(1)) {
+            var q = new THREE.Quaternion(self.transform.rotation.x,
+                                         self.transform.rotation.y,
+                                         self.transform.rotation.z,
+                                         self.transform.rotation.w);
+            var tfMat = new THREE.Matrix4().makeRotationFromQuaternion(q);
+            tfMat.setPosition(new THREE.Vector3(self.transform.translation.x,
+                                                self.transform.translation.y,
+                                                self.transform.translation.z));
+            tfMat.getInverse(tfMat);
+            ptsFlat = tfMat.multiplyVector3Array(ptsFlat);
+        }
+        for (var i=0; i < ptsFlat.length/3; i++ ) {
+            pts[i] = ptsFlat.slice(3*i,3*i+3).concat(1);
+        }
+        var pixel_hom = numeric.dot(self.P, numeric.transpose(pts));
+        pixel_hom = numeric.transpose(pixel_hom);
+        for (var i=0; i < pixel_hom.length; i++) {
+            pixel_hom[i][0] /= pixel_hom[i][2]
+            pixel_hom[i][1] /= pixel_hom[i][2]
+            pixel_hom[i][0] /= self.width;
+            pixel_hom[i][1] /= self.height;
+            pixel_hom[i].pop();
+        }
+        return pixel_hom;
+    }
+
+    self.projectPoint = function (px, py, pz, frame_id) {
+        if (typeof frame_id === 'undefined') {
+            frame_id = self.frame_id;
+        } else if (!self.checkFrameId(frame_id)) {
+            console.log("cameraModel -- Unknown Frame Id: ", frame_id);
+            return;
+        }
+        if (frame_id === self.tfClient.fixedFrame.substring(1)) {
             var q = new THREE.Quaternion(self.transform.rotation.x,
                                          self.transform.rotation.y,
                                          self.transform.rotation.z,
@@ -220,7 +258,6 @@ RFH.ROSCameraModel = function (options) {
         var pixel_hom = numeric.dot(self.P, [[px],[py],[pz],[1]]);
         var pix_x = pixel_hom[0]/pixel_hom[2];
         var pix_y = pixel_hom[1]/pixel_hom[2];
-        //return [pix_x, pix_y];
         return [pix_x/self.width, pix_y/self.height];
     }
 };
