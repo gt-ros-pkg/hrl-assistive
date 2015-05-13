@@ -107,7 +107,7 @@ class armReachAction(mpcBaseAction):
 
         # duplication
         confirm = False
-        while not confirm or not rospy.is_shutdown():
+        while not confirm:
             print "Current pose"
             print self.getEndeffectorPose()
             ans = raw_input("Enter y to confirm to start: ")
