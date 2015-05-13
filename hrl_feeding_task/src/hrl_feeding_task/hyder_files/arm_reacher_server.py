@@ -196,7 +196,7 @@ class armReachAction(mpcBaseAction):
 
         print "MOVES3 - Scooping/pushing down into bottom of bowl..."
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], bowlQuatOffsets[2][3])
+        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
         timeout = 2
         #self.setPositionGoal(pos, quat, timeout)
         self.setOrientGoal(pos, quat, timeout)
