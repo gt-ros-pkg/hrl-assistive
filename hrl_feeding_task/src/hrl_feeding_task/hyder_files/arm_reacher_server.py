@@ -35,15 +35,15 @@ class armReachAction(mpcBaseAction):
         #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
 
-        if arm == 'r': 
+        if arm == 'r':
 		self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
 		self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
-		timeout = 2
+		self.timeout = 2
 
 	else:
 		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
 		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
-		timeout = 4
+		self.timeout = 4
 
         #!self.previousGoals = JointTrajectory()
         #NEED TO APPEND A JointTrajectoryPoint to the end!!! FIX THIS!!! NOT FIXED AS OF FRIDAY MARCH 27, 2015
@@ -148,16 +148,16 @@ class armReachAction(mpcBaseAction):
     		print "MOVES_KINECT_BOWL_POSITION"
             	(pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
             	(quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)
-                timeout = 7
-            	#self.setPositionGoal(pos, quat, timeout)
-            	self.setOrientGoal(pos, quat, timeout)
+                self.timeout = 7
+            	#self.setPositionGoal(pos, quat, self.timeout)
+            	self.setOrientGoal(pos, quat, self.timeout)
     		raw_input('Press Enter to continue: ' )
 
         print "MOVES1 - Moving over bowl... "
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
+        #self.setPositionGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, self.timeout)
 
         # #Code for storing current joint angles in case of playback...
         # self.currentAngles = self.getJointAngles()
@@ -182,8 +182,8 @@ class armReachAction(mpcBaseAction):
         print "MOVES2 - Pointing down into bottom of bowl..."
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
+        #self.setPositionGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, self.timeout)
 
         # #Code for storing current joint angles in case of playback...
         # currentAngles = self.getJointAngles()
@@ -201,8 +201,8 @@ class armReachAction(mpcBaseAction):
         print "MOVES3 - Scooping/pushing down into bottom of bowl..."
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
+        #self.setPositionGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, self.timeout)
 
         # #Code for storing current joint angles in case of playback...
         # currentAngles = self.getJointAngles()
@@ -220,8 +220,8 @@ class armReachAction(mpcBaseAction):
         print "MOVES4 - Lifting a little out of bottom of bowl..."
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
+        #self.setPositionGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, self.timeout)
 
         # #Code for storing current joint angles in case of playback...
         # currentAngles = self.getJointAngles()
@@ -239,8 +239,8 @@ class armReachAction(mpcBaseAction):
         print "MOVES5 - Lifting above bowl..."
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
-        #self.setPositionGoal(pos, quat, timeout)
-        self.setOrientGoal(pos, quat, timeout)
+        #self.setPositionGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, self.timeout)
 
         # #Code for storing current joint angles in case of playback...
         # currentAngles = self.getJointAngles()
@@ -256,7 +256,7 @@ class armReachAction(mpcBaseAction):
         return True
 
     def stopCallback(self, msg):
-        
+
 	print "Stopping Motion..."
        	self.setStop() #Stops Current Motion
         posStop = Point()
@@ -267,18 +267,18 @@ class armReachAction(mpcBaseAction):
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
 
         print "Moving to previous position..."
-        #self.setOrientGoal(posStop, quatStop, timeout) #go to previously reached position, last step
+        #self.setOrientGoal(posStop, quatStop, self.timeout) #go to previously reached position, last step
 
         #Safe reversed position 1
         (posStop.x, posStop.y, posStop.z) = (0.967, 0.124, 0.525)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.748, -0.023, -0.128, 0.651)
         print "Moving to safe position 1"
-        self.setOrientGoal(posStop, quatStop, timeout + 2)
+        self.setOrientGoal(posStop, quatStop, self.timeout + 2)
 
         print "Moving to safe position 2"
         (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
-        self.setOrientGoal(posStop, quatStop, timeout + 2)
+        self.setOrientGoal(posStop, quatStop, self.timeout + 2)
 
 if __name__ == '__main__':
 
