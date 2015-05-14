@@ -104,7 +104,7 @@ RFH.Drive = function (options) {
         self.lines['left'].attr({'cx':lp.cx, 'cy':lp.originC[1], 'r': Math.max((lp.rad-lp.originL[0]-lp.originC[0]), 0)});
         self.lines['right'].attr({'cx':lp.cx, 'cy':lp.originC[1], 'r': Math.max((lp.rad+lp.originR[0]-lp.originC[0]), 0)});
     };
-    self.driveSVG.node.onmousemove = self.updateLinesCB;
+//    self.driveSVG.node.onmousemove = self.updateLinesCB;
 
  
     self.getWorldPath = function (event) {
@@ -125,70 +125,102 @@ RFH.Drive = function (options) {
         var pts = [];
         var ang = Math.PI * Math.sin(1/rad)
         var minAng = -Math.PI/2;//(Cy > 0) ? -ang : 0; 
-        var maxAng = (Cy > 0) ? 0 : ang;
-        var angs = numeric.linspace(minAng, maxAng, 8);
+        var maxAng = Math.PI/2;//(Cy > 0) ? 0 : ang;
+        var angs = numeric.linspace(minAng, maxAng, 5);
         for (var i in angs) {
             pts.push([Cx + rad*Math.cos(angs[i]), Cy + rad*Math.sin(angs[i]), 0]);
         }
-        //if (leftRad > 0 ) {
-        //    for (var i in angs) {
-        //        pts.push([Cx + leftRad*Math.cos(angs[i]), Cy + leftRad*Math.sin(angs[i]), 0]);
-        //    }
-        //}
-        //if (rightRad > 0 ) {
-        //    for (var i in angs) {
-        //        pts.push([Cx + rightRad*Math.cos(angs[i]), Cy + rightRad*Math.sin(angs[i]), 0]);
-        //    }
-        //}
+//        if (leftRad > 0 ) {
+//            for (var i in angs) {
+//                pts.push([Cx + leftRad*Math.cos(angs[i]), Cy + leftRad*Math.sin(angs[i]), 0]);
+//            }
+//        }
+//        if (rightRad > 0 ) {
+//            for (var i in angs) {
+//                pts.push([Cx + rightRad*Math.cos(angs[i]), Cy + rightRad*Math.sin(angs[i]), 0]);
+//            }
+//        }
         var imgpts = self.camera.projectPoints(pts, 'base_link');
         var w = $(self.driveSVG.node).width();
         var h = $(self.driveSVG.node).height();
-        var filt = function(el, i, arr) {
-            return (el[0] < -0.25 || el[1] < -0.25 || el[0] > 1.5 || el[1] > 1.5 ) ? false : true;
-            }
-        var p1 = imgpts.shift();
-        imgpts = imgpts.filter(filt);
-        imgpts.unshift(p1);
+        //var filt = function(el, i, arr) {
+        //    return (el[0] < -0.25 || el[1] < -0.25 || el[0] > 1.5 || el[1] > 1.5 ) ? false : true;
+        //    }
+        //var p1 = imgpts.shift();
+        //imgpts = imgpts.filter(filt);
+        //imgpts.unshift(p1);
         for (var i=0; i<imgpts.length; i += 1) {
             imgpts[i][0] *= w;
             imgpts[i][1] *= h;
             self.driveSVG.paper.circle(imgpts[i][0], imgpts[i][1], 4).attr({'fill-color':'red'});
         }
 
-        var path = "M"+imgpts[0][0].toString()+','+imgpts[0][1].toString()+"R";
-        imgpts.shift();
-        for (var pt in imgpts) {
-            path += imgpts[pt][0].toString() + ',' + imgpts[pt][1].toString()+' ';
-        }
-        self.lines['center'].attr({'d':path,
-                                   'stroke':'blue',
-                                   'stroke-width':5,
-                                   'id':'drivePath'});
-
+        //var path = "M"+imgpts[0][0].toString()+','+imgpts[0][1].toString()+"R";
+        //imgpts.shift();
+        //for (var pt in imgpts) {
+        //    path += imgpts[pt][0].toString() + ',' + imgpts[pt][1].toString()+' ';
+        //}
+//        self.lines['center'].attr({'d':path,
+//                                   'stroke':'blue',
+//                                   'stroke-width':5,
+//                                   'id':'drivePath'});
+//
        // Given 5 points in image, solve for matrix parameters of fitting conic through points.
        // Ref: http://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections
         // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0 --> Must be true for each of 5 pts, assume F=1
-//        var b = [100,100,100,100,100];  
-//        var Amat = [];
-//        for (var i=0; i<imgpts.length; i += 1) {
-//            var x = imgpts[i][0];
-//            var y = imgpts[i][1];
-//            Amat.push([x*x, x*y, y*y, x, y]);
-//        }
-//        // Solve Ax=b for x
-//        var ellMatParams = numeric.solve(Amat, b);
-//        var A = ellMatParams[0];
-//        var B = ellMatParams[1];
-//        var C = ellMatParams[2];
-//        var D = ellMatParams[3];
-//        var E = ellMatParams[4];
-//        var F = -100;
-//        var det = B*B - 4*A*C;
-//        if (det < 0) { console.log("Fit: Ellipse")};
-//        if (det === 0) { console.log("Fit: Parabola")};
-//        if (det > 0)  { console.log("Fit: Hyperbola")};
+        var b = [100,100,100,100,100];  
+        var Amat = [];
+        for (var i=0; i<imgpts.length; i += 1) {
+            var x = imgpts[i][0];
+            var y = imgpts[i][1];
+            Amat.push([x*x, x*y, y*y, x, y]);
+        }
+        // Solve Ax=b for x
+        var ellMatParams = numeric.solve(Amat, b);
+        var A = ellMatParams[0];
+        var B = ellMatParams[1];
+        var C = ellMatParams[2];
+        var D = ellMatParams[3];
+        var E = ellMatParams[4];
+        var F = -100;
+        var Aq = [[A, B/2, D/2],
+                  [B/2, C, E/2],
+                  [D/2, E/2, F]];
+        var A33 = [[A, B/2], [B/2, A]];
+        var detAq = numeric.det(Aq);
+        var detA33 = numeric.det(A33);
+        if (detAq < 1E-8) {
+            console.log("Degenerate Conic");
+        } else {
+            if (detAq < 0) { console.log("Fit: Ellipse")};
+            if (detAq === 0) { console.log("Fit: Parabola")};
+            if (detAq > 0)  { console.log("Fit: Hyperbola")};
+        }
+        var Cx = (B*E - 2*C*D)/(4*A*C - B*B);
+        var Cy = (D*B - 2*A*E)/(4*A*C - B*B);
+        self.driveSVG.paper.circle(Cx, Cy, 10);
 
-
+        // Switch to Wolfram math page notation for simplicity...
+        var a = A;
+        var b = B/2;
+        var c = C;
+        var d = D/2;
+        var f = E/2;
+        var g = F;
+        var axis_A_len = Math.sqrt(2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)/((b*b-a*c)*(Math.sqrt((a-c)*(a-c)+4*b*b) - (a+c))));
+        var axis_B_len = Math.sqrt(2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)/((b*b-a*c)*(-Math.sqrt((a-c)*(a-c)+4*b*b) - (a+c))));
+        if (b < 1E-12) {
+            var rot = (a < c) ? 0 : Math.PI/2;
+        } else {
+            var rot = 0.5*Math.atan(2*b/(a-c));
+            rot += (a < c) ? 0 : Math.PI/2;
+        }
+        var path = "M"+imgpts[0][0].toString()+','+imgpts[0][1].toString();
+        path += "A"+axis_A_len.toString()+','+axis_B_len.toString() + " ";
+        path += rot.toString() + " ";
+        path += "1,0 "+imgpts[imgpts.length-1][0].toString()+","+imgpts[imgpts.length-1][1].toString();
+        self.driveSVG.paper.path(path).attr({"fill-opacity":0.0,
+                                             "stroke":"red"});
 
        // var Rworld = Math.abs(Cy);
        // console.log(Cx, Cy, Rworld);
@@ -205,7 +237,7 @@ RFH.Drive = function (options) {
        //                  [D/2, E/2, 0]];
     }
     //self.driveSVG.node.onmousemove = self.getWorldPath;
-//    self.driveSVG.node.onclick = self.getWorldPath;
+    self.driveSVG.node.onclick = self.getWorldPath;
 
     self.updateLineOffsets = function (event) {
         var width =$('#drive-lines').width();
