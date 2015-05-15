@@ -113,6 +113,6 @@ if __name__ == '__main__':
     #controller = 'actionlib'
     #arm        = 'l'
 
-    rospy.init_node('arm_reacher')
-    ara = armReachAction(d_robot, controller, opt.arm)
+    rospy.init_node('arm_movement_tests')
+    ara = armMovements(d_robot, controller, opt.arm)
     rospy.spin()
