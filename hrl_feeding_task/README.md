@@ -31,21 +31,22 @@ To launch each arm:
    	   
 	3) rosrun hrl_feeding_task arm_reacher_client.py
 
-If you want to manually set the bowl location...
+If you want to manually set the bowl location:
 	1) roslaunch hrl_feeding_task bowl_location_publisher.py
-Start emergency stop node, enter '!' to stop and reverse robot arm
+	
+Start emergency stop node, enter '!' to stop and reverse robot arm:
 	1) rosrun hrl_feeding_task emergency_stop_publisher.py
 
-Register bowl position...
+Register bowl position:
 	1) Go to http://pr2c1.hsi.gatech.edu:8000/assistive_teleop/hz_tab_interface.html
 	2) Press RYDS tab, register bowl location :)
 
-To manually set end effector position quickly and change between angles, run...
+To manually set end effector position quickly and change between angles, used for testing:
 	1) rosrun hrl_feeding_task arm_movement_tests.py
 
 To find end wrist location:
 
-rosrun tf tf_echo /torso_lift_link /l_gripper_spoon_frame
-rosrun tf tf_echo /torso_lift_link /r_gripper_tool_frame
+	1) Left arm:  rosrun tf tf_echo /torso_lift_link /l_gripper_spoon_frame
+	2) Right arm: rosrun tf tf_echo /torso_lift_link /r_gripper_tool_frame
 
 
