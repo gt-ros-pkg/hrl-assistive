@@ -43,7 +43,7 @@ class armReachAction(mpcBaseAction):
 	else:
 		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
 		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
-		self.timeout = 4
+		self.timeout = 2
 
         #!self.previousGoals = JointTrajectory()
         #NEED TO APPEND A JointTrajectoryPoint to the end!!! FIX THIS!!! NOT FIXED AS OF FRIDAY MARCH 27, 2015
@@ -98,7 +98,7 @@ class armReachAction(mpcBaseAction):
     def bowlPoseKinectCallback(self, data):
         #Takes in a PointStamped() type message, contains Header() and Pose(), from Kinect bowl location publisher
         self.bowl_frame = data.header.frame_id
-        self.bowl_pos = np.matrix([ [data.pose.position.x], [data.pose.position.y], [data.pose.position.z] ])
+        self.bowl_pos = np.matrix([ [data.pose.position.x + .006], [data.pose.position.y - .067], [data.pose.position.z - .013] ])
         self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
 	print '-----------------------------------------------------'
 	print 'Bowl Pos: '
@@ -106,6 +106,27 @@ class armReachAction(mpcBaseAction):
 	print 'Bowl Quaternions: '
 	print self.bowl_quat
 	print '-----------------------------------------------------'
+
+	#--------------REMOVE AFTER TESTING!-----------------------#
+	#Testing! After receiveing kinect location, go there!
+	pos = Point()
+	quat = Quaternion()
+
+	kinectPose = raw_input('Press k in order to position spoon to Kinect-provided bowl position, used for testing: ')
+        if kinectPose == 'k':
+                #THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
+                print "MOVES_KINECT_BOWL_POSITION"
+                (pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
+                (quat.x, quat.y, quat.z, quat.w) = (0.632, 0.395, -0.205, 0.635)
+                self.kinectTimeout = 4
+                #self.setPositionGoal(pos, quat, self.timeout)
+                self.setOrientGoal(pos, quat, self.kinectTimeout)
+                raw_input('Press Enter to move arm away: ' )
+		(pos.x, pos.y, pos.z) = (0.640, 0.827, -0.191)
+                (quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)
+		self.setOrientGoal(pos, quat, self.kinectTimeout)
+	else:
+		return
 
     def run(self):
 
@@ -147,17 +168,26 @@ class armReachAction(mpcBaseAction):
     		#THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
     		print "MOVES_KINECT_BOWL_POSITION"
             	(pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
-            	(quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)
-                self.timeout = 7
+            	(quat.x, quat.y, quat.z, quat.w) = (0.632, 0.395, -0.205, 0.635)
+                self.kinectTimeout = 4
             	#self.setPositionGoal(pos, quat, self.timeout)
-            	self.setOrientGoal(pos, quat, self.timeout)
+            	self.setOrientGoal(pos, quat, self.kinectTimeout)
     		raw_input('Press Enter to continue: ' )
+
+	calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
+        if calibrateJoints == 'front':
+            print "Setting initial joint angles... "
+            self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
+
+        elif calibrateJoints == 'side':
+            print "Setting initial joint angles..."
+            self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
 
         print "MOVES1 - Moving over bowl... "
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
         #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, 4)
 
         # #Code for storing current joint angles in case of playback...
         # self.currentAngles = self.getJointAngles()
@@ -183,17 +213,10 @@ class armReachAction(mpcBaseAction):
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
         #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, 2)
 
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, armReachAction.iteration+1)
-        # np.resize(self.previousGoals.points[armReachAction.iteration].positions, 7)
-        # self.previousGoals.points[armReachAction.iteration].positions = currentAngles
         armReachAction.iteration += 1
-        #
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
+
         raw_input("Iteration # = %d. Enter anything to continue: " % armReachAction.iteration)
 
         #---------------------------------------------------------------------------------------#
@@ -202,17 +225,10 @@ class armReachAction(mpcBaseAction):
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
         #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, 2)
 
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, armReachAction.iteration+1)
-        # np.resize(self.previousGoals.points[armReachAction.iteration].positions, 7)
-        # self.previousGoals.points[armReachAction.iteration].positions = currentAngles
         armReachAction.iteration += 1
-        #
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
+
         raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
         #---------------------------------------------------------------------------------------#
@@ -221,17 +237,10 @@ class armReachAction(mpcBaseAction):
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
         #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, 1)
 
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, armReachAction.iteration+1)
-        # np.resize(self.previousGoals.points[armReachAction.iteration].positions, 7)
-        # self.previousGoals.points[armReachAction.iteration].positions = currentAngles
         armReachAction.iteration += 1
-        #
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
+
         raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
         #---------------------------------------------------------------------------------------#
@@ -240,17 +249,10 @@ class armReachAction(mpcBaseAction):
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
         #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, 4)
 
-        # #Code for storing current joint angles in case of playback...
-        # currentAngles = self.getJointAngles()
-        # np.resize(self.previousGoals.points, armReachAction.iteration+1)
-        # np.resize(self.previousGoals.points[armReachAction.iteration].positions, 7)
-        # self.previousGoals.points[armReachAction.iteration].positions = currentAngles
         armReachAction.iteration += 1
-        #
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[iteration].positions
+
         raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
         return True
@@ -273,12 +275,12 @@ class armReachAction(mpcBaseAction):
         (posStop.x, posStop.y, posStop.z) = (0.967, 0.124, 0.525)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.748, -0.023, -0.128, 0.651)
         print "Moving to safe position 1"
-        self.setOrientGoal(posStop, quatStop, self.timeout + 2)
+        self.setOrientGoal(posStop, quatStop, self.timeout + 1)
 
         print "Moving to safe position 2"
         (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
-        self.setOrientGoal(posStop, quatStop, self.timeout + 2)
+        self.setOrientGoal(posStop, quatStop, self.timeout + 1)
 
 if __name__ == '__main__':
 
