@@ -55,7 +55,7 @@
     display:none;
 }
 
-#drive-lines circle {
-    stroke: green;
-    fill-opacity: 1.0;
-}
+/*#drive-lines circle {
+/*    stroke: green;
+/*    fill-opacity: 1.0;
+/*}

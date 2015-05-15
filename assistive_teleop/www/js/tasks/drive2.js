@@ -15,7 +15,7 @@ RFH.Drive = function (options) {
                   'center':null,
                   'right':null};
     self.lineCenterOffset = 0; //5% image width offset between lines
-    self.baseWidth = 0.35; //Half-width of PR2 Base
+    self.baseOffset = [0.35, 0.1]; //Half-width of PR2 Base [l/r, f/b]
     self.lineWidthOffset = 0.18; //5% image width offset between lines
     self.clamp = function (x,a,b) {
         return ( x < a ) ? a : ( ( x > b ) ? b : x );
@@ -90,9 +90,10 @@ RFH.Drive = function (options) {
     self.driveSVG.node.onmouseenter = self.createLinesCB;
 
     self.removeLinesCB = function (event) {
-        self.lines['center'].remove();
-        self.lines['left'].remove();
-        self.lines['right'].remove();
+        self.driveSVG.paper.clear();
+//        self.lines['center'].remove();
+//        self.lines['left'].remove();
+//        self.lines['right'].remove();
         self.lines = {};
     };
     self.driveSVG.node.onmouseleave = self.removeLinesCB;
@@ -108,71 +109,133 @@ RFH.Drive = function (options) {
 
  
     self.getWorldPath = function (event) {
-//        self.driveSVG.paper.clear(); 
+        if (event.target.id !== 'drive-lines') { return };
+        self.driveSVG.paper.clear();
         var rtxy = self.getRTheta(event); //Get real-world point in base frame
-        var qx = rtxy[2];
-        var qy = rtxy[3];
-        //Find Center of circle (tangent to base center, through clicked point) in world
-        // Px,Py = (0,0) (base frame origin)
-        // Cy = Py = 0 (forward motion is tangent to circle)
-        // Distance from Center to P, Q (clicked point) must be equal
-        var Cy = (qx*qx + qy*qy) / (2*qy);
-        var Cx = 0;
-        var rad = Math.abs(Cy);
-        var leftRad = (Cy < 0) ? rad + self.baseWidth : rad - self.baseWidth;
-        var rightRad = (Cy < 0) ? rad - self.baseWidth : rad + self.baseWidth;
-        // Find points around the circle from start to target location.
-        var pts = [];
-        var ang = Math.PI * Math.sin(1/rad)
-        var minAng = -Math.PI/2;//(Cy > 0) ? -ang : 0; 
-        var maxAng = Math.PI/2;//(Cy > 0) ? 0 : ang;
-        var angs = numeric.linspace(minAng, maxAng, 5);
-        for (var i in angs) {
-            pts.push([Cx + rad*Math.cos(angs[i]), Cy + rad*Math.sin(angs[i]), 0]);
+        var T = rtxy.slice(2); //Target (clicked) Point on floor in real world
+        var B = [0, 0]; //origin of motion (base movement moves center of robot)
+        var A = new Array(2); //point straight ahead.
+        var BL = new Array(2); //Left base line point
+        var BR = new Array(2); //Right base line point
+        var C = new Array(2);
+        var side = '';
+        switch (self.currentStop) {
+            case 'forward':
+                A = [B[0] + 1, B[1]];
+                BL = [B[0] + self.baseOffset[1], B[1] + self.baseOffset[0]] //Left and right guide-line reference points
+                BR = [B[0] + self.baseOffset[1], B[1] - self.baseOffset[0]] 
+                C[0] = B[0]; // Center is on line with base center
+                //Center is equidistant from base center to target -- Must for corner of a square with base and target.
+                C[1] = ( B[0]*B[0] + B[1]*B[1] - T[0]*T[0] - T[1]*T[1] - 2 * C[0]*(B[0] - T[0]) ) / (2 * (B[1] - T[1]));
+                side = (T[1] > B[1]) ? "left" : "right";
+                break;
+            case 'back-left':
+            case 'back-right':
+                A = [B[0] - 1, B[1]];
+                BL = [B[0] - self.baseOffset[1], B[1] - self.baseOffset[0]]
+                BR = [B[0] - self.baseOffset[1], B[1] + self.baseOffset[0]]
+                C[0] = B[0]; // Center is on line with base center
+                C[1] = ( B[0]*B[0] + B[1]*B[1] - T[0]*T[0] - T[1]*T[1] - 2 * C[0]*(B[0] - T[0]) ) / (2 * (B[1] - T[1]));
+                side = (T[1] < B[1]) ? "left" : "right";
+                break;
+            case 'left':
+                A = [B[0], B[1] + 1];
+                BL = [B[0] - self.baseOffset[0], B[1] + self.baseOffset[1]]
+                BR = [B[0] + self.baseOffset[0], B[1] + self.baseOffset[1]]
+                C[1] = B[1];
+                C[0] = ( B[0]*B[0] + B[1]*B[1] - T[0]*T[0] - T[1]*T[1] - 2 * C[1]*(B[1] - T[1]) ) / (2 * (B[0] - T[0]));
+                side = (T[0] < B[0]) ? "left" : "right";
+                break;
+            case 'right':
+                A = [B[0], B[1] - 1];
+                BL = [B[0] + self.baseOffset[0], B[1] - self.baseOffset[1]]
+                BR = [B[0] - self.baseOffset[0], B[1] - self.baseOffset[1]]
+                C[1] = B[1];
+                C[0] = ( B[0]*B[0] + B[1]*B[1] - T[0]*T[0] - T[1]*T[1] - 2 * C[1]*(B[1] - T[1]) ) / (2 * (B[0] - T[0])); 
+                side = (T[0] > B[0]) ? "left" : "right";
+                break;
         }
-//        if (leftRad > 0 ) {
-//            for (var i in angs) {
-//                pts.push([Cx + leftRad*Math.cos(angs[i]), Cy + leftRad*Math.sin(angs[i]), 0]);
-//            }
-//        }
-//        if (rightRad > 0 ) {
-//            for (var i in angs) {
-//                pts.push([Cx + rightRad*Math.cos(angs[i]), Cy + rightRad*Math.sin(angs[i]), 0]);
-//            }
-//        }
-        var imgpts = self.camera.projectPoints(pts, 'base_link');
+        var R = Math.sqrt( Math.pow(C[0]-B[0], 2) + Math.pow(C[1]-B[1], 2) )
+        var RL = Math.sqrt( Math.pow(C[0]-BL[0], 2) + Math.pow(C[1]-BL[1], 2) )
+        var RR = Math.sqrt( Math.pow(C[0]-BR[0], 2) + Math.pow(C[1]-BR[1], 2) )
+
+        // Find points around the circle from start to target location.
         var w = $(self.driveSVG.node).width();
         var h = $(self.driveSVG.node).height();
-        //var filt = function(el, i, arr) {
-        //    return (el[0] < -0.25 || el[1] < -0.25 || el[0] > 1.5 || el[1] > 1.5 ) ? false : true;
-        //    }
-        //var p1 = imgpts.shift();
-        //imgpts = imgpts.filter(filt);
-        //imgpts.unshift(p1);
-        for (var i=0; i<imgpts.length; i += 1) {
-            imgpts[i][0] *= w;
-            imgpts[i][1] *= h;
-            self.driveSVG.paper.circle(imgpts[i][0], imgpts[i][1], 4).attr({'fill-color':'red'});
+
+        //////////// DEBUG IMAGE OVERLAYS //////////////////////////
+        var imgC = self.camera.projectPoint(C[0], C[1], 0, 'base_link');
+        self.driveSVG.paper.circle(w*imgC[0], h*imgC[1], 10);
+        var imgB = self.camera.projectPoint(B[0], B[1], 0, 'base_link');
+        self.driveSVG.paper.circle(w*imgB[0], h*imgB[1], 10).attr({'fill':'blue'});
+        imgB = self.camera.projectPoint(BL[0], BL[1], 0, 'base_link');
+        self.driveSVG.paper.circle(w*imgB[0], h*imgB[1], 10).attr({'fill':'blue'});
+        imgB = self.camera.projectPoint(BR[0], BR[1], 0, 'base_link');
+        self.driveSVG.paper.circle(w*imgB[0], h*imgB[1], 10).attr({'fill':'blue'});
+//        var imgT = self.camera.projectPoint(T[0], T[1], 0, 'base_link');
+//        self.driveSVG.paper.circle(w*imgT[0], h*imgT[1], 10).attr({'fill':'red'});
+        /////////// END DEBUG ////////////////////////////////////////
+
+        var pts = [];
+        var angs = numeric.linspace(-Math.PI, 3*Math.PI/4, 45);
+        for (var i in angs) {
+            pts.push([C[0] + R*Math.cos(angs[i]), C[1] + R*Math.sin(angs[i]), 0]);
+        }
+        var imgptsC = self.camera.projectPoints(pts, 'base_link');
+        for (var i=0; i<imgptsC.length; i += 1) {
+            imgptsC[i][0] *= w;
+            imgptsC[i][1] *= h;
+            self.driveSVG.paper.circle(imgptsC[i][0], imgptsC[i][1], 4).attr({'fill':'green'});
+        }
+        var ell_C = self.fitEllipse(imgptsC);
+
+        if (side === 'right' || RL < R) {
+            pts = [];
+            for (var i in angs) {
+                pts.push([C[0] + RL*Math.cos(angs[i]), C[1] + RL*Math.sin(angs[i]), 0]);
+            }
+            var imgptsL = self.camera.projectPoints(pts, 'base_link');
+            //Draw points
+            for (var i=0; i<imgptsL.length; i += 1) {
+                imgptsL[i][0] *= w;
+                imgptsL[i][1] *= h;
+                self.driveSVG.paper.circle(imgptsL[i][0], imgptsL[i][1], 4).attr({'fill':'red'});
+            }
+            var ell_L = self.fitEllipse(imgptsL);
         }
 
-        //var path = "M"+imgpts[0][0].toString()+','+imgpts[0][1].toString()+"R";
-        //imgpts.shift();
-        //for (var pt in imgpts) {
-        //    path += imgpts[pt][0].toString() + ',' + imgpts[pt][1].toString()+' ';
-        //}
-//        self.lines['center'].attr({'d':path,
-//                                   'stroke':'blue',
-//                                   'stroke-width':5,
-//                                   'id':'drivePath'});
-//
-       // Given 5 points in image, solve for matrix parameters of fitting conic through points.
+        if (side == 'left' ||  RR < R) {
+            pts = [];
+            for (var i in angs) {
+                pts.push([C[0] + RR*Math.cos(angs[i]), C[1] + RR*Math.sin(angs[i]), 0]);
+            }
+            var imgptsR = self.camera.projectPoints(pts, 'base_link');
+            //Draw points
+            for (var i=0; i<imgptsR.length; i += 1) {
+                imgptsR[i][0] *= w;
+                imgptsR[i][1] *= h;
+                self.driveSVG.paper.circle(imgptsR[i][0], imgptsR[i][1], 4).attr({'fill':'blue'});
+            }
+            var ell_R = self.fitEllipse(imgptsR);
+        }
+    };
+
+    self.pseudoInv = function (A) {
+        var aT = numeric.transpose(A);
+        return numeric.dot(numeric.inv(numeric.dot(aT, A)), aT);
+    };
+
+    self.fitEllipse = function (pts) {
+        return;
+       // Given points in image, solve for matrix parameters of fitting conic through points.
        // Ref: http://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections
-        // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0 --> Must be true for each of 5 pts, assume F=1
+       // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0 --> Must be true for each of 5 pts, assume F=1
+
         var b = [100,100,100,100,100];  
         var Amat = [];
-        for (var i=0; i<imgpts.length; i += 1) {
-            var x = imgpts[i][0];
-            var y = imgpts[i][1];
+        for (var i=0; i<pts.length; i += 1) {
+            var x = pts[i][0];
+            var y = pts[i][1];
             Amat.push([x*x, x*y, y*y, x, y]);
         }
         // Solve Ax=b for x
@@ -215,10 +278,10 @@ RFH.Drive = function (options) {
             var rot = 0.5*Math.atan(2*b/(a-c));
             rot += (a < c) ? 0 : Math.PI/2;
         }
-        var path = "M"+imgpts[0][0].toString()+','+imgpts[0][1].toString();
+        var path = "M"+pts[0][0].toString()+','+pts[0][1].toString();
         path += "A"+axis_A_len.toString()+','+axis_B_len.toString() + " ";
         path += rot.toString() + " ";
-        path += "1,0 "+imgpts[imgpts.length-1][0].toString()+","+imgpts[imgpts.length-1][1].toString();
+        path += "1,0 "+pts[pts.length-1][0].toString()+","+pts[pts.length-1][1].toString();
         self.driveSVG.paper.path(path).attr({"fill-opacity":0.0,
                                              "stroke":"red"});
 
@@ -236,8 +299,8 @@ RFH.Drive = function (options) {
        //                  [0,   A,   E/2],
        //                  [D/2, E/2, 0]];
     }
-    //self.driveSVG.node.onmousemove = self.getWorldPath;
-    self.driveSVG.node.onclick = self.getWorldPath;
+    self.driveSVG.node.onmousemove = self.getWorldPath;
+    //self.driveSVG.node.onclick = self.getWorldPath;
 
     self.updateLineOffsets = function (event) {
         var width =$('#drive-lines').width();
