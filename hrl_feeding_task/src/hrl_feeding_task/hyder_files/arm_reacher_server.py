@@ -12,6 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+import hrl_lib.src.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -52,18 +53,39 @@ class armReachAction(mpcBaseAction):
         #Variables...! #
         armReachAction.iteration = -1 # armReachAction.iteration
 
-        # offset variable
-        self.bowlPosOffsets = np.array([[-0.09743569,    -0.11179373,    0.18600000], #Row 1 = Move 1
-                                   [-0.03143569,    -0.09879372,    0.02800000], #Row 2 = Move 2
-                                   [-0.03543569,    -0.09179373,    -0.02600000], # ...
-                                   [0.00156431,     -0.07279373,    0.04900000],
-                                   [0.00756431,     -0.13179373,    0.59400000]])
+        # Offets variables, multiple options...
+        self.bowlPosOffsetsOne = np.array([[-0.09743569,     -0.11179373,    0.18600000],
+                                            [-0.03143569,    -0.09879372,    0.02800000],
+                                            [-0.03543569,    -0.09179373,    -0.02600000],
+                                            [0.00156431,     -0.07279373,    0.04900000],
+                                            [0.00756431,     -0.13179373,    0.59400000]])
 
-        self.bowlQuatOffsets = np.array([[0.580, 0.333, 0.050, 0.742],
+        self.bowlQuatOffsetsOne = np.array([[0.580, 0.333, 0.050, 0.742],
+                                            [0.484, 0.487, -0.164, 0.708],
+                                            [0.505, 0.516, -0.160, 0.673],
+                                            [0.617, 0.300, -0.035, 0.726],
+                                            [0.702, 0.168, 0.132, 0.679]])
+
+        #-------------------------------------------------------------------#
+
+        self.bowlPosOffsetsTwo = np.array([[.2,     0,    0],
+                                           [.2,     0,    0],
+                                           [.025,   0,    0],
+                                           [.025,   0,    0],
+                                           [.2,     0,    0]])
+
+        self.bowlQuatOffsetsTwo = np.array([[0.580, 0.333, 0.050, 0.742],
                                    [0.484, 0.487, -0.164, 0.708],
                                    [0.505, 0.516, -0.160, 0.673],
                                    [0.617, 0.300, -0.035, 0.726],
                                    [0.702, 0.168, 0.132, 0.679]])
+
+
+        #Choose which set of offsets to use
+        self.bowlPosOffsets = self.bowlPosOffsetsTwo
+        self.bowlQuatOffsets = self.bowlQuatOffsetsTwo
+
+
 
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
@@ -99,34 +121,37 @@ class armReachAction(mpcBaseAction):
         #Takes in a PointStamped() type message, contains Header() and Pose(), from Kinect bowl location publisher
         self.bowl_frame = data.header.frame_id
         self.bowl_pos = np.matrix([ [data.pose.position.x + .006], [data.pose.position.y - .067], [data.pose.position.z - .013] ])
-        self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
-	print '-----------------------------------------------------'
-	print 'Bowl Pos: '
-	print self.bowl_pos
-	print 'Bowl Quaternions: '
-	print self.bowl_quat
-	print '-----------------------------------------------------'
+        #self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
+        #^Proper code!
+        self.bowl_quat = np.matrix([0,0,0,0]) #JUST FOR TESTING, in order to manually set all quaternions!
+        print '-----------------------------------------------------'
+        print 'Bowl Pos: '
+        print self.bowl_pos
+        print 'Bowl Quaternions: '
+        print self.bowl_quat
+        print '-----------------------------------------------------'
 
-	#--------------REMOVE AFTER TESTING!-----------------------#
-	#Testing! After receiveing kinect location, go there!
-	pos = Point()
-	quat = Quaternion()
+        #--------------REMOVE AFTER TESTING!-----------------------#
+        #Testing! After receiveing kinect location, go there!
+        pos = Point()
+        quat = Quaternion()
 
-	kinectPose = raw_input('Press k in order to position spoon to Kinect-provided bowl position, used for testing: ')
+        kinectPose = raw_input('Press k in order to position spoon to Kinect-provided bowl position, used for testing: ')
         if kinectPose == 'k':
-                #THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
-                print "MOVES_KINECT_BOWL_POSITION"
-                (pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
-                (quat.x, quat.y, quat.z, quat.w) = (0.632, 0.395, -0.205, 0.635)
-                self.kinectTimeout = 4
-                #self.setPositionGoal(pos, quat, self.timeout)
-                self.setOrientGoal(pos, quat, self.kinectTimeout)
-                raw_input('Press Enter to move arm away: ' )
-		(pos.x, pos.y, pos.z) = (0.640, 0.827, -0.191)
-                (quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)
-		self.setOrientGoal(pos, quat, self.kinectTimeout)
-	else:
-		return
+            #THIS IS SOME TEST CODE, BASICALLY PUTS THE SPOON WHERE THE KINECT THINKS THE BOWL IS, USED TO COMPARE ACTUAL BOWL POSITION WITH KINECT-PROVIDED BOWL POSITION!! UNCOMMENT ALL THIS OUT IF NOT USED MUCH!!#
+            print "MOVES_KINECT_BOWL_POSITION"
+            (pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
+            (quat.x, quat.y, quat.z, quat.w) = (0.632, 0.395, -0.205, 0.635)
+            self.kinectTimeout = 4
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.kinectTimeout)
+            raw_input('Press Enter to move arm away: ' )
+            (pos.x, pos.y, pos.z) = (0.640, 0.827, -0.191)
+            (quat.x, quat.y, quat.z, quat.w) = (0, 0, 0, 1)
+            self.setOrientGoal(pos, quat, self.kinectTimeout)
+        else:
+            return
+        #--------------REMOVE AFTER TESTING!-----------------------#
 
     def run(self):
 
