@@ -15,7 +15,8 @@ if __name__ == '__main__':
     
     rospy.wait_for_service("/arm_reach_enable")
     armReachAction = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
+    #armMovements = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
 
     ret = armReachAction()
-
+    #ret = armMovements()
     print ret

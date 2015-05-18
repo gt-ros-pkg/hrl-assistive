@@ -12,7 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-import hrl_lib.src.quaternion as quatMath #Used for quaternion math :)
+import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -68,22 +68,22 @@ class armReachAction(mpcBaseAction):
 
         #-------------------------------------------------------------------#
 
-        self.bowlPosOffsetsTwo = np.array([[.2,     0,    0],
-                                           [.2,     0,    0],
-                                           [.025,   0,    0],
-                                           [.025,   0,    0],
-                                           [.2,     0,    0]])
+        self.bowlPosOffsetsTwo = np.array([[0,     0,    .2],
+                                           [0,     0,    .2],
+                                           [0,   0,    .025],
+                                           [0,   0,    .025],
+                                           [0,     0,    .2]])
 
-        self.bowlQuatOffsetsTwo = np.array([[0.580, 0.333, 0.050, 0.742],
-                                   [0.484, 0.487, -0.164, 0.708],
-                                   [0.505, 0.516, -0.160, 0.673],
-                                   [0.617, 0.300, -0.035, 0.726],
-                                   [0.702, 0.168, 0.132, 0.679]])
+        self.bowlQuatOffsetsTwo = np.array([[0, 0, 0, 0],
+                                   [0, 0, 0, 0],
+                                   [0, 0, 0, 0],
+                                   [0, 0, 0, 0],
+                                   [0, 0, 0, 0]])
 
 
         #Choose which set of offsets to use
-        self.bowlPosOffsets = self.bowlPosOffsetsTwo
-        self.bowlQuatOffsets = self.bowlQuatOffsetsTwo
+        self.bowlPosOffsets = self.bowlPosOffsetsOne
+        self.bowlQuatOffsets = self.bowlQuatOffsetsOne
 
 
 
@@ -120,7 +120,7 @@ class armReachAction(mpcBaseAction):
     def bowlPoseKinectCallback(self, data):
         #Takes in a PointStamped() type message, contains Header() and Pose(), from Kinect bowl location publisher
         self.bowl_frame = data.header.frame_id
-        self.bowl_pos = np.matrix([ [data.pose.position.x + .006], [data.pose.position.y - .067], [data.pose.position.z - .013] ])
+        self.bowl_pos = np.matrix([ [data.pose.position.x], [data.pose.position.y + 0.025], [data.pose.position.z] ])
         #self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
         #^Proper code!
         self.bowl_quat = np.matrix([0,0,0,0]) #JUST FOR TESTING, in order to manually set all quaternions!

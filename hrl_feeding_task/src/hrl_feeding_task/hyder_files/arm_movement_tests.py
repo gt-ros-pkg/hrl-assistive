@@ -37,6 +37,13 @@ class armMovements(mpcBaseAction):
                 print "----------------------"
                 break
 
+	if arm == 'r':
+		self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+		self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
+	else:
+		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
+		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
+
     def start_cb(self, req):
 	#Run manipulation tasks
 
@@ -47,62 +54,75 @@ class armMovements(mpcBaseAction):
 
     def run(self):
 
-        pos = Point()
-        quat = Quaternion()
+	while not rospy.is_shutdown():
 
-        quatOrEulerSet = Falseselection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
+		calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
+        	if calibrateJoints == 'front':
+            		print "Setting initial joint angles... "
+            		self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
 
-        if selection == 'setQuat':
-            pos.x = raw_input("pos.x = :")
-            pos.y = raw_input("pos.y = :")
-            pos.z = raw_input("pos.z = :")
-            quat.x = raw_input("quat.x = :")
-            quat.y = raw_input("quat.y = :")
-            quat.z = raw_input("quat.z = :")
-            quat.w = raw_input("quat.w = :")
-            timeout = raw_input("timeout = :")
+        	elif calibrateJoints == 'side':
+            		print "Setting initial joint angles..."
+            		self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
 
-            quatOrEulerSet = True
+		pos = Point()
+		quat = Quaternion()
 
-            raw_input("Set position: [%d]; Set quaternions: [%d]; Enter anything to move here" % pos, quat)
+		quatOrEulerSet = False
+		selection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
 
-            self.setOrientGoal(pos, quat, timeout)
+		if selection == 'setQuat':
+		    pos.x = raw_input("pos.x = :")
+		    pos.y = raw_input("pos.y = :")
+		    pos.z = raw_input("pos.z = :")
+		    quat.x = raw_input("quat.x = :")
+		    quat.y = raw_input("quat.y = :")
+		    quat.z = raw_input("quat.z = :")
+		    quat.w = raw_input("quat.w = :")
+		    timeout = raw_input("timeout = :")
 
-            raw_input("Moved to... Position: [%d]; Quaternions: [%d]; Enter anything to continue" % pos, quat)
+		    quatOrEulerSet = True
 
-        if selection == 'setEuler':
-            pos.x = raw_input("pos.x = :")
-            pos.y = raw_input("pos.y = :")
-            pos.z = raw_input("pos.z = :")
-            roll = raw_input("roll = :")
-            pitch = raw_input("pitch = :")
-            yaw = raw_input("yaw = :")
-            quat = quatMath.euler2quat(roll, pitch, yaw)
-            timeout = raw_input("timeout = :")
+		    raw_input("Set position: [%d]; Set quaternions: [%d]; Enter anything to move here" % pos, quat)
 
-            quatOrEulerSet = True
+		    self.setOrientGoal(pos, quat, timeout)
 
-            raw_input("Set position: [%d]; Set euler angles: [%d, %d, %d]; Calculated quaternion angles: [%d]; Enter anything to move here" % pos, roll, pitch, yaw, quat)
+		    raw_input("Moved to... Position: [%d]; Quaternions: [%d]; Enter anything to continue" % pos, quat)
 
-            self.setOrientGoal(pos, quat, timeout)
+		if selection == 'setEuler':
+		    pos.x = float(raw_input("pos.x = :"))
+		    pos.y = float(raw_input("pos.y = :"))
+		    pos.z = float(raw_input("pos.z = :"))
+		    roll = float(raw_input("roll = :"))
+		    pitch = float(raw_input("pitch = :"))
+		    yaw = float(raw_input("yaw = :"))
+		    quatConv = quatMath.euler2quat(roll, pitch, yaw)
+		    quat.x, quat.y, quat.z, quat.w = quatConv[0], quatConv[1], quatConv[2], quatConv[3]
+		    timeout = float(raw_input("timeout = :"))
 
-            raw_input("Moved to... Position: [%d]; Euler angles: [%d, %d, %d]; Quaternion angles: %d; Enter anything to continue" % pos, roll, pitch, yaw, quat)
+		    quatOrEulerSet = True
+	            print "Calculated quat ="
+		    print quat
+		    raw_input("Set position: [%f, %f, %f]; Set euler angles: [%f, %f, %f]; Calculated quaternion angles: [%f, %f, %f, %f]; Enter anything to move here" % (pos.x, pos.y, pos.z, roll, pitch, yaw, quat.x, quat.y, quat.z, quat.w))
 
-        if selection == 'setPos':
-            if not quatOrEulerSet:
-                raw_input("Set quaternions or euler angles first, press Enter to continue:")
-                return
-            if quatOrEulerSet:
-                pos.x = raw_input("pos.x = :")
-                pos.y = raw_input("pos.y = :")
-                pos.z = raw_input("pos.z = :")
-                timeout = raw_input("timeout = :")
+		    self.setOrientGoal(pos, quat, timeout)
+		    raw_input("MOved to... Position: [%f, %f, %f]; Euler angles: [%f, %f, %f]; Quaternion angles: [%f, %f, %f, %f]; Enter anything to continue" % (pos.x, pos.y, pos.z, roll, pitch, yaw, quat.x, quat.y, quat.z, quat.w))
+		    
+		if selection == 'setPos':
+		    if not quatOrEulerSet:
+			raw_input("Set quaternions or euler angles first, press Enter to continue:")
+			return
+		    if quatOrEulerSet:
+			pos.x = raw_input("pos.x = :")
+			pos.y = raw_input("pos.y = :")
+			pos.z = raw_input("pos.z = :")
+			timeout = raw_input("timeout = :")
 
-                raw_input("Set new position: [%d]; Set previous quaternions: [%d]; Enter anything to move here" % pos, quat)
+			raw_input("Set new position: [%d]; Set previous quaternions: [%d]; Enter anything to move here" % pos, quat)
 
-                self.setOrientGoal(pos, quat, timeout)
+			self.setOrientGoal(pos, quat, timeout)
 
-                raw_input("Moved to... New position: [%d]; Previous quaternions: [%d]; Enter anything to continue" % pos, quat)
+			raw_input("Moved to... New position: [%d]; Previous quaternions: [%d]; Enter anything to continue" % pos, quat)
 
 if __name__ == '__main__':
 
@@ -119,4 +139,5 @@ if __name__ == '__main__':
 
     rospy.init_node('arm_movement_tests')
     ara = armMovements(d_robot, controller, opt.arm)
+   # ara.run()
     rospy.spin()
