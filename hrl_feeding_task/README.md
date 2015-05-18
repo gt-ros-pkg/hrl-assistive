@@ -46,7 +46,8 @@ Register bowl position:
 
 To manually set end effector position quickly and change between angles, used for testing:
 
-	1) rosrun hrl_feeding_task arm_movement_tests.py
+	1) roslaunch hrl_feeding_task arm_movement_tests.launch
+	2) rosrun hrl_feeding_task arm_movement_tests.py
 
 To find end wrist location:
 
