@@ -12,7 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-import hrl_lib.src.quaternion as quatMath #Used for quaternion math :)
+import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -24,29 +24,35 @@ class armMovements(mpcBaseAction):
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
-        rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseCallback)
-        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback)
-
-        rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
-
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
-    def start_cb(self, req):
+	rate = rospy.Rate(100) # 25Hz, nominally.
+        while not rospy.is_shutdown():
+            if self.getJointAngles() != []:
+                print "----------------------"
+                print "Current joint angles"
+                print self.getJointAngles()
+                print "Current pose"
+                print self.getEndeffectorPose()
+                print "----------------------"
+                break
 
-        # Run manipulation tasks
+    def start_cb(self, req):
+	#Run manipulation tasks
+
         if self.run():
-            return None_BoolResponse(True)
+		return None_BoolResponse(True)
         else:
-            return None_BoolResponse(False)
+		return None_BoolResponse(False)
+
+    def run(self):
 
         pos = Point()
-        quat = Quaterion()
+        quat = Quaternion()
 
         quatOrEulerSet = False
 
-        while not rospy.is_shutdown():
-
-            selection = raw_input("Which action? Type 'setQuat' or 'setEuler', or afterwards 'setPos'")
+	selection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
 
             if selection == 'setQuat':
                 pos.x = raw_input("pos.x = :")
@@ -85,10 +91,10 @@ class armMovements(mpcBaseAction):
                 raw_input("Moved to... Position: [%d]; Euler angles: [%d, %d, %d]; Quaternion angles: %d; Enter anything to continue" % pos, roll, pitch, yaw, quat)
 
             if selection == 'setPos':
-                if not quatOrEulerSet
+                if not quatOrEulerSet:
                     raw_input("Set quaternions or euler angles first, press Enter to continue:")
                     return
-                if quatOrEulerSet
+                if quatOrEulerSet:
                     pos.x = raw_input("pos.x = :")
                     pos.y = raw_input("pos.y = :")
                     pos.z = raw_input("pos.z = :")

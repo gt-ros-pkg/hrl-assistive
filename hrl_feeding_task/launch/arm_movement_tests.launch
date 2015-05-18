@@ -28,10 +28,6 @@
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/mpc_params_pr2.yaml" />
       <rosparam command="load" file="$(find hrl_anomaly_detection)/params/pr2_config_params_r.yaml" />
 
-      <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen"/>
-
-
-
     </group-->
 
 </launch>
