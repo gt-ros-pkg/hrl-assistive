@@ -177,7 +177,7 @@ RFH.Drive = function (options) {
         /////////// END DEBUG ////////////////////////////////////////
 
         var pts = [];
-        var angs = numeric.linspace(-Math.PI, 3*Math.PI/4, 45);
+        var angs = numeric.linspace(-Math.PI, 3*Math.PI/4, 6);
         for (var i in angs) {
             pts.push([C[0] + R*Math.cos(angs[i]), C[1] + R*Math.sin(angs[i]), 0]);
         }
@@ -201,7 +201,7 @@ RFH.Drive = function (options) {
                 imgptsL[i][1] *= h;
                 self.driveSVG.paper.circle(imgptsL[i][0], imgptsL[i][1], 4).attr({'fill':'red'});
             }
-            var ell_L = self.fitEllipse(imgptsL);
+//            var ell_L = self.fitEllipse(imgptsL);
         }
 
         if (side == 'left' ||  RR < R) {
@@ -216,7 +216,7 @@ RFH.Drive = function (options) {
                 imgptsR[i][1] *= h;
                 self.driveSVG.paper.circle(imgptsR[i][0], imgptsR[i][1], 4).attr({'fill':'blue'});
             }
-            var ell_R = self.fitEllipse(imgptsR);
+//            var ell_R = self.fitEllipse(imgptsR);
         }
     };
 
@@ -227,6 +227,34 @@ RFH.Drive = function (options) {
 
     self.fitEllipse = function (pts) {
         // Fit Ellipse to data points. Following Numerically Stable Direct Lease Squares Fitting of Ellipses (Halir, Flusser, 1998)
+        //Make test points;
+        var Center = [0,0];
+        var h = $(self.driveSVG.node).height();
+        var w = $(self.driveSVG.node).width();
+        var R = 150;
+        Center[0] = w/2;
+        Center[1] = h/2;
+        pts = [];
+        var angs = numeric.linspace(-Math.PI, (5/6)*Math.PI, 20);
+        for (var i in angs) {
+            pts.push([Center[0] + (0.49+(0.02*Math.random()))*R*Math.cos(angs[i]), Center[1] + (0.99+(0.02*Math.random()))*R*Math.sin(angs[i])]);
+        }
+        for (var i in pts) {
+            self.driveSVG.paper.circle(pts[i][0], pts[i][1], 4).attr({'fill':'brown'});
+        }
+        // Get points as relative to centroid;
+        //var centroid =[0,0];
+        //for (var i in pts) {
+        //    centroid[0] += pts[i][0];
+        //    centroid[1] += pts[i][1];
+        //}
+        //centroid[0] = centroid[0]/pts.length;
+        //centroid[1] = centroid[1]/pts.length;
+        //for (var i in pts) {
+        //    pts[i][0] -= centroid[0];
+        //    pts[i][1] -= centroid[1];
+        //}
+
         // Build Design Matrix D
         var D1 = [];
         var D2 = [];
@@ -245,16 +273,16 @@ RFH.Drive = function (options) {
         
         var T = numeric.mul(-1, numeric.dot(numeric.inv(S3), numeric.transpose(S2)));
         var M = numeric.add(S1, numeric.dot(S2, T))
-        var M = [numeric.mul(0.5, M[3]), numeric.mul(-1, M[2]), numeric.mul(0.5, M[1])];
+        var M = [numeric.mul(0.5, M[2]), numeric.mul(-1, M[1]), numeric.mul(0.5, M[0])];
         var eigs = numeric.eig(M);
-        var eigVals = eigs.lambda.x
+        var eigVals = eigs.lambda.x;
         eigVals.push.apply(eigVals, eigs.lambda.y);
         var eigVecs = eigs.E.x;
-        eigVecs.push.apply(eigVecs, eigs.E.y;}
-        var cond = numeric.mul(4, numeric.mul(eigVecs[1], eigVecs[3]))
-        cond = numeric.sub(cond, numeric.pow(eigVecs[2], 2))
-        var a1 = eigVecs[numeric.gt(cond, 0)];
-        var ellMatParams = [a1];
+        eigVecs.push.apply(eigVecs, eigs.E.y);
+        var cond = numeric.mul(4, numeric.mul(eigVecs[0], eigVecs[2]));
+        cond = numeric.sub(cond, numeric.pow(eigVecs[1], 2));
+        var a1 = eigVecs[numeric.gt(cond, 0).indexOf(true)];
+        var ellMatParams = a1;
         ellMatParams.push.apply(ellMatParams, numeric.dot(T, a1));
 
         var A = ellMatParams[0];
@@ -262,19 +290,30 @@ RFH.Drive = function (options) {
         var C = ellMatParams[2];
         var D = ellMatParams[3];
         var E = ellMatParams[4];
-        var F = -100;
-        var Aq = [[A, B/2, D/2],
-                  [B/2, C, E/2],
+        var F = ellMatParams[5];
+        var Aq = [[A,   B/2, D/2],
+                  [B/2, C,   E/2],
                   [D/2, E/2, F]];
-        var A33 = [[A, B/2], [B/2, A]];
+        var A33 = [[A,  B/2],
+                   [B/2, C]];
+        var I = A + C;
         var detAq = numeric.det(Aq);
         var detA33 = numeric.det(A33);
-        if (detAq < 1E-8) {
+        if (Math.abs(detAq) < numeric.epsilon) {
             console.log("Degenerate Conic");
+            return;
         } else {
-            if (detAq < 0) { console.log("Fit: Ellipse")};
-            if (detAq === 0) { console.log("Fit: Parabola")};
-            if (detAq > 0)  { console.log("Fit: Hyperbola")};
+            if (detA33 > 0) {
+                if (detAq/I > 0) {
+                    console.log("Fit Imaginary Ellipse");
+                } else {
+                    console.log("Fit Real Ellipse");
+                }
+            } else if (detA33 < 0) {
+                console.log("Fit: Hyperbola")
+            } else if (Math.abs(detA33) < numeric.epsilon) {
+                console.log("Fit: Parabola");
+            }
         }
         var Cx = (B*E - 2*C*D)/(4*A*C - B*B);
         var Cy = (D*B - 2*A*E)/(4*A*C - B*B);
@@ -298,7 +337,8 @@ RFH.Drive = function (options) {
         var path = "M"+pts[0][0].toString()+','+pts[0][1].toString();
         path += "A"+axis_A_len.toString()+','+axis_B_len.toString() + " ";
         path += rot.toString() + " ";
-        path += "1,0 "+pts[pts.length-1][0].toString()+","+pts[pts.length-1][1].toString();
+        path += "0,0 "+pts[pts.length-1][0].toString()+","+pts[pts.length-1][1].toString();
+        self.driveSVG.paper.ellipse(Cx, Cy, axis_B_len, axis_A_len).attr({'fill-opacity':0.0, 'stroke':'purple'});
         self.driveSVG.paper.path(path).attr({"fill-opacity":0.0,
                                              "stroke":"red"});
 
@@ -316,8 +356,8 @@ RFH.Drive = function (options) {
        //                  [0,   A,   E/2],
        //                  [D/2, E/2, 0]];
     }
-    self.driveSVG.node.onmousemove = self.getWorldPath;
-    //self.driveSVG.node.onclick = self.getWorldPath;
+   // self.driveSVG.node.onmousemove = self.getWorldPath;
+    self.driveSVG.node.onclick = self.getWorldPath;
 
     self.updateLineOffsets = function (event) {
         var width =$('#drive-lines').width();
