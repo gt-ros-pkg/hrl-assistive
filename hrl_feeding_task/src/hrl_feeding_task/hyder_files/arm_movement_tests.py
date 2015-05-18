@@ -50,61 +50,59 @@ class armMovements(mpcBaseAction):
         pos = Point()
         quat = Quaternion()
 
-        quatOrEulerSet = False
+        quatOrEulerSet = Falseselection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
 
-	selection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
+        if selection == 'setQuat':
+            pos.x = raw_input("pos.x = :")
+            pos.y = raw_input("pos.y = :")
+            pos.z = raw_input("pos.z = :")
+            quat.x = raw_input("quat.x = :")
+            quat.y = raw_input("quat.y = :")
+            quat.z = raw_input("quat.z = :")
+            quat.w = raw_input("quat.w = :")
+            timeout = raw_input("timeout = :")
 
-            if selection == 'setQuat':
+            quatOrEulerSet = True
+
+            raw_input("Set position: [%d]; Set quaternions: [%d]; Enter anything to move here" % pos, quat)
+
+            self.setOrientGoal(pos, quat, timeout)
+
+            raw_input("Moved to... Position: [%d]; Quaternions: [%d]; Enter anything to continue" % pos, quat)
+
+        if selection == 'setEuler':
+            pos.x = raw_input("pos.x = :")
+            pos.y = raw_input("pos.y = :")
+            pos.z = raw_input("pos.z = :")
+            roll = raw_input("roll = :")
+            pitch = raw_input("pitch = :")
+            yaw = raw_input("yaw = :")
+            quat = quatMath.euler2quat(roll, pitch, yaw)
+            timeout = raw_input("timeout = :")
+
+            quatOrEulerSet = True
+
+            raw_input("Set position: [%d]; Set euler angles: [%d, %d, %d]; Calculated quaternion angles: [%d]; Enter anything to move here" % pos, roll, pitch, yaw, quat)
+
+            self.setOrientGoal(pos, quat, timeout)
+
+            raw_input("Moved to... Position: [%d]; Euler angles: [%d, %d, %d]; Quaternion angles: %d; Enter anything to continue" % pos, roll, pitch, yaw, quat)
+
+        if selection == 'setPos':
+            if not quatOrEulerSet:
+                raw_input("Set quaternions or euler angles first, press Enter to continue:")
+                return
+            if quatOrEulerSet:
                 pos.x = raw_input("pos.x = :")
                 pos.y = raw_input("pos.y = :")
                 pos.z = raw_input("pos.z = :")
-                quat.x = raw_input("quat.x = :")
-                quat.y = raw_input("quat.y = :")
-                quat.z = raw_input("quat.z = :")
-                quat.w = raw_input("quat.w = :")
                 timeout = raw_input("timeout = :")
 
-                quatOrEulerSet = True
-
-                raw_input("Set position: [%d]; Set quaternions: [%d]; Enter anything to move here" % pos, quat)
+                raw_input("Set new position: [%d]; Set previous quaternions: [%d]; Enter anything to move here" % pos, quat)
 
                 self.setOrientGoal(pos, quat, timeout)
 
-                raw_input("Moved to... Position: [%d]; Quaternions: [%d]; Enter anything to continue" % pos, quat)
-
-            if selection == 'setEuler':
-                pos.x = raw_input("pos.x = :")
-                pos.y = raw_input("pos.y = :")
-                pos.z = raw_input("pos.z = :")
-                roll = raw_input("roll = :")
-                pitch = raw_input("pitch = :")
-                yaw = raw_input("yaw = :")
-                quat = quatMath.euler2quat(roll, pitch, yaw)
-                timeout = raw_input("timeout = :")
-
-                quatOrEulerSet = True
-
-                raw_input("Set position: [%d]; Set euler angles: [%d, %d, %d]; Calculated quaternion angles: [%d]; Enter anything to move here" % pos, roll, pitch, yaw, quat)
-
-                self.setOrientGoal(pos, quat, timeout)
-
-                raw_input("Moved to... Position: [%d]; Euler angles: [%d, %d, %d]; Quaternion angles: %d; Enter anything to continue" % pos, roll, pitch, yaw, quat)
-
-            if selection == 'setPos':
-                if not quatOrEulerSet:
-                    raw_input("Set quaternions or euler angles first, press Enter to continue:")
-                    return
-                if quatOrEulerSet:
-                    pos.x = raw_input("pos.x = :")
-                    pos.y = raw_input("pos.y = :")
-                    pos.z = raw_input("pos.z = :")
-                    timeout = raw_input("timeout = :")
-
-                    raw_input("Set new position: [%d]; Set previous quaternions: [%d]; Enter anything to move here" % pos, quat)
-
-                    self.setOrientGoal(pos, quat, timeout)
-
-                    raw_input("Moved to... New position: [%d]; Previous quaternions: [%d]; Enter anything to continue" % pos, quat)
+                raw_input("Moved to... New position: [%d]; Previous quaternions: [%d]; Enter anything to continue" % pos, quat)
 
 if __name__ == '__main__':
 
