@@ -226,20 +226,37 @@ RFH.Drive = function (options) {
     };
 
     self.fitEllipse = function (pts) {
-        return;
-       // Given points in image, solve for matrix parameters of fitting conic through points.
-       // Ref: http://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections
-       // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0 --> Must be true for each of 5 pts, assume F=1
-
-        var b = [100,100,100,100,100];  
-        var Amat = [];
+        // Fit Ellipse to data points. Following Numerically Stable Direct Lease Squares Fitting of Ellipses (Halir, Flusser, 1998)
+        // Build Design Matrix D
+        var D1 = [];
+        var D2 = [];
         for (var i=0; i<pts.length; i += 1) {
             var x = pts[i][0];
             var y = pts[i][1];
-            Amat.push([x*x, x*y, y*y, x, y]);
+            D1.push([x*x, x*y, y*y]);
+            D2.push([x, y, 1]);
         }
-        // Solve Ax=b for x
-        var ellMatParams = numeric.solve(Amat, b);
+        // Build Scatter Matrices S1-S3
+        var D1T = numeric.transpose(D1);
+        var D2T = numeric.transpose(D2);
+        var S1 = numeric.dot(D1T, D1);
+        var S2 = numeric.dot(D1T, D2);
+        var S3 = numeric.dot(D2T, D2);
+        
+        var T = numeric.mul(-1, numeric.dot(numeric.inv(S3), numeric.transpose(S2)));
+        var M = numeric.add(S1, numeric.dot(S2, T))
+        var M = [numeric.mul(0.5, M[3]), numeric.mul(-1, M[2]), numeric.mul(0.5, M[1])];
+        var eigs = numeric.eig(M);
+        var eigVals = eigs.lambda.x
+        eigVals.push.apply(eigVals, eigs.lambda.y);
+        var eigVecs = eigs.E.x;
+        eigVecs.push.apply(eigVecs, eigs.E.y;}
+        var cond = numeric.mul(4, numeric.mul(eigVecs[1], eigVecs[3]))
+        cond = numeric.sub(cond, numeric.pow(eigVecs[2], 2))
+        var a1 = eigVecs[numeric.gt(cond, 0)];
+        var ellMatParams = [a1];
+        ellMatParams.push.apply(ellMatParams, numeric.dot(T, a1));
+
         var A = ellMatParams[0];
         var B = ellMatParams[1];
         var C = ellMatParams[2];
