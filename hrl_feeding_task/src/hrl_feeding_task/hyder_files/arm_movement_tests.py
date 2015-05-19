@@ -37,6 +37,16 @@ class armMovements(mpcBaseAction):
                 print "----------------------"
                 break
 
+	if arm == 'r':
+		self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+		self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
+	else:
+		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
+		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
+	self.pos = Point()
+        self.quat = Quaternion()
+	self.quatOrEulerSet = False
+
     def start_cb(self, req):
 	#Run manipulation tasks
 
@@ -47,62 +57,82 @@ class armMovements(mpcBaseAction):
 
     def run(self):
 
-        pos = Point()
-        quat = Quaternion()
+	while not rospy.is_shutdown():
 
-        quatOrEulerSet = Falseselection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
+		calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
+        	if calibrateJoints == 'front':
+            		print "Setting initial joint angles... "
+            		self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
 
-        if selection == 'setQuat':
-            pos.x = raw_input("pos.x = :")
-            pos.y = raw_input("pos.y = :")
-            pos.z = raw_input("pos.z = :")
-            quat.x = raw_input("quat.x = :")
-            quat.y = raw_input("quat.y = :")
-            quat.z = raw_input("quat.z = :")
-            quat.w = raw_input("quat.w = :")
-            timeout = raw_input("timeout = :")
+        	elif calibrateJoints == 'side':
+            		print "Setting initial joint angles..."
+            		self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
 
-            quatOrEulerSet = True
+		#pos = Point()
+		#quat = Quaternion()
 
-            raw_input("Set position: [%d]; Set quaternions: [%d]; Enter anything to move here" % pos, quat)
+		selection = raw_input("Which action? Type 'setQuat' or 'setEuler' or afterwards 'setPos' :")
 
-            self.setOrientGoal(pos, quat, timeout)
+		if selection == 'setQuat':
+			try:
+			    self.pos.x = float(raw_input("pos.x = "))
+			    self.pos.y = float(raw_input("pos.y = "))
+			    self.pos.z = float(raw_input("pos.z = "))
+			    self.quat.x = float(raw_input("quat.x = "))
+			    self.quat.y = float(raw_input("quat.y = "))
+			    self.quat.z = float(raw_input("quat.z = "))
+			    self.quat.w = float(raw_input("quat.w = "))
+			    self.timeout = float(raw_input("timeout = "))
 
-            raw_input("Moved to... Position: [%d]; Quaternions: [%d]; Enter anything to continue" % pos, quat)
+			    self.quatOrEulerSet = True
 
-        if selection == 'setEuler':
-            pos.x = raw_input("pos.x = :")
-            pos.y = raw_input("pos.y = :")
-            pos.z = raw_input("pos.z = :")
-            roll = raw_input("roll = :")
-            pitch = raw_input("pitch = :")
-            yaw = raw_input("yaw = :")
-            quat = quatMath.euler2quat(roll, pitch, yaw)
-            timeout = raw_input("timeout = :")
+			    raw_input("Set position: [%d, %d, %d]; Set quaternions: [%d, %d, %d, %d]; Enter anything to move here" % (self.pos.x, self.pos.y, self.pos.z, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
 
-            quatOrEulerSet = True
+			    self.setOrientGoal(self.pos, self.quat, self.timeout)
 
-            raw_input("Set position: [%d]; Set euler angles: [%d, %d, %d]; Calculated quaternion angles: [%d]; Enter anything to move here" % pos, roll, pitch, yaw, quat)
+			    raw_input("Moved to... Position: [%d, %d, %d]; Quaternions: [%d, %d, %d, %d]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.quat.x, self.quat.y, self.quat.z))
+			except:
+			    print "Oops, error! Make sure you enter only numbers!"  
 
-            self.setOrientGoal(pos, quat, timeout)
+		if selection == 'setEuler':
+			#try: 
+		    self.pos.x = float(raw_input("pos.x = "))
+		    self.pos.y = float(raw_input("pos.y = "))
+		    self.pos.z = float(raw_input("pos.z = "))
+		    self.eulerX = float(raw_input("eulerX = "))
+		    self.eulerY = float(raw_input("eulerY = "))
+		    self.eulerZ = float(raw_input("eulerZ = "))
+		    self.eulerRads = np.radians([self.eulerX, self.eulerZ, self.eulerY]) #euler2quat needs radian values !! Z AMD Y ARE SWAPPED DUE TO OBSERVED REVERSAL WHEN TESTING CODE, FIGURE OUT AND FIX ROOT PROBLEM!! LIES SOMEWHERE IN THIS CODE BLOCK!!
+		    self.quatConv = quatMath.euler2quat(self.eulerRads[2], self.eulerRads[1], self.eulerRads[0]) #input in order Z, Y, X
+		    self.quat.x, self.quat.y, self.quat.z, self.quat.w = self.quatConv[0], self.quatConv[1], self.quatConv[2], self.quatConv[3]
+		    self.timeout = float(raw_input("timeout = "))
 
-            raw_input("Moved to... Position: [%d]; Euler angles: [%d, %d, %d]; Quaternion angles: %d; Enter anything to continue" % pos, roll, pitch, yaw, quat)
+		    self.quatOrEulerSet = True
+		    print "Calculated quat ="
+		    print self.quat
+		    raw_input("Set position: [%f, %f, %f]; Set euler angles: [%f, %f, %f]; Calculated quaternion angles: [%f, %f, %f, %f]; Enter anything to move here" % (self.pos.x, self.pos.y, self.pos.z, self.eulerX, self.eulerY, self.eulerZ, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
 
-        if selection == 'setPos':
-            if not quatOrEulerSet:
-                raw_input("Set quaternions or euler angles first, press Enter to continue:")
-                return
-            if quatOrEulerSet:
-                pos.x = raw_input("pos.x = :")
-                pos.y = raw_input("pos.y = :")
-                pos.z = raw_input("pos.z = :")
-                timeout = raw_input("timeout = :")
+		    self.setOrientGoal(self.pos, self.quat, self.timeout)
+		    raw_input("MOved to... Position: [%f, %f, %f]; Euler angles: [%f, %f, %f]; Quaternion angles: [%f, %f, %f, %f]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.eulerX, self.eulerY, self.eulerZ, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
+			#except:
+				#print "Oops, error! Make sure you enter only numbers!"  
+		if selection == 'setPos':
+			#try:
+		    if not self.quatOrEulerSet:
+			raw_input("Set quaternions or euler angles first, press Enter to continue:")
+		    if self.quatOrEulerSet:
+			self.pos.x = float(raw_input("pos.x = "))
+			self.pos.y = float(raw_input("pos.y = "))
+			self.pos.z = float(raw_input("pos.z = "))
+			self.timeout = float(raw_input("timeout = "))
 
-                raw_input("Set new position: [%d]; Set previous quaternions: [%d]; Enter anything to move here" % pos, quat)
+			raw_input("Set new position: [%d, %d, %d]; Set previous quaternions: [%d, %d, %d, %d]; Enter anything to move here" % ( self.pos.x, self.pos.y, self.pos.z, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
 
-                self.setOrientGoal(pos, quat, timeout)
+			self.setOrientGoal(self.pos, self.quat, self.timeout)
 
-                raw_input("Moved to... New position: [%d]; Previous quaternions: [%d]; Enter anything to continue" % pos, quat)
+			raw_input("Moved to... New position: [%d, %d, %d]; Previous quaternions: [%d, %d, %d, %d]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
+			#except:
+				#print "Oops, error! Make sure you enter only numbers!"
 
 if __name__ == '__main__':
 
@@ -119,4 +149,5 @@ if __name__ == '__main__':
 
     rospy.init_node('arm_movement_tests')
     ara = armMovements(d_robot, controller, opt.arm)
+   # ara.run()
     rospy.spin()
