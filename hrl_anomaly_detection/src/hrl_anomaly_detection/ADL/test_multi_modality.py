@@ -1315,8 +1315,6 @@ if __name__ == '__main__':
             
         
         for i in xrange(nDataSet):
-        ## for i in xrange(len(true_aXData1)):
-
             cross_data_path = os.path.join(cross_root_path,'multi_sim_'+task_names[task])
             if os.path.isdir(cross_data_path) == False:
                 os.system('mkdir -p '+cross_data_path)
