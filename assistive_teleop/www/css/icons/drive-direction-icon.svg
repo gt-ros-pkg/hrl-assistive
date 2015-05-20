@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="1052.4" width="744.09" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+ <metadata>
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <g>
+  <g style="fill-rule:nonzero;stroke:#0e17fd;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:1.29999995;fill:#00baaa;">
+   <path style="stroke-linejoin:round;fill-rule:nonzero;stroke-dashoffset:0;stroke:#0e17fd;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:1.25666654;fill:#00baaa;" d="M345.75,453.12a14.5,14.5,0,0,1,-10.25,4.24v-14.5z" transform="matrix(1.034483,0,0,1.0344828,27.930953,-20.771128)"/>
+   <path style="stroke-linejoin:round;fill-rule:nonzero;stroke-dashoffset:0;stroke:#0e17fd;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:1.25666654;fill:#00baaa;" d="M345.75,453.12a14.5,14.5,0,0,1,-10.25,4.24v-14.5z" transform="matrix(-1.034483,0,0,1.0344828,722.06905,-20.771128)"/>
+   <path style="stroke-linejoin:round;fill-rule:nonzero;stroke-dashoffset:0;stroke:#0e17fd;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:1.25666654;fill:#00baaa;" d="m345.75,432.61a14.5,14.5,0,0,1,0,20.506l-10.25-10.26z" transform="matrix(1.034483,0,0,1.0344828,27.930954,-20.771128)"/>
+   <path style="stroke-linejoin:round;fill-rule:nonzero;stroke-dashoffset:0;stroke:#0e17fd;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:1.25666654;fill:#00baaa;" d="m345.75,432.61a14.5,14.5,0,0,1,0,20.506l-10.25-10.26z" transform="matrix(-1.034483,0,0,-1.0344828,722.06905,895.49549)"/>
+   <path style="stroke-linejoin:round;fill-rule:nonzero;stroke-dashoffset:0;stroke:#0e17fd;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:1.25666654;fill:#00baaa;" d="m345.75,432.61a14.5,14.5,0,0,1,0,20.506l-10.25-10.26z" transform="matrix(0,-1.034483,1.0344828,0,-83.133311,784.43123)"/>
+  </g>
+  <text style="font-size:3.17003155px;font-family:Serif;fill:#000000;letter-spacing:0px;text-anchor:middle;line-height:125%;word-spacing:0px;font-stretch:normal;font-variant:normal;font-weight:normal;font-style:normal;text-align:center;" xml:space="preserve" y="428.36218" x="375"><tspan x="375" y="428.36218">Forward</tspan></text>
+  <text style="font-size:3.17003155px;font-family:Serif;fill:#000000;letter-spacing:0px;text-anchor:middle;line-height:125%;word-spacing:0px;font-stretch:normal;font-variant:normal;font-weight:normal;font-style:normal;text-align:center;" xml:space="preserve" y="438.36218" x="384"><tspan x="384" y="438.36218">Right</tspan></text>
+  <text style="font-size:3.17003155px;font-family:Serif;fill:#000000;letter-spacing:0px;text-anchor:middle;line-height:125%;word-spacing:0px;font-stretch:normal;font-variant:normal;font-weight:normal;font-style:normal;text-align:center;" xml:space="preserve" y="438.36218" x="365"><tspan x="365" y="438.36218">Left</tspan></text>
+  <text style="font-size:2.3020618px;font-family:Serif;fill:#000000;letter-spacing:0px;text-anchor:middle;line-height:125%;word-spacing:0px;font-stretch:normal;font-variant:normal;font-weight:normal;font-style:normal;text-align:center;" xml:space="preserve" y="446.11218" x="370.875"><tspan x="370.875" y="446.11218">(L)</tspan><tspan x="370.875" y="448.98975">Back</tspan></text>
+  <text style="font-size:2.3020618px;font-family:Serif;fill:#000000;letter-spacing:0px;text-anchor:middle;line-height:125%;word-spacing:0px;font-stretch:normal;font-variant:normal;font-weight:normal;font-style:normal;text-align:center;" xml:space="preserve" y="446.17468" x="379.09375"><tspan x="379.09375" y="446.17468">(R)</tspan><tspan x="379.09375" y="449.05225">Back</tspan></text>
+ </g>
+</svg>
