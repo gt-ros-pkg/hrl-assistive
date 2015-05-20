@@ -1,7 +1,7 @@
 /*
  * This program's backbone is based on the pixel_2_3d program.
  * This program must be used with the clickable UI.
- * 
+ *
  */
 
 
@@ -95,7 +95,7 @@ namespace hrl_feeding_task {
         nh.param<bool>("use_closest_pixel", use_closest_pixel, false);
         nh.param<std::string>("output_frame", output_frame, "");
         //camera_sub = img_trans.subscribeCamera<CupFinderServer>
-        //                                      ("/image", 1, 
+        //                                      ("/image", 1,
         //                                       &CupFinderServer::cameraCallback, this);
         camera_info_sub = nh.subscribe("/info_topic", 1, &CupFinderServer::cameraInfoCallback, this);
         pc_sub = nh.subscribe("/point_cloud", 1, &CupFinderServer::pcCallback, this);
@@ -165,7 +165,7 @@ namespace hrl_feeding_task {
         if (!working)
 	{
 	  return true;
-	} 
+	}
 
 	if (cup_found)
 	{
@@ -188,7 +188,7 @@ namespace hrl_feeding_task {
         }
 
         int64_t pc_ind = req.pixel_u + req.pixel_v * img_width;
-        if(req.pixel_u < 0 || req.pixel_v < 0 || 
+        if(req.pixel_u < 0 || req.pixel_v < 0 ||
            req.pixel_u >= (int32_t) img_width || req.pixel_v >= (int32_t) img_height) {
             ROS_WARN("Pixel requested is outside image size.");
             resp.error_flag = resp.OUTSIDE_IMAGE;
@@ -248,7 +248,7 @@ namespace hrl_feeding_task {
         double closest_dist = 1000, cur_dist;
         for(uint32_t i=0;i<inds.size();i++) {
             cur_dist = DIST3(pt3d_trans.point.x, pt3d_trans.point.y, pt3d_trans.point.z,
-                             near_pts->points.at(i).x, near_pts->points.at(i).y, 
+                             near_pts->points.at(i).x, near_pts->points.at(i).y,
                              near_pts->points.at(i).z);
             if(cur_dist < closest_dist) {
                 closest_dist = cur_dist;
@@ -275,19 +275,19 @@ namespace hrl_feeding_task {
         double nz = normals_ptr->points[closest_ind].normal[2];
         double dot = nx*pt3d_trans.point.x + ny*pt3d_trans.point.y + nz*pt3d_trans.point.z;
         if(dot > 0) { nx = -nx; ny = -ny; nz = -nz; }
-       
+
         //Phil's update, now returns direction of pose (x-axis) along normal
         btVector3 normal_vec(nx,ny,nz);
         btVector3 x_axis(1.0,0.0,0.0);
         btVector3 axis = x_axis.cross(normal_vec);
         double angle = x_axis.angle(normal_vec);
         btQuaternion quat(axis, angle);
-        
+
         //Kelsey's solution, returns Z-axis of quaternion along normal
         //double j = std::sqrt(1/(1+ny*ny/(nz*nz)));
         //double k = -ny*j/nz;
-        //btMatrix3x3 M (0,  ny*k - nz*j,  nx,      
-        //               j,  -nx*k,        ny,      
+        //btMatrix3x3 M (0,  ny*k - nz*j,  nx,
+        //               j,  -nx*k,        ny,
         //               k,  nx*j,         nz);
         //btQuaternion quat;
         //M.getRotation(quat);
@@ -303,7 +303,7 @@ namespace hrl_feeding_task {
         pt3d_pose.pose.orientation.y = quat.getY();
         pt3d_pose.pose.orientation.z = quat.getZ();
         pt3d_pose.pose.orientation.w = quat.getW();
-        
+
 
 	float centerX = pt3d_trans.point.x;
 	float centerY = pt3d_trans.point.y;
@@ -345,7 +345,7 @@ namespace hrl_feeding_task {
 /*
         pt3d_pub.publish(pt3d_pose);
         ROS_INFO("[pixel_2_3d] Pixel (%d, %d) converted to pose (%f, %f, %f), (%f, %f, %f, %f) in %s",
-                 req.pixel_u, req.pixel_v, 
+                 req.pixel_u, req.pixel_v,
                  pt3d_pose.pose.position.x, pt3d_pose.pose.position.y, pt3d_pose.pose.position.z,
                  pt3d_pose.pose.orientation.x, pt3d_pose.pose.orientation.y,
                  pt3d_pose.pose.orientation.z, pt3d_pose.pose.orientation.w,
@@ -377,7 +377,7 @@ namespace hrl_feeding_task {
 
 
 	std::cerr << "Before PC transform" <<std::endl;
-	
+
 
 	(*filter_pc).header.stamp = ros::Time::now();
 	tf_listener.waitForTransform(output_frame, (*filter_pc).header.frame_id, (*filter_pc).header.stamp, ros::Duration(10.0) );
@@ -387,7 +387,7 @@ namespace hrl_feeding_task {
 	//cur_pc_sample_box.header.stamp = ros::Time::now();
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cupZone (new pcl::PointCloud<pcl::PointXYZRGB>);
 //	tf_listener.transformPointCloud(output_frame, cur_pc_sample_box, cupZone);
-	pcl_ros::transformPointCloud(output_frame, *filter_pc, *cupZone, tf_listener); //TODO fix const problem. 
+	pcl_ros::transformPointCloud(output_frame, *filter_pc, *cupZone, tf_listener); //TODO fix const problem.
         std::cerr << "Found this many points!   :   " << cupZone->points.size()<< "points" <<std::endl;
 
 
@@ -436,7 +436,7 @@ namespace hrl_feeding_task {
 			modeCounter[i] = 0;
 			for (int j = 0; j < numberR; ++j)
 				{
-					if ( i != j && tableFinder[i] == tableFinder[j]) 
+					if ( i != j && tableFinder[i] == tableFinder[j])
 					{
 						modeCounter[i] = modeCounter[i] + 1;
 					}
@@ -447,11 +447,11 @@ namespace hrl_feeding_task {
 	int modeNumber = modeCounter[modeLocation];
 	for (int i = 0; i < numberR; ++i)
 	{
-		if (modeNumber < modeCounter[i]) 
+		if (modeNumber < modeCounter[i])
 			{
 				modeLocation = i;
 				modeNumber = modeCounter[i];
-			}    
+			}
 
 	}
 
@@ -489,7 +489,7 @@ namespace hrl_feeding_task {
 	float numberS = 0;
 	for (size_t i =0; i < cupPCL->points.size (); ++i)
 		{
-		
+
 			Test = cupPCL->points[i].x;
 			if (Test != Test) {
 			}
@@ -499,11 +499,11 @@ namespace hrl_feeding_task {
 				numberS = numberS+1;
 			}
 		}
-	
+
 	float cupPointZ = tableZ;
 	float cupPointX = dataX/numberS;
 	float cupPointY = dataY/numberS;
-	
+
 
 
 	//Publishing it as topic/.

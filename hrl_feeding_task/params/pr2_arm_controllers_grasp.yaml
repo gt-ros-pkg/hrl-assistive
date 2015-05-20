@@ -67,13 +67,21 @@ l_arm_controller:
     #l_wrist_flex_joint: {p: 27.5, d: 2.0, i: 300, i_clamp: 0.0}
     #l_wrist_roll_joint: {p: 20.0, d: 2.0, i: 300, i_clamp: 0.0}
 
-    l_shoulder_pan_joint: {p: 110.0, d: 6.5, i: 900.0, i_clamp: 0.1}
-    l_shoulder_lift_joint: {p: 100.0, d: 6.5, i: 800.0, i_clamp: 0.1}
-    l_upper_arm_roll_joint: {p: 12.0, d: 1.0, i: 700.0, i_clamp: 0.1}
-    l_elbow_flex_joint: {p: 12.0, d: 0.5, i: 550, i_clamp: 0.05}
-    l_forearm_roll_joint: {p: 8.0, d: 0.5, i: 400, i_clamp: 0.01}
-    l_wrist_flex_joint: {p: 8.5, d: 1.0, i: 400, i_clamp: 0.01}
-    l_wrist_roll_joint: {p: 3.0, d: 1.0, i: 400, i_clamp: 0.01}
+    l_shoulder_pan_joint: {p: 90.0, d: 10.0, i: 800.0, i_clamp: 0.0}
+    l_shoulder_lift_joint: {p: 80.0, d: 15.0, i: 700.0, i_clamp: 0.0}
+    l_upper_arm_roll_joint: {p: 20.0, d: 4.0, i: 600.0, i_clamp: 0.0}
+    l_elbow_flex_joint: {p: 22.0, d: 1.0, i: 450, i_clamp: 0.0}
+    l_forearm_roll_joint: {p: 12, d: 1.0, i: 300, i_clamp: 0.0}
+    l_wrist_flex_joint: {p: 27.5, d: 2.0, i: 300, i_clamp: 0.0}
+    l_wrist_roll_joint: {p: 20.0, d: 2.0, i: 300, i_clamp: 0.0}
+
+    #l_shoulder_pan_joint: {p: 110.0, d: 6.5, i: 900.0, i_clamp: 0.1}
+    #l_shoulder_lift_joint: {p: 80.0, d: 6.5, i: 800.0, i_clamp: 0.1}
+    #l_upper_arm_roll_joint: {p: 20.0, d: 1.0, i: 700.0, i_clamp: 0.1}
+    #l_elbow_flex_joint: {p: 12.0, d: 0.5, i: 550, i_clamp: 0.05}
+    #l_forearm_roll_joint: {p: 8.0, d: 0.5, i: 400, i_clamp: 0.01}
+    #l_wrist_flex_joint: {p: 8.5, d: 1.0, i: 400, i_clamp: 0.01}
+    #l_wrist_roll_joint: {p: 3.0, d: 1.0, i: 400, i_clamp: 0.01}
 
   joint_trajectory_action_node:
     joints:

@@ -34,6 +34,7 @@ from hrl_msgs.msg import FloatArrayBare
 import pickle
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
+import joblib
 
 
 
@@ -51,13 +52,16 @@ class BaseSelector(object):
             self.listener = tf.TransformListener()
         else:
             self.listener = transform_listener
-
+        # self.mode = mode
         self.model = model
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, latch=True)
 
         self.bed_state_z = 0.
         self.bed_state_head_theta = 0.
         self.bed_state_leg_theta = 0.
+
+        rospack = rospkg.RosPack()
+        self.pkg_path = rospack.get_path('hrl_base_selection')
 
         self.robot_z = 0
         self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
@@ -66,7 +70,7 @@ class BaseSelector(object):
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
         # Just for testing
-        self.moded = mode
+        self.mode = mode
         if self.mode == 'test':
             angle = -m.pi/2
             pr2_B_head1  =  np.matrix([[   m.cos(angle),  -m.sin(angle),          0.,        0.],
@@ -90,9 +94,9 @@ class BaseSelector(object):
 
         start_time = time.time()
         print 'Loading data, please wait.'
-        self.chair_scores = self.load_task('yogurt', 'chair')
-        self.autobed_scores = self.load_task('feeding_quick', 'autobed')
-        self.shaving_scores = self.load_task('shaving', 'chair')
+        # self.chair_scores = self.load_task('yogurt', 'chair')
+        self.autobed_scores = self.load_task('feeding_quick', 'autobed', 0)
+        # self.shaving_scores = self.load_task('shaving', 'chair')
         print 'Time to receive load data: %fs' % (time.time()-start_time)
         # Service
         self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
@@ -307,7 +311,7 @@ class BaseSelector(object):
         # #print 'head from input: \n', head
         if self.task == 'shaving_test':
             self.mode = 'test'
-        if self.mode == 'normal':
+        elif self.mode == 'normal':
             try:
                 now = rospy.Time.now()
                 self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(15))
@@ -326,14 +330,16 @@ class BaseSelector(object):
                     ar_trans_B = np.eye(4)
                     # -.445 if right side of body. .445 if left side.
                     # This is the translational transform from bed origin to the ar tag tf.
-                    ar_trans_B[0:3,3] = np.array([0.625, -.445, .275+(self.bed_state_z-9)/100])
+                    # ar_trans_B[0:3,3] = np.array([0.625, -.445, .275+(self.bed_state_z-9)/100])
+                    ar_trans_B[0:3,3] = np.array([-.04, 0., .74])
                     ar_rotz_B = np.eye(4)
                     # If left side of body should be np.array([[-1,0],[0,-1]])
                     # If right side of body should be np.array([[1,0],[0,1]])
-                    ar_rotz_B [0:2,0:2] = np.array([[-1, 0],[0, -1]])
+                    # ar_rotz_B [0:2,0:2] = np.array([[-1, 0],[0, -1]])
+                    # ar_rotz_B
                     ar_rotx_B = np.eye(4)
-                    ar_rotx_B[1:3,1:3] = np.array([[0,1],[-1,0]])
-                    self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(rotz_B)*np.matrix(ar_rotx_B)
+                    # ar_rotx_B[1:3,1:3] = np.array([[0,1],[-1,0]])
+                    self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
                     # now = rospy.Time.now()
                     # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
                     # (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
@@ -348,8 +354,51 @@ class BaseSelector(object):
                 rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
                               "head location:\r\n%s" % e)
                 return None
+        elif self.mode == 'demo':
+            try:
+                now = rospy.Time.now()
+                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(15))
+                (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
+                self.pr2_B_head = createBMatrix(trans, rot)
+                if model == 'chair':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
+                    self.pr2_B_ar = createBMatrix(trans, rot)
+                elif model == 'autobed':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_link', '/reference', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/reference', now)
+                    self.pr2_B_ar = createBMatrix(trans, rot)
+                    ar_trans_B_model = np.eye(4)
+                    # -.445 if right side of body. .445 if left side.
+                    # This is the translational transform from reference markers to the bed origin.
+                    # ar_trans_B[0:3,3] = np.array([0.625, -.445, .275+(self.bed_state_z-9)/100])
+                    # ar_trans_B_model[0:3,3] = np.array([.06, 0., -.74])
+                    # ar_rotz_B = np.eye(4)
+                    # If left side of body should be np.array([[-1,0],[0,-1]])
+                    # If right side of body should be np.array([[1,0],[0,1]])
+                    # ar_rotz_B [0:2,0:2] = np.array([[-1, 0],[0, -1]])
+                    # ar_rotz_B
+                    # ar_rotx_B = np.eye(4)
+                    # ar_rotx_B[1:3,1:3] = np.array([[0,1],[-1,0]])
+                    # self.model_B_ar = np.matrix(ar_trans_B_model).I  # *np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
+                    self.model_B_ar = np.matrix(np.eye(4))
+                    # now = rospy.Time.now()
+                    # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
+                    # (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
+                    # self.ar_B_model = createBMatrix(trans, rot)
+                if np.linalg.norm(trans) > 4:
+                    rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
+                                  'tag. Or just move it closer via other means. Alternatively, the PR2 may have lost '
+                                  'sight of the AR tag or it is having silly issues recognizing it. ')
+                    return None
 
-        if self.mode == 'sim':
+            except Exception as e:
+                rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
+                              "head location:\r\n%s" % e)
+                return None
+        elif self.mode == 'sim':
             self.head_pose_sub = rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.head_pose_cb)
             if self.model == 'autobed':
                 self.bed_pose_sub = rospy.Subscriber('/haptic_mpc/bed_pose', PoseStamped, self.bed_pose_cb)
@@ -478,10 +527,10 @@ class BaseSelector(object):
         start_time = time.time()
 
         ## Set the weights for the different scores.
-        alpha = 0.001  # Weight on base's closeness to goal
+        alpha = 0.0001  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .7  # Weight on distance to move to get to that goal location
+        zeta = .0007  # Weight on distance to move to get to that goal location
         # pr2_B_headfloor = self.pr2_B_head*self.headfloor_B_head.I
         # headfloor_B_pr2 = pr2_B_headfloor.I
         pr2_loc = np.array([self.origin_B_pr2[0, 3], self.origin_B_pr2[1, 3]])
@@ -611,7 +660,7 @@ class BaseSelector(object):
             pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
             # odom_B_goal = odom_B_pr2 * self.origin_B_pr2.I * origin_B_goal
             # pos_goal, ori_goal = Bmat_to_pos_quat(odom_B_goal)
-            pr2_base_output.append([pos_goal, ori_goal])
+            pr2_base_output.append([pos_goal[0], pos_goal[1], m.acos(pr2_B_goal[0, 0])])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
 
             ## I no longer return posestamped messages. Now I return a list of floats.
@@ -811,7 +860,7 @@ class BaseSelector(object):
 
 if __name__ == "__main__":
     # model = 'bed'
-    mode = 'normal'  # Mode options are: 'normal' 'test' 'sim'
+    mode = 'demo'  # Mode options are: 'normal' 'test' 'sim' 'demo'
     rospy.init_node('select_base_server')
     selector = BaseSelector(mode=mode)
     rospy.spin()

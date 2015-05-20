@@ -3,6 +3,13 @@
 
 #define USE_COLOR_MODEL
 
+#define KINECT2 
+#ifdef KINECT1
+#define KINECT_WIDTH 640
+#else
+#define KINECT_WIDTH 960
+#endif 
+
 void extractSkinPC(const PCRGB::Ptr& pc_in, PCRGB::Ptr& pc_out, double thresh) 
 {
     uint8_t r, g, b; 
@@ -19,18 +26,18 @@ void extractSkinPC(const PCRGB::Ptr& pc_in, PCRGB::Ptr& pc_out, double thresh)
 
 int32_t findClosestPoint(const PCRGB::Ptr& pc, uint32_t u, uint32_t v)
 {
-    if(PT_IS_NOT_NAN(pc, v*640 + u))
-        return v*640 + u;
+    if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u))
+        return v*KINECT_WIDTH + u;
     for(uint32_t i=1;i<5;i++) {
         for(uint32_t j=1;j<5;j++) {
-            if(PT_IS_NOT_NAN(pc, v*640 + u + i))
-                return v*640 + u + i;
-            if(PT_IS_NOT_NAN(pc, v*640 + u - i))
-                return v*640 + u + i;
-            if(PT_IS_NOT_NAN(pc, v*640 + u + j*640))
-                return v*640 + u + i;
-            if(PT_IS_NOT_NAN(pc, v*640 + u - j*640))
-                return v*640 + u + i;
+            if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u + i))
+                return v*KINECT_WIDTH + u + i;
+            if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u - i))
+                return v*KINECT_WIDTH + u + i;
+            if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u + j*KINECT_WIDTH))
+                return v*KINECT_WIDTH + u + i;
+            if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u - j*KINECT_WIDTH))
+                return v*KINECT_WIDTH + u + i;
         }
     }
     return -1;

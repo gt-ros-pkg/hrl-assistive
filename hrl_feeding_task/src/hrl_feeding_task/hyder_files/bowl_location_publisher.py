@@ -10,7 +10,7 @@ import std_msgs.msg
 
 class bowlPublisher():
 	def __init__(self):
-		self.bowl_pub = rospy.Publisher('bowl_location', PoseStamped, latch = True)
+		self.bowl_pub = rospy.Publisher('hrl_feeding_task/manual_bowl_location', PoseStamped, latch = True)
 		rospy.init_node('bowl_location_publisher', anonymous = True)
 		self.rate = rospy.Rate(10)
 		self.i = 0
@@ -26,10 +26,8 @@ class bowlPublisher():
 			orientation = Quaternion()
 
 			#Actual bowl location, set manually...
-			position.x, position.y, position.z = 0.732, 0.197, -0.376 #0.300, 0.912, -0.113 #
-			#ORIGINAL HARD CODED BOWL POSITION: 0.763, 0.592, -0.301
-			orientation.x, orientation.y, orientation.z, orientation.w = 0.528, 0.469, -0.006, 0.708
-			#ORIGINAL HARD CODE BOWL ORIENTATION:  0.706, 0.068, -0.235, 0.664
+			position.x, position.y, position.z = 0.814, -0.146, -0.301
+			orientation.x, orientation.y, orientation.z, orientation.w = 0.632, 0.395, -0.205, 0.635
 			pose_msg = PoseStamped( header = hdr, pose =  Pose(position, orientation) )
 			rospy.loginfo(pose_msg)
 

@@ -51,8 +51,8 @@ class Manipulability_Testing(object):
         print 'I will use data that was trained on subject ', self.train_subj
         print 'I will test on data from subject ', self.test_subj
 
-        self.task = 'feeding' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
-        self.model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
+        self.task = 'shaving' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
+        self.model = 'chair'  # options are: 'chair', 'bed', 'autobed'
 
         pos_clust = 2
         ori_clust = 2
@@ -107,6 +107,7 @@ class Manipulability_Testing(object):
         print 'The best base location is: \n', self.best_base
 
         if visualize_best:
+            read_data.pub_rviz()
             self.visualize_base_config(self.best_base, self.goal_data, self.raw_reference_options)
 
     def get_best_base(self):
@@ -682,13 +683,13 @@ class Manipulability_Testing(object):
 
 
 if __name__ == "__main__":
-    rospy.init_node('manipulability_feeding_autobed')
+    rospy.init_node('manipulability_shaving_chair')
     train_subj = 0
     test_subj = 0
-    visualize_best = False
+    visualize_best = True
     myTest = Manipulability_Testing(visualize_best=visualize_best, train_subj=train_subj, test_subj=test_subj)
     best_base = myTest.get_best_base()
-    myTest.run_comparisons()
+    # myTest.run_comparisons()
     rospy.spin()
     # myTest.initialize_test_conditions()
     # myTest.evaluate_task()
