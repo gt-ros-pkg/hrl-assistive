@@ -1227,7 +1227,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 1
+    class_num = 0
     task  = 1
     if class_num == 0:
         class_name = 'door'
@@ -1303,9 +1303,17 @@ if __name__ == '__main__':
 
     # Load simulated anomaly
     if opt.bRocOnlineSimAnomaly:
-        K = len(true_aXData1)/4 # the number of test data
-        nDataSet = 10 #30
-        n_false_data = K
+
+        if True:
+            # leave-one-out
+            nDataSet = len(true_aXData1)            
+            n_false_data = K = 1 # the number of test data
+        else:
+            K = len(true_aXData1)/4 # the number of test data
+            nDataSet = 10 #30
+            n_false_data = K
+            
+        
         for i in xrange(nDataSet):
         ## for i in xrange(len(true_aXData1)):
 
@@ -1319,7 +1327,8 @@ if __name__ == '__main__':
 
                 labels = [True]*len(true_aXData1)
                 true_dataSet = dm.create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
-                test_dataSet = Dataset.random_samples(true_dataSet, K)
+                test_ids     = Dataset.get_samples_by_attr(true_dataSet, 'id', i)
+                test_dataSet = true_dataSet[test_ids]
                 train_ids = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
                 train_ids = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
                 train_dataSet = true_dataSet[train_ids]
