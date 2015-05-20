@@ -379,13 +379,13 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
         fig = pp.figure()
         
         for method in check_method:
-            fn_l = np.zeros(len(threshold_mult)); fn_cnt = np.zeros(len(threshold_mult))
-            tp_l = np.zeros(len(threshold_mult)); tp_cnt = np.zeros(len(threshold_mult))
-            tn_l = np.zeros(len(threshold_mult)); tn_cnt = np.zeros(len(threshold_mult))
-            fp_l = np.zeros(len(threshold_mult)); fp_cnt = np.zeros(len(threshold_mult))
+            fn_l = np.zeros(len(threshold_mult))
+            tp_l = np.zeros(len(threshold_mult))
+            tn_l = np.zeros(len(threshold_mult))
+            fp_l = np.zeros(len(threshold_mult))
 
             delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
-            err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
+            ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
                 
             for i in xrange(nDataSet):
                             
@@ -396,22 +396,20 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
                     res_file = os.path.join(cross_test_path, res_file)
 
                     d = ut.load_pickle(res_file)
-                    fn_l[j] += np.sum(d['fn_l']); fn_cnt[j] += float(len(d['fn_l']))
-                    tn_l[j] += np.sum(d['tn_l']); tn_cnt[j] += float(len(d['tn_l']))  
+                    fn_l[j] += d['fn']; tp_l[j] += d['tp'] 
+                    tn_l[j] += d['tn']; fp_l[j] += d['fp'] 
                     delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
 
                     ## # Exclude wrong detection cases
                     ## if delay == []: continue
 
-            fn_l  = fn_l/fn_cnt
-            tn_l  = tn_l/tn_cnt
+            tpr_l = tp_l/(tp_l+fn_l)*100.0
+            fpr_l = fp_l/(fp_l+tn_l)*100.0
             delay_l = delay_l/delay_cnt
 
-            idx_list = sorted(range(len(fn_l)), key=lambda k: fn_l[k])
-            sorted_fn_l    = np.array([fn_l[k] for k in idx_list])
-            sorted_tp_l    = 1.0 - sorted_fn_l
-            sorted_tn_l    = np.array([tn_l[k] for k in idx_list])
-            sorted_fp_l    = 1.0 - sorted_tn_l
+            idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
+            sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
+            sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
             sorted_delay_l = [delay_l[k] for k in idx_list]
 
             color = colors.next()
@@ -421,7 +419,10 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            pp.plot(sorted_fp_l, sorted_tp_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            if method == 'global': label = 'fixed threshold'
+            if method == 'progress': label = 'progress based threshold'
+                
+            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
             #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
@@ -436,15 +437,15 @@ def fig_roc_online_sim(cross_data_path, nDataSet, \
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
         
-        pp.xlabel('Detection rate (percentage)', fontsize=16)
-        pp.ylabel('Detection delay (sec)', fontsize=16)    
-        ## pp.xlim([-1, 100])
-        ## pp.ylim([-1, 101])
+        pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+        pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
+        pp.xlim([0.0, 40])
+        pp.ylim([0.0, 100])
         pp.legend(loc=4,prop={'size':16})
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.pdf ~/Dropbox/')
+        os.system('cp test.p* ~/Dropbox/')
         ## pp.show()
         
     return
@@ -991,22 +992,22 @@ def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_i
     pp.plot(t, rms_list) 
 
     #========== MFCC =========================
-    ## ax = pp.subplot(412)
-    ## mfcc_feat = librosa.feature.mfcc(data_seq, n_mfcc=4, sr=rate, n_fft=1024)
-    ## ## mfcc_feat = feature.mfcc(data_list, sr=rate, n_mfcc=13, n_fft=1024, )
-    ## pp.imshow(mfcc_feat, origin='down')
-    ## ## ax.set_xlim([0, t[-1]*100])
+    ax = pp.subplot(412)
+    mfcc_feat = librosa.feature.mfcc(data_seq, n_mfcc=4, sr=rate, n_fft=1024)
+    ## mfcc_feat = feature.mfcc(data_list, sr=rate, n_mfcc=13, n_fft=1024, )
+    pp.imshow(mfcc_feat, origin='down')
+    ## ax.set_xlim([0, t[-1]*100])
 
-    ## ax = pp.subplot(413)
-    ## S = feature.melspectrogram(data_list, sr=rate, n_fft=1024, hop_length=1, n_mels=128)
-    ## log_S = librosa.logamplitude(S, ref_power=np.max)        
-    ## ## mfcc_feat = librosa.feature.mfcc(S=log_S, n_mfcc=20, sr=rate, n_fft=1024)
-    ## mfcc_feat = librosa.feature.delta(mfcc_feat)
-    ## pp.imshow(mfcc_feat, origin='down')
+    ax = pp.subplot(413)
+    S = feature.melspectrogram(data_list, sr=rate, n_fft=1024, hop_length=1, n_mels=128)
+    log_S = librosa.logamplitude(S, ref_power=np.max)        
+    ## mfcc_feat = librosa.feature.mfcc(S=log_S, n_mfcc=20, sr=rate, n_fft=1024)
+    mfcc_feat = librosa.feature.delta(mfcc_feat)
+    pp.imshow(mfcc_feat, origin='down')
 
-    ## ax = pp.subplot(414)
-    ## mfcc_feat = librosa.feature.delta(mfcc_feat, order=2)
-    ## pp.imshow(mfcc_feat, origin='down')
+    ax = pp.subplot(414)
+    mfcc_feat = librosa.feature.delta(mfcc_feat, order=2)
+    pp.imshow(mfcc_feat, origin='down')
 
     
     
@@ -1216,6 +1217,8 @@ if __name__ == '__main__':
                  default=False, help='Plot progress difference')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
                  default=False, help='Plot')
+    p.add_option('--fftdisp', '--fd', action='store_true', dest='bFftDisp',
+                 default=False, help='Plot')
     p.add_option('--use_ml_pkl', '--mp', action='store_true', dest='bUseMLObspickle',
                  default=False, help='Use pre-trained object file')
     opt, args = p.parse_args()
@@ -1224,7 +1227,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 0
+    class_num = 1
     task  = 1
     if class_num == 0:
         class_name = 'door'
@@ -1503,8 +1506,17 @@ if __name__ == '__main__':
 
         ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
         ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
-       
 
+        
+    #---------------------------------------------------------------------------   
+    elif opt.bFftDisp:
+        d = dm.load_data(data_path, task_names[task], normal_only=False)
+        
+        audio_time_list = d['audio_time']
+        audio_data_list = d['audio_data']
+
+        plot_audio(audio_time_list[0], audio_data_list[0])
+        
             
     #---------------------------------------------------------------------------   
     elif opt.bAnimation:
