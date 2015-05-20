@@ -674,8 +674,12 @@ class learning_hmm_multi(learning_base):
             X_test = self.convert_sequence(X1, X2, emission=False)                
         n = len(np.squeeze(X1))
 
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-        logp         = self.ml.loglikelihood(final_ts_obj)
+        try:
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            logp         = self.ml.loglikelihood(final_ts_obj)
+        except:
+            print "Too different input profile that cannot be expressed by emission matrix"
+            return -1, 0.0 # error
 
         if self.check_method == 'global':
             err = logp - (self.l_mu - ths_mult*self.l_std)
