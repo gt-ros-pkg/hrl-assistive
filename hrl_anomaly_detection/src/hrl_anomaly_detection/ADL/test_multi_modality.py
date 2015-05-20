@@ -1221,7 +1221,7 @@ if __name__ == '__main__':
         check_dims      = [0,1,2]
         test_title      = 'online_dim_comp'
 
-        fig_roc_sim(cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
                             
