@@ -33,7 +33,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
-def fig_roc_sim(cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
                 threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
                 cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False):
@@ -43,7 +43,7 @@ def fig_roc_sim(cross_data_path, nDataSet, onoff_type, check_methods, check_dims
     trans_type = "left_right"
     
     # Check the existance of workspace
-    cross_test_path = os.path.join(cross_data_path, str(nState)+'_'+onoff_type)
+    cross_test_path = os.path.join(cross_data_path, str(nState)+'_'+test_title)
     if os.path.isdir(cross_test_path) == False:
         os.system('mkdir -p '+cross_test_path)
 
@@ -1216,9 +1216,10 @@ if __name__ == '__main__':
         threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
         ## threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 1.0 #np.arange(0.0, 25.001, 0.5)    
         attr            = 'id'
-        onoff_type      = 'offline'
+        onoff_type      = 'online'
         check_methods   = ['progress']
         check_dims      = [0,1,2]
+        test_title      = 'online_dim_comp'
 
         fig_roc_sim(cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
@@ -1236,8 +1237,9 @@ if __name__ == '__main__':
         onoff_type      = 'online'
         check_methods   = ['global', 'progress']
         check_dims      = [2]
+        test_title      = 'online_method_comp'
 
-        fig_roc_sim(cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
 
