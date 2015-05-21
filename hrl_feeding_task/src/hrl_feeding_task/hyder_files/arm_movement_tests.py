@@ -43,6 +43,7 @@ class armMovements(mpcBaseAction):
 	else:
 		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
 		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
+
 	self.pos = Point()
         self.quat = Quaternion()
 	self.quatOrEulerSet = False
