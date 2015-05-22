@@ -24,6 +24,7 @@ class armMovements(mpcBaseAction):
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
+	rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback)
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
 	rate = rospy.Rate(100) # 25Hz, nominally.
@@ -55,6 +56,17 @@ class armMovements(mpcBaseAction):
 		return None_BoolResponse(True)
         else:
 		return None_BoolResponse(False)
+
+    def bowlPoseKinectCallback(self, data):
+	self.bowl_frame = data.header.frame_id
+        self.bowl_pos = np.matrix([ [data.pose.position.x], [data.pose.position.y], [data.pose.position.z] ])
+        self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
+        print '-----------------------------------------------------'
+        print 'Bowl Pos: '
+        print self.bowl_pos
+        print 'Bowl Quaternions: '
+        print self.bowl_quat
+        print '-----------------------------------------------------'
 
     def run(self):
 
@@ -114,7 +126,10 @@ class armMovements(mpcBaseAction):
 		    raw_input("Set position: [%f, %f, %f]; Set euler angles: [%f, %f, %f]; Calculated quaternion angles: [%f, %f, %f, %f]; Enter anything to move here" % (self.pos.x, self.pos.y, self.pos.z, self.eulerX, self.eulerY, self.eulerZ, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
 
 		    self.setOrientGoal(self.pos, self.quat, self.timeout)
-		    raw_input("MOved to... Position: [%f, %f, %f]; Euler angles: [%f, %f, %f]; Quaternion angles: [%f, %f, %f, %f]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.eulerX, self.eulerY, self.eulerZ, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
+		    #raw_input("Moved to... Position: [%f, %f, %f]; Euler angles: [%f, %f, %f]; Quaternion angles: [%f, %f, %f, %f]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.eulerX, self.eulerY, self.eulerZ, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
+		    print "Moved to:"
+		    print self.getEndeffectorPose()
+		    raw_input("Press Enter to continue")
 			#except:
 				#print "Oops, error! Make sure you enter only numbers!"  
 		if selection == 'setPos':
@@ -131,7 +146,10 @@ class armMovements(mpcBaseAction):
 
 			self.setOrientGoal(self.pos, self.quat, self.timeout)
 
-			raw_input("Moved to... New position: [%d, %d, %d]; Previous quaternions: [%d, %d, %d, %d]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
+			#raw_input("Moved to... New position: [%d, %d, %d]; Previous quaternions: [%d, %d, %d, %d]; Enter anything to continue" % (self.pos.x, self.pos.y, self.pos.z, self.quat.x, self.quat.y, self.quat.z, self.quat.w))
+			print "Moved to:"
+			print self.getEndeffectorPose()
+			raw_input("Press Enter to continue")
 			#except:
 				#print "Oops, error! Make sure you enter only numbers!"
 
