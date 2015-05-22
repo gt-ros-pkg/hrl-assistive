@@ -1,49 +1,43 @@
-.drive-look {
-    position: absolute;
-    top:0%;
-    height:100%;
-    width:8%;
-    min-width:2em;
+.drive-ctrl {
     display:none; /*Initialize hidden*/
 }
+
+.drive-look {
+    position: absolute;
+    bottom:0%;
+    height:13%;
+    width:8%;
+    background-color: rgba(235,235,235,0.35);
+    background-repeat: no-repeat;
+    background-position: center;
+    border: 2px solid rgba(235,235,235,0.7);
+    border-bottom:none;
+}
+
+.drive-look:hover{
+    background-color: rgba(235,235,235,0.5);
+    border: 2px solid rgba(235,235,235,0.87);
+    border-bottom:none;
+}
+
+.drive-look:active{
+    background-color: rgba(155,155,155,0.65);
+    border: 2px solid rgba(255,255,255,0.97);
+    border-bottom:none;
+}
+
 .drive-look.left {
     left:0em;
+    background-image: url('./cursors/eyes/eyes-left.png');
 }
 
 .drive-look.right {
     right:0em;
-}
-
-.drive-guide {
-    position: absolute;
-    width: 0.2em;
-    height: 60%;
-    bottom: 28%;
-    background-color: rgba(255, 140, 30, 0.0);
-    display:none; /*Initialize hidden*/
-}
-
-.drive-guide.left {
-    left: 26.5%;
-}
-
-.drive-guide.right {
-    right: 26.5%;
+    background-image: url('./cursors/eyes/eyes-right.png');
 }
 
 #mjpeg {
     overflow: hidden;
-}
-
-.linear-ring {
-    position: absolute;
-    bottom:-34%;
-    left: 23%;
-    height: 60%;
-    width: 42%;
-    border: 5px solid gray;
-    border-radius: 50%;
-    display:none; /*Initialize hidden*/
 }
 
 #drive-lines {
@@ -55,7 +49,46 @@
     display:none;
 }
 
-/*#drive-lines circle {
-/*    stroke: green;
-/*    fill-opacity: 1.0;
-/*}
+#drive-lines circle {
+    fill-opacity: 1.0;
+}
+
+#drive-lines>*{
+    pointer-events: none;
+}
+
+.turn-signal{
+    position:absolute;
+    bottom:0px;
+    height:13%;
+    border: 2px solid rgba(0,188,212,0.35);
+    border-bottom:none;
+    background-color: rgba(0,188,212,0.1);
+}
+
+.turn-signal:hover{
+    background-color: rgba(0,188,212,0.35);
+    border: 2px solid rgba(0,188,212,0.5);
+    border-bottom:none;
+}
+
+.turn-signal:active{
+    background-color: rgba(10,212,242,0.55);
+    border: 2px solid rgba(0,142,168,0.9);
+    border-bottom:none;
+}
+
+.turn-signal.left {
+    left:calc(8% + 2px);
+    width:21%;
+    border-top-right-radius:1em;
+}
+
+.turn-signal.right {
+    right:calc(8% + 2px);
+    width:29%;
+    border-top-left-radius:1em;
+}
+
+
+

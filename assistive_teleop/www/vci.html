@@ -72,8 +72,7 @@
      <div id="controls">
         <h3>Controls</h3>
         <!-- Driving Controls -->
-<!--        <button class="drive up">Camera Up</button>
-            <button class="drive down">Camera Down</button>-->
+        <svg id="drive-dir-icon" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
         <!-- EE Cart Controls -->
         <input type="checkbox" id="touchspot-toggle"/>
         <label id="touchspot-toggle-label" for="touchspot-toggle">Touch Spot</label>
@@ -137,9 +136,10 @@
          <!-- divs for driving controls -->
          <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
          </svg>
-         <div class="drive-ctrl drive-look left cursor-eyes-left"></div>
-         <div class="drive-ctrl drive-look right cursor-eyes-right"></div>
-         <!--<div class="drive-ctrl linear-ring"></div>-->
+         <div class="drive-ctrl drive-look left"></div>
+         <div class="drive-ctrl drive-look right"></div>
+         <div class="drive-ctrl turn-signal left"></div>
+         <div class="drive-ctrl turn-signal right"></div>
          <!-- divs for torso controls -->
          <img id="tallIcon" src="./css/icons/tall.png"></img>
          <img id="shortIcon" src="./css/icons/short.png"></img>
