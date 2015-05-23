@@ -156,8 +156,20 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
         shapes = itertools.cycle(['x','v', 'o', '+'])
         
         fig = pp.figure()
+
+        if len(check_methods) > len(check_dims): nClass = len(check_methods)
+        else: nClass = len(check_dims)
         
-        for method in check_methods:
+        for n in range(nClass):
+
+            if len(check_methods) > len(check_dims): 
+                method = check_methods[n]
+                check_dim = check_dims[0]
+            else: 
+                method = check_methods[0]
+                check_dim = check_dims[n]
+                
+                
             fn_l = np.zeros(len(threshold_mult))
             tp_l = np.zeros(len(threshold_mult))
             tn_l = np.zeros(len(threshold_mult))
@@ -167,7 +179,7 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
                 
             for i in xrange(nDataSet):
-                            
+
                 for j, ths in enumerate(threshold_mult):
                     # save file name
                     res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'_ths_'+ \
@@ -179,9 +191,17 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     tn_l[j] += d['tn']; fp_l[j] += d['fp'] 
                     delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
 
+                    print d
+                    sys.exit()
+
+                    
                     ## # Exclude wrong detection cases
                     ## if delay == []: continue
 
+            print tp_l
+            print fn_l
+            print tn_l
+                    
             tpr_l = tp_l/(tp_l+fn_l)*100.0
             fpr_l = fp_l/(fp_l+tn_l)*100.0
             delay_l = delay_l/delay_cnt
@@ -198,8 +218,9 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            if method == 'global': label = 'fixed threshold'
-            if method == 'progress': label = 'progress based threshold'
+            ## if method == 'global': label = 'fixed threshold'
+            ## if method == 'progress': label = 'progress based threshold'
+            label = method+"_"+str(check_dim)
                 
             pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
             #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
@@ -1057,14 +1078,14 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 1
+    task  = 0
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
         f_zero_size = [8, 5, 10]
         f_thres     = [1.0, 1.7, 3.0]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult = [[1.0, 1.5, 1.5, 1.5],[10.0, 10.0, 10.0, 10.0],[1.5, 5.5, 5.5, 5.5]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 1: 
         class_name = 'switch'
@@ -1072,7 +1093,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 18, 7]
         f_thres     = [0.7, 0.5, 1.0]
         audio_thres = [1.0, 0.7, 0.0015]
-        cov_mult = [[1.5, 1.5, 1.5, 2.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 2:        
         class_name = 'lock'
@@ -1080,7 +1101,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 5, 5]
         f_thres     = [1.0, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 3:        
         class_name = 'complex'
@@ -1088,15 +1109,15 @@ if __name__ == '__main__':
         f_zero_size = [5, 3, 8]
         f_thres     = [1.0, 1.5, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult    = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
-        nState_l    = [20, 15, 20] #glass 10?
+        cov_mult    = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
+        nState_l    = [20, 20, 20] #glass 10?
     elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
         f_zero_size = [5, 5, 8]
         f_thres     = [1.35, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult    = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult    = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     else:
         print "Please specify right task."
