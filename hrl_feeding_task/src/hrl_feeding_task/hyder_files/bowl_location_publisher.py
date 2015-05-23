@@ -26,8 +26,8 @@ class bowlPublisher():
 			orientation = Quaternion()
 
 			#Actual bowl location, set manually...
-			position.x, position.y, position.z = 0.814, -0.146, -0.301
-			orientation.x, orientation.y, orientation.z, orientation.w = 0.632, 0.395, -0.205, 0.635
+			position.x, position.y, position.z = 0.850, 0.157, -0.313
+			orientation.x, orientation.y, orientation.z, orientation.w = -0.636, 0.318, 0.348, 0.611
 			pose_msg = PoseStamped( header = hdr, pose =  Pose(position, orientation) )
 			rospy.loginfo(pose_msg)
 
