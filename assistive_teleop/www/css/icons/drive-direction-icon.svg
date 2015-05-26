@@ -12,11 +12,11 @@
  </metadata>
  <g transform="translate(-359.36427,-421.72645)">
   <g stroke-linejoin="round" fill-rule="nonzero" stroke-dashoffset="0" stroke="#0e17fd" stroke-linecap="round" stroke-dasharray="none" stroke-miterlimit="4" stroke-width="1.25666654" fill="#00baaa">
-   <path d="m345.8,453.1c-2.719,2.719-6.407,4.247-10.25,4.247v-14.5z" transform="matrix(1.034483,0,0,1.0344828,27.930953,-20.771128)"/>
-   <path d="m345.8,453.1c-2.719,2.719-6.407,4.247-10.25,4.247v-14.5z" transform="matrix(-1.034483,0,0,1.0344828,722.06905,-20.771128)"/>
-   <path d="m345.8,432.6c5.663,5.663,5.663,14.84,0,20.51l-10.3-10.2z" transform="matrix(1.034483,0,0,1.0344828,27.930954,-20.771128)"/>
-   <path d="m345.8,432.6c5.663,5.663,5.663,14.84,0,20.51l-10.3-10.2z" transform="matrix(-1.034483,0,0,-1.0344828,722.06905,895.49549)"/>
-   <path d="m345.8,432.6c5.663,5.663,5.663,14.84,0,20.51l-10.3-10.2z" transform="matrix(0,-1.034483,1.0344828,0,-83.133311,784.43123)"/>
+   <path class="back-right" d="m345.8,453.1c-2.719,2.719-6.407,4.247-10.25,4.247v-14.5z" transform="matrix(1.034483,0,0,1.0344828,27.930953,-20.771128)"/>
+   <path class="back-left" d="m345.8,453.1c-2.719,2.719-6.407,4.247-10.25,4.247v-14.5z" transform="matrix(-1.034483,0,0,1.0344828,722.06905,-20.771128)"/>
+   <path class="right" d="m345.8,432.6c5.663,5.663,5.663,14.84,0,20.51l-10.3-10.2z" transform="matrix(1.034483,0,0,1.0344828,27.930954,-20.771128)"/>
+   <path class="left" d="m345.8,432.6c5.663,5.663,5.663,14.84,0,20.51l-10.3-10.2z" transform="matrix(-1.034483,0,0,-1.0344828,722.06905,895.49549)"/>
+   <path class="forward" d="m345.8,432.6c5.663,5.663,5.663,14.84,0,20.51l-10.3-10.2z" transform="matrix(0,-1.034483,1.0344828,0,-83.133311,784.43123)"/>
   </g>
   <text style="letter-spacing:0px;text-anchor:middle;word-spacing:0px;text-align:center;" font-weight="normal" xml:space="preserve" font-size="3.17003155px" font-style="normal" font-stretch="normal" font-variant="normal" y="428.36218" x="375" font-family="Serif" line-height="125%" fill="#000000"><tspan x="375" y="428.36218">Forward</tspan></text>
   <text style="letter-spacing:0px;text-anchor:middle;word-spacing:0px;text-align:center;" font-weight="normal" xml:space="preserve" font-size="3.17003155px" font-style="normal" font-stretch="normal" font-variant="normal" y="438.36218" x="384" font-family="Serif" line-height="125%" fill="#000000"><tspan x="384" y="438.36218">Right</tspan></text>

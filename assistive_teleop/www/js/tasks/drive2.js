@@ -297,7 +297,17 @@ RFH.Drive = function (options) {
     self.driveDirIcon = Snap("#drive-dir-icon");
     Snap.load('./css/icons/drive-direction-icon.svg', function (icon_svg) {
         self.driveDirIcon.append(icon_svg.select('g'));
-       console.log("Drive Direction Icon Loaded"); 
+
+        var wedgeClickCB = function (e) {
+            self.moveToStop(e.target.classList[0]);
+        }
+
+        var wedges = self.driveDirIcon.selectAll('path');
+        for (var i=0; i<wedges.length; i+=1) {
+           wedges[i].click(wedgeClickCB);
+        }
+
+        console.log("Drive Direction Icon Loaded"); 
     });
 
     $('.turn-signal.left').on('mouseenter', function (event) {

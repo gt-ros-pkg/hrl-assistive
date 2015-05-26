@@ -90,5 +90,11 @@
     border-top-left-radius:1em;
 }
 
+#drive-dir-icon{
+    height:auto;
+    width:100%;
+}
 
-
+#drive-dir-icon text { 
+    pointer-events: none;
+}
