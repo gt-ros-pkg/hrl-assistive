@@ -98,3 +98,26 @@
 #drive-dir-icon text { 
     pointer-events: none;
 }
+
+#drive-dir-icon path {
+    cursor: url(cursors/eyes/eyes.png) 27 16, auto;
+    stroke-width: 0.5;
+    stroke: rgb(33,150,243);
+    stroke-opacity: 0.87;
+    fill: rgb(40, 202, 218);
+    fill-opacity:0.75;
+}
+
+#drive-dir-icon path:hover {
+    stroke-width: 0.7;
+    stroke: rgb(13,130,213);
+    fill: rgb(30, 220, 250);
+    fill-opacity:0.57;
+}
+
+#drive-dir-icon path:active {
+    stroke-width: 0.7;
+    stroke: rgb(3, 80, 150);
+    fill: rgb(80, 240, 255);
+    fill-opacity:0.75;
+}

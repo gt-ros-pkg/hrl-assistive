@@ -92,8 +92,7 @@ RFH.CartesianEEControl = function (options) {
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
     $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button').button();
-    $('#speedOptions-buttons, #ee-mode-set').buttonset();
-    //$('#speedOptions-buttons, #posrot-set, #ee-mode-set').buttonset();
+    $('#speedOptions-buttons, #posrot-set, #ee-mode-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer').hide();
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
 
@@ -508,6 +507,7 @@ RFH.CartesianEEControl = function (options) {
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
         self.trackHand();
+        $('.'+self.side+'-arm-ctrl, .arm-ctrl').show();
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $("#select-focus-toggle-label").show();
         $('#speedOptions').show();
@@ -527,6 +527,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.stop = function () {
         clearInterval(RFH.pr2.head.pubInterval);
+        $('.'+self.side+'-arm-ctrl, .arm-ctrl').hide();
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('mousedown.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');

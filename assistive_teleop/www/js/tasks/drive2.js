@@ -297,16 +297,13 @@ RFH.Drive = function (options) {
     self.driveDirIcon = Snap("#drive-dir-icon");
     Snap.load('./css/icons/drive-direction-icon.svg', function (icon_svg) {
         self.driveDirIcon.append(icon_svg.select('g'));
-
         var wedgeClickCB = function (e) {
             self.moveToStop(e.target.classList[0]);
         }
-
         var wedges = self.driveDirIcon.selectAll('path');
         for (var i=0; i<wedges.length; i+=1) {
            wedges[i].click(wedgeClickCB);
         }
-
         console.log("Drive Direction Icon Loaded"); 
     });
 
@@ -363,7 +360,6 @@ RFH.Drive = function (options) {
         var angs = numeric.linspace(-Math.PI, 0.85*Math.PI, self.Ndots);
         var Rcircles = self.lines['right'].children();
         var Lcircles = self.lines['left'].children();
-        //var r = 1*(h-cy);
         for (var i in angs) {
             Rcircles[self.Ndots-i-1].attr({'cx':cx + 0.5*r*Math.cos(angs[i]),
                                          'cy':cy + 0.5*r*Math.sin(angs[i])});
@@ -392,8 +388,8 @@ RFH.Drive = function (options) {
         $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
         $('.turn-signal').on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe)
         $('.turn-signal').on('mousedown.rfh', self.driveGo);
-        $(self.driveSVG.node, '.turn-signal').on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe)
-        $(self.driveSVG.node, '.turn-signal').on('mousedown.rfh', self.driveGo);
+        $(self.driveSVG.node).on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe)
+        $(self.driveSVG.node).on('mousedown.rfh', self.driveGo);
         $('.drive-ctrl').show();
         self.moveToStop(self.getNearestStop());
         $(self.driveSVG.node).on('resize.rfh', self.updateLineOffsets)

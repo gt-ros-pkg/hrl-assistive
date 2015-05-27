@@ -74,9 +74,9 @@
         <!-- Driving Controls -->
         <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
         <!-- EE Cart Controls -->
-        <input type="checkbox" id="touchspot-toggle"/>
-        <label id="touchspot-toggle-label" for="touchspot-toggle">Touch Spot</label>
-        <div id="ee-mode-set" style="display:none">
+        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
+        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>
+        <div id="ee-mode-set" class="arm-ctrl" style="display:none">
             <input class="menu-item" id="ee-mode-table" type="radio" name="ee-mode-radio" checked="checked">
             <label for="ee-mode-table">Table</label>
             <input class="menu-item" id="ee-mode-wall" type="radio" name="ee-mode-radio">
@@ -84,18 +84,18 @@
             <input class="menu-item" id="ee-mode-free" type="radio" name="ee-mode-radio">
             <label for="ee-mode-free">Free</label>
         </div>
-<!--        <div id="posrot-set" style="display:none">
+        <div id="posrot-set" class="arm-ctrl" style="display:none">
             <input class="menu-item" id="posrot-pos" type="radio" name="posrot-radio" checked="checked">
             <label for="posrot-pos">Position</label>
             <input class="menu-item" id="posrot-rot" type="radio" name="posrot-radio">
             <label for="posrot-rot">Rotation</label>
-        </div>-->
-        <div id="r-rot-ctrls">
+        </div>
+        <div id="r-rot-ctrls" class="r-arm-ctrl">
             <div class="wrist-rot-slider"></div>
             <div class="wrist-lon-slider"></div>
             <div class="wrist-lat-slider"></div>
         </div>
-        <div id="l-rot-ctrls">
+        <div id="l-rot-ctrls" class="l-arm-ctrl">
             <div class="wrist-rot-slider"></div>
             <div class="wrist-lon-slider"></div>
             <div class="wrist-lat-slider"></div>
@@ -104,7 +104,7 @@
         <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
         <button id="wristCW" style="display:none">CW</button>
         <button id="wristCCW" style="display:none">CCW</button>-->
-        <div id="speedOptions">
+        <div id="speedOptions" class="r-arm-ctrl">
             <h4>Step Size</h4>
             <div id="speedOptions-buttons">
               <form id="speedOptions-form">
@@ -145,11 +145,11 @@
          <img id="shortIcon" src="./css/icons/short.png"></img>
          <div id="torsoSlider"></div>
          <!-- divs for arm controls -->
-         <img id="rightFocusPoint" class="focus-point" src="./css/icons/focus-point.png"></img>
-         <img id="leftFocusPoint" class="focus-point" src="./css/icons/focus-point.png"></img>
-         <div id="depthMaskLeft" class="depth-mask" ></div>
-         <div id="depthMaskRight" class="depth-mask" ></div>
-         <div id='armCtrlContainer' class="ctrlContainer" style="display:none">
+<!--         <img id="rightFocusPoint" class="focus-point r-arm-ctrl" src="./css/icons/focus-point.png"></img>
+         <img id="leftFocusPoint" class="focus-point l-arm-ctrl" src="./css/icons/focus-point.png"></img>
+         <div id="depthMaskLeft" class="depth-mask arm-ctrl" ></div>
+         <div id="depthMaskRight" class="depth-mask arm-ctrl" ></div>-->
+         <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
              <!--<div class="slider"></div>-->
              <div id="ctrl-ring" class="default">
                  <div class="arrow left default"></div>
