@@ -847,8 +847,11 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             if (an_type == 'force' or an_type == 'both'):
 
                 # Select a type of anomaly
-                an1 = random.choice(force_an)
-
+                while True:
+                    an1 = random.choice(force_an)
+                    if an_type == 'force' and an1 == 'normal': continue
+                    else: break
+                       
                 if an1 == 'normal':
                     print "normal force"
 
@@ -939,7 +942,11 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             if an_type == 'sound' or an_type == 'both':
 
                 # Select a type of anomaly
-                an2 = random.choice(sound_an)
+                while True:
+                    an2 = random.choice(sound_an)
+                    if an_type == 'both' and an1 == 'normal' and an2 == 'normal': continue
+                    else if an_type == 'sound' and an2 == 'normal': continue
+                    else: break
 
                 if an2 == 'normal':
                     print "normal sound"
