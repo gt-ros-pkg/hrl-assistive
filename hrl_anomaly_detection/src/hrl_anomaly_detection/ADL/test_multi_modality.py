@@ -122,7 +122,7 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                             x_train2 = train_dataSet.samples[:,1,:]
                             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                             lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
-
+                            
                     if onoff_type == 'online':
                         tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
                                                                           ths, check_dim=check_dim)
@@ -647,15 +647,16 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
 
         # anomaly_check only returns anomaly cases only
         for j in range(2,m):                    
-    
+
             if check_dim == 2:            
                 an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
             else:
                 an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
-
+            
             if an == 1.0:   fn += 1.0
             elif an == 0.0: tp += 1.0
 
+                
     # 2) Use False data to get true negative rate
     if check_dim == 2:
         x_test1 = false_dataSet.samples[:,0]
