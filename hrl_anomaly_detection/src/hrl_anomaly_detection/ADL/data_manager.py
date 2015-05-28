@@ -887,7 +887,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 elif an1 == 'rndimpulse' or an1 == 'inelastic' or an1 == 'inelastic_continue':
                     print "Random impulse force which is inelastic collision force: ", an1
                     #http://www.vernier.com/innovate/impulse-comparison-for-elastic-and-inelastic-collisions/
-                    peak   = max_c1 * random.uniform(0.1, 1.5)
+                    peak   = max_c1 * random.uniform(0.1, 0.5)
                     width  = random.randint(3,6)                    
                     an_idx = loc = random.randint(1,length-1-width)
 
@@ -910,7 +910,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 elif an1 == 'elastic' or an1 == 'elastic_continue':
                     print "elastic collision with continuous force"
 
-                    peak  = max_c1 * random.uniform(0.1, 1.5)
+                    peak  = max_c1 * random.uniform(0.1, 0.5)
                     if len(x1_anomaly) <= 25: 
                         width = random.randint(5,10)
                     else:
@@ -950,7 +950,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     print "Random impulse sound"
                     
                     # sample sound shape
-                    peak  = max_c2 * random.uniform(0.2, 1.5)
+                    peak  = max_c2 * random.uniform(0.2, 0.5)
                     width = random.randint(3,4)
                     if len(x1_anomaly) <= 20+width: block_size = 4
                     else: block_size = 10
