@@ -833,16 +833,16 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         ## an_type = random.choice(an_types)            
         ## an_type = 'both'
 
-        x1_anomaly = copy.copy(true_aXData1[x_idx])
-        x2_anomaly = copy.copy(true_aXData2[x_idx])
-        an1 = 'normal'
-        an2 = 'normal'
-        an_idx = None # anomaly start location
-
         while sampling_complete == False:
 
+            x1_anomaly = copy.copy(true_aXData1[x_idx])
+            x2_anomaly = copy.copy(true_aXData2[x_idx])
+            an1 = 'normal'
+            an2 = 'normal'
+            an_idx = None # anomaly start location
+            
             # random anomaly type
-            if an_type == 'force' or an_type == 'both':
+            if (an_type == 'force' or an_type == 'both'):
 
                 # Select a type of anomaly
                 an1 = random.choice(force_an)
@@ -988,7 +988,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     # sampling shape
                     peak  = max_c2 * random.uniform(0.1, 0.5)
                     if len(x1_anomaly) <= 25: 
-                        width = random.randint(5,10)
+                        width = random.randint(10,20)
                         block_size = 4
                     else: 
                         width = random.randint(5,20)

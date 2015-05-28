@@ -1034,6 +1034,15 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--roc_online_simulated_dim_check', '--ronsimdim', action='store_true', \
+                 dest='bRocOnlineSimDimCheck', default=False, 
+                 help='Plot online ROC by simulated anomaly form dim comparison')    
+    p.add_option('--roc_online_simulated_method_check', '--ronsimmthd', action='store_true', \
+                 dest='bRocOnlineSimMethodCheck',
+                 default=False, help='Plot online ROC by simulated anomaly')    
+    p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
+                 default=False, help='Plot all data')
+
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
                  default=False, help='Renew pickle files.')
     p.add_option('--simulated_abnormal', '--sim_an', action='store_true', dest='bSimAbnormal',
@@ -1042,18 +1051,10 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
                  default=False, help='Plot by a figure of ROC human')
-    p.add_option('--roc_online_simulated_dim_check', '--ronsimdim', action='store_true', \
-                 dest='bRocOnlineSimDimCheck', default=False, 
-                 help='Plot online ROC by simulated anomaly form dim comparison')    
-    p.add_option('--roc_online_simulated_method_check', '--ronsimmthd', action='store_true', 
-                 dest='bRocOnlineSimMethodCheck',
-                 default=False, help='Plot online ROC by simulated anomaly')    
     p.add_option('--roc_online_robot', '--ron', action='store_true', dest='bRocOnlineRobot',
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
                  default=False, help='Plot by a figure of ROC robot')
-    p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
-                 default=False, help='Plot all data')
     p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
                  default=False, help='Plot one data')
     p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
@@ -1147,7 +1148,7 @@ if __name__ == '__main__':
     true_chunks  = d['true_chunks']
 
     # Load simulated anomaly
-    if opt.bRocOnlineSimMethodCheck or opt.bRocOnlineSimDimCheck:
+    if opt.bRocOnlineSimMethodCheck or opt.bRocOnlineSimDimCheck or opt.bSimAbnormal:
 
         if True:
             # leave-one-out
@@ -1334,6 +1335,7 @@ if __name__ == '__main__':
         true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
 
         if opt.bAbnormal or opt.bSimAbnormal:
+            
             # min max scaling
             false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
             false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
