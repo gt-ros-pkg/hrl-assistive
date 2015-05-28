@@ -124,9 +124,9 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                             lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
                     if test:
-                        tp, fn, fp, tn, delay_l, _ = anomaly_check_online_tests(lhm, test_dataSet, 
-                                                                                false_dataSet, \
-                                                                                ths, check_dim=check_dim)
+                        tp, fn, fp, tn, delay_l, _ = anomaly_check_online_test(lhm, test_dataSet, 
+                                                                               false_dataSet, \
+                                                                               ths, check_dim=check_dim)
                     elif onoff_type == 'online':
                         tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
                                                                           ths, check_dim=check_dim)
@@ -195,16 +195,33 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     tn_l[j] += d['tn']; fp_l[j] += d['fp'] 
                     delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
 
+                    ## print ths, " : ", d['tn'], d['fn'], " : ", d['delay_l']
                     ## # Exclude wrong detection cases
                     ## if delay == []: continue
+
+            tpr_l = np.zeros(len(threshold_mult))
+            fpr_l = np.zeros(len(threshold_mult))
+            npv_l = np.zeros(len(threshold_mult))
                     
-            tpr_l = tp_l/(tp_l+fn_l)*100.0
-            fpr_l = fp_l/(fp_l+tn_l)*100.0
-            delay_l = delay_l/delay_cnt
+            for i in xrange(len(threshold_mult)):
+                if tp_l[i]+fn_l[i] != 0:
+                    tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+
+                if fp_l[i]+tn_l[i] != 0:
+                    fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+                if tn_l[i]+fn_l[i] != 0:
+                    npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
+
+                if delay_cnt[i] == 0:
+                    delay_l[i] = 0
+                else:                    
+                    delay_l[i] = delay_l[i]/delay_cnt[i]
 
             idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
+            sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
             sorted_delay_l = [delay_l[k] for k in idx_list]
 
             color = colors.next()
@@ -218,8 +235,11 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             ## if method == 'progress': label = 'progress based threshold'
             label = method+"_"+str(check_dim)
 
-            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
-            #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            if test:
+                pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+            else:
+                pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -706,7 +726,7 @@ def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2
     fn = 0.0
     fp = 0.0
     tn = 0.0
-    
+
     err_l = []
     delay_l = []
 
@@ -762,23 +782,12 @@ def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2
         if an == 1.0:
             if delay >= 0:
                 tn += 1.0
+                delay_l.append(delay)                
             else:
                 fn += 1.0
         elif an == 0.0:
             print "Error with anomaly check"
-            
-            if delay >= 0:
-                if an == 1.0:
-                    tn += 1.0
-                    delay_l.append(delay)
-                elif an == 0.0:
-                    fp += 1.0
-            else:
-                if an == 1.0:
-                    fn += 1.0
-                elif an == 0.0:
-                    tp += 1.0    
-                ## err_l.append(err)
+            fp += 1.0
 
     return tp, fn, fp, tn, delay_l, anomaly_idx
     
@@ -1164,7 +1173,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 2
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1320,8 +1329,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
-        ## threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 1.0 #np.arange(0.0, 25.001, 0.5)    
+        threshold_mult  = np.logspace(0.1, 1.5, 30, endpoint=True) 
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['global', 'progress']
