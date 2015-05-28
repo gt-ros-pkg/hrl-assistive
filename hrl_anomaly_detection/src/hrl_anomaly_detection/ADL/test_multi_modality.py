@@ -36,7 +36,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
                 threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False):
+                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -122,8 +122,12 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                             x_train2 = train_dataSet.samples[:,1,:]
                             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                             lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
-                            
-                    if onoff_type == 'online':
+
+                    if test:
+                        tp, fn, fp, tn, delay_l, _ = anomaly_check_online_tests(lhm, test_dataSet, 
+                                                                                false_dataSet, \
+                                                                                ths, check_dim=check_dim)
+                    elif onoff_type == 'online':
                         tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
                                                                           ths, check_dim=check_dim)
                     else:
@@ -694,6 +698,89 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
                 ## err_l.append(err)
 
     return tp, fn, fp, tn, delay_l, anomaly_idx
+
+
+def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
+
+    tp = 0.0
+    fn = 0.0
+    fp = 0.0
+    tn = 0.0
+    
+    err_l = []
+    delay_l = []
+
+    ## # 1) Use True data to get true negative rate
+    ## if check_dim == 2:
+    ##     x_test1 = test_dataSet.samples[:,0]
+    ##     x_test2 = test_dataSet.samples[:,1]
+    ## else:
+    ##     x_test1 = test_dataSet.samples[:,check_dim]
+
+    ## n = len(x_test1)
+    ## for i in range(n):
+    ##     m = len(x_test1[i])
+
+    ##     # anomaly_check only returns anomaly cases only
+    ##     for j in range(2,m):                    
+
+    ##         if check_dim == 2:            
+    ##             an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+    ##         else:
+    ##             an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+            
+    ##         if an == 1.0:   fn += 1.0
+    ##         elif an == 0.0: tp += 1.0
+
+                
+    # 2) Use False data to get true negative rate
+    if check_dim == 2:
+        x_test1 = false_dataSet.samples[:,0]
+        x_test2 = false_dataSet.samples[:,1]
+    else:
+        x_test1 = false_dataSet.samples[:,check_dim]
+    anomaly_idx = false_dataSet.sa.anomaly_idx
+        
+    n = len(x_test1)
+    for i in range(n):
+        m = len(x_test1[i])
+
+        # anomaly_check only returns anomaly cases only
+        delay = 0
+        for j in range(2,m):                    
+    
+            if check_dim == 2:            
+                an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+            else:
+                an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+                
+            delay = j-anomaly_idx[i]
+
+            if an == 1.0: break
+
+            
+        if an == 1.0:
+            if delay >= 0:
+                tn += 1.0
+            else:
+                fn += 1.0
+        elif an == 0.0:
+            print "Error with anomaly check"
+            
+            if delay >= 0:
+                if an == 1.0:
+                    tn += 1.0
+                    delay_l.append(delay)
+                elif an == 0.0:
+                    fp += 1.0
+            else:
+                if an == 1.0:
+                    fn += 1.0
+                elif an == 0.0:
+                    tp += 1.0    
+                ## err_l.append(err)
+
+    return tp, fn, fp, tn, delay_l, anomaly_idx
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
@@ -1040,6 +1127,9 @@ if __name__ == '__main__':
     p.add_option('--roc_online_simulated_method_check', '--ronsimmthd', action='store_true', \
                  dest='bRocOnlineSimMethodCheck',
                  default=False, help='Plot online ROC by simulated anomaly')    
+    p.add_option('--test', action='store_true', \
+                 dest='bTest',
+                 default=False, help='Plot online ROC by simulated anomaly')    
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
 
@@ -1074,7 +1164,7 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
     class_num = 0
-    task  = 0
+    task  = 2
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1148,7 +1238,7 @@ if __name__ == '__main__':
     true_chunks  = d['true_chunks']
 
     # Load simulated anomaly
-    if opt.bRocOnlineSimMethodCheck or opt.bRocOnlineSimDimCheck or opt.bSimAbnormal:
+    if opt.bRocOnlineSimMethodCheck or opt.bRocOnlineSimDimCheck or opt.bSimAbnormal or opt.bTest:
 
         if True:
             # leave-one-out
@@ -1225,7 +1315,24 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    if opt.bRocOnlineSimDimCheck: 
+    if opt.bTest: 
+        
+        print "ROC Offline Robot with simulated anomalies"
+        cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
+        nState          = nState_l[task]
+        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
+        ## threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 1.0 #np.arange(0.0, 25.001, 0.5)    
+        attr            = 'id'
+        onoff_type      = 'online'
+        check_methods   = ['global', 'progress']
+        check_dims      = [2]
+        test_title      = 'online_method_test'
+
+        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                    task_names[task], nState, threshold_mult, \
+                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, test=True)
+                    
+    elif opt.bRocOnlineSimDimCheck: 
         
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
