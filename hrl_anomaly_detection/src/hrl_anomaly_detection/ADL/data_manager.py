@@ -968,6 +968,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     # sampling location
                     loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
+                    if an_idx is None: an_idx = loc                    
                     if loc < an_idx: an_idx = loc
                     ## if an_type == 'sound':
                     ##     loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
@@ -1008,6 +1009,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     # sampling location
                     loc   = random.randint(1,len(x1_anomaly)-width-1)                        
+                    if an_idx is None: an_idx = loc                                        
                     if loc < an_idx: an_idx = loc
                     ## if an_type == 'sound':                        
                     ##     try:
