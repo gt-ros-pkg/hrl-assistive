@@ -1260,7 +1260,25 @@ if __name__ == '__main__':
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
 
-            
+
+    #---------------------------------------------------------------------------           
+    elif opt.bRocOfflineSimMethodCheck:
+        
+        print "ROC Online Robot with simulated anomalies"
+        cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
+        nState          = nState_l[task]
+        threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) # np.arange(0.0, 30.001, 2.0) #
+        attr            = 'id'
+        onoff_type      = 'online'
+        check_methods   = ['global', 'progress']
+        check_dims      = [2]
+        test_title      = 'offline_method_comp'
+
+        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                    task_names[task], nState, threshold_mult, \
+                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
+
+                    
     #---------------------------------------------------------------------------           
     elif opt.bRocOnlineRobot:
 
