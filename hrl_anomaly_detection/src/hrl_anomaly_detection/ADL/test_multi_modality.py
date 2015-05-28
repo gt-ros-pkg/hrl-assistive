@@ -220,7 +220,7 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     delay_l[i] = delay_l[i]/delay_cnt[i]
 
                 if tn_l[i] + fn_l[i] + fp_l[i] != 0:
-                    detect_l[i] = tn_l[i]/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
+                    detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
 
             idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
@@ -241,9 +241,9 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             label = method+"_"+str(check_dim)
 
             if test:
-                ## pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
-                ## pp.plot(sorted_detect_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
-                pp.plot(sorted_npv_l, sorted_detect_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                ##pp.plot(sorted_detect_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                ##pp.plot(sorted_npv_l, sorted_detect_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
             else:
                 pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
                 #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)

@@ -797,10 +797,12 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
     '''
     
     ## an_types = ['force', 'sound', 'both']
-    force_an = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+    force_an = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+    ## force_an = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
     ## force_an = ['normal', 'magnified', 'shrinked', 'amplified', 'weaken']
     
-    sound_an = ['rndsharp', 'rnddull']
+    sound_an = ['normal', 'rndsharp', 'rnddull']
+    ## sound_an = ['rndsharp', 'rnddull']
     ## sound_an = ['normal', 'weaken', 'rndimpulse']
 
     length = len(true_aXData1[0])
