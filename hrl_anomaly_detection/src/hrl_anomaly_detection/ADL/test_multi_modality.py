@@ -202,6 +202,7 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             tpr_l = np.zeros(len(threshold_mult))
             fpr_l = np.zeros(len(threshold_mult))
             npv_l = np.zeros(len(threshold_mult))
+            detect_l = np.zeros(len(threshold_mult))
                     
             for i in xrange(len(threshold_mult)):
                 if tp_l[i]+fn_l[i] != 0:
@@ -218,11 +219,15 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                 else:                    
                     delay_l[i] = delay_l[i]/delay_cnt[i]
 
+                if tn_l[i] + fn_l[i] + fp_l[i] != 0:
+                    detect_l[i] = tn_l[i]/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
+
             idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
             sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
             sorted_delay_l = [delay_l[k] for k in idx_list]
+            sorted_detect_l = [detect_l[k] for k in idx_list]
 
             color = colors.next()
             shape = shapes.next()
@@ -236,7 +241,9 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             label = method+"_"+str(check_dim)
 
             if test:
-                pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                ## pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                ## pp.plot(sorted_detect_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                pp.plot(sorted_npv_l, sorted_detect_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
             else:
                 pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
                 #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
@@ -252,11 +259,12 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
         ## new_fp_l = np.linspace(fp_l.min(), fp_l.max(), 50)        
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
-        
-        pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
-        pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
-        pp.xlim([0.0, 40])
-        pp.ylim([0.0, 100])
+        if test == False:
+            pp.xlim([0.0, 40])
+            pp.ylim([0.0, 100])        
+            pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+            pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
+
         pp.legend(loc=4,prop={'size':16})
         
         fig.savefig('test.pdf')
@@ -1377,21 +1385,21 @@ if __name__ == '__main__':
 
 
     #---------------------------------------------------------------------------           
-    elif opt.bRocOfflineSimMethodCheck:
+    ## elif opt.bRocOfflineSimMethodCheck:
         
-        print "ROC Online Robot with simulated anomalies"
-        cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
-        nState          = nState_l[task]
-        threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) # np.arange(0.0, 30.001, 2.0) #
-        attr            = 'id'
-        onoff_type      = 'online'
-        check_methods   = ['global', 'progress']
-        check_dims      = [2]
-        test_title      = 'offline_method_comp'
+    ##     print "ROC Online Robot with simulated anomalies"
+    ##     cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
+    ##     nState          = nState_l[task]
+    ##     threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) # np.arange(0.0, 30.001, 2.0) #
+    ##     attr            = 'id'
+    ##     onoff_type      = 'online'
+    ##     check_methods   = ['global', 'progress']
+    ##     check_dims      = [2]
+    ##     test_title      = 'offline_method_comp'
 
-        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
-                    task_names[task], nState, threshold_mult, \
-                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
+    ##     fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+    ##                 task_names[task], nState, threshold_mult, \
+    ##                 opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
 
                     
     #---------------------------------------------------------------------------           
@@ -1653,7 +1661,7 @@ if __name__ == '__main__':
         # If you want normal likelihood, class 0, data 1
         # testData 0
         # false data 0 (make it false)
-        false_data_flag = False #True
+        false_data_flag = True
         if false_data_flag:
             test_dataSet    = false_dataSet
                                                                

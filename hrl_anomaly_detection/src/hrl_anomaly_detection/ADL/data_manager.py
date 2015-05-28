@@ -860,6 +860,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     xnew = np.linspace(0.0, 1.0, length*mag)
                     x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
+                    an_idx = 0                                        
 
                 elif an1 == 'shrinked':
                     print "shrinked force"
@@ -871,18 +872,19 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     xnew = np.linspace(0.0, 1.0, length*mag)
                     x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
+                    an_idx = 0                                        
 
                 elif an1 == 'amplified':
                     print "Amplied force"
-
                     mag = random.uniform(1.1, 1.5)                
                     x1_anomaly = x1_anomaly*mag
+                    an_idx = 0                    
 
                 elif an1 == 'weaken':
                     print "Weaken force"
-
                     mag = random.uniform(0.1, 0.9)                
                     x1_anomaly = x1_anomaly*mag
+                    an_idx = 0                    
 
                 elif an1 == 'rndimpulse' or an1 == 'inelastic' or an1 == 'inelastic_continue':
                     print "Random impulse force which is inelastic collision force: ", an1
@@ -956,14 +958,16 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     else: block_size = 10
 
                     # sampling location
-                    if an_type == 'sound':
-                        loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
-                    else:
-                        if an_idx is None:
-                            print "Error: no start index"
-                            break
-                        else:
-                            loc = an_idx
+                    loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
+                    if loc < an_idx: an_idx = loc
+                    ## if an_type == 'sound':
+                    ##     loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
+                    ## else:
+                    ##     if an_idx is None:
+                    ##         print "Error: no start index"
+                    ##         break
+                    ##     else:
+                    ##         loc = an_idx
 
                     if loc+width > length-1:
                         continue            
@@ -972,8 +976,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     xnew    = range(width)
                     impulse = np.zeros(width)
-                    x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
-                    #x2_anomaly = true_aXData2[x_idx]
+                    ## x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
 
                     for i in xrange(width):
                         if i < width/2:
@@ -995,17 +998,19 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                         block_size = 10
 
                     # sampling location
-                    if an_type == 'sound':                        
-                        try:
-                            loc   = random.randint(1,len(x1_anomaly)-width-1)                        
-                        except:
-                            continue
-                    else:
-                        if an_idx is None:
-                            print "Error: no start index"
-                            break
-                        else:
-                            loc = an_idx
+                    loc   = random.randint(1,len(x1_anomaly)-width-1)                        
+                    if loc < an_idx: an_idx = loc
+                    ## if an_type == 'sound':                        
+                    ##     try:
+                    ##         loc   = random.randint(1,len(x1_anomaly)-width-1)                        
+                    ##     except:
+                    ##         continue
+                    ## else:
+                    ##     if an_idx is None:
+                    ##         print "Error: no start index"
+                    ##         break
+                    ##     else:
+                    ##         loc = an_idx
 
                     if loc+width > length-1:
                         continue                                
@@ -1014,8 +1019,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     xnew    = range(width)
                     impulse = np.zeros(width)
-                    x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
-                    #x2_anomaly = true_aXData2[x_idx]
+                    ## x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
 
                     for i in xrange(width):
                         impulse[i] = peak * (1.0 - ( (i+1-(float(width)/2.0))/(float(width)/2.0) )**2)
