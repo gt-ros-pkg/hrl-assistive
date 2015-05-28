@@ -945,7 +945,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 while True:
                     an2 = random.choice(sound_an)
                     if an_type == 'both' and an1 == 'normal' and an2 == 'normal': continue
-                    else if an_type == 'sound' and an2 == 'normal': continue
+                    elif an_type == 'sound' and an2 == 'normal': continue
                     else: break
 
                 if an2 == 'normal':
