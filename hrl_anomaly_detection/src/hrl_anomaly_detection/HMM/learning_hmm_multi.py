@@ -194,7 +194,7 @@ class learning_hmm_multi(learning_base):
             ## a = np.log(np.sum(alpha[:temp/2],axis=1)*scale[:temp/2])
             ## print np.sum(a)
 
-        return
+        return 
 
 
     #----------------------------------------------------------------------        
@@ -669,7 +669,7 @@ class learning_hmm_multi(learning_base):
     def anomaly_check(self, X1, X2=None, ths_mult=None):
 
         if self.nEmissionDim == 1:
-            X_test = X1
+            X_test = np.array([X1])
         else:
             X_test = self.convert_sequence(X1, X2, emission=False)                
         n = len(np.squeeze(X1))
