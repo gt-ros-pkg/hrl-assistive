@@ -685,7 +685,6 @@ class learning_hmm_multi(learning_base):
             err = logp - (self.l_mu - ths_mult*self.l_std)
             
         elif self.check_method == 'progress':
-            print self.check_method
             try:
                 post = np.array(self.ml.posterior(final_ts_obj))            
             except:
