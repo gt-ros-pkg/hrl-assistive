@@ -129,8 +129,23 @@ class learning_hmm_multi(learning_base):
         [A, B, pi] = self.ml.asMatrices()
         n,m = np.shape(X1)
         self.nGaussian = self.nState
+
+
+        if self.check_method == 'change':
+            # Get maximum change of loglikelihood over whole time
+            l_logp = []
+            for j in xrange(n):    
+                for k in xrange(1,m):
+                    final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
+                    logp         = self.ml.loglikelihoods(final_ts_obj)[0]
+
+                    l_logp.append(logp)
+
+            l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])
+            self.l_max_delta = np.amax(abs(l_delta_logp))
+            self.l_std_delta = np.std(abs(l_delta_logp))
         
-        if self.check_method == 'global':
+        elif self.check_method == 'global':
             # Get average loglikelihood threshold over whole time
 
             l_logp = []
@@ -668,11 +683,8 @@ class learning_hmm_multi(learning_base):
     #
     def anomaly_check(self, X1, X2=None, ths_mult=None):
 
-        if self.nEmissionDim == 1:
-            X_test = np.array([X1])
-        else:
-            X_test = self.convert_sequence(X1, X2, emission=False)                
-        n = len(np.squeeze(X1))
+        if self.nEmissionDim == 1: X_test = np.array([X1])
+        else: X_test = self.convert_sequence(X1, X2, emission=False)                
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -680,8 +692,24 @@ class learning_hmm_multi(learning_base):
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
+
+        if self.check_method == 'change':
+
+            if len(X1)<3: return -1, 0.0 #error
+
+            if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
+            else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return -1, 0.0 # error
             
-        if self.check_method == 'global':
+            err = (self.l_max_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
+            
+        elif self.check_method == 'global':
             err = logp - (self.l_mu - ths_mult*self.l_std)
             
         elif self.check_method == 'progress':
@@ -691,6 +719,8 @@ class learning_hmm_multi(learning_base):
                 print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return 1.0, 0.0 # anomaly
 
+            n = len(np.squeeze(X1))
+                
             # Find the best posterior distribution
             min_dist  = 100000000
             min_index = 0
@@ -712,7 +742,7 @@ class learning_hmm_multi(learning_base):
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
 
-        
+
     #----------------------------------------------------------------------        
     #
     def simulation(self, X1, X2):

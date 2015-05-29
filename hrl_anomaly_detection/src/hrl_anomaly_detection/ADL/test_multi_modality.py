@@ -1389,7 +1389,7 @@ if __name__ == '__main__':
         threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) 
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['global', 'progress']
+        check_methods   = ['change', 'global', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
