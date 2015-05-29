@@ -129,8 +129,27 @@ class learning_hmm_multi(learning_base):
         [A, B, pi] = self.ml.asMatrices()
         n,m = np.shape(X1)
         self.nGaussian = self.nState
+
+
+        if self.check_method == 'change' or self.check_method == 'global_change':
+            # Get maximum change of loglikelihood over whole time
+            ll_delta_logp = []
+            for j in xrange(n):    
+                l_logp = []                
+                for k in xrange(1,m):
+                    final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
+                    logp         = self.ml.loglikelihoods(final_ts_obj)[0]
+
+                    l_logp.append(logp)
+                l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])                    
+                ll_delta_logp.append(l_delta_logp)
+
+            self.l_mean_delta = np.mean(abs(np.array(ll_delta_logp).flatten()))
+            self.l_std_delta = np.std(abs(np.array(ll_delta_logp).flatten()))
+
+            print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
         
-        if self.check_method == 'global':
+        if self.check_method == 'global' or self.check_method == 'global_change':
             # Get average loglikelihood threshold over whole time
 
             l_logp = []
@@ -171,9 +190,6 @@ class learning_hmm_multi(learning_base):
                 d['ll_mu'] = self.ll_mu
                 d['ll_std'] = self.ll_std
                 ut.save_pickle(d, ml_pkl)
-        else:
-            print "Not available anomaly ckeck method"
-            sys.exit()
 
             ##########################################################################
             ## path          = self.ml.viterbi(final_ts_obj)
@@ -668,11 +684,8 @@ class learning_hmm_multi(learning_base):
     #
     def anomaly_check(self, X1, X2=None, ths_mult=None):
 
-        if self.nEmissionDim == 1:
-            X_test = np.array([X1])
-        else:
-            X_test = self.convert_sequence(X1, X2, emission=False)                
-        n = len(np.squeeze(X1))
+        if self.nEmissionDim == 1: X_test = np.array([X1])
+        else: X_test = self.convert_sequence(X1, X2, emission=False)                
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -680,9 +693,30 @@ class learning_hmm_multi(learning_base):
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
+
+        if self.check_method == 'change' or self.check_method == 'global_change':
+
+            if len(X1)<3: return -1, 0.0 #error
+
+            if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
+            else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return -1, 0.0 # error
+
+            ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
+
+            err = (self.l_mean_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
+            if err < 0.0: return 1.0, 0.0 # anomaly            
             
-        if self.check_method == 'global':
-            err = logp - (self.l_mu - ths_mult*self.l_std)
+        if self.check_method == 'global' or self.check_method == 'global_change':
+            err = logp - (self.l_mu - ths_mult*self.l_std) 
+            if err < 0.0: return 1.0, 0.0 # anomaly
+            else: return 0.0, err # normal               
             
         elif self.check_method == 'progress':
             try:
@@ -691,6 +725,8 @@ class learning_hmm_multi(learning_base):
                 print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return 1.0, 0.0 # anomaly
 
+            n = len(np.squeeze(X1))
+                
             # Find the best posterior distribution
             min_dist  = 100000000
             min_index = 0
@@ -712,7 +748,7 @@ class learning_hmm_multi(learning_base):
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
 
-        
+
     #----------------------------------------------------------------------        
     #
     def simulation(self, X1, X2):
