@@ -1386,11 +1386,11 @@ if __name__ == '__main__':
         test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(-1.0, 2.5, 20, endpoint=True) -2.0
+        threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['change']
-        ## check_methods   = ['change', 'global', 'progress']
+        check_methods   = ['global_change']
+        ## check_methods   = ['change', 'global', 'global_change', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
