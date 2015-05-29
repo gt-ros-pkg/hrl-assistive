@@ -419,6 +419,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     max_f   = 0.0
     max_idx = 0
     idx     = 1
+    ref_idx = 0
     for i, force in enumerate(ft_force_l):
         if labels[i] is False: continue
         else: 
