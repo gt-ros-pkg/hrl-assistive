@@ -12,7 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-from hrl_feeding_task.src import
+#from hrl_feeding_task.src import
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -183,15 +183,15 @@ class armReachAction(mpcBaseAction):
     		raw_input("Press Enter to continue")
 
     	calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
-            if calibrateJoints == 'front':
-                print "Setting initial joint angles... "
-                self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
-    	    raw_input("Press Enter to continue")
+        if calibrateJoints == 'front':
+            print "Setting initial joint angles... "
+            self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
+    	raw_input("Press Enter to continue")
 
-            elif calibrateJoints == 'side':
-                print "Setting initial joint angles..."
-                self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
-    	    raw_input("Press Enter to continue")
+        elif calibrateJoints == 'side':
+            print "Setting initial joint angles..."
+            self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
+    	raw_input("Press Enter to continue")
 
     	print "--------------------------------"
 
