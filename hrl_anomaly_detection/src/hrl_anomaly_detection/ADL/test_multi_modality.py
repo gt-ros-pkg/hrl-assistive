@@ -371,8 +371,8 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-        #pp.show()
+        #os.system('cp test.p* ~/Dropbox/HRL/')
+        pp.show()
         
     return
 
@@ -1282,8 +1282,8 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 1
-    task  = 2
+    class_num = 2
+    task  = 0
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
