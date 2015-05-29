@@ -55,3 +55,71 @@ To find end wrist location:
 	2) Right arm: rosrun tf tf_echo /torso_lift_link /r_gripper_tool_frame
 
 
+............................................................
+rosrun tf tf_echo /torso_lift_link /l_gripper_spoon_frame
+At time 1432250946.263
+- Translation: [0.831, 0.148, -0.368]
+- Rotation: in Quaternion [0.650, 0.323, -0.265, 0.634]
+            in RPY [1.655, 0.855, 0.129]
+
+............................................................
+Manual Scooping Trials...
+	1) 	pos.x = .82
+		pos.y = .148
+		pos.z = 0
+		eulerX = 90
+		eulerY = -60
+		eulerZ = 0
+		timeout = 15
+		Calculated quat =
+		x: 0.612372435696
+		y: 0.353553390593
+		z: -0.353553390593
+		w: 0.612372435696
+
+	2)	pos.x = .831
+		pos.y = .148
+		pos.z = -.36
+		eulerX = 90
+		eulerY = -60
+		eulerZ = 0
+		timeout = 15
+		Calculated quat =
+		x: 0.612372435696
+		y: 0.353553390593
+		z: -0.353553390593
+		w: 0.612372435696
+	3)	pos.x = .835
+		pos.y = .148
+		pos.z = -.36
+		eulerX = 90
+		eulerY = -30
+		eulerZ = 0
+		timeout = 5
+		Calculated quat =
+		x: 0.683012701892
+		y: 0.183012701892
+		z: -0.183012701892
+		w: 0.683012701892
+	4)	pos.x = .835
+		pos.y = .148
+		pos.z = .3
+		eulerX = 90
+		eulerY = 0
+		eulerZ = 0
+		timeout = 6
+		Calculated quat =
+		x: 0.707106781187
+		y: 0.0
+		z: 0.0
+		w: 0.707106781187
+
+
+
+....................................................
+- Translation: [0.955, 0.102, -0.357]
+- Rotation: in Quaternion [0.666, 0.187, -0.218, 0.689]
+            in RPY [1.519, 0.579, -0.061]
+ *) May 22, 2015
+
+

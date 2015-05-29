@@ -12,6 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+from hrl_feeding_task.src import
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -24,6 +25,13 @@ class armReachAction(mpcBaseAction):
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
+        #leftArmMpc = mpcBaseAction(self, d_robot, controller, "l")
+        #rightArmMpc = mpcBaseAction(self, d_robot, controller, "r")
+        #leftArmMpc.setOrientGoal(pos, quat, timeout)
+        #rightArmMpc.setOrientGoal(pos, quat, timeout)
+        #^will this work?
+
+
         #Subscribers to publishers of bowl location data
         rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseCallback)  # hrl_feeding/bowl_location
         rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback) # launch you can remap the topic name (ros wiki)
@@ -32,57 +40,57 @@ class armReachAction(mpcBaseAction):
 
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
-	
+
         #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
 
         if arm == 'r':
-		self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
-		self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
-		self.timeout = 2
+            self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+            self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
+            self.timeout = 2
 
-	else:
-		self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
-		self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
-		self.timeout = 2
+        else:
+            self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
+            self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
+            self.timeout = 2
 
         #Variables...! #
         armReachAction.iteration = 0
 
-        self.bowlPosOffsets = np.array([[-.01,	0,	.4],
-                                        [-.01,	0,    .008],
-					[.05,	0,    .008],
-                                        [.05,   0,    .008],
-                                        [.02,   0,	.6],
-					[0,	0,	 0],
-					[.02,	0,	.6]])
+        self.bowlPosOffsets = np.array([[-.01,	0,	   .4],
+                                        [-.01,	0,   .008],
+                                        [.05,	0,   .008],
+                                        [.05,   0,   .008],
+                                        [.02,   0,	   .6],
+                                        [0,     0,      0],
+                                        [.02,	0,	  .6]])
 
-        self.bowlEulers = np.array([	[90,	-60,	0], #Euler angles, XYZ rotations
-					[90,	-60,	0],
-					[90,	-60,	0],
-					[90,	-30,	0],
-					[90,	0,	0],
-					[0,	0,	0],
-					[90,	0,	0]])
+        self.bowlEulers = np.array([[90,	-60,	0], #Euler angles, XYZ rotations
+                                    [90,	-60,	0],
+                                    [90,	-60,	0],
+                                    [90,	-30,	0],
+                                    [90,	  0,    0],
+                                    [0,       0,	0],
+                                    [90,	  0,	0]])
 
-	self.headPosOffsets = np.array([[.01,	.075,	-.01],
-					[.01,	.2,	   .1],
-					[0,	0,	   0]])
-	
-	self.headEulers = np.array([[90,0,-90],
-				    [90,0,-90],
-				    [90,0,0]])
-					
-	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
+        self.headPosOffsets = np.array([[.01,   .075,   -.01],
+                                        [.01,   .2,       .1],
+                                        [0,      0,       0]])
 
-	self.timeouts = [15, 7, 4, 4, 4, 12, 12]
-	self.kinectReachTimeout = 15
+        self.headEulers = np.array([[90,    0,  -90],
+                                    [90,    0,  -90],
+                                    [90,    0,   0]])
 
-	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
-	self.headQuatOffsets = self.euler2quatArray(self.headEulers)	
+    	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
-	print "Calculated quaternions:"
-	print self.bowlQuatOffsets
+    	self.timeouts = [15, 7, 4, 4, 4, 12, 12]
+    	self.kinectReachTimeout = 15
+
+    	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
+    	self.headQuatOffsets = self.euler2quatArray(self.headEulers)
+
+    	print "Calculated quaternions:"
+    	print self.bowlQuatOffsets
 
         try:
                 print "--------------------------------"
@@ -162,7 +170,7 @@ class armReachAction(mpcBaseAction):
 	except:
 	    print "Please register bowl position!"
         #Variables...! # local
-        
+
         #self.getJointPlan()
         #calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
         #if calibrateJoints == 'front':
@@ -228,9 +236,9 @@ class armReachAction(mpcBaseAction):
 
 
         #---------------------------------------------------------------------------------------#
-	
+
 	print "--------------------------------"
-	
+
         print "MOVES2 - Moving down into bowl"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
@@ -344,7 +352,7 @@ class armReachAction(mpcBaseAction):
 	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]])
 	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
 	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = quats[0], quats[1], quats[2], quats[3]
-	    
+
 	return quatArray
 
 if __name__ == '__main__':
@@ -360,6 +368,9 @@ if __name__ == '__main__':
     #controller = 'actionlib'
     #arm        = 'l'
 
-    rospy.init_node('arm_reacher')
-    ara = armReachAction(d_robot, controller, opt.arm)
+    arm = opt.arm1 #added/changed due to new launch file controlling both arms (arm1, arm2)
+
+
+    rospy.init_node('arm_reacher_server')
+    ara = armReachAction(d_robot, controller, arm)
     rospy.spin()
