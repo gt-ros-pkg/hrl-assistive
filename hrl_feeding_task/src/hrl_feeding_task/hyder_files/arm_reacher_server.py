@@ -165,26 +165,10 @@ class armReachAction(mpcBaseAction):
                 confirm = True
             print self.getJointAngles()
 
-	try:
-	    print self.bowl_pos
-	except:
-	    print "Please register bowl position!"
-        #Variables...! # local
-
-        #self.getJointPlan()
-        #calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
-        #if calibrateJoints == 'front':
-            #print "Setting initial joint angles... "
-            #self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
-
-        #elif calibrateJoints == 'side':
-            #print "Setting initial joint angles..."
-            #self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
-
-            #!!---- BASIC SCOOPING MOTION WITH BOWL POSITION OFFSET
-    	#Flat Gripper Orientation Values:
-    	#(0.642, 0.150, 0.154, 0.736)
-
+    	try:
+    	    print self.bowl_pos
+    	except:
+    	    print "Please register bowl position!"
 
         #---------------------------------------------------------------------------------------#
 
@@ -198,162 +182,154 @@ class armReachAction(mpcBaseAction):
             	self.setOrientGoal(pos, quat, self.kinectReachTimeout)
     		raw_input("Press Enter to continue")
 
-	calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
-        if calibrateJoints == 'front':
-            print "Setting initial joint angles... "
-            self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
-	    raw_input("Press Enter to continue")
+    	calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
+            if calibrateJoints == 'front':
+                print "Setting initial joint angles... "
+                self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
+    	    raw_input("Press Enter to continue")
 
-        elif calibrateJoints == 'side':
-            print "Setting initial joint angles..."
-            self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
-	    raw_input("Press Enter to continue")
+            elif calibrateJoints == 'side':
+                print "Setting initial joint angles..."
+                self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
+    	    raw_input("Press Enter to continue")
 
-	print "--------------------------------"
+    	print "--------------------------------"
 
-        print "MOVES1 - Pointing down over bowl "
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[0])
+            print "MOVES1 - Pointing down over bowl "
+            (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[0])
 
-        # #Code for storing current joint angles in case of playback...
-        # self.currentAngles = self.getJointAngles()
-        # print "Current Angles:"
-        # print self.currentAngles
-        # self.point.positions = self.currentAngles
-        # self.previousGoals.points.append(self.point)
-        # print "EVERYTHING:"
-        # print self.previousGoals
-        # print "resized Points:"
-        # print self.previousGoals.points[armReachAction.iteration]
-        armReachAction.iteration += 1
-        # print "Stored joint angles: "
-        # print self.previousGoals.points[armReachAction.iteration].positions[2]
-
-
-        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+            # #Code for storing current joint angles in case of playback...
+            # self.currentAngles = self.getJointAngles()
+            # print "Current Angles:"
+            # print self.currentAngles
+            # self.point.positions = self.currentAngles
+            # self.previousGoals.points.append(self.point)
+            # print "EVERYTHING:"
+            # print self.previousGoals
+            # print "resized Points:"
+            # print self.previousGoals.points[armReachAction.iteration]
+            armReachAction.iteration += 1
+            # print "Stored joint angles: "
+            # print self.previousGoals.points[armReachAction.iteration].positions[2]
 
 
-        #---------------------------------------------------------------------------------------#
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
-	print "--------------------------------"
+    	print "--------------------------------"
 
-        print "MOVES2 - Moving down into bowl"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[1])
+            print "MOVES2 - Moving down into bowl"
+            (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[1])
 
-        armReachAction.iteration += 1
+            armReachAction.iteration += 1
 
-        raw_input("Iteration # = %d. Enter anything to continue: " % armReachAction.iteration)
+            raw_input("Iteration # = %d. Enter anything to continue: " % armReachAction.iteration)
 
-        #---------------------------------------------------------------------------------------#
 
-	print "--------------------------------"
+    	print "--------------------------------"
 
-        print "MOVES3 - Pushing forward in bowl, scooping"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[2])
+            print "MOVES3 - Pushing forward in bowl, scooping"
+            (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[2])
 
-        armReachAction.iteration += 1
+            armReachAction.iteration += 1
 
-        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
-        #---------------------------------------------------------------------------------------#
+    	print "--------------------------------"
 
-	print "--------------------------------"
+            print "MOVES4 - Scooping in bowl"
+            (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[3])
 
-        print "MOVES4 - Scooping in bowl"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[3])
+            armReachAction.iteration += 1
 
-        armReachAction.iteration += 1
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
-        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+    	print "--------------------------------"
 
-        #---------------------------------------------------------------------------------------#
+            print "MOVES5 - Lifting above bowl"
+            (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[4])
 
-	print "--------------------------------"
+            armReachAction.iteration += 1
 
-        print "MOVES5 - Lifting above bowl"
-        (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[4])
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
-        armReachAction.iteration += 1
+    	print "--------------------------------"
 
-        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+    	print "MOVES6 - Reaching to mouth"
+    	try:
+    		(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[0][0], self.headPos[1] + self.headPosOffsets[0][1], self.headPos[2] + self.headPosOffsets[0][2]);
+            	(quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[0][0], self.headQuatOffsets[0][1], self.headQuatOffsets[0][2], self.headQuatOffsets[0][3])
+            	self.setOrientGoal(pos, quat, self.timeouts[5])
 
-	print "--------------------------------"
+            	armReachAction.iteration += 1
 
-	print "MOVES6 - Reaching to mouth"
-	try:
-		(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[0][0], self.headPos[1] + self.headPosOffsets[0][1], self.headPos[2] + self.headPosOffsets[0][2]);
-        	(quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[0][0], self.headQuatOffsets[0][1], self.headQuatOffsets[0][2], self.headQuatOffsets[0][3])
-        	self.setOrientGoal(pos, quat, self.timeouts[5])
-
-        	armReachAction.iteration += 1
-
-        	raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+            	raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
         except:
                 print "Oops, can't get head_frame tf info!"
 
-	print "--------------------------------"
+    	print "--------------------------------"
 
-	print "MOVES7 - Moving away from mouth"
+    	print "MOVES7 - Moving away from mouth"
 
-	(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[1][0], self.headPos[1] + self.headPosOffsets[1][1], self.headPos[2] + self.headPosOffsets[1][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[1][0], self.headQuatOffsets[1][1], self.headQuatOffsets[1][2], self.headQuatOffsets[1][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[6])
+    	(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[1][0], self.headPos[1] + self.headPosOffsets[1][1], self.headPos[2] + self.headPosOffsets[1][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[1][0], self.headQuatOffsets[1][1], self.headQuatOffsets[1][2], self.headQuatOffsets[1][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[6])
 
-        armReachAction.iteration += 1
+            armReachAction.iteration += 1
 
-        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
-        return True
+            return True
 
     def stopCallback(self, msg):
 
-	print "Stopping Motion..."
-       	self.setStop() #Stops Current Motion
-        posStop = Point()
-        quatStop = Quaternion()
-        #Sets goal positions and quaternions to match previously reached end effector position, go to last step
-        #(posStop.x, posStop.y, posStop.z) = (self.bowl_pos[0] + self.bowlPosOffsets[armReachAction.iteration][0], self.bowl_pos[1] + self.bowlPosOffsets[armReachAction.iteration][1], self.bowl_pos[2] + self.bowlPosOffsets[armReachAction.iteration][2])
+    	print "Stopping Motion..."
+           	self.setStop() #Stops Current Motion
+            posStop = Point()
+            quatStop = Quaternion()
+            #Sets goal positions and quaternions to match previously reached end effector position, go to last step
+            #(posStop.x, posStop.y, posStop.z) = (self.bowl_pos[0] + self.bowlPosOffsets[armReachAction.iteration][0], self.bowl_pos[1] + self.bowlPosOffsets[armReachAction.iteration][1], self.bowl_pos[2] + self.bowlPosOffsets[armReachAction.iteration][2])
 
-        #(quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
+            #(quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
 
-        print "Moving to previous position..."
-        #self.setOrientGoal(posStop, quatStop, self.timeout) #go to previously reached position, last step
+            print "Moving to previous position..."
+            #self.setOrientGoal(posStop, quatStop, self.timeout) #go to previously reached position, last step
 
-        #Safe reversed position 1
-        (posStop.x, posStop.y, posStop.z) = (0.967, 0.124, 0.525)
-        (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.748, -0.023, -0.128, 0.651)
-        print "Moving to safe position 1"
-        self.setOrientGoal(posStop, quatStop, 5)
+            #Safe reversed position 1
+            (posStop.x, posStop.y, posStop.z) = (0.967, 0.124, 0.525)
+            (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.748, -0.023, -0.128, 0.651)
+            print "Moving to safe position 1"
+            self.setOrientGoal(posStop, quatStop, 5)
 
-        print "Moving to safe position 2"
-        (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
-        (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
-        self.setOrientGoal(posStop, quatStop, 5)
+            print "Moving to safe position 2"
+            (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
+            (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
+            self.setOrientGoal(posStop, quatStop, 5)
 
     def euler2quatArray(self, eulersIn): #converts an array of euler angles (in degrees) to array of quaternions
-	(rows, cols) = np.shape(eulersIn)
-	quatArray = np.zeros((rows, cols+1))
-	for r in xrange(0, rows):
-	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]])
-	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
-	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = quats[0], quats[1], quats[2], quats[3]
+    	(rows, cols) = np.shape(eulersIn)
+    	quatArray = np.zeros((rows, cols+1))
+    	for r in xrange(0, rows):
+    	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]])
+    	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
+    	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = quats[0], quats[1], quats[2], quats[3]
 
-	return quatArray
+    	return quatArray
 
 if __name__ == '__main__':
 
@@ -368,8 +344,10 @@ if __name__ == '__main__':
     #controller = 'actionlib'
     #arm        = 'l'
 
-    arm = opt.arm1 #added/changed due to new launch file controlling both arms (arm1, arm2)
-
+    try:
+        arm = opt.arm1 #added/changed due to new launch file controlling both arms (arm1, arm2)
+    except:
+        arm = opt.arm
 
     rospy.init_node('arm_reacher_server')
     ara = armReachAction(d_robot, controller, arm)
