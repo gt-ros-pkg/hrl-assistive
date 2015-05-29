@@ -144,6 +144,8 @@ class learning_hmm_multi(learning_base):
             l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])
             self.l_max_delta = np.amax(abs(l_delta_logp))
             self.l_std_delta = np.std(abs(l_delta_logp))
+
+            print "max_delta: ", self.l_max_delta, " std_delta: ", self.l_std_delta
         
         elif self.check_method == 'global':
             # Get average loglikelihood threshold over whole time
