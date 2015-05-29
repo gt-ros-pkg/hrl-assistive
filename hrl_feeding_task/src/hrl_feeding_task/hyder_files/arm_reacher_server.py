@@ -32,13 +32,7 @@ class armReachAction(mpcBaseAction):
 
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
-
-	self.tfListener = tf.TransformListener()
-	try:
-		(self.headPos, self.headQuat) = self.tfListener.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
-	except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-		print "Oops, can't get head_frame tf info!"
-
+	
         #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
 
@@ -53,42 +47,68 @@ class armReachAction(mpcBaseAction):
 		self.timeout = 2
 
         #Variables...! #
-        armReachAction.iteration = -1 # armReachAction.iteration
+        armReachAction.iteration = 0
 
         self.bowlPosOffsets = np.array([[-.01,	0,	.4],
                                         [-.01,	0,    .008],
 					[.05,	0,    .008],
                                         [.05,   0,    .008],
-                                        [.02,   0,	.6]])
+                                        [.02,   0,	.6],
+					[0,	0,	 0],
+					[.02,	0,	.6]])
 
-        self.bowlEulers = np.array([	[90, -60, 0], #Euler angles, XYZ rotations
-					[90, -60, 0],
-					[90, -60, 0],
-					[90, -30, 0],
-					[90,  0,  0]])
+        self.bowlEulers = np.array([	[90,	-60,	0], #Euler angles, XYZ rotations
+					[90,	-60,	0],
+					[90,	-60,	0],
+					[90,	-30,	0],
+					[90,	0,	0],
+					[0,	0,	0],
+					[90,	0,	0]])
 
-	self.bowlQuatOffsets = np.zeros((5, 4))
-	self.timeouts = [15, 7, 4, 4, 4]
+	self.headPosOffsets = np.array([[.01,	.075,	-.01],
+					[.01,	.2,	   .1],
+					[0,	0,	   0]])
+	
+	self.headEulers = np.array([[90,0,-90],
+				    [90,0,-90],
+				    [90,0,0]])
+					
+	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
-	for i in xrange(0, 5): #convert all the Euler angles into quaternions!
-		self.eulerRads = np.radians([self.bowlEulers[i][0], self.bowlEulers[i][2], self.bowlEulers[i][1]])
-		self.quatConv = quatMath.euler2quat(self.eulerRads[2], self.eulerRads[1], self.eulerRads[0])
-		self.bowlQuatOffsets[i][0], self.bowlQuatOffsets[i][1], self.bowlQuatOffsets[i][2], self.bowlQuatOffsets[i][3] = self.quatConv[0], self.quatConv[1], self.quatConv[2], self.quatConv[3]
+	self.timeouts = [15, 7, 4, 4, 4, 12, 12]
+	self.kinectReachTimeout = 15
+
+	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
+	self.headQuatOffsets = self.euler2quatArray(self.headEulers)	
 
 	print "Calculated quaternions:"
 	print self.bowlQuatOffsets
 
-        #Choose which set of offsets to use
+        try:
+                print "--------------------------------"
+                raw_input("Register bowl &  head position! Then press Enter \m")
+                self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
+                (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
+                print "Recived head position: \n"
+                print self.headPos
+                print self.headQuat
+                print "--------------------------------"
+                raw_input("Press Enter to confirm.")
+                print "--------------------------------"
+        except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print "Oops, can't get head_frame tf info!, trying again :)"
+                #(self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
+
 
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             if self.getJointAngles() != []:
-                print "----------------------"
+                print "--------------------------------"
                 print "Current joint angles"
                 print self.getJointAngles()
                 print "Current pose"
                 print self.getEndeffectorPose()
-                print "----------------------"
+                print "--------------------------------"
                 break
 
         rospy.spin()
@@ -111,7 +131,7 @@ class armReachAction(mpcBaseAction):
     def bowlPoseKinectCallback(self, data):
         #Takes in a PointStamped() type message, contains Header() and Pose(), from Kinect bowl location publisher
         self.bowl_frame = data.header.frame_id
-        self.bowl_pos = np.matrix([ [data.pose.position.x - .08], [data.pose.position.y - .04], [data.pose.position.z] ])
+        self.bowl_pos = np.matrix([ [data.pose.position.x + self.kinectBowlFoundPosOffsets[0]], [data.pose.position.y + self.kinectBowlFoundPosOffsets[1]], [data.pose.position.z + self.kinectBowlFoundPosOffsets[2]] ])
         #self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
         #^Proper code!
         self.bowl_quat = np.matrix([0,0,0,0]) #JUST FOR TESTING, in order to manually set all quaternions!
@@ -137,18 +157,21 @@ class armReachAction(mpcBaseAction):
                 confirm = True
             print self.getJointAngles()
 
+	try:
+	    print self.bowl_pos
+	except:
+	    print "Please register bowl position!"
         #Variables...! # local
-        armReachAction.iteration = -1
-
+        
         #self.getJointPlan()
-        calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
-        if calibrateJoints == 'front':
-            print "Setting initial joint angles... "
-            self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
+        #calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
+        #if calibrateJoints == 'front':
+            #print "Setting initial joint angles... "
+            #self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
 
-        elif calibrateJoints == 'side':
-            print "Setting initial joint angles..."
-            self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
+        #elif calibrateJoints == 'side':
+            #print "Setting initial joint angles..."
+            #self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
 
             #!!---- BASIC SCOOPING MOTION WITH BOWL POSITION OFFSET
     	#Flat Gripper Orientation Values:
@@ -163,21 +186,24 @@ class armReachAction(mpcBaseAction):
     		print "MOVES_KINECT_BOWL_POSITION"
             	(pos.x, pos.y, pos.z) = (self.bowl_pos[0], self.bowl_pos[1], self.bowl_pos[2])
             	(quat.x, quat.y, quat.z, quat.w) = (0.632, 0.395, -0.205, 0.635)
-                self.kinectTimeout = 7
             	#self.setPositionGoal(pos, quat, self.timeout)
-            	self.setOrientGoal(pos, quat, self.kinectTimeout)
-    		raw_input('Press Enter to continue: ' )
+            	self.setOrientGoal(pos, quat, self.kinectReachTimeout)
+    		raw_input("Press Enter to continue")
 
 	calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
         if calibrateJoints == 'front':
             print "Setting initial joint angles... "
             self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
+	    raw_input("Press Enter to continue")
 
         elif calibrateJoints == 'side':
             print "Setting initial joint angles..."
             self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
+	    raw_input("Press Enter to continue")
 
-        print "MOVES1 - Moving over bowl... "
+	print "--------------------------------"
+
+        print "MOVES1 - Pointing down over bowl "
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
         #self.setPositionGoal(pos, quat, self.timeout)
@@ -202,8 +228,10 @@ class armReachAction(mpcBaseAction):
 
 
         #---------------------------------------------------------------------------------------#
-
-        print "MOVES2 - Pointing down into bottom of bowl..."
+	
+	print "--------------------------------"
+	
+        print "MOVES2 - Moving down into bowl"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
         #self.setPositionGoal(pos, quat, self.timeout)
@@ -215,7 +243,9 @@ class armReachAction(mpcBaseAction):
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES3 - Scooping/pushing down into bottom of bowl..."
+	print "--------------------------------"
+
+        print "MOVES3 - Pushing forward in bowl, scooping"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
         #self.setPositionGoal(pos, quat, self.timeout)
@@ -227,7 +257,9 @@ class armReachAction(mpcBaseAction):
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES4 - Lifting a little out of bottom of bowl..."
+	print "--------------------------------"
+
+        print "MOVES4 - Scooping in bowl"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
         #self.setPositionGoal(pos, quat, self.timeout)
@@ -239,11 +271,40 @@ class armReachAction(mpcBaseAction):
 
         #---------------------------------------------------------------------------------------#
 
-        print "MOVES5 - Lifting above bowl..."
+	print "--------------------------------"
+
+        print "MOVES5 - Lifting above bowl"
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
         #self.setPositionGoal(pos, quat, self.timeout)
         self.setOrientGoal(pos, quat, self.timeouts[4])
+
+        armReachAction.iteration += 1
+
+        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+
+	print "--------------------------------"
+
+	print "MOVES6 - Reaching to mouth"
+	try:
+		(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[0][0], self.headPos[1] + self.headPosOffsets[0][1], self.headPos[2] + self.headPosOffsets[0][2]);
+        	(quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[0][0], self.headQuatOffsets[0][1], self.headQuatOffsets[0][2], self.headQuatOffsets[0][3])
+        	self.setOrientGoal(pos, quat, self.timeouts[5])
+
+        	armReachAction.iteration += 1
+
+        	raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+        except:
+                print "Oops, can't get head_frame tf info!"
+
+	print "--------------------------------"
+
+	print "MOVES7 - Moving away from mouth"
+
+	(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[1][0], self.headPos[1] + self.headPosOffsets[1][1], self.headPos[2] + self.headPosOffsets[1][2])
+        (quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[1][0], self.headQuatOffsets[1][1], self.headQuatOffsets[1][2], self.headQuatOffsets[1][3])
+        #self.setPositionGoal(pos, quat, self.timeout)
+        self.setOrientGoal(pos, quat, self.timeouts[6])
 
         armReachAction.iteration += 1
 
@@ -258,9 +319,9 @@ class armReachAction(mpcBaseAction):
         posStop = Point()
         quatStop = Quaternion()
         #Sets goal positions and quaternions to match previously reached end effector position, go to last step
-        (posStop.x, posStop.y, posStop.z) = (self.bowl_pos[0] + self.bowlPosOffsets[armReachAction.iteration][0], self.bowl_pos[1] + self.bowlPosOffsets[armReachAction.iteration][1], self.bowl_pos[2] + self.bowlPosOffsets[armReachAction.iteration][2])
+        #(posStop.x, posStop.y, posStop.z) = (self.bowl_pos[0] + self.bowlPosOffsets[armReachAction.iteration][0], self.bowl_pos[1] + self.bowlPosOffsets[armReachAction.iteration][1], self.bowl_pos[2] + self.bowlPosOffsets[armReachAction.iteration][2])
 
-        (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
+        #(quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (self.bowlQuatOffsets[armReachAction.iteration][0], self.bowlQuatOffsets[armReachAction.iteration][1], self.bowlQuatOffsets[armReachAction.iteration][2], self.bowlQuatOffsets[armReachAction.iteration][3])
 
         print "Moving to previous position..."
         #self.setOrientGoal(posStop, quatStop, self.timeout) #go to previously reached position, last step
@@ -269,12 +330,22 @@ class armReachAction(mpcBaseAction):
         (posStop.x, posStop.y, posStop.z) = (0.967, 0.124, 0.525)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.748, -0.023, -0.128, 0.651)
         print "Moving to safe position 1"
-        self.setOrientGoal(posStop, quatStop, self.timeout + 1)
+        self.setOrientGoal(posStop, quatStop, 5)
 
         print "Moving to safe position 2"
         (posStop.x, posStop.y, posStop.z) = (0.420, 0.814, 0.682)
         (quatStop.x, quatStop.y, quatStop.z, quatStop.w) = (-0.515, -0.524, 0.144, 0.663)
-        self.setOrientGoal(posStop, quatStop, self.timeout + 1)
+        self.setOrientGoal(posStop, quatStop, 5)
+
+    def euler2quatArray(self, eulersIn): #converts an array of euler angles (in degrees) to array of quaternions
+	(rows, cols) = np.shape(eulersIn)
+	quatArray = np.zeros((rows, cols+1))
+	for r in xrange(0, rows):
+	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]])
+	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
+	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = quats[0], quats[1], quats[2], quats[3]
+	    
+	return quatArray
 
 if __name__ == '__main__':
 
