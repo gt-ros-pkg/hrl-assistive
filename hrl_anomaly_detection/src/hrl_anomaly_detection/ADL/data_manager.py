@@ -429,11 +429,12 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             for j, f_mag in enumerate(ft_force_mag[::-1]):
                 if f_mag > f_thres: #ft_force_mag[-1]*2.0: 
                     idx = len(ft_force_mag)-j
-
-                    if max_idx < idx:
-                        max_idx = idx
-                        ref_idx = i                                       
                     break
+                
+            if max_idx < idx:
+                max_idx = idx
+                ref_idx = i                                       
+                
 
 
     # Ref force and audio data
