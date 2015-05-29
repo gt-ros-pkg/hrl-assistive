@@ -190,9 +190,6 @@ class learning_hmm_multi(learning_base):
                 d['ll_mu'] = self.ll_mu
                 d['ll_std'] = self.ll_std
                 ut.save_pickle(d, ml_pkl)
-        else:
-            print "Not available anomaly ckeck method"
-            sys.exit()
 
             ##########################################################################
             ## path          = self.ml.viterbi(final_ts_obj)
