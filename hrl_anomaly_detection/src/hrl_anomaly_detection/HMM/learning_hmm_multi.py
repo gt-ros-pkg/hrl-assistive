@@ -144,10 +144,10 @@ class learning_hmm_multi(learning_base):
                 l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])                    
                 ll_delta_logp.append(l_delta_logp)
 
-            self.l_max_delta = np.amax(abs(np.array(ll_delta_logp).flatten()))
+            self.l_mean_delta = np.mean(abs(np.array(ll_delta_logp).flatten()))
             self.l_std_delta = np.std(abs(np.array(ll_delta_logp).flatten()))
 
-            print "max_delta: ", self.l_max_delta, " std_delta: ", self.l_std_delta
+            print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
         
         elif self.check_method == 'global':
             # Get average loglikelihood threshold over whole time
@@ -711,7 +711,9 @@ class learning_hmm_multi(learning_base):
                 print "Too different input profile that cannot be expressed by emission matrix"
                 return -1, 0.0 # error
 
-            err = (self.l_max_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
+            ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
+
+            err = (self.l_mean_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
             
         elif self.check_method == 'global':
             err = logp - (self.l_mu - ths_mult*self.l_std)
