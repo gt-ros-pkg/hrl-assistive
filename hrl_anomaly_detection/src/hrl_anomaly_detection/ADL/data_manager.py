@@ -791,20 +791,21 @@ def movingaverage(values,window):
     return np.array(new_values)
     
     
-def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, max_c2):
+def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, max_c2, an_type='both'):
     '''
     num : number of anomaly data
     '''
     
-    an_types = ['force', 'sound', 'both']
+    ## an_types = ['force', 'sound', 'both']
     force_an = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+    ## force_an = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
     ## force_an = ['normal', 'magnified', 'shrinked', 'amplified', 'weaken']
     
     sound_an = ['normal', 'rndsharp', 'rnddull']
+    ## sound_an = ['rndsharp', 'rnddull']
     ## sound_an = ['normal', 'weaken', 'rndimpulse']
 
     length = len(true_aXData1[0])
-
 
     # mean, var of true data    
     x = range(len(true_aXData1[0]))
@@ -816,13 +817,12 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
     ## mu1, var1 = hdl.gaussian_param_estimation(x, y1)
     ## mu2, var2 = hdl.gaussian_param_estimation(x, y2)
-    
-
     new_X1 = []
     new_X2 = []
     chunks = []
     an_start =[]
-        
+    sampling_complete = False
+                
     for i in xrange(num):
 
         # randomly select 
@@ -833,211 +833,232 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
         # 2) only sound
         # 3) both
         ## an_type = random.choice(an_types)            
-        an_type = 'both'
+        ## an_type = 'both'
 
-        x1_anomaly = copy.copy(true_aXData1[x_idx])
-        x2_anomaly = copy.copy(true_aXData2[x_idx])
-        an1 = 'normal'
-        an2 = 'normal'
-        an_idx = None
-        
-        # random anomaly type
-        if an_type == 'force' or an_type == 'both':
+        while sampling_complete == False:
 
-            if an_type == 'force': an1 = random.choice(force_an[1:])
-            else: an1 = random.choice(force_an)
-                
-            if an1 == 'normal':
-                print "normal force"
-
-            elif an1 == 'magnified':
-                print "magnified force"
-
-                mag = random.uniform(1.1, 1.5)
-
-                x   = np.linspace(0.0, 1.0, length)
-                tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
-
-                xnew = np.linspace(0.0, 1.0, length*mag)
-                x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
-                
-            elif an1 == 'shrinked':
-                print "shrinked force"
-
-                mag = random.uniform(0.4, 0.9)
-
-                x   = np.linspace(0.0, 1.0, length)
-                tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
-
-                xnew = np.linspace(0.0, 1.0, length*mag)
-                x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
-                
-            elif an1 == 'amplified':
-                print "Amplied force"
-
-                mag = random.uniform(1.1, 1.5)                
-                x1_anomaly = x1_anomaly*mag
-                
-            elif an1 == 'weaken':
-                print "Weaken force"
-
-                mag = random.uniform(0.1, 0.9)                
-                x1_anomaly = x1_anomaly*mag
-                                
-            elif an1 == 'rndimpulse' or an1 == 'inelastic' or an1 == 'inelastic_continue':
-                print "Random impulse force which is inelastic collision force: ", an1
-                #http://www.vernier.com/innovate/impulse-comparison-for-elastic-and-inelastic-collisions/
-
-                peak  = max_c1 * random.uniform(0.2, 1.5)
-                width = random.randint(3,6)
-                loc   = random.randint(1,length-1-width)
-                an_idx = loc
-
-                xnew    = range(width)
-                impulse = np.zeros(width)
-
-                if an1 == 'inelastic_continue':                    
-                    for i in xrange(width/2):
-                        x1_anomaly[loc+i] += (i+1)*peak/(float(width)/2.0)
-                    x1_anomaly[loc+width/2:] += peak
-                else:
-                    for i in xrange(width):
-                        if i < width/2:
-                            impulse[i] = (i+1)*peak/(float(width)/2.0)
-                        else:
-                            impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
-
-                        x1_anomaly[loc+i] += impulse[i] 
-
-            elif an1 == 'elastic' or an1 == 'elastic_continue':
-                print "elastic collision with continuous force"
-
-                peak  = max_c1 * random.uniform(0.2, 1.5)
-                if len(x1_anomaly) <= 25: 
-                    width = random.randint(5,10)
-                else:
-                    width = random.randint(5,20)
-                    
-                loc   = random.randint(1,length-1-width)
-                an_idx = loc
-
-                xnew    = range(width)
-                impulse = np.zeros(width)
-                impulse[width/2] = peak
-
-                if an1 == 'elastic_continue':                    
-                    for i in xrange(width/2):
-                        x1_anomaly[loc+i] += peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
-                    x1_anomaly[loc+width/2:] += peak
-                else:                
-                    for i in xrange(width):
-                        impulse[i] = peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
-                        x1_anomaly[loc+i] += impulse[i] 
-            else:
-                print "Not implemented type of force anomaly : ", an1
-                
-        if an_type == 'sound' or an_type == 'both':
-
-            if an_type == 'sound' or an1 == 'normal': an2 = random.choice(sound_an[1:])
-            else: an2 = random.choice(sound_an)
-                
-            if an2 == 'normal':
-                print "normal sound"
+            x1_anomaly = copy.copy(true_aXData1[x_idx])
+            x2_anomaly = copy.copy(true_aXData2[x_idx])
+            an1 = 'normal'
+            an2 = 'normal'
+            an_idx = None # anomaly start location
             
-            elif an2 == 'weaken':
-                print "Weaken sound"
+            # random anomaly type
+            if (an_type == 'force' or an_type == 'both'):
 
-                mag = random.uniform(0.05, 0.3)                
-                x2_anomaly = x2_anomaly*mag
-
-            elif an2 == 'rndimpulse' or an2 == 'rndsharp':
-                print "Random impulse sound"
-
-                peak  = max_c2 * random.uniform(0.2, 1.5)
-                
+                # Select a type of anomaly
                 while True:
-                    width = random.randint(3,4)
+                    an1 = random.choice(force_an)
+                    if an_type == 'force' and an1 == 'normal': continue
+                    else: break
+                       
+                if an1 == 'normal':
+                    print "normal force"
 
+                elif an1 == 'magnified':
+                    print "magnified force"
+
+                    mag = random.uniform(1.1, 1.5)
+
+                    x   = np.linspace(0.0, 1.0, length)
+                    tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
+
+                    xnew = np.linspace(0.0, 1.0, length*mag)
+                    x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
+                    an_idx = 0                                        
+
+                elif an1 == 'shrinked':
+                    print "shrinked force"
+
+                    mag = random.uniform(0.4, 0.9)
+
+                    x   = np.linspace(0.0, 1.0, length)
+                    tck = interpolate.splrep(x, true_aXData1[x_idx], s=0)
+
+                    xnew = np.linspace(0.0, 1.0, length*mag)
+                    x1_anomaly = interpolate.splev(xnew, tck, der=0)*mag
+                    an_idx = 0                                        
+
+                elif an1 == 'amplified':
+                    print "Amplied force"
+                    mag = random.uniform(1.1, 1.5)                
+                    x1_anomaly = x1_anomaly*mag
+                    an_idx = 0                    
+
+                elif an1 == 'weaken':
+                    print "Weaken force"
+                    mag = random.uniform(0.1, 0.9)                
+                    x1_anomaly = x1_anomaly*mag
+                    an_idx = 0                    
+
+                elif an1 == 'rndimpulse' or an1 == 'inelastic' or an1 == 'inelastic_continue':
+                    print "Random impulse force which is inelastic collision force: ", an1
+                    #http://www.vernier.com/innovate/impulse-comparison-for-elastic-and-inelastic-collisions/
+                    peak   = max_c1 * random.uniform(0.1, 0.5)
+                    width  = random.randint(3,6)                    
+                    an_idx = loc = random.randint(1,length-1-width)
+
+                    xnew    = range(width)
+                    impulse = np.zeros(width)
+
+                    if an1 == 'inelastic_continue':                    
+                        for i in xrange(width/2):
+                            x1_anomaly[loc+i] += (i+1)*peak/(float(width)/2.0)
+                        x1_anomaly[loc+width/2:] += peak
+                    else:
+                        for i in xrange(width):
+                            if i < width/2:
+                                impulse[i] = (i+1)*peak/(float(width)/2.0)
+                            else:
+                                impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
+
+                            x1_anomaly[loc+i] += impulse[i] 
+
+                elif an1 == 'elastic' or an1 == 'elastic_continue':
+                    print "elastic collision with continuous force"
+
+                    peak  = max_c1 * random.uniform(0.1, 0.5)
+                    if len(x1_anomaly) <= 25: 
+                        width = random.randint(5,10)
+                    else:
+                        width = random.randint(5,20)
+
+                    an_idx  = loc = random.randint(1,length-1-width)
+                    xnew    = range(width)
+                    impulse = np.zeros(width)
+                    impulse[width/2] = peak
+
+                    if an1 == 'elastic_continue':                    
+                        for i in xrange(width/2):
+                            x1_anomaly[loc+i] += peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
+                        x1_anomaly[loc+width/2:] += peak
+                    else:                
+                        for i in xrange(width):
+                            impulse[i] = peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
+                            x1_anomaly[loc+i] += impulse[i] 
+                else:
+                    print "Not implemented type of force anomaly : ", an1
+
+            if an_type == 'sound' or an_type == 'both':
+
+                # Select a type of anomaly
+                while True:
+                    an2 = random.choice(sound_an)
+                    if an_type == 'both' and an1 == 'normal' and an2 == 'normal': continue
+                    elif an_type == 'sound' and an2 == 'normal': continue
+                    else: break
+
+                if an2 == 'normal':
+                    print "normal sound"
+                    
+                elif an2 == 'weaken':
+                    print "Weaken sound"
+
+                    mag = random.uniform(0.05, 0.3)                
+                    x2_anomaly = x2_anomaly*mag
+
+                elif an2 == 'rndimpulse' or an2 == 'rndsharp':
+                    print "Random impulse sound"
+                    
+                    # sample sound shape
+                    peak  = max_c2 * random.uniform(0.2, 0.5)
+                    width = random.randint(3,4)
                     if len(x1_anomaly) <= 20+width: block_size = 4
                     else: block_size = 10
-                        
-                    loc   = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)            
+
+                    # sampling location
+                    loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
+                    if an_idx is None: an_idx = loc                    
+                    if loc < an_idx: an_idx = loc
+                    ## if an_type == 'sound':
+                    ##     loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
+                    ## else:
+                    ##     if an_idx is None:
+                    ##         print "Error: no start index"
+                    ##         break
+                    ##     else:
+                    ##         loc = an_idx
+
                     if loc+width > length-1:
                         continue            
                     if loc+width < max_y2_idx - block_size or loc > max_y2_idx + block_size:                     
-                        break
+                        continue
 
-                xnew    = range(width)
-                impulse = np.zeros(width)
-                x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
-                #x2_anomaly = true_aXData2[x_idx]
-                an_idx = loc
-                
-                for i in xrange(width):
-                    if i < width/2:
-                        impulse[i] = (i+1)*peak/(float(width)/2.)
-                    else:
-                        impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
+                    xnew    = range(width)
+                    impulse = np.zeros(width)
+                    ## x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
 
-                    x2_anomaly[loc+i] += impulse[i] 
+                    for i in xrange(width):
+                        if i < width/2:
+                            impulse[i] = (i+1)*peak/(float(width)/2.)
+                        else:
+                            impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
+                        x2_anomaly[loc+i] += impulse[i] 
 
-            elif an2 == 'rnddull':
-                print "Random dull sound"
+                elif an2 == 'rnddull':
+                    print "Random dull sound"
 
-                peak  = max_c2 * random.uniform(0.2, 1.0)
-                
-                while True:
-
+                    # sampling shape
+                    peak  = max_c2 * random.uniform(0.1, 0.5)
                     if len(x1_anomaly) <= 25: 
-                        width = random.randint(5,10)
+                        width = random.randint(10,20)
                         block_size = 4
                     else: 
                         width = random.randint(5,20)
                         block_size = 10
 
-                    try:
-                        loc   = random.randint(1,len(x1_anomaly)-width-1)                        
-                    except:
-                        print len(x1_anomaly), width
-                        continue
-                    
+                    # sampling location
+                    loc   = random.randint(1,len(x1_anomaly)-width-1)                        
+                    if an_idx is None: an_idx = loc                                        
+                    if loc < an_idx: an_idx = loc
+                    ## if an_type == 'sound':                        
+                    ##     try:
+                    ##         loc   = random.randint(1,len(x1_anomaly)-width-1)                        
+                    ##     except:
+                    ##         continue
+                    ## else:
+                    ##     if an_idx is None:
+                    ##         print "Error: no start index"
+                    ##         break
+                    ##     else:
+                    ##         loc = an_idx
+
                     if loc+width > length-1:
                         continue                                
                     if loc+width < max_y2_idx - block_size or loc > max_y2_idx + block_size:
-                        break
+                        continue
 
-                xnew    = range(width)
-                impulse = np.zeros(width)
-                x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
-                #x2_anomaly = true_aXData2[x_idx]
-                an_idx = loc
+                    xnew    = range(width)
+                    impulse = np.zeros(width)
+                    ## x2_anomaly = np.ones(np.shape(x1_anomaly)) * x2_anomaly[0]
 
-                for i in xrange(width):
-                    impulse[i] = peak * (1.0 - ( (i+1-(float(width)/2.0))/(float(width)/2.0) )**2)
-                    x2_anomaly[loc+i] += impulse[i] 
-                    
+                    for i in xrange(width):
+                        impulse[i] = peak * (1.0 - ( (i+1-(float(width)/2.0))/(float(width)/2.0) )**2)
+                        x2_anomaly[loc+i] += impulse[i] 
+
+                else:
+                    print "Not implemented type of sound anomaly : ", an2
+
             else:
-                print "Not implemented type of sound anomaly : ", an2
-                    
-        else:
-            print "Undefined options"
-            continue
-            
+                print "Undefined options"
+                continue
 
-        # Zero padding to meet same length
-        n1 = len(x1_anomaly)
-        n2 = len(x2_anomaly)
-        if n1 >= n2:
-            x2_anomaly = np.hstack([x2_anomaly, [x2_anomaly[-1]]*(n1-n2)])
-        else:
-            x1_anomaly = np.hstack([x1_anomaly, [x1_anomaly[-1]]*(n2-n1)])
 
-        #print "New anomaly data size: ", len(x1_anomaly), " ", len(x2_anomaly)
-            
-        new_X1.append(x1_anomaly)
-        new_X2.append(x2_anomaly)
-        chunks.append(an1+"_"+an2)
-        an_start.append(an_idx)
+            # Zero padding to meet same length
+            n1 = len(x1_anomaly)
+            n2 = len(x2_anomaly)
+            if n1 >= n2:
+                x2_anomaly = np.hstack([x2_anomaly, [x2_anomaly[-1]]*(n1-n2)])
+            else:
+                x1_anomaly = np.hstack([x1_anomaly, [x1_anomaly[-1]]*(n2-n1)])
+
+            #print "New anomaly data size: ", len(x1_anomaly), " ", len(x2_anomaly)
+
+            new_X1.append(x1_anomaly)
+            new_X2.append(x2_anomaly)
+            chunks.append(an1+"_"+an2)
+            an_start.append(an_idx)
+            sampling_complete = True
         
     return new_X1, new_X2, chunks, an_start
 
