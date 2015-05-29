@@ -791,17 +791,18 @@ def movingaverage(values,window):
     return np.array(new_values)
     
     
-def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, max_c2, an_type='both'):
+def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, max_c2, an_type,
+                      force_an, sound_an):
     '''
     num : number of anomaly data
     '''
     
     ## an_types = ['force', 'sound', 'both']
-    force_an = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+    ## force_an = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
     ## force_an = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
     ## force_an = ['normal', 'magnified', 'shrinked', 'amplified', 'weaken']
     
-    sound_an = ['normal', 'rndsharp', 'rnddull']
+    ## sound_an = ['normal', 'rndsharp', 'rnddull']
     ## sound_an = ['rndsharp', 'rnddull']
     ## sound_an = ['normal', 'weaken', 'rndimpulse']
 
@@ -1063,14 +1064,15 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
     return new_X1, new_X2, chunks, an_start
 
 
-def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data):
+def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data, an_type, force_an, sound_an):
 
     _, min_c1, max_c1 = scaling(true_aXData1, scale=10.0)
     _, min_c2, max_c2 = scaling(true_aXData2, scale=10.0)    
     
     # generate simulated data!!
     aXData1, aXData2, chunks, an_start = simulated_anomaly(true_aXData1, true_aXData2, n_false_data, \
-                                                           min_c1, max_c1, min_c2, max_c2)
+                                                           min_c1, max_c1, min_c2, max_c2, an_type,
+                                                           force_an, sound_an)
 
     d = {}
     d['ft_force_mag_sim_false_l'] = aXData1
