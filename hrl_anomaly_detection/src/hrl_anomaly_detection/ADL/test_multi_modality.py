@@ -1389,7 +1389,7 @@ if __name__ == '__main__':
         threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) - 2.0
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['change', 'global']
+        check_methods   = ['change']
         ## check_methods   = ['change', 'global', 'progress']
         check_dims      = [2]
         an_type         = 'both'

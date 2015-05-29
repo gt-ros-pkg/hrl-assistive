@@ -133,17 +133,19 @@ class learning_hmm_multi(learning_base):
 
         if self.check_method == 'change':
             # Get maximum change of loglikelihood over whole time
-            l_logp = []
+            ll_delta_logp = []
             for j in xrange(n):    
+                l_logp = []                
                 for k in xrange(1,m):
                     final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
                     logp         = self.ml.loglikelihoods(final_ts_obj)[0]
 
                     l_logp.append(logp)
+                l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])                    
+                ll_delta_logp.append(l_delta_logp)
 
-            l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])
-            self.l_max_delta = np.amax(abs(l_delta_logp))
-            self.l_std_delta = np.std(abs(l_delta_logp))
+            self.l_max_delta = np.amax(abs(np.array(ll_delta_logp).flatten()))
+            self.l_std_delta = np.std(abs(np.array(ll_delta_logp).flatten()))
 
             print "max_delta: ", self.l_max_delta, " std_delta: ", self.l_std_delta
         
@@ -708,7 +710,7 @@ class learning_hmm_multi(learning_base):
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
                 return -1, 0.0 # error
-            
+
             err = (self.l_max_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
             
         elif self.check_method == 'global':
