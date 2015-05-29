@@ -34,7 +34,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
 
-def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path, 
+def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path=None, 
              an_type=None, force_an=None, sound_an=None, bRenew=False):
 
 
@@ -138,7 +138,7 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
 def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
                 threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False):
+                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -224,6 +224,25 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                             x_train2 = train_dataSet.samples[:,1,:]
                             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                             lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
+
+                    if disp is not None and method == 'progress':
+                        if disp == 'test':
+                            if check_dim == 2:
+                                x_test1 = test_dataSet.samples[:,0]
+                                x_test2 = test_dataSet.samples[:,1]
+                            else:
+                                x_test1 = test_dataSet.samples[:,check_dim]
+                        else:
+                            if check_dim == 2:
+                                x_test1 = false_dataSet.samples[:,0]
+                                x_test2 = false_dataSet.samples[:,1]
+                            else:
+                                x_test1 = false_dataSet.samples[:,check_dim]
+
+                                                
+                        lhm.likelihood_disp(x_test1, x_test2, ths, scale1=[min_c1, max_c1, scale], \
+                                            scale2=[min_c2, max_c2, scale])
+                        
 
                     if test:
                         tp, fn, fp, tn, delay_l, _ = anomaly_check_online_test(lhm, test_dataSet, 
@@ -1251,6 +1270,10 @@ if __name__ == '__main__':
                  default=False, help='Plot online ROC by simulated anomaly')    
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
+    p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
+                 default=False, help='Plot one data')
+    p.add_option('--plot', '--p', action='store_true', dest='bPlot',
+                 default=False, help='Plot')
 
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
                  default=False, help='Renew pickle files.')
@@ -1264,14 +1287,10 @@ if __name__ == '__main__':
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
                  default=False, help='Plot by a figure of ROC robot')
-    p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
-                 default=False, help='Plot one data')
     p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
                  default=False, help='Plot all path')
     p.add_option('--progress_diff', '--prd', action='store_true', dest='bProgressDiff',
                  default=False, help='Plot progress difference')
-    p.add_option('--plot', '--p', action='store_true', dest='bPlot',
-                 default=False, help='Plot')
     p.add_option('--fftdisp', '--fd', action='store_true', dest='bFftDisp',
                  default=False, help='Plot')
     p.add_option('--use_ml_pkl', '--mp', action='store_true', dest='bUseMLObspickle',
@@ -1282,7 +1301,7 @@ if __name__ == '__main__':
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     
-    class_num = 2
+    class_num = 0
     task  = 2
     if class_num == 0:
         class_name = 'door'
@@ -1291,7 +1310,7 @@ if __name__ == '__main__':
         f_thres     = [1.0, 1.7, 3.0]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
-        nState_l    = [20, 20, 20]
+        nState_l    = [20, 20, 10]
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
@@ -1383,14 +1402,16 @@ if __name__ == '__main__':
     elif opt.bRocOnlineSimMethodCheck:
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_comp'
+        test_title      = 'online_method_comp_test'
+        ## test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
+        ## threshold_mult  = [2.0]
         threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
         attr            = 'id'
         onoff_type      = 'online'
+        ## check_methods   = ['progress']
         check_methods   = ['change', 'global', 'global_change', 'progress']
-        ## check_methods   = ['change', 'global', 'global_change', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
@@ -1402,7 +1423,9 @@ if __name__ == '__main__':
         
         fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
-                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
+                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                    )
+                    ## disp='None')
 
 
     #---------------------------------------------------------------------------           
@@ -1493,6 +1516,9 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.bAllPlot:
 
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], audio_thres[task])
+        
         true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
         true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
 
@@ -1657,7 +1683,20 @@ if __name__ == '__main__':
         check_dim = 2
         if check_dim == 0 or check_dim == 1: nEmissionDim=1
         else: nEmissionDim=2
-
+        
+        if opt.bAbnormal:
+            test_title      = 'online_method_comp'
+            cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
+            false_data_flag = True
+            true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+              = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], 
+                         audio_thres[task], cross_data_path)            
+        else:
+            false_data_flag = False       
+            true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+              = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], 
+                         audio_thres[task])
+                
         # Get train/test dataset
         aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
         aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
@@ -1682,7 +1721,6 @@ if __name__ == '__main__':
         # If you want normal likelihood, class 0, data 1
         # testData 0
         # false data 0 (make it false)
-        false_data_flag = True
         if false_data_flag:
             test_dataSet    = false_dataSet
                                                                

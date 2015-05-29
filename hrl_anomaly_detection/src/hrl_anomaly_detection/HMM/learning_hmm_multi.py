@@ -1018,7 +1018,7 @@ class learning_hmm_multi(learning_base):
         
         ax1 = plt.subplot(311)
         ax1.plot(x*(1./43.), y1)
-        y_max = 35.0
+        y_max = np.amax(y1) #35.0
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.), 
                                                                  ymin=0, ymax=y_max+4.0, 
                                                                  where=np.array(block_flag_interp)>0, 
