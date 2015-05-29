@@ -741,8 +741,8 @@ class learning_hmm_multi(learning_base):
 
             err = logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
             ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
-        else:
-            print "Not available anomaly check method"
+        ## else:
+        ##     print "Not available anomaly check method"
 
 
         if err < 0.0: return 1.0, 0.0 # anomaly

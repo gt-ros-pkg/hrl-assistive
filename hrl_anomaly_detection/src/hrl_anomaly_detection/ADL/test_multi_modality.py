@@ -34,106 +34,6 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
 
-def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path=None, 
-             an_type=None, force_an=None, sound_an=None, bRenew=False):
-
-
-    if os.path.isfile(pkl_file) and bRenew is False:
-        d = ut.load_pickle(pkl_file)
-    else:
-        d = dm.load_data(data_path, task_name, normal_only=False)
-        d = dm.cutting_for_robot(d, f_zero_size=f_zero_size, f_thres=f_thres, \
-                                 audio_thres=audio_thres, dtw_flag=False)        
-        ut.save_pickle(d, pkl_file)
-        
-    #
-    aXData1  = d['ft_force_mag_l']
-    aXData2  = d['audio_rms_l'] 
-    labels   = d['labels']
-    ## chunks   = d['chunks'] 
-
-    true_aXData1 = d['ft_force_mag_true_l']
-    true_aXData2 = d['audio_rms_true_l'] 
-    true_chunks  = d['true_chunks']
-
-    nDataSet = len(true_aXData1)
-    
-    # Load simulated anomaly
-    if an_type is not None:
-    
-        if True:
-            # leave-one-out
-            nDataSet = len(true_aXData1)            
-            n_false_data = K = 1 # the number of test data
-        else:
-            K = len(true_aXData1)/4 # the number of test data
-            nDataSet = 10 #30
-            n_false_data = K
-
-        if os.path.isdir(cross_data_path) == False:
-            os.system('mkdir -p '+cross_data_path)
-            
-        for i in xrange(nDataSet):
-
-            pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
-            dd = None
-            if os.path.isfile(pkl_file) is False:
-
-                labels        = [True]*len(true_aXData1)
-                true_dataSet  = dm.create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
-                test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', i)
-                test_dataSet  = true_dataSet[test_ids]
-                train_ids     = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
-                train_ids     = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
-                train_dataSet = true_dataSet[train_ids]
-
-                train_aXData1 = train_dataSet.samples[:,0,:]
-                train_aXData2 = train_dataSet.samples[:,1,:]
-                train_chunks  = train_dataSet.sa.chunks 
-
-                test_aXData1 = test_dataSet.samples[:,0,:]
-                test_aXData2 = test_dataSet.samples[:,1,:]
-                test_chunks  = test_dataSet.sa.chunks
-
-                dd = dm.generate_sim_anomaly(test_aXData1, test_aXData2, n_false_data, an_type, force_an, 
-                                             sound_an)
-                dd['ft_force_mag_train_l'] = train_aXData1 
-                dd['audio_rms_train_l']    = train_aXData2 
-                dd['train_chunks']         = train_chunks
-                dd['ft_force_mag_test_l']  = test_aXData1 
-                dd['audio_rms_test_l']     = test_aXData2 
-                dd['test_chunks']          = test_chunks
-
-                ut.save_pickle(dd, pkl_file)
-            else:
-                dd = ut.load_pickle(pkl_file)
-
-                train_aXData1 = dd['ft_force_mag_train_l']
-                train_aXData2 = dd['audio_rms_train_l'] 
-                train_chunks  = dd['train_chunks']
-                test_aXData1  = dd['ft_force_mag_test_l']
-                test_aXData2  = dd['audio_rms_test_l'] 
-                test_chunks   = dd['test_chunks']
-
-            false_aXData1       = dd['ft_force_mag_sim_false_l']
-            false_aXData2       = dd['audio_rms_sim_false_l'] 
-            false_chunks        = dd['sim_false_chunks']
-            false_anomaly_start = dd['anomaly_start_idx']
-
-    ## elif opt.bSimAbnormal or opt.bRocOfflineSimAnomaly:
-    ##     pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
-    ##     if os.path.isfile(pkl_file) and opt.bRenew is False:
-    ##         dd = ut.load_pickle(pkl_file)
-    else:
-        false_aXData1 = d['ft_force_mag_false_l']
-        false_aXData2 = d['audio_rms_false_l'] 
-        false_chunks  = d['false_chunks']
-
-    print "All: ", len(true_aXData1)+len(false_aXData1), \
-      " Success: ", len(true_aXData1), \
-      " Failure: ", len(false_aXData1)
-        
-    return true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet
 
 def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
@@ -225,14 +125,14 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                             lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
-                    if disp is not None and method == 'progress':
+                    if (disp == 'test' or disp == 'false') and method == 'progress':
                         if disp == 'test':
                             if check_dim == 2:
                                 x_test1 = test_dataSet.samples[:,0]
                                 x_test2 = test_dataSet.samples[:,1]
                             else:
                                 x_test1 = test_dataSet.samples[:,check_dim]
-                        else:
+                        elif disp == 'false':
                             if check_dim == 2:
                                 x_test1 = false_dataSet.samples[:,0]
                                 x_test2 = false_dataSet.samples[:,1]
@@ -1300,7 +1200,9 @@ if __name__ == '__main__':
 
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
-    
+    all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
+                       'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
+        
     class_num = 0
     task  = 2
     if class_num == 0:
@@ -1406,26 +1308,33 @@ if __name__ == '__main__':
         ## test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
-        ## threshold_mult  = [2.0]
         threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
         attr            = 'id'
         onoff_type      = 'online'
-        ## check_methods   = ['progress']
         check_methods   = ['change', 'global', 'global_change', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal', 'rndsharp', 'rnddull'] 
+        disp            = 'None'
 
+        # temp
+        ## threshold_mult  = [2.0]
+        ## check_methods   = ['progress']
+        ## disp            = 'test'
+            
         true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-          = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], audio_thres[task],
-                     cross_data_path, an_type, force_an, sound_an)
-        
-        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
-                    task_names[task], nState, threshold_mult, \
-                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
-                    )
-                    ## disp='None')
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task], cross_data_path, an_type, force_an, sound_an)
+
+        if opt.bAllPlot is not True:
+            fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                        task_names[task], nState, threshold_mult, \
+                        opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                        disp=disp)
+        else:
+            fig_roc_sim_all(cross_root_path, all_task_names, test_title, threshold_mult, check_methods, \
+                            check_dims, an_type, force_an, sound_an)
 
 
     #---------------------------------------------------------------------------           

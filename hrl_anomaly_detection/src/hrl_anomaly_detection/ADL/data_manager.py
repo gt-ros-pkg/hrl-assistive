@@ -1084,3 +1084,105 @@ def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data, an_type, forc
     d['anomaly_start_idx'] = an_start
 
     return d
+
+
+def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path=None, 
+             an_type=None, force_an=None, sound_an=None, bRenew=False):
+
+
+    if os.path.isfile(pkl_file) and bRenew is False:
+        d = ut.load_pickle(pkl_file)
+    else:
+        d = load_data(data_path, task_name, normal_only=False)
+        d = cutting_for_robot(d, f_zero_size=f_zero_size, f_thres=f_thres, \
+                                 audio_thres=audio_thres, dtw_flag=False)        
+        ut.save_pickle(d, pkl_file)
+        
+    #
+    aXData1  = d['ft_force_mag_l']
+    aXData2  = d['audio_rms_l'] 
+    labels   = d['labels']
+    ## chunks   = d['chunks'] 
+
+    true_aXData1 = d['ft_force_mag_true_l']
+    true_aXData2 = d['audio_rms_true_l'] 
+    true_chunks  = d['true_chunks']
+
+    nDataSet = len(true_aXData1)
+    
+    # Load simulated anomaly
+    if an_type is not None:
+    
+        if True:
+            # leave-one-out
+            nDataSet = len(true_aXData1)            
+            n_false_data = K = 1 # the number of test data
+        else:
+            K = len(true_aXData1)/4 # the number of test data
+            nDataSet = 10 #30
+            n_false_data = K
+
+        if os.path.isdir(cross_data_path) == False:
+            os.system('mkdir -p '+cross_data_path)
+            
+        for i in xrange(nDataSet):
+
+            pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
+            dd = None
+            if os.path.isfile(pkl_file) is False:
+
+                labels        = [True]*len(true_aXData1)
+                true_dataSet  = create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
+                test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', i)
+                test_dataSet  = true_dataSet[test_ids]
+                train_ids     = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+                train_ids     = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+                train_dataSet = true_dataSet[train_ids]
+
+                train_aXData1 = train_dataSet.samples[:,0,:]
+                train_aXData2 = train_dataSet.samples[:,1,:]
+                train_chunks  = train_dataSet.sa.chunks 
+
+                test_aXData1 = test_dataSet.samples[:,0,:]
+                test_aXData2 = test_dataSet.samples[:,1,:]
+                test_chunks  = test_dataSet.sa.chunks
+
+                dd = generate_sim_anomaly(test_aXData1, test_aXData2, n_false_data, an_type, force_an, 
+                                             sound_an)
+                dd['ft_force_mag_train_l'] = train_aXData1 
+                dd['audio_rms_train_l']    = train_aXData2 
+                dd['train_chunks']         = train_chunks
+                dd['ft_force_mag_test_l']  = test_aXData1 
+                dd['audio_rms_test_l']     = test_aXData2 
+                dd['test_chunks']          = test_chunks
+
+                ut.save_pickle(dd, pkl_file)
+            else:
+                dd = ut.load_pickle(pkl_file)
+
+                train_aXData1 = dd['ft_force_mag_train_l']
+                train_aXData2 = dd['audio_rms_train_l'] 
+                train_chunks  = dd['train_chunks']
+                test_aXData1  = dd['ft_force_mag_test_l']
+                test_aXData2  = dd['audio_rms_test_l'] 
+                test_chunks   = dd['test_chunks']
+
+            false_aXData1       = dd['ft_force_mag_sim_false_l']
+            false_aXData2       = dd['audio_rms_sim_false_l'] 
+            false_chunks        = dd['sim_false_chunks']
+            false_anomaly_start = dd['anomaly_start_idx']
+
+    ## elif opt.bSimAbnormal or opt.bRocOfflineSimAnomaly:
+    ##     pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
+    ##     if os.path.isfile(pkl_file) and opt.bRenew is False:
+    ##         dd = ut.load_pickle(pkl_file)
+    else:
+        false_aXData1 = d['ft_force_mag_false_l']
+        false_aXData2 = d['audio_rms_false_l'] 
+        false_chunks  = d['false_chunks']
+
+    print "All: ", len(true_aXData1)+len(false_aXData1), \
+      " Success: ", len(true_aXData1), \
+      " Failure: ", len(false_aXData1)
+        
+    return true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet
