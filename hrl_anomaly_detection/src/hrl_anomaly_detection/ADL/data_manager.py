@@ -435,7 +435,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
                 max_idx = idx
                 ref_idx = i                                       
                 
-
+    print len(ft_time_l), ref_idx
 
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
