@@ -12,7 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-#from hrl_feeding_task.src import
+from hrl_feeding_task.src.arm_reacher_helper_right import rightArmControl
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -44,42 +44,41 @@ class armReachAction(mpcBaseAction):
         #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
 
-        if arm == 'r':
-            self.initialJointAnglesSideOfBody = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
-            self.initialJointAnglesSideFacingFoward = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
-            self.timeout = 2
+        self.initialJointAnglesSideOfBodyLEFT = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+        self.initialJointAnglesSideFacingFowardLEFT = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
 
-        else:
-            self.initialJointAnglesSideOfBody = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
-            self.initialJointAnglesSideFacingFoward = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
-            self.timeout = 2
+        self.initialJointAnglesSideOfBodyRIGHT = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
+        self.initialJointAnglesSideFacingFowardRIGHT = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
+
 
         #Variables...! #
         armReachAction.iteration = 0
 
-        self.bowlPosOffsets = np.array([[-.01,	0,	   .4],
-                                        [-.01,	0,   .008],
+        self.bowlPosOffsets = np.array([[-.01,	0,	   .4], #offsets from bowl_pos to left arm spoon
+                                        [-.01,	0,   .008], #scooping motion is set of offsets
                                         [.05,	0,   .008],
                                         [.05,   0,   .008],
                                         [.02,   0,	   .6],
                                         [0,     0,      0],
                                         [.02,	0,	  .6]])
 
-        self.bowlEulers = np.array([[90,	-60,	0], #Euler angles, XYZ rotations
-                                    [90,	-60,	0],
+        self.bowlEulers = np.array([[90,	-60,	0], #Euler angles, XYZ rotations for left arm spoon
+                                    [90,	-60,	0], #controls scooping motion
                                     [90,	-60,	0],
                                     [90,	-30,	0],
                                     [90,	  0,    0],
                                     [0,       0,	0],
                                     [90,	  0,	0]])
 
-        self.headPosOffsets = np.array([[.01,   .075,   -.01],
-                                        [.01,   .2,       .1],
+        self.headPosOffsets = np.array([[.01,   .075,   -.01], #offsets from head_frame to left arm spoon
+                                        [.01,   .2,       .1], #feeding motion set of offsets
                                         [0,      0,       0]])
 
-        self.headEulers = np.array([[90,    0,  -90],
-                                    [90,    0,  -90],
+        self.headEulers = np.array([[90,    0,  -90], #Euler angles, XYZ rotations for left arm spoon
+                                    [90,    0,  -90], #controls feeding to mouth motion
                                     [90,    0,   0]])
+
+        self.rightArmPosOffsets = np.array([[.02, 0, .6]])
 
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
@@ -134,8 +133,6 @@ class armReachAction(mpcBaseAction):
         self.bowl_pos = np.matrix([ [data.pose.position.x], [data.pose.position.y], [data.pose.position.z] ])
         self.bowl_quat = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y], [data.pose.orientation.z], [data.pose.orientation.w] ])
 
-
-
     def bowlPoseKinectCallback(self, data):
         #Takes in a PointStamped() type message, contains Header() and Pose(), from Kinect bowl location publisher
         self.bowl_frame = data.header.frame_id
@@ -182,16 +179,7 @@ class armReachAction(mpcBaseAction):
             	self.setOrientGoal(pos, quat, self.kinectReachTimeout)
     		raw_input("Press Enter to continue")
 
-    	calibrateJoints = raw_input("Enter 'front' or 'side' to calibrate joint angles to front or side of robot: ")
-        if calibrateJoints == 'front':
-            print "Setting initial joint angles... "
-            self.setPostureGoal(self.initialJointAnglesFrontOfBody, 7)
-    	raw_input("Press Enter to continue")
-
-        elif calibrateJoints == 'side':
-            print "Setting initial joint angles..."
-            self.setPostureGoal(self.initialJointAnglesSideOfBody, 7)
-    	raw_input("Press Enter to continue")
+        self.initJoints()
 
     	print "--------------------------------"
 
@@ -279,20 +267,28 @@ class armReachAction(mpcBaseAction):
 
         	raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
         except:
-            print "Oops, can't get head_frame tf info!"
+            raw_input("Oops, can't get head_frame tf info, press Enter to continue: "
 
     	print "--------------------------------"
 
     	print "MOVES7 - Moving away from mouth"
 
-    	(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[1][0], self.headPos[1] + self.headPosOffsets[1][1], self.headPos[2] + self.headPosOffsets[1][2])
-        (quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[1][0], self.headQuatOffsets[1][1], self.headQuatOffsets[1][2], self.headQuatOffsets[1][3])
-        #self.setPositionGoal(pos, quat, self.timeout)
-        self.setOrientGoal(pos, quat, self.timeouts[6])
+        try:
+        	(pos.x, pos.y, pos.z) = (self.headPos[0] + self.headPosOffsets[1][0], self.headPos[1] + self.headPosOffsets[1][1], self.headPos[2] + self.headPosOffsets[1][2])
+            (quat.x, quat.y, quat.z, quat.w) = (self.headQuatOffsets[1][0], self.headQuatOffsets[1][1], self.headQuatOffsets[1][2], self.headQuatOffsets[1][3])
+            #self.setPositionGoal(pos, quat, self.timeout)
+            self.setOrientGoal(pos, quat, self.timeouts[6])
 
-        armReachAction.iteration += 1
+            armReachAction.iteration += 1
 
-        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+        except:
+            raw_input("Oops, can't get head_frame tf info, press Enter to continue")
+
+        print "--------------------------------"
+
+        print "MOVES8 - Moving RIGHT ARM above bowl"
+
 
         return True
 
@@ -330,6 +326,18 @@ class armReachAction(mpcBaseAction):
     	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = quats[0], quats[1], quats[2], quats[3]
 
     	return quatArray
+
+    def initJoints(self):
+        initLeft = raw_input("Initialize left arm joint angles? [y/n]")
+        if initLeft == 'y':
+            print "Initializing left arm joint angles: "
+            self.setPostureGoal(self.initialJointAngleSideOfBodyLEFT, 7)
+            raw_input("Press Enter to continue")
+        initRight = raw_input("Initialize right arm joint angles? [y/n]")
+        if initRight == 'y':
+            print "Initializing right arm joint angles: "
+            rightArmControl.setPostureGoalRight(self.initialJointAnglesSideOfBodyRIGHT, 7)
+            raw_input("Press Enter to continue")            
 
 if __name__ == '__main__':
 

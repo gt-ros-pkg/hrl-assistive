@@ -25,13 +25,27 @@ class rightArmControl(mpcBaseAction):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
     def setOrientRight(self, pos, quat, timeout):
-        self.setOrientGoal(pos, quat, timeout)
-        outputString = "Right arm pos: " + pos + "\n" + "Right arm quat: " + quat + "\n"
-        return outputString
+        try:
+            self.setOrientGoal(pos, quat, timeout)
+            outputString = "Right arm pos: " + pos + "\n" + "Right arm quat: " + quat + "\n"
+            return outputString
+        except:
+            return "Could not set right arm end effector orientation"
 
     def setStopRight(self):
-        self.setStop()
-        return "Stopped right arm"
+        try:
+            self.setStop()
+            return "Stopped right arm"
+        except:
+            return "Could not stop right arm"
+
+    def setPostureGoalRight(self, angles, timeout):
+        try:
+            self.setPostureGoal(angles, timeout)
+            return "Set right arm joint angles:"
+            return self.getJointAngles()
+        except:
+            return "Could not set right arm joint angles"
 
 if __name__ == '__main__':
 
@@ -45,8 +59,10 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     #arm        = 'r'
-
-    arm = opt.arm2
+    try:
+        arm = opt.arm2
+    except:
+        arm = opt.arm
 
     rospy.init_node('arm_reacher_helper')
     ara = armReachAction(d_robot, controller, arm)
