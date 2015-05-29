@@ -1386,7 +1386,7 @@ if __name__ == '__main__':
         test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True)
+        threshold_mult  = np.logspace(-1.0, 2.5, 20, endpoint=True)
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['change']
