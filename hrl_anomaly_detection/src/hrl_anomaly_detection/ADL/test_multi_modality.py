@@ -1304,7 +1304,7 @@ if __name__ == '__main__':
         class_name = 'lock'
         task_names = ['case', 'lock_wipes', 'lock_huggies']
         f_zero_size = [5, 5, 5]
-        f_thres     = [1.0, 1.35, 1.35]
+        f_thres     = [1.0, 1.0, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
