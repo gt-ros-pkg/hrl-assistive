@@ -36,7 +36,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
                 threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False):
+                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -123,7 +123,11 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                             lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                             lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
-                    if onoff_type == 'online':
+                    if test:
+                        tp, fn, fp, tn, delay_l, _ = anomaly_check_online_test(lhm, test_dataSet, 
+                                                                               false_dataSet, \
+                                                                               ths, check_dim=check_dim)
+                    elif onoff_type == 'online':
                         tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, false_dataSet, \
                                                                           ths, check_dim=check_dim)
                     else:
@@ -156,8 +160,20 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
         shapes = itertools.cycle(['x','v', 'o', '+'])
         
         fig = pp.figure()
-        
-        for method in check_methods:
+
+        if len(check_methods) > len(check_dims): nClass = len(check_methods)
+        else: nClass = len(check_dims)
+
+        for n in range(nClass):
+
+            if len(check_methods) > len(check_dims): 
+                method = check_methods[n]
+                check_dim = check_dims[0]
+            else: 
+                method = check_methods[0]
+                check_dim = check_dims[n]
+                
+                
             fn_l = np.zeros(len(threshold_mult))
             tp_l = np.zeros(len(threshold_mult))
             tn_l = np.zeros(len(threshold_mult))
@@ -167,7 +183,7 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
                 
             for i in xrange(nDataSet):
-                            
+
                 for j, ths in enumerate(threshold_mult):
                     # save file name
                     res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'_ths_'+ \
@@ -179,17 +195,39 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     tn_l[j] += d['tn']; fp_l[j] += d['fp'] 
                     delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
 
+                    ## print ths, " : ", d['tn'], d['fn'], " : ", d['delay_l']
                     ## # Exclude wrong detection cases
                     ## if delay == []: continue
 
-            tpr_l = tp_l/(tp_l+fn_l)*100.0
-            fpr_l = fp_l/(fp_l+tn_l)*100.0
-            delay_l = delay_l/delay_cnt
+            tpr_l = np.zeros(len(threshold_mult))
+            fpr_l = np.zeros(len(threshold_mult))
+            npv_l = np.zeros(len(threshold_mult))
+            detect_l = np.zeros(len(threshold_mult))
+                    
+            for i in xrange(len(threshold_mult)):
+                if tp_l[i]+fn_l[i] != 0:
+                    tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+
+                if fp_l[i]+tn_l[i] != 0:
+                    fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+                if tn_l[i]+fn_l[i] != 0:
+                    npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
+
+                if delay_cnt[i] == 0:
+                    delay_l[i] = 0
+                else:                    
+                    delay_l[i] = delay_l[i]/delay_cnt[i]
+
+                if tn_l[i] + fn_l[i] + fp_l[i] != 0:
+                    detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
 
             idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
+            sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
             sorted_delay_l = [delay_l[k] for k in idx_list]
+            sorted_detect_l = [detect_l[k] for k in idx_list]
 
             color = colors.next()
             shape = shapes.next()
@@ -198,11 +236,17 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
             ## elif i==1: semantic_label='Sound only'
             ## else: semantic_label='Force and sound'
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
-            if method == 'global': label = 'fixed threshold'
-            if method == 'progress': label = 'progress based threshold'
-                
-            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
-            #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
+            ## if method == 'global': label = 'fixed threshold'
+            ## if method == 'progress': label = 'progress based threshold'
+            label = method+"_"+str(check_dim)
+
+            if test:
+                pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                ##pp.plot(sorted_detect_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                ##pp.plot(sorted_npv_l, sorted_detect_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+            else:
+                pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                #pp.plot(sorted_ths_l, sorted_tn_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
 
 
 
@@ -215,11 +259,12 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
         ## new_fp_l = np.linspace(fp_l.min(), fp_l.max(), 50)        
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
-        
-        pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
-        pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
-        pp.xlim([0.0, 40])
-        pp.ylim([0.0, 100])
+        if test == False:
+            pp.xlim([0.0, 40])
+            pp.ylim([0.0, 100])        
+            pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+            pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
+
         pp.legend(loc=4,prop={'size':16})
         
         fig.savefig('test.pdf')
@@ -634,15 +679,16 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
 
         # anomaly_check only returns anomaly cases only
         for j in range(2,m):                    
-    
+
             if check_dim == 2:            
                 an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
             else:
                 an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
-
+            
             if an == 1.0:   fn += 1.0
             elif an == 0.0: tp += 1.0
-        
+
+                
     # 2) Use False data to get true negative rate
     if check_dim == 2:
         x_test1 = false_dataSet.samples[:,0]
@@ -678,7 +724,79 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
                 elif an == 0.0:
                     tp += 1.0    
                 ## err_l.append(err)
-                        
+
+    return tp, fn, fp, tn, delay_l, anomaly_idx
+
+
+def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
+
+    tp = 0.0
+    fn = 0.0
+    fp = 0.0
+    tn = 0.0
+
+    err_l = []
+    delay_l = []
+
+    ## # 1) Use True data to get true negative rate
+    ## if check_dim == 2:
+    ##     x_test1 = test_dataSet.samples[:,0]
+    ##     x_test2 = test_dataSet.samples[:,1]
+    ## else:
+    ##     x_test1 = test_dataSet.samples[:,check_dim]
+
+    ## n = len(x_test1)
+    ## for i in range(n):
+    ##     m = len(x_test1[i])
+
+    ##     # anomaly_check only returns anomaly cases only
+    ##     for j in range(2,m):                    
+
+    ##         if check_dim == 2:            
+    ##             an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+    ##         else:
+    ##             an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+            
+    ##         if an == 1.0:   fn += 1.0
+    ##         elif an == 0.0: tp += 1.0
+
+                
+    # 2) Use False data to get true negative rate
+    if check_dim == 2:
+        x_test1 = false_dataSet.samples[:,0]
+        x_test2 = false_dataSet.samples[:,1]
+    else:
+        x_test1 = false_dataSet.samples[:,check_dim]
+    anomaly_idx = false_dataSet.sa.anomaly_idx
+        
+    n = len(x_test1)
+    for i in range(n):
+        m = len(x_test1[i])
+
+        # anomaly_check only returns anomaly cases only
+        delay = 0
+        for j in range(2,m):                    
+    
+            if check_dim == 2:            
+                an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+            else:
+                an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+                
+            delay = j-anomaly_idx[i]
+
+            if an == 1.0: break
+
+            
+        if an == 1.0:
+            if delay >= 0:
+                tn += 1.0
+                delay_l.append(delay)                
+            else:
+                fn += 1.0
+        elif an == 0.0:
+            print "Error with anomaly check"
+            fp += 1.0
+
     return tp, fn, fp, tn, delay_l, anomaly_idx
     
     
@@ -1020,6 +1138,18 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--roc_online_simulated_dim_check', '--ronsimdim', action='store_true', \
+                 dest='bRocOnlineSimDimCheck', default=False, 
+                 help='Plot online ROC by simulated anomaly form dim comparison')    
+    p.add_option('--roc_online_simulated_method_check', '--ronsimmthd', action='store_true', \
+                 dest='bRocOnlineSimMethodCheck',
+                 default=False, help='Plot online ROC by simulated anomaly')    
+    p.add_option('--test', action='store_true', \
+                 dest='bTest',
+                 default=False, help='Plot online ROC by simulated anomaly')    
+    p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
+                 default=False, help='Plot all data')
+
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
                  default=False, help='Renew pickle files.')
     p.add_option('--simulated_abnormal', '--sim_an', action='store_true', dest='bSimAbnormal',
@@ -1028,16 +1158,10 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--roc_human', '--rh', action='store_true', dest='bRocHuman',
                  default=False, help='Plot by a figure of ROC human')
-    p.add_option('--roc_offline_simulated_anomaly', '--roffsim', action='store_true', \
-                 dest='bRocOfflineSimAnomaly', default=False, help='Plot offline ROC by simulated anomaly')    
-    p.add_option('--roc_online_simulated_anomaly', '--ronsim', action='store_true', dest='bRocOnlineSimAnomaly',
-                 default=False, help='Plot online ROC by simulated anomaly')    
     p.add_option('--roc_online_robot', '--ron', action='store_true', dest='bRocOnlineRobot',
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
                  default=False, help='Plot by a figure of ROC robot')
-    p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
-                 default=False, help='Plot all data')
     p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
                  default=False, help='Plot one data')
     p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
@@ -1064,7 +1188,7 @@ if __name__ == '__main__':
         f_zero_size = [8, 5, 10]
         f_thres     = [1.0, 1.7, 3.0]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult = [[1.0, 1.5, 1.5, 1.5],[10.0, 10.0, 10.0, 10.0],[1.5, 5.5, 5.5, 5.5]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 1: 
         class_name = 'switch'
@@ -1072,7 +1196,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 18, 7]
         f_thres     = [0.7, 0.5, 1.0]
         audio_thres = [1.0, 0.7, 0.0015]
-        cov_mult = [[1.5, 1.5, 1.5, 2.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 2:        
         class_name = 'lock'
@@ -1080,7 +1204,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 5, 5]
         f_thres     = [1.0, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     elif class_num == 3:        
         class_name = 'complex'
@@ -1088,15 +1212,15 @@ if __name__ == '__main__':
         f_zero_size = [5, 3, 8]
         f_thres     = [1.0, 1.5, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult    = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
-        nState_l    = [20, 15, 20] #glass 10?
+        cov_mult    = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
+        nState_l    = [20, 20, 20] #glass 10?
     elif class_num == 4:        
         class_name = 'button'
         task_names = ['joystick', 'keyboard']
         f_zero_size = [5, 5, 8]
         f_thres     = [1.35, 1.35, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult    = [[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0],[1.0, 1.0, 1.0, 1.0]]
+        cov_mult    = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20]
     else:
         print "Please specify right task."
@@ -1131,7 +1255,7 @@ if __name__ == '__main__':
     true_chunks  = d['true_chunks']
 
     # Load simulated anomaly
-    if opt.bRocOnlineSimAnomaly or opt.bRocOfflineSimAnomaly:
+    if opt.bRocOnlineSimMethodCheck or opt.bRocOnlineSimDimCheck or opt.bSimAbnormal or opt.bTest:
 
         if True:
             # leave-one-out
@@ -1192,10 +1316,10 @@ if __name__ == '__main__':
             false_chunks  = dd['sim_false_chunks']
             false_anomaly_start = dd['anomaly_start_idx']
 
-    elif opt.bSimAbnormal or opt.bRocOfflineSimAnomaly:
-        pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
-        if os.path.isfile(pkl_file) and opt.bRenew is False:
-            dd = ut.load_pickle(pkl_file)
+    ## elif opt.bSimAbnormal or opt.bRocOfflineSimAnomaly:
+    ##     pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
+    ##     if os.path.isfile(pkl_file) and opt.bRenew is False:
+    ##         dd = ut.load_pickle(pkl_file)
     else:
         false_aXData1 = d['ft_force_mag_false_l']
         false_aXData2 = d['audio_rms_false_l'] 
@@ -1208,7 +1332,23 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    if opt.bRocOfflineSimAnomaly:
+    if opt.bTest: 
+        
+        print "ROC Offline Robot with simulated anomalies"
+        cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
+        nState          = nState_l[task]
+        threshold_mult  = np.logspace(0.1, 1.5, 30, endpoint=True) 
+        attr            = 'id'
+        onoff_type      = 'online'
+        check_methods   = ['global', 'progress']
+        check_dims      = [2]
+        test_title      = 'online_method_test'
+
+        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                    task_names[task], nState, threshold_mult, \
+                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, test=True)
+                    
+    elif opt.bRocOnlineSimDimCheck: 
         
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
@@ -1227,7 +1367,7 @@ if __name__ == '__main__':
                             
             
     #---------------------------------------------------------------------------           
-    elif opt.bRocOnlineSimAnomaly:
+    elif opt.bRocOnlineSimMethodCheck:
         
         print "ROC Online Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
@@ -1243,7 +1383,25 @@ if __name__ == '__main__':
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
 
-            
+
+    #---------------------------------------------------------------------------           
+    ## elif opt.bRocOfflineSimMethodCheck:
+        
+    ##     print "ROC Online Robot with simulated anomalies"
+    ##     cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
+    ##     nState          = nState_l[task]
+    ##     threshold_mult  = np.logspace(-1.0, 1.5, 20, endpoint=True) # np.arange(0.0, 30.001, 2.0) #
+    ##     attr            = 'id'
+    ##     onoff_type      = 'online'
+    ##     check_methods   = ['global', 'progress']
+    ##     check_dims      = [2]
+    ##     test_title      = 'offline_method_comp'
+
+    ##     fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+    ##                 task_names[task], nState, threshold_mult, \
+    ##                 opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
+
+                    
     #---------------------------------------------------------------------------           
     elif opt.bRocOnlineRobot:
 
@@ -1318,6 +1476,7 @@ if __name__ == '__main__':
         true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
 
         if opt.bAbnormal or opt.bSimAbnormal:
+            
             # min max scaling
             false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
             false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
@@ -1502,7 +1661,7 @@ if __name__ == '__main__':
         # If you want normal likelihood, class 0, data 1
         # testData 0
         # false data 0 (make it false)
-        false_data_flag = False #True
+        false_data_flag = True
         if false_data_flag:
             test_dataSet    = false_dataSet
                                                                

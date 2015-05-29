@@ -140,11 +140,11 @@ class learning_hmm_multi(learning_base):
                     logp         = self.ml.loglikelihoods(final_ts_obj)[0]
 
                     l_logp.append(logp)
-            
+
             self.l_mu = np.mean(l_logp)
             self.l_std = np.std(l_logp)
-            
-            
+
+
         elif self.check_method == 'progress':
             # Get average loglikelihood threshold wrt progress
             self.std_coff  = 1.0
@@ -194,7 +194,7 @@ class learning_hmm_multi(learning_base):
             ## a = np.log(np.sum(alpha[:temp/2],axis=1)*scale[:temp/2])
             ## print np.sum(a)
 
-        return
+        return 
 
 
     #----------------------------------------------------------------------        
@@ -669,7 +669,7 @@ class learning_hmm_multi(learning_base):
     def anomaly_check(self, X1, X2=None, ths_mult=None):
 
         if self.nEmissionDim == 1:
-            X_test = X1
+            X_test = np.array([X1])
         else:
             X_test = self.convert_sequence(X1, X2, emission=False)                
         n = len(np.squeeze(X1))
@@ -680,7 +680,7 @@ class learning_hmm_multi(learning_base):
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
-
+            
         if self.check_method == 'global':
             err = logp - (self.l_mu - ths_mult*self.l_std)
             
@@ -690,7 +690,6 @@ class learning_hmm_multi(learning_base):
             except:
                 print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return 1.0, 0.0 # anomaly
-
 
             # Find the best posterior distribution
             min_dist  = 100000000
@@ -708,6 +707,7 @@ class learning_hmm_multi(learning_base):
             ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
         else:
             print "Not available anomaly check method"
+
 
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
