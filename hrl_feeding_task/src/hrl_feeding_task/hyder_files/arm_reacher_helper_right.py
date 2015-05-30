@@ -65,5 +65,5 @@ if __name__ == '__main__':
         arm = opt.arm
 
     rospy.init_node('arm_reacher_helper')
-    ara = armReachAction(d_robot, controller, arm)
+    ara = rightArmControl(d_robot, controller, arm)
     rospy.spin()
