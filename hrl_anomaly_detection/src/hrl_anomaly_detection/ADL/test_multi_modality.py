@@ -1324,7 +1324,7 @@ if __name__ == '__main__':
     all_task_names  = ['microwave_white', 'wallsw', 'switch_device', \
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
         
-    class_num = 1
+    class_num = 0
     task  = 0
     if class_num == 0:
         class_name = 'door'
