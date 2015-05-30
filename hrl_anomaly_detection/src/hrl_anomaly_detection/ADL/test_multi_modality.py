@@ -34,7 +34,6 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
 
-
 def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
                 threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
@@ -295,7 +294,116 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
         
     return
 
+
+def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
+                    check_dims, an_type, force_an, sound_an):
+                    
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+    threshold_mult = threshold_mult.tolist()
     
+    fig = pp.figure()
+
+    if len(check_methods) > len(check_dims): nClass = len(check_methods)
+    else: nClass = len(check_dims)
+
+    for n in range(nClass):
+
+        if len(check_methods) > len(check_dims): 
+            method = check_methods[n]
+            check_dim = check_dims[0]
+        else: 
+            method = check_methods[0]
+            check_dim = check_dims[n]
+
+        fn_l = np.zeros(len(threshold_mult))
+        tp_l = np.zeros(len(threshold_mult))
+        tn_l = np.zeros(len(threshold_mult))
+        fp_l = np.zeros(len(threshold_mult))
+
+        delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
+        ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
+
+        # Collect data
+        for task_name in all_task_names:
+            
+            cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
+            cross_test_path = os.path.join(cross_data_path, str(nState)+'_'+test_title)
+
+            pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
+                cross_test_path,d))])
+
+            for pkl_file in pkl_files:
+
+                # method
+                method = pkl_file.split('_roc')[0].split('_')[-1]
+                # dim
+                dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
+                # ths
+                ths = float(pkl_file.split('ths_')[-1].split('.pkl')[0])
+
+                # find close index
+                for i, t_thres in enumerate(threshold_mult):
+                    if abs(t_thres - ths) < 0.00001:
+                        idx = i
+                        break
+                    
+                res_file = os.path.join(cross_test_path, pkl_file)
+
+                d = ut.load_pickle(res_file)
+                fn_l[idx] += d['fn']; tp_l[idx] += d['tp'] 
+                tn_l[idx] += d['tn']; fp_l[idx] += d['fp'] 
+                delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+                
+
+        tpr_l = np.zeros(len(threshold_mult))
+        fpr_l = np.zeros(len(threshold_mult))
+        npv_l = np.zeros(len(threshold_mult))
+        detect_l = np.zeros(len(threshold_mult))
+
+        for i in xrange(len(threshold_mult)):
+            if tp_l[i]+fn_l[i] != 0:
+                tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+
+            if fp_l[i]+tn_l[i] != 0:
+                fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+            if tn_l[i]+fn_l[i] != 0:
+                npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
+
+            if delay_cnt[i] == 0:
+                delay_l[i] = 0
+            else:                    
+                delay_l[i] = delay_l[i]/delay_cnt[i]
+
+            if tn_l[i] + fn_l[i] + fp_l[i] != 0:
+                detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
+                
+        idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
+        sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
+        sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
+        sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
+        sorted_delay_l = [delay_l[k] for k in idx_list]
+        sorted_detect_l = [detect_l[k] for k in idx_list]
+
+        color = colors.next()
+        shape = shapes.next()
+
+        pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+
+    pp.legend(loc=4,prop={'size':16})
+
+    fig.savefig('test.pdf')
+    fig.savefig('test.png')
+    os.system('cp test.p* ~/Dropbox/HRL/')
+    #pp.show()
+ 
+
+        
+
+#---------------------------------------------------------------------------------------#        
+#---------------------------------------------------------------------------------------#    
 def fig_roc_offline(cross_data_path, \
                     true_aXData1, true_aXData2, true_chunks, \
                     false_aXData1, false_aXData2, false_chunks, \
@@ -1304,7 +1412,7 @@ if __name__ == '__main__':
     elif opt.bRocOnlineSimMethodCheck:
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_comp_test'
+        test_title      = 'online_method_comp'
         ## test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
@@ -1333,7 +1441,7 @@ if __name__ == '__main__':
                         opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
                         disp=disp)
         else:
-            fig_roc_sim_all(cross_root_path, all_task_names, test_title, threshold_mult, check_methods, \
+            fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
                             check_dims, an_type, force_an, sound_an)
 
 
