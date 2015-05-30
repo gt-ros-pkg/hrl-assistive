@@ -37,7 +37,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                 prefix, nState=20, \
                 threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None):
+                cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None, rm_run=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -108,7 +108,11 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                         count += 1            
                         continue
                     elif hcu.is_file(cross_test_path, mutex_file_part): continue
-                    elif os.path.isfile(mutex_file): continue
+                    elif os.path.isfile(mutex_file): 
+                        if rm_run == True:
+                            os.system('rm '+mutex_file)
+                        else:                           
+                            continue
                     os.system('touch '+mutex_file)
 
                     if lhm is None:
@@ -348,9 +352,12 @@ def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, thresho
                     sys.exit()
 
                 # method
-                method = pkl_file.split('_roc')[0].split('_')[-1]
+                c_method = pkl_file.split('_roc')[0].split('_')[-1]
+                if c_method != method: continue
                 # dim
-                dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
+                c_dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
+                if c_dim != check_dim: continue
+                
                 # ths
                 ths = float(pkl_file.split('ths_')[-1].split('.pkl')[0])
 
@@ -401,6 +408,7 @@ def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, thresho
         color = colors.next()
         shape = shapes.next()
 
+        label = method+"_"+str(check_dim)
         pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=4,prop={'size':16})
@@ -1293,6 +1301,9 @@ if __name__ == '__main__':
                  default=False, help='Plot one data')
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
                  default=False, help='Plot')
+    p.add_option('--rm_running', '--rr', action='store_true', dest='bRemoveRunning',
+                 default=False, help='Plot')
+    
 
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
                  default=False, help='Renew pickle files.')
@@ -1321,10 +1332,10 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     ## all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
     ##                    'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
-    all_task_names  = ['microwave_black', 'microwave_white']
+    all_task_names  = ['microwave_white']
                 
     class_num = 0
-    task  = 0
+    task  = 2
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1451,7 +1462,7 @@ if __name__ == '__main__':
             fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                         task_names[task], nState, threshold_mult, \
                         opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
-                        disp=disp)
+                        disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
                             check_dims, an_type, force_an, sound_an)
