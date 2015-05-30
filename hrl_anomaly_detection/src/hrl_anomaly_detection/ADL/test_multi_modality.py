@@ -162,7 +162,11 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     d['ths']   = ths
                     d['delay_l'] = delay_l
 
-                    ut.save_pickle(d,res_file)        
+                    try:
+                        ut.save_pickle(d,res_file)        
+                    except:
+                        print "There is the targeted pkl file"
+                        
                     os.system('rm '+mutex_file)
                     print "-----------------------------------------------"
 
