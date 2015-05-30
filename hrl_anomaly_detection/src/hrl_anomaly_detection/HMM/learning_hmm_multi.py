@@ -131,7 +131,7 @@ class learning_hmm_multi(learning_base):
         self.nGaussian = self.nState
 
 
-        if self.check_method == 'change' or self.check_method == 'global_change':
+        if self.check_method == 'change' or self.check_method == 'globalChange':
             # Get maximum change of loglikelihood over whole time
             ll_delta_logp = []
             for j in xrange(n):    
@@ -149,7 +149,7 @@ class learning_hmm_multi(learning_base):
 
             print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
         
-        if self.check_method == 'global' or self.check_method == 'global_change':
+        if self.check_method == 'global' or self.check_method == 'globalChange':
             # Get average loglikelihood threshold over whole time
 
             l_logp = []
@@ -694,7 +694,7 @@ class learning_hmm_multi(learning_base):
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
-        if self.check_method == 'change' or self.check_method == 'global_change':
+        if self.check_method == 'change' or self.check_method == 'globalChange':
 
             if len(X1)<3: return -1, 0.0 #error
 
@@ -713,7 +713,7 @@ class learning_hmm_multi(learning_base):
             err = (self.l_mean_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
             if err < 0.0: return 1.0, 0.0 # anomaly            
             
-        if self.check_method == 'global' or self.check_method == 'global_change':
+        if self.check_method == 'global' or self.check_method == 'globalChange':
             err = logp - (self.l_mu - ths_mult*self.l_std) 
             if err < 0.0: return 1.0, 0.0 # anomaly
             else: return 0.0, err # normal               

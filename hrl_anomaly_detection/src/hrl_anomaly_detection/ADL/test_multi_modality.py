@@ -48,6 +48,10 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
     if os.path.isdir(cross_test_path) == False:
         os.system('mkdir -p '+cross_test_path)
 
+    if rm_run == True:                            
+        os.system('rm '+os.path.join(cross_test_path, 'running')+'*')
+        
+
     # anomaly check method list
     use_ml_pkl = False
     count = 0        
@@ -103,15 +107,12 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     mutex_file_part = 'running_dataset_'+str(i)+'_dim_'+str(check_dim)+'_ths_'+str(ths)+'_'+method
                     mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
                     mutex_file      = os.path.join(cross_test_path, mutex_file_full)
-
+                                        
                     if os.path.isfile(res_file): 
                         count += 1            
                         continue
                     elif hcu.is_file(cross_test_path, mutex_file_part): 
-                        if rm_run == True:                            
-                            os.system('rm '+os.path.join(cross_test_path, mutex_file_part)+'*')
-                        else:                                                   
-                            continue
+                        continue
                     ## elif os.path.isfile(mutex_file): continue
                     os.system('touch '+mutex_file)
 
@@ -337,7 +338,13 @@ def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, thresho
         for task_name in all_task_names:
             
             cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
-            cross_test_path = os.path.join(cross_data_path, str(nState)+'_'+test_title)
+
+            t_dirs = os.listdir(cross_data_path)
+            for t_dir in t_dirs:
+                if t_dir.find(test_title)>=0:
+                    break
+            
+            cross_test_path = os.path.join(cross_data_path, t_dir)
 
             pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
                 cross_test_path,d))])
@@ -1302,7 +1309,7 @@ if __name__ == '__main__':
     p.add_option('--plot', '--p', action='store_true', dest='bPlot',
                  default=False, help='Plot')
     p.add_option('--rm_running', '--rr', action='store_true', dest='bRemoveRunning',
-                 default=False, help='Plot')
+                 default=False, help='Remove all the running files')
     
 
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
@@ -1335,7 +1342,7 @@ if __name__ == '__main__':
     all_task_names  = ['microwave_white']
                 
     class_num = 0
-    task  = 2
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
@@ -1442,7 +1449,7 @@ if __name__ == '__main__':
         threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['change', 'global', 'global_change', 'progress']
+        check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
