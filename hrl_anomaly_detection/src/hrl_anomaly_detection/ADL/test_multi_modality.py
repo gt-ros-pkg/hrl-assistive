@@ -1342,7 +1342,7 @@ if __name__ == '__main__':
     all_task_names  = ['microwave_white']
                 
     class_num = 2
-    task  = 0
+    task  = 1
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
