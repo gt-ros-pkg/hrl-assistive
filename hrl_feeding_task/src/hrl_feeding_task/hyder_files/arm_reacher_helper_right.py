@@ -24,26 +24,33 @@ class rightArmControl(mpcBaseAction):
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
-    def setOrientRight(self, pos, quat, timeout):
+        #Allows another node (client) to request specific actions corresponding to the right arm mpcBaseAction instance...
+        setOrientRightGoalService = rospy.Service('setOrientGoalRightService', PosQuatTimeoutMsg, self.setOrientGoalRight)
+
+        setStopRightService = rospy.Service('setStopRightService', None_Bool, self.setStopRight)
+
+        setPostureGoalRightService = rospy.Service('setPostureGoalRightService', AnglesTimeoutMsg, self.setPostureGoalRight)
+
+    def setOrientGoalRight(self, msg):
         try:
-            self.setOrientGoal(pos, quat, timeout)
-            outputString = "Right arm pos: " + pos + "\n" + "Right arm quat: " + quat + "\n"
+            self.setOrientGoal(msg.position, msg.orientation, msg.timeout)
+            outputString = "Right arm pos: " + msg.position + "\n" + "Right arm quat: " + msg.orientation + "\n"
             return outputString
         except:
             return "Could not set right arm end effector orientation"
 
-    def setStopRight(self):
+    def setStopRight(self, msg):
         try:
             self.setStop()
             return "Stopped right arm"
         except:
             return "Could not stop right arm"
 
-    def setPostureGoalRight(self, angles, timeout):
+    def setPostureGoalRight(self, msg):
         try:
-            self.setPostureGoal(angles, timeout)
-            return "Set right arm joint angles:"
-            return self.getJointAngles()
+            self.setPostureGoal(msg.angles, msg.timeout)
+            outputString = "Set right arm joint angles: " + msg.angles + "\n"
+            return outputString
         except:
             return "Could not set right arm joint angles"
 

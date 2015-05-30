@@ -12,6 +12,9 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+from hrl_feeding_task.msg import PosQuatTimeoutMsg, AnglesTimeoutMsg
+#Used to communicate with right arm control server
+
 from arm_reacher_helper_right import rightArmControl
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
@@ -25,23 +28,21 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
-	#rightArm = rightArmControl()
-
-        #leftArmMpc = mpcBaseAction(self, d_robot, controller, "l")
-        #rightArmMpc = mpcBaseAction(self, d_robot, controller, "r")
-        #leftArmMpc.setOrientGoal(pos, quat, timeout)
-        #rightArmMpc.setOrientGoal(pos, quat, timeout)
-        #^will this work?
-
-
         #Subscribers to publishers of bowl location data
         rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseCallback)  # hrl_feeding/bowl_location
-        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback) # launch you can remap the topic name (ros wiki)
+        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation', PoseStamped, self.bowlPoseKinectCallback)
 
         rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
 
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
+
+        try:
+            self.setOrientGoalRight = rospy.ServiceProxy('setOrientGoalRightService', PosQuatTimeoutMsg)
+            self.setStopRight = rospy.ServiceProxy('setStopRightService', None_Bool)
+            self.setPostureGoalRight = rospy.ServiceProxy('setPostureGoalRightService', AnglesTimeoutMsg)
+        except:
+            print "Oops, can't connect to right arm server!"
 
         #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
@@ -80,7 +81,8 @@ class armReachAction(mpcBaseAction, rightArmControl):
                                     [90,    0,  -90], #controls feeding to mouth motion
                                     [90,    0,   0]])
 
-        self.rightArmPosOffsets = np.array([[.02, 0, .6]])
+        self.rightArmPosOffsets = np.array([[.02, 0, .6]]) #Set of pos offests for the right arm end effector
+        self.rightArmEulers = np.array([[90, 0, 0]]) #Set of end effector angles for right arm
 
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
@@ -89,6 +91,7 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
     	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
     	self.headQuatOffsets = self.euler2quatArray(self.headEulers)
+        self.rightArmQuatOffsets = self.euler2quatArray(self.rightArmEulers)
 
     	print "Calculated quaternions:"
     	print self.bowlQuatOffsets
@@ -291,6 +294,18 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
         print "MOVES8 - Moving RIGHT ARM above bowl"
 
+        try:
+            poseR = PosQuatTimeoutMsg()
+            poseR.position.x, poseR.position.y, poseR.position.z = (self.bowl_pos[0] + self.rightArmPosOffsets[0], self.bowl_pos[1] + self.rightArmPosOffsets[1], self.bowl_pos[2] + self.rightArmPosOffsets[2]))
+            poseR.orientation.x, poseR.orientation.y, poseR.orientation.z, poseR.orientation.w = (self.rightArmQuatOffsets[0], self.rightArmQuatOffsets[1], self.rightArmQuatOffsets[2], self.rightArmQuatOffsets[3])
+            poseR.timeout = 10
+            print(self.setOrientGoalRight(poseR)) #Sends request to
+
+            armReachAction.iteration += 1
+
+            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+        except:
+            print "Oops, can't connect to right arm server, position not set"
 
         return True
 
@@ -330,6 +345,10 @@ class armReachAction(mpcBaseAction, rightArmControl):
     	return quatArray
 
     def initJoints(self):
+        rightArmAngles = AnglesTimeoutMsg()
+        rightArmAngles.angles = self.initialJointAnglesSideOfBodyRIGHT
+        rightArmAngles.timeout = 7
+
         initLeft = raw_input("Initialize left arm joint angles? [y/n]")
         if initLeft == 'y':
             print "Initializing left arm joint angles: "
@@ -338,8 +357,8 @@ class armReachAction(mpcBaseAction, rightArmControl):
         initRight = raw_input("Initialize right arm joint angles? [y/n]")
         if initRight == 'y':
             print "Initializing right arm joint angles: "
-            self.setPostureGoalRight(self.initialJointAnglesSideOfBodyRIGHT, 7)
-            raw_input("Press Enter to continue")            
+            print(self.setPostureGoalRight(rightArmAngles))
+            raw_input("Press Enter to continue")
 
 if __name__ == '__main__':
 
