@@ -107,12 +107,12 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
                     if os.path.isfile(res_file): 
                         count += 1            
                         continue
-                    elif hcu.is_file(cross_test_path, mutex_file_part): continue
-                    elif os.path.isfile(mutex_file): 
-                        if rm_run == True:
-                            os.system('rm running*')
-                        else:                           
+                    elif hcu.is_file(cross_test_path, mutex_file_part): 
+                        if rm_run == True:                            
+                            os.system('rm '+os.path.join(cross_test_path, mutex_file_part)+'*')
+                        else:                                                   
                             continue
+                    elif os.path.isfile(mutex_file): continue
                     os.system('touch '+mutex_file)
 
                     if lhm is None:
