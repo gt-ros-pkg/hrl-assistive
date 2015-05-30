@@ -2,16 +2,15 @@ Steps to running all code for hrl_feeding_task (launch Kinect files, arm files, 
 
 Start robot:
 
-	1) ssh dpark@pr2c1
-	2) rosrun pr2_dashboard pr2_dashboard 
-	3) roslaunch pr2_teleop teleop_joystick.launch
+	1) Set proper environment variables via .bashrc
+	   If using epipac via hhasnain3 user, run command "pr2"
+	2) ssh dpark@pr2c1
+	3) rosrun pr2_dashboard pr2_dashboard 
+	4) roslaunch pr2_teleop teleop_joystick.launch
 
 Launch Kinect files:
 
-	1) roslaunch hrl_feeding_task head_registration_Kinect2.launch
-	2) roslaunch hrl_feeding_task assistive_teleop_Kinect2.launch
-	^DON'T WORK ANYMORE, INSTEAD DO...
-	*) roslaunch hrl_feeding_task Feeding_Visual_Kinect2.launch
+	1) roslaunch hrl_feeding_task Feeding_Visual_Kinect2.launch
 
 Calibrate arms:
 
