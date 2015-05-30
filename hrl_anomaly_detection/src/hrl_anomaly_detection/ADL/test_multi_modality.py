@@ -336,6 +336,13 @@ def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, thresho
 
             for pkl_file in pkl_files:
 
+                if pkl_file.find('txt') >= 0:
+                    print "There is running file!!!"
+                    print cross_test_path
+                    res_file = os.path.join(cross_test_path, pkl_file)
+                    os.system('rm '+res_file)
+                    sys.exit()
+
                 # method
                 method = pkl_file.split('_roc')[0].split('_')[-1]
                 # dim
@@ -1310,10 +1317,10 @@ if __name__ == '__main__':
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
     ## all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
     ##                    'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
-    all_task_names  = ['microwave_black', 'microwave_white', 'wallsw', 'switch_device', \
+    all_task_names  = ['microwave_white', 'wallsw', 'switch_device', \
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
         
-    class_num = 0
+    class_num = 1
     task  = 0
     if class_num == 0:
         class_name = 'door'
