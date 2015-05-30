@@ -305,7 +305,7 @@ def fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods
 
 
 def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                    check_dims, an_type, force_an, sound_an):
+                    check_dims, an_type, force_an, sound_an, renew=False):
                     
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -334,52 +334,72 @@ def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, thresho
         delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
         ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
 
-        # Collect data
-        for task_name in all_task_names:
-            
-            cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
+        save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
+        if os.path.isfile(save_pkl_file) == False:        
+            # Collect data
+            for task_name in all_task_names:
 
-            t_dirs = os.listdir(cross_data_path)
-            for t_dir in t_dirs:
-                if t_dir.find(test_title)>=0:
-                    break
-            
-            cross_test_path = os.path.join(cross_data_path, t_dir)
+                cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
 
-            pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
-                cross_test_path,d))])
-
-            for pkl_file in pkl_files:
-
-                if pkl_file.find('txt') >= 0:
-                    print "There is running file!!!"
-                    print cross_test_path
-                    res_file = os.path.join(cross_test_path, pkl_file)
-                    os.system('rm '+res_file)
-                    sys.exit()
-
-                # method
-                c_method = pkl_file.split('_roc')[0].split('_')[-1]
-                if c_method != method: continue
-                # dim
-                c_dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
-                if c_dim != check_dim: continue
-                
-                # ths
-                ths = float(pkl_file.split('ths_')[-1].split('.pkl')[0])
-
-                # find close index
-                for i, t_thres in enumerate(threshold_mult):
-                    if abs(t_thres - ths) < 0.00001:
-                        idx = i
+                t_dirs = os.listdir(cross_data_path)
+                for t_dir in t_dirs:
+                    if t_dir.find(test_title)>=0:
                         break
-                    
-                res_file = os.path.join(cross_test_path, pkl_file)
 
-                d = ut.load_pickle(res_file)
-                fn_l[idx] += d['fn']; tp_l[idx] += d['tp'] 
-                tn_l[idx] += d['tn']; fp_l[idx] += d['fp'] 
-                delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+                cross_test_path = os.path.join(cross_data_path, t_dir)
+
+
+
+                pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
+                    cross_test_path,d))])
+
+                for pkl_file in pkl_files:
+
+                    if pkl_file.find('txt') >= 0:
+                        print "There is running file!!!"
+                        print cross_test_path
+                        res_file = os.path.join(cross_test_path, pkl_file)
+                        os.system('rm '+res_file)
+                        sys.exit()
+
+                    # method
+                    c_method = pkl_file.split('_roc')[0].split('_')[-1]
+                    if c_method != method: continue
+                    # dim
+                    c_dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
+                    if c_dim != check_dim: continue
+
+                    # ths
+                    ths = float(pkl_file.split('ths_')[-1].split('.pkl')[0])
+
+                    # find close index
+                    for i, t_thres in enumerate(threshold_mult):
+                        if abs(t_thres - ths) < 0.00001:
+                            idx = i
+                            break
+
+                    res_file = os.path.join(cross_test_path, pkl_file)
+
+                    d = ut.load_pickle(res_file)
+                    fn_l[idx] += d['fn']; tp_l[idx] += d['tp'] 
+                    tn_l[idx] += d['tn']; fp_l[idx] += d['fp'] 
+                    delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+            data = {}
+            data['fn_l'] = fn_l
+            data['tp_l'] = tp_l
+            data['tn_l'] = tn_l
+            data['fp_l'] = fp_l
+            data['delay_l'] = delay_l
+            data['delay_cnt'] = delay_cnt
+            ut.save_pickle(data, save_pkl_file)
+        else:
+            data = ut.load_pickle(save_pkl_file)
+            fn_l = data['fn_l']
+            tp_l = data['tp_l'] 
+            tn_l = data['tn_l'] 
+            fp_l = data['fp_l'] 
+            delay_l = data['delay_l'] 
+            delay_cnt = data['delay_cnt'] 
                 
 
         tpr_l = np.zeros(len(threshold_mult))
@@ -415,10 +435,21 @@ def fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, thresho
         color = colors.next()
         shape = shapes.next()
 
-        label = method+"_"+str(check_dim)
+        if method == 'globalChange':
+            label = 'Fixed threshold & \n change detection'
+        elif method == 'change':
+            label = 'Change detection'
+        elif method == 'global':
+            label = 'Fixed threshold \n detection'
+        elif method == 'progress':
+            label = 'Progress-based \n detection'
+        else:
+            label = method #+"_"+str(check_dim)
         pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=4,prop={'size':16})
+    pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+    pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
 
     fig.savefig('test.pdf')
     fig.savefig('test.png')
@@ -1337,9 +1368,9 @@ if __name__ == '__main__':
 
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
-    ## all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
-    ##                    'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
-    all_task_names  = ['microwave_white']
+    all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
+                       'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
+    ## all_task_names  = ['microwave_white']
                 
     class_num = 3
     task  = 1
@@ -1416,26 +1447,33 @@ if __name__ == '__main__':
     elif opt.bRocOnlineSimDimCheck: 
         
         print "ROC Offline Robot with simulated anomalies"
+        test_title      = 'online_dim_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 #np.arange(0.0, 25.001, 0.5)    
-        ## threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 1.0 #np.arange(0.0, 25.001, 0.5)    
+        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['progress']
         check_dims      = [0,1,2]
-        test_title      = 'online_dim_comp'
         an_type         = 'both'
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['rndsharp', 'rnddull'] 
+        disp            = 'None'
 
-        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks \
-          = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], audio_thres[task],
-                   cross_data_path)
-        
-        fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
-                    task_names[task], nState, threshold_mult, \
-                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False)
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task], cross_data_path, an_type, force_an, sound_an)
+
+                        
+        if opt.bAllPlot is not True:
+            fig_roc_sim(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                        task_names[task], nState, threshold_mult, \
+                        opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                        disp=disp, rm_run=opt.bRemoveRunning)
+        else:
+            fig_roc_sim_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
+                            check_dims, an_type, force_an, sound_an)
+
                             
             
     #---------------------------------------------------------------------------           
