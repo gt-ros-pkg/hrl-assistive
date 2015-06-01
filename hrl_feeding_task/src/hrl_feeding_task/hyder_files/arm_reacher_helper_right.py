@@ -12,6 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -25,11 +26,11 @@ class rightArmControl(mpcBaseAction):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Allows another node (client) to request specific actions corresponding to the right arm mpcBaseAction instance...
-        setOrientRightGoalService = rospy.Service('setOrientGoalRightService', PosQuatTimeoutMsg, self.setOrientGoalRight)
+        setOrientRightGoalService = rospy.Service('setOrientGoalRightService', PosQuatTimeoutSrv, self.setOrientGoalRight)
 
         setStopRightService = rospy.Service('setStopRightService', None_Bool, self.setStopRight)
 
-        setPostureGoalRightService = rospy.Service('setPostureGoalRightService', AnglesTimeoutMsg, self.setPostureGoalRight)
+        setPostureGoalRightService = rospy.Service('setPostureGoalRightService', AnglesTimeoutSrv, self.setPostureGoalRight)
 
     def setOrientGoalRight(self, msg):
         try:

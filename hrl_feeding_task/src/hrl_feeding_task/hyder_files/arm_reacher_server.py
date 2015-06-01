@@ -12,7 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-from hrl_feeding_task.msg import PosQuatTimeoutMsg, AnglesTimeoutMsg
+from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 #Used to communicate with right arm control server
 
 from arm_reacher_helper_right import rightArmControl
@@ -38,9 +38,9 @@ class armReachAction(mpcBaseAction, rightArmControl):
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
         try:
-            self.setOrientGoalRight = rospy.ServiceProxy('setOrientGoalRightService', PosQuatTimeoutMsg)
-            self.setStopRight = rospy.ServiceProxy('setStopRightService', None_Bool)
-            self.setPostureGoalRight = rospy.ServiceProxy('setPostureGoalRightService', AnglesTimeoutMsg)
+            setOrientGoalRight = rospy.ServiceProxy('setOrientGoalRightService', PosQuatTimeoutSrv)
+            setStopRight = rospy.ServiceProxy('setStopRightService', None_Bool)
+            setPostureGoalRight = rospy.ServiceProxy('setPostureGoalRightService', AnglesTimeoutSrv)
         except:
             print "Oops, can't connect to right arm server!"
 
@@ -190,12 +190,12 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
         print "Testing right arm server code..."
 
-        poseR = PosQuatTimeoutMsg
+        poseR = PosQuatTimeoutMsg()
         pointR = Point()
         quatR = Quaternion()
 
         pointR.x, pointR.y, pointR.z = .5, -.5, 0
-        quatR.x, quatR.y, quatR.z, quatR.= 0, 0, 0, 0
+        quatR.x, quatR.y, quatR.z, quatR.w = 0, 0, 0, 0
         poseR.position = pointR
         poseR.orientation = quatR
         poseR.timeout = 10
