@@ -188,6 +188,22 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
     	print "--------------------------------"
 
+        print "Testing right arm server code..."
+
+        poseR = PosQuatTimeoutMsg
+        pointR = Point()
+        quatR = Quaternion()
+
+        pointR.x, pointR.y, pointR.z = .5, -.5, 0
+        quatR.x, quatR.y, quatR.z, quatR.= 0, 0, 0, 0
+        poseR.position = pointR
+        poseR.orientation = quatR
+        poseR.timeout = 10
+
+        self.setOrientGoalRight(poseR)
+
+        raw_input("Ummm... press Enter to continue")
+
         print "MOVES1 - Pointing down over bowl "
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
         (quat.x, quat.y, quat.z, quat.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
@@ -299,7 +315,7 @@ class armReachAction(mpcBaseAction, rightArmControl):
             poseR.position.x, poseR.position.y, poseR.position.z = (self.bowl_pos[0] + self.rightArmPosOffsets[0], self.bowl_pos[1] + self.rightArmPosOffsets[1], self.bowl_pos[2] + self.rightArmPosOffsets[2]))
             poseR.orientation.x, poseR.orientation.y, poseR.orientation.z, poseR.orientation.w = (self.rightArmQuatOffsets[0], self.rightArmQuatOffsets[1], self.rightArmQuatOffsets[2], self.rightArmQuatOffsets[3])
             poseR.timeout = 10
-            print(self.setOrientGoalRight(poseR)) #Sends request to
+            self.setOrientGoalRight(poseR) #Sends request to right arm server
 
             armReachAction.iteration += 1
 
@@ -357,7 +373,7 @@ class armReachAction(mpcBaseAction, rightArmControl):
         initRight = raw_input("Initialize right arm joint angles? [y/n]")
         if initRight == 'y':
             print "Initializing right arm joint angles: "
-            print(self.setPostureGoalRight(rightArmAngles))
+            self.setPostureGoalRight(rightArmAngles)
             raw_input("Press Enter to continue")
 
 if __name__ == '__main__':

@@ -17,5 +17,4 @@
     <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node.py" args="-r pr2 -s fabric -a $(arg arm)" output="screen"/>
     <node name="haptic_mpc" pkg="hrl_haptic_mpc" type="haptic_mpc.py" args="-r pr2 -a $(arg arm) -v $(arg verbose)" output="screen"/>
 
-
 </launch>

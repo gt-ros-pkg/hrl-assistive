@@ -21,7 +21,7 @@
   <group ns="right">
     <!--Right arm launch files-->
     <arg name="arm2" default="r"/>
-    
+
     <arg name="robot_config_right" default="$(find hrl_feeding_task)/params/pr2_config_params_r.yaml" />
     <rosparam command="load" file="$(arg robot_config_right)" />
     <!--rosparam command="load" file="$(find hrl_feeding_task)/params/mpc_params_pr2_yogurt.yaml" /-->
