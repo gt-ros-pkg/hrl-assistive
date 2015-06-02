@@ -197,20 +197,35 @@ class armReachAction(mpcBaseAction):
 
         testL = raw_input("Press 'y' to test left arm movements!")
         if testL == 'y':
-            posL.x, posL.y, posL.z = 1, 1, 0
+            posL.x, posL.y, posL.z = .5, .5, 0
 
             testEulers = np.array([[90, -60, 0],
                                    [90, -30, 0],
                                    [90,   0, 0]])
-            testQuats = euler2quatArray(testEulers)
-            quatL.x, quatL.y, quatL.z, quatL.w = testEulers[0][0], testEulers[0][1], testEulers[0][2], testEulers[0][3]
+            testQuats = self.euler2quatArray(testEulers)
+	    print "Calculated test quaternions: "
+	    print testQuats
+	    
+            quatL.x, quatL.y, quatL.z, quatL.w = testQuats[0][0], testQuats[0][1], testQuats[0][2], testQuats[0][3]
             self.setOrientGoal(posL, quatL, 15)
+	    print "Position should be: "
+	    print posL
+	    print "Quaternions should be: "
+	    print quatL
             raw_input("Press Enter to continue")
-            quatL.x, quatL.y, quatL.z, quatL.w = testEulers[1][0], testEulers[1][1], testEulers[1][2], testEulers[1][3]
-            self.setOrientGoal(posL, quatL, 5)
+            quatL.x, quatL.y, quatL.z, quatL.w = testQuats[1][0], testQuats[1][1], testQuats[1][2], testQuats[1][3]
+            self.setOrientGoal(posL, quatL, 15)
+	    print "Position should be: "
+            print posL
+            print "Quaternions should be: "
+            print quatL
             raw_input("Press Enter to continue")
-            quatL.x, quatL.y, quatL.z, quatL.w = testEulers[2][0], testEulers[2][1], testEulers[2][2], testEulers[2][3]
-            self.setOrientGoal(posL, quatL, 5)
+            quatL.x, quatL.y, quatL.z, quatL.w = testQuats[2][0], testQuats[2][1], testQuats[2][2], testQuats[2][3]
+            self.setOrientGoal(posL, quatL, 15)
+	    print "Position should be: "
+            print posL
+            print "Quaternions should be: "
+            print quatL
             raw_input("Press Enter to continue")
 
     	raw_input("Press Enter to test both arms")
@@ -343,7 +358,7 @@ class armReachAction(mpcBaseAction):
     	(rows, cols) = np.shape(eulersIn)
     	quatArray = np.zeros((rows, cols+1))
     	for r in xrange(0, rows):
-    	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]])
+    	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
     	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
     	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = quats[0], quats[1], quats[2], quats[3]
 
