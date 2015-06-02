@@ -103,7 +103,7 @@ class armReachAction(mpcBaseAction):
         try:
                 print "--------------------------------"
                 raw_input("Register bowl &  head position! Then press Enter \m")
-                self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
+                #self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
                 (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
                 print "Recived head position: \n"
                 print self.headPos
