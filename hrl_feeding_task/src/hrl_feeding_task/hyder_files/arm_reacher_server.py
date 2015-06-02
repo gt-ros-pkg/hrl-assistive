@@ -15,7 +15,7 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 #Used to communicate with right arm control server
 
-from arm_reacher_helper_right import rightArmControl
+#from arm_reacher_helper_right import rightArmControl
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -23,7 +23,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
-class armReachAction(mpcBaseAction, rightArmControl):
+class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm): #removed arm= 'l' so I can use right arm as well as an option
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
@@ -38,19 +38,22 @@ class armReachAction(mpcBaseAction, rightArmControl):
         self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
         try:
-            setOrientGoalRight = rospy.ServiceProxy('setOrientGoalRightService', PosQuatTimeoutSrv)
-            setStopRight = rospy.ServiceProxy('setStopRightService', None_Bool)
-            setPostureGoalRight = rospy.ServiceProxy('setPostureGoalRightService', AnglesTimeoutSrv)
+            self.setOrientGoalRight = rospy.ServiceProxy('/setOrientGoalRightService', PosQuatTimeoutSrv)
+            self.setStopRight = rospy.ServiceProxy('/setStopRightService', None_Bool)
+            self.setPostureGoalRight = rospy.ServiceProxy('/setPostureGoalRightService', AnglesTimeoutSrv)
+	    print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	    print "CONNECTED TO RIGHT ARM SERVER YAY!"
         except:
             print "Oops, can't connect to right arm server!"
 
         #Stored initialization joint angles
         self.initialJointAnglesFrontOfBody = [0, 0.786, 0, -2, -3.141, 0, 0]
 
-        self.initialJointAnglesSideOfBodyLEFT = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+        self.initialJointAnglesSideOfBodyLEFT = [1.570, 0, 0, -1.570, 3.141, 0, -1.570]
+	#self.initialJointAnglesSideOfBodyLEFT = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
         self.initialJointAnglesSideFacingFowardLEFT = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
 
-        self.initialJointAnglesSideOfBodyRIGHT = [1.570, 0, 0, -1.570, 3.141, 0, -4.712]
+        self.initialJointAnglesSideOfBodyRIGHT = [-1.570, 0, 0, -1.570, 3.141, 0, -4.712]
         self.initialJointAnglesSideFacingFowardRIGHT = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
 
 
@@ -87,6 +90,7 @@ class armReachAction(mpcBaseAction, rightArmControl):
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
     	self.timeouts = [15, 7, 4, 4, 4, 12, 12]
+	self.timeoutsR = [10, 10, 10]
     	self.kinectReachTimeout = 15
 
     	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
@@ -99,18 +103,16 @@ class armReachAction(mpcBaseAction, rightArmControl):
         try:
                 print "--------------------------------"
                 raw_input("Register bowl &  head position! Then press Enter \m")
-                #self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
-                #(self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
+                self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
+                (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
                 print "Recived head position: \n"
-                #print self.headPos
-                #print self.headQuat
+                print self.headPos
+                print self.headQuat
                 print "--------------------------------"
                 raw_input("Press Enter to confirm.")
                 print "--------------------------------"
         except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print "Oops, can't get head_frame tf info!, trying again :)"
-                #(self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
-
 
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
@@ -156,6 +158,8 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
         pos  = Point()
         quat = Quaternion()
+	posR = Point()
+	quatR = Quaternion()
 
         # duplication
         confirm = False
@@ -184,25 +188,19 @@ class armReachAction(mpcBaseAction, rightArmControl):
             	self.setOrientGoal(pos, quat, self.kinectReachTimeout)
     		raw_input("Press Enter to continue")
 
+        print "--------------------------------"
+
         self.initJoints()
 
-    	print "--------------------------------"
-
-        print "Testing right arm server code..."
-
-        poseR = PosQuatTimeoutMsg()
-        pointR = Point()
-        quatR = Quaternion()
-
-        pointR.x, pointR.y, pointR.z = .5, -.5, 0
-        quatR.x, quatR.y, quatR.z, quatR.w = 0, 0, 0, 0
-        poseR.position = pointR
-        poseR.orientation = quatR
-        poseR.timeout = 10
-
-        self.setOrientGoalRight(poseR)
-
-        raw_input("Ummm... press Enter to continue")
+	raw_input("Press Enter to test both arms")
+	pos.x, pos.y, pos.z = 1, 0, 0
+	quat.x, quat.y, quat.z, quat.w = 0, 0, 0, 1
+	posR.x, posR.y, posR.z = 1, 0, 0
+	quatR.x, quatR.y, quatR.z, quatR.w = 0, 0, 0, 1
+	#self.setOrientGoal(pos, quat, 10)
+	raw_input("Press Enter to continue")
+	#self.setOrientGoalRight(posR, quatR, 10)
+	raw_input("Press Enter to continue")
 
         print "MOVES1 - Pointing down over bowl "
         (pos.x, pos.y, pos.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
@@ -310,18 +308,17 @@ class armReachAction(mpcBaseAction, rightArmControl):
 
         print "MOVES8 - Moving RIGHT ARM above bowl"
 
-        try:
-            poseR = PosQuatTimeoutMsg()
-            poseR.position.x, poseR.position.y, poseR.position.z = (self.bowl_pos[0] + self.rightArmPosOffsets[0], self.bowl_pos[1] + self.rightArmPosOffsets[1], self.bowl_pos[2] + self.rightArmPosOffsets[2]))
-            poseR.orientation.x, poseR.orientation.y, poseR.orientation.z, poseR.orientation.w = (self.rightArmQuatOffsets[0], self.rightArmQuatOffsets[1], self.rightArmQuatOffsets[2], self.rightArmQuatOffsets[3])
-            poseR.timeout = 10
-            self.setOrientGoalRight(poseR) #Sends request to right arm server
+       
+            
+        posR = Point()
+        quatR = Quaternion()
+        posR.x, posR.y, posR.z = (self.bowl_pos[0] + self.rightArmPosOffsets[0], self.bowl_pos[1] + self.rightArmPosOffsets[1], self.bowl_pos[2] + self.rightArmPosOffsets[2])
+        quatR.x, quatR.y, quatR.z, quatR.w = (self.rightArmQuatOffsets[0], self.rightArmQuatOffsets[1], self.rightArmQuatOffsets[2], self.rightArmQuatOffsets[3])
+        self.setOrientGoalRight(posR, quatR, 10) #Sends request to right arm server
 
-            armReachAction.iteration += 1
+        armReachAction.iteration += 1
 
-            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
-        except:
-            print "Oops, can't connect to right arm server, position not set"
+        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
 
         return True
 
@@ -361,10 +358,7 @@ class armReachAction(mpcBaseAction, rightArmControl):
     	return quatArray
 
     def initJoints(self):
-        rightArmAngles = AnglesTimeoutMsg()
-        rightArmAngles.angles = self.initialJointAnglesSideOfBodyRIGHT
-        rightArmAngles.timeout = 7
-
+       
         initLeft = raw_input("Initialize left arm joint angles? [y/n]")
         if initLeft == 'y':
             print "Initializing left arm joint angles: "
@@ -373,8 +367,8 @@ class armReachAction(mpcBaseAction, rightArmControl):
         initRight = raw_input("Initialize right arm joint angles? [y/n]")
         if initRight == 'y':
             print "Initializing right arm joint angles: "
-            self.setPostureGoalRight(rightArmAngles)
-            raw_input("Press Enter to continue")
+            self.setPostureGoalRight(self.initialJointAnglesSideOfBodyRIGHT, 7)
+	    raw_input("Press Enter to continue")
 
 if __name__ == '__main__':
 
