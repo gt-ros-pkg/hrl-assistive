@@ -63,7 +63,7 @@ class rightArmControl(mpcBaseAction):
         except:
 	    print "Could not set right arm joint angles"
 	    return "Didn't work"
-            
+
 if __name__ == '__main__':
 
     import optparse

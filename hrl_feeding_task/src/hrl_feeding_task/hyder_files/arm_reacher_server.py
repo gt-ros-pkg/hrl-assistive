@@ -205,7 +205,7 @@ class armReachAction(mpcBaseAction):
             testQuats = self.euler2quatArray(testEulers)
 	    print "Calculated test quaternions: "
 	    print testQuats
-	    
+
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[0][0], testQuats[0][1], testQuats[0][2], testQuats[0][3]
             self.setOrientGoal(posL, quatL, 15)
 	    print "Position should be: "
