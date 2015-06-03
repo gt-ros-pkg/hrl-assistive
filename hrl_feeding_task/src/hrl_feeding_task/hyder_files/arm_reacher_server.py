@@ -91,7 +91,8 @@ class armReachAction(mpcBaseAction):
 
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
-    	self.timeouts = [15, 7, 4, 4, 4, 12, 12]
+    	self.timeoutsOld = [15, 7, 4, 4, 4, 12, 12]
+	self.timeouts = [30, 30, 30, 30, 30, 30, 30]
         self.timeoutsR = [10, 10, 10]
     	self.kinectReachTimeout = 15
 
@@ -195,9 +196,10 @@ class armReachAction(mpcBaseAction):
 
         self.initJoints()
 
-        testL = raw_input("Press 'y' to test left arm movements!")
+        testL = raw_input("Press 'y' to test arm movements!")
         if testL == 'y':
             posL.x, posL.y, posL.z = .5, .5, 0
+	    posR.x, posR.y, posR.z = .5, -.5, 0
 
             testEulers = np.array([[90, -60, 0],
                                    [90, -30, 0],
@@ -207,39 +209,44 @@ class armReachAction(mpcBaseAction):
 	    print testQuats
 
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[0][0], testQuats[0][1], testQuats[0][2], testQuats[0][3]
-            self.setPositionGoal(posL, quatL, 1)
-	    self.setOrientGoal(posL, quatL, 10)
+            ans = raw_input("Press 'L' to test left arm movements!")
+	    if ans == 'L':
+	    #self.setPositionGoal(posL, quatL, 1)
+	    	self.setOrientGoal(posL, quatL, 20)
+	    ans = raw_input("Press 'R' to test right arm movements!")
+            if ans == 'R':
+		self.setOrientGoalRight(posR, quatL, 20)
 	    print "Position should be: "
 	    print posL
 	    print "Quaternions should be: "
 	    print quatL
             raw_input("Press Enter to continue")
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[1][0], testQuats[1][1], testQuats[1][2], testQuats[1][3]
-            self.setPositionGoal(posL, quatL, 5)
-	    self.setOrientGoal(posL, quatL, 5)
+	    ans = raw_input("Press 'L' to test left arm movements!")
+            if ans == 'L':
+            #self.setPositionGoal(posL, quatL, 1)
+                self.setOrientGoal(posL, quatL, 20)
+            ans = raw_input("Press 'R' to test right arm movements!")
+            if ans == 'R':
+                self.setOrientGoalRight(posR, quatL, 20)
 	    print "Position should be: "
             print posL
             print "Quaternions should be: "
             print quatL
             raw_input("Press Enter to continue")
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[2][0], testQuats[2][1], testQuats[2][2], testQuats[2][3]
-	    self.setPositionGoal(posL, quatL, 5)
-            self.setOrientGoal(posL, quatL, 5)
+	    ans = raw_input("Press 'L' to test left arm movements!")
+            if ans == 'L':
+            #self.setPositionGoal(posL, quatL, 1)
+                self.setOrientGoal(posL, quatL, 20)
+            ans = raw_input("Press 'R' to test right arm movements!")
+            if ans == 'R':
+                self.setOrientGoalRight(posR, quatL, 20)
 	    print "Position should be: "
             print posL
             print "Quaternions should be: "
             print quatL
             raw_input("Press Enter to continue")
-
-    	raw_input("Press Enter to test both arms")
-    	posL.x, posL.y, posL.z = 1, 0, 0
-    	quatL.x, quatL.y, quatL.z, quatL.w = 0, 0, 0, 1
-    	posR.x, posR.y, posR.z = 1, 0, 0
-    	quatR.x, quatR.y, quatR.z, quatR.w = 0, 0, 0, 1
-    	#self.setOrientGoal(posL, quatL, 10)
-    	raw_input("Press Enter to continue")
-    	#self.setOrientGoalRight(posR, quatR, 10)
-    	raw_input("Press Enter to continue")
 
         print "MOVES1 - Pointing down over bowl "
         (posL.x, posL.y, posL.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
