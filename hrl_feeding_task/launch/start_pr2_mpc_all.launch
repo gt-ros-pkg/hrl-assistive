@@ -1,6 +1,7 @@
 <launch>
 
     <!--Left arm launch files-->
+  <group ns="left">
     <arg name="arm1" default="l"/>
     <arg name="verbose" default="True" />
 
@@ -14,11 +15,13 @@
     <node name="waypoint_generator" pkg="hrl_haptic_mpc" type="waypoint_generator.py" args="-r pr2 -s fabric -a $(arg arm1)" output="screen"/>
     <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node.py" args="-r pr2 -s fabric -a $(arg arm1)" output="screen"/>
     <node name="haptic_mpc" pkg="hrl_haptic_mpc" type="haptic_mpc.py" args="-r pr2 -a $(arg arm1) -v $(arg verbose)" output="screen"/>
+  </group>
 
     <!--Right arm launch files-->
-  <!--
+
   <group ns="right">
     <arg name="arm2" default="r"/>
+    <arg name="verbose" default="True" />
 
     <arg name="robot_config_right" default="$(find hrl_feeding_task)/params/pr2_config_params_r.yaml" />
     <rosparam command="load" file="$(arg robot_config_right)" />
@@ -32,5 +35,5 @@
     <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node.py" args="-r pr2 -s fabric -a $(arg arm2)" output="screen"/>
     <node name="haptic_mpc" pkg="hrl_haptic_mpc" type="haptic_mpc.py" args="-r pr2 -a $(arg arm2) -v $(arg verbose)" output="screen"/>
   </group>
-  -->
+
 </launch>

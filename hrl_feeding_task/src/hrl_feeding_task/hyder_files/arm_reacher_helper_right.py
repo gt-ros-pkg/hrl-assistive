@@ -81,6 +81,8 @@ if __name__ == '__main__':
     except:
         arm = opt.arm
 
+    arm = 'r'
+
     rospy.init_node('arm_reacher_helper')
-    ara = rightArmControl(d_robot, controller, arm)
+    ara2 = rightArmControl(d_robot, controller, arm)
     rospy.spin()

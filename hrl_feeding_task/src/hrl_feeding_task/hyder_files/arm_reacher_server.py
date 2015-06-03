@@ -207,21 +207,24 @@ class armReachAction(mpcBaseAction):
 	    print testQuats
 
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[0][0], testQuats[0][1], testQuats[0][2], testQuats[0][3]
-            self.setOrientGoal(posL, quatL, 15)
+            self.setPositionGoal(posL, quatL, 1)
+	    self.setOrientGoal(posL, quatL, 10)
 	    print "Position should be: "
 	    print posL
 	    print "Quaternions should be: "
 	    print quatL
             raw_input("Press Enter to continue")
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[1][0], testQuats[1][1], testQuats[1][2], testQuats[1][3]
-            self.setOrientGoal(posL, quatL, 15)
+            self.setPositionGoal(posL, quatL, 5)
+	    self.setOrientGoal(posL, quatL, 5)
 	    print "Position should be: "
             print posL
             print "Quaternions should be: "
             print quatL
             raw_input("Press Enter to continue")
             quatL.x, quatL.y, quatL.z, quatL.w = testQuats[2][0], testQuats[2][1], testQuats[2][2], testQuats[2][3]
-            self.setOrientGoal(posL, quatL, 15)
+	    self.setPositionGoal(posL, quatL, 5)
+            self.setOrientGoal(posL, quatL, 5)
 	    print "Position should be: "
             print posL
             print "Quaternions should be: "
@@ -390,10 +393,12 @@ if __name__ == '__main__':
     #controller = 'actionlib'
     #arm        = 'l'
 
-    try:
-        arm = opt.arm1 #added/changed due to new launch file controlling both arms (arm1, arm2)
-    except:
-        arm = opt.arm
+    #try:
+        #arm = opt.arm1 #added/changed due to new launch file controlling both arms (arm1, arm2)
+    #except:
+        #arm = opt.arm
+
+    arm = 'l'
 
     rospy.init_node('arm_reacher_server')
     ara = armReachAction(d_robot, controller, arm)
