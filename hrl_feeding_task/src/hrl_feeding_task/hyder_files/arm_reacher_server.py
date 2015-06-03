@@ -51,7 +51,7 @@ class armReachAction(mpcBaseAction):
 
         self.initialJointAnglesSideOfBodyLEFT = [1.570, 0, 0, -1.570, 3.141, 0, -1.570]
         #self.initialJointAnglesSideOfBodyLEFT = [-1.570, 0, 0, -1.570, 3.141, 0, -1.570]
-        self.initialJointAnglesSideFacingFowardLEFT = [-1.570, 0, 0, -1.570, 1.570, -1.570, -1.570]
+        self.initialJointAnglesSideFacingFowardLEFT = [1.57, 0, 1.57, -1.57, 1.57, 0, -1.57]
 
         self.initialJointAnglesSideOfBodyRIGHT = [-1.570, 0, 0, -1.570, 3.141, 0, -4.712]
         self.initialJointAnglesSideFacingFowardRIGHT = [1.570, 0, 0, -1.570, 1.570, -1.570, -4.712]
@@ -75,25 +75,28 @@ class armReachAction(mpcBaseAction):
                                     [0,       0,	0],
                                     [90,	  0,	0]])
 
-        self.headPosOffsets = np.array([[.01,   .075,   -.01], #offsets from head_frame to left arm spoon
+        self.headPosOffsets = np.array([[.01,   .085,   -.01], #offsets from head_frame to left arm spoon
                                         [.01,   .2,       .1], #feeding motion set of offsets
                                         [0,      0,       0]])
 
         self.headEulers = np.array([[90,    0,  -90], #Euler angles, XYZ rotations for left arm spoon
-                                    [90,    0,  -90], #controls feeding to mouth motion
+                                    [90,    0,  -45], #controls feeding to mouth motion
                                     [90,    0,   0]])
 
         self.stopPos = np.array([[.7, .7, .5]])
         self.stopEulers = np.array([[90, 0, 30]])
 
-        self.rightArmPosOffsets = np.array([[.02, 0, .6]]) #Set of pos offests for the right arm end effector
-        self.rightArmEulers = np.array([[90, 0, 0]]) #Set of end effector angles for right arm
+        self.rightArmPosOffsets = np.array([[.02,  .1, .1],
+					    [.02,  .1, .3],
+					    [0,	   0,   0]]) #Set of pos offests for the right arm end effector
+        self.rightArmEulers = np.array([[90, 0, 0],
+					[90, 0, 0],
+					[0,  0, 0]]) #Set of end effector angles for right arm
 
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
-    	self.timeoutsOld = [15, 7, 4, 4, 4, 12, 12]
-	self.timeouts = [30, 30, 30, 30, 30, 30, 30]
-        self.timeoutsR = [10, 10, 10]
+    	self.timeouts = [20, 7, 4, 4, 4, 10, 7]
+	self.timeoutsR = [10, 10, 10]
     	self.kinectReachTimeout = 15
 
     	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
@@ -339,15 +342,45 @@ class armReachAction(mpcBaseAction):
 
         print "--------------------------------"
 
-        print "MOVES8 - Moving RIGHT ARM above bowl"
+	print "MOVES7.5 - Moving left arm back to original position"
+	self.setPostureGoal(self.initialJointAnglesSideFacingFowardLEFT, 7)
+	armReachAction.iteration += 1
 
-        posR.x, posR.y, posR.z = (self.bowl_pos[0] + self.rightArmPosOffsets[0], self.bowl_pos[1] + self.rightArmPosOffsets[1], self.bowl_pos[2] + self.rightArmPosOffsets[2])
-        quatR.x, quatR.y, quatR.z, quatR.w = (self.rightArmQuatOffsets[0], self.rightArmQuatOffsets[1], self.rightArmQuatOffsets[2], self.rightArmQuatOffsets[3])
+        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+
+        print "--------------------------------"
+
+        print "MOVES8 - Moving RIGHT ARM in front of face"
+
+        posR.x, posR.y, posR.z = (self.headPos[0] + self.rightArmPosOffsets[0][0], self.headPos[1] + self.rightArmPosOffsets[0][1], self.headPos[2] + self.rightArmPosOffsets[0][2])
+        quatR.x, quatR.y, quatR.z, quatR.w = (self.rightArmQuatOffsets[0][0], self.rightArmQuatOffsets[0][1], self.rightArmQuatOffsets[0][2], self.rightArmQuatOffsets[0][3])
         self.setOrientGoalRight(posR, quatR, 10) #Sends request to right arm server
 
         armReachAction.iteration += 1
 
         raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+
+	print "--------------------------------"
+
+        print "MOVES9 - Moving RIGHT ARM away from/above face"
+
+        posR.x, posR.y, posR.z = (self.headPos[0] + self.rightArmPosOffsets[1][0], self.headPos[1] + self.rightArmPosOffsets[1][1], self.headPos[2] + self.rightArmPosOffsets[1][2])
+        quatR.x, quatR.y, quatR.z, quatR.w = (self.rightArmQuatOffsets[1][0], self.rightArmQuatOffsets[1][1], self.rightArmQuatOffsets[1][2], self.rightArmQuatOffsets[1][3])
+        self.setOrientGoalRight(posR, quatR, 10) #Sends request to right arm server
+
+        armReachAction.iteration += 1
+
+        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+
+        print "--------------------------------"
+
+	print "MOVES 9 - Moving RIGHT ARM back to original position"
+	self.setPostureGoalRight(self.initialJointAnglesSideOfBodyRIGHT, 7)
+
+	armReachAction.iteration += 1
+
+        raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
+
 
         return True
 
@@ -379,7 +412,7 @@ class armReachAction(mpcBaseAction):
         initLeft = raw_input("Initialize left arm joint angles? [y/n]")
         if initLeft == 'y':
             print "Initializing left arm joint angles: "
-            self.setPostureGoal(self.initialJointAnglesSideOfBodyLEFT, 7)
+            self.setPostureGoal(self.initialJointAnglesSideFacingFowardLEFT, 7)
             raw_input("Press Enter to continue")
         initRight = raw_input("Initialize right arm joint angles? [y/n]")
         if initRight == 'y':
