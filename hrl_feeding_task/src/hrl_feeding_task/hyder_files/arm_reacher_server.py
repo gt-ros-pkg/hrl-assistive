@@ -86,9 +86,9 @@ class armReachAction(mpcBaseAction):
         self.stopPos = np.array([[.7, .7, .5]])
         self.stopEulers = np.array([[90, 0, 30]])
 
-        self.rightArmPosOffsets = np.array([[.02,  .1, .1],
+        self.rightArmPosOffsets = np.array([[.02,  .05, -.01],
 					    [.02,  .1, .3],
-					    [0,	   0,   0]]) #Set of pos offests for the right arm end effector
+					    [0,	   0,   0]]) #Set of pos offsets for the right arm end effector
         self.rightArmEulers = np.array([[90, 0, 0],
 					[90, 0, 0],
 					[0,  0, 0]]) #Set of end effector angles for right arm
@@ -199,59 +199,8 @@ class armReachAction(mpcBaseAction):
 
         self.initJoints()
 
-        testL = raw_input("Press 'y' to test arm movements!")
-        if testL == 'y':
-            posL.x, posL.y, posL.z = .5, .5, 0
-	    posR.x, posR.y, posR.z = .5, -.5, 0
 
-            testEulers = np.array([[90, -60, 0],
-                                   [90, -30, 0],
-                                   [90,   0, 0]])
-            testQuats = self.euler2quatArray(testEulers)
-	    print "Calculated test quaternions: "
-	    print testQuats
-
-            quatL.x, quatL.y, quatL.z, quatL.w = testQuats[0][0], testQuats[0][1], testQuats[0][2], testQuats[0][3]
-            ans = raw_input("Press 'L' to test left arm movements!")
-	    if ans == 'L':
-	    #self.setPositionGoal(posL, quatL, 1)
-	    	self.setOrientGoal(posL, quatL, 20)
-	    ans = raw_input("Press 'R' to test right arm movements!")
-            if ans == 'R':
-		self.setOrientGoalRight(posR, quatL, 20)
-	    print "Position should be: "
-	    print posL
-	    print "Quaternions should be: "
-	    print quatL
-            raw_input("Press Enter to continue")
-            quatL.x, quatL.y, quatL.z, quatL.w = testQuats[1][0], testQuats[1][1], testQuats[1][2], testQuats[1][3]
-	    ans = raw_input("Press 'L' to test left arm movements!")
-            if ans == 'L':
-            #self.setPositionGoal(posL, quatL, 1)
-                self.setOrientGoal(posL, quatL, 20)
-            ans = raw_input("Press 'R' to test right arm movements!")
-            if ans == 'R':
-                self.setOrientGoalRight(posR, quatL, 20)
-	    print "Position should be: "
-            print posL
-            print "Quaternions should be: "
-            print quatL
-            raw_input("Press Enter to continue")
-            quatL.x, quatL.y, quatL.z, quatL.w = testQuats[2][0], testQuats[2][1], testQuats[2][2], testQuats[2][3]
-	    ans = raw_input("Press 'L' to test left arm movements!")
-            if ans == 'L':
-            #self.setPositionGoal(posL, quatL, 1)
-                self.setOrientGoal(posL, quatL, 20)
-            ans = raw_input("Press 'R' to test right arm movements!")
-            if ans == 'R':
-                self.setOrientGoalRight(posR, quatL, 20)
-	    print "Position should be: "
-            print posL
-            print "Quaternions should be: "
-            print quatL
-            raw_input("Press Enter to continue")
-
-        print "MOVES1 - Pointing down over bowl "
+        print "MOVES 1 - Pointing down over bowl "
         (posL.x, posL.y, posL.z) = (self.bowl_pos[0] + self.bowlPosOffsets[0][0], self.bowl_pos[1] + self.bowlPosOffsets[0][1], self.bowl_pos[2] + self.bowlPosOffsets[0][2])
         (quatL.x, quatL.y, quatL.z, quatL.w) = (self.bowlQuatOffsets[0][0], self.bowlQuatOffsets[0][1], self.bowlQuatOffsets[0][2], self.bowlQuatOffsets[0][3])
         #self.setPositionGoal(posL, quatL, self.timeout)
@@ -263,7 +212,7 @@ class armReachAction(mpcBaseAction):
 
     	print "--------------------------------"
 
-        print "MOVES2 - Moving down into bowl"
+        print "MOVES 2 - Moving down into bowl"
         (posL.x, posL.y, posL.z) = (self.bowl_pos[0] + self.bowlPosOffsets[1][0], self.bowl_pos[1] + self.bowlPosOffsets[1][1], self.bowl_pos[2] + self.bowlPosOffsets[1][2])
         (quatL.x, quatL.y, quatL.z, quatL.w) = (self.bowlQuatOffsets[1][0], self.bowlQuatOffsets[1][1], self.bowlQuatOffsets[1][2], self.bowlQuatOffsets[1][3])
         #self.setPositionGoal(posL, quatL, self.timeout)
@@ -276,7 +225,7 @@ class armReachAction(mpcBaseAction):
 
     	print "--------------------------------"
 
-        print "MOVES3 - Pushing forward in bowl, scooping"
+        print "MOVES 3 - Pushing forward in bowl, scooping"
         (posL.x, posL.y, posL.z) = (self.bowl_pos[0] + self.bowlPosOffsets[2][0], self.bowl_pos[1] + self.bowlPosOffsets[2][1], self.bowl_pos[2] + self.bowlPosOffsets[2][2])
         (quatL.x, quatL.y, quatL.z, quatL.w) = (self.bowlQuatOffsets[2][0], self.bowlQuatOffsets[2][1], self.bowlQuatOffsets[2][2], self.bowlQuatOffsets[2][3])
         #self.setPositionGoal(posL, quatL, self.timeout)
@@ -288,7 +237,7 @@ class armReachAction(mpcBaseAction):
 
     	print "--------------------------------"
 
-        print "MOVES4 - Scooping in bowl"
+        print "MOVES 4 - Scooping in bowl"
         (posL.x, posL.y, posL.z) = (self.bowl_pos[0] + self.bowlPosOffsets[3][0], self.bowl_pos[1] +  self.bowlPosOffsets[3][1], self.bowl_pos[2] + self.bowlPosOffsets[3][2])
         (quatL.x, quatL.y, quatL.z, quatL.w) = (self.bowlQuatOffsets[3][0], self.bowlQuatOffsets[3][1], self.bowlQuatOffsets[3][2], self.bowlQuatOffsets[3][3])
         #self.setPositionGoal(posL, quatL, self.timeout)
@@ -300,7 +249,7 @@ class armReachAction(mpcBaseAction):
 
     	print "--------------------------------"
 
-        print "MOVES5 - Lifting above bowl"
+        print "MOVES 5 - Lifting above bowl"
         (posL.x, posL.y, posL.z) = (self.bowl_pos[0] + self.bowlPosOffsets[4][0], self.bowl_pos[1] + self.bowlPosOffsets[4][1], self.bowl_pos[2] + self.bowlPosOffsets[4][2])
         (quatL.x, quatL.y, quatL.z, quatL.w) = (self.bowlQuatOffsets[4][0], self.bowlQuatOffsets[4][1], self.bowlQuatOffsets[4][2], self.bowlQuatOffsets[4][3])
         #self.setPositionGoal(posL, quatL, self.timeout)
@@ -312,7 +261,7 @@ class armReachAction(mpcBaseAction):
 
     	print "--------------------------------"
 
-    	print "MOVES6 - Reaching to mouth"
+    	print "MOVES 6 - Reaching to mouth"
     	try:
     		(posL.x, posL.y, posL.z) = (self.headPos[0] + self.headPosOffsets[0][0], self.headPos[1] + self.headPosOffsets[0][1], self.headPos[2] + self.headPosOffsets[0][2]);
         	(quatL.x, quatL.y, quatL.z, quatL.w) = (self.headQuatOffsets[0][0], self.headQuatOffsets[0][1], self.headQuatOffsets[0][2], self.headQuatOffsets[0][3])
@@ -326,23 +275,7 @@ class armReachAction(mpcBaseAction):
 
     	print "--------------------------------"
 
-    	print "MOVES7 - Moving away from mouth"
-
-        try:
-            (posL.x, posL.y, posL.z) = (self.headPos[0] + self.headPosOffsets[1][0], self.headPos[1] + self.headPosOffsets[1][1], self.headPos[2] + self.headPosOffsets[1][2])
-            (quatL.x, quatL.y, quatL.z, quatL.w) = (self.headQuatOffsets[1][0], self.headQuatOffsets[1][1], self.headQuatOffsets[1][2], self.headQuatOffsets[1][3])
-            #self.setPositionGoal(posL, quatL, self.timeout)
-            self.setOrientGoal(posL, quatL, self.timeouts[6])
-
-            armReachAction.iteration += 1
-
-            raw_input("Iteration # %d. Enter anything to continue: " % armReachAction.iteration)
-        except:
-            raw_input("Oops, can't get head_frame tf info, press Enter to continue")
-
-        print "--------------------------------"
-
-	print "MOVES7.5 - Moving left arm back to original position"
+	print "MOVES 7 - Moving left arm back to original position"
 	self.setPostureGoal(self.initialJointAnglesSideFacingFowardLEFT, 7)
 	armReachAction.iteration += 1
 
@@ -350,7 +283,7 @@ class armReachAction(mpcBaseAction):
 
         print "--------------------------------"
 
-        print "MOVES8 - Moving RIGHT ARM in front of face"
+        print "MOVES 8 - Moving RIGHT ARM in front of face"
 
         posR.x, posR.y, posR.z = (self.headPos[0] + self.rightArmPosOffsets[0][0], self.headPos[1] + self.rightArmPosOffsets[0][1], self.headPos[2] + self.rightArmPosOffsets[0][2])
         quatR.x, quatR.y, quatR.z, quatR.w = (self.rightArmQuatOffsets[0][0], self.rightArmQuatOffsets[0][1], self.rightArmQuatOffsets[0][2], self.rightArmQuatOffsets[0][3])
@@ -362,7 +295,7 @@ class armReachAction(mpcBaseAction):
 
 	print "--------------------------------"
 
-        print "MOVES9 - Moving RIGHT ARM away from/above face"
+        print "MOVES 9 - Moving RIGHT ARM away from/above face"
 
         posR.x, posR.y, posR.z = (self.headPos[0] + self.rightArmPosOffsets[1][0], self.headPos[1] + self.rightArmPosOffsets[1][1], self.headPos[2] + self.rightArmPosOffsets[1][2])
         quatR.x, quatR.y, quatR.z, quatR.w = (self.rightArmQuatOffsets[1][0], self.rightArmQuatOffsets[1][1], self.rightArmQuatOffsets[1][2], self.rightArmQuatOffsets[1][3])
@@ -374,7 +307,7 @@ class armReachAction(mpcBaseAction):
 
         print "--------------------------------"
 
-	print "MOVES 9 - Moving RIGHT ARM back to original position"
+	print "MOVES 10 - Moving RIGHT ARM back to original position"
 	self.setPostureGoalRight(self.initialJointAnglesSideOfBodyRIGHT, 7)
 
 	armReachAction.iteration += 1
