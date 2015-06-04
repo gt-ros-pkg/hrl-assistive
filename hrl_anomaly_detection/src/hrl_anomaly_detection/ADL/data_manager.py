@@ -1107,12 +1107,12 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
     true_aXData1 = d['ft_force_mag_true_l']
     true_aXData2 = d['audio_rms_true_l'] 
     true_chunks  = d['true_chunks']
-
-    nDataSet = len(true_aXData1)
     
     # Load simulated anomaly
     if an_type is not None:
-    
+
+        nDataSet = len(true_aXData1)
+        
         if True:
             # leave-one-out
             nDataSet = len(true_aXData1)            
@@ -1157,15 +1157,6 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
                 dd['test_chunks']          = test_chunks
 
                 ut.save_pickle(dd, pkl_file)
-            else:
-                dd = ut.load_pickle(pkl_file)
-
-                train_aXData1 = dd['ft_force_mag_train_l']
-                train_aXData2 = dd['audio_rms_train_l'] 
-                train_chunks  = dd['train_chunks']
-                test_aXData1  = dd['ft_force_mag_test_l']
-                test_aXData2  = dd['audio_rms_test_l'] 
-                test_chunks   = dd['test_chunks']
 
             false_aXData1       = dd['ft_force_mag_sim_false_l']
             false_aXData2       = dd['audio_rms_sim_false_l'] 
@@ -1177,10 +1168,34 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
     ##     if os.path.isfile(pkl_file) and opt.bRenew is False:
     ##         dd = ut.load_pickle(pkl_file)
     else:
+
         false_aXData1 = d['ft_force_mag_false_l']
         false_aXData2 = d['audio_rms_false_l'] 
         false_chunks  = d['false_chunks']
+        false_anomaly_start = np.zeros(len(false_chunks))
+        nDataSet = 1
+        i        = 0
 
+        if cross_data_path is not None:
+        
+            if os.path.isdir(cross_data_path) == False:
+                os.system('mkdir -p '+cross_data_path)        
+            pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
+
+            dd = {}
+            if os.path.isfile(pkl_file) is False:
+
+                dd['ft_force_mag_train_l'] = true_aXData1 
+                dd['audio_rms_train_l']    = true_aXData2 
+                dd['train_chunks']         = true_chunks
+                dd['ft_force_mag_test_l']  = false_aXData1 
+                dd['audio_rms_test_l']     = false_aXData2 
+                dd['test_chunks']          = false_chunks
+                dd['anomaly_start_idx']    = false_anomaly_start
+
+                ut.save_pickle(dd, pkl_file)
+            
+            
     print "All: ", len(true_aXData1)+len(false_aXData1), \
       " Success: ", len(true_aXData1), \
       " Failure: ", len(false_aXData1)
