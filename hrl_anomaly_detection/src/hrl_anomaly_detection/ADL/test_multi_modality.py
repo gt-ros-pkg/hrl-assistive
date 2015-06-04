@@ -907,7 +907,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
         else:
             x_test1 = false_dataSet.samples[:,check_dim]
         anomaly_idx = false_dataSet.sa.anomaly_idx
-        
+
         n = len(x_test1)
         for i in range(n):
             m = len(x_test1[i])
