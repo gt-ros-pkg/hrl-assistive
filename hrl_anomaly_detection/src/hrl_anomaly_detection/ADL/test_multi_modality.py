@@ -446,16 +446,26 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
         color = colors.next()
         shape = shapes.next()
 
-        if method == 'globalChange':
-            label = 'Fixed threshold & \n change detection'
-        elif method == 'change':
-            label = 'Change detection'
-        elif method == 'global':
-            label = 'Fixed threshold \n detection'
-        elif method == 'progress':
-            label = 'Progress-based \n detection'
+        if test_title.find('dim')>=0:
+            if check_dim == 0:
+                label = 'Force only'
+            elif check_dim == 1:
+                label = 'Sound only'
+            elif check_dim == 2:
+                label = 'Force & sound'
+            else:
+                label = method +"_"+str(check_dim)                
         else:
-            label = method #+"_"+str(check_dim)
+            if method == 'globalChange':
+                label = 'Fixed threshold & \n change detection'
+            elif method == 'change':
+                label = 'Change detection'
+            elif method == 'global':
+                label = 'Fixed threshold \n detection'
+            elif method == 'progress':
+                label = 'Progress-based \n detection'
+            else:
+                label = method +"_"+str(check_dim)
         pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=4,prop={'size':16})
@@ -1244,7 +1254,7 @@ def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, label
     
 
     
-def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, distribution=False):
+def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, distribution=False, freq=43.0):
 
         ## # find init
         ## pp.figure()
@@ -1270,39 +1280,43 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
         
         return mu, sig
 
+
+    if false_data1 is None:
+        data = data1[0]
+    else:
+        data = false_data1[0]                
+    x   = np.arange(0., float(len(data))) * (1./freq)
         
-    pp.figure()
+        
+    fig = pp.figure()
     plt.rc('text', usetex=True)
 
     #-----------------------------------------------------------------
     ax1 = pp.subplot(211)
     if distribution:
-
         x       = range(len(data1[0]))
         mu, sig = vectors_to_mean_sigma(data1)        
         ax1.fill_between(x, mu-sig, mu+sig, facecolor='green', edgecolor='1.0', \
-                         alpha=0.5, interpolate=True)
-            
+                         alpha=0.5, interpolate=True)            
     else:
         for i, d in enumerate(data1):
             if not(labels is not None and labels[i] == False):
-                true_line, = pp.plot(d, label='Normal data')
+                true_line, = pp.plot(x, d, label='Normal data')
 
     # False data
     if false_data1 is not None:
         for i, d in enumerate(false_data1):
-            pp.plot(d, color='k', linewidth=1.0)
+            pp.plot(x. d, color='k', linewidth=1.0)
                 
     ## # False data
     ## for i, d in enumerate(data1):
     ##     if labels is not None and labels[i] == False:
     ##         pp.plot(d, label=str(i), color='k', linewidth=1.0)
-
-    true_line = ax1.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
-    false_line = ax1.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend
-    
     ax1.set_ylabel("Force [N]", fontsize=18)
-    ax1.legend()
+
+    ## true_line = ax1.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
+    ## false_line = ax1.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend    
+    ## ax1.legend()
 
         
     #-----------------------------------------------------------------
@@ -1315,21 +1329,22 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
     else:        
         for i, d in enumerate(data2):
             if not(labels is not None and labels[i] == False):
-                pp.plot(d)
+                pp.plot(x, d)
 
     # for false data
     if false_data2 is not None:
         for i, d in enumerate(false_data2):
-            pp.plot(d, color='k', linewidth=1.0)
+            pp.plot(x, d, color='k', linewidth=1.0)
             
     ax2.set_ylabel("Sound [RMS]", fontsize=18)
-    ax2.set_xlabel("Time step [43Hz]", fontsize=18)
+    ax2.set_xlabel("Time step [sec]", fontsize=18)
 
-    true_line = ax2.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
-    false_line = ax2.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend
-    ax2.legend()
+    ## true_line = ax2.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
+    ## false_line = ax2.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend
+    ## ax2.legend()
 
-    
+    fig.savefig('tool_case_normal.pdf')
+    fig.savefig('tool_case_normal.png')    
     pp.show()
     
     
@@ -1650,8 +1665,12 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.bAllPlot:
 
+        test_title      = 'plot_all'
+        cross_data_path = os.path.join(cross_root_path, test_title)
+        
         true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], audio_thres[task])
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task])
         
         true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
         true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
