@@ -1417,13 +1417,9 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
-<<<<<<< HEAD
-    class_num = 2
-    task  = 0
-=======
     class_num = 0
     task  = 1
->>>>>>> 91a994bbcda85733fc94f5cad01ec3c71b3e4cf6
+
     if class_num == 0:
         class_name = 'door'
         task_names = ['microwave_black', 'microwave_white', 'lab_cabinet']
