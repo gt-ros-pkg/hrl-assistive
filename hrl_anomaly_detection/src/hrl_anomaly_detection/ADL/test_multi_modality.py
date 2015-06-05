@@ -323,7 +323,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
 
 
 def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                check_dims, an_type, force_an, sound_an, renew=False):
+                check_dims, an_type=None, force_an=None, sound_an=None, renew=False, sim=False):
                     
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -357,7 +357,10 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             # Collect data
             for task_name in all_task_names:
 
-                cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
+                if sim:
+                    cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
+                else:
+                    cross_data_path = os.path.join(cross_root_path, 'multi_'+task_name, test_title)
 
                 t_dirs = os.listdir(cross_data_path)
                 for t_dir in t_dirs:
@@ -1044,48 +1047,48 @@ def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
     return fp_l, err_l
     
 
-def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
+## def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
         
-    import itertools
-    colors = itertools.cycle(['g', 'm', 'c', 'k'])
-    shapes = itertools.cycle(['x','v', 'o', '+'])
+##     import itertools
+##     colors = itertools.cycle(['g', 'm', 'c', 'k'])
+##     shapes = itertools.cycle(['x','v', 'o', '+'])
     
-    pp.figure()    
-    ## pp.title("ROC of anomaly detection ")
-    for i, prefix in enumerate(prefixes):
+##     pp.figure()    
+##     ## pp.title("ROC of anomaly detection ")
+##     for i, prefix in enumerate(prefixes):
 
-        cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
+##         cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
         
-        fp_l = []
-        err_l = []
-        for ths in threshold_mult:
-            res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
-            res_file   = os.path.join(cross_test_path, res_file)
+##         fp_l = []
+##         err_l = []
+##         for ths in threshold_mult:
+##             res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+##             res_file   = os.path.join(cross_test_path, res_file)
 
-            d = ut.load_pickle(res_file)
-            fp  = d['fp'] 
-            err = d['err']         
+##             d = ut.load_pickle(res_file)
+##             fp  = d['fp'] 
+##             err = d['err']         
 
-            fp_l.append([fp])
-            err_l.append([err])
+##             fp_l.append([fp])
+##             err_l.append([err])
 
-        fp_l  = np.array(fp_l)*100.0
+##         fp_l  = np.array(fp_l)*100.0
 
-        color = colors.next()
-        shape = shapes.next()
+##         color = colors.next()
+##         shape = shapes.next()
 
-        if i==0:
-            semantic_label='Known mechanism \n class -'+prefix
-        else:
-            semantic_label='Known mechanism \n identity -'+prefix
+##         if i==0:
+##             semantic_label='Known mechanism \n class -'+prefix
+##         else:
+##             semantic_label='Known mechanism \n identity -'+prefix
             
-        pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+##         pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
 
-    pp.legend(loc=0,prop={'size':14})
+##     pp.legend(loc=0,prop={'size':14})
 
-    pp.xlabel('False positive rate (percentage)')
-    pp.ylabel('Mean excess log likelihood')    
-    pp.show()
+##     pp.xlabel('False positive rate (percentage)')
+##     pp.ylabel('Mean excess log likelihood')    
+##     pp.show()
         
     
 
@@ -1372,7 +1375,7 @@ if __name__ == '__main__':
     p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
                  dest='bRocOnlineMethodCheck',
                  default=False, help='Plot online ROC by real anomaly')    
-    p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
+    p.add_option('--roc_offline_method_check', '--roffmthd', action='store_true', \
                  dest='bRocOfflineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
     p.add_option('--test', action='store_true', \
@@ -1417,7 +1420,7 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
-    class_num = 0
+    class_num = 2
     task  = 1
 
     if class_num == 0:
@@ -1519,7 +1522,7 @@ if __name__ == '__main__':
                     disp=disp, rm_run=opt.bRemoveRunning, sim=True)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                        check_dims, an_type, force_an, sound_an)
+                        check_dims, an_type, force_an, sound_an, sim=True)
 
                             
             
@@ -1557,7 +1560,7 @@ if __name__ == '__main__':
                     disp=disp, rm_run=opt.bRemoveRunning, sim=True)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                        check_dims, an_type, force_an, sound_an)
+                        check_dims, an_type, force_an, sound_an, sim=True)
 
 
     #---------------------------------------------------------------------------           
@@ -1613,7 +1616,7 @@ if __name__ == '__main__':
                     disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                        check_dims, an_type, force_an, sound_an)
+                        check_dims)
                         
     #---------------------------------------------------------------------------           
     ## elif opt.bRocOfflineSimMethodCheck:
