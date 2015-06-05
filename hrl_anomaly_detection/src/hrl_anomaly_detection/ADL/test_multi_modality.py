@@ -54,6 +54,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
 
     # anomaly check method list
     use_ml_pkl = False
+    false_dataSet = None
     count = 0        
     
     for method in check_methods:        
@@ -352,7 +353,11 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
         delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
         ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
 
-        save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
+        if sim:
+            save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
+        else:
+            save_pkl_file = os.path.join(cross_root_path,test_title+'_real_'+method+'_'+str(check_dim)+'.pkl')
+            
         if os.path.isfile(save_pkl_file) == False:        
             # Collect data
             for task_name in all_task_names:
@@ -1421,7 +1426,7 @@ if __name__ == '__main__':
     ## all_task_names  = ['microwave_white']
                 
     class_num = 2
-    task  = 2
+    task  = 1
 
     if class_num == 0:
         class_name = 'door'
@@ -1531,7 +1536,6 @@ if __name__ == '__main__':
         
         print "ROC Online Robot with simulated anomalies"
         test_title      = 'online_method_comp'
-        ## test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
         threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
@@ -1588,7 +1592,7 @@ if __name__ == '__main__':
                     disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                        check_dims, an_type, force_an, sound_an)
+                        check_dims)
                             
 
     #---------------------------------------------------------------------------           

@@ -1156,6 +1156,8 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
                 dd['test_chunks']          = test_chunks
 
                 ut.save_pickle(dd, pkl_file)
+            else:
+                dd = ut.load_pickle(pkl_file)
 
             false_aXData1       = dd['ft_force_mag_sim_false_l']
             false_aXData2       = dd['audio_rms_sim_false_l'] 
@@ -1167,7 +1169,8 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
     ##     if os.path.isfile(pkl_file) and opt.bRenew is False:
     ##         dd = ut.load_pickle(pkl_file)
     else:
-
+        print "Load real anomaly data"
+        
         false_aXData1 = d['ft_force_mag_false_l']
         false_aXData2 = d['audio_rms_false_l'] 
         false_chunks  = d['false_chunks']
