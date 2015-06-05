@@ -12,6 +12,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 import hrl_lib.quaternion as quatMath #Used for quaternion math :)
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -23,29 +24,45 @@ class rightArmControl(mpcBaseAction):
     def __init__(self, d_robot, controller, arm): #removed arm= 'l' so I can use right arm as well as an option
 
         mpcBaseAction.__init__(self, d_robot, controller, arm)
-
-    def setOrientRight(self, pos, quat, timeout):
+        #Allows another node (client) to request specific actions corresponding to the right arm mpcBaseAction instance...
         try:
-            self.setOrientGoal(pos, quat, timeout)
-            outputString = "Right arm pos: " + pos + "\n" + "Right arm quat: " + quat + "\n"
-            return outputString
-        except:
-            return "Could not set right arm end effector orientation"
+		self.setOrientRightGoalService = rospy.Service('/setOrientGoalRightService', PosQuatTimeoutSrv, self.setOrientGoalRight)
 
-    def setStopRight(self):
+        	self.setStopRightService = rospy.Service('/setStopRightService', None_Bool, self.setStopRight)
+
+        	self.setPostureGoalRightService = rospy.Service('/setPostureGoalRightService', AnglesTimeoutSrv, self.setPostureGoalRight)
+		print "Right arm services started!"
+	except:
+		print "Right arm services NOT started!"
+
+    def setOrientGoalRight(self, msg):
+        try:
+            self.setOrientGoal(msg.position, msg.orientation, msg.timeout)
+            outputString = "Right arm pos: " + msg.position + "\n" + "Right arm quat: " + msg.orientation + "\n"
+            print outputString
+	    return "Worked"
+        except:
+            print "Could not set right arm end effector orientation"
+	    return "Didn't work"
+
+    def setStopRight(self, msg):
         try:
             self.setStop()
-            return "Stopped right arm"
+            print "Stopped right arm"
+	    return "Worked"
         except:
-            return "Could not stop right arm"
+            print "Could not stop right arm"
+	    return "Didn't work"
 
-    def setPostureGoalRight(self, angles, timeout):
+    def setPostureGoalRight(self, msg):
         try:
-            self.setPostureGoal(angles, timeout)
-            return "Set right arm joint angles:"
-            return self.getJointAngles()
+            self.setPostureGoal(msg.angles, msg.timeout)
+            outputString = "Set right arm joint angles: " + msg.angles + "\n"
+            print outputString
+	    return "Worked"
         except:
-            return "Could not set right arm joint angles"
+	    print "Could not set right arm joint angles"
+	    return "Didn't work"
 
 if __name__ == '__main__':
 
@@ -64,6 +81,8 @@ if __name__ == '__main__':
     except:
         arm = opt.arm
 
+    arm = 'r'
+
     rospy.init_node('arm_reacher_helper')
-    ara = rightArmControl(d_robot, controller, arm)
+    ara2 = rightArmControl(d_robot, controller, arm)
     rospy.spin()
