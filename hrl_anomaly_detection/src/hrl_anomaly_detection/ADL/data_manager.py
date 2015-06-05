@@ -1185,12 +1185,34 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
             dd = {}
             if os.path.isfile(pkl_file) is False:
 
-                dd['ft_force_mag_train_l'] = true_aXData1 
-                dd['audio_rms_train_l']    = true_aXData2 
-                dd['train_chunks']         = true_chunks
-                dd['ft_force_mag_test_l']  = false_aXData1 
-                dd['audio_rms_test_l']     = false_aXData2 
-                dd['test_chunks']          = false_chunks
+                labels        = [True]*len(true_aXData1)
+                true_dataSet  = create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
+                test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', 
+                                                            random.sample(range(len(labels)), 
+                                                                          len(false_chunks)))
+                test_dataSet  = true_dataSet[test_ids]
+                train_ids     = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
+                train_ids     = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
+                train_dataSet = true_dataSet[train_ids]
+                
+                train_aXData1 = train_dataSet.samples[:,0,:]
+                train_aXData2 = train_dataSet.samples[:,1,:]
+                train_chunks  = train_dataSet.sa.chunks 
+
+                test_aXData1 = test_dataSet.samples[:,0,:]
+                test_aXData2 = test_dataSet.samples[:,1,:]
+                test_chunks  = test_dataSet.sa.chunks
+
+                dd['ft_force_mag_train_l'] = train_aXData1 
+                dd['audio_rms_train_l']    = train_aXData2 
+                dd['train_chunks']         = train_chunks
+                dd['ft_force_mag_test_l']  = test_aXData1 
+                dd['audio_rms_test_l']     = test_aXData2 
+                dd['test_chunks']          = test_chunks
+
+                dd['ft_force_mag_false_l'] = false_aXData1
+                dd['audio_rms_false_l']    = false_aXData2
+                dd['false_chunks']         = false_chunks                 
                 dd['anomaly_start_idx']    = false_anomaly_start
 
                 ut.save_pickle(dd, pkl_file)
