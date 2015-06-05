@@ -1089,7 +1089,6 @@ def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data, an_type, forc
 def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path=None, 
              an_type=None, force_an=None, sound_an=None, bRenew=False):
 
-
     if os.path.isfile(pkl_file) and bRenew is False:
         d = ut.load_pickle(pkl_file)
     else:
