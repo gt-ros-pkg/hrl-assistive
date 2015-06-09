@@ -96,7 +96,7 @@ class armReachAction(mpcBaseAction):
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
     	self.timeouts = [20, 7, 4, 4, 4, 10, 7]
-	self.timeoutsR = [10, 10, 10]
+	    self.timeoutsR = [10, 10, 10]
     	self.kinectReachTimeout = 15
 
     	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
