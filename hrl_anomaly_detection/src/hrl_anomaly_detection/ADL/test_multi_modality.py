@@ -1383,6 +1383,9 @@ if __name__ == '__main__':
     p.add_option('--roc_offline_method_check', '--roffmthd', action='store_true', \
                  dest='bRocOfflineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
+    p.add_option('--online_method_check', '--omc', action='store_true', \
+                 dest='bOnlineMethodCheck',
+                 default=False, help='Plot offline ROC by real anomaly')    
     p.add_option('--test', action='store_true', \
                  dest='bTest',
                  default=False, help='Plot online ROC by simulated anomaly')    
@@ -1606,6 +1609,33 @@ if __name__ == '__main__':
         attr            = 'id'
         onoff_type      = 'offline'
         check_methods   = ['global', 'progress']
+        check_dims      = [2]
+        disp            = 'None'
+
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task], cross_data_path)
+
+        if opt.bAllPlot is not True:
+            fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                    task_names[task], nState, threshold_mult, \
+                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                    disp=disp, rm_run=opt.bRemoveRunning)
+        else:
+            fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
+                        check_dims)
+
+
+    #---------------------------------------------------------------------------           
+    elif opt.bOnlineMethodCheck:
+        
+        print "ROC Online Robot with real anomalies"
+        test_title      = 'online_method_check'
+        cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
+        nState          = nState_l[task]
+        attr            = 'id'
+        onoff_type      = 'online'
+        check_methods   = ['progress']
         check_dims      = [2]
         disp            = 'None'
 
