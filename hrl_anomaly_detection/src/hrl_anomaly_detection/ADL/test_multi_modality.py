@@ -168,7 +168,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                                                                                ths, \
                                                                                check_dim=check_dim)
                     elif onoff_type == 'online':
-                        tp, fn, fp, tn, delay_l = anomaly_check_online(lhm, test_dataSet, \
+                        tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, \
                                                                        false_dataSet, \
                                                                        ths, \
                                                                        check_dim=check_dim)
@@ -630,10 +630,10 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                                                                            max_ths, \
                                                                            check_dim=check_dim)
                 elif onoff_type == 'online':
-                    tp, fn, fp, tn, delay_l = anomaly_check_online(lhm, [], \
-                                                                   false_dataSet, \
-                                                                   max_ths, \
-                                                                   check_dim=check_dim)
+                    tp, fn, fp, tn, delay_l, false_detection_l = anomaly_check_online(lhm, [], \
+                                                                                      false_dataSet, \
+                                                                                      max_ths, \
+                                                                                      check_dim=check_dim)
                 else:
                     tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, [], \
                                                                     false_dataSet, \
@@ -647,6 +647,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 d['fp']    = fp
                 d['ths']   = ths
                 d['delay_l'] = delay_l
+                d['false_detection_l'] = false_detection_l
 
                 try:
                     ut.save_pickle(d,res_file)        
@@ -672,6 +673,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         tp_l = np.zeros(nDataSet)
         tn_l = np.zeros(nDataSet)
         fp_l = np.zeros(nDataSet)
+        delay_l = []
         fpr_l = np.zeros(nDataSet)
         
         for i in xrange(nDataSet):
@@ -682,25 +684,139 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             d = ut.load_pickle(res_file)
             fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
             tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
+            delay_l.append([d['delay_l']])
+            print len(d['delay_l'])
 
         for i in xrange(nDataSet):
             if fp_l[i]+tn_l[i] != 0:
                 fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
-            print fpr_l[i], fp_l[i], (fp_l[i]+tn_l[i])
+            print i, tn_l[i], fp_l[i], len(delay_l[i])
 
+        tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
+        
         pp.ylim([0.0, 100])                   
-        pp.bar(range(nDataSet), fpr_l)
+        pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))
 
-        #fig.savefig('test.pdf')
-        #fig.savefig('test.png')
-        #os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        #pp.show()
         
 
 
 
 #---------------------------------------------------------------------------------------#    
+def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
+                 check_dims, an_type=None, force_an=None, sound_an=None, renew=False, sim=False):
+                    
+    fig = pp.figure()
+
+    if len(check_methods) >= len(check_dims): nClass = len(check_methods)
+    else: nClass = len(check_dims)
+
+    for n in range(nClass):
+
+        if len(check_methods) >= len(check_dims): 
+            method = check_methods[n]
+            check_dim = check_dims[0]
+        else: 
+            method = check_methods[0]
+            check_dim = check_dims[n]
+
+        fn_l = np.zeros(len(all_task_names))
+        tp_l = np.zeros(len(all_task_names))
+        tn_l = np.zeros(len(all_task_names))
+        fp_l = np.zeros(len(all_task_names))
+
+        if sim:
+            save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
+        else:
+            save_pkl_file = os.path.join(cross_root_path,test_title+'_real_'+method+'_'+str(check_dim)+'.pkl')
+
+        if os.path.isfile(save_pkl_file) == False:        
+            # Collect data
+            for task_num, task_name in enumerate(all_task_names):
+
+                if sim:
+                    cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_name, test_title)
+                else:
+                    cross_data_path = os.path.join(cross_root_path, 'multi_'+task_name, test_title)
+
+                t_dirs = os.listdir(cross_data_path)
+                for t_dir in t_dirs:
+                    if t_dir.find(test_title)>=0:
+                        break
+
+                cross_test_path = os.path.join(cross_data_path, t_dir)
+
+                pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
+                    cross_test_path,d))])
+
+                for pkl_file in pkl_files:
+
+                    if pkl_file.find('txt') >= 0:
+                        print "There is running file!!!"
+                        print cross_test_path
+                        res_file = os.path.join(cross_test_path, pkl_file)
+                        os.system('rm '+res_file)
+                        sys.exit()
+
+                    # method
+                    c_method = pkl_file.split('_roc')[0].split('_')[-1]
+                    if c_method != method: continue
+                    # dim
+                    c_dim = int(pkl_file.split('dim_')[-1].split('.pkl')[0])
+                    if c_dim != check_dim: continue
+
+                    res_file = os.path.join(cross_test_path, pkl_file)
+
+                    d = ut.load_pickle(res_file)
+                    fn_l[task_num] += d['fn']; tp_l[task_num] += d['tp'] 
+                    tn_l[task_num] += d['tn']; fp_l[task_num] += d['fp'] 
+
+            data = {}
+            data['fn_l'] = fn_l
+            data['tp_l'] = tp_l
+            data['tn_l'] = tn_l
+            data['fp_l'] = fp_l
+            ut.save_pickle(data, save_pkl_file)
+        else:
+            data = ut.load_pickle(save_pkl_file)
+            fn_l = data['fn_l']
+            tp_l = data['tp_l'] 
+            tn_l = data['tn_l'] 
+            fp_l = data['fp_l'] 
+
+        tpr_l = np.zeros(len(all_task_names))
+        fpr_l = np.zeros(len(all_task_names))
+        npv_l = np.zeros(len(all_task_names))
+        detect_l = np.zeros(len(all_task_names))
+
+        for i in xrange(len(all_task_names)):
+            if tp_l[i]+fn_l[i] != 0:
+                tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+
+            if fp_l[i]+tn_l[i] != 0:
+                fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+            if tn_l[i]+fn_l[i] != 0:
+                npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
+
+            if tn_l[i] + fn_l[i] + fp_l[i] != 0:
+                detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
+                
+        pp.bar(range(len(all_task_names)), fpr_l)
+
+    ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+    ## pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
+
+    fig.savefig('test.pdf')
+    fig.savefig('test.png')
+    os.system('cp test.p* ~/Dropbox/HRL/')
+    #pp.show()
+ 
+#-------------------------------------------------------------------------------------------------------
 def fig_roc_offline(cross_data_path, \
                     true_aXData1, true_aXData2, true_chunks, \
                     false_aXData1, false_aXData2, false_chunks, \
@@ -1093,6 +1209,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
     
     err_l = []
     delay_l = []
+    false_detection_l = []
 
     # 1) Use True data to get true negative rate
     if test_dataSet != []:    
@@ -1127,6 +1244,8 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
             x_test1 = false_dataSet.samples[:,check_dim]
         anomaly_idx = false_dataSet.sa.anomaly_idx
 
+        false_detection_l = np.zeros(len(x_test1))
+
         n = len(x_test1)
         for i in range(n):
             m = len(x_test1[i])
@@ -1155,7 +1274,9 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
                         tp += 1.0    
                     ## err_l.append(err)
 
-    return tp, fn, fp, tn, delay_l
+                if an == 1.0: false_detection_l[i] = True
+
+    return tp, fn, fp, tn, delay_l, false_detection_l
 
 
 def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
@@ -1590,7 +1711,7 @@ if __name__ == '__main__':
     ## all_task_names  = ['microwave_white']
                 
     class_num = 0
-    task  = 1
+    task  = 2
 
     if class_num == 0:
         class_name = 'door'
@@ -1812,8 +1933,8 @@ if __name__ == '__main__':
                      opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
                      disp=disp, rm_run=opt.bRemoveRunning)
         else:
-            fig_eval_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                         check_dims)
+            fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
+                         check_dims, nDataSet)
                         
     #---------------------------------------------------------------------------           
     ## elif opt.bRocOfflineSimMethodCheck:
