@@ -13,6 +13,10 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
+from hrl_summer_2015.src.record_data import robot_kinematics as kinematicsRecord
+from hrl_summer_2015.src.record_data import tool_audio as audioRecord
+from hrl_summer_2015.src.record_data import tool_ft as ftRecord
+
 import hrl_lib.quaternion as quatMath
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
