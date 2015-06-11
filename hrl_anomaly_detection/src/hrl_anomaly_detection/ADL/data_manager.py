@@ -435,7 +435,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
                 max_idx = idx
                 ref_idx = i                                       
                 
-    print len(ft_time_l), ref_idx
+    ## print len(ft_time_l), ref_idx
 
     # Ref force and audio data
     ft_time   = ft_time_l[ref_idx]
@@ -457,7 +457,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     if ft_time[-1] < audio_time[-1]: end_time = ft_time[-1]
     else: end_time = audio_time[-1]
 
-    print "Time: ", start_time, end_time
+    ## print "Time: ", start_time, end_time
         
     # Cut sequence
     idx_start = None
@@ -468,7 +468,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
         if t > end_time and idx_end is None:
             idx_end = i            
     if idx_end is None: idx_end = len(ft_time)-1
-    print "idx: ", idx_start, idx_end
+    ## print "idx: ", idx_start, idx_end
     
     a_idx_start = None
     a_idx_end   = None                
@@ -479,7 +479,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
         if t > end_time and a_idx_end is None:
             a_idx_end = j            
     if a_idx_end is None: a_idx_end = len(audio_time)-1
-    print "a_idx: ", a_idx_start, a_idx_end
+    ## print "a_idx: ", a_idx_start, a_idx_end
 
     # Interpolated sequences
     ft_time_cut       = ft_time[idx_start:idx_end]
@@ -527,7 +527,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     if idx_end is None: idx_end = len(ft_force_mag_cut)-nZero        
     if idx_end <= idx_start: idx_end += 3
     idx_length = idx_end - idx_start + nZero
-    print idx_start, idx_end, idx_length, len(ft_force_mag), len(ft_time)
+    ## print idx_start, idx_end, idx_length, len(ft_force_mag), len(ft_time)
     
     #-------------------------------------------------------------------        
     
@@ -595,7 +595,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             ft_avg2 = np.mean(ft_force_mag_cut[j+1*nZero:j+2*nZero])
 
             if idx_start == None:
-                if ft_avg > f_thres and ft_avg < ft_avg2:
+                if ft_avg > f_thres and ft_avg < ft_avg2 and j-nZero>=0:
                     idx_start = j-nZero
             else:
                 if ft_avg < f_thres and idx_end is None:
@@ -621,10 +621,10 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
             ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_start+idx_length]
             audio_rms_ref_cut = audio_rms_ref_cut[idx_start:idx_start+idx_length]
         else:
-            print labels[i], " : ", idx_start, idx_end
+            print labels[i], " : ", idx_start, idx_end, " in ", np.shape(ft_force_mag_cut), \
+              " ", np.shape(audio_rms_ref_cut)
             ft_force_mag_cut  = ft_force_mag_cut[idx_start:idx_end]
             audio_rms_ref_cut = audio_rms_ref_cut[idx_start:idx_end]
-
 
         label_list.append(labels[i])
         name_list.append(names[i])
@@ -726,7 +726,7 @@ def cutting_for_robot(d, f_zero_size=5, f_thres=1.25, audio_thres=1.0, dtw_flag=
     d['ft_force_mag_false_l'] = ft_force_mag_false_list
     d['audio_rms_false_l']    = audio_rms_false_list
     d['false_chunks']         = false_name_list
-    
+
     return d
 
     
@@ -1163,7 +1163,7 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
             false_aXData2       = dd['audio_rms_sim_false_l'] 
             false_chunks        = dd['sim_false_chunks']
             false_anomaly_start = dd['anomaly_start_idx']
-
+ 
     ## elif opt.bSimAbnormal or opt.bRocOfflineSimAnomaly:
     ##     pkl_file = os.path.join(cross_root_path,task_names[task]+"_sim_an_data.pkl")
     ##     if os.path.isfile(pkl_file) and opt.bRenew is False:

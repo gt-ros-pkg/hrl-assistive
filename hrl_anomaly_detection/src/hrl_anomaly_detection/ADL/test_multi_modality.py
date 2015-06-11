@@ -559,6 +559,11 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 false_chunks  = dd['false_chunks']
                 false_anomaly_start = dd['anomaly_start_idx']                
 
+                ## print np.shape(false_aXData1), np.shape(false_aXData2)
+                ## print false_chunks
+                ## for k in xrange(len(false_aXData2)):
+                ##     print np.shape(false_aXData1[k]), np.shape(false_aXData2[k])
+
                 aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
                 aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
                 labels = [False]*len(false_aXData1)
@@ -594,7 +599,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                         elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
                     else:
                         x_train1 = train_dataSet.samples[:,0,:]
-                        x_train2 = train_dataSet.samples[:,1,:]
+                        x_train2 = train_dataSet.samples[:,1,:]                        
+                        ## plot_all(x_train1, x_train2)
+                        
                         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
                         lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
@@ -621,6 +628,20 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                         if max_ths < ths:
                             max_ths = ths
                             print "Maximum threshold: ", max_ths
+
+
+                if False:      
+                    for j in xrange(len(false_chunks)):                     
+                        if check_dim == 2:
+                            x_test1 = np.array([false_dataSet.samples[j:j+1,0][0]])
+                            x_test2 = np.array([false_dataSet.samples[j:j+1,1][0]])
+                        else:
+                            x_test1 = np.array([false_dataSet.samples[j:j+1,check_dim][0]])
+
+                        print np.shape(x_test1), np.shape(x_test2)
+                            
+                        lhm.likelihood_disp(x_test1, x_test2, max_ths, scale1=[min_c1, max_c1, scale], \
+                                            scale2=[min_c2, max_c2, scale])
 
                             
 
@@ -701,8 +722,8 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
 
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-        #pp.show()
+        #os.system('cp test.p* ~/Dropbox/HRL/')
+        pp.show()
         
 
 
@@ -731,6 +752,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         fp_l = np.zeros(len(all_task_names))
         fdr_l = np.zeros(len(all_task_names)) # false detection rate
 
+        tot_fd_sum = 0
+        tot_fd_cnt = 0
+
         if sim:
             save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
         else:
@@ -755,6 +779,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
                     cross_test_path,d))])
 
+                fd_sum = 0
+                fd_cnt = 0
+
                 for pkl_file in pkl_files:
 
                     if pkl_file.find('txt') >= 0:
@@ -777,14 +804,25 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     fn_l[task_num] += d['fn']; tp_l[task_num] += d['tp'] 
                     tn_l[task_num] += d['tn']; fp_l[task_num] += d['fp'] 
 
+                    fd_sum += np.sum(d['false_detection_l'])
+                    fd_cnt += len(d['false_detection_l'])
+
                     print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
+
+                fdr_l[task_num] = float(fd_sum) / float(fd_cnt)
+
+                tot_fd_sum += float(fd_sum)
+                tot_fd_cnt += float(fd_cnt)
+                                
 
             data = {}
             data['fn_l'] = fn_l
             data['tp_l'] = tp_l
             data['tn_l'] = tn_l
             data['fp_l'] = fp_l
+            data['fdr_l'] = fdr_l
+            data['tot_fdr'] = tot_fdr = tot_fd_sum/tot_fd_cnt
             ut.save_pickle(data, save_pkl_file)
         else:
             data = ut.load_pickle(save_pkl_file)
@@ -792,26 +830,30 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             tp_l = data['tp_l'] 
             tn_l = data['tn_l'] 
             fp_l = data['fp_l'] 
+            fdr_l = data['fdr_l'] 
+            tot_fdr = data['tot_fdr']
 
-        tpr_l = np.zeros(len(all_task_names))
-        fpr_l = np.zeros(len(all_task_names))
-        npv_l = np.zeros(len(all_task_names))
-        detect_l = np.zeros(len(all_task_names))
+        ## tpr_l = np.zeros(len(all_task_names))
+        ## fpr_l = np.zeros(len(all_task_names))
+        ## npv_l = np.zeros(len(all_task_names))
+        ## detect_l = np.zeros(len(all_task_names))
 
-        for i in xrange(len(all_task_names)):
-            if tp_l[i]+fn_l[i] != 0:
-                tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+        ## for i in xrange(len(all_task_names)):
+        ##     if tp_l[i]+fn_l[i] != 0:
+        ##         tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
 
-            if fp_l[i]+tn_l[i] != 0:
-                fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+        ##     if fp_l[i]+tn_l[i] != 0:
+        ##         fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
-            if tn_l[i]+fn_l[i] != 0:
-                npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
+        ##     if tn_l[i]+fn_l[i] != 0:
+        ##         npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
 
-            if tn_l[i] + fn_l[i] + fp_l[i] != 0:
-                detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
+        ##     if tn_l[i] + fn_l[i] + fp_l[i] != 0:
+        ##         detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
                 
-        pp.bar(range(len(all_task_names)), fpr_l)
+        pp.bar(range(len(all_task_names)), fdr_l)
+
+        print tot_fdr
 
     ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
     ## pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
@@ -1715,7 +1757,7 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
-    class_num = 2
+    class_num = 3
     task  = 1
 
     if class_num == 0:
@@ -1729,19 +1771,19 @@ if __name__ == '__main__':
     elif class_num == 1: 
         class_name = 'switch'
         task_names = ['wallsw', 'switch_device', 'switch_outlet']
-        f_zero_size = [5, 18, 7]
-        f_thres     = [0.7, 0.5, 1.0]
+        f_zero_size = [5, 10, 7]
+        f_thres     = [0.7, 0.8, 1.0]
         audio_thres = [1.0, 0.7, 0.0015]
-        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
-        nState_l    = [20, 20, 20]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[50.0, 50.0, 50.0, 50.0],[10.0, 10.0, 10.0, 10.0]]
+        nState_l    = [10, 20, 20]
     elif class_num == 2:        
         class_name = 'lock'
         task_names = ['case', 'lock_wipes', 'lock_huggies']
         f_zero_size = [5, 5, 5]
-        f_thres     = [1.0, 1.0, 1.35]
+        f_thres     = [0.7, 1.0, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
         cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
-        nState_l    = [20, 20, 20]
+        nState_l    = [20, 10, 20]
     elif class_num == 3:        
         class_name = 'complex'
         task_names = ['toaster_white', 'glass_case']
@@ -1922,7 +1964,7 @@ if __name__ == '__main__':
         nState          = nState_l[task]
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['progress']
+        check_methods   = ['global', 'progress']
         check_dims      = [2]
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
