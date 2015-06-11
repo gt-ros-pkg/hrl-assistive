@@ -1590,7 +1590,7 @@ if __name__ == '__main__':
     ## all_task_names  = ['microwave_white']
                 
     class_num = 3
-    task  = 0
+    task  = 1
 
     if class_num == 0:
         class_name = 'door'
