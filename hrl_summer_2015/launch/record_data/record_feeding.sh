@@ -28,4 +28,3 @@ roslaunch hrl_anomaly_detection record_feeding.launch fname:=$FILE_NAME
 
 #    i=$[$i+1]
 #done
-

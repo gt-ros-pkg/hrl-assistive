@@ -15,7 +15,7 @@ import glob
 
 # ROS
 import roslib
-roslib.load_manifest('hrl_anomaly_detection')
+roslib.load_manifest('hrl_summer_2015')
 roslib.load_manifest('geometry_msgs')
 roslib.load_manifest('hrl_lib')
 import rospy, optparse, math, time
@@ -51,7 +51,7 @@ def log_parse():
 
     (options, args) = parser.parse_args()
 
-    return options.tracker_name, options.ft_sensor_name 
+    return options.tracker_name, options.ft_sensor_name
 
 class robot_kinematics(Thread):
     def __init__(self):
@@ -67,7 +67,7 @@ class robot_kinematics(Thread):
         self.time_data  = []
         self.joint_data = []
 
-        
+
         groups = rospy.get_param('/right/haptic_mpc/groups' )
         for group in groups:
             if group['name'] == 'left_arm_joints' and self.arm == 'l':
@@ -97,18 +97,18 @@ class robot_kinematics(Thread):
             ## self.joint_efforts = joint_efforts
             self.joint_velocities = joint_vel
 
-            
+
     def run(self):
-        """Overloaded Thread.run, runs the update 
+        """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
 
-        rate = rospy.Rate(1000) # 25Hz, nominally.            
+        rate = rospy.Rate(1000) # 25Hz, nominally.
         while not self.cancelled:
             self.log()
             rospy.sleep(1/1000.)
-            
+
     def log(self):
-        
+
         self.time_data.append(rospy.get_time()-self.init_time)
         self.joint_data.append(self.joint_angles)
 
@@ -116,7 +116,7 @@ class robot_kinematics(Thread):
         """End this timer thread"""
         self.cancelled = True
         rospy.sleep(1.0)
-        
+
 
 class tool_audio(Thread):
     MAX_INT = 32768.0
@@ -126,72 +126,73 @@ class tool_audio(Thread):
     CHANNEL=1 #number of channels
     FORMAT=pyaudio.paInt16
     DTYPE = np.int16
-    
+    DEVICE = 
+
     def __init__(self):
         super(tool_audio, self).__init__()
         self.daemon = True
         self.cancelled = False
-        
+
         self.init_time = 0.
         self.noise_freq_l = None
         self.noise_band = 150.0
         self.noise_amp_num = 0 #20 #10
-        self.noise_amp_thres = 0.0  
-        self.noise_amp_mult = 2.0  
+        self.noise_amp_thres = 0.0
+        self.noise_amp_mult = 2.0
         self.noise_bias = 0.0
-        
-        self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME) 
+
+        self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME)
         self.audio_data = []
         self.audio_amp  = []
 
         self.time_data = []
-        
+
         self.b,self.a = self.butter_bandpass(1,400, self.RATE, order=6)
-        
-                
+
+
         self.p=pyaudio.PyAudio()
         self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, \
-                                input=True, frames_per_buffer=self.CHUNK)
+                                input_device_index=self.DEVICE, input=True, frames_per_buffer=self.CHUNK)
         rospy.logout('Done subscribing audio')
 
 
     def run(self):
-        """Overloaded Thread.run, runs the update 
+        """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
 
-        self.stream.start_stream()        
-                
+        self.stream.start_stream()
+
         while not self.cancelled:
             self.log()
             ## sleep(0.01)
-        
+
     def log(self):
 
         data=self.stream.read(self.CHUNK)
         self.time_data.append(rospy.get_time()-self.init_time)
-        
+
         audio_data = np.fromstring(data, self.DTYPE)
         ## audio_data = signal.lfilter(self.b, self.a, audio_data)
-        
+
 
         # Exclude low rms data
-        ## amp = self.get_rms(data)            
+        ## amp = self.get_rms(data)
         ## if amp < self.noise_amp_thres*2.0:
         ##     audio_data = audio_data*np.exp( - self.noise_amp_mult*(self.noise_amp_thres - amp))
 
         ## audio_data -= self.noise_bias
-        new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT          
-        
+        new_F = F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
+
         # Remove noise
         ## for noise_freq in self.noise_freq_l:
         ##     new_F = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F)])
-                                
+
         ## frame = np.fft.ifft(new_F)*float(self.MAX_INT)
         frame = audio_data
 
         self.audio_amp.append(new_F)
         self.audio_data.append(frame)
-                
+
         ## self.time_data.append(self.time)
 
     def cancel(self):
@@ -209,13 +210,13 @@ class tool_audio(Thread):
         while count < samples:
             self.stream.read(self.CHUNK)
             count += self.CHUNK
-            rospy.sleep(0.01)        
-            
+            rospy.sleep(0.01)
+
     ## def save_audio(self):
-        
+
     ##     ## RECORD_SECONDS = 9.0
 
-    ##     string_audio_data = np.array(self.audio_data, dtype=self.DTYPE).tostring() 
+    ##     string_audio_data = np.array(self.audio_data, dtype=self.DTYPE).tostring()
     ##     import wave
     ##     WAVE_OUTPUT_FILENAME = "/home/dpark/git/pyaudio/test/output.wav"
     ##     wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
@@ -224,18 +225,18 @@ class tool_audio(Thread):
     ##     wf.setframerate(self.RATE)
     ##     wf.writeframes(b''.join(string_audio_data))
     ##     wf.close()
-            
 
-        ## pp.figure()        
+
+        ## pp.figure()
         ## pp.subplot(211)
         ## pp.plot(new_frames,'b-')
         ## pp.plot(new_filt_frames,'r-')
-        
+
         ## pp.subplot(212)
         ## pp.plot(f[:n/10],np.abs(F[:n/10]),'b')
         ## if new_F is not None:
         ##     pp.plot(f[:n/10],np.abs(new_F[:n/10]),'r')
-        ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)        
+        ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)
         ## pp.show()
 
 
@@ -243,25 +244,25 @@ class tool_audio(Thread):
 
         self.skip(1.0)
         rospy.sleep(1.0)
-        
-        # Get noise frequency        
+
+        # Get noise frequency
         frames=None
-        
+
         ## for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
         data=self.stream.read(self.CHUNK)
         audio_data=np.fromstring(data, self.DTYPE)
 
         if frames is None: frames = audio_data
         else: frames = np.hstack([frames, audio_data])
-        self.noise_amp_thres = self.get_rms(data)            
-        
+        self.noise_amp_thres = self.get_rms(data)
+
         ## self.noise_bias = np.mean(audio_data)
         ## audio_data -= self.noise_bias
 
-        F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT       
-        f  = np.fft.fftfreq(len(F), self.UNIT_SAMPLE_TIME) 
+        F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
+        f  = np.fft.fftfreq(len(F), self.UNIT_SAMPLE_TIME)
         n=len(f)
-                
+
         import heapq
         values = heapq.nlargest(self.noise_amp_num, F[:n/2]) #amplitude
 
@@ -275,35 +276,35 @@ class tool_audio(Thread):
 
         ## self.skip(1.0)
         self.stream.stop_stream()
-        
+
         ## #temp
-        ## ## F1 = F[:n/2]        
+        ## ## F1 = F[:n/2]
         ## for noise_freq in self.noise_freq_l:
         ##     F = np.array([self.filter_rule(x,f[j], noise_freq, self.noise_band) for j, x in enumerate(F)])
         ## ## new_F = np.hstack([F1, F1[::-1]])
         ## new_F = F
-        
+
         ## temp_audio_data = np.fft.ifft(new_F) * float(self.MAX_INT)
         ## print len(temp_audio_data), self.noise_freq_l
-        
+
         ## pp.figure()
         ## pp.subplot(211)
         ## pp.plot(audio_data,'r-')
         ## pp.plot(temp_audio_data,'b-')
-        
+
         ## pp.subplot(212)
         ## pp.plot(f[:n/4],np.abs(F[:n/4]),'b')
         ## pp.stem(self.noise_freq_l, values, 'r-*', bottom=0)
         ## pp.show()
         ## ## raw_input("Enter anything to start: ")
-                        
+
 
     def filter_rule(self, x, freq, noise_freq, noise_band):
         if np.abs(freq) > noise_freq+noise_band or np.abs(freq) < noise_freq-noise_band:
             return x
         else:
             return 0
-                  
+
 
     def butter_bandpass(self, lowcut, highcut, fs, order=5):
         '''
@@ -315,16 +316,16 @@ class tool_audio(Thread):
         b, a = signal.butter(order, [low, high], btype='band')
         return b, a
 
-        
+
     def get_rms(self, block):
         # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
-        
-        # RMS amplitude is defined as the square root of the 
+
+        # RMS amplitude is defined as the square root of the
         # mean over time of the square of the amplitude.
-        # so we need to convert this string of bytes into 
+        # so we need to convert this string of bytes into
         # a string of 16-bit samples...
 
-        # we will get one short out for each 
+        # we will get one short out for each
         # two chars in the string.
         count = len(block)/2
         format = "%dh"%(count)
@@ -333,12 +334,12 @@ class tool_audio(Thread):
         # iterate over the block.
         sum_squares = 0.0
         for sample in shorts:
-        # sample is a signed short in +/- 32768. 
+        # sample is a signed short in +/- 32768.
         # normalize it to 1.0
             n = sample / self.MAX_INT
             sum_squares += n*n
 
-        return math.sqrt( sum_squares / count )        
+        return math.sqrt( sum_squares / count )
 
 class tool_ft(Thread):
     def __init__(self,ft_sensor_topic_name):
@@ -361,7 +362,7 @@ class tool_ft(Thread):
         self.torque_data = []
         self.torque_raw_data = []
 
-        #capture the force on the tool tip	
+        #capture the force on the tool tip
         ## self.force_sub = rospy.Subscriber(ft_sensor_topic_name,\
         ## 	WrenchStamped, self.force_cb)
         #raw ft values from the NetFT
@@ -372,20 +373,20 @@ class tool_ft(Thread):
 
 
     def force_cb(self, msg):
-        self.force = np.matrix([msg.wrench.force.x, 
+        self.force = np.matrix([msg.wrench.force.x,
         msg.wrench.force.y,
         msg.wrench.force.z]).T
-        self.torque = np.matrix([msg.wrench.torque.x, 
+        self.torque = np.matrix([msg.wrench.torque.x,
         msg.wrench.torque.y,
         msg.wrench.torque.z]).T
 
 
     def force_raw_cb(self, msg):
         self.time = msg.header.stamp.to_time()
-        self.force_raw = np.matrix([msg.wrench.force.x, 
+        self.force_raw = np.matrix([msg.wrench.force.x,
         msg.wrench.force.y,
         msg.wrench.force.z]).T
-        self.torque_raw = np.matrix([msg.wrench.torque.x, 
+        self.torque_raw = np.matrix([msg.wrench.torque.x,
         msg.wrench.torque.y,
         msg.wrench.torque.z]).T
         self.counter += 1
@@ -394,16 +395,16 @@ class tool_ft(Thread):
     def reset(self):
         ## self.force_zero.publish(Bool(True))
         pass
-        
+
     def run(self):
-        """Overloaded Thread.run, runs the update 
+        """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
 
-        rate = rospy.Rate(1000) # 25Hz, nominally.            
+        rate = rospy.Rate(1000) # 25Hz, nominally.
         while not self.cancelled:
             self.log()
             rospy.sleep(1/1000.)
-    
+
 
     def log(self):
         if self.counter > self.counter_prev:
@@ -418,15 +419,15 @@ class tool_ft(Thread):
             ## self.torque_data.append(self.torque)
             self.torque_raw_data.append(self.torque_raw)
             self.time_data.append(rospy.get_time()-self.init_time)
-            
+
 
 
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
         rospy.sleep(1.0)
-            
-            
+
+
     ## def static_bias(self):
     ##     print '!!!!!!!!!!!!!!!!!!!!'
     ##     print 'BIASING FT'
@@ -450,7 +451,7 @@ class tool_ft(Thread):
 
 class ADL_log():
     def __init__(self, ft=True, audio=False, kinematics=False, manip=False, test_mode=False):
-        rospy.init_node('ADLs_log', anonymous = True)
+        #rospy.init_node('ADLs_log', anonymous = True)
 
         self.ft = ft
         self.audio = audio
@@ -460,7 +461,7 @@ class ADL_log():
 
         self.init_time = 0.
         self.file_name = 'test'
-        self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()        
+        self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()
         rospy.logout('ADLs_log node subscribing..')
 
         if self.manip:
@@ -481,7 +482,7 @@ class ADL_log():
                 num=raw_input("Enter the number for the choice of task:")
                 ## "\n1) cup \n2) door \n3) drawer"+\
                 ## "\n4) staple\n5) microwave_black\n6) dishwasher\n7) wallsw\n: ")
-                
+
             if num == '1':
                 self.task_name = 'microwave_black'
             elif num == '2':
@@ -518,11 +519,11 @@ class ADL_log():
             elif num == '17':
                 self.task_name = 'lock_wipes'
             elif num == '18':
-                self.task_name = 'toaster_white'                
+                self.task_name = 'toaster_white'
             elif num == '19':
-                self.task_name = 'glass_case'                
+                self.task_name = 'glass_case'
             elif num == '20':
-                self.task_name = 'lab_cabinet'                
+                self.task_name = 'lab_cabinet'
             else:
                 print '\n!!!!!Invalid choice of task!!!!!\n'
                 valid = False
@@ -539,45 +540,45 @@ class ADL_log():
                     print '\n!!!!!Invalid choice of actor!!!!!\n'
                     valid = False
                     sys.exit()
-                    
+
             if valid:
                 ## ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
                 ## if ans == 'y':
                 confirm = True
-                    
+
     def init_log_file(self, subject=None, task=None, actor=None):
 
-        if self.test_mode is False: 
+        if self.test_mode is False:
             self.task_cmd_input(subject, task, actor)
 
-        if self.ft: 
+        if self.ft:
             self.ft = tool_ft(self.ft_sensor_topic_name)
             ## self.ft_log_file = open(self.file_name+'_ft.log','w')
-            
-        if self.audio: 
-            self.audio = tool_audio()
-            ## self.audio_log_file = open(self.file_name+'_audio.log','w')        
 
-        if self.kinematics: 
+        if self.audio:
+            self.audio = tool_audio()
+            ## self.audio_log_file = open(self.file_name+'_audio.log','w')
+
+        if self.kinematics:
             self.kinematics = robot_kinematics()
-            ## self.audio_log_file = open(self.file_name+'_audio.log','w')        
+            ## self.audio_log_file = open(self.file_name+'_audio.log','w')
 
         raw_input('press Enter to reset')
         if self.ft: self.ft.reset()
         ## if self.audio: self.audio.reset()
-        
+
 
     def log_start(self, trial_name):
-        
+
         raw_input('press Enter to begin the test')
         self.init_time = rospy.get_time()
-        if self.ft: 
+        if self.ft:
             self.ft.init_time = self.init_time
             self.ft.start()
-        if self.audio: 
+        if self.audio:
             self.audio.init_time = self.init_time
             self.audio.start()
-        if self.kinematics: 
+        if self.kinematics:
             self.kinematics.init_time = self.init_time
             self.kinematics.start()
 
@@ -588,17 +589,17 @@ class ADL_log():
 
             self.close_log_file(trial_name)
             sys.exit()
-                    
 
-                            
-        
+
+
+
     def close_log_file(self, trial_name):
         # Finish data collection
         if self.ft: self.ft.cancel()
         if self.audio: self.audio.cancel()
         if self.kinematics: self.kinematics.cancel()
-        
-        
+
+
         d = {}
         d['init_time'] = self.init_time
 
@@ -629,9 +630,9 @@ class ADL_log():
         elif flag == "2": self.trial_name = trial_name
         elif flag == "3": sys.exit()
         else: self.trial_name = flag
-        self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name			
+        self.file_name = self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name
 
-            
+
         pkl_list = glob.glob('*.pkl')
         max_num = 0
         for pkl in pkl_list:
@@ -643,8 +644,8 @@ class ADL_log():
         self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
 
         print "File name: ", self.pkl
-            
-        
+
+
         ut.save_pickle(d, self.pkl)
 
         ## self.tool_tracker_log_file.close()
@@ -653,7 +654,7 @@ class ADL_log():
         ## self.gen_log_file.close()
         print 'Closing..  log files have saved..'
 
-                
+
 
 if __name__ == '__main__':
 
@@ -666,23 +667,23 @@ if __name__ == '__main__':
     ## trial_name = 'contentscollision'
     ## trial_name = 'paperblock'
     manip=True
-    
+
     ## log = ADL_log(audio=True, ft=True, manip=manip, test_mode=False)
     log = ADL_log(audio=True, ft=True, kinematics=True,  manip=manip, test_mode=False)
     log.init_log_file(subject, task, actor)
 
     log.log_start(trial_name)
-    
-    rate = rospy.Rate(1000) # 25Hz, nominally.    
+
+    rate = rospy.Rate(1000) # 25Hz, nominally.
     while not rospy.is_shutdown():
         ## log.log_state()
         rate.sleep()
         ## rospy.sleep(1/1000.)
 
     log.close_log_file(trial_name)
-    
 
-    
+
+
 
 
 
@@ -691,24 +692,24 @@ if __name__ == '__main__':
 
 ## class adl_recording():
 ##     def __init__(self, obj_id_list, netft_flag_list):
-##         self.ftc_list = []                                                                                       
-##         for oid, netft in zip(obj_id_list, netft_flag_list):                                                     
-##             self.ftc_list.append(ftc.FTClient(oid, netft))                                                       
+##         self.ftc_list = []
+##         for oid, netft in zip(obj_id_list, netft_flag_list):
+##             self.ftc_list.append(ftc.FTClient(oid, netft))
 ##         self.oid_list = copy.copy(obj_id_list)
-        
+
 ##         ## self.initComms()
 ##         pass
 
-        
+
 ##     def initComms(self):
-        
+
 ##         # service
 ##         #rospy.Service('door_opening/mech_analyse_enable', None_Bool, self.mech_anal_en_cb)
-        
-##         # Subscriber
-##         rospy.Subscriber('/netft_rdt', Wrench, self.ft_sensor_cb)                    
 
-        
+##         # Subscriber
+##         rospy.Subscriber('/netft_rdt', Wrench, self.ft_sensor_cb)
+
+
 ##     # returns a dict of <object id: 3x1 np matrix of force>
 ##     def get_forces(self, bias = True):
 ##         f_list = []
@@ -729,8 +730,8 @@ if __name__ == '__main__':
 ##     def bias_fts(self):
 ##         for ftcl in self.ftc_list:
 ##             ftcl.bias()
-        
-        
+
+
 ##     # TODO
 ##     def ft_sensor_cb(self, msg):
 
@@ -746,13 +747,11 @@ if __name__ == '__main__':
 ##         ar.bias_fts()
 ##         rospy.loginfo("FT bias complete")
 
-        
+
 ##         rate = rospy.Rate(2) # 25Hz, nominally.
 ##         rospy.loginfo("Beginning publishing waypoints")
-##         while not rospy.is_shutdown():         
+##         while not rospy.is_shutdown():
 ##             f = self.get_forces()[0]
 ##             print f
 ##             #print rospy.Time()
-##             rate.sleep()        
-            
-    
+##             rate.sleep()

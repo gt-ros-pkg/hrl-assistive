@@ -2,8 +2,8 @@
 
   <arg name="fname" default="feeding_hrl"/>
 
-  
-  <node pkg="rosbag" type="record" name="rosbag" args="record -o $(find hrl_anomaly_detection)/data/$(arg fname) 
+
+  <node pkg="rosbag" type="record" name="rosbag" args="record -o $(find hrl_anomaly_detection)/data/$(arg fname)
                                                        /tf
                                                        /joint_states
                                                        /l_arm_controller/command
