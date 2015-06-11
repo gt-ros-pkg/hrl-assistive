@@ -1710,8 +1710,13 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
+<<<<<<< HEAD
     class_num = 0
     task  = 2
+=======
+    class_num = 3
+    task  = 1
+>>>>>>> 275623855a1d177f23ffcb7ca9d0cf2195c9b9f3
 
     if class_num == 0:
         class_name = 'door'
