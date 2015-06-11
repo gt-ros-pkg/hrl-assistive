@@ -209,12 +209,12 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         
         fig = pp.figure()
 
-        if len(check_methods) > len(check_dims): nClass = len(check_methods)
+        if len(check_methods) >= len(check_dims): nClass = len(check_methods)
         else: nClass = len(check_dims)
 
         for n in range(nClass):
 
-            if len(check_methods) > len(check_dims): 
+            if len(check_methods) >= len(check_dims): 
                 method = check_methods[n]
                 check_dim = check_dims[0]
             else: 
@@ -492,10 +492,214 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
     os.system('cp test.p* ~/Dropbox/HRL/')
     #pp.show()
  
+       
+#---------------------------------------------------------------------------------------#        
+def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+             prefix, nState=20, \
+             opr='robot', attr='id', bPlot=False, \
+             cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None, rm_run=False, sim=False):
+    
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+    trans_type = "left_right"
+    
+    # Check the existance of workspace
+    cross_test_path = os.path.join(cross_data_path, str(nState)+'_'+test_title)
+    if os.path.isdir(cross_test_path) == False:
+        os.system('mkdir -p '+cross_test_path)
 
+    if rm_run == True:                            
+        os.system('rm '+os.path.join(cross_test_path, 'running')+'*')
+        
+    # anomaly check method list
+    use_ml_pkl = False
+    false_dataSet = None
+    count = 0        
+    
+    for method in check_methods:        
+        for i in xrange(nDataSet):
+
+            pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
+            dd = ut.load_pickle(pkl_file)
+
+            train_aXData1 = dd['ft_force_mag_train_l']
+            train_aXData2 = dd['audio_rms_train_l'] 
+            train_chunks  = dd['train_chunks']
+            test_aXData1 = dd['ft_force_mag_test_l']
+            test_aXData2 = dd['audio_rms_test_l'] 
+            test_chunks  = dd['test_chunks']
+
+            # min max scaling for training data
+            aXData1_scaled, min_c1, max_c1 = dm.scaling(train_aXData1, scale=10.0)
+            aXData2_scaled, min_c2, max_c2 = dm.scaling(train_aXData2, scale=10.0)    
+            labels = [True]*len(train_aXData1)
+            train_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, train_chunks, labels)
+
+            # test data!!
+            aXData1_scaled, _, _ = dm.scaling(test_aXData1, min_c1, max_c1, scale=10.0)
+            aXData2_scaled, _, _ = dm.scaling(test_aXData2, min_c2, max_c2, scale=10.0)    
+            labels = [False]*len(test_aXData1)
+            test_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, test_chunks, labels)
+
+            if sim == True:
+                false_aXData1 = dd['ft_force_mag_sim_false_l']
+                false_aXData2 = dd['audio_rms_sim_false_l'] 
+                false_chunks  = dd['sim_false_chunks']
+                false_anomaly_start = dd['anomaly_start_idx']
+            
+                # generate simulated data!!
+                aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+                aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+                labels = [False]*len(false_aXData1)
+                false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
+                false_dataSet.sa['anomaly_idx'] = false_anomaly_start
+            else:
+                false_aXData1 = dd['ft_force_mag_false_l']
+                false_aXData2 = dd['audio_rms_false_l'] 
+                false_chunks  = dd['false_chunks']
+                false_anomaly_start = dd['anomaly_start_idx']                
+
+                aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+                aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+                labels = [False]*len(false_aXData1)
+                false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
+                false_dataSet.sa['anomaly_idx'] = false_anomaly_start
+
+            for check_dim in check_dims:
+            
+                lhm = None
+
+                # save file name
+                res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
+                res_file = os.path.join(cross_test_path, res_file)
+
+                mutex_file_part = 'running_dataset_'+str(i)+'_dim_'+str(check_dim)+'_'+method
+                mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+                mutex_file      = os.path.join(cross_test_path, mutex_file_full)
+
+                if os.path.isfile(res_file): 
+                    count += 1            
+                    continue
+                elif hcu.is_file(cross_test_path, mutex_file_part): 
+                    continue
+                ## elif os.path.isfile(mutex_file): continue
+                os.system('touch '+mutex_file)
+
+                if lhm is None:
+                    if check_dim is not 2:
+                        x_train1 = train_dataSet.samples[:,check_dim,:]
+                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
+                                                 check_method=method)
+                        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
+                        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
+                    else:
+                        x_train1 = train_dataSet.samples[:,0,:]
+                        x_train2 = train_dataSet.samples[:,1,:]
+                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
+                        lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
+
+                # find a minimum sensitivity gain
+                if check_dim == 2:
+                    x_test1 = test_dataSet.samples[:,0]
+                    x_test2 = test_dataSet.samples[:,1]
+                else:
+                    x_test1 = test_dataSet.samples[:,check_dim]
+
+                max_ths = 0
+                n = len(x_test1)
+                for i in range(n):
+                    m = len(x_test1[i])
+
+                    # anomaly_check only returns anomaly cases only
+                    for j in range(2,m):                    
+
+                        if check_dim == 2:            
+                            ths = lhm.max_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
+                        else:
+                            ths = lhm.max_sensitivity_gain(x_test1[i][:j])
+
+                        if max_ths < ths:
+                            max_ths = ths
+                            print "Maximum threshold: ", max_ths
+
+                            
+
+                if test:
+                    tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, [], \
+                                                                           false_dataSet, \
+                                                                           max_ths, \
+                                                                           check_dim=check_dim)
+                elif onoff_type == 'online':
+                    tp, fn, fp, tn, delay_l = anomaly_check_online(lhm, [], \
+                                                                   false_dataSet, \
+                                                                   max_ths, \
+                                                                   check_dim=check_dim)
+                else:
+                    tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, [], \
+                                                                    false_dataSet, \
+                                                                    max_ths, \
+                                                                    check_dim=check_dim)
+
+                d = {}
+                d['fn']    = fn
+                d['tn']    = tn
+                d['tp']    = tp
+                d['fp']    = fp
+                d['ths']   = ths
+                d['delay_l'] = delay_l
+
+                try:
+                    ut.save_pickle(d,res_file)        
+                except:
+                    print "There is the targeted pkl file"
+
+                os.system('rm '+mutex_file)
+                print "-----------------------------------------------"
+
+    if count == len(check_methods)*nDataSet*len(check_dims):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
+    else:
+        return
         
 
-#---------------------------------------------------------------------------------------#        
+    if bPlot:
+
+        fig = pp.figure()
+        
+        fn_l = np.zeros(nDataSet)
+        tp_l = np.zeros(nDataSet)
+        tn_l = np.zeros(nDataSet)
+        fp_l = np.zeros(nDataSet)
+        fpr_l = np.zeros(nDataSet)
+        
+        for i in xrange(nDataSet):
+            # save file name
+            res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
+            res_file = os.path.join(cross_test_path, res_file)
+
+            d = ut.load_pickle(res_file)
+            fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
+            tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
+
+        for i in xrange(nDataSet):
+            if fp_l[i]+tn_l[i] != 0:
+                fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+            print fpr_l[i], fp_l[i], (fp_l[i]+tn_l[i])
+
+        pp.ylim([0.0, 100])                   
+        pp.bar(range(nDataSet), fpr_l)
+
+        #fig.savefig('test.pdf')
+        #fig.savefig('test.png')
+        #os.system('cp test.p* ~/Dropbox/HRL/')
+        pp.show()
+        
+
+
+
 #---------------------------------------------------------------------------------------#    
 def fig_roc_offline(cross_data_path, \
                     true_aXData1, true_aXData2, true_chunks, \
@@ -1052,49 +1256,6 @@ def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
     return fp_l, err_l
     
 
-## def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
-        
-##     import itertools
-##     colors = itertools.cycle(['g', 'm', 'c', 'k'])
-##     shapes = itertools.cycle(['x','v', 'o', '+'])
-    
-##     pp.figure()    
-##     ## pp.title("ROC of anomaly detection ")
-##     for i, prefix in enumerate(prefixes):
-
-##         cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
-        
-##         fp_l = []
-##         err_l = []
-##         for ths in threshold_mult:
-##             res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
-##             res_file   = os.path.join(cross_test_path, res_file)
-
-##             d = ut.load_pickle(res_file)
-##             fp  = d['fp'] 
-##             err = d['err']         
-
-##             fp_l.append([fp])
-##             err_l.append([err])
-
-##         fp_l  = np.array(fp_l)*100.0
-
-##         color = colors.next()
-##         shape = shapes.next()
-
-##         if i==0:
-##             semantic_label='Known mechanism \n class -'+prefix
-##         else:
-##             semantic_label='Known mechanism \n identity -'+prefix
-            
-##         pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
-
-##     pp.legend(loc=0,prop={'size':14})
-
-##     pp.xlabel('False positive rate (percentage)')
-##     pp.ylabel('Mean excess log likelihood')    
-##     pp.show()
-        
     
 
 def plot_audio(time_list, data_list, title=None, chunk=1024, rate=44100.0, max_int=32768.0 ):
@@ -1428,8 +1589,8 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
-    class_num = 2
-    task  = 1
+    class_num = 0
+    task  = 0
 
     if class_num == 0:
         class_name = 'door'
@@ -1629,7 +1790,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.bOnlineMethodCheck:
         
-        print "ROC Online Robot with real anomalies"
+        print "Evaluation for Online Robot with real anomalies and automatic threshold decision"
         test_title      = 'online_method_check'
         cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
         nState          = nState_l[task]
@@ -1638,19 +1799,21 @@ if __name__ == '__main__':
         check_methods   = ['progress']
         check_dims      = [2]
         disp            = 'None'
+        rFold           = 0.75 # ratio of training dataset in true dataset
+        nDataSet        = 10
 
         true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
           = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
-                        audio_thres[task], cross_data_path)
+                        audio_thres[task], cross_data_path, rFold=rFold, nDataSet=nDataSet)
 
         if opt.bAllPlot is not True:
-            fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
-                    task_names[task], nState, threshold_mult, \
-                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
-                    disp=disp, rm_run=opt.bRemoveRunning)
+            fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                     task_names[task], nState, \
+                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                     disp=disp, rm_run=opt.bRemoveRunning)
         else:
-            fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
-                        check_dims)
+            fig_eval_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
+                         check_dims)
                         
     #---------------------------------------------------------------------------           
     ## elif opt.bRocOfflineSimMethodCheck:
@@ -2243,3 +2406,46 @@ if __name__ == '__main__':
 
 
     
+## def fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id'):
+        
+##     import itertools
+##     colors = itertools.cycle(['g', 'm', 'c', 'k'])
+##     shapes = itertools.cycle(['x','v', 'o', '+'])
+    
+##     pp.figure()    
+##     ## pp.title("ROC of anomaly detection ")
+##     for i, prefix in enumerate(prefixes):
+
+##         cross_test_path = os.path.join(cross_data_path, 'multi_'+prefix, str(nState))
+        
+##         fp_l = []
+##         err_l = []
+##         for ths in threshold_mult:
+##             res_file   = prefix+'_roc_'+opr+'_'+'ths_'+str(ths)+'.pkl'
+##             res_file   = os.path.join(cross_test_path, res_file)
+
+##             d = ut.load_pickle(res_file)
+##             fp  = d['fp'] 
+##             err = d['err']         
+
+##             fp_l.append([fp])
+##             err_l.append([err])
+
+##         fp_l  = np.array(fp_l)*100.0
+
+##         color = colors.next()
+##         shape = shapes.next()
+
+##         if i==0:
+##             semantic_label='Known mechanism \n class -'+prefix
+##         else:
+##             semantic_label='Known mechanism \n identity -'+prefix
+            
+##         pp.plot(fp_l, err_l, '--'+shape+color, label= semantic_label, mec=color, ms=8, mew=2)
+
+##     pp.legend(loc=0,prop={'size':14})
+
+##     pp.xlabel('False positive rate (percentage)')
+##     pp.ylabel('Mean excess log likelihood')    
+##     pp.show()
+        

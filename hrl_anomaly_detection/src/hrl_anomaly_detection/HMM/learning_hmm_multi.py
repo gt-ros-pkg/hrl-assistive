@@ -751,6 +751,67 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
+    def max_sensitivity_gain(self, X1, X2=None):
+
+        if self.nEmissionDim == 1: X_test = np.array([X1])
+        else: X_test = self.convert_sequence(X1, X2, emission=False)                
+
+        try:
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            logp         = self.ml.loglikelihood(final_ts_obj)
+        except:
+            print "Too different input profile that cannot be expressed by emission matrix"
+            return -1, 0.0 # error
+
+        ## if self.check_method == 'change' or self.check_method == 'globalChange':
+
+        ##     if len(X1)<3: return -1, 0.0 #error
+
+        ##     if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
+        ##     else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
+
+        ##     try:
+        ##         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+        ##         last_logp         = self.ml.loglikelihood(final_ts_obj)
+        ##     except:
+        ##         print "Too different input profile that cannot be expressed by emission matrix"
+        ##         return -1, 0.0 # error
+
+        ##     ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
+
+        ##     err = (self.l_mean_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
+        ##     if err < 0.0: return 1.0, 0.0 # anomaly            
+            
+        ## if self.check_method == 'global' or self.check_method == 'globalChange':
+        ##     err = logp - (self.l_mu - ths_mult*self.l_std) 
+        ##     if err < 0.0: return 1.0, 0.0 # anomaly
+        ##     else: return 0.0, err # normal               
+            
+        if self.check_method == 'progress':
+            try:
+                post = np.array(self.ml.posterior(final_ts_obj))            
+            except:
+                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                return 1.0, 0.0 # anomaly
+
+            n = len(np.squeeze(X1))
+                
+            # Find the best posterior distribution
+            min_dist  = 100000000
+            min_index = 0
+            for j in xrange(self.nGaussian):
+                dist = entropy(post[n-1], self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist 
+
+            ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
+
+        return ths
+        
+
+    #----------------------------------------------------------------------        
+    #
     def simulation(self, X1, X2):
 
         X1= np.squeeze(X1)
