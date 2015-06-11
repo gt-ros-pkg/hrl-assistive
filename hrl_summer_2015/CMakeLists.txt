@@ -26,7 +26,7 @@ rosbuild_gensrv()
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
-rosbuild_add_executable(CupFinder src/CupFinder.cpp)
+#rosbuild_add_executable(CupFinder src/CupFinder.cpp)
 
 #rosbuild_add_executable(example examples/example.cpp)
 #rosbuild_add_executable(pkl_converter src/pkl_converter.cpp)
