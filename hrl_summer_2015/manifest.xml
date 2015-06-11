@@ -1,5 +1,5 @@
 <package>
-    <description brief=“hrl_summer_2015”>
+    <description brief="hrl_summer_2015">
 
         Project for summer 2015
 
@@ -15,7 +15,7 @@
     <depend package="pcl"/>
     <depend package="pcl_ros"/>
     <depend package="image_transport"/>
-    <depend package="image_geometry"/>
+    <!--depend package="image_geometry"/-->
     <depend package="tf"/>
     <depend package="geometry_msgs"/>
 
@@ -23,7 +23,7 @@
     <depend package="hrl_lib"/>
 
     <depend package="sandbox_dpark_darpa_m3"/>
-
+    
 </package>
 
 

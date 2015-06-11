@@ -1,0 +1,11 @@
+<launch>
+    <group ns="right">
+      <arg name="arm" default="r"/>
+      <arg name="verbose" default="True" />
+
+      <node name="online_analyse" pkg="hrl_anomaly_detection" type="mechanism_analyse_online.py" args="--man" output="screen" />
+      <node name="online_detection" pkg="hrl_anomaly_detection" type="anomaly_detector_door.py" args="" output="screen" />
+
+    </group>
+
+</launch>
