@@ -674,6 +674,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         tn_l = np.zeros(nDataSet)
         fp_l = np.zeros(nDataSet)
         delay_l = []
+        fd_l = []
         fpr_l = np.zeros(nDataSet)
         
         for i in xrange(nDataSet):
@@ -685,13 +686,13 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
             tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
             delay_l.append([d['delay_l']])
-            print len(d['delay_l'])
+            fd_l.append([d['false_detection_l']])
+            print d['false_detection_l']
 
         for i in xrange(nDataSet):
             if fp_l[i]+tn_l[i] != 0:
                 fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
-            print i, tn_l[i], fp_l[i], len(delay_l[i])
 
         tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
         
@@ -728,6 +729,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         tp_l = np.zeros(len(all_task_names))
         tn_l = np.zeros(len(all_task_names))
         fp_l = np.zeros(len(all_task_names))
+        fdr_l = np.zeros(len(all_task_names)) # false detection rate
 
         if sim:
             save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
@@ -774,6 +776,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     d = ut.load_pickle(res_file)
                     fn_l[task_num] += d['fn']; tp_l[task_num] += d['tp'] 
                     tn_l[task_num] += d['tn']; fp_l[task_num] += d['fp'] 
+
+                    print task_num, d['false_detection_l']
+                    ## fdr_l[task_num] = d['false_detection_l']
 
             data = {}
             data['fn_l'] = fn_l
@@ -1710,7 +1715,7 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
-    class_num = 3
+    class_num = 2
     task  = 1
 
     if class_num == 0:
