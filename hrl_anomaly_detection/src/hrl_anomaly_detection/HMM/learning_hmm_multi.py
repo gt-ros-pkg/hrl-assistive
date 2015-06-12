@@ -710,7 +710,7 @@ class learning_hmm_multi(learning_base):
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
 
-            err = (self.l_mean_delta + abs(ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
+            err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             if err < 0.0: return 1.0, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':

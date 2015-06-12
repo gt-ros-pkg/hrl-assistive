@@ -317,8 +317,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-        ## pp.show()
+        #os.system('cp test.p* ~/Dropbox/HRL/')
+        pp.show()
         
     return
 
@@ -1880,7 +1880,8 @@ if __name__ == '__main__':
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['change', 'global', 'globalChange', 'progress']
+        ## check_methods   = ['change', 'global', 'globalChange', 'progress']
+        check_methods   = ['change']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
