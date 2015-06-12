@@ -807,7 +807,7 @@ class learning_hmm_multi(learning_base):
                 print "Too different input profile that cannot be expressed by emission matrix"
                 return -1, 0.0 # error
             
-            ths = abs(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
+            ths = -(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
             return ths, 0
         
 

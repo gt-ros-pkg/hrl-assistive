@@ -1982,8 +1982,7 @@ if __name__ == '__main__':
         nState          = nState_l[task]
         attr            = 'id'
         onoff_type      = 'online'
-        ## check_methods   = ['global', 'progress']
-        check_methods   = ['progress']
+        check_methods   = ['change', 'global', 'progress']
         check_dims      = [2]
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
