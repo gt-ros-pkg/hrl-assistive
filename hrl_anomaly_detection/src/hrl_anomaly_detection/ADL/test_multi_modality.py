@@ -36,7 +36,7 @@ from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
             prefix, nState=20, \
-            threshold_mult = np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
+            threshold_mult = -1.0*np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
             cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None, rm_run=False, sim=False):
     
     # For parallel computing
@@ -612,7 +612,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 else:
                     x_test1 = test_dataSet.samples[:,check_dim]
 
-                max_ths = 0
+                min_ths = 0
                 n = len(x_test1)
                 for i in range(n):
                     m = len(x_test1[i])
@@ -621,13 +621,13 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                     for j in range(2,m):                    
 
                         if check_dim == 2:            
-                            ths = lhm.max_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
+                            ths = lhm.get_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
                         else:
-                            ths = lhm.max_sensitivity_gain(x_test1[i][:j])
+                            ths = lhm.get_sensitivity_gain(x_test1[i][:j])
 
-                        if max_ths < ths:
-                            max_ths = ths
-                            print "Maximum threshold: ", max_ths
+                        if min_ths > ths:
+                            min_ths = ths
+                            print "Minimum threshold: ", min_ths
 
 
                 if False:      
@@ -648,17 +648,17 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 if test:
                     tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, [], \
                                                                            false_dataSet, \
-                                                                           max_ths, \
+                                                                           min_ths, \
                                                                            check_dim=check_dim)
                 elif onoff_type == 'online':
                     tp, fn, fp, tn, delay_l, false_detection_l = anomaly_check_online(lhm, [], \
                                                                                       false_dataSet, \
-                                                                                      max_ths, \
+                                                                                      min_ths, \
                                                                                       check_dim=check_dim)
                 else:
                     tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, [], \
                                                                     false_dataSet, \
-                                                                    max_ths, \
+                                                                    min_ths, \
                                                                     check_dim=check_dim)
 
                 d = {}
@@ -687,8 +687,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         
 
     if bPlot:
-
-        fig = pp.figure()
+        method = 'global'
+        
+        fig = pp.figure()       
         
         fn_l = np.zeros(nDataSet)
         tp_l = np.zeros(nDataSet)
@@ -1757,8 +1758,8 @@ if __name__ == '__main__':
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
                 
-    class_num = 3
-    task  = 1
+    class_num = 0
+    task  = 0
 
     if class_num == 0:
         class_name = 'door'
@@ -1819,7 +1820,7 @@ if __name__ == '__main__':
         print "ROC Offline Robot with simulated anomalies"
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 1.5, 30, endpoint=True) 
+        threshold_mult  = -1.0*np.logspace(0.1, 1.5, 30, endpoint=True) 
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['global', 'progress']
@@ -1837,7 +1838,7 @@ if __name__ == '__main__':
         test_title      = 'online_dim_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 
+        threshold_mult  = -1.0*(np.logspace(0.1, 2.0, 30, endpoint=True) - 5.0 )
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['progress']
@@ -1870,7 +1871,7 @@ if __name__ == '__main__':
         test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
+        threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['change', 'global', 'globalChange', 'progress']
@@ -1906,7 +1907,7 @@ if __name__ == '__main__':
         test_title      = 'online_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
+        threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['change', 'global', 'globalChange', 'progress']
@@ -1934,7 +1935,7 @@ if __name__ == '__main__':
         test_title      = 'offline_method_comp'
         cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0
+        threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'offline'
         check_methods   = ['global', 'progress']

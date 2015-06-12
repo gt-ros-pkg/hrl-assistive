@@ -710,11 +710,11 @@ class learning_hmm_multi(learning_base):
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
 
-            err = (self.l_mean_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
+            err = (self.l_mean_delta + abs(ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             if err < 0.0: return 1.0, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':
-            err = logp - (self.l_mu - ths_mult*self.l_std) 
+            err = logp - (self.l_mu + ths_mult*self.l_std) 
             if err < 0.0: return 1.0, 0.0 # anomaly
             else: return 0.0, err # normal               
             
@@ -736,10 +736,10 @@ class learning_hmm_multi(learning_base):
                     min_index = j
                     min_dist  = dist 
 
-            ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+            ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
             ## raw_input()
 
-            err = logp - (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
+            err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
             ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
         ## else:
         ##     print "Not available anomaly check method"
@@ -751,7 +751,7 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def max_sensitivity_gain(self, X1, X2=None):
+    def get_sensitivity_gain(self, X1, X2=None):
 
         if self.nEmissionDim == 1: X_test = np.array([X1])
         else: X_test = self.convert_sequence(X1, X2, emission=False)                
@@ -763,29 +763,6 @@ class learning_hmm_multi(learning_base):
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
-        ## if self.check_method == 'change' or self.check_method == 'globalChange':
-
-        ##     if len(X1)<3: return -1, 0.0 #error
-
-        ##     if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
-        ##     else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
-
-        ##     try:
-        ##         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-        ##         last_logp         = self.ml.loglikelihood(final_ts_obj)
-        ##     except:
-        ##         print "Too different input profile that cannot be expressed by emission matrix"
-        ##         return -1, 0.0 # error
-
-        ##     ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
-
-        ##     err = (self.l_mean_delta + ths_mult*self.l_std_delta ) - abs(logp-last_logp)
-        ##     if err < 0.0: return 1.0, 0.0 # anomaly            
-            
-        ## if self.check_method == 'global' or self.check_method == 'globalChange':
-        ##     err = logp - (self.l_mu - ths_mult*self.l_std) 
-        ##     if err < 0.0: return 1.0, 0.0 # anomaly
-        ##     else: return 0.0, err # normal               
             
         if self.check_method == 'progress':
             try:
@@ -806,6 +783,24 @@ class learning_hmm_multi(learning_base):
                     min_dist  = dist 
 
             ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
+
+        elif self.check_method == 'global':
+            ths = (logp - self.l_mu) / self.l_std
+
+        elif self.check_method == 'change':
+            if len(X1)<3: return -1, 0.0 #error
+
+            if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
+            else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return -1, 0.0 # error
+            
+            ths = abs(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
 
         return ths
         
@@ -1029,7 +1024,7 @@ class learning_hmm_multi(learning_base):
             ll_likelihood[i] = logp
             ll_state_idx[i]  = min_index
             ll_likelihood_mu[i]  = self.ll_mu[min_index]
-            ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] - ths_mult*self.ll_std[min_index]
+            ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
 
         # temp to see offline state path
         ## path_l = path
@@ -1120,7 +1115,7 @@ class learning_hmm_multi(learning_base):
         ax3 = plt.subplot(313)        
         ax3.plot(x*(1./43.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
         ax3.plot(x*(1./43.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
-        ax3.plot(x*(1./43.), ll_likelihood_mu - ths_mult*ll_likelihood_std, 'r--', label='Threshold')
+        ax3.plot(x*(1./43.), ll_likelihood_mu + ths_mult*ll_likelihood_std, 'r--', label='Threshold')
         ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
         ax3.set_ylabel('Log-likelihood',fontsize=18)
         ax3.set_xlim([0, x[-1]*(1./43.)])
