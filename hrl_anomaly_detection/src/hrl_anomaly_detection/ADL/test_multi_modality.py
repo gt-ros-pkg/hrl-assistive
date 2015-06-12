@@ -1727,6 +1727,11 @@ if __name__ == '__main__':
                  default=False, help='Plot')
     p.add_option('--rm_running', '--rr', action='store_true', dest='bRemoveRunning',
                  default=False, help='Remove all the running files')
+
+    p.add_option('--class', '--c', action='store', type='int', dest='nClass',
+                 default=0, help='Store a class number')
+    p.add_option('--task', '--t', action='store', type='int', dest='nTask',
+                 default=0, help='Store a task number')
     
 
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
@@ -1757,9 +1762,10 @@ if __name__ == '__main__':
     all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
                        'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
-                
-    class_num = 0
-    task  = 0
+
+    
+    class_num = int(opt.nClass)
+    task  = int(opt.nTask)
 
     if class_num == 0:
         class_name = 'door'
