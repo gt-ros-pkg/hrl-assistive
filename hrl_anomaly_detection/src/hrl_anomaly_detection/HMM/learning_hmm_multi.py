@@ -711,12 +711,18 @@ class learning_hmm_multi(learning_base):
                 return -1, 0.0 # error
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
-
-            err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
+            if type(ths_mult) == list:
+                err = (self.l_mean_delta + (-1.0*ths_mult[0])*self.l_std_delta ) - abs(logp-last_logp)
+            else:                
+                err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             if err < 0.0: return 1.0, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':
-            err = logp - (self.l_mu + ths_mult*self.l_std) 
+            if type(ths_mult) == list:
+                err = logp - (self.l_mu + ths_mult[1]*self.l_std) 
+            else:
+                err = logp - (self.l_mu + ths_mult*self.l_std) 
+                
             if err < 0.0: return 1.0, 0.0 # anomaly
             else: return 0.0, err # normal               
             
@@ -809,7 +815,26 @@ class learning_hmm_multi(learning_base):
             
             ths = -(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
             return ths, 0
-        
+
+        elif self.check_method == 'globalChange':
+            if len(X1)<3: return -1, 0.0 #error
+
+            if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
+            else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return -1, 0.0 # error
+            
+            ths_c = -(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
+
+            ths_g = (logp - self.l_mu) / self.l_std
+            
+            return [ths_c, ths_g], 0
+            
 
     #----------------------------------------------------------------------        
     #

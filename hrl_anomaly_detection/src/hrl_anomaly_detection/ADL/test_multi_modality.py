@@ -614,6 +614,8 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 if method == 'progress':
                     min_ths = np.zeros(lhm.nGaussian)+10000
                     min_ind = np.zeros(lhm.nGaussian)
+                elif method == 'globalChange':
+                    min_ths = np.zeros(2)+10000
                     
                 n = len(x_test1)
                 for i in range(n):
@@ -631,6 +633,12 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                             if min_ths[ind] > ths:
                                 min_ths[ind] = ths
                                 print "Minimum threshold: ", min_ths[ind], ind                                
+                        if method == 'globalChange':
+                            if min_ths[0] > ths[0]:
+                                min_ths[0] = ths[0]
+                            if min_ths[1] > ths[1]:
+                                min_ths[1] = ths[1]
+                            print "Minimum threshold: ", min_ths[0], min_ths[1]                                
                         else:
                             if min_ths > ths:
                                 min_ths = ths
@@ -694,40 +702,41 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         
 
     if bPlot:
-        method = 'progress'
         
         fig = pp.figure()       
+        for method in check_methods:        
         
-        fn_l = np.zeros(nDataSet)
-        tp_l = np.zeros(nDataSet)
-        tn_l = np.zeros(nDataSet)
-        fp_l = np.zeros(nDataSet)
-        delay_l = []
-        fd_l = []
-        fpr_l = np.zeros(nDataSet)
-        
-        for i in xrange(nDataSet):
-            # save file name
-            res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
-            res_file = os.path.join(cross_test_path, res_file)
+            fn_l = np.zeros(nDataSet)
+            tp_l = np.zeros(nDataSet)
+            tn_l = np.zeros(nDataSet)
+            fp_l = np.zeros(nDataSet)
+            delay_l = []
+            fd_l = []
+            fpr_l = np.zeros(nDataSet)
 
-            d = ut.load_pickle(res_file)
-            fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
-            tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
-            delay_l.append([d['delay_l']])
-            fd_l.append([d['false_detection_l']])
-            print d['false_detection_l']
+            for i in xrange(nDataSet):
+                # save file name
+                res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
+                res_file = os.path.join(cross_test_path, res_file)
 
-        for i in xrange(nDataSet):
-            if fp_l[i]+tn_l[i] != 0:
-                fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+                d = ut.load_pickle(res_file)
+                fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
+                tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
+                delay_l.append([d['delay_l']])
+                fd_l.append([d['false_detection_l']])
+                ## print d['false_detection_l']
+
+            for i in xrange(nDataSet):
+                if fp_l[i]+tn_l[i] != 0:
+                    fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
 
-        tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
-        print tot_fpr 
-        
+            tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
+            print method, tot_fpr 
+
+            
+        pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
         pp.ylim([0.0, 100])                   
-        pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))
 
         fig.savefig('test.pdf')
         fig.savefig('test.png')
@@ -819,6 +828,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     ## fdr_l[task_num] = d['false_detection_l']
                     ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))
 
+                if float(fd_cnt) == 0.0:
+                    print c_method, task_num
+                    sys.exit()
                 fdr_l[task_num] = float(fd_sum) / float(fd_cnt)
 
                 tot_fd_sum += float(fd_sum)
@@ -1982,7 +1994,7 @@ if __name__ == '__main__':
         nState          = nState_l[task]
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['change', 'global', 'progress']
+        check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
