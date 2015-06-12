@@ -63,6 +63,8 @@ class learning_hmm_multi(learning_base):
         learning_base.__dict__['fit'] = self.fit        
         learning_base.__dict__['predict'] = self.predict
         learning_base.__dict__['score'] = self.score                
+
+        print "HMM initialized for ",self.check_method
         pass
 
         
@@ -738,8 +740,11 @@ class learning_hmm_multi(learning_base):
 
             ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
             ## raw_input()
-
-            err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
+            if len(ths_mult)>1:
+                err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
+            else:
+                err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
+                    
             ## print logp, (self.ll_mu[min_index] - ths_mult*self.ll_std[min_index])
         ## else:
         ##     print "Not available anomaly check method"
@@ -783,9 +788,11 @@ class learning_hmm_multi(learning_base):
                     min_dist  = dist 
 
             ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
+            return ths, min_index
 
         elif self.check_method == 'global':
             ths = (logp - self.l_mu) / self.l_std
+            return ths, 0
 
         elif self.check_method == 'change':
             if len(X1)<3: return -1, 0.0 #error
@@ -801,8 +808,7 @@ class learning_hmm_multi(learning_base):
                 return -1, 0.0 # error
             
             ths = abs(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
-
-        return ths
+            return ths, 0
         
 
     #----------------------------------------------------------------------        
@@ -1005,6 +1011,7 @@ class learning_hmm_multi(learning_base):
         ll_state_idx  = np.zeros(m)
         ll_likelihood_mu  = np.zeros(m)
         ll_likelihood_std = np.zeros(m)
+        ll_thres_mult = np.zeros(m)
         for i in xrange(m):
             if i == 0: continue
         
@@ -1025,7 +1032,11 @@ class learning_hmm_multi(learning_base):
             ll_state_idx[i]  = min_index
             ll_likelihood_mu[i]  = self.ll_mu[min_index]
             ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
-
+            if self.check_method == 'progress' and len(ths_mult)>1:
+                ll_thres_mult[i] = ths_mult[min_index]
+            else:
+                ll_thres_mult[i] = ths_mult
+            
         # temp to see offline state path
         ## path_l = path
             
@@ -1115,7 +1126,7 @@ class learning_hmm_multi(learning_base):
         ax3 = plt.subplot(313)        
         ax3.plot(x*(1./43.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
         ax3.plot(x*(1./43.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
-        ax3.plot(x*(1./43.), ll_likelihood_mu + ths_mult*ll_likelihood_std, 'r--', label='Threshold')
+        ax3.plot(x*(1./43.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
         ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
         ax3.set_ylabel('Log-likelihood',fontsize=18)
         ax3.set_xlim([0, x[-1]*(1./43.)])

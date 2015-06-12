@@ -489,8 +489,8 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
 
     fig.savefig('test.pdf')
     fig.savefig('test.png')
-    os.system('cp test.p* ~/Dropbox/HRL/')
-    #pp.show()
+    #os.system('cp test.p* ~/Dropbox/HRL/')
+    pp.show()
  
        
 #---------------------------------------------------------------------------------------#        
@@ -572,8 +572,6 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
 
             for check_dim in check_dims:
             
-                lhm = None
-
                 # save file name
                 res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
                 res_file = os.path.join(cross_test_path, res_file)
@@ -590,20 +588,19 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 ## elif os.path.isfile(mutex_file): continue
                 os.system('touch '+mutex_file)
 
-                if lhm is None:
-                    if check_dim is not 2:
-                        x_train1 = train_dataSet.samples[:,check_dim,:]
-                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
-                                                 check_method=method)
-                        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
-                        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
-                    else:
-                        x_train1 = train_dataSet.samples[:,0,:]
-                        x_train2 = train_dataSet.samples[:,1,:]                        
-                        ## plot_all(x_train1, x_train2)
-                        
-                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
-                        lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
+                if check_dim is not 2:
+                    x_train1 = train_dataSet.samples[:,check_dim,:]
+                    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
+                                             check_method=method)
+                    if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
+                    elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
+                else:
+                    x_train1 = train_dataSet.samples[:,0,:]
+                    x_train2 = train_dataSet.samples[:,1,:]                        
+                    ## plot_all(x_train1, x_train2)
+
+                    lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
+                    lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
                 # find a minimum sensitivity gain
                 if check_dim == 2:
@@ -613,6 +610,11 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                     x_test1 = test_dataSet.samples[:,check_dim]
 
                 min_ths = 0
+                min_ind = 0
+                if method == 'progress':
+                    min_ths = np.zeros(lhm.nGaussian)+10000
+                    min_ind = np.zeros(lhm.nGaussian)
+                    
                 n = len(x_test1)
                 for i in range(n):
                     m = len(x_test1[i])
@@ -621,16 +623,21 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                     for j in range(2,m):                    
 
                         if check_dim == 2:            
-                            ths = lhm.get_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
+                            ths, ind = lhm.get_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
                         else:
-                            ths = lhm.get_sensitivity_gain(x_test1[i][:j])
+                            ths, ind = lhm.get_sensitivity_gain(x_test1[i][:j])
 
-                        if min_ths > ths:
-                            min_ths = ths
-                            print "Minimum threshold: ", min_ths
+                        if method == 'progress':
+                            if min_ths[ind] > ths:
+                                min_ths[ind] = ths
+                                print "Minimum threshold: ", min_ths[ind], ind                                
+                        else:
+                            if min_ths > ths:
+                                min_ths = ths
+                                print "Minimum threshold: ", min_ths
 
 
-                if False:      
+                if True:      
                     for j in xrange(len(false_chunks)):                     
                         if check_dim == 2:
                             x_test1 = np.array([false_dataSet.samples[j:j+1,0][0]])
@@ -640,7 +647,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
 
                         print np.shape(x_test1), np.shape(x_test2)
                             
-                        lhm.likelihood_disp(x_test1, x_test2, max_ths, scale1=[min_c1, max_c1, scale], \
+                        lhm.likelihood_disp(x_test1, x_test2, min_ths, scale1=[min_c1, max_c1, scale], \
                                             scale2=[min_c2, max_c2, scale])
 
                             
@@ -687,7 +694,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         
 
     if bPlot:
-        method = 'global'
+        method = 'progress'
         
         fig = pp.figure()       
         
@@ -717,6 +724,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
 
 
         tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
+        print tot_fpr 
         
         pp.ylim([0.0, 100])                   
         pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))
@@ -724,7 +732,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         #os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        ## pp.show()
         
 
 
@@ -733,10 +741,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
 def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
                  check_dims, an_type=None, force_an=None, sound_an=None, renew=False, sim=False):
                     
-    fig = pp.figure()
-
     if len(check_methods) >= len(check_dims): nClass = len(check_methods)
     else: nClass = len(check_dims)
+    fdr_class_l = []
 
     for n in range(nClass):
 
@@ -808,14 +815,16 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     fd_sum += np.sum(d['false_detection_l'])
                     fd_cnt += len(d['false_detection_l'])
 
-                    print task_num, d['false_detection_l']
+                    ## print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
+                    ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))
 
                 fdr_l[task_num] = float(fd_sum) / float(fd_cnt)
 
                 tot_fd_sum += float(fd_sum)
                 tot_fd_cnt += float(fd_cnt)
-                                
+
+            print method, " : ", fdr_l
 
             data = {}
             data['fn_l'] = fn_l
@@ -851,18 +860,20 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
         ##     if tn_l[i] + fn_l[i] + fp_l[i] != 0:
         ##         detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
-                
-        pp.bar(range(len(all_task_names)), fdr_l)
 
-        print tot_fdr
-
+        fdr_class_l.append(tot_fdr)
+        
+    fig = pp.figure()
+        
+    pp.bar(range(nClass), fdr_class_l)
+    
     ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
     ## pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
 
-    fig.savefig('test.pdf')
-    fig.savefig('test.png')
-    os.system('cp test.p* ~/Dropbox/HRL/')
-    #pp.show()
+    ## fig.savefig('test.pdf')
+    ## fig.savefig('test.png')
+    ## os.system('cp test.p* ~/Dropbox/HRL/')
+    pp.show()
  
 #-------------------------------------------------------------------------------------------------------
 def fig_roc_offline(cross_data_path, \
@@ -1880,8 +1891,7 @@ if __name__ == '__main__':
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
-        ## check_methods   = ['change', 'global', 'globalChange', 'progress']
-        check_methods   = ['change']
+        check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
@@ -1972,7 +1982,8 @@ if __name__ == '__main__':
         nState          = nState_l[task]
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['global', 'progress']
+        ## check_methods   = ['global', 'progress']
+        check_methods   = ['progress']
         check_dims      = [2]
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
