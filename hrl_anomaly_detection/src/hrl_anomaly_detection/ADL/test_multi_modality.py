@@ -637,7 +637,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                                 print "Minimum threshold: ", min_ths
 
 
-                if True:      
+                if False:      
                     for j in xrange(len(false_chunks)):                     
                         if check_dim == 2:
                             x_test1 = np.array([false_dataSet.samples[j:j+1,0][0]])
