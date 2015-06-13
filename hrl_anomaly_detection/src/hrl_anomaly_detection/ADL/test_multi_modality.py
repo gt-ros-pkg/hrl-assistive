@@ -629,11 +629,13 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                         else:
                             ths, ind = lhm.get_sensitivity_gain(x_test1[i][:j])
 
+                        if ths == []: continue
+
                         if method == 'progress':
                             if min_ths[ind] > ths:
                                 min_ths[ind] = ths
                                 print "Minimum threshold: ", min_ths[ind], ind                                
-                        if method == 'globalChange':
+                        elif method == 'globalChange':
                             if min_ths[0] > ths[0]:
                                 min_ths[0] = ths[0]
                             if min_ths[1] > ths[1]:

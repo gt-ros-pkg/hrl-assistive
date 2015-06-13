@@ -711,14 +711,14 @@ class learning_hmm_multi(learning_base):
                 return -1, 0.0 # error
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
-            if type(ths_mult) == list:
+            if type(ths_mult) == list or type(ths_mult) == np.ndarray:
                 err = (self.l_mean_delta + (-1.0*ths_mult[0])*self.l_std_delta ) - abs(logp-last_logp)
             else:                
                 err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             if err < 0.0: return 1.0, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':
-            if type(ths_mult) == list:
+            if type(ths_mult) == list or type(ths_mult) == np.ndarray:
                 err = logp - (self.l_mu + ths_mult[1]*self.l_std) 
             else:
                 err = logp - (self.l_mu + ths_mult*self.l_std) 
@@ -772,7 +772,7 @@ class learning_hmm_multi(learning_base):
             logp         = self.ml.loglikelihood(final_ts_obj)
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
-            return -1, 0.0 # error
+            return [], 0.0 # error
 
             
         if self.check_method == 'progress':
@@ -780,7 +780,7 @@ class learning_hmm_multi(learning_base):
                 post = np.array(self.ml.posterior(final_ts_obj))            
             except:
                 print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-                return 1.0, 0.0 # anomaly
+                return [], 0.0 # anomaly
 
             n = len(np.squeeze(X1))
                 
@@ -801,7 +801,7 @@ class learning_hmm_multi(learning_base):
             return ths, 0
 
         elif self.check_method == 'change':
-            if len(X1)<3: return -1, 0.0 #error
+            if len(X1)<3: return [], 0.0 #error
 
             if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
             else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
@@ -817,7 +817,7 @@ class learning_hmm_multi(learning_base):
             return ths, 0
 
         elif self.check_method == 'globalChange':
-            if len(X1)<3: return -1, 0.0 #error
+            if len(X1)<3: return [], 0.0 #error
 
             if self.nEmissionDim == 1: X_test = np.array([X1[:-1]])
             else: X_test = self.convert_sequence(X1[:-1], X2[:-1], emission=False)                
@@ -827,7 +827,7 @@ class learning_hmm_multi(learning_base):
                 last_logp         = self.ml.loglikelihood(final_ts_obj)
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
-                return -1, 0.0 # error
+                return [], 0.0 # error
             
             ths_c = -(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
 
