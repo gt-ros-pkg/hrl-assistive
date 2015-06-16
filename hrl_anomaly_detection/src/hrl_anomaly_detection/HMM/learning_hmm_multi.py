@@ -838,17 +838,17 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def simulation(self, X1, X2):
+    def simulation(self, X1, X2, ths_mult, freq=43.0):
 
         X1= np.squeeze(X1)
         X2= np.squeeze(X2)
         
-        X_time = np.arange(0.0, len(X1), 1.0)
+        X_time = np.arange(0.0, len(X1), 1.0) * (1./freq)
         
         plt.rc('text', usetex=True)
         
         self.fig = plt.figure(1)
-        self.gs = gridspec.GridSpec(2, 2, width_ratios=[6, 1]) 
+        self.gs = gridspec.GridSpec(3, 1, width_ratios=[6, 1]) 
         
         #-------------------------- 1 ------------------------------------
         self.ax11 = self.fig.add_subplot(self.gs[0,0])
@@ -857,6 +857,11 @@ class learning_hmm_multi(learning_base):
         ## self.ax11.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
         ## self.ax11.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
 
+        self.ax21 = self.fig.add_subplot(self.gs[0,0])
+        self.ax21.set_xlim([0, np.max(X_time)*1.05])
+        self.ax21.set_ylim([0, np.max(X2)*1.4])
+
+        
         self.ax12 = self.fig.add_subplot(self.gs[0,1])        
         lbar_1,    = self.ax12.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
         self.ax12.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
@@ -949,9 +954,20 @@ class learning_hmm_multi(learning_base):
                 p       = self.loglikelihood(X_test)
 
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-                posterior = self.ml.posterior(final_ts_obj)
-                state_idx = posterior[i-1].index(max(posterior[i-1]))
-                threshold = self.likelihood_avg[state_idx]
+                post = self.ml.posterior(final_ts_obj)
+
+                n = len(np.squeeze(y1))
+
+                # Find the best posterior distribution
+                min_dist  = 100000000
+                min_index = 0
+                for j in xrange(self.nGaussian):
+                    dist = entropy(post[n-1], self.l_statePosterior[j])
+                    if min_dist > dist:
+                        min_index = j
+                        min_dist  = dist 
+
+                threshold = (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
                 
             
             if i >= 3 and i < len(X1)-1:# -self.nFutureStep:
