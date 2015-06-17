@@ -25,7 +25,7 @@ var BodyRegistration = function (ros) {
                     console.log('Head registration insufficient');
                 
                 } else {
-                    assistive_teleop.log('Head registration complete. Please press Confirm Registration to continue');
+                    assistive_teleop.log('Head registration complete. Please press '"Confirm Registration"' to continue');
                     $("#confirm_reg").button({disabled: false });
                 }
             }
