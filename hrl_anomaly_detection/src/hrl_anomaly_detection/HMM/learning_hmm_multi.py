@@ -844,115 +844,109 @@ class learning_hmm_multi(learning_base):
         X2= np.squeeze(X2)
         
         X_time = np.arange(0.0, len(X1), 1.0) * (1./freq)
+        self.l_ll = []
+        self.l_ell = []
+        self.l_thres = []
+        min_llim = -70.0
+        max_llim = 150.0
+        
         
         plt.rc('text', usetex=True)
         
         self.fig = plt.figure(1)
-        self.gs = gridspec.GridSpec(3, 1, width_ratios=[6, 1]) 
+        ## self.gs = gridspec.GridSpec(3, 2, width_ratios=[6, 1], height_ratios=[1,1,2]) 
+        self.gs = gridspec.GridSpec(3, 1, height_ratios=[1,1,2]) 
         
         #-------------------------- 1 ------------------------------------
         self.ax11 = self.fig.add_subplot(self.gs[0,0])
         self.ax11.set_xlim([0, np.max(X_time)*1.05])
         self.ax11.set_ylim([0, np.max(X1)*1.4])
         ## self.ax11.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
-        ## self.ax11.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
-
-        self.ax21 = self.fig.add_subplot(self.gs[0,0])
-        self.ax21.set_xlim([0, np.max(X_time)*1.05])
-        self.ax21.set_ylim([0, np.max(X2)*1.4])
-
-        
-        self.ax12 = self.fig.add_subplot(self.gs[0,1])        
-        lbar_1,    = self.ax12.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
-        self.ax12.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
-        self.ax12.text(0.05, 0.95, 'Abnormal', fontsize='14', zorder=0)            
-        self.ax12.set_xlim([0.0, 1.0])
-        self.ax12.set_ylim([0, 1.0])        
-        self.ax12.set_xlabel("Anomaly \n Gauge", fontsize=18)        
-        plt.setp(self.ax12.get_xticklabels(), visible=False)
-        plt.setp(self.ax12.get_yticklabels(), visible=False)
+        self.ax11.set_ylabel('Magnitude [N]', fontsize=14)
 
         self.ax21 = self.fig.add_subplot(self.gs[1,0])
         self.ax21.set_xlim([0, np.max(X_time)*1.05])
-        self.ax21.set_ylim([0, np.max(X1)*1.4])
+        self.ax21.set_ylim([0, np.max(X2)*1.4])
         ## self.ax21.set_xlabel(r'\textbf{Angle [}{^\circ}\textbf{]}', fontsize=22)
-        ## self.ax21.set_ylabel(r'\textbf{Applied Opening Force [N]}', fontsize=22)
+        self.ax21.set_ylabel('Energy', fontsize=14)
 
-        self.ax22 = self.fig.add_subplot(self.gs[1,1])        
-        lbar_2,    = self.ax22.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
-        self.ax22.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
-        self.ax22.text(0.05, 0.95, 'Abnormal', fontsize='14', zorder=0)            
-        self.ax22.set_xlim([0.0, 1.0])
-        self.ax22.set_ylim([0, 1.0])        
-        self.ax22.set_xlabel("Anomaly \n Gauge", fontsize=18)        
-        plt.setp(self.ax22.get_xticklabels(), visible=False)
-        plt.setp(self.ax22.get_yticklabels(), visible=False)
+        self.ax31 = self.fig.add_subplot(self.gs[2,0])
+        self.ax31.set_xlim([0, np.max(X_time)*1.05])
+        self.ax31.set_ylim([min_llim, max_llim])
+        self.ax31.set_xlabel('Time [s]', fontsize=22)
+        self.ax31.set_ylabel('log-likelihood', fontsize=14)
         
-        #-------------------------- 1 ------------------------------------
+        ## self.ax32 = self.fig.add_subplot(self.gs[2,1])        
+        ## self.ax32.text(0.13, 0.02, 'Normal', fontsize='14', zorder=-1)            
+        ## self.ax32.text(0.05, 0.95, 'Abnormal', fontsize='14', zorder=0)            
+        ## self.ax32.set_xlim([0.0, 1.0])
+        ## self.ax32.set_ylim([0, 1.0])        
+        ## self.ax32.set_xlabel("Anomaly \n Gauge", fontsize=18)        
+        ## plt.setp(self.ax32.get_xticklabels(), visible=False)
+        ## plt.setp(self.ax32.get_yticklabels(), visible=False)
+        
+        #-------------------------- 2 ------------------------------------
 
-        lAll_1, = self.ax11.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
-        line_1, = self.ax11.plot([], [], lw=2, label='Current force history')
-        lmean_1, = self.ax11.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
-        lvar1_1, = self.ax11.plot([], [], '--', color='0.75', linewidth=2.0, \
-                                  label=r'Predicted bounds \mu \pm ( d_1 \sigma + d_2 )')    
-        lvar2_1, = self.ax11.plot([], [], '--', color='0.75', linewidth=2.0, )    
-        ## self.ax11.legend(loc=2,prop={'size':12})        
+        line_1, = self.ax11.plot([], [], lw=2, label='Force')
+        line_2, = self.ax21.plot([], [], lw=2, label='Sound')
+        line_3, = self.ax31.plot([], [], lw=2, label='Log-likelihood')
+        
 
-        lAll_2, = self.ax21.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
-        line_2, = self.ax21.plot([], [], lw=2, label='Current force history')
-        lmean_2, = self.ax21.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
-        lvar1_2, = self.ax21.plot([], [], '--', color='0.75', linewidth=2.0, \
-                                  label=r'Predicted bounds \mu \pm ( d_1 \sigma + d_2 )')    
-        lvar2_2, = self.ax21.plot([], [], '--', color='0.75', linewidth=2.0, )    
-        ## self.ax21.legend(loc=2,prop={'size':12})               
+        lmean, = self.ax31.plot([], [], 'm-', linewidth=2.0, label='Expected log-likelihood')    
+        lvar, = self.ax31.plot([], [], '--', color='0.75', linewidth=2.0, \
+                                  label='Threshold')    
+        ## lbar,     = self.ax32.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
+        
+        ## lAll_1, = self.ax11.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
+        ## ## self.ax11.legend(loc=2,prop={'size':12})        
+
+        ## lAll_2, = self.ax21.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
+        ## lmean_2, = self.ax21.plot([], [], 'm-', linewidth=2.0, label=r'Predicted mean \mu')    
+        ## lvar1_2, = self.ax21.plot([], [], '--', color='0.75', linewidth=2.0, \
+        ##                           label=r'Predicted bounds \mu \pm ( d_1 \sigma + d_2 )')    
+        ## lvar2_2, = self.ax21.plot([], [], '--', color='0.75', linewidth=2.0, )    
+        ## ## self.ax21.legend(loc=2,prop={'size':12})               
         
         self.fig.subplots_adjust(wspace=0.02)        
         
         def init():
-            lAll_1.set_data([],[])
             line_1.set_data([],[])
-            lmean_1.set_data([],[])
-            lvar1_1.set_data([],[])
-            lvar2_1.set_data([],[])
-            lbar_1.set_height(0.0)            
-
-            lAll_2.set_data([],[])
             line_2.set_data([],[])
-            lmean_2.set_data([],[])
-            lvar1_2.set_data([],[])
-            lvar2_2.set_data([],[])
-            lbar_2.set_height(0.0)            
+            line_3.set_data([],[])
             
-            return lAll_1, line_1, lmean_1, lvar1_1, lvar2_1, lbar_1, \
-              lAll_2, line_2, lmean_2, lvar1_2, lvar2_2, lbar_2,
+            lmean.set_data([],[])
+            lvar.set_data([],[])
+            ## lbar.set_height(0.0)            
+            self.l_ll = []
+            self.l_ell = []
+            self.l_thres = []            
+            
+            return line_1, line_2, line_3, lmean, lvar # , lbar
 
         def animate(i):
-            lAll_1.set_data(X_time, X1)            
-            lAll_2.set_data(X_time, X2)            
+            if i==0:
+                self.l_ll = []
+                self.l_ell = []
+                self.l_thres = []            
+                
             
             x = X_time[:i]
             y1 = X1[:i]
             y2 = X2[:i]
 
-            if i >= 30:
-                y1[29] = 2.0
-            
-            x_nxt = X_time[:i+1]
-            y_nxt1 = X1[:i+1]
-            y_nxt2 = X2[:i+1]
-            line_1.set_data(x, y1)
-            line_2.set_data(x, y2)
-
-            
+            try:
+                line_1.set_data(x, y1)
+                line_2.set_data(x, y2)
+            except:
+                print "Length error for line_1"
+                    
+                        
             if i > 1:
-            ##     mu_list, var_list = self.update_buffer(y)            
-                ## # check anomaly score
-                ## bFlag, err, fScore = self.check_anomaly(y_nxt[-1])
                 
                 X_test = self.convert_sequence(np.array([y1]), np.array([y2]), emission=False)                
                 ## mu, cov = self.predict(X_test)
-                p       = self.loglikelihood(X_test)
-
+                p      = self.loglikelihood(X_test)
+                
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 post = self.ml.posterior(final_ts_obj)
 
@@ -968,53 +962,41 @@ class learning_hmm_multi(learning_base):
                         min_dist  = dist 
 
                 threshold = (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
-                
-            
-            if i >= 3 and i < len(X1)-1:# -self.nFutureStep:
 
-                ## x_sup, idx = hdl.find_nearest(self.aXRange, x[-1], sup=True)            
-                ## a_X   = np.arange(x_sup, x_sup+(self.nFutureStep+1)*self.fXInterval, self.fXInterval)
+                self.l_ll.append(p)
+                self.l_ell.append(self.ll_mu[min_index])
+                self.l_thres.append(threshold)
                 
-                ## if x[-1]-x_sup < x[-1]-x[-2]:                    
-                ##     y_idx = 1
+                x = X_time[1:i]
+
+                max_lim = max([max(self.l_ll),max(self.l_ell), max(self.l_thres), max_llim])
+                min_lim = min([min(self.l_ll),min(self.l_ell), min(self.l_thres), min_llim])
+                self.ax31.set_ylim([min_lim, max_lim*1.2])
+                
+                try:
+                    line_3.set_data(x, self.l_ll)                    
+                    lmean.set_data(x, self.l_ell)                    
+                    lvar.set_data(x, self.l_thres)                    
+                except:
+                    print len(x), len(self.l_ll)
+                    print i
+                    print "Length error"
+
+                ## lbar.set_height(1)
+                ## if p < threshold:
+                ##     lbar.set_color('r')
+                ## elif p < threshold*0.9:          
+                ##     lbar.set_color('orange')
                 ## else:
-                ##     y_idx = int((x[-1]-x_sup)/(x[-1]-x[-2]))+1
-                ## a_time = [x[-1], x[-1]+1.0] 
-                ## a_mu1  = np.hstack([y1[-1], mu[0]])
-                ## a_mu2  = np.hstack([y2[-1], mu[1]])
-                ## a_sig1 = np.hstack([0, np.sqrt(cov[0])])
-                ## a_sig2 = np.hstack([0, np.sqrt(cov[3])])
-
-                ## lmean_1.set_data( a_time, a_mu1)
-                ## lmean_2.set_data( a_time, a_mu2)
-
-                ## sig_mult = self.sig_mult*np.arange(self.nFutureStep) + self.sig_offset
-                ## sig_mult = np.hstack([0, sig_mult])
-
-                ## min_val = a_mu1 - a_sig1 
-                ## max_val = a_mu1 + a_sig1 
-
-                ## lvar1_1.set_data( a_time, min_val)
-                ## lvar2_1.set_data( a_time, max_val)
-
-                lbar_2.set_height(1)
-                if p < threshold*0.7:
-                    lbar_2.set_color('r')
-                elif p < threshold*0.95:          
-                    lbar_2.set_color('orange')
-                else:
-                    lbar_2.set_color('b')
-                    
+                ##     lbar.set_color('b')
+                
             else:
-                lmean_1.set_data([],[])
-                lvar1_1.set_data([],[])
-                lvar2_1.set_data([],[])
-                lbar_1.set_height(0.0)           
+                line_3.set_data([],[])
+                lmean.set_data([],[])
+                lvar.set_data([],[])
+                ## lbar.set_height(0.0)           
 
-                lmean_2.set_data([],[])
-                lvar1_2.set_data([],[])
-                lvar2_2.set_data([],[])
-                lbar_2.set_height(0.0)           
+                
                 
             ## if i>=0 or i<4 : 
             ##     self.ax1.legend(handles=[lAll, line, lmean, lvar1], loc=2,prop={'size':12})        
@@ -1025,12 +1007,11 @@ class learning_hmm_multi(learning_base):
             ##     plt.savefig('roc_ani_'+str(i)+'.pdf')
                 
                 
-            return lAll_1, line_1, lmean_1, lvar1_1, lvar2_1, lbar_1, \
-              lAll_2, line_2, lmean_2, lvar1_2, lvar2_2, lbar_2,
+            return line_1, line_2, line_3, lmean, lvar #, lbar
 
            
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
-                                       frames=len(X1), interval=300, blit=True)
+                                       frames=len(X1), interval=300) #, blit=True
 
         ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         plt.show()

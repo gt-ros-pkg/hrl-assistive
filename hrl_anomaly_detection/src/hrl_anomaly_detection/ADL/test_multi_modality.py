@@ -754,7 +754,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     
     if len(check_methods) >= len(check_dims): nClass = len(check_methods)
     else: nClass = len(check_dims)
-    fdr_class_l = []
+    fdr_mu_class_l = []
+    fdr_std_class_l = []
 
     for n in range(nClass):
 
@@ -771,8 +772,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         fp_l = np.zeros(len(all_task_names))
         fdr_l = np.zeros(len(all_task_names)) # false detection rate
 
-        tot_fd_sum = 0
-        tot_fd_cnt = 0
+        ## tot_fd_sum = 0
+        ## tot_fd_cnt = 0
 
         if sim:
             save_pkl_file = os.path.join(cross_root_path,test_title+'_'+method+'_'+str(check_dim)+'.pkl')
@@ -831,12 +832,13 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))
 
                 if float(fd_cnt) == 0.0:
+                    print cross_test_path
                     print c_method, task_num
                     sys.exit()
                 fdr_l[task_num] = float(fd_sum) / float(fd_cnt)
 
-                tot_fd_sum += float(fd_sum)
-                tot_fd_cnt += float(fd_cnt)
+                ## tot_fd_sum += float(fd_sum)
+                ## tot_fd_cnt += float(fd_cnt)
 
             print method, " : ", fdr_l
 
@@ -846,7 +848,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['tn_l'] = tn_l
             data['fp_l'] = fp_l
             data['fdr_l'] = fdr_l
-            data['tot_fdr'] = tot_fdr = tot_fd_sum/tot_fd_cnt
+            data['tot_fdr_mu'] = tot_fdr_mu = np.mean(fdr_l*100)
+            data['tot_fdr_std'] = tot_fdr_std = np.std(fdr_l*100)
             ut.save_pickle(data, save_pkl_file)
         else:
             data = ut.load_pickle(save_pkl_file)
@@ -855,45 +858,37 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             tn_l = data['tn_l'] 
             fp_l = data['fp_l'] 
             fdr_l = data['fdr_l'] 
-            tot_fdr = data['tot_fdr']
+            tot_fdr_mu  = data['tot_fdr_mu']
+            tot_fdr_std = data['tot_fdr_std']
 
-        ## tpr_l = np.zeros(len(all_task_names))
-        ## fpr_l = np.zeros(len(all_task_names))
-        ## npv_l = np.zeros(len(all_task_names))
-        ## detect_l = np.zeros(len(all_task_names))
-
-        ## for i in xrange(len(all_task_names)):
-        ##     if tp_l[i]+fn_l[i] != 0:
-        ##         tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
-
-        ##     if fp_l[i]+tn_l[i] != 0:
-        ##         fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
-
-        ##     if tn_l[i]+fn_l[i] != 0:
-        ##         npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
-
-        ##     if tn_l[i] + fn_l[i] + fp_l[i] != 0:
-        ##         detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
-
-        fdr_class_l.append(tot_fdr)
+        fdr_mu_class_l.append(tot_fdr_mu)
+        fdr_std_class_l.append(tot_fdr_std)
         
     fig = pp.figure()
-        
-    pp.bar(range(nClass), fdr_class_l)
-    
-    ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
-    ## pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
 
-    ## fig.savefig('test.pdf')
-    ## fig.savefig('test.png')
-    ## os.system('cp test.p* ~/Dropbox/HRL/')
-    pp.show()
+    ind = np.arange(nClass)*0.9
+    width = 0.5
+    methods = ('Check \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
+               'Progress-based \n detection')
+
+    print fdr_mu_class_l
+    pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
+    
+    pp.ylabel('Anomaly Detection Rate (Percentage)', fontsize=16)    
+    ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+    pp.xticks(ind + width*3.0/4, methods )
+    pp.ylim([0.0, 100])                   
+
+    fig.savefig('test.pdf')
+    fig.savefig('test.png')
+    os.system('cp test.p* ~/Dropbox/HRL/')
+    ##pp.show()
 
 
 #---------------------------------------------------------------------------------------#        
 def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
               prefix, nState=20, \
-              opr='robot', attr='id', cov_mult=[1.0, 1.0, 1.0, 1.0], sim=False):
+              opr='robot', attr='id', cov_mult=[1.0, 1.0, 1.0, 1.0], sim=False, true_data=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -1022,12 +1017,12 @@ def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, 
                                 min_ths = ths
                                 print "Minimum threshold: ", min_ths
 
-
-                if check_dim == 2:
-                    x_test1 = false_dataSet.samples[:,0]
-                    x_test2 = false_dataSet.samples[:,1]
-                else:
-                    x_test1 = false_dataSet.samples[:,check_dim]
+                if true_data==False:
+                    if check_dim == 2:
+                        x_test1 = false_dataSet.samples[:,0]
+                        x_test2 = false_dataSet.samples[:,1]
+                    else:
+                        x_test1 = false_dataSet.samples[:,check_dim]
 
                 n = len(x_test1)
                 for i in range(n):
@@ -2152,7 +2147,7 @@ if __name__ == '__main__':
 
         animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
-                     opr='robot', attr='id', cov_mult=cov_mult[task])
+                     opr='robot', attr='id', cov_mult=cov_mult[task], true_data=True)
                         
 
     #---------------------------------------------------------------------------   
