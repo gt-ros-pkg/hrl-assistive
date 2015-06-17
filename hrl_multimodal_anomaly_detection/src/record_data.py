@@ -14,6 +14,8 @@ import operator
 from threading import Thread
 import glob
 import os
+import pwd
+import getpass
 
 # ROS
 import roslib
@@ -146,6 +148,8 @@ class tool_audio(Thread):
         self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME)
         self.audio_data = []
         self.audio_amp  = []
+	
+	self.audio_data_raw = []
 
         self.time_data = []
 
@@ -180,6 +184,7 @@ class tool_audio(Thread):
         audio_data = np.fromstring(data, self.DTYPE)
         ## audio_data = signal.lfilter(self.b, self.a, audio_data)
 
+	self.audio_data_raw.append(data)
 
         # Exclude low rms data
         ## amp = self.get_rms(data)
@@ -654,6 +659,8 @@ class ADL_log():
             d['audio_freq']  = self.audio.audio_freq
             d['audio_chunk'] = self.audio.CHUNK
             d['audio_time']  = self.audio.time_data
+	    
+	    d['audio_data_raw'] = self.audio.audio_data_raw
 
         if self.kinematics:
             d['kinematics_time']  = self.kinematics.time_data
@@ -669,7 +676,8 @@ class ADL_log():
         elif flag == "3": sys.exit()
         else: self.trial_name = flag
 
-        self.folder_name = '/home/hhasnain/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
+	current_user = getpass.getuser()
+	self.folder_name = '/home/'+ current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
         print "Current save folder is: " + self.folder_name
         change_folder = raw_input("Change save folder? [y/n]")
         if change_folder == 'y':

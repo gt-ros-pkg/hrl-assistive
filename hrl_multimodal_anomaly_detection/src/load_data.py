@@ -76,6 +76,7 @@ if __name__ == '__main__':
         audio_amp = d['audio_amp']
         audio_freq = d['audio_freq']
         audio_chunk = d['audio_chunk']
+	audio_data_raw = d['audio_data_raw']
 
 
         audio_data = np.array(audio_data).flatten()
@@ -103,19 +104,42 @@ if __name__ == '__main__':
 
 
         pp.figure()
-        pp.subplot(211)
+        pp.subplot(611)
         pp.plot(audio_data,'b.')
+	pp.xlabel('Time')
+	pp.ylabel('Audio Data... Amplitude?')
         pp.title("Audio Data")
 
-        pp.subplot(212)
+        pp.subplot(612)
         xs = audio_freq[:audio_chunk/16]
         ys = np.abs(audio_amp[:][:audio_chunk/16])
         ys = np.multiply(20,np.log10(ys))
-        pp.plot(xs,ys,'b*')
+        pp.plot(xs,ys,'y')
+	pp.xlabel('Audio freqs')
+	pp.ylabel('Amplitudes')
         pp.title("Audio Frequency and Amplitude")
-        pp.show()
+        
+	pp.subplot(613)
+	pp.plot(audio_freq, 'b')
+	pp.title('Raw audio_freq data')
 
-        ## pp.plot(rms)
+	pp.subplot(614)
+	pp.plot(audio_amp, 'y')
+	pp.title('Raw audio_amp data')
+
+	pp.subplot(615)
+	pp.plot(audio_data, 'b')
+	pp.title('Raw audio_data data')
+
+	pp.subplot(616)
+	p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))
+	f = np.linspace(0, rate/2.0, len(p))
+	pp.plot(f, p)
+	pp.xlabel("Frequency(Hz)")
+	pp.ylabel("Power(dB)")
+	pp.title("Raw audio_data (same as wav data)")
+        
+	## pp.plot(rms)
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)
 
         ## import pyaudio
