@@ -505,8 +505,8 @@ class ADL_log():
         rospy.logout('ADLs_log node subscribing..')
 
         if self.manip:
-            rospy.wait_for_service("/adl/arm_reach_enable")
-            self.armReachAction = rospy.ServiceProxy("/adl/arm_reach_enable", None_Bool)
+            rospy.wait_for_service("/arm_reach_enable")
+            self.armReachAction = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
             rospy.loginfo("arm reach server connected!!")
 
     def task_cmd_input(self, subject=None, task=None, actor=None):
