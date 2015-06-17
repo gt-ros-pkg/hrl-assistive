@@ -893,7 +893,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 #---------------------------------------------------------------------------------------#        
 def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
               prefix, nState=20, \
-              opr='robot', attr='id', cov_mult=[1.0, 1.0, 1.0, 1.0], sim=False):
+              opr='robot', attr='id', cov_mult=[1.0, 1.0, 1.0, 1.0], sim=False, true_data=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -1022,12 +1022,12 @@ def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, 
                                 min_ths = ths
                                 print "Minimum threshold: ", min_ths
 
-
-                if check_dim == 2:
-                    x_test1 = false_dataSet.samples[:,0]
-                    x_test2 = false_dataSet.samples[:,1]
-                else:
-                    x_test1 = false_dataSet.samples[:,check_dim]
+                if true_data==False:
+                    if check_dim == 2:
+                        x_test1 = false_dataSet.samples[:,0]
+                        x_test2 = false_dataSet.samples[:,1]
+                    else:
+                        x_test1 = false_dataSet.samples[:,check_dim]
 
                 n = len(x_test1)
                 for i in range(n):
@@ -2152,7 +2152,7 @@ if __name__ == '__main__':
 
         animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
-                     opr='robot', attr='id', cov_mult=cov_mult[task])
+                     opr='robot', attr='id', cov_mult=cov_mult[task], true_data=True)
                         
 
     #---------------------------------------------------------------------------   
