@@ -157,8 +157,7 @@ class tool_audio(Thread):
 
 
         self.p=pyaudio.PyAudio()
-        self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, \
-                                input=True, frames_per_buffer=self.CHUNK)
+        self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
         rospy.logout('Done subscribing audio')
         print "Done subscribing audio"
 

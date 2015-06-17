@@ -13,12 +13,12 @@ from load_data import *
 
 class audioRecord():
 
-    audio = True
-    audioRecord = True
-    ft = False
-    kinematics = True
-    manip = False
-    test_mode = False
+    AUDIO = True
+    AUDIORECORD = True
+    FT = False
+    KINEMATICS = True
+    MANIP = False
+    TEST_MODE = False
 
 
     def __init__(self):
