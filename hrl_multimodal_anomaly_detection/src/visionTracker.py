@@ -4,10 +4,10 @@ __author__ = 'zerickson'
 
 import rospy
 import numpy as np
-from geometry_msgs.msg import Point, Pose
+from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 from arTagPoint import arTagPoint
-from kanadeLucasPoint import kanadeLucasPoint
+# from kanadeLucasPoint import kanadeLucasPoint
 
 import kinectCircularPath as circularPath
 import kinectLinearPath as linearPath
@@ -26,13 +26,10 @@ class visionTracker:
         if shouldSpin:
             rospy.init_node('listener_kinect')
         if useARTags:
-            self.tracker = arTagPoint(self.spinner)
-            self.minDist = 0.005
-            self.maxDist = 0.02
-        else:
-            self.tracker = kanadeLucasPoint(self.spinner, True)
-            self.minDist = 0.015
-            self.maxDist = 0.03
+            self.tracker = arTagPoint(self.spinner, '/camera_link')
+        # else:
+            # self.tracker = kanadeLucasPoint(self.spinner, True)
+            # self.tracker = kanadeLucasPoint(self.multiFeature, True)
         if shouldSpin:
             rospy.spin()
 
@@ -40,44 +37,76 @@ class visionTracker:
         if not self.newDataAvailable:
             return None
         self.newDataAvailable = False
-        return self.tracker.getPoint(0, '/camera_link')
+        return self.tracker.getRecentPoint(0)
 
     def spinner(self):
-        point = self.tracker.getPoint(0, '/camera_link')
-        if point is None:
+        markers = self.tracker.getAllMarkersWithHistory()
+        if markers is None:
             return
-        point2 = self.tracker.getPoint(1, '/camera_link')
-        # point2 = None
 
-        if self.lastPosition is None:
-            # Very first point in list
-            self.appendDataPoint(point, point2)
+        for index, marker in enumerate(markers):
+            # Verify there are enough new points before regenerating paths
+            if len(marker.history) - marker.lastHistoryCount >= 5:
+                marker.lastHistoryCount = len(marker.history)
+                # Find a linear fit of the points
+                endPoints, linearError = linearPath.calcLinearPath(marker.history, verbose=False, plot=False)
 
-        # Check if new position is within the range to be determined a new point for our dataset
-        dist = np.linalg.norm(point - self.lastPosition)
-        if self.minDist <= dist <= self.maxDist:
-            self.appendDataPoint(point, point2)
+                radius, centerPoint, normal, circularError, synthetic = circularPath.calcCircularPath(marker.history, normal=None, maxRadius=10, verbose=False, plot=False)
+
+                # Compare whether the linear or circular path provides a better fit
+                if linearError < circularError:
+                    self.publishLinearPath(endPoints, index)
+                else:
+                    self.publishCircularPath(centerPoint, normal, synthetic, index)
+
+                self.publishDataPoints(marker.history, index)
+
+    def multiFeature(self):
+        features, status = self.tracker.getAllPoints('/camera_link')
+        if features is None:
+            return
+
+        # Append feature list
+        if self.points is None:
+            self.points = [features]
+        else:
+            self.points.append(features)
 
         # After several new points, update and publish a visual path in ROS (rviz)
-        if self.visual and len(self.points) - self.lastUpdate >= 5:
+        if self.visual and len(self.points) - self.lastUpdate >= 30:
             self.lastUpdate = len(self.points)
-            # Find a linear fit of the points
-            endPoints, linearError = linearPath.calcLinearPath(self.points, verbose=True, plot=False)
 
-            normal = None
-            # Find a circular fit of the points
-            if self.normals is not None:
-                normal = np.mean(self.normals, axis=0)
-            if normal is not None and type(normal) is np.float64:
-                # Sometimes, the normal vector isn't actually a vector (this fixes such a problem)
-                return
-            radius, centerPoint, normal, circularError, synthetic = circularPath.calcCircularPath(self.points, normal=normal, maxRadius=10, verbose=True, plot=False)
+            lineCount = 0
+            circularCount = 0
+            centers = []
+            normals = []
+            # Loop through all features which are still active (status is True)
+            for i in [i for i, x in enumerate(status) if x]:
+                feats = []
+                for featSet in self.points:
+                    if i < len(featSet) and featSet[i] is not None:
+                        feats.append(featSet[i])
+                if len(feats) < 5:
+                    continue
+                feats = np.array(feats)
 
-            # Compare whether the linear or circular path provides a better fit
-            if linearError < circularError:
-                self.publishLinearPath(endPoints)
-            else:
-                self.publishCircularPath(centerPoint, normal, synthetic)
+                # Find a linear fit of the features
+                endPoints, linearError = linearPath.calcLinearPath(feats, verbose=True, plot=False)
+
+                radius, centerPoint, normal, circularError, synthetic = circularPath.calcCircularPath(feats, normal=None, maxRadius=10, verbose=True, plot=False)
+
+                # Compare whether the linear or circular path provides a better fit
+                if linearError < circularError:
+                    lineCount += 1
+                else:
+                    circularCount += 1
+                    centers.append(centerPoint)
+                    normals.append(normal)
+
+            if circularCount > 0:
+                normal = np.mean(normals, axis=0)
+                center = np.mean(centers, axis=0)
+                self.publishCircularPathKanade(center, normal)
 
     def appendDataPoint(self, point, point2):
         if self.points is None:
@@ -100,12 +129,12 @@ class visionTracker:
         self.newDataAvailable = True
         # rospy.loginfo(rospy.get_caller_id() + '\tI heard: \n%s', str(point))
 
-    def publishLinearPath(self, endPoints):
+    def publishLinearPath(self, endPoints, index):
         startPoint, endPoint = endPoints
         # Display best fit line through points (linear axis of translation)
         marker = Marker()
         marker.header.frame_id = '/camera_link'
-        marker.ns = 'axis_vector'
+        marker.ns = 'axis_vector_%d' % index
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
         marker.scale.x = 0.02
@@ -125,13 +154,11 @@ class visionTracker:
         marker.points.append(end)
         self.publisher.publish(marker)
 
-        self.publishDataPoints()
-
-    def publishCircularPath(self, centerPoint, normal, synthetic):
+    def publishCircularPath(self, centerPoint, normal, synthetic, index):
         # Display normal vector (axis of rotation)
         marker = Marker()
         marker.header.frame_id = '/camera_link'
-        marker.ns = 'axis_vector'
+        marker.ns = 'axis_vector_%d' % index
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
         # print normal
@@ -155,7 +182,7 @@ class visionTracker:
         # Display all points on the estimated circular path
         pointsMarker = Marker()
         pointsMarker.header.frame_id = '/camera_link'
-        pointsMarker.ns = 'circularPoints'
+        pointsMarker.ns = 'circularPoints_%d' % index
         pointsMarker.type = pointsMarker.LINE_STRIP
         pointsMarker.action = pointsMarker.ADD
         pointsMarker.scale.x = 0.005
@@ -172,13 +199,11 @@ class visionTracker:
 
         self.publisher.publish(pointsMarker)
 
-        self.publishDataPoints()
-
-    def publishDataPoints(self):
+    def publishDataPoints(self, points, index):
         # Display all points that were used to generate the estimated path
         pointsMarker = Marker()
         pointsMarker.header.frame_id = '/camera_link'
-        pointsMarker.ns = 'path_points'
+        pointsMarker.ns = 'path_points_%d' % index
         pointsMarker.type = pointsMarker.POINTS
         pointsMarker.action = pointsMarker.ADD
         pointsMarker.scale.x = 0.01
@@ -186,7 +211,7 @@ class visionTracker:
         pointsMarker.color.a = 1.0
         pointsMarker.color.b = 0.5
         pointsMarker.color.r = 0.5
-        for point in self.points:
+        for point in points:
             p = Point()
             p.x = point[0]
             p.y = point[1]
@@ -194,3 +219,28 @@ class visionTracker:
             pointsMarker.points.append(p)
 
         self.publisher.publish(pointsMarker)
+
+    def publishCircularPathKanade(self, centerPoint, normal):
+        # Display normal vector (axis of rotation)
+        marker = Marker()
+        marker.header.frame_id = '/camera_link'
+        marker.ns = 'axis_vector'
+        marker.type = marker.LINE_LIST
+        marker.action = marker.ADD
+        # print normal
+        marker.scale.x = 0.02
+        # Green color
+        marker.color.a = 1.0
+        marker.color.g = 1.0
+        # Define start and end points for our normal vector
+        start = Point()
+        start.x = centerPoint[0]
+        start.y = centerPoint[1]
+        start.z = centerPoint[2]
+        marker.points.append(start)
+        end = Point()
+        end.x = centerPoint[0] + normal[0]
+        end.y = centerPoint[1] + normal[1]
+        end.z = centerPoint[2] + normal[2]
+        marker.points.append(end)
+        self.publisher.publish(marker)
