@@ -15,7 +15,8 @@ class audioRecord():
 
     AUDIO = True
     AUDIORECORD = True
-    FT = False
+    FT = True
+    VISION = False
     KINEMATICS = True
     MANIP = False
     TEST_MODE = False
@@ -23,7 +24,7 @@ class audioRecord():
 
     def __init__(self):
 
-        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, ft=self.FT, kinematics=self.KINEMATICS,  manip=self.MANIP, test_mode=self.TEST_MODE)
+        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION,  ft=self.FT, kinematics=self.KINEMATICS,  manip=self.MANIP, test_mode=self.TEST_MODE)
 
         self.subject = raw_input("Enter subject name: ")
         self.task = raw_input("Enter task name: ")
