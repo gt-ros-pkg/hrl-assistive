@@ -250,31 +250,20 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             tn_l = np.zeros(len(threshold_list))
             fp_l = np.zeros(len(threshold_list))
 
-            delay_l = np.zeros(len(threshold_list)); delay_cnt = np.zeros(len(threshold_list))
+            ## delay_l = np.zeros(len(threshold_list)); delay_cnt = np.zeros(len(threshold_list))
             ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
                 
             for i in xrange(nDataSet):
 
-                for j, ths in enumerate(threshold_list):
+                # save file name
+                res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
+                res_file = os.path.join(cross_test_path, res_file)
 
-                    # save file name
-                    if method == 'globalChange':
-                        res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+ \
-                          '_ths_'+ str(ths[0])+'_thsg_'+str(ths[1])+'.pkl'
-                    else:                        
-                        res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+ \
-                          '_ths_'+ str(ths)+'.pkl'
-                    res_file = os.path.join(cross_test_path, res_file)
-
-                    d = ut.load_pickle(res_file)
-                    fn_l[j] += d['fn']; tp_l[j] += d['tp'] 
-                    tn_l[j] += d['tn']; fp_l[j] += d['fp'] 
-                    delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
-
-                    ## print ths, " : ", d['tn'], d['fn'], " : ", d['delay_l']
-                    ## # Exclude wrong detection cases
-                    ## if delay == []: continue
-
+                d = ut.load_pickle(res_file)
+                fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
+                #delay_l[j] += np.sum(d['delay_ll']); delay_cnt[j] += float(len(d['delay_ll']))  
+                
             tpr_l = np.zeros(len(threshold_list))
             fpr_l = np.zeros(len(threshold_list))
             npv_l = np.zeros(len(threshold_list))
@@ -345,8 +334,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        #os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        #pp.show()
         
     return
 
@@ -373,12 +362,17 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             method = check_methods[0]
             check_dim = check_dims[n]
 
-        fn_l = np.zeros(len(threshold_mult))
-        tp_l = np.zeros(len(threshold_mult))
-        tn_l = np.zeros(len(threshold_mult))
-        fp_l = np.zeros(len(threshold_mult))
+        if method == 'globalChange':
+            threshold_list = product(threshold_mult, threshold_mult)
+        else:
+            threshold_list = threshold_mult
+           
+        fn_l = np.zeros(len(threshold_list))
+        tp_l = np.zeros(len(threshold_list))
+        tn_l = np.zeros(len(threshold_list))
+        fp_l = np.zeros(len(threshold_list))
 
-        delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
+        ## delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
         ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
 
         if sim:
@@ -402,8 +396,6 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
 
                 cross_test_path = os.path.join(cross_data_path, t_dir)
 
-
-
                 pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
                     cross_test_path,d))])
 
@@ -423,18 +415,24 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
                     c_dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
                     if c_dim != check_dim: continue
 
-                    # ths
-                    ths = float(pkl_file.split('ths_')[-1].split('_')[0])
+                    res_file = os.path.join(cross_test_path, pkl_file)
+                    d = ut.load_pickle(res_file)
 
+                    ths_l = d['ths_l']
+
+                    for ths in ths_l:
+
+                        if c_method == 'globalChange':
+                            
                     # find close index
                     for i, t_thres in enumerate(threshold_mult):
                         if abs(t_thres - ths) < 0.00001:
                             idx = i
                             break
 
-                    res_file = os.path.join(cross_test_path, pkl_file)
 
-                    d = ut.load_pickle(res_file)
+
+                    
                     fn_l[idx] += d['fn']; tp_l[idx] += d['tp'] 
                     tn_l[idx] += d['tn']; fp_l[idx] += d['fp'] 
                     delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
