@@ -746,7 +746,8 @@ class learning_hmm_multi(learning_base):
 
             ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
             ## raw_input()
-            if len(ths_mult)>1:
+            if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and \
+              len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
