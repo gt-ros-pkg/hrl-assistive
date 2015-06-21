@@ -4,6 +4,7 @@
 import numpy as np
 import time, sys
 import cPickle as pkl
+import pandas as pd
 from collections import deque
 import pyaudio
 import wave
@@ -14,6 +15,9 @@ import operator
 from threading import Thread
 import glob
 import os
+import pwd
+import getpass
+from tool_vision import tool_vision
 
 # ROS
 import roslib
@@ -147,14 +151,15 @@ class tool_audio(Thread):
         self.audio_data = []
         self.audio_amp  = []
 
+        self.audio_data_raw = []
+
         self.time_data = []
 
         self.b,self.a = self.butter_bandpass(1,400, self.RATE, order=6)
 
 
         self.p=pyaudio.PyAudio()
-        self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, \
-                                input=True, frames_per_buffer=self.CHUNK)
+        self.stream=self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
         rospy.logout('Done subscribing audio')
         print "Done subscribing audio"
 
@@ -180,6 +185,7 @@ class tool_audio(Thread):
         audio_data = np.fromstring(data, self.DTYPE)
         ## audio_data = signal.lfilter(self.b, self.a, audio_data)
 
+        self.audio_data_raw.append(data)
 
         # Exclude low rms data
         ## amp = self.get_rms(data)
@@ -437,7 +443,7 @@ class tool_ft(Thread):
         rate = rospy.Rate(1000) # 25Hz, nominally.
         while not self.cancelled:
             self.log()
-            rospy.sleep(1/1000.)
+            rate.sleep()
 
 
     def log(self):
@@ -483,12 +489,13 @@ class tool_ft(Thread):
     ##         print 'Biasing Failed!'
 
 
-class ADL_log():
-    def __init__(self, ft=True, audio=False, audioRecord=False, kinematics=False, manip=False, test_mode=False):
+class ADL_log:
+    def __init__(self, ft=True, audio=False, audioRecord=False, vision=False, kinematics=False, manip=False, test_mode=False):
         #rospy.init_node('ADLs_log', anonymous = True)
 
         self.ft = ft
         self.audio = audio
+        self.vision = vision
         self.manip = manip
         self.kinematics = kinematics
         self.test_mode = test_mode
@@ -500,8 +507,8 @@ class ADL_log():
         rospy.logout('ADLs_log node subscribing..')
 
         if self.manip:
-            rospy.wait_for_service("/adl/arm_reach_enable")
-            self.armReachAction = rospy.ServiceProxy("/adl/arm_reach_enable", None_Bool)
+            rospy.wait_for_service("/arm_reach_enable")
+            self.armReachAction = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
             rospy.loginfo("arm reach server connected!!")
 
     def task_cmd_input(self, subject=None, task=None, actor=None):
@@ -588,14 +595,18 @@ class ADL_log():
         self.sub_name = subject
         self.task_name = task
         self.actor = actor
+	ft_sensor_topic_name = '/netft_data'
 
         if self.ft:
-            self.ft = tool_ft(self.ft_sensor_topic_name)
+            self.ft = tool_ft(ft_sensor_topic_name)
             ## self.ft_log_file = open(self.file_name+'_ft.log','w')
 
         if self.audio:
             self.audio = tool_audio(self.audioRec)
             ## self.audio_log_file = open(self.file_name+'_audio.log','w')
+
+        if self.vision:
+            self.vision = tool_vision()
 
         if self.kinematics:
             self.kinematics = robot_kinematics()
@@ -616,6 +627,9 @@ class ADL_log():
         if self.audio:
             self.audio.init_time = self.init_time
             self.audio.start()
+        if self.vision:
+            self.vision.init_time = self.init_time
+            self.vision.start()
         if self.kinematics:
             self.kinematics.init_time = self.init_time
             self.kinematics.start()
@@ -629,16 +643,15 @@ class ADL_log():
             sys.exit()
 
 
-
-
     def close_log_file(self, trial_name):
         # Finish data collection
         if self.ft: self.ft.cancel()
         if self.audio: self.audio.cancel()
+        if self.vision: self.vision.cancel()
         if self.kinematics: self.kinematics.cancel()
 
 
-        d = {}
+        d = dict()
         d['init_time'] = self.init_time
 
         if self.ft:
@@ -654,10 +667,19 @@ class ADL_log():
             d['audio_freq']  = self.audio.audio_freq
             d['audio_chunk'] = self.audio.CHUNK
             d['audio_time']  = self.audio.time_data
+            #d['audio_data_raw'] = self.audio.audio_data_raw
+
+        if self.vision:
+            d['visual_points'] = self.vision.visual_points
+            d['visual_time'] = self.vision.time_data
 
         if self.kinematics:
             d['kinematics_time']  = self.kinematics.time_data
             d['kinematics_joint'] = self.kinematics.joint_data
+
+
+        #Save using PANDAS DataFrame format
+        df = pd.DataFrame(d)
 
 
         ## if trial_name is not None: self.trial_name = trial_name
@@ -669,7 +691,8 @@ class ADL_log():
         elif flag == "3": sys.exit()
         else: self.trial_name = flag
 
-        self.folder_name = '/home/hhasnain/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
+        current_user = getpass.getuser()
+        self.folder_name = '/home/'+ current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
         print "Current save folder is: " + self.folder_name
         change_folder = raw_input("Change save folder? [y/n]")
         if change_folder == 'y':
@@ -678,19 +701,35 @@ class ADL_log():
             os.makedirs(self.folder_name)
         self.file_name = self.folder_name+self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name
 
-        pkl_list = glob.glob('*.pkl')
+        #SAVING AS PICKLE FILE!#
+        #OLD METHOD, USING PANDAS INSTEAD!#
+        # pkl_list = glob.glob('*.pkl')
+        # max_num = 0
+
+        # for pkl in pkl_list:
+        #     if pkl.find(self.file_name)>=0:
+        #         num = int(pkl.split('_')[-1].split('.')[0])
+        #         if max_num < num:
+        #             max_num = num
+        # max_num = int(max_num)+1
+        # self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
+
+        # print "Pickle file name: ", self.pkl
+        # ut.save_pickle(d, self.pkl)
+
+        csv_list = glob.glob('*.csv')
         max_num = 0
 
-        for pkl in pkl_list:
-            if pkl.find(self.file_name)>=0:
-                num = int(pkl.split('_')[-1].split('.')[0])
+        for csv in csv_list:
+            if csv.find(self.file_name)>=0:
+                num = int(csv.split('_')[-1].split('.')[0])
                 if max_num < num:
                     max_num = num
         max_num = int(max_num)+1
-        self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
+        self.csv_file_name = self.file_name+'_'+str(max_num)+'.csv'
 
-        print "Pickle file name: ", self.pkl
-        ut.save_pickle(d, self.pkl)
+        print "CSV (Pandas) file name: ", self.csv_file_name
+        df.to_csv(self.csv_file_name)
 
         ## self.tool_tracker_log_file.close()
         ## self.tooltip_log_file.close()
@@ -715,7 +754,7 @@ if __name__ == '__main__':
     manip=True
 
     ## log = ADL_log(audio=True, ft=True, manip=manip, test_mode=False)
-    log = ADL_log(audio=True, ft=True, kinematics=True,  manip=manip, test_mode=False)
+    log = ADL_log(audio=True, ft=True, vision=True, kinematics=True,  manip=manip, test_mode=False)
     log.init_log_file(subject, task, actor)
 
     log.log_start(trial_name)

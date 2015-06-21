@@ -12,9 +12,19 @@ from load_data import *
 
 
 class audioRecord():
+
+    AUDIO = True
+    AUDIORECORD = True
+    FT = True
+    VISION = False
+    KINEMATICS = True
+    MANIP = False
+    TEST_MODE = False
+
+
     def __init__(self):
 
-        self.log = ADL_log(audio=True, audioRecord=True, ft=False, kinematics=False,  manip=False, test_mode=False)
+        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION,  ft=self.FT, kinematics=self.KINEMATICS,  manip=self.MANIP, test_mode=self.TEST_MODE)
 
         self.subject = raw_input("Enter subject name: ")
         self.task = raw_input("Enter task name: ")
@@ -35,8 +45,8 @@ class audioRecord():
         ans = raw_input("Press 'x' to stop logging: ")
         while ans != 'x':
             ans = raw_input("Press 'x' to stop logging: ")
-        print "Closing audio log file"
         self.log.close_log_file(self.trial_name)
+        print "Closing log file"
                 # break
 
         sys.exit()

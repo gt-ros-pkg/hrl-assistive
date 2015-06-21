@@ -4,6 +4,8 @@
 import numpy as np
 import time, sys, os
 import cPickle as pkl
+import pandas as pd
+import getpass
 
 
 # ROS
@@ -48,16 +50,34 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
 
 if __name__ == '__main__':
 
-    pkl_file = raw_input("Enter exact name of pkl file, ex: './test.pkl: '")
-    #pkl_file = './noise.pkl'
-    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
-    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
-    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
-    print os.path.isfile(pkl_file)
-    d = ut.load_pickle(pkl_file)
+    #Current method uses CSV file (Pandas format)
+    current_user = getpass.getuser()
+    folder_name = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
+    change_folder = raw_input("Current folder is: %s, press [y] to change ", % folder_name)
+    if change_folder == 'y':
+        folder_name = raw_input("Enter new folder name and press [Enter] ")
+    csv_file_name = raw_input("Enter exact name of csv file, ex: [test.csv] ")
+    csv_file_path = folder_name + csv_file_name
+
+    df = pd.read_csv(csv_file_name)
+
+    print "Read CSV file as :"
+    print df
+
+    #Old method uses PKL file (Pickle format)
+    # pkl_file = raw_input("Enter exact name of pkl file, ex: './test.pkl: '")
+    # #pkl_file = './noise.pkl'
+    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
+    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
+    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
+    # print os.path.isfile(pkl_file)
+    # d = ut.load_pickle(pkl_file)
+
+    #** 6/20/15 Hyder – CAN'T EXTRACT CSV INFO BECAUSE I HAVEN'T TESTED RECORDING...
+    #** ... CSV FILES YET USING NEW RECORD_DATA.PY CODE. REMOVE WARNING WHEN FIXED!!!
 
     print d.keys()
-    ft = False
+    ft = True
     audio = True
 
     if ft:
@@ -76,6 +96,7 @@ if __name__ == '__main__':
         audio_amp = d['audio_amp']
         audio_freq = d['audio_freq']
         audio_chunk = d['audio_chunk']
+	#audio_data_raw = d['audio_data_raw']
 
 
         audio_data = np.array(audio_data).flatten()
@@ -103,19 +124,42 @@ if __name__ == '__main__':
 
 
         pp.figure()
-        pp.subplot(211)
+        pp.subplot(511)
         pp.plot(audio_data,'b.')
+	pp.xlabel('Time')
+	pp.ylabel('Audio Data... Amplitude?')
         pp.title("Audio Data")
 
-        pp.subplot(212)
+        pp.subplot(512)
         xs = audio_freq[:audio_chunk/16]
         ys = np.abs(audio_amp[:][:audio_chunk/16])
         ys = np.multiply(20,np.log10(ys))
-        pp.plot(xs,ys,'b*')
+        pp.plot(xs,ys,'y')
+	pp.xlabel('Audio freqs')
+	pp.ylabel('Amplitudes')
         pp.title("Audio Frequency and Amplitude")
-        pp.show()
+        
+	pp.subplot(513)
+	pp.plot(audio_freq, 'b')
+	pp.title('Raw audio_freq data')
 
-        ## pp.plot(rms)
+	pp.subplot(514)
+	pp.plot(audio_amp, 'y')
+	pp.title('Raw audio_amp data')
+
+	pp.subplot(515)
+	pp.plot(audio_data, 'b')
+	pp.title('Raw audio_data data')
+
+	#pp.subplot(616)
+	#p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))
+	#f = np.linspace(0, rate/2.0, len(p))
+	#pp.plot(f, p)
+	#pp.xlabel("Frequency(Hz)")
+	#pp.ylabel("Power(dB)")
+	#pp.title("Raw audio_data (same as wav data)")
+        
+	## pp.plot(rms)
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)
 
         ## import pyaudio
