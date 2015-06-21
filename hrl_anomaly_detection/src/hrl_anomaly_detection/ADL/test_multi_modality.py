@@ -347,6 +347,9 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     threshold_mult = threshold_mult.tolist()
+
+    tpr_l_fixed = None
+    fpr_l_fixed = None
     
     fig = pp.figure()
 
@@ -363,7 +366,7 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             check_dim = check_dims[n]
 
         if method == 'globalChange':
-            threshold_list = product(threshold_mult, threshold_mult)
+            threshold_list = list(product(threshold_mult, threshold_mult))
         else:
             threshold_list = threshold_mult
            
@@ -412,7 +415,7 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
                     c_method = pkl_file.split('_roc')[0].split('_')[-1]
                     if c_method != method: continue
                     # dim
-                    c_dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
+                    c_dim = int(pkl_file.split('dim_')[-1].split('.pkl')[0])
                     if c_dim != check_dim: continue
 
                     res_file = os.path.join(cross_test_path, pkl_file)
@@ -421,28 +424,30 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
                     ths_l = d['ths_l']
 
                     ## for ths in ths_l:
-
-                    ##     if c_method == 'globalChange':
                             
-                    # find close index
-                    ## for i, t_thres in enumerate(threshold_mult):
-                    ##     if abs(t_thres - ths) < 0.00001:
-                    ##         idx = i
-                    ##         break
+                    ##     # find close index
+                    ##     for i, t_thres in enumerate(threshold_list):
 
+                    ##         if c_method == 'globalChange':
+                    ##             if abs(t_thres[0] - ths[0]) < 0.00001 and abs(t_thres[1] - ths[1]) < 0.00001:
+                    ##                 idx = i
+                    ##                 break
+                    ##         else:
+                    ##             if abs(t_thres - ths) < 0.00001:
+                    ##                 idx = i
+                    ##                 break
 
-
-                    
-                    fn_l[idx] += d['fn']; tp_l[idx] += d['tp'] 
-                    tn_l[idx] += d['tn']; fp_l[idx] += d['fp'] 
-                    delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+                    fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                    tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])                                
+                    ## delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+                            
             data = {}
             data['fn_l'] = fn_l
             data['tp_l'] = tp_l
             data['tn_l'] = tn_l
             data['fp_l'] = fp_l
-            data['delay_l'] = delay_l
-            data['delay_cnt'] = delay_cnt
+            ## data['delay_l'] = delay_l
+            ## data['delay_cnt'] = delay_cnt
             ut.save_pickle(data, save_pkl_file)
         else:
             data = ut.load_pickle(save_pkl_file)
@@ -450,16 +455,16 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             tp_l = data['tp_l'] 
             tn_l = data['tn_l'] 
             fp_l = data['fp_l'] 
-            delay_l = data['delay_l'] 
-            delay_cnt = data['delay_cnt'] 
+            ## delay_l = data['delay_l'] 
+            ## delay_cnt = data['delay_cnt'] 
                 
 
-        tpr_l = np.zeros(len(threshold_mult))
-        fpr_l = np.zeros(len(threshold_mult))
-        npv_l = np.zeros(len(threshold_mult))
-        detect_l = np.zeros(len(threshold_mult))
+        tpr_l = np.zeros(len(threshold_list))
+        fpr_l = np.zeros(len(threshold_list))
+        npv_l = np.zeros(len(threshold_list))
+        detect_l = np.zeros(len(threshold_list))
 
-        for i in xrange(len(threshold_mult)):
+        for i in xrange(len(threshold_list)):
             if tp_l[i]+fn_l[i] != 0:
                 tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
 
@@ -469,10 +474,10 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             if tn_l[i]+fn_l[i] != 0:
                 npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
 
-            if delay_cnt[i] == 0:
-                delay_l[i] = 0
-            else:                    
-                delay_l[i] = delay_l[i]/delay_cnt[i]
+            ## if delay_cnt[i] == 0:
+            ##     delay_l[i] = 0
+            ## else:                    
+            ##     delay_l[i] = delay_l[i]/delay_cnt[i]
 
             if tn_l[i] + fn_l[i] + fp_l[i] != 0:
                 detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
@@ -481,9 +486,13 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
         sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
         sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
         sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
-        sorted_delay_l = [delay_l[k] for k in idx_list]
+        ## sorted_delay_l = [delay_l[k] for k in idx_list]
         sorted_detect_l = [detect_l[k] for k in idx_list]
 
+        if method == 'global':
+            tpr_l_fixed = sorted_tpr_l
+            fpr_l_fixed = sorted_fpr_l
+            
         color = colors.next()
         shape = shapes.next()
 
@@ -504,10 +513,38 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             elif method == 'global':
                 label = 'Fixed threshold \n detection'
             elif method == 'progress':
-                label = 'Progress-based \n detection'
+                label = 'Dynamic threshold \n detection'
             else:
                 label = method +"_"+str(check_dim)
-        pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+
+        if method == 'globalChange':                
+
+            xl = []
+            yl = []
+            for x,y in zip(sorted_fpr_l, sorted_tpr_l):
+
+                min_idx = 0
+                min_dist = 1000
+                for i, (tx, ty) in enumerate(zip(fpr_l_fixed, tpr_l_fixed)):
+                    if min_dist > (tx-x)**2 + (ty-y)**2:
+                        min_idx  = i
+                        min_dist = (tx-x)**2 + (ty-y)**2
+
+                if min_idx == 0 or min_idx == len(fpr_l_fixed)-1: continue
+
+                a1 = (tpr_l_fixed[min_idx] - tpr_l_fixed[min_idx-1]) / (fpr_l_fixed[min_idx] - fpr_l_fixed[min_idx-1])
+                b1 = tpr_l_fixed[min_idx] - a1*fpr_l_fixed[min_idx]
+
+                a2 = (tpr_l_fixed[min_idx+1] - tpr_l_fixed[min_idx]) / (fpr_l_fixed[min_idx+1] - fpr_l_fixed[min_idx])
+                b2 = tpr_l_fixed[min_idx+1] - a2*fpr_l_fixed[min_idx+1]
+                
+                if y - (a1*x + b1) > 0 or y - (a2*x + b2) > 0:
+                    xl.append(x)
+                    yl.append(y)
+            
+            pp.plot(xl, yl, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+        else:
+            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=4,prop={'size':16})
     pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
@@ -895,7 +932,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     ind = np.arange(nClass)*0.9
     width = 0.5
     methods = ('Check \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
-               'Progress-based \n detection')
+               'Dynamic threshold \n detection')
 
     print fdr_mu_class_l
     pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
