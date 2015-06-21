@@ -241,7 +241,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                 check_dim = check_dims[n]
                 
             if method == 'globalChange':
-                threshold_list = product(threshold_mult, threshold_mult_c)
+                threshold_list = list(product(threshold_mult, threshold_mult))
             else:
                 threshold_list = threshold_mult
                 
@@ -279,10 +279,10 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                 if tn_l[i]+fn_l[i] != 0:
                     npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
 
-                if delay_cnt[i] == 0:
-                    delay_l[i] = 0
-                else:                    
-                    delay_l[i] = delay_l[i]/delay_cnt[i]
+                ## if delay_cnt[i] == 0:
+                ##     delay_l[i] = 0
+                ## else:                    
+                ##     delay_l[i] = delay_l[i]/delay_cnt[i]
 
                 if tn_l[i] + fn_l[i] + fp_l[i] != 0:
                     detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
@@ -291,7 +291,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
             sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
-            sorted_delay_l = [delay_l[k] for k in idx_list]
+            ## sorted_delay_l = [delay_l[k] for k in idx_list]
             sorted_detect_l = [detect_l[k] for k in idx_list]
 
             color = colors.next()
@@ -420,15 +420,15 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
 
                     ths_l = d['ths_l']
 
-                    for ths in ths_l:
+                    ## for ths in ths_l:
 
-                        if c_method == 'globalChange':
+                    ##     if c_method == 'globalChange':
                             
                     # find close index
-                    for i, t_thres in enumerate(threshold_mult):
-                        if abs(t_thres - ths) < 0.00001:
-                            idx = i
-                            break
+                    ## for i, t_thres in enumerate(threshold_mult):
+                    ##     if abs(t_thres - ths) < 0.00001:
+                    ##         idx = i
+                    ##         break
 
 
 
