@@ -489,7 +489,7 @@ class tool_ft(Thread):
 
 
 class ADL_log:
-    def __init__(self, ft=True, audio=False, vision=False, audioRecord=False, kinematics=False, manip=False, test_mode=False):
+    def __init__(self, ft=True, audio=False, audioRecord=False, vision=False, kinematics=False, manip=False, test_mode=False):
         #rospy.init_node('ADLs_log', anonymous = True)
 
         self.ft = ft
@@ -594,9 +594,10 @@ class ADL_log:
         self.sub_name = subject
         self.task_name = task
         self.actor = actor
+	ft_sensor_topic_name = '/netft_data'
 
         if self.ft:
-            self.ft = tool_ft(self.ft_sensor_topic_name)
+            self.ft = tool_ft(ft_sensor_topic_name)
             ## self.ft_log_file = open(self.file_name+'_ft.log','w')
 
         if self.audio:
@@ -665,7 +666,7 @@ class ADL_log:
             d['audio_freq']  = self.audio.audio_freq
             d['audio_chunk'] = self.audio.CHUNK
             d['audio_time']  = self.audio.time_data
-            d['audio_data_raw'] = self.audio.audio_data_raw
+            #d['audio_data_raw'] = self.audio.audio_data_raw
 
         if self.vision:
             d['visual_points'] = self.vision.visual_points
