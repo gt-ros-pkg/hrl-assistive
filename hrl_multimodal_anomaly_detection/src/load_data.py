@@ -4,6 +4,8 @@
 import numpy as np
 import time, sys, os
 import cPickle as pkl
+import pandas as pd
+import getpass
 
 
 # ROS
@@ -48,13 +50,31 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
 
 if __name__ == '__main__':
 
-    pkl_file = raw_input("Enter exact name of pkl file, ex: './test.pkl: '")
-    #pkl_file = './noise.pkl'
-    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
-    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
-    ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
-    print os.path.isfile(pkl_file)
-    d = ut.load_pickle(pkl_file)
+    #Current method uses CSV file (Pandas format)
+    current_user = getpass.getuser()
+    folder_name = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
+    change_folder = raw_input("Current folder is: %s, press [y] to change ", % folder_name)
+    if change_folder == 'y':
+        folder_name = raw_input("Enter new folder name and press [Enter] ")
+    csv_file_name = raw_input("Enter exact name of csv file, ex: [test.csv] ")
+    csv_file_path = folder_name + csv_file_name
+
+    df = pd.read_csv(csv_file_name)
+
+    print "Read CSV file as :"
+    print df
+
+    #Old method uses PKL file (Pickle format)
+    # pkl_file = raw_input("Enter exact name of pkl file, ex: './test.pkl: '")
+    # #pkl_file = './noise.pkl'
+    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
+    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
+    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
+    # print os.path.isfile(pkl_file)
+    # d = ut.load_pickle(pkl_file)
+
+    #** 6/20/15 Hyder – CAN'T EXTRACT CSV INFO BECAUSE I HAVEN'T TESTED RECORDING...
+    #** ... CSV FILES YET USING NEW RECORD_DATA.PY CODE. REMOVE WARNING WHEN FIXED!!!
 
     print d.keys()
     ft = True

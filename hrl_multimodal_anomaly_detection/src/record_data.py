@@ -4,6 +4,7 @@
 import numpy as np
 import time, sys
 import cPickle as pkl
+import pandas as pd
 from collections import deque
 import pyaudio
 import wave
@@ -677,6 +678,10 @@ class ADL_log:
             d['kinematics_joint'] = self.kinematics.joint_data
 
 
+        #Save using PANDAS DataFrame format
+        df = pd.DataFrame(d)
+
+
         ## if trial_name is not None: self.trial_name = trial_name
         ## else:
         flag = raw_input("Enter trial's name (e.g. 1:success, 2:failure_reason, 3: exit): ")
@@ -696,19 +701,35 @@ class ADL_log:
             os.makedirs(self.folder_name)
         self.file_name = self.folder_name+self.sub_name+'_'+self.task_name+'_'+self.actor+'_'+self.trial_name
 
-        pkl_list = glob.glob('*.pkl')
+        #SAVING AS PICKLE FILE!#
+        #OLD METHOD, USING PANDAS INSTEAD!#
+        # pkl_list = glob.glob('*.pkl')
+        # max_num = 0
+
+        # for pkl in pkl_list:
+        #     if pkl.find(self.file_name)>=0:
+        #         num = int(pkl.split('_')[-1].split('.')[0])
+        #         if max_num < num:
+        #             max_num = num
+        # max_num = int(max_num)+1
+        # self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
+
+        # print "Pickle file name: ", self.pkl
+        # ut.save_pickle(d, self.pkl)
+
+        csv_list = glob.glob('*.csv')
         max_num = 0
 
-        for pkl in pkl_list:
-            if pkl.find(self.file_name)>=0:
-                num = int(pkl.split('_')[-1].split('.')[0])
+        for csv in csv_list:
+            if csv.find(self.file_name)>=0:
+                num = int(csv.split('_')[-1].split('.')[0])
                 if max_num < num:
                     max_num = num
         max_num = int(max_num)+1
-        self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
+        self.csv_file_name = self.file_name+'_'+str(max_num)+'.csv'
 
-        print "Pickle file name: ", self.pkl
-        ut.save_pickle(d, self.pkl)
+        print "CSV (Pandas) file name: ", self.csv_file_name
+        df.to_csv(self.csv_file_name)
 
         ## self.tool_tracker_log_file.close()
         ## self.tooltip_log_file.close()
