@@ -36,8 +36,9 @@ class arTagPoint:
         # Find frameId for transformations
         if self.frameId is None:
             self.frameId = self.recentMarkers[0].header.frame_id
-            trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
-            self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
+            if self.targetFrame is not None:
+                trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
+                self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
 
         # Update markers
         for m in self.recentMarkers:
@@ -74,10 +75,10 @@ class arTagPoint:
     def getAllMarkersWithHistory(self):
         if len(self.markers) <= 0:
             return None
-        pointSet = []
+        markerSet = []
         for marker in self.markers.values():
-            pointSet.append(marker)
-        return pointSet
+            markerSet.append(marker)
+        return markerSet
 
     def markerRecentCount(self):
         if self.recentMarkers is None:
@@ -110,6 +111,13 @@ class feature:
         if minDist <= dist <= maxDist:
             self.history.append(self.recentPosition)
             self.lastHistoryPosition = self.recentPosition
+
+    def isAvailableForNewPath(self):
+        if len(self.history) - self.lastHistoryCount >= 5:
+            self.lastHistoryCount = len(self.history)
+            return True
+        return False
+
 
 ''' ar_track_alvar/AlvarMarkers data
 std_msgs/Header header
