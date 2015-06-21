@@ -12,14 +12,18 @@ from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 from geometry_msgs.msg import Point, PointStamped
 from roslib import message
 
+# Clustering
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+
 import roslib
 roslib.load_manifest('cv_bridge')
 import tf
 from cv_bridge import CvBridge, CvBridgeError
 
 class kanadeLucasPoint:
-    def __init__(self, caller, visual=False):
-        self.markers = None
+    def __init__(self, caller, targetFrame=None, visual=False):
         self.caller = caller
         self.bridge = CvBridge()
         # ROS publisher for data points
@@ -28,24 +32,25 @@ class kanadeLucasPoint:
         self.feature_params = dict(maxCorners=100, qualityLevel=0.1, minDistance=7, blockSize=7)
         # Parameters for lucas kanade optical flow
         self.lk_params = dict(winSize=(15,15), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-        # Create some random colors
-        self.color = np.random.randint(0, 255, (100, 3))
         # Variables to store past iteration output
         self.prevGray = None
         self.prevFeats = None
-        # List of features we are checking to see if they are novel
-        self.novelQueue = None
-        # Novel features part of the object that we want to track
-        self.novelFeats = None
+        # List of features we are tracking
+        self.features = None
         # PointCloud2 data used for determining 3D location from 2D pixel location
         self.pointCloud = None
-        # Frame id used for transformations
-        self.imageFrameId = None
+        # Transformations
+        self.frameId = None
         self.cameraWidth = None
         self.cameraHeight = None
         self.transformer = tf.TransformListener()
+        self.targetFrame = targetFrame
+        self.transMatrix = None
         # Whether to display visual plots or not
         self.visual = visual
+
+        self.dbscan = DBSCAN(eps=0.6, min_samples=10)
+        self.N = 30
 
         rospy.Subscriber('/camera/rgb/image_color', Image, self.imageCallback)
         rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
@@ -54,78 +59,92 @@ class kanadeLucasPoint:
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
 
-    def getPoint(self, index, targetFrame):
-        if index >= self.markerCount() or self.markerCount() < 15:
+    def getRecentPoint(self, index):
+        if index >= self.markerRecentCount():
             return None
-        feature = self.novelFeats[10]
-        return self.get3DPointFromCloud(feature, targetFrame)
+        return self.features[index].recent3DPosition
 
-    def markerCount(self):
-        if self.novelFeats is None:
+    def getAllRecentPoints(self):
+        if self.markerRecentCount() <= 0:
+            return None
+        return [feat.recent3DPosition for feat in self.features if feat.isNovel]
+
+    def getAllMarkersWithHistory(self):
+        if self.markerRecentCount() <= 0:
+            return None
+        featureSet = []
+        for feature in self.features:
+            if feature.isNovel:
+                featureSet.append(feature)
+        return featureSet
+
+    def markerRecentCount(self):
+        if self.features is None:
             return 0
-        return len(self.novelFeats)
+        return len([feat for feat in self.features if feat.isNovel])
 
     def determineGoodFeatures(self, imageGray):
         # Take a frame and find corners in it
         self.prevFeats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
-        self.novelQueue = np.array([feature(self.prevFeats[i]) for i in xrange(len(self.prevFeats))])
+        self.features = np.array([feature(self.prevFeats[i]) for i in xrange(len(self.prevFeats))])
 
-    def opticalFlowQueue(self, imageGray):
+    def opticalFlow(self, imageGray):
         newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, self.prevFeats, None, **self.lk_params)
         statusRemovals = [i for i, s in enumerate(status) if s == 0]
 
         # Update all features
-        for i in xrange(len(newFeats)):
-            self.novelQueue[i].frame += 1
-            self.novelQueue[i].distance = np.linalg.norm(self.novelQueue[i].position - newFeats[i])
+        for i, feat in enumerate(self.features):
+            feat.update(newFeats[i])
 
         # Remove all features that are no longer being tracked (ie. status == 0)
-        self.novelQueue = np.delete(self.novelQueue, statusRemovals, axis=0)
+        self.features = np.delete(self.features, statusRemovals, axis=0)
         newFeats = np.delete(newFeats, statusRemovals, axis=0)
 
-        # Remove specific features that match a given criteria
-        removeList = []
-        for i in xrange(len(self.novelQueue)):
-            # Check if certain features have now become 'novel' by traveling a far enough distance
-            if self.novelQueue[i].distance >= 50:
-                if self.novelFeats is None:
-                    self.novelFeats = np.array(newFeats[i])
-                else:
-                    self.novelFeats = np.vstack((self.novelFeats, newFeats[i]))
-                removeList.append(i)
-            # Else if certain features hit the frame limit, remove them
-            # elif novelQueue[i].frame >= 40:
-                # removeList.append(i)
-
-        # Remove specified features from tracking queue process
-        self.novelQueue = np.delete(self.novelQueue, removeList, axis=0)
-        # oldFeats = np.delete(oldFeats, removeList, axis=0)
-        newFeats = np.delete(newFeats, removeList, axis=0)
+        # Define features as novel if they meet a given criteria
+        for feat in self.features:
+            if feat.distance >= 50:
+                feat.isNovel = True
 
         self.prevFeats = newFeats
 
-    def opticalFlowNovel(self, imageGray):
-        novel, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, self.novelFeats, None, **self.lk_params)
-        if novel is None or status is None:
-            return
-        statusRemovals = [i for i, s in enumerate(status) if s == 0]
-        # Remove all features that are no longer being tracked (ie. status == 0)
-        novel = np.delete(novel, statusRemovals, axis=0)
-        self.novelFeats = novel
+    def drawOnImage(self, image):
+        # Cluster feature points
+        points = []
+        for feat in self.features:
+            if feat.isNovel:
+                points.append(feat.recent2DPosition)
+        points = np.array(points)
 
-    def drawOnImage(self, image, features):
-        # Draw feature points
-        for i, feature in enumerate(features):
-            a, b = feature.ravel()
-            cv2.circle(image, (a, b), 5, self.color[i].tolist(), -1)
+        # Perform dbscan clustering
+        X = StandardScaler().fit_transform(points)
+        labels = self.dbscan.fit_predict(X)
+
+        unique_labels = set(labels)
+        colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))*255
+        # Drop alpha channel
+        colors = np.delete(colors, -1, 1)
+        for k, col in zip(unique_labels, colors):
+            if k == -1:
+                # Black used for noise.
+                col = [0, 0, 0]
+
+            # Draw feature points
+            clusterPoints = points[labels==k]
+            for point in clusterPoints:
+                a, b = point
+                if a >= self.cameraWidth or b >= self.cameraHeight:
+                    # Red used for features not within the camera's dimensions
+                    col = [1, 0, 0]
+                cv2.circle(image, (a, b), 5, col, -1)
+
         return image
 
-    def publishFeatures(self, features, pointCloud):
+    def publishFeatures(self):
         if self.cameraWidth is None:
             return
         # Display all novel (object) features that we are tracking.
         marker = Marker()
-        marker.header.frame_id = pointCloud.header.frame_id
+        marker.header.frame_id = self.pointCloud.header.frame_id
         marker.ns = 'points'
         marker.type = marker.POINTS
         marker.action = marker.ADD
@@ -133,11 +152,10 @@ class kanadeLucasPoint:
         marker.scale.y = 0.01
         marker.color.a = 1.0
         marker.color.b = 1.0
-        for feature in features:
-            point = self.get3DPointFromCloud(feature, None)
-            if point is None:
+        for feature in self.features:
+            if not feature.isNovel:
                 continue
-            x, y, depth = point
+            x, y, depth = feature.recent3DPosition
             # Create 3d point
             p = Point()
             p.x = x
@@ -147,14 +165,14 @@ class kanadeLucasPoint:
 
         self.publisher.publish(marker)
 
-    def get3DPointFromCloud(self, feature, targetFrame):
+    def get3DPointFromCloud(self, feature2DPosition):
         if self.cameraWidth is None:
             return None
         # Grab x, y values from feature and verify they are within the image bounds
-        x, y = feature
+        x, y = feature2DPosition
         x, y = int(x), int(y)
         if x >= self.cameraWidth or y >= self.cameraHeight:
-            print 'x, y greater than camera size! Feature', x, y, self.cameraWidth, self.cameraHeight
+            # print 'x, y greater than camera size! Feature', x, y, self.cameraWidth, self.cameraHeight
             return None
         # Retrieve 3d location of feature from PointCloud2
         points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=False, uvs=[[x, y]])
@@ -165,14 +183,12 @@ class kanadeLucasPoint:
             # print 'NaN! Feature', ps, py, depth
             return None
 
+        xyz = None
         # Transpose point to targetFrame
-        if targetFrame is not None:
-            trans, rot = self.transformer.lookupTransform(targetFrame, self.pointCloud.header.frame_id, rospy.Time(0))
-            mat = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
-            xyz = tuple(np.dot(mat, np.array([px, py, depth, 1.0])))[:3]
-            px, py, depth = xyz
+        if self.targetFrame is not None:
+            xyz = np.dot(self.transMatrix, np.array([px, py, depth, 1.0]))[:3]
 
-        return np.array([px, py, depth])
+        return xyz
 
     def imageCallback(self, data):
         # Grab image from Kinect sensor
@@ -190,46 +206,101 @@ class kanadeLucasPoint:
         # Convert to grayscale
         imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        if self.prevGray is None:
+        # Find frameId for transformations and determine a good set of starting features
+        if self.frameId is None:
             # Grab frame id for later transformations
-            self.imageFrameId = data.header.frame_id
+            self.frameId = data.header.frame_id
+            if self.targetFrame is not None:
+                trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
+                self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
             # Determine initial set of features
             self.determineGoodFeatures(imageGray)
             self.prevGray = imageGray
             return
 
-        if len(self.prevFeats) > 0:
-            self.opticalFlowQueue(imageGray)
+        # Update markers
+        for m in self.recentMarkers:
+            index = m.id
+            if index not in [0, 7]:
+                continue
+            position = m.pose.pose.position
+            point = self.transposePoint([position.x, position.y, position.z])
+            marker = self.markers.get(index)
+            if marker is None:
+                print 'New marker! Index:', index
+                self.markers[index] = feature(point)
+            else:
+                marker.update(point)
 
-        if self.novelFeats is not None:
-            self.opticalFlowNovel(imageGray)
+        if len(self.features) > 0:
+            self.opticalFlow(imageGray)
             if self.visual:
-                self.publishFeatures(self.novelFeats, self.pointCloud)
-                image = self.drawOnImage(image, self.novelFeats)
+                self.publishFeatures()
+                image = self.drawOnImage(image)
                 cv2.imshow('Image window', image)
                 cv2.waitKey(30)
 
         self.prevGray = imageGray
 
         # Call our caller now that new data has been processed
-        self.caller(self)
+        self.caller()
 
     def cloudCallback(self, data):
         # Store PointCloud2 data for use when determining 3D locations
-        try:
-            self.pointCloud = data
-        except CvBridgeError, e:
-            print e
+        self.pointCloud = data
 
     def cameraRGBInfoCallback(self, data):
         self.cameraWidth = data.width
         self.cameraHeight = data.height
 
+minDist = 0.015
+maxDist = 0.03
 class feature:
-    def __init__(self, position):
-        self.position = position
+    def __init__(self, position, kanadeLucas):
+        self.kanadeLucas = kanadeLucas
+        self.startPosition = None
+        self.recent2DPosition = np.array(position)
+        self.recent3DPosition = None
         self.frame = 0
         self.distance = 0.0
+        self.isNovel = False
+        self.history = []
+        self.lastHistoryPosition = None
+        self.lastHistoryCount = 0
+
+        self.setStartPosition()
+
+    def setStartPosition(self):
+        self.startPosition = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
+        self.history = [self.startPosition] if self.startPosition is not None else []
+        self.lastHistoryPosition = self.startPosition
+
+    def update(self, newPosition):
+        newPosition = np.array(newPosition)
+        self.recent2DPosition = newPosition
+        self.frame += 1
+        # Check if start position has been successfully set yet
+        if self.startPosition is None:
+            self.setStartPosition()
+            return
+        # Grab 3D location for this feature
+        self.recent3DPosition = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
+        if self.recent3DPosition is None:
+            return
+        # Update total distance traveled
+        self.distance = np.linalg.norm(self.recent3DPosition - self.startPosition)
+        # Check if the point has traveled far enough to add a new history point
+        dist = np.linalg.norm(self.recent3DPosition - self.lastHistoryPosition)
+        if minDist <= dist <= maxDist:
+            self.history.append(self.recent3DPosition)
+            self.lastHistoryPosition = self.recent3DPosition
+
+    def isAvailableForNewPath(self):
+        if len(self.history) - self.lastHistoryCount >= 5:
+            self.lastHistoryCount = len(self.history)
+            return True
+        return False
+
 
 ''' sensor_msgs/Image data
 std_msgs/Header header
