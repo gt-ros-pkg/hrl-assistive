@@ -711,14 +711,14 @@ class learning_hmm_multi(learning_base):
                 return -1, 0.0 # error
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
-            if type(ths_mult) == list or type(ths_mult) == np.ndarray:
+            if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
                 err = (self.l_mean_delta + (-1.0*ths_mult[0])*self.l_std_delta ) - abs(logp-last_logp)
             else:                
                 err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             if err < 0.0: return 1.0, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':
-            if type(ths_mult) == list or type(ths_mult) == np.ndarray:
+            if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
                 err = logp - (self.l_mu + ths_mult[1]*self.l_std) 
             else:
                 err = logp - (self.l_mu + ths_mult*self.l_std) 
@@ -1257,7 +1257,7 @@ class learning_hmm_multi(learning_base):
         ## cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
         ax1.set_xlabel("Time [sec]", fontsize=18)
-        ax1.set_ylabel("Hidden State", fontsize=18)
+        ax1.set_ylabel("Hidden State Index", fontsize=18)
         
         ## for p in path_l:
         ##     ax1.plot(x, p, '*')
@@ -1271,11 +1271,11 @@ class learning_hmm_multi(learning_base):
         
         
         ## ax3 = plt.subplot(313)
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
         plt.grid()            
         plt.show()
             
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
 
     def progress_analysis(self, X1, X2, scale1=None, scale2=None):
 
