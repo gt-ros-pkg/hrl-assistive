@@ -27,6 +27,7 @@ import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.patches import Polygon
+from itertools import product
 
 import data_manager as dm
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
@@ -56,7 +57,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
     use_ml_pkl = False
     false_dataSet = None
     count = 0        
-    
+    threshold_list = None
+        
     for method in check_methods:        
         for i in xrange(nDataSet):
 
@@ -110,39 +112,49 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             for check_dim in check_dims:
             
                 lhm = None
+                if method == 'globalChange':
+                    threshold_list = product(threshold_mult, threshold_mult)
+                else:
+                    threshold_list = threshold_mult
 
-                for ths in threshold_mult:
+                # save file name
+                res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
+                mutex_file_part = 'running_dataset_'+str(i)+'_dim_'+str(check_dim)+'_'+method
 
-                    # save file name
-                    res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'_ths_'+ \
-                      str(ths)+'.pkl'
-                    res_file = os.path.join(cross_test_path, res_file)
+                res_file = os.path.join(cross_test_path, res_file)
+                mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+                mutex_file      = os.path.join(cross_test_path, mutex_file_full)
 
-                    mutex_file_part = 'running_dataset_'+str(i)+'_dim_'+str(check_dim)+'_ths_'+str(ths)+'_'+method
-                    mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
-                    mutex_file      = os.path.join(cross_test_path, mutex_file_full)
-                                        
-                    if os.path.isfile(res_file): 
-                        count += 1            
-                        continue
-                    elif hcu.is_file(cross_test_path, mutex_file_part): 
-                        continue
-                    ## elif os.path.isfile(mutex_file): continue
-                    os.system('touch '+mutex_file)
+                if os.path.isfile(res_file): 
+                    count += 1            
+                    continue
+                elif hcu.is_file(cross_test_path, mutex_file_part): 
+                    continue
+                ## elif os.path.isfile(mutex_file): continue
+                os.system('touch '+mutex_file)
+                
+                if lhm is None:
+                    if check_dim is not 2:
+                        x_train1 = train_dataSet.samples[:,check_dim,:]
+                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
+                                                 check_method=method)
+                        if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
+                        elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
+                    else:
+                        x_train1 = train_dataSet.samples[:,0,:]
+                        x_train2 = train_dataSet.samples[:,1,:]
+                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
+                        lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
-                    if lhm is None:
-                        if check_dim is not 2:
-                            x_train1 = train_dataSet.samples[:,check_dim,:]
-                            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
-                                                     check_method=method)
-                            if check_dim==0: lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
-                            elif check_dim==1: lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
-                        else:
-                            x_train1 = train_dataSet.samples[:,0,:]
-                            x_train2 = train_dataSet.samples[:,1,:]
-                            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
-                            lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
-
+                tp_l = []
+                fn_l = []
+                fp_l = []
+                tn_l = []
+                delay_ll = []
+                ths_l = []
+                        
+                for ths in threshold_list:
+                            
                     if (disp == 'test' or disp == 'false') and method == 'progress':
                         if disp == 'test':
                             if check_dim == 2:
@@ -178,23 +190,30 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                                                                         ths, \
                                                                         check_dim=check_dim)
 
-                    d = {}
-                    d['fn']    = fn
-                    d['tn']    = tn
-                    d['tp']    = tp
-                    d['fp']    = fp
-                    d['ths']   = ths
-                    d['delay_l'] = delay_l
+                    tp_l.append(tp)
+                    fn_l.append(fn)
+                    fp_l.append(fp)
+                    tn_l.append(tn)
+                    ths_l.append(ths)
+                    delay_ll.append(delay_l)
 
-                    try:
-                        ut.save_pickle(d,res_file)        
-                    except:
-                        print "There is the targeted pkl file"
-                        
-                    os.system('rm '+mutex_file)
-                    print "-----------------------------------------------"
+                d = {}
+                d['fn_l']    = fn_l
+                d['tn_l']    = tn_l
+                d['tp_l']    = tp_l
+                d['fp_l']    = fp_l
+                d['ths_l']   = ths_l
+                d['delay_ll'] = delay_ll
 
-    if count == len(threshold_mult)*len(check_methods)*nDataSet*len(check_dims):
+                try:
+                    ut.save_pickle(d,res_file)        
+                except:
+                    print "There is the targeted pkl file"
+
+                os.system('rm '+mutex_file)
+                print "-----------------------------------------------"
+
+    if count == len(check_methods)*nDataSet*len(check_dims):
         print "#############################################################################"
         print "All file exist ", count
         print "#############################################################################"        
@@ -221,38 +240,36 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                 method = check_methods[0]
                 check_dim = check_dims[n]
                 
+            if method == 'globalChange':
+                threshold_list = list(product(threshold_mult, threshold_mult))
+            else:
+                threshold_list = threshold_mult
                 
-            fn_l = np.zeros(len(threshold_mult))
-            tp_l = np.zeros(len(threshold_mult))
-            tn_l = np.zeros(len(threshold_mult))
-            fp_l = np.zeros(len(threshold_mult))
+            fn_l = np.zeros(len(threshold_list))
+            tp_l = np.zeros(len(threshold_list))
+            tn_l = np.zeros(len(threshold_list))
+            fp_l = np.zeros(len(threshold_list))
 
-            delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
+            ## delay_l = np.zeros(len(threshold_list)); delay_cnt = np.zeros(len(threshold_list))
             ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
                 
             for i in xrange(nDataSet):
 
-                for j, ths in enumerate(threshold_mult):
-                    # save file name
-                    res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'_ths_'+ \
-                      str(ths)+'.pkl'
-                    res_file = os.path.join(cross_test_path, res_file)
+                # save file name
+                res_file = prefix+'_dataset_'+str(i)+'_'+method+'_roc_'+opr+'_dim_'+str(check_dim)+'.pkl'
+                res_file = os.path.join(cross_test_path, res_file)
 
-                    d = ut.load_pickle(res_file)
-                    fn_l[j] += d['fn']; tp_l[j] += d['tp'] 
-                    tn_l[j] += d['tn']; fp_l[j] += d['fp'] 
-                    delay_l[j] += np.sum(d['delay_l']); delay_cnt[j] += float(len(d['delay_l']))  
-
-                    ## print ths, " : ", d['tn'], d['fn'], " : ", d['delay_l']
-                    ## # Exclude wrong detection cases
-                    ## if delay == []: continue
-
-            tpr_l = np.zeros(len(threshold_mult))
-            fpr_l = np.zeros(len(threshold_mult))
-            npv_l = np.zeros(len(threshold_mult))
-            detect_l = np.zeros(len(threshold_mult))
+                d = ut.load_pickle(res_file)
+                fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
+                #delay_l[j] += np.sum(d['delay_ll']); delay_cnt[j] += float(len(d['delay_ll']))  
+                
+            tpr_l = np.zeros(len(threshold_list))
+            fpr_l = np.zeros(len(threshold_list))
+            npv_l = np.zeros(len(threshold_list))
+            detect_l = np.zeros(len(threshold_list))
                     
-            for i in xrange(len(threshold_mult)):
+            for i in xrange(len(threshold_list)):
                 if tp_l[i]+fn_l[i] != 0:
                     tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
 
@@ -262,10 +279,10 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                 if tn_l[i]+fn_l[i] != 0:
                     npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
 
-                if delay_cnt[i] == 0:
-                    delay_l[i] = 0
-                else:                    
-                    delay_l[i] = delay_l[i]/delay_cnt[i]
+                ## if delay_cnt[i] == 0:
+                ##     delay_l[i] = 0
+                ## else:                    
+                ##     delay_l[i] = delay_l[i]/delay_cnt[i]
 
                 if tn_l[i] + fn_l[i] + fp_l[i] != 0:
                     detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
@@ -274,7 +291,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
             sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
-            sorted_delay_l = [delay_l[k] for k in idx_list]
+            ## sorted_delay_l = [delay_l[k] for k in idx_list]
             sorted_detect_l = [detect_l[k] for k in idx_list]
 
             color = colors.next()
@@ -317,8 +334,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        #os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        #pp.show()
         
     return
 
@@ -330,6 +347,9 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     threshold_mult = threshold_mult.tolist()
+
+    tpr_l_fixed = None
+    fpr_l_fixed = None
     
     fig = pp.figure()
 
@@ -345,12 +365,17 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             method = check_methods[0]
             check_dim = check_dims[n]
 
-        fn_l = np.zeros(len(threshold_mult))
-        tp_l = np.zeros(len(threshold_mult))
-        tn_l = np.zeros(len(threshold_mult))
-        fp_l = np.zeros(len(threshold_mult))
+        if method == 'globalChange':
+            threshold_list = list(product(threshold_mult, threshold_mult))
+        else:
+            threshold_list = threshold_mult
+           
+        fn_l = np.zeros(len(threshold_list))
+        tp_l = np.zeros(len(threshold_list))
+        tn_l = np.zeros(len(threshold_list))
+        fp_l = np.zeros(len(threshold_list))
 
-        delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
+        ## delay_l = np.zeros(len(threshold_mult)); delay_cnt = np.zeros(len(threshold_mult))
         ## err_l = np.zeros(len(threshold_mult));   err_cnt = np.zeros(len(threshold_mult))
 
         if sim:
@@ -374,8 +399,6 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
 
                 cross_test_path = os.path.join(cross_data_path, t_dir)
 
-
-
                 pkl_files = sorted([d for d in os.listdir(cross_test_path) if os.path.isfile(os.path.join( \
                     cross_test_path,d))])
 
@@ -392,31 +415,39 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
                     c_method = pkl_file.split('_roc')[0].split('_')[-1]
                     if c_method != method: continue
                     # dim
-                    c_dim = int(pkl_file.split('dim_')[-1].split('_ths')[0])
+                    c_dim = int(pkl_file.split('dim_')[-1].split('.pkl')[0])
                     if c_dim != check_dim: continue
 
-                    # ths
-                    ths = float(pkl_file.split('ths_')[-1].split('.pkl')[0])
-
-                    # find close index
-                    for i, t_thres in enumerate(threshold_mult):
-                        if abs(t_thres - ths) < 0.00001:
-                            idx = i
-                            break
-
                     res_file = os.path.join(cross_test_path, pkl_file)
-
                     d = ut.load_pickle(res_file)
-                    fn_l[idx] += d['fn']; tp_l[idx] += d['tp'] 
-                    tn_l[idx] += d['tn']; fp_l[idx] += d['fp'] 
-                    delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+
+                    ths_l = d['ths_l']
+
+                    ## for ths in ths_l:
+                            
+                    ##     # find close index
+                    ##     for i, t_thres in enumerate(threshold_list):
+
+                    ##         if c_method == 'globalChange':
+                    ##             if abs(t_thres[0] - ths[0]) < 0.00001 and abs(t_thres[1] - ths[1]) < 0.00001:
+                    ##                 idx = i
+                    ##                 break
+                    ##         else:
+                    ##             if abs(t_thres - ths) < 0.00001:
+                    ##                 idx = i
+                    ##                 break
+
+                    fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                    tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])                                
+                    ## delay_l[idx] += np.sum(d['delay_l']); delay_cnt[idx] += float(len(d['delay_l']))  
+                            
             data = {}
             data['fn_l'] = fn_l
             data['tp_l'] = tp_l
             data['tn_l'] = tn_l
             data['fp_l'] = fp_l
-            data['delay_l'] = delay_l
-            data['delay_cnt'] = delay_cnt
+            ## data['delay_l'] = delay_l
+            ## data['delay_cnt'] = delay_cnt
             ut.save_pickle(data, save_pkl_file)
         else:
             data = ut.load_pickle(save_pkl_file)
@@ -424,16 +455,16 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             tp_l = data['tp_l'] 
             tn_l = data['tn_l'] 
             fp_l = data['fp_l'] 
-            delay_l = data['delay_l'] 
-            delay_cnt = data['delay_cnt'] 
+            ## delay_l = data['delay_l'] 
+            ## delay_cnt = data['delay_cnt'] 
                 
 
-        tpr_l = np.zeros(len(threshold_mult))
-        fpr_l = np.zeros(len(threshold_mult))
-        npv_l = np.zeros(len(threshold_mult))
-        detect_l = np.zeros(len(threshold_mult))
+        tpr_l = np.zeros(len(threshold_list))
+        fpr_l = np.zeros(len(threshold_list))
+        npv_l = np.zeros(len(threshold_list))
+        detect_l = np.zeros(len(threshold_list))
 
-        for i in xrange(len(threshold_mult)):
+        for i in xrange(len(threshold_list)):
             if tp_l[i]+fn_l[i] != 0:
                 tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
 
@@ -443,10 +474,10 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             if tn_l[i]+fn_l[i] != 0:
                 npv_l[i] = tn_l[i]/(tn_l[i]+fn_l[i])*100.0
 
-            if delay_cnt[i] == 0:
-                delay_l[i] = 0
-            else:                    
-                delay_l[i] = delay_l[i]/delay_cnt[i]
+            ## if delay_cnt[i] == 0:
+            ##     delay_l[i] = 0
+            ## else:                    
+            ##     delay_l[i] = delay_l[i]/delay_cnt[i]
 
             if tn_l[i] + fn_l[i] + fp_l[i] != 0:
                 detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
@@ -455,9 +486,13 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
         sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
         sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
         sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
-        sorted_delay_l = [delay_l[k] for k in idx_list]
+        ## sorted_delay_l = [delay_l[k] for k in idx_list]
         sorted_detect_l = [detect_l[k] for k in idx_list]
 
+        if method == 'global':
+            tpr_l_fixed = sorted_tpr_l
+            fpr_l_fixed = sorted_fpr_l
+            
         color = colors.next()
         shape = shapes.next()
 
@@ -478,10 +513,38 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             elif method == 'global':
                 label = 'Fixed threshold \n detection'
             elif method == 'progress':
-                label = 'Progress-based \n detection'
+                label = 'Dynamic threshold \n detection'
             else:
                 label = method +"_"+str(check_dim)
-        pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+
+        if method == 'globalChange':                
+
+            xl = []
+            yl = []
+            for x,y in zip(sorted_fpr_l, sorted_tpr_l):
+
+                min_idx = 0
+                min_dist = 1000
+                for i, (tx, ty) in enumerate(zip(fpr_l_fixed, tpr_l_fixed)):
+                    if min_dist > (tx-x)**2 + (ty-y)**2:
+                        min_idx  = i
+                        min_dist = (tx-x)**2 + (ty-y)**2
+
+                if min_idx == 0 or min_idx == len(fpr_l_fixed)-1: continue
+
+                a1 = (tpr_l_fixed[min_idx] - tpr_l_fixed[min_idx-1]) / (fpr_l_fixed[min_idx] - fpr_l_fixed[min_idx-1])
+                b1 = tpr_l_fixed[min_idx] - a1*fpr_l_fixed[min_idx]
+
+                a2 = (tpr_l_fixed[min_idx+1] - tpr_l_fixed[min_idx]) / (fpr_l_fixed[min_idx+1] - fpr_l_fixed[min_idx])
+                b2 = tpr_l_fixed[min_idx+1] - a2*fpr_l_fixed[min_idx+1]
+                
+                if y - (a1*x + b1) > 0 or y - (a2*x + b2) > 0:
+                    xl.append(x)
+                    yl.append(y)
+            
+            pp.plot(xl, yl, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+        else:
+            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
 
     pp.legend(loc=4,prop={'size':16})
     pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
@@ -869,7 +932,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     ind = np.arange(nClass)*0.9
     width = 0.5
     methods = ('Check \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
-               'Progress-based \n detection')
+               'Dynamic threshold \n detection')
 
     print fdr_mu_class_l
     pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
@@ -1595,8 +1658,8 @@ def plot_one(data1, data2, false_data1=None, false_data2=None, data_idx=0, label
     pp.plot(x, data, 'b', linewidth=1.5, label='Sound')
     #ax2.set_xlim([0, len(data)])
     pp.grid()
-    ax2.set_ylabel("RMS", fontsize=18)
-    ax2.set_xlabel("Time step [sec]", fontsize=18)
+    ax2.set_ylabel("Energy", fontsize=18)
+    ax2.set_xlabel("Time [sec]", fontsize=18)
     
     ax1.legend(prop={'size':18})
     ax2.legend(prop={'size':18})
@@ -1666,7 +1729,7 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
     ## for i, d in enumerate(data1):
     ##     if labels is not None and labels[i] == False:
     ##         pp.plot(d, label=str(i), color='k', linewidth=1.0)
-    ax1.set_ylabel("Force [N]", fontsize=18)
+    ax1.set_ylabel("Force Magnitude [N]", fontsize=18)
 
     ## true_line = ax1.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
     ## false_line = ax1.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend    
@@ -1690,7 +1753,7 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
         for i, d in enumerate(false_data2):
             pp.plot(x, d, color='k', linewidth=1.0)
             
-    ax2.set_ylabel("Sound [RMS]", fontsize=18)
+    ax2.set_ylabel("Sound Energy", fontsize=18)
     ax2.set_xlabel("Time step [sec]", fontsize=18)
 
     ## true_line = ax2.plot([], [], color='green', alpha=0.5, linewidth=10, label='Normal data') #fake for legend
@@ -1738,6 +1801,8 @@ if __name__ == '__main__':
                  default=False, help='Remove all the running files')
     p.add_option('--animation', '--ani', action='store_true', dest='bAnimation',
                  default=False, help='Plot by time using animation')
+    p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
+                 default=False, help='Plot all path')
 
     p.add_option('--class', '--c', action='store', type='int', dest='nClass',
                  default=0, help='Store a class number')
@@ -1755,8 +1820,6 @@ if __name__ == '__main__':
                  default=False, help='Plot by a figure of ROC robot')
     p.add_option('--roc_offline_robot', '--roff', action='store_true', dest='bRocOfflineRobot',
                  default=False, help='Plot by a figure of ROC robot')
-    p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
-                 default=False, help='Plot all path')
     p.add_option('--progress_diff', '--prd', action='store_true', dest='bProgressDiff',
                  default=False, help='Plot progress difference')
     p.add_option('--fftdisp', '--fd', action='store_true', dest='bFftDisp',
@@ -1898,7 +1961,7 @@ if __name__ == '__main__':
 
         # temp
         ## threshold_mult  = [2.0]
-        ## check_methods   = ['progress']
+        ## check_methods   = ['globalChange']
         ## disp            = 'test'
             
         true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
@@ -1998,7 +2061,95 @@ if __name__ == '__main__':
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
                          check_dims, nDataSet)
+
+    #---------------------------------------------------------------------------
+    elif opt.bOnePlot:
+
+        print "Visualization of each sequence"
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task])
+        
+        ## true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
+        ## true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
+
+        if opt.bAbnormal or opt.bSimAbnormal:
+            for idx in xrange(len(false_aXData1)):
+                # min max scaling
+                ## false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
+                ## false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
+
+                plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx, freq=freq)
+
+        else:
+            for idx in xrange(len(true_aXData1)):
+                plot_one(true_aXData1, true_aXData2, data_idx=idx, freq=freq)            
+
+            
+    #---------------------------------------------------------------------------
+    elif opt.bAllPlot:
+
+        print "Visualization of all sequence"
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task])
+        
+        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
+        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
+
+        if opt.bAbnormal or opt.bSimAbnormal:
+            
+            # min max scaling
+            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
+            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
                         
+            ## plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
+            ## plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2)
+            plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2, distribution=True)
+            
+        else:
+            ## plot_all(true_aXData1_scaled, true_aXData2_scaled)            
+            plot_all(true_aXData1, true_aXData2)            
+
+        ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
+        ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
+
+
+    #---------------------------------------------------------------------------   
+    elif opt.bPathDisp:
+
+        print "Hidden-state path Visualization of each sequence"
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task])
+        
+        nState   = nState_l[task]
+        trans_type= "left_right"
+        check_dim = 2
+        if check_dim == 0 or check_dim == 1: nEmissionDim=1
+        else: nEmissionDim=2
+
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+        true_labels = [True]*len(true_aXData1)
+
+        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+            
+        x_train1  = true_dataSet.samples[:,0,:]
+        x_train2  = true_dataSet.samples[:,1,:]
+
+        # Learning
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
+
+        if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
+        elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
+        else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
+
+        x_test1 = x_train1
+        x_test2 = x_train2
+        lhm.path_disp(x_test1, x_test2, scale1=[min_c1, max_c1, scale], \
+                                scale2=[min_c2, max_c2, scale])
+        
     #---------------------------------------------------------------------------           
     ## elif opt.bRocOfflineSimMethodCheck:
         
@@ -2065,54 +2216,6 @@ if __name__ == '__main__':
             fig_roc_all(cross_data_path, nState, threshold_mult, prefixes, opr='robot', attr='id')
             
 
-    #---------------------------------------------------------------------------
-    elif opt.bOnePlot:
-
-        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
-        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
-
-        if opt.bAbnormal or opt.bSimAbnormal:
-            for idx in xrange(len(false_aXData1)):
-                # min max scaling
-                false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
-                false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
-
-                plot_one(true_aXData1, true_aXData2, false_aXData1, false_aXData2, data_idx=idx, freq=freq)
-
-        else:
-            for idx in xrange(len(true_aXData1)):
-                plot_one(true_aXData1, true_aXData2, data_idx=idx, freq=freq)            
-
-            
-    #---------------------------------------------------------------------------
-    elif opt.bAllPlot:
-
-        test_title      = 'plot_all'
-        cross_data_path = os.path.join(cross_root_path, test_title)
-        
-        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
-                        audio_thres[task])
-        
-        true_aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1, scale=scale)
-        true_aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2, scale=scale)    
-
-        if opt.bAbnormal or opt.bSimAbnormal:
-            
-            # min max scaling
-            false_aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=scale)
-            false_aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=scale)
-                        
-            ## plot_all(true_aXData1_scaled, true_aXData2_scaled, false_aXData1_scaled, false_aXData2_scaled)
-            ## plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2)
-            plot_all(true_aXData1, true_aXData2, false_aXData1, false_aXData2, distribution=True)
-            
-        else:
-            ## plot_all(true_aXData1_scaled, true_aXData2_scaled)            
-            plot_all(true_aXData1, true_aXData2)            
-
-        ## print min_c1, max_c1, np.min(aXData1_scaled), np.max(aXData1_scaled)
-        ## print min_c2, max_c2, np.min(aXData2_scaled), np.max(aXData2_scaled)
 
         
     #---------------------------------------------------------------------------   
@@ -2150,35 +2253,6 @@ if __name__ == '__main__':
                      opr='robot', attr='id', cov_mult=cov_mult[task], true_data=True)
                         
 
-    #---------------------------------------------------------------------------   
-    elif opt.bPathDisp:
-
-        nState   = nState_l[task]
-        trans_type= "left_right"
-        check_dim = 2
-        if check_dim == 0 or check_dim == 1: nEmissionDim=1
-        else: nEmissionDim=2
-
-        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
-        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
-        true_labels = [True]*len(true_aXData1)
-
-        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
-            
-        x_train1  = true_dataSet.samples[:,0,:]
-        x_train2  = true_dataSet.samples[:,1,:]
-
-        # Learning
-        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
-
-        if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
-        elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
-        else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
-
-        x_test1 = x_train1
-        x_test2 = x_train2
-        lhm.path_disp(x_test1, x_test2, scale1=[min_c1, max_c1, scale], \
-                                scale2=[min_c2, max_c2, scale])
                 
 
     #---------------------------------------------------------------------------   
