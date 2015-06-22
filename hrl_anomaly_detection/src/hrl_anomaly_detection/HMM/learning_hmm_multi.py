@@ -839,7 +839,7 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def simulation(self, X1, X2, ths_mult, freq=43.0):
+    def simulation(self, X1, X2, ths_mult, freq=43.0, bSave=False):
 
         X1= np.squeeze(X1)
         X2= np.squeeze(X2)
@@ -895,8 +895,10 @@ class learning_hmm_multi(learning_base):
 
         lmean, = self.ax31.plot([], [], 'm-', linewidth=2.0, label='Expected log-likelihood')    
         lvar, = self.ax31.plot([], [], '--', color='0.75', linewidth=2.0, \
-                                  label='Threshold')    
+                                  label='Threshold')                                      
         ## lbar,     = self.ax32.bar(0.0001, 0.0, width=1.0, color='b', zorder=1)
+
+        self.legend = None
         
         ## lAll_1, = self.ax11.plot([], [], color='#66FFFF', lw=2, label='Expected force history')
         ## ## self.ax11.legend(loc=2,prop={'size':12})        
@@ -998,11 +1000,13 @@ class learning_hmm_multi(learning_base):
                 ## lbar.set_height(0.0)           
 
                 
+            self.ax11.legend(handles=[line_1], loc=2,prop={'size':12})
+            self.ax21.legend(handles=[line_2], loc=2,prop={'size':12})
                 
-            ## if i>=0 or i<4 : 
-            ##     self.ax1.legend(handles=[lAll, line, lmean, lvar1], loc=2,prop={'size':12})        
-            ## else:
-            ##     self.ax1.legend.set_visible(False)
+            if i>=0 and i<10 or True: 
+                self.legend = self.ax31.legend(handles=[line_3, lmean, lvar], loc=2,prop={'size':12})        
+            else:
+                self.legend.remove()
                                 
             ## if i%3 == 0 and i >0:
             ##     plt.savefig('roc_ani_'+str(i)+'.pdf')
@@ -1014,7 +1018,8 @@ class learning_hmm_multi(learning_base):
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(X1), interval=300) #, blit=True
 
-        ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
+        if bSave == True:
+            anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         plt.show()
 
 

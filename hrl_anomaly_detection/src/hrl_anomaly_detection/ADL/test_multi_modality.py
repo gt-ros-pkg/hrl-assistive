@@ -1068,17 +1068,17 @@ def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, 
                         if method == 'progress':
                             if min_ths[ind] > ths:
                                 min_ths[ind] = ths
-                                print "Minimum threshold: ", min_ths[ind], ind                                
+                                ## print "Minimum threshold: ", min_ths[ind], ind                                
                         elif method == 'globalChange':
                             if min_ths[0] > ths[0]:
                                 min_ths[0] = ths[0]
                             if min_ths[1] > ths[1]:
                                 min_ths[1] = ths[1]
-                            print "Minimum threshold: ", min_ths[0], min_ths[1]                                
+                            ## print "Minimum threshold: ", min_ths[0], min_ths[1] 
                         else:
                             if min_ths > ths:
                                 min_ths = ths
-                                print "Minimum threshold: ", min_ths
+                                ## print "Minimum threshold: ", min_ths
 
                 if true_data==False:
                     if check_dim == 2:
@@ -1089,8 +1089,9 @@ def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, 
 
                 n = len(x_test1)
                 for i in range(n):
-                    
-                    lhm.simulation(x_test1[i], x_test2[i], min_ths)
+                    print "Visualize : ", i
+                    if i != 4: continue
+                    lhm.simulation(x_test1[i], x_test2[i], min_ths, bSave=True)
     
 #-------------------------------------------------------------------------------------------------------
 def fig_roc_offline(cross_data_path, \
@@ -1867,8 +1868,8 @@ if __name__ == '__main__':
         class_name = 'complex'
         task_names = ['toaster_white', 'glass_case']
         f_zero_size = [5, 3, 8]
-        f_thres     = [1.0, 1.5, 1.35]
-        audio_thres = [1.0, 1.0, 1.0]
+        f_thres     = [0.8, 1.5, 1.35]
+        audio_thres = [1., 1.0, 1.0]
         cov_mult    = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20] #glass 10?
     elif class_num == 4:        
@@ -2250,9 +2251,10 @@ if __name__ == '__main__':
 
         animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
-                     opr='robot', attr='id', cov_mult=cov_mult[task], true_data=True)
+                     opr='robot', attr='id', cov_mult=cov_mult[task], true_data=False)
                         
-
+        ## c0t1 - true=4, false=0
+        ## c1t2 - true=2, false=0
                 
 
     #---------------------------------------------------------------------------   
