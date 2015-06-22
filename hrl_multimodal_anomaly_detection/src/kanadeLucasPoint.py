@@ -6,7 +6,10 @@ import cv2
 import math
 import rospy
 import numpy as np
-import point_cloud2 as pc2
+try :
+    import sensor_msgs.point_cloud2 as pc2
+except:
+    import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 from geometry_msgs.msg import Point, PointStamped
@@ -214,7 +217,7 @@ class kanadeLucasPoint:
         imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Find frameId for transformations and determine a good set of starting features
-        if self.frameId is None:
+        if self.frameId is None or self.features:
             # Grab frame id for later transformations
             self.frameId = data.header.frame_id
             if self.targetFrame is not None:
