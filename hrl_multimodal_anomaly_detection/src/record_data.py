@@ -60,7 +60,7 @@ def log_parse():
     return options.tracker_name, options.ft_sensor_name
 
 class robot_kinematics(Thread):
-    def __init__(self):
+    def __init__(self, tfListener):
         super(robot_kinematics, self).__init__()
         self.daemon = True
         self.cancelled = False
@@ -79,6 +79,8 @@ class robot_kinematics(Thread):
         self.r_end_effector_pos = []
         self.r_end_effector_quat = []
 
+        self.tf_listener = tfListener
+
         groups = rospy.get_param('/right/haptic_mpc/groups' )
         for group in groups:
             if group['name'] == 'left_arm_joints' and self.arm == 'l':
@@ -87,8 +89,6 @@ class robot_kinematics(Thread):
                 self.joint_names_list = group['joints']
 
         rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
-
-        self.tf_listener = tf.TransformListener()
 
     def jointStatesCallback(self, data):
         joint_angles = []
@@ -517,6 +517,7 @@ class ADL_log:
         self.init_time = 0.
         self.file_name = 'test'
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()
+        self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
 
         if self.manip:
@@ -619,10 +620,10 @@ class ADL_log:
             ## self.audio_log_file = open(self.file_name+'_audio.log','w')
 
         if self.vision:
-            self.vision = tool_vision()
+            self.vision = tool_vision(self.tf_listener)
 
         if self.kinematics:
-            self.kinematics = robot_kinematics()
+            self.kinematics = robot_kinematics(self.tf_listener)
             ## self.audio_log_file = open(self.file_name+'_audio.log','w')
 
         raw_input('press Enter to reset')

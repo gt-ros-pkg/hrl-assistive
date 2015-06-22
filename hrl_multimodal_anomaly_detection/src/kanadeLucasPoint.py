@@ -26,7 +26,7 @@ import tf
 from cv_bridge import CvBridge, CvBridgeError
 
 class kanadeLucasPoint:
-    def __init__(self, caller, targetFrame=None, publish=False, visual=False):
+    def __init__(self, caller, targetFrame=None, publish=False, visual=False, tfListener=None):
         self.caller = caller
         self.bridge = CvBridge()
         # ROS publisher for data points
@@ -46,7 +46,10 @@ class kanadeLucasPoint:
         self.frameId = None
         self.cameraWidth = None
         self.cameraHeight = None
-        self.transformer = tf.TransformListener()
+        if tfListener is None:
+            self.transformer = tf.TransformListener()
+        else:
+            self.transformer = tfListener
         self.targetFrame = targetFrame
         self.transMatrix = None
         # Whether to publish data to a topic

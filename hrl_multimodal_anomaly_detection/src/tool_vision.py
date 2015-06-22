@@ -5,7 +5,7 @@ from threading import Thread
 from visionTracker import visionTracker
 
 class tool_vision(Thread):
-    def __init__(self):
+    def __init__(self, tfListener=None):
         super(tool_vision, self).__init__()
         self.daemon = True
         self.cancelled = False
@@ -16,7 +16,7 @@ class tool_vision(Thread):
         # A set of 3D points
         self.visual_points = []
 
-        self.visionTracker = visionTracker(useARTags=False, targetFrame='/torso_lift_link', shouldSpin=False, visual=False)
+        self.visionTracker = visionTracker(useARTags=False, targetFrame='/torso_lift_link', shouldSpin=False, publish=True, visual=False, tfListener=tfListener)
 
     def reset(self):
         pass

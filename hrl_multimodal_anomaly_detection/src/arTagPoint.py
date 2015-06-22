@@ -10,7 +10,7 @@ import tf
 from ar_track_alvar.msg import AlvarMarkers
 
 class arTagPoint:
-    def __init__(self, caller, targetFrame=None):
+    def __init__(self, caller, targetFrame=None, tfListener=None):
         # Recent Markers in last frame
         self.recentMarkers = None
         # All markers with past history
@@ -18,7 +18,10 @@ class arTagPoint:
         self.caller = caller
         # Transformations
         self.frameId = None
-        self.transformer = tf.TransformListener()
+        if tfListener is None:
+            self.transformer = tf.TransformListener()
+        else:
+            self.transformer = tfListener
         self.targetFrame = targetFrame
         self.transMatrix = None
         self.updateNumber = 0

@@ -14,7 +14,7 @@ import kinectCircularPath as circularPath
 import kinectLinearPath as linearPath
 
 class visionTracker:
-    def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, publish=False, visual=False):
+    def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, publish=False, visual=False, tfListener=None):
         self.publisher = rospy.Publisher('visualization_marker', Marker)
         self.lastPosition = None
         self.lastPosition2 = None
@@ -27,9 +27,9 @@ class visionTracker:
         if shouldSpin:
             rospy.init_node('listener_kinect')
         if useARTags:
-            self.tracker = arTagPoint(self.spinner if publish else None, targetFrame=targetFrame)
+            self.tracker = arTagPoint(self.spinner if publish else None, targetFrame=targetFrame, tfListener=tfListener)
         else:
-            self.tracker = kanadeLucasPoint(self.multispinner if publish else None, targetFrame=targetFrame, publish=publish, visual=visual)
+            self.tracker = kanadeLucasPoint(self.multispinner if publish else None, targetFrame=targetFrame, publish=publish, visual=visual, tfListener=tfListener)
         if shouldSpin:
             rospy.spin()
 
