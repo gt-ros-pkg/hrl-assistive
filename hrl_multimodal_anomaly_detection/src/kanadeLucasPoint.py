@@ -61,9 +61,9 @@ class kanadeLucasPoint:
         # rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
         # rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         # Kinect 2
-        rospy.Subscriber('/head_mount_kinect/rgb/image', Image, self.imageCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
         rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
 
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
@@ -188,8 +188,6 @@ class kanadeLucasPoint:
         if self.pointCloud is None:
             print 'AHH! The PointCloud2 data is not available!'
             return None
-        print self.pointCloud.row_step, self.pointCloud.point_step, self.pointCloud.width, self.pointCloud.height
-        print self.pointCloud
         points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=False, uvs=[[x, y]])
         for point in points:
             px, py, depth = point
