@@ -1,4 +1,4 @@
-/**
+/** //Kinect2 params
  * @author Russell Toris - rctoris@wpi.edu
  * @author David Gossow - dgossow@willowgarage.com
  */
@@ -2753,7 +2753,7 @@ ROS3D.Viewer = function(options) {
 
   // create the global camera
   //this.camera = new THREE.PerspectiveCamera(40, width / height, 0.01, 1000);
-  this.camera = new THREE.PerspectiveCamera(43, 1.3333, 0.02, 30);
+  this.camera = new THREE.PerspectiveCamera(53.8, 1.5632, 0.02, 30); //Kinect2 params
   this.camera.position.x = cameraPosition.x;
   this.camera.position.y = cameraPosition.y;
   this.camera.position.z = cameraPosition.z;

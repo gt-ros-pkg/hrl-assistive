@@ -1,34 +1,3 @@
-
-//Old camera parameters
-//  'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
-//                optgroup:'Default',
-//                cameraInfo: '/r_forearm_cam/camera_info',
-//                clickable:true,
-//                rotated: true,
-//                width:640,
-//                height:480},
-//  'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
-//               optgroup:'Default',
-//               cameraInfo: '/l_forearm_cam/camera_info',
-//               clickable: false,
-//               rotated: true,
-//               width:640,
-//               height:480},
-//  'AR Tag': {topic:'/ar_servo/confirmation_rotated',
-//             optgroup:'Special',
-//             cameraInfo:'/r_forearm_cam/camera_info',
-//             clickable:false,
-//             rotated: true,
-//             width:640,
-//             height:480},
-//  'Head Registration': {topic: '/head_registration/confirmation',
-//                        optgroup:'Special',
-//                        cameraInfo: 'head_mount_kinect/rgb/camera_info',
-//                        clickable: true,
-//                        rotated: false,
-//                        width: 640, //1280,
-//                        height:480}//1024}
-
 RFH.MjpegClient = function (options) {
     "use strict";
     var self = this;
@@ -198,9 +167,12 @@ RFH.ROSCameraModel = function (options) {
     }
 
     self.projectPoints = function (pts, frame_id) {
-        if (typeof frame_id === 'undefined') {
-            frame_id = self.frame_id;
-        } else if (!self.checkFrameId(frame_id)) {
+        if (!self.has_data) { //Make sure camera has own transform data
+            throw "Camera data not available";
+        }
+        if (typeof frame_id === 'undefined') { // Assume camera frame if not specified
+            frame_id = self.frame_id; 
+        } else if (!self.checkFrameId(frame_id)) { 
             console.log("cameraModel -- Unknown Frame Id: ", frame_id);
             return;
         }

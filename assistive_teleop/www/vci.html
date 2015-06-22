@@ -124,6 +124,7 @@
  <div id="video-main">
      <div id='mjpeg'>
          <img id="mjpeg-image"></img>
+         <div id="markers"></div>
          <!-- Divs for selecting eyeballs for looking task -->
          <div class="map-look top left cursor-eyes-up-left"></div>
          <div class="map-look top center cursor-eyes-up"></div>
@@ -136,6 +137,8 @@
          <!-- divs for driving controls -->
          <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
          </svg>
+         <svg id="arm-svg" class="r-arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+         </svg>
          <div class="drive-ctrl drive-look left"></div>
          <div class="drive-ctrl drive-look right"></div>
          <div class="drive-ctrl turn-signal left"></div>
@@ -146,7 +149,7 @@
          <div id="torsoSlider"></div>
          <!-- divs for arm controls -->
 <!--         <img id="rightFocusPoint" class="focus-point r-arm-ctrl" src="./css/icons/focus-point.png"></img>
-         <img id="leftFocusPoint" class="focus-point l-arm-ctrl" src="./css/icons/focus-point.png"></img>
+         <img id="leftFocusPoint" class="focus-point l-ARM-Ctrl" src="./css/icons/focus-point.png"></img>
          <div id="depthMaskLeft" class="depth-mask arm-ctrl" ></div>
          <div id="depthMaskRight" class="depth-mask arm-ctrl" ></div>-->
          <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">

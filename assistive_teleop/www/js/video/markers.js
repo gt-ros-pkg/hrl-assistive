@@ -1,8 +1,8 @@
 var initMarkerDisplay = function (divID) {
     "use strict";
     // Create the main viewer.
-    var width = 0.8 * window.innerWidth;
-    var height = 0.95 * window.innerHeight;
+    var width = $('#'+divID).width();
+    var height = $('#'+divID).height();
     RFH.viewer = new ROS3D.Viewer({
         divID : divID,
         width : width,

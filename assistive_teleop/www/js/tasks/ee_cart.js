@@ -25,6 +25,87 @@ RFH.CartesianEEControl = function (options) {
     self.dt = 500; //hold-repeat time in ms
     self.mode = "table" // "wall", "free"
     self.active = false;
+    self.SVGCanvas = Snap('#arm-svg');
+    self.rotPaths = {'xp': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'xp', 'stroke-width':8,'stroke':'black'}),
+                            'points':[[-0.15, -0.1, 0.15],
+                                      [-0.15, -0.1, 0.2],
+                                      [-0.15, -0.15, 0.175]]},
+                     'xn': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'xn', 'stroke-width':8,'stroke':'black'}),
+                            'points':[[-0.15, 0.1, 0.15],
+                                      [-0.15, 0.1, 0.2],
+                                      [-0.15, 0.15, 0.175]]},
+                     'yp': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'yp', 'stroke-width':8,'stroke':'black'}),
+                            'points':[[0.04, 0.23, 0],
+                                      [-0.04, 0.18, 0.05],
+                                      [-0.04, 0.18, -0.05]]},
+                     'yn': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'yn', 'stroke-width':8,'stroke':'black'}),
+                            'points':[[0.04, -0.23, 0],
+                                      [-0.04, -0.18, 0.05],
+                                      [-0.04, -0.18, -0.05]]},
+                     'zp': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'zp', 'stroke-width':8,'stroke':'black'}),
+                            'points':[[0.04, 0, 0.23],
+                                      [-0.04, 0.05, 0.18],
+                                      [-0.04, -0.05, 0.18]]},
+                     'zn': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'zn', 'stroke-width':8,'stroke':'black'}),
+                            'points':[[0.04, 0, -0.23],
+                                      [-0.04, 0.05, -0.18],
+                                      [-0.04, -0.05, -0.18]]}
+                    }
+
+//        var geometry = new THREE.SphereGeometry(0.01,8,8);
+//        var material = new THREE.MeshBasicMaterial( { color: 0x0000ee, wireframe: true } );
+//        self.mesh = new THREE.Mesh( geometry, material );
+//        RFH.viewer.scene.add( self.mesh );
+
+    self.updateRotImage = function () {
+        if (self.eeTF === null) { return };
+        var q = new THREE.Quaternion(self.eeTF.rotation.x,
+                                     self.eeTF.rotation.y,
+                                     self.eeTF.rotation.z,
+                                     self.eeTF.rotation.w);
+        var tfMat = new THREE.Matrix4().makeRotationFromQuaternion(q);
+        tfMat.setPosition(new THREE.Vector3(self.eeTF.translation.x,
+                                            self.eeTF.translation.y,
+                                            self.eeTF.translation.z));
+
+        var w = $(self.SVGCanvas.node).width();
+        var h = $(self.SVGCanvas.node).height();
+        for (var dir in self.rotPaths) {
+            var pts = [];
+            for (var pt in self.rotPaths[dir]['points']) {
+                var v = new THREE.Vector3(pt[0], pt[1], pt[2]);
+                v.applyMatrix4(tfMat);
+                pts.push([v.x,v.y,v.z]);
+            }
+            try {
+                var imgPts = self.camera.projectPoints(pts, 'base_link');
+            } catch (err) {
+                if (err !== 'Camera data not available') {
+                    console.error(err);
+                }
+                return;
+            }
+
+            var pathStr = "M"+imgPts[0][0]*w+','+imgPts[0][1]*h;
+            for (var i=1; i < imgPts.length; i += 1) {
+                var ps = 'L'+imgPts[i][0]*w+','+imgPts[i][1]*h;
+                pathStr += ps; 
+            }
+            pathStr += "Z";
+            self.rotPaths[dir]['path'].attr({'d':pathStr})
+        }
+
+        ////////Test THREE.js after this point/////////////////////////
+//        var handOrigin = new THREE.Vector3(0,0,0);
+//        handOrigin.applyMatrix4(tfMat);
+//        RFH.viewer.renderer.setSize(w, h);
+//        self.mesh.position.x = handOrigin.x;
+//        self.mesh.position.y = handOrigin.y;
+//        self.mesh.position.z = handOrigin.z;
+//        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
+//        var imgPt = self.camera.projectPoint(handOrigin.x, handOrigin.y, handOrigin.z, 'base_link')
+//        self.SVGCanvas.circle(imgPt[0]*w, imgPt[1]*h, 5).attr({'fill':'green','stroke':'none'})
+    }
 
     self.rotCtrls = new RFH.EERotation({div: self.side+'-rot-ctrls',
                                         arm: self.arm,
@@ -75,7 +156,7 @@ RFH.CartesianEEControl = function (options) {
 //        transformStr += " scale("+1/ratio+")";
         $('#armCtrlContainer').css({'transform':transformStr});
     }
-    
+
     self.focusPoint = new RFH.FocalPoint({camera: self.camera,
         tfClient: self.tfClient,
         ros: self.ros,
@@ -103,7 +184,7 @@ RFH.CartesianEEControl = function (options) {
     self.orientHand = function () {
         if (self.focusPoint.point === null) {
             throw "Orient Hand: No focus point.";
-        } 
+        }
         var target = self.focusPoint.point.clone(); // 3D point in /base_link to point at
         var eePos =  self.eeTF.translation.clone(); // 3D point in /base_link from which to point
         var camPos = self.cameraTF.translation.clone(); // 3D point of view (resolve free rotation to orient hand second axis toward camera)
@@ -132,7 +213,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.updateOpFrame = function () {
         // Define an 'operational frame' at the end effector (ee) aligned with the perspective of the camera
-        // (i.e. z-axis along line from camera center through ee center for z-out optical frames, 
+        // (i.e. z-axis along line from camera center through ee center for z-out optical frames,
         //  x- and y-axes rotated accordingly.  Commands will be issued in this frame, so they have the exact
         // effect that it looks like they should from the flat, 2D camera view at all times.
 
@@ -140,7 +221,7 @@ RFH.CartesianEEControl = function (options) {
         if (self.eeTF === null || self.cameraTF === null) { return; };
         // Format ee frame as transformation matrix
         var eePosInBase = new THREE.Vector3().copy(self.eeTF.translation);
-        var eeQuatInBase = new THREE.Quaternion(self.eeTF.rotation.x, 
+        var eeQuatInBase = new THREE.Quaternion(self.eeTF.rotation.x,
                 self.eeTF.rotation.y,
                 self.eeTF.rotation.z,
                 self.eeTF.rotation.w);
@@ -193,6 +274,7 @@ RFH.CartesianEEControl = function (options) {
             self.eeTF = tf;
             self.updateOpFrame();
             self.updateCtrlRingViz();
+            self.updateRotImage();
         });
         console.log("Subscribing to TF Frame: "+self.arm.ee_frame);
     } else {
@@ -202,7 +284,7 @@ RFH.CartesianEEControl = function (options) {
     // Get camera frame updates from TF
     self.checkCameraTF = function () {
         if (self.camera.frame_id !== '') {
-            self.tfClient.subscribe(self.camera.frame_id, function (tf) { 
+            self.tfClient.subscribe(self.camera.frame_id, function (tf) {
                 self.cameraTF = tf;
                 self.updateOpFrame();
                 self.updateCtrlRingViz();
@@ -306,7 +388,7 @@ RFH.CartesianEEControl = function (options) {
             }
         }
     };
-     
+
     self.ctrlRingActivate = self.checkMouseButtonDecorator(function (e) {
         $('#ctrl-ring, #ctrl-ring > .arrow').removeClass('default').addClass('active');
         var pt = RFH.positionInElement(e);
@@ -454,7 +536,7 @@ RFH.CartesianEEControl = function (options) {
                 poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
                                                          pose.position.y + offset.y,
                                                          pose.position.z + offset.z));
-                var trans = new THREE.Matrix4(); 
+                var trans = new THREE.Matrix4();
                 var scale = new THREE.Vector3();
                 poseRotMat.decompose(trans, quat, scale);
                 self.arm.sendGoal({
@@ -476,18 +558,18 @@ RFH.CartesianEEControl = function (options) {
         }
     };
 
-//    self.setRotationCtrls = function (e) {
-//        $('#ctrl-ring').off('mousedown.rfh');
-//        $('#toward-button, #away-button').off('click.rfh');
-//        self.focusPoint.clear();
-//
-//        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
-//        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
-//        $('#away-button').on('mousedown.rfh', self.cwCB).text('CW');
-//        $('#toward-button').on('mousedown.rfh', self.ccwCB).text('CCW');
+    self.setRotationCtrls = function (e) {
+        $('#ctrl-ring').off('mousedown.rfh');
+        $('#toward-button, #away-button').off('click.rfh');
+        self.focusPoint.clear();
+
+        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
+        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
+        $('#away-button').on('mousedown.rfh', self.cwCB).text('CW');
+        $('#toward-button').on('mousedown.rfh', self.ccwCB).text('CCW');
 //        $('#select-focus-toggle-label').off('click.rfh').hide();
-//    };
-//
+    };
+
     self.setPositionCtrls = function (e) {
         $('#ctrl-ring').off('mousedown.rfh');
         $('#toward-button, #away-button').off('mousedown.rfh');
@@ -504,6 +586,9 @@ RFH.CartesianEEControl = function (options) {
         self.updateCtrlRingViz();
     };
 
+    $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
+    $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
+
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
         self.trackHand();
@@ -512,9 +597,7 @@ RFH.CartesianEEControl = function (options) {
         $("#select-focus-toggle-label").show();
         $('#speedOptions').show();
         $("#"+self.gripperDisplayDiv).show();
-//        $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
-//        $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
-//        $('#posrot-set').show();
+        $('#posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
@@ -547,3 +630,4 @@ RFH.CartesianEEControl = function (options) {
         self.active = false;
     };
 }
+

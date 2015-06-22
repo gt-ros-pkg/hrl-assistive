@@ -38,10 +38,10 @@ RFH.EERotation = function (options) {
     //                                                   value: 45,
     //                                                   shape:'Half Circle Right'});
 
-    self.sendRotation = function () {
-        var rx = self.rotSlider.slider('option','value');
-        var ry = self.lonSlider.slider('option','value');
-        var rz = self.latSlider.slider('option','value');
+    self.sendRotation = function (rx, ry, rz) {
+        var rx = rx || self.rotSlider.slider('option','value');
+        var ry = ry || self.lonSlider.slider('option','value');
+        var rz = rz || self.latSlider.slider('option','value');
         var euler = new THREE.Euler(rx, ry, rz, 'ZYX');
         var q = new THREE.Quaternion().setFromEuler(euler);
         var quat = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
