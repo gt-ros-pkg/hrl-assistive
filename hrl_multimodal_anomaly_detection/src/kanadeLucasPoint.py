@@ -55,7 +55,7 @@ class kanadeLucasPoint:
         self.visual = visual
         self.updateNumber = 0
 
-        self.dbscan = DBSCAN(eps=0.6, min_samples=10)
+        self.dbscan = DBSCAN(eps=5, min_samples=10)
         self.N = 30
 
         # XBox 360 Kinect
@@ -78,21 +78,41 @@ class kanadeLucasPoint:
     def getAllRecentPoints(self):
         if self.markerRecentCount() <= 0:
             return None
-        return [feat.recent3DPosition for feat in self.features if feat.isNovel]
+        return self.getNovelAndClusteredFeatures(returnFeatures=False)
 
     def getAllMarkersWithHistory(self):
         if self.markerRecentCount() <= 0:
             return None
-        featureSet = []
-        for feature in self.features:
-            if feature.isNovel:
-                featureSet.append(feature)
-        return featureSet
+        return self.getNovelAndClusteredFeatures(returnFeatures=True)
 
     def markerRecentCount(self):
         if self.features is None:
             return 0
         return len([feat for feat in self.features if feat.isNovel])
+
+    def getNovelAndClusteredFeatures(self, returnFeatures=False):
+        # Cluster feature points
+        points = []
+        feats = []
+        for feat in self.features:
+            if feat.isNovel:
+                points.append(feat.recent3DPosition)
+                feats.append(feat)
+        if not points:
+            # No novel features
+            return None
+        points = np.array(points)
+
+        # Perform dbscan clustering
+        X = StandardScaler().fit_transform(points)
+        labels = self.dbscan.fit_predict(X)
+
+        novelAndClustered = []
+        for i, feat in enumerate(feats if returnFeatures else points):
+            # k == -1 are unlabeled (non clustered) points
+            if labels[i] != -1:
+                novelAndClustered.append(feat)
+        return novelAndClustered
 
     def determineGoodFeatures(self, imageGray):
         # Take a frame and find corners in it

@@ -20,6 +20,7 @@ class visionTracker:
         self.lastPosition2 = None
         self.points = None
         self.normals = None
+        self.targetFrame = targetFrame
         self.lastUpdateNumber = 0
         self.lastTime = time.time()
 
@@ -85,12 +86,12 @@ class visionTracker:
                 if linearError < circularError:
                     lines += 1
                     ends.append(endPoints)
-                    # self.publishLinearPath(endPoints, index)
+                    self.publishLinearPath(endPoints, index)
                 else:
                     circles += 1
                     centers.append(centerPoint)
                     normals.append(normal)
-                    # self.publishCircularPath(centerPoint, normal, synthetic, index)
+                    self.publishCircularPath(centerPoint, normal, synthetic, index)
 
                 self.publishDataPoints(marker.history, index)
 
@@ -108,11 +109,11 @@ class visionTracker:
         startPoint, endPoint = endPoints
         # Display best fit line through points (linear axis of translation)
         marker = Marker()
-        marker.header.frame_id = '/camera_link'
+        marker.header.frame_id = self.targetFrame
         marker.ns = 'axis_vector_%d' % index
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
-        marker.scale.x = 0.02
+        marker.scale.x = 0.005
         # Green color
         marker.color.a = 1.0
         marker.color.g = 1.0
@@ -132,12 +133,12 @@ class visionTracker:
     def publishCircularPath(self, centerPoint, normal, synthetic, index):
         # Display normal vector (axis of rotation)
         marker = Marker()
-        marker.header.frame_id = '/camera_link'
+        marker.header.frame_id = self.targetFrame
         marker.ns = 'axis_vector_%d' % index
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
         # print normal
-        marker.scale.x = 0.02
+        marker.scale.x = 0.005
         # Green color
         marker.color.a = 1.0
         marker.color.g = 1.0
@@ -156,7 +157,7 @@ class visionTracker:
 
         # Display all points on the estimated circular path
         pointsMarker = Marker()
-        pointsMarker.header.frame_id = '/camera_link'
+        pointsMarker.header.frame_id = self.targetFrame
         pointsMarker.ns = 'circularPoints_%d' % index
         pointsMarker.type = pointsMarker.LINE_STRIP
         pointsMarker.action = pointsMarker.ADD
@@ -177,7 +178,7 @@ class visionTracker:
     def publishDataPoints(self, points, index):
         # Display all points that were used to generate the estimated path
         pointsMarker = Marker()
-        pointsMarker.header.frame_id = '/camera_link'
+        pointsMarker.header.frame_id = self.targetFrame
         pointsMarker.ns = 'path_points_%d' % index
         pointsMarker.type = pointsMarker.POINTS
         pointsMarker.action = pointsMarker.ADD
@@ -198,12 +199,12 @@ class visionTracker:
     def publishNormal(self, centerPoint, normal):
         # Display normal vector (axis of rotation)
         marker = Marker()
-        marker.header.frame_id = '/camera_link'
+        marker.header.frame_id = self.targetFrame
         marker.ns = 'axis_vector'
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
         # print normal
-        marker.scale.x = 0.02
+        marker.scale.x = 0.01
         # Green color
         marker.color.a = 1.0
         marker.color.g = 1.0
