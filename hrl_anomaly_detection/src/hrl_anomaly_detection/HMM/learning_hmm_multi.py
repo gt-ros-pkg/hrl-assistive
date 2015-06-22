@@ -839,7 +839,7 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
-    def simulation(self, X1, X2, ths_mult, freq=43.0):
+    def simulation(self, X1, X2, ths_mult, freq=43.0, bSave=False):
 
         X1= np.squeeze(X1)
         X2= np.squeeze(X2)
@@ -1003,7 +1003,7 @@ class learning_hmm_multi(learning_base):
             self.ax11.legend(handles=[line_1], loc=2,prop={'size':12})
             self.ax21.legend(handles=[line_2], loc=2,prop={'size':12})
                 
-            if i>=0 and i<10: 
+            if i>=0 and i<10 or True: 
                 self.legend = self.ax31.legend(handles=[line_3, lmean, lvar], loc=2,prop={'size':12})        
             else:
                 self.legend.remove()
@@ -1018,7 +1018,8 @@ class learning_hmm_multi(learning_base):
         anim = animation.FuncAnimation(self.fig, animate, init_func=init,
                                        frames=len(X1), interval=300) #, blit=True
 
-        ## anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
+        if bSave == True:
+            anim.save('ani_test.mp4', fps=6, extra_args=['-vcodec', 'libx264'])
         plt.show()
 
 

@@ -1175,6 +1175,7 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
         false_aXData2 = d['audio_rms_false_l'] 
         false_chunks  = d['false_chunks']
         false_anomaly_start = np.zeros(len(false_chunks))
+        print false_chunks
 
         if rFold is not None:
             nTest = int(len(true_chunks)*(1.0-rFold))            

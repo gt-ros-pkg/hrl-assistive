@@ -1090,8 +1090,8 @@ def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, 
                 n = len(x_test1)
                 for i in range(n):
                     print "Visualize : ", i
-                    ## if i != 2: continue
-                    lhm.simulation(x_test1[i], x_test2[i], min_ths)
+                    if i != 4: continue
+                    lhm.simulation(x_test1[i], x_test2[i], min_ths, bSave=True)
     
 #-------------------------------------------------------------------------------------------------------
 def fig_roc_offline(cross_data_path, \
@@ -1868,8 +1868,8 @@ if __name__ == '__main__':
         class_name = 'complex'
         task_names = ['toaster_white', 'glass_case']
         f_zero_size = [5, 3, 8]
-        f_thres     = [1.0, 1.5, 1.35]
-        audio_thres = [1.0, 1.0, 1.0]
+        f_thres     = [0.8, 1.5, 1.35]
+        audio_thres = [1., 1.0, 1.0]
         cov_mult    = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 20, 20] #glass 10?
     elif class_num == 4:        
