@@ -48,6 +48,7 @@ class kanadeLucasPoint:
         self.transMatrix = None
         # Whether to display visual plots or not
         self.visual = visual
+        self.updateNumber = 0
 
         self.dbscan = DBSCAN(eps=0.6, min_samples=10)
         self.N = 30
@@ -86,7 +87,7 @@ class kanadeLucasPoint:
     def determineGoodFeatures(self, imageGray):
         # Take a frame and find corners in it
         self.prevFeats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
-        self.features = np.array([feature(self.prevFeats[i]) for i in xrange(len(self.prevFeats))])
+        self.features = np.array([feature(self.prevFeats[i][0], self) for i in xrange(len(self.prevFeats))])
 
     def opticalFlow(self, imageGray):
         newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, self.prevFeats, None, **self.lk_params)
@@ -94,7 +95,7 @@ class kanadeLucasPoint:
 
         # Update all features
         for i, feat in enumerate(self.features):
-            feat.update(newFeats[i])
+            feat.update(newFeats[i][0])
 
         # Remove all features that are no longer being tracked (ie. status == 0)
         self.features = np.delete(self.features, statusRemovals, axis=0)
@@ -102,7 +103,8 @@ class kanadeLucasPoint:
 
         # Define features as novel if they meet a given criteria
         for feat in self.features:
-            if feat.distance >= 50:
+            # Consider features that have traveled 15 cm
+            if feat.distance >= 0.15:
                 feat.isNovel = True
 
         self.prevFeats = newFeats
@@ -144,7 +146,7 @@ class kanadeLucasPoint:
             return
         # Display all novel (object) features that we are tracking.
         marker = Marker()
-        marker.header.frame_id = self.pointCloud.header.frame_id
+        marker.header.frame_id = self.targetFrame
         marker.ns = 'points'
         marker.type = marker.POINTS
         marker.action = marker.ADD
@@ -211,26 +213,13 @@ class kanadeLucasPoint:
             # Grab frame id for later transformations
             self.frameId = data.header.frame_id
             if self.targetFrame is not None:
+                self.transformer.waitForTransform(self.targetFrame, self.frameId, rospy.Time(0), rospy.Duration(5.0))
                 trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
                 self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
             # Determine initial set of features
             self.determineGoodFeatures(imageGray)
             self.prevGray = imageGray
             return
-
-        # Update markers
-        for m in self.recentMarkers:
-            index = m.id
-            if index not in [0, 7]:
-                continue
-            position = m.pose.pose.position
-            point = self.transposePoint([position.x, position.y, position.z])
-            marker = self.markers.get(index)
-            if marker is None:
-                print 'New marker! Index:', index
-                self.markers[index] = feature(point)
-            else:
-                marker.update(point)
 
         if len(self.features) > 0:
             self.opticalFlow(imageGray)
@@ -240,10 +229,13 @@ class kanadeLucasPoint:
                 cv2.imshow('Image window', image)
                 cv2.waitKey(30)
 
+        self.updateNumber += 1
+
         self.prevGray = imageGray
 
         # Call our caller now that new data has been processed
-        self.caller()
+        if self.caller is not None:
+            self.caller()
 
     def cloudCallback(self, data):
         # Store PointCloud2 data for use when determining 3D locations
@@ -284,9 +276,10 @@ class feature:
             self.setStartPosition()
             return
         # Grab 3D location for this feature
-        self.recent3DPosition = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
-        if self.recent3DPosition is None:
+        position3D = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
+        if position3D is None:
             return
+        self.recent3DPosition = position3D
         # Update total distance traveled
         self.distance = np.linalg.norm(self.recent3DPosition - self.startPosition)
         # Check if the point has traveled far enough to add a new history point
@@ -296,7 +289,7 @@ class feature:
             self.lastHistoryPosition = self.recent3DPosition
 
     def isAvailableForNewPath(self):
-        if len(self.history) - self.lastHistoryCount >= 5:
+        if len(self.history) - self.lastHistoryCount >= 10:
             self.lastHistoryCount = len(self.history)
             return True
         return False

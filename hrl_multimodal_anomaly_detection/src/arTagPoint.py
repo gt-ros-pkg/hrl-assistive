@@ -21,6 +21,7 @@ class arTagPoint:
         self.transformer = tf.TransformListener()
         self.targetFrame = targetFrame
         self.transMatrix = None
+        self.updateNumber = 0
 
         # 'rostopic info /ar_pose_marker' -> 'rosmsg show ar_track_alvar/AlvarMarkers'
         rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.callback)
@@ -37,6 +38,7 @@ class arTagPoint:
         if self.frameId is None:
             self.frameId = self.recentMarkers[0].header.frame_id
             if self.targetFrame is not None:
+                self.transformer.waitForTransform(self.targetFrame, self.frameId, rospy.Time(0), rospy.Duration(5.0))
                 trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
                 self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
 
@@ -54,8 +56,11 @@ class arTagPoint:
             else:
                 marker.update(point)
 
+        self.updateNumber += 1
+
         # Call our caller now that new data has been collected
-        self.caller()
+        if self.caller is not None:
+            self.caller()
 
     def getRecentPoint(self, index):
         if index >= self.markerRecentCount():

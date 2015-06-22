@@ -10,13 +10,13 @@ class tool_vision(Thread):
         self.daemon = True
         self.cancelled = False
 
-        self.init_time = 0.
+        self.init_time = rospy.get_time()
 
         self.time_data = []
         # A set of 3D points
         self.visual_points = []
 
-        self.visionTracker = visionTracker(useARTags=True, shouldSpin=False, visual=False)
+        self.visionTracker = visionTracker(useARTags=False, targetFrame='/torso_lift_link', shouldSpin=False, visual=False)
 
     def reset(self):
         pass
@@ -30,9 +30,9 @@ class tool_vision(Thread):
             rate.sleep()
 
     def log(self):
-        point = self.visionTracker.getLogData()
-        if point is not None:
-            self.visual_points.append(point)
+        features = self.visionTracker.getLogData()
+        if features is not None:
+            self.visual_points.append(features)
             self.time_data.append(rospy.get_time() - self.init_time)
 
     def cancel(self):
