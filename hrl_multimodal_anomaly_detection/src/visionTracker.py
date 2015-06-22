@@ -46,8 +46,7 @@ class visionTracker:
 
         for index, marker in enumerate(markers):
             # Verify there are enough new points before regenerating paths
-            if len(marker.history) - marker.lastHistoryCount >= 5:
-                marker.lastHistoryCount = len(marker.history)
+            if marker.isAvailableForNewPath():
                 # Find a linear fit of the points
                 endPoints, linearError = linearPath.calcLinearPath(marker.history, verbose=False, plot=False)
 
