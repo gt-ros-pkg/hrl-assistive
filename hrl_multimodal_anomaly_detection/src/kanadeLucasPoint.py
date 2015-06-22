@@ -187,6 +187,7 @@ class kanadeLucasPoint:
         # Retrieve 3d location of feature from PointCloud2
         if self.pointCloud is None:
             print 'AHH! The PointCloud2 data is not available!'
+        print self.pointCloud.row_step, self.pointCloud.point_step, self.pointCloud.width, self.pointCloud.height
         points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=False, uvs=[[x, y]])
         for point in points:
             px, py, depth = point
