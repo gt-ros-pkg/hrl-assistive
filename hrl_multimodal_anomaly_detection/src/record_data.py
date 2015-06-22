@@ -67,12 +67,17 @@ class robot_kinematics(Thread):
         self.arm = 'r'
         self.init_time = 0.
         self.jstate_lock = threading.RLock() ## joint state lock
+        self.l_end_effector = 'l_gripper_spoon_frame'
+        self.r_end_effector = 'r_gripper_tool_frame'
 
         self.joint_angles = []
 
         self.time_data  = []
         self.joint_data = []
-
+        self.l_end_effector_pos = []
+        self.l_end_effector_quat = []
+        self.r_end_effector_pos = []
+        self.r_end_effector_quat = []
 
         groups = rospy.get_param('/right/haptic_mpc/groups' )
         for group in groups:
@@ -82,6 +87,8 @@ class robot_kinematics(Thread):
                 self.joint_names_list = group['joints']
 
         rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
+
+        self.tf_listener = tf.TransformListener()
 
     def jointStatesCallback(self, data):
         joint_angles = []
@@ -117,6 +124,12 @@ class robot_kinematics(Thread):
 
         self.time_data.append(rospy.get_time()-self.init_time)
         self.joint_data.append(self.joint_angles)
+        (pos_l, quat_l) = self.tf_listener.lookupTransform('/torso_lift_link', self.l_end_effector, rospy.Time(0))
+        (pos_r, quat_r) = self.tf_listener.lookupTransform('/torso_lift_link', self.r_end_effector, rospy.Time(0))
+        self.l_end_effector_pos.append(pos_l)
+        self.l_end_effector_quat.append(quat_l)
+        self.r_end_effector_pos.append(pos_r)
+        self.r_end_effector_quat.append(quat_r)
 
     def cancel(self):
         """End this timer thread"""
@@ -595,7 +608,7 @@ class ADL_log:
         self.sub_name = subject
         self.task_name = task
         self.actor = actor
-	ft_sensor_topic_name = '/netft_data'
+        ft_sensor_topic_name = '/netft_data'
 
         if self.ft:
             self.ft = tool_ft(ft_sensor_topic_name)
@@ -676,10 +689,10 @@ class ADL_log:
         if self.kinematics:
             d['kinematics_time']  = self.kinematics.time_data
             d['kinematics_joint'] = self.kinematics.joint_data
-
-
-        #Save using PANDAS DataFrame format
-        df = pd.DataFrame(d)
+            d['l_end_effector_pos'] = self.kinematics.l_end_effector_pos
+            d['l_end_effector_quat'] = self.kinematics.l_end_effector_quat
+            d['r_end_effector_pos'] = self.kinematics.r_end_effector_pos
+            d['r_end_effector_quat'] = self.kinematics.r_end_effector_quat
 
 
         ## if trial_name is not None: self.trial_name = trial_name
@@ -703,33 +716,36 @@ class ADL_log:
 
         #SAVING AS PICKLE FILE!#
         #OLD METHOD, USING PANDAS INSTEAD!#
-        # pkl_list = glob.glob('*.pkl')
-        # max_num = 0
-
-        # for pkl in pkl_list:
-        #     if pkl.find(self.file_name)>=0:
-        #         num = int(pkl.split('_')[-1].split('.')[0])
-        #         if max_num < num:
-        #             max_num = num
-        # max_num = int(max_num)+1
-        # self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
-
-        # print "Pickle file name: ", self.pkl
-        # ut.save_pickle(d, self.pkl)
-
-        csv_list = glob.glob('*.csv')
+        pkl_list = glob.glob('*.pkl')
         max_num = 0
 
-        for csv in csv_list:
-            if csv.find(self.file_name)>=0:
-                num = int(csv.split('_')[-1].split('.')[0])
+        for pkl in pkl_list:
+            if pkl.find(self.file_name)>=0:
+                num = int(pkl.split('_')[-1].split('.')[0])
                 if max_num < num:
                     max_num = num
         max_num = int(max_num)+1
-        self.csv_file_name = self.file_name+'_'+str(max_num)+'.csv'
+        self.pkl = self.file_name+'_'+str(max_num)+'.pkl'
 
-        print "CSV (Pandas) file name: ", self.csv_file_name
-        df.to_csv(self.csv_file_name)
+        print "Pickle file name: ", self.pkl
+        ut.save_pickle(d, self.pkl)
+
+        #NOT USED Pandas File formating saving!
+     #    csv_list = glob.glob('*.csv')
+     #    max_num = 0
+
+     #    for csv in csv_list:
+     #        if csv.find(self.file_name)>=0:
+     #            num = int(csv.split('_')[-1].split('.')[0])
+     #            if max_num < num:
+     #                max_num = num
+     #    max_num = int(max_num)+1
+     #    self.csv_file_name = self.file_name+'_'+str(max_num)+'.csv'
+
+
+	    # self.csv_file_name_FT = self.file_name+'_FT_'+str(max_num)+'.csv'
+     #    print "CSV (Pandas) file name: ", self.csv_file_name
+     #    df.to_csv(self.csv_file_name)
 
         ## self.tool_tracker_log_file.close()
         ## self.tooltip_log_file.close()
