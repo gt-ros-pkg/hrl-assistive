@@ -26,7 +26,7 @@ import tf
 from cv_bridge import CvBridge, CvBridgeError
 
 class kanadeLucasPoint:
-    def __init__(self, caller, targetFrame=None, visual=False):
+    def __init__(self, caller, targetFrame=None, publish=False, visual=False):
         self.caller = caller
         self.bridge = CvBridge()
         # ROS publisher for data points
@@ -49,6 +49,8 @@ class kanadeLucasPoint:
         self.transformer = tf.TransformListener()
         self.targetFrame = targetFrame
         self.transMatrix = None
+        # Whether to publish data to a topic
+        self.publish = publish
         # Whether to display visual plots or not
         self.visual = visual
         self.updateNumber = 0
@@ -123,6 +125,9 @@ class kanadeLucasPoint:
         for feat in self.features:
             if feat.isNovel:
                 points.append(feat.recent2DPosition)
+        if not points:
+            # No novel features
+            return image
         points = np.array(points)
 
         # Perform dbscan clustering
@@ -234,8 +239,9 @@ class kanadeLucasPoint:
 
         if len(self.features) > 0:
             self.opticalFlow(imageGray)
-            if self.visual:
+            if self.publish:
                 self.publishFeatures()
+            if self.visual:
                 image = self.drawOnImage(image)
                 cv2.imshow('Image window', image)
                 cv2.waitKey(30)

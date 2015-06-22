@@ -14,22 +14,21 @@ import kinectCircularPath as circularPath
 import kinectLinearPath as linearPath
 
 class visionTracker:
-    def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, visual=False):
+    def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, publish=False, visual=False):
         self.publisher = rospy.Publisher('visualization_marker', Marker)
         self.lastPosition = None
         self.lastPosition2 = None
         self.points = None
         self.normals = None
         self.lastUpdateNumber = 0
-        self.visual = visual
         self.lastTime = time.time()
 
         if shouldSpin:
             rospy.init_node('listener_kinect')
         if useARTags:
-            self.tracker = arTagPoint(self.spinner if visual else None, targetFrame=targetFrame)
+            self.tracker = arTagPoint(self.spinner if publish else None, targetFrame=targetFrame)
         else:
-            self.tracker = kanadeLucasPoint(self.multispinner if visual else None, targetFrame=targetFrame, visual=visual)
+            self.tracker = kanadeLucasPoint(self.multispinner if publish else None, targetFrame=targetFrame, publish=publish, visual=visual)
         if shouldSpin:
             rospy.spin()
 
@@ -86,13 +85,16 @@ class visionTracker:
                 if linearError < circularError:
                     lines += 1
                     ends.append(endPoints)
+                    # self.publishLinearPath(endPoints, index)
                 else:
                     circles += 1
                     centers.append(centerPoint)
                     normals.append(normal)
+                    # self.publishCircularPath(centerPoint, normal, synthetic, index)
 
                 self.publishDataPoints(marker.history, index)
 
+            print circles, lines
             if circles > 0 and circles >= lines:
                 self.publishNormal(np.mean(centers, axis=0), np.mean(normals, axis=0))
             elif lines > 0:
