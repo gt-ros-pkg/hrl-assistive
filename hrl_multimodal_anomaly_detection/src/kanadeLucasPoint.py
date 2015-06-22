@@ -53,9 +53,14 @@ class kanadeLucasPoint:
         self.dbscan = DBSCAN(eps=0.6, min_samples=10)
         self.N = 30
 
-        rospy.Subscriber('/camera/rgb/image_color', Image, self.imageCallback)
-        rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
-        rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # XBox 360 Kinect
+        # rospy.Subscriber('/camera/rgb/image_color', Image, self.imageCallback)
+        # rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
+        # rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # Kinect 2
+        rospy.Subscriber('/head_mount_kinect/rgb/image', Image, self.imageCallback)
+        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
 
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
