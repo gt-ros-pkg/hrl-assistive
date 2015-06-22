@@ -11,12 +11,12 @@ from record_data import *
 from load_data import *
 
 
-class audioRecord():
+class dataRecord():
 
     AUDIO = True
     AUDIORECORD = True
     FT = True
-    VISION = False
+    VISION = True
     KINEMATICS = True
     MANIP = False
     TEST_MODE = False
@@ -52,9 +52,9 @@ class audioRecord():
         sys.exit()
 
 if __name__ == '__main__':
-    rospy.init_node('local_audio_record')
+    rospy.init_node('local_data_record')
 
-    recorder = audioRecord()
+    recorder = dataRecord()
     recorder.run()
 
     rospy.spin()
