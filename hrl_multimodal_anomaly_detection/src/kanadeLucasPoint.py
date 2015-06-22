@@ -185,6 +185,8 @@ class kanadeLucasPoint:
             # print 'x, y greater than camera size! Feature', x, y, self.cameraWidth, self.cameraHeight
             return None
         # Retrieve 3d location of feature from PointCloud2
+        if self.pointCloud is None:
+            print 'AHH! The PointCloud2 data is not available!'
         points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=False, uvs=[[x, y]])
         for point in points:
             px, py, depth = point
@@ -217,7 +219,7 @@ class kanadeLucasPoint:
         imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Find frameId for transformations and determine a good set of starting features
-        if self.frameId is None or self.features:
+        if self.frameId is None or self.features is None:
             # Grab frame id for later transformations
             self.frameId = data.header.frame_id
             if self.targetFrame is not None:
