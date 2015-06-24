@@ -10,7 +10,6 @@ import tf
 from record_data import *
 from load_data import *
 
-
 class dataRecord():
 
     AUDIO = True
@@ -18,7 +17,7 @@ class dataRecord():
     FT = True
     VISION = True
     KINEMATICS = True
-    MANIP = False
+    MANIP = True
     TEST_MODE = False
 
 

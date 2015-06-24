@@ -524,6 +524,7 @@ class ADL_log:
             rospy.wait_for_service("/arm_reach_enable")
             self.armReachAction = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
             rospy.loginfo("arm reach server connected!!")
+            startClient = self.armReachAction()
 
     def task_cmd_input(self, subject=None, task=None, actor=None):
         confirm = False
