@@ -26,31 +26,68 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table" // "wall", "free"
     self.active = false;
     self.SVGCanvas = Snap('#arm-svg');
-    self.rotPaths = {'xp': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'xp', 'stroke-width':8,'stroke':'black'}),
-                            'points':[[-0.15, -0.1, 0.15],
-                                      [-0.15, -0.1, 0.2],
-                                      [-0.15, -0.15, 0.175]]},
-                     'xn': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'xn', 'stroke-width':8,'stroke':'black'}),
-                            'points':[[-0.15, 0.1, 0.15],
-                                      [-0.15, 0.1, 0.2],
-                                      [-0.15, 0.15, 0.175]]},
-                     'yp': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'yp', 'stroke-width':8,'stroke':'black'}),
-                            'points':[[0.04, 0.23, 0],
-                                      [-0.04, 0.18, 0.05],
-                                      [-0.04, 0.18, -0.05]]},
-                     'yn': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'yn', 'stroke-width':8,'stroke':'black'}),
-                            'points':[[0.04, -0.23, 0],
-                                      [-0.04, -0.18, 0.05],
-                                      [-0.04, -0.18, -0.05]]},
-                     'zp': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'zp', 'stroke-width':8,'stroke':'black'}),
-                            'points':[[0.04, 0, 0.23],
-                                      [-0.04, 0.05, 0.18],
-                                      [-0.04, -0.05, 0.18]]},
-                     'zn': {'path': self.SVGCanvas.path('M0,0').attr({'class':self.side+'-arm-rot-icon', 'id':'zn', 'stroke-width':8,'stroke':'black'}),
-                            'points':[[0.04, 0, -0.23],
-                                      [-0.04, 0.05, -0.18],
-                                      [-0.04, -0.05, -0.18]]}
+    self.rotPaths = {'xp': {'path': self.SVGCanvas.path('M0,0'),
+                            'baseline': self.SVGCanvas.path('M0,0'),
+                            'points':[[0.0, -0.1, 0.12],
+                                      [0.04, -0.14, 0.18],
+                                      [0.02, -0.18, 0.08]]},
+                     'xn': {'path': self.SVGCanvas.path('M0,0'),
+                            'baseline': self.SVGCanvas.path('M0,0'),
+                            'points':[[0.0, 0.1, 0.12],
+                                      [0.04, 0.14, 0.18],
+                                      [0.02, 0.18, 0.08]]},
+                     'zn': {'path': self.SVGCanvas.path('M0,0'),
+                            'baseline': self.SVGCanvas.path('M0,0'),
+                            'points':[[-0.04, -0.18, 0.05],
+                                      [-0.04, -0.18, -0.05],
+                                      [0.04, -0.23, 0]]},
+                     'zp': {'path': self.SVGCanvas.path('M0,0'),
+                            'baseline': self.SVGCanvas.path('M0,0'),
+                            'points':[[-0.04, 0.18, 0.05],
+                                      [-0.04, 0.18, -0.05],
+                                      [0.04, 0.23, 0]]},
+                     'yn': {'path': self.SVGCanvas.path('M0,0'),
+                            'baseline': self.SVGCanvas.path('M0,0'),
+                            'points':[[-0.04, 0.05, -0.18],
+                                      [-0.04, -0.05, -0.18],
+                                      [0.04, 0, -0.23]]},
+                     'yp': {'path': self.SVGCanvas.path('M0,0'),
+                            'baseline': self.SVGCanvas.path('M0,0'),
+                            'points':[[-0.04, 0.05, 0.18],
+                                      [-0.04, -0.05, 0.18],
+                                      [0.04, 0, 0.23]]}
                     }
+
+    for (var dir in self.rotPaths) {
+        var click;
+        var rot = 1; // Used as a fraction of selected step size...
+        switch (dir) {
+            case 'xp':
+                click = function (event) {self.eeDeltaCmd({'roll':-rot})};
+                break;
+            case 'xn':
+                click = function (event) {self.eeDeltaCmd({'roll':rot})};
+                break;
+            case 'yn':
+                click = function (event) {self.eeDeltaCmd({'pitch':rot})};
+                break;
+            case 'yp':
+                click = function (event) {self.eeDeltaCmd({'pitch':-rot})};
+                break;
+            case 'zn':
+                click = function (event) {self.eeDeltaCmd({'yaw':rot})};
+                break;
+            case 'zp':
+                click = function (event) {self.eeDeltaCmd({'yaw':-rot})};
+                break;
+        }
+        self.rotPaths[dir]['path'].attr({'class':self.side+'-arm-rot-icon',
+                                 'id':dir});
+        self.rotPaths[dir]['path'].click(click);
+        self.rotPaths[dir]['baseline'].click(click);
+        self.rotPaths[dir]['baseline'].attr({'class':self.side+'-arm-rot-icon-baseline',
+                                             'id':dir+'-base'});
+    }
 
 //        var geometry = new THREE.SphereGeometry(0.01,8,8);
 //        var material = new THREE.MeshBasicMaterial( { color: 0x0000ee, wireframe: true } );
@@ -71,9 +108,10 @@ RFH.CartesianEEControl = function (options) {
         var w = $(self.SVGCanvas.node).width();
         var h = $(self.SVGCanvas.node).height();
         for (var dir in self.rotPaths) {
+            var handPts = self.rotPaths[dir]['points'];
             var pts = [];
-            for (var pt in self.rotPaths[dir]['points']) {
-                var v = new THREE.Vector3(pt[0], pt[1], pt[2]);
+            for (var idx in handPts) {
+                var v = new THREE.Vector3(handPts[idx][0], handPts[idx][1], handPts[idx][2]);
                 v.applyMatrix4(tfMat);
                 pts.push([v.x,v.y,v.z]);
             }
@@ -85,6 +123,7 @@ RFH.CartesianEEControl = function (options) {
                 }
                 return;
             }
+            self.rotPaths[dir]['baseline'].attr({'d':'M'+imgPts[0][0]*w+','+imgPts[0][1]*h+'L'+imgPts[1][0]*w+','+imgPts[1][1]*h});
 
             var pathStr = "M"+imgPts[0][0]*w+','+imgPts[0][1]*h;
             for (var i=1; i < imgPts.length; i += 1) {
@@ -107,11 +146,11 @@ RFH.CartesianEEControl = function (options) {
 //        self.SVGCanvas.circle(imgPt[0]*w, imgPt[1]*h, 5).attr({'fill':'green','stroke':'none'})
     }
 
-    self.rotCtrls = new RFH.EERotation({div: self.side+'-rot-ctrls',
-                                        arm: self.arm,
-                                        tfClient: self.tfClient,
-                                        eeFrame: self.side+'_gripper_tool_frame'});
-    $('#'+self.rotCtrls.div).hide();
+//    self.rotCtrls = new RFH.EERotation({div: self.side+'-rot-ctrls',
+//                                        arm: self.arm,
+//                                        tfClient: self.tfClient,
+//                                        eeFrame: self.side+'_gripper_tool_frame'});
+//    $('#'+self.rotCtrls.div).hide();
 
     self.updateCtrlRingViz = function () {
         // Check that we have values for both camera and ee frames
@@ -319,6 +358,29 @@ RFH.CartesianEEControl = function (options) {
                 var dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
                 var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
                 var dz = posStep * z;
+                var dRoll = rotStep * roll;
+                var dPitch = rotStep * pitch;
+                var dYaw = rotStep * yaw;
+                // Convert del goal to Matrix4
+                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
+                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
+                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
+                cmd.setPosition(cmdDelPos);
+                // Get EE transform in THREE mat4
+                var eeQuat = new THREE.Quaternion(self.eeTF.rotation.x,
+                                                 self.eeTF.rotation.y,
+                                                 self.eeTF.rotation.z,
+                                                 self.eeTF.rotation.w);
+                var eeMat = new THREE.Matrix4().makeRotationFromQuaternion(eeQuat);
+                // Transform del goal (in hand frame) to base frame
+                cmd.multiplyMatrices(eeMat, cmd);
+                var pos = new THREE.Vector3();
+                var quat = new THREE.Quaternion();
+                var scale = new THREE.Vector3();
+                cmd.decompose(pos, quat, scale);
+                pos.x += dx;
+                pos.y += dy;
+                pos.z += dz;
                 break;
             case 'wall':
                 if (self.eeTF === null) {
@@ -368,10 +430,10 @@ RFH.CartesianEEControl = function (options) {
         var pos = {x: self.eeTF.translation.x + dx,
                    y: self.eeTF.translation.y + dy,
                    z: self.eeTF.translation.z - dz}
-        var quat = {x: self.eeTF.rotation.x,
-                y: self.eeTF.rotation.y,
-                z: self.eeTF.rotation.z,
-                w: self.eeTF.rotation.w}
+//        var quat = {x: self.eeTF.rotation.x,
+//                y: self.eeTF.rotation.y,
+//                z: self.eeTF.rotation.z,
+//                w: self.eeTF.rotation.w}
         quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
         self.arm.sendGoal({position: pos,
             orientation: quat,
@@ -517,10 +579,10 @@ RFH.CartesianEEControl = function (options) {
 
     self.touchSpotCB = function (e) {
         if ($('#touchspot-toggle').prop('checked')) {
-            $('#armCtrlContainer').show();
-            $('#'+self.div).off('click.rfh');
+            self.setPositionCtrls();
+            self.SVGCanvas.node.off('click.rfh');
         } else {
-            $('#armCtrlContainer').hide();
+            $('#armCtrlContainer, .'+self.side+'-arm-rot-icon').hide();
             // TODO: Change cursor here?
 
             var onRetCB = function (pose) {
@@ -545,41 +607,32 @@ RFH.CartesianEEControl = function (options) {
                     frame_id: 'base_link'
                 })
                 $('#touchspot-toggle').prop('checked', false).button('refresh');
-                $('#armCtrlContainer').show();
+                self.setPositionCtrls();
             };
 
             var clickCB = function (e) {
                 var pt = RFH.positionInElement(e);
-                var x = (pt[0]/e.target.width);
-                var y = (pt[1]/e.target.height);
+                var x = pt[0]/$(e.target).width();
+                var y = pt[1]/$(e.target).height();
                 self.pixel23d.callRelativeScale(x, y, onRetCB);
             };
-            $('#'+self.div).one('click.rfh', clickCB);
+            $(self.SVGCanvas.node).one('click.rfh', clickCB);
         }
     };
 
     self.setRotationCtrls = function (e) {
-        $('#ctrl-ring').off('mousedown.rfh');
-        $('#toward-button, #away-button').off('click.rfh');
-        self.focusPoint.clear();
-
-        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
-        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivateRot);
-        $('#away-button').on('mousedown.rfh', self.cwCB).text('CW');
-        $('#toward-button').on('mousedown.rfh', self.ccwCB).text('CCW');
-//        $('#select-focus-toggle-label').off('click.rfh').hide();
+        $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').show();
+        $('#armCtrlContainer').hide();
     };
 
     self.setPositionCtrls = function (e) {
-        $('#ctrl-ring').off('mousedown.rfh');
-        $('#toward-button, #away-button').off('mousedown.rfh');
-
-        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
-        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
-        $('#away-button').on('mousedown.rfh', self.awayCB).text('');
-        $('#toward-button').on('mousedown.rfh', self.towardCB).text('');
-//        $('#select-focus-toggle-label').on('click.rfh', self.selectFocusCB).show();
+        $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').hide();
+        $('#armCtrlContainer').show();
     };
+    $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
+    $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
+    $('#away-button').on('mousedown.rfh', self.awayCB);
+    $('#toward-button').on('mousedown.rfh', self.towardCB);
 
     self.setEEMode = function (e) {
         self.mode = e.target.id.split("-")[2]; // Will break with different naming convention
@@ -602,7 +655,7 @@ RFH.CartesianEEControl = function (options) {
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
 //        $('#posrot-pos').click();
-        $('#'+self.rotCtrls.div).show();
+//        $('#'+self.rotCtrls.div).show();
         self.setPositionCtrls();
         self.updateCtrlRingViz();
         self.active = true;
@@ -626,7 +679,7 @@ RFH.CartesianEEControl = function (options) {
             $('#touchspot-toggle').click();
         }
         $('#touchspot-toggle-label').off('click.rfh').hide();
-        $('#'+self.rotCtrls.div).hide();
+//        $('#'+self.rotCtrls.div).hide();
         self.active = false;
     };
 }

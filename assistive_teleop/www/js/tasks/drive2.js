@@ -171,7 +171,7 @@ RFH.Drive = function (options) {
     };
 
     self.calcCmd = function (path) {
-        var linV = self.clamp(0.2*path.R*path.theta, 0.0, 0.4);
+        var linV = self.clamp(0.2*path.R*path.theta, 0.0, 0.2);
         var cmd_theta = Math.tan(linV/path.R);
         cmd_theta *= (path.side === 'left') ? 1 : -1;
         var cmd_x = 0;
@@ -291,6 +291,8 @@ RFH.Drive = function (options) {
     self.moveToStop = function (stopName) {
         var angs = self.headStopAngles[stopName];
         self.currentStop = stopName;
+        $('#drive-dir-icon path').css({'fill':'rgb(30,220,250)'});
+        $('#drive-dir-icon path.'+stopName).css({'fill':'#ffffff'});
         self.head.setPosition(angs[0], angs[1]);
     }
 
@@ -456,173 +458,3 @@ RFH.Drive = function (options) {
         self.timer = setTimeout(function(){self.sendCmd(self.cmd)}, 50);
     }
 }
-
-
-
-
-        //////////// DEBUG IMAGE OVERLAYS //////////////////////////
-//        var imgC = self.camera.projectPoint(C[0], C[1], 0, 'base_link');
-//        self.driveSVG.paper.circle(w*imgC[0], h*imgC[1], 5);
-//        var imgB = self.camera.projectPoint(B[0], B[1], 0, 'base_link');
-//        self.driveSVG.paper.circle(w*imgB[0], h*imgB[1], 5).attr({'fill':'blue'});
-//        imgB = self.camera.projectPoint(BL[0], BL[1], 0, 'base_link');
-//        self.driveSVG.paper.circle(w*imgB[0], h*imgB[1], 3).attr({'fill':'blue'});
-//        imgB = self.camera.projectPoint(BR[0], BR[1], 0, 'base_link');
-///        self.driveSVG.paper.circle(w*imgB[0], h*imgB[1], 3).attr({'fill':'blue'});
-//        var imgT = self.camera.projectPoint(T[0], T[1], 0, 'base_link');
-//        self.driveSVG.paper.circle(w*imgT[0], h*imgT[1], 5).attr({'fill':'red'});
-//        /////////// END DEBUG ////////////////////////////////////////
-//
-/*    self.pseudoInv = function (A) {
-        var aT = numeric.transpose(A);
-        return numeric.dot(numeric.inv(numeric.dot(aT, A)), aT);
-    };
-
-    self.fitEllipse = function (pts) {
-        // Fit Ellipse to data points. Following Numerically Stable Direct Lease Squares Fitting of Ellipses (Halir, Flusser, 1998)
-        // Build Design Matrix D
-        var D1 = [];
-        var D2 = [];
-        for (var i=0; i<pts.length; i += 1) {
-            var x = pts[i][0];
-            var y = pts[i][1];
-            D1.push([x*x, x*y, y*y]);
-            D2.push([x, y, 1]);
-        }
-        // Build Scatter Matrices S1-S3
-        var D1T = numeric.transpose(D1);
-        var D2T = numeric.transpose(D2);
-        var S1 = numeric.dot(D1T, D1);
-        var S2 = numeric.dot(D1T, D2);
-        var S3 = numeric.dot(D2T, D2);
-        
-        var T = numeric.mul(-1, numeric.dot(numeric.inv(S3), numeric.transpose(S2)));
-        var M = numeric.add(S1, numeric.dot(S2, T))
-        var M = [numeric.mul(0.5, M[2]), numeric.mul(-1, M[1]), numeric.mul(0.5, M[0])];
-        var eigs = numeric.eig(M);
-        var eigVals = eigs.lambda.x;
-        eigVals.push.apply(eigVals, eigs.lambda.y);
-        var eigVecs = eigs.E.x;
-        eigVecs.push.apply(eigVecs, eigs.E.y);
-        var cond = numeric.mul(4, numeric.mul(eigVecs[0], eigVecs[2]));
-        cond = numeric.sub(cond, numeric.pow(eigVecs[1], 2));
-        var ind = numeric.gt(cond, 0).indexOf(true);
-        var a1 = [eigVecs[0][ind], eigVecs[1][ind], eigVecs[2][ind]];
-        var ellMatParams = a1;
-        ellMatParams.push.apply(ellMatParams, numeric.dot(T, a1));
-
-        var A = ellMatParams[0];
-        var B = ellMatParams[1];
-        var C = ellMatParams[2];
-        var D = ellMatParams[3];
-        var E = ellMatParams[4];
-        var F = ellMatParams[5];
-//        var Aq = [[A,   B/2, D/2],
-//                  [B/2, C,   E/2],
-//                  [D/2, E/2, F]];
-//        var A33 = [[A,  B/2],
-//                   [B/2, C]];
-//        var I = A + C;
-//        var detAq = numeric.det(Aq);
-//        var detA33 = numeric.det(A33);
-//        if (Math.abs(detAq) < numeric.epsilon) {
-//            console.log("Degenerate Conic");
-//            return;
-//        } else {
-//            if (detA33 > 0) {
-//                if (detAq/I > 0) {
-//                    console.log("Fit Imaginary Ellipse");
-//                } else {
-//                    console.log("Fit Real Ellipse");
-//                }
-//            } else if (detA33 < 0) {
-//                console.log("Fit: Hyperbola")
-//            } else if (Math.abs(detA33) < numeric.epsilon) {
-//                console.log("Fit: Parabola");
-//            }
-//        }
-        var Cx = (B*E - 2*C*D)/(4*A*C - B*B);
-        var Cy = (D*B - 2*A*E)/(4*A*C - B*B);
-//        self.driveSVG.paper.circle(Cx, Cy, 10);
-        // Switch to Wolfram math page notation for simplicity...
-        var B = B/2;
-        var D = D/2;
-        var E = E/2;
-        var axis_B_len = Math.sqrt(2*(A*E*E+C*D*D+F*B*B-2*B*D*E-A*C*F)/((B*B-A*C)*(Math.sqrt((A-C)*(A-C)+4*B*B) - (A+C))));
-        var axis_A_len = Math.sqrt(2*(A*E*E+C*D*D+F*B*B-2*B*D*E-A*C*F)/((B*B-A*C)*(-Math.sqrt((A-C)*(A-C)+4*B*B) - (A+C))));
-        if (B < numeric.epsilon) {
-            var rot = (A < C) ? 0 : Math.PI/2;
-        } else {
-            var rot = 0.5*Math.atan(2*B/(A-C));
-            rot += (A > C) ? 0 : Math.PI/2;
-        }
-        self.ell = self.driveSVG.paper.ellipse(Cx, Cy, axis_A_len, axis_B_len).attr({'fill':'none',
-                                                                                     'stroke':'purple'});
-        var rotMat = new Snap.Matrix().rotate(rot*(180/Math.PI), Cx, Cy);
-        self.ell.transform(rotMat.toTransformString());
-        
-    }
-*/
-
- //   self.getLineParams = function (event) {
- //       var target = RFH.positionInElement(event); 
- //       var w = $(self.driveSVG.node).width();
- //       var h = $(self.driveSVG.node).height();
- //       var deadAhead = self.camera.projectPoint(1,0,0,'base_link');
- //       deadAhead[0] *= w;
- //       deadAhead[1] *= h;
- //       var originC = self.camera.projectPoint(0,0,0,'base_link');
- //       originC[0] *= w;
- //       originC[1] *= h;
- //       var fwdVec = [deadAhead[0] - originC[0], deadAhead[1] - originC[1]];
- //       var baselineVec = [-fwdVec[1], fwdVec[0]];
- //       var originL = self.camera.projectPoint(0,0.332,0,'base_link');
- //       originL[0] *= w;
- //       originL[1] *= h;
- //       var originR = self.camera.projectPoint(0,-0.332,0,'base_link');
- //       originR[0] *= w;
- //       originR[1] *= h;
- //       var tx = -(target[0]-originC[0]);
- //       var ty = -(target[1]-originC[1]);
- //       var ang = Math.atan2(tx, ty);
- //       var mag = Math.sqrt(tx*tx+ty*ty);
- //       var pathRad = 0.5*Math.abs(mag/Math.sin(ang));
- //       var cx = originC[0] + ((ang >= 0 ) ? -pathRad : pathRad) ;
- //       return {'cx':cx, 'originC':originC, 'originL':originL, 'originR':originR, 'rad':pathRad};
- //   };
-
-//    self.getLineParams = function (event) {
-//        var target = RFH.positionInElement(event); 
-//        var originX = $('#drive-lines').width()/2 + self.lineCenterOffset;
-//        var originY = $('#drive-lines').height();
-//        var tx = -(target[0]-originX);
-//        var ty = -(target[1]-originY);
-//        var ang = Math.atan2(tx, ty);
-//        var mag = Math.sqrt(tx*tx+ty*ty);
-//        var pathRad = 0.5*Math.abs(mag/Math.sin(ang));
-//        var cx = originX + ((ang >= 0 ) ? -pathRad : pathRad) ;
-//        return {'cx':cx, 'originX':originX, 'originY':originY, 'rad':pathRad};
-//    };
-
-//    self.createLinesCB = function (event) {
-//        var lp = self.getLineParams(event); 
-//        if (lp.rad === Infinity) {
-//            lp.rad = 10000
-//            lp.cx = lp.rad + lp.originC[0];
-//            }
-//        //self.lines['center'] = self.driveSVG.path('M0,0').attr({
-//        self.lines['center'] = self.driveSVG.circle(lp.cx, lp.originC[1], lp.rad).attr({
-//                                    "id":"dl-line-center",
-//                                    "stroke-width": 10,
-//                                    "stroke-opacity":0.6,
-//                                    "fill":"none"});
-//        self.lines['left'] = self.lines['center'].clone().attr({
-//                                    'id':'dl-line-left',
-//                                    'rad':(lp.rad - lp.originL[0]-lp.originC[0]),
-//                                    'cx':lp.cx});
-//        self.lines['right'] = self.lines['center'].clone().attr({
-//                                    'id':'dl-line-right',
-//                                    'rad':(lp.rad + lp.originR[0]-lp.originC[0]),
-//                                    'cx':lp.cx});
-//    };
-//    self.driveSVG.node.onmouseenter = self.createLinesCB;

@@ -39,13 +39,17 @@ RFH.EERotation = function (options) {
     //                                                   shape:'Half Circle Right'});
 
     self.sendRotation = function (rx, ry, rz) {
-        var rx = rx || self.rotSlider.slider('option','value');
-        var ry = ry || self.lonSlider.slider('option','value');
-        var rz = rz || self.latSlider.slider('option','value');
-        var euler = new THREE.Euler(rx, ry, rz, 'ZYX');
+        var rx = rx || 0;
+        var ry = ry || 0;
+        var rz = rz || 0;
+        var rx = self.rotSlider.slider('option','value') + rx;
+        var ry = self.lonSlider.slider('option','value') + ry;
+        var rz = self.latSlider.slider('option','value') + rz;
+        var euler = new THREE.Euler(rx, ry, rz, 'ZYX'); //Originally working
+//        var euler = new THREE.Euler(rx, ry, rz, 'XYZ');
         var q = new THREE.Quaternion().setFromEuler(euler);
         var quat = new ROSLIB.Quaternion({x:q.x, y:q.y, z:q.z, w:q.w});
-//        console.log("Sending RPY: "+euler.x+", "+euler.y+", "+euler.z);
+        console.log("Sending RPY: "+euler.x+", "+euler.y+", "+euler.z);
 //        console.log("Sending Quat: "+q.x+", "+q.y+", "+q.z+", "+q.w);
         self.arm.sendGoal({orientation: quat});
     };
