@@ -174,12 +174,12 @@ class armReachAction(mpcBaseAction):
             [data.pose.position.y], [data.pose.position.z]])
         self.bowl_quat_manual = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
-        print '-----------------------------------------------------'
-        print 'Manually Provided Bowl Pos: '
-        print self.bowl_pos_manual
-        print 'Manually Provided Bowl Quaternions: '
-        print self.bowl_quat_manual
-        print '-----------------------------------------------------'
+        #print '-----------------------------------------------------'
+        #print 'Manually Provided Bowl Pos: '
+        #print self.bowl_pos_manual
+        #print 'Manually Provided Bowl Quaternions: '
+        #print self.bowl_quat_manual
+        #print '-----------------------------------------------------'
 
     def bowlPoseKinectCallback(self, data):
 
@@ -191,12 +191,9 @@ class armReachAction(mpcBaseAction):
             [data.pose.position.z + self.kinectBowlFoundPosOffsets[2]]])
         self.bowl_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
-        print '-----------------------------------------------------'
-        print 'Kinect Provided Bowl Pos: '
-        print self.bowl_pos_kinect
-        print 'Kinect Provided Bowl Quaternions: '
-        print self.bowl_quat_kinect
-        print '-----------------------------------------------------'
+        #print '-----------------------------------------------------'
+        
+        #print '-----------------------------------------------------'
 
     def headPoseManualCallback(self, data):
 
@@ -216,11 +213,21 @@ class armReachAction(mpcBaseAction):
 
         if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
             print "No Kinect provided bowl information, using manually provided bowl information"
+            print 'Manually Provided Bowl Pos: '
+            print self.bowl_pos_manual
+            print 'Manually Provided Bowl Quaternions: '
+            print self.bowl_quat_manual
+            
             self.bowl_frame = self.bowl_frame_manual
             self.bowl_pos = self.bowl_pos_manual
             self.bowl_quat = self.bowl_quat_manual
         elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
             print "No manually provided bowl information, using Kinect provided bowl information"
+            print 'Kinect Provided Bowl Pos: '
+            print self.bowl_pos_kinect
+            print 'Kinect Provided Bowl Quaternions: '
+            print self.bowl_quat_kinect
+            
             self.bowl_frame = self.bowl_frame_kinect
             self.bowl_pos = self.bowl_pos_kinect
             self.bowl_quat = self.bowl_quat_kinect
@@ -229,10 +236,22 @@ class armReachAction(mpcBaseAction):
             while which_bowl != 'k' and which_bowl != 'm':
                 which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
             if which_bowl == 'k':
+                
+                print 'Kinect Provided Bowl Pos: '
+                print self.bowl_pos_kinect
+                print 'Kinect Provided Bowl Quaternions: '
+                print self.bowl_quat_kinect
+                
                 self.bowl_frame = self.bowl_frame_kinect
                 self.bowl_pos = self.bowl_pos_kinect
                 self.bowl_quat = self.bowl_quat_kinect
             elif which_bowl == 'm':
+                
+                print 'Manually Provided Bowl Pos: '
+                print self.bowl_pos_manual
+                print 'Manually Provided Bowl Quaternions: '
+                print self.bowl_quat_manua
+                
                 self.bowl_frame = self.bowl_frame_manual
                 self.bowl_pos = self.bowl_pos_manual
                 self.bowl_frame = self.bowl_quat_manual

@@ -34,10 +34,20 @@ class bowlPublisher():
 		self.head_pose_manual.header.seq = self.i
 		
 		#The manually set positions and orientations!!!
-		self.bowl_pose_manual.pose.position = [.5, .5, .5]
-		self.bowl_pose_manual.pose.orientation = [0, 0, 0, 1]
-		self.head_pose_manual.pose.position = [.5, .1, -.1]
-		self.head_pose_manual.pose.orientation = [0, 0, 0, 1]
+		(self.bowl_pose_manual.pose.position.x, 
+			self.bowl_pose_manual.pose.position.y, 
+			self.bowl_pose_manual.pose.position.z) = (.5, .5, .5)
+		(self.bowl_pose_manual.pose.orientation.x,
+			self.bowl_pose_manual.pose.orientation.y,
+			self.bowl_pose_manual.pose.orientation.z,
+			self.bowl_pose_manual.pose.orientation.w) = (0, 0, 0, 1)
+		(self.head_pose_manual.pose.position.x,
+			self.head_pose_manual.pose.position.y,
+			self.head_pose_manual.pose.position.z) = (.5, .1, -.1)
+		(self.head_pose_manual.pose.orientation.x,
+			self.head_pose_manual.pose.orientation.y,
+			self.head_pose_manual.pose.orientation.z,
+			self.head_pose_manual.pose.orientation.w) = (0, 0, 0, 1)
 
 
 	def publish(self):
