@@ -4,11 +4,12 @@ Healthcare Robotics Lab
 Summer 2015 Project
 -------------------
 
-# Multimodal Anomaly Detection
+Multimodal Anomaly Detection
+----------------------------
 
-## Daehyung Park
-## Hyder Hasnain
-## Zackory Erickson
+    Daehyung Park - Research Mentor
+    Hyder Hasnain - Undergraduate
+    Zackory Erickson - Undergraduate
 
 
 ...
