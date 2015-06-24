@@ -9,7 +9,7 @@
 
     <rosparam command="load" file="$(find hrl_feeding_task)/params/mpc_params_pr2.yaml" />
     <rosparam command="load" file="$(find hrl_feeding_task)/params/pr2_config_params_l.yaml" />
-    <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_server.py" args="-a $(arg arm1)" output="screen"/>
+    <node name="arm_server" pkg="hrl_feeding_task" type="arm_reacher_feeding.py" args="-a $(arg arm1)" output="screen"/>
   
   
   <group ns="right" >
@@ -22,7 +22,7 @@
 
     <rosparam command="load" file="$(find hrl_feeding_task)/params/mpc_params_pr2.yaml" />
     <rosparam command="load" file="$(find hrl_feeding_task)/params/pr2_config_params_r.yaml" />
-    <node name="arm_helper_right" pkg="hrl_feeding_task" type="arm_reacher_helper_right.py" args="-a $(arg arm2)" output="screen"/>
+    <!--node name="arm_helper_right" pkg="hrl_feeding_task" type="arm_reacher_helper_right.py" args="-a $(arg arm2)" output="screen"--/>
   </group>
 
 
