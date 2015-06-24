@@ -81,6 +81,8 @@ class visionTracker:
                 endPoints, linearError = linearPath.calcLinearPath(marker.history, verbose=False, plot=False)
 
                 radius, centerPoint, normal, circularError, synthetic = circularPath.calcCircularPath(marker.history, normal=None, maxRadius=10, verbose=False, plot=False)
+                if radius > 0.75:
+                    continue
 
                 # Compare whether the linear or circular path provides a better fit
                 if linearError < circularError:

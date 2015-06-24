@@ -19,11 +19,16 @@
     <depend package="tf"/>
     <depend package="geometry_msgs"/>
 
+    <depend package="sensor_msgs"/>
+    <depend package="visualization_msgs"/>
+    <depend package="ar_track_alvar"/>
+    <depend package="image_geometry"/>
+    <depend package="cv_bridge"/>
 
     <depend package="hrl_lib"/>
 
     <depend package="sandbox_dpark_darpa_m3"/>
-    
+
 </package>
 
 

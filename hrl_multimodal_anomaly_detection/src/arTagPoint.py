@@ -75,18 +75,12 @@ class arTagPoint:
     def getAllRecentPoints(self):
         if self.markerRecentCount() == 0:
             return None
-        points = []
-        for i in xrange(self.markerRecentCount()):
-            points.append(self.getRecentPoint(i))
-        return points
+        return [self.getRecentPoint(i) for i in xrange(self.markerRecentCount())]
 
     def getAllMarkersWithHistory(self):
         if len(self.markers) <= 0:
             return None
-        markerSet = []
-        for marker in self.markers.values():
-            markerSet.append(marker)
-        return markerSet
+        return [marker for marker in self.markers.values()]
 
     def markerRecentCount(self):
         if self.recentMarkers is None:
