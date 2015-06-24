@@ -113,13 +113,13 @@ class armReachAction(mpcBaseAction):
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-    	self.timeoutsScooping = [20, 7, 4, 4, 4]
+    	self.timeoutsScooping = [17, 10, 4, 4, 4]
         self.timeoutsFeeding = [10, 7, 5]
 
         #Paused used between each motion
         #... for automatic movement
-        self.pausesScooping = self.timeoutsScooping
-        self.pausesFeeding = self.timeoutsFeeding
+        self.pausesScooping = [1, 1, 1, 1, 1]
+        self.pausesFeeding = [1, 1, 1]
 
     	print "Calculated quaternions: \n"
     	print "leftArmScoopingQuats -"
