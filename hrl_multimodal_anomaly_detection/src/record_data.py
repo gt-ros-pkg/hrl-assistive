@@ -524,7 +524,6 @@ class ADL_log:
             rospy.wait_for_service("/arm_reach_enable")
             self.armReachAction = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
             rospy.loginfo("arm reach server connected!!")
-            startClient = self.armReachAction()
 
     def task_cmd_input(self, subject=None, task=None, actor=None):
         confirm = False
@@ -602,7 +601,7 @@ class ADL_log:
                 ## ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
                 ## if ans == 'y':
                 confirm = True
-                
+
 
     def init_log_file(self, subject=None, task=None, actor=None):
 

@@ -23,15 +23,16 @@ class dataRecord():
 
     def __init__(self):
 
-        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION,  ft=self.FT, kinematics=self.KINEMATICS,  manip=self.MANIP, test_mode=self.TEST_MODE)
-
         self.subject = raw_input("Enter subject name: ")
         self.task = raw_input("Enter task name: ")
         self.actor = raw_input("Enter actor name: ")
         self.trial_name = raw_input("Enter trial name: ")
 
+        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION,  ft=self.FT, kinematics=self.KINEMATICS,  manip=self.MANIP, test_mode=self.TEST_MODE)
+
         self.log.init_log_file(self.subject, self.task, self.actor)
 
+        #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
         repeatAns = raw_input("Change trial name before starting? [y/n]")
         while repeatAns != 'n':
             self.trial_name = raw_input("Enter trial name: ")
