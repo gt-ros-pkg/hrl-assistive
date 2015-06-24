@@ -298,7 +298,7 @@ class armReachAction(mpcBaseAction):
         runScooping = True
         while runScooping:
             print "Initializing left arm for scooping... "
-            self.setPostureGoal(self.leftArmInitialJointAnglesScooping)
+            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
 
             print "Current joint angles: "
             print self.getJointAngles()
@@ -390,7 +390,7 @@ class armReachAction(mpcBaseAction):
         runFeeding = True
         while runFeeding:
             print "Initializing left arm for feeding... "
-            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding)
+            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
 
             print "Current joint angles: "
             print self.getJointAngles()
@@ -495,10 +495,10 @@ class armReachAction(mpcBaseAction):
                 initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
             if initKind == 'f':
                 print "Initializing left arm for feeding"
-                self.setPostureGoal(self.leftArmInitialJointAnglesFeeding)
+                self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
             elif initKind == 's':
                 print "Initializing left arm for scooping"
-                self.setPostureGoal(self.leftArmInitialJointAnglesScooping)
+                self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
         initRight = raw_input("Initialize right arm joint angles? [y/n]")
         if initRight == 'y':
             initKind = raw_input("Initialize for holding bowl or folding up? [b/f]")
@@ -507,10 +507,10 @@ class armReachAction(mpcBaseAction):
                 initKind = raw_input("Initialize for holding bowl or folding up? [b/f]")
             if initKind == 'b':
                 print "Initializing for holding bowl"
-                self.setPostureGoalRight(self)
+                self.setPostureGoalRight(self.rightArmInitialJointAnglesHoldingBowl)
             elif initKind == 'f':
                 print "Initializing for folding up out of the way"
-                sel.setPostureGoalRight(self)
+                self.setPostureGoalRight(self.rightArmInitialJointAnglesFoldingUp)
         print "initialization completed"
 
     def run(self):
