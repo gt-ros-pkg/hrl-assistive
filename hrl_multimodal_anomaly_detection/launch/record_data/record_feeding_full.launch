@@ -1,0 +1,13 @@
+<launch>
+
+	<arg name="run_feeding" default="false"/>
+
+	<node name="local_data_record" pkg="hrl_multimodal_anomaly_detection" type="local_data_record.py" output="screen" />
+
+	<group if="$(arg run_feeding)" >
+		<node name="arm_reacher_client" pkg="hrl_multimodal_anomaly_detection" type="arm_reacher_client.py" />
+	</group>
+
+    <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.120 --rate 50" respawn="true" />
+    
+</launch>

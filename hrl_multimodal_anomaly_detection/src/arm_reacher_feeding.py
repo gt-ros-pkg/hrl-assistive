@@ -65,7 +65,7 @@ class armReachAction(mpcBaseAction):
         self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -3.141, 0, -1.570]
         self.rightArmInitialJointAnglesHoldingBowl = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFoldingUp = [0, 0, 0, 0, 0, 0, 0]
-	#^^ THESE NEED TO BE UPDATED!!!
+        #^^ THESE NEED TO BE UPDATED!!!
 
         #Variables...! #
         armReachAction.iteration = 0
@@ -122,12 +122,12 @@ class armReachAction(mpcBaseAction):
         self.pausesFeeding = self.timeoutsFeeding
 
     	print "Calculated quaternions: \n"
-	print "leftArmScoopingQuats -"
-    	print self.leftArmScoopingQuats
-	print "leftArmFeedingQuats -"
-	print self.leftArmFeedingQuats
-	print "leftArmStopQuats -"
-	print self.leftArmStopQuats
+    	print "leftArmScoopingQuats -"
+        print self.leftArmScoopingQuats
+    	print "leftArmFeedingQuats -"
+    	print self.leftArmFeedingQuats
+    	print "leftArmStopQuats -"
+    	print self.leftArmStopQuats
 
         try:
                 print "--------------------------------"
@@ -174,12 +174,6 @@ class armReachAction(mpcBaseAction):
             [data.pose.position.y], [data.pose.position.z]])
         self.bowl_quat_manual = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
-        #print '-----------------------------------------------------'
-        #print 'Manually Provided Bowl Pos: '
-        #print self.bowl_pos_manual
-        #print 'Manually Provided Bowl Quaternions: '
-        #print self.bowl_quat_manual
-        #print '-----------------------------------------------------'
 
     def bowlPoseKinectCallback(self, data):
 
@@ -191,9 +185,6 @@ class armReachAction(mpcBaseAction):
             [data.pose.position.z + self.kinectBowlFoundPosOffsets[2]]])
         self.bowl_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
-        #print '-----------------------------------------------------'
-        
-        #print '-----------------------------------------------------'
 
     def headPoseManualCallback(self, data):
 
@@ -257,7 +248,9 @@ class armReachAction(mpcBaseAction):
                 self.bowl_frame = self.bowl_quat_manual
         else:
             print "No bowl information available, publish info before running client/run again!! "
-            sys.exit()
+            
+            return False
+            #sys.exit()
 
     def chooseHeadPose(self):
 
@@ -380,6 +373,8 @@ class armReachAction(mpcBaseAction):
 
         print "Done running scooping!"
 
+        return True
+
     def feeding(self):
 
         self.chooseHeadPose()
@@ -447,6 +442,8 @@ class armReachAction(mpcBaseAction):
                 runFeeding = False
 
         print "Done running feeding!"
+
+        return True
 
     def stopCallback(self, msg):
 

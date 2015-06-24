@@ -1,15 +1,15 @@
 <launch>
   
-    <arg name="arm1" default="l"/>
+  <arg name="arm1" default="l"/>
 
-    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
-      <param name="tip_name" value="l_gripper_spoon_frame" />
-      <param name="root_name" value="torso_lift_link" />
-    </node>
+  <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
+    <param name="tip_name" value="l_gripper_spoon_frame" />
+    <param name="root_name" value="torso_lift_link" />
+  </node>
 
-    <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/mpc_params_pr2.yaml" />
-    <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/pr2_config_params_l.yaml" />
-    <node name="arm_reacher_feeding" pkg="hrl_multimodal_anomaly_detection" type="arm_reacher_feeding.py" args="-a $(arg arm1)" output="screen"/>
+  <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/mpc_params_pr2.yaml" />
+  <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/pr2_config_params_l.yaml" />
+  <node name="arm_reacher_feeding" pkg="hrl_multimodal_anomaly_detection" type="arm_reacher_feeding.py" args="-a $(arg arm1)" output="screen"/>
   
   
   <group ns="right" >
@@ -26,6 +26,7 @@
   
   </group>
 
+  <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.120 --rate 50" respawn="true" />
 
 </launch>
 

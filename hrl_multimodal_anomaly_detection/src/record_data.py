@@ -602,6 +602,7 @@ class ADL_log:
                 ## ans=raw_input("Enter y to confirm that log file is:  "+self.file_name+"\n: ")
                 ## if ans == 'y':
                 confirm = True
+                
 
     def init_log_file(self, subject=None, task=None, actor=None):
 

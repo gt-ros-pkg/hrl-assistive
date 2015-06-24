@@ -61,9 +61,7 @@ Launch data recording:
     1) rosrun hrl_multimodal_anomaly_detection local_data_record.py
         *) How it works...
             *) Launches local data recording node, reads recording settings and inputs
-            *) Launches record_data stuff, which in turn enables the arm_reach_enable client
-                ... and enables/starts the arm_reacher_feeding server
-            *) At any time during running the feeding code, the data recording can be independently
-                ... stopped, and if the local_data_record node is restarted while the arm_reacher_feeding
-                ... server keeps running, the arm_reach_enable client will be re-activated and will 
-                ... restart the arm_reacher_feeding service
+            *) Launches record_data stuff, which in turn enables the arm_reach_enable ...
+               ... client and enables/starts the arm_reacher_feeding server
+            *) Once arm_reacher_feeding tasks are completed, record_data completes ...
+               ... recording and closes log file

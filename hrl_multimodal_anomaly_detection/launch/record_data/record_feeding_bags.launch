@@ -1,0 +1,46 @@
+<launch>
+
+  <arg name="fname" default="feeding_hrl"/>
+
+
+  <node pkg="rosbag" type="record" name="rosbag" args="record -o $(find hrl_anomaly_detection)/data/$(arg fname)
+                                                       /tf
+                                                       /joint_states
+                                                       /l_arm_controller/command
+                                                       /l_arm_controller/follow_joint_trajectory/cancel
+                                                       /l_arm_controller/follow_joint_trajectory/feedback
+                                                       /l_arm_controller/follow_joint_trajectory/goal
+                                                       /l_arm_controller/follow_joint_trajectory/result
+                                                       /l_arm_controller/follow_joint_trajectory/status
+                                                       /l_arm_controller/joint_trajectory_action/cancel
+                                                       /l_arm_controller/joint_trajectory_action/feedback
+                                                       /l_arm_controller/joint_trajectory_action/goal
+                                                       /l_arm_controller/joint_trajectory_action/result
+                                                       /l_arm_controller/joint_trajectory_action/status
+                                                       /l_arm_controller/state
+                                                       /accelerometer/l_gripper_motor
+                                                       /ft/l_gripper_motor
+                                                       /feeding/raw_audio
+                                                       /audio_analysis
+                                                       /Accel_result
+                                                       /Force_result
+                                                       /Torque_result
+                                                       /emergency
+                                                       /pups
+                                                       /Continue_message
+                                                       /Main_Control
+                                                       /task_check
+                                                       /head_check
+                                                       /head_check_confirm
+                                                       /base_controller/command
+                                                       /feedback
+                                                       /test_head_pose
+                                                       /RYDS_BowlConfirmation
+                                                       /haptic_mpc/goal_pose
+                                                       /haptic_mpc/weights
+                                                       /haptic_mpc/goal_posture
+                                                       /right/haptic_mpc/goal_pose
+                                                       /right/haptic_mpc/weights
+                                                       /right/haptic_mpc/goal_posture
+                                                       " output="screen"/>
+</launch>
