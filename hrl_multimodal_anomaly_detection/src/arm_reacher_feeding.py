@@ -2,7 +2,7 @@
 
 import roslib
 roslib.load_manifest('sandbox_dpark_darpa_m3')
-roslib.load_manifest('hrl_feeding_task')
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy
 import numpy as np, math
 import time
@@ -14,7 +14,7 @@ import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
+from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
 from pr2_controllers_msgs.msg import JointTrajectoryGoal
@@ -91,13 +91,14 @@ class armReachAction(mpcBaseAction):
                                               [90, 0, -90],
                                               [90, 0, -90]])
 
+        self.leftArmStopPos = np.array([[.7, .7, .5]])
+        self.leftArmStopEulers = np.array([[90, 0, 0]])
+
         #converts the array of eulers to an array of quats
 
         self.leftArmScoopingQuats = self.euler2quatArray(self.leftArmScoopingEulers)
         self.leftArmFeedingQuats = self.euler2quatArray(self.leftArmFeedingEulers)
-
-        self.stopPos = np.array([[.7, .7, .5]])
-        self.stopEulers = np.array([[90, 0, 30]])
+        self.leftArmStopQuats = self.euler2quatArray(self.leftArmStopEulers)
 
         #Declares bowl positions options
         self.bowl_pos_manual = None
@@ -122,22 +123,22 @@ class armReachAction(mpcBaseAction):
     	print "Calculated quaternions:"
     	print self.bowlQuatOffsets
 
-        # try:
-        #         print "--------------------------------"
-        #         raw_input("Register bowl &  head position! Then press Enter \m")
-        #         #self.tf_lstnr.waitForTransform('/torso_lift_link', 
-        #               'head_frame', rospy.Time.now(), rospy.Duration(10))
-        #         (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 
-        #                                                                       'head_frame', 
-        #                                                                       rospy.Time(0))
-        #         print "Recived head position: \n"
-        #         print self.headPos
-        #         print self.headQuat
-        #         print "--------------------------------"
-        #         raw_input("Press Enter to confirm.")
-        #         print "--------------------------------"
-        # except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        #         print "Oops, can't get head_frame tf info!, trying again :)"
+        try:
+                print "--------------------------------"
+                #raw_input("Register bowl &  head position! Then press Enter \m")
+                #self.tf_lstnr.waitForTransform('/torso_lift_link', 
+                      #'head_frame', rospy.Time.now(), rospy.Duration(10))
+                (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 
+                                                                              'head_frame', 
+                                                                              rospy.Time(0))
+                print "Recived Kinect provided head position: \n"
+                print self.headPos
+                print self.headQuat
+                print "--------------------------------"
+                #raw_input("Press Enter to confirm.")
+                #print "--------------------------------"
+        except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print "Oops, can't get head_frame tf info from Kinect! \n Will try to use manual!"
 
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
@@ -434,15 +435,15 @@ class armReachAction(mpcBaseAction):
         posStopL = Point()
         quatStopL = Quaternion()
 
-        print "Moving to safe position "
-        (posStopL.x, posStopL.y, posStopL.z) = (self.stopPos[0][0], 
-            self.stopPos[0][1], 
-            self.stopPos[0][2])
-        (quatStopL.x, quatStopL.y, quatStopL.z, quatStopL.w) = (self.stopQuatOffsets[0][0], 
-            self.stopQuatOffsets[0][1], 
-            self.stopQuatOffsets[0][2], 
-            self.stopQuatOffsets[0][3]
-        self.setOrientGoal(posStop, quatStop, 10)
+        print "Moving left arm to safe position "
+        (posStopL.x, posStopL.y, posStopL.z) = (self.leftArmStopPos[0][0], 
+            self.leftArmStopPos[0][1], 
+            self.leftArmStopPos[0][2])
+        (quatStopL.x, quatStopL.y, quatStopL.z, quatStopL.w) = (self.leftArmStopQuats[0][0], 
+            self.leftArmStopQuats[0][1], 
+            self.leftArmStopQuats[0][2], 
+            self.leftArmStopQuats[0][3])
+        self.setOrientGoal(posStopL, quatStopL, 10)
 
     #converts an array of euler angles (in degrees) to array of quaternions
     def euler2quatArray(self, eulersIn): 
