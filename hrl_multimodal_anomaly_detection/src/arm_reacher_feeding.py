@@ -61,10 +61,11 @@ class armReachAction(mpcBaseAction):
             print "Oops, can't connect to right arm server!"
 
         #Stored initialization joint angles
-        self.leftArmInitialJointAnglesScooping = []
-        self.leftArmInitialJointAnglesFeeding = []
-        self.rightArmInitialJointAnglesHoldingBowl = []
-        self.rightArmInitialJointAnglesFoldingUp = []
+        self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -3.141, 0, -1.570]
+        self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -3.141, 0, -1.570]
+        self.rightArmInitialJointAnglesHoldingBowl = [0, 0, 0, 0, 0, 0, 0]
+        self.rightArmInitialJointAnglesFoldingUp = [0, 0, 0, 0, 0, 0, 0]
+	#^^ THESE NEED TO BE UPDATED!!!
 
         #Variables...! #
         armReachAction.iteration = 0
@@ -120,8 +121,13 @@ class armReachAction(mpcBaseAction):
         self.pausesScooping = self.timeoutsScooping
         self.pausesFeeding = self.timeoutsFeeding
 
-    	print "Calculated quaternions:"
-    	print self.bowlQuatOffsets
+    	print "Calculated quaternions: \n"
+	print "leftArmScoopingQuats -"
+    	print self.leftArmScoopingQuats
+	print "leftArmFeedingQuats -"
+	print self.leftArmFeedingQuats
+	print "leftArmStopQuats -"
+	print self.leftArmStopQuats
 
         try:
                 print "--------------------------------"
@@ -143,11 +149,11 @@ class armReachAction(mpcBaseAction):
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             if self.getJointAngles() != []:
-            print "--------------------------------"
-            print "Current joint angles"
-            print self.getJointAngles()
-            print "Current pose"
-            print self.getEndeffectorPose()
+                print "--------------------------------"
+                print "Current left arm joint angles"
+                print self.getJointAngles()
+                print "Current left arm pose"
+                print self.getEndeffectorPose()
                 print "--------------------------------"
                 break
 
@@ -183,7 +189,7 @@ class armReachAction(mpcBaseAction):
         self.bowl_pos_kinect = np.matrix([[data.pose.position.x + self.kinectBowlFoundPosOffsets[0]],
             [data.pose.position.y + self.kinectBowlFoundPosOffsets[1]],
             [data.pose.position.z + self.kinectBowlFoundPosOffsets[2]]])
-        self.bowl_quat_kinect = np.matrix([ data.pose.orientation.x], [data.pose.orientation.y],
+        self.bowl_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
         print '-----------------------------------------------------'
         print 'Kinect Provided Bowl Pos: '
