@@ -61,8 +61,8 @@ class armReachAction(mpcBaseAction):
             print "Oops, can't connect to right arm server!"
 
         #Stored initialization joint angles
-        self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -3.141, 0, -1.570]
-        self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -3.141, 0, -1.570]
+        self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
+        self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
         self.rightArmInitialJointAnglesHoldingBowl = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFoldingUp = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
@@ -308,9 +308,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[0][1],
                 self.leftArmScoopingQuats[0][2],
                 self.leftArmScoopingQuats[0][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[0])
-            print "Pausing for {} seconds ".format(pausesL[0])
-            time.sleep(pausesL[0])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[0])
+            print "Pausing for {} seconds ".format(self.pausesScooping[0])
+            time.sleep(self.pausesScooping[0])
 
             print "#2 Moving down into bowl... "
             posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[1][0],
@@ -320,9 +320,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[1][1],
                 self.leftArmScoopingQuats[1][2],
                 self.leftArmScoopingQuats[1][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[1])
-            print "Pausing for {} seconds ".format(pausesL[1])
-            time.sleep(pausesL[1])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[1])
+            print "Pausing for {} seconds ".format(self.pausesScooping[1])
+            time.sleep(self.pausesScooping[1])
 
             print "#3 Moving forward in bowl... "
             posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[2][0],
@@ -332,9 +332,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[2][1],
                 self.leftArmScoopingQuats[2][2],
                 self.leftArmScoopingQuats[2][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[2])
-            print "Pausing for {} seconds ".format(pausesL[2])
-            time.sleep(pausesL[2])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[2])
+            print "Pausing for {} seconds ".format(self.pausesScooping[2])
+            time.sleep(self.pausesScooping[2])
 
             print "#4 Scooping in bowl... "
             posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[3][0],
@@ -344,9 +344,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[3][1],
                 self.leftArmScoopingQuats[3][2],
                 self.leftArmScoopingQuats[3][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[3])
-            print "Pausing for {} seconds ".format(pausesL[3])
-            time.sleep(pausesL[3])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[3])
+            print "Pausing for {} seconds ".format(self.pausesScooping[3])
+            time.sleep(self.pausesScooping[3])
 
             print "#5 Moving out of bowl... "
             posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[4][0],
@@ -356,9 +356,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[4][1],
                 self.leftArmScoopingQuats[4][2],
                 self.leftArmScoopingQuats[4][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[4])
-            print "Pausing for {} seconds ".format(pausesL[4])
-            time.sleep(pausesL[4])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[4])
+            print "Pausing for {} seconds ".format(self.pausesScooping[4])
+            time.sleep(self.pausesScooping[4])
 
             print "Scooping action completed"
 
@@ -402,11 +402,11 @@ class armReachAction(mpcBaseAction):
                 self.leftArmFeedingQuats[0][1],
                 self.leftArmFeedingQuats[0][2],
                 self.leftArmFeedingQuats[0][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[0])
-            print "Pausing for {} seconds ".format(pausesL[0])
-            time.sleep(pausesL[0])
+            self.setOrientGoal(posL, quatL, self.timeoutsFeeding[0])
+            print "Pausing for {} seconds ".format(self.pausesFeeding[0])
+            time.sleep(self.pausesFeeding[0])
 
-            print "#1 Moving into mouth... "
+            print "#2 Moving into mouth... "
             posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[1][0],
                 self.bowl_pos[1] + self.leftArmFeedingPos[1][1],
                 self.bowl_pos[2] + self.leftArmFeedingPos[1][2])
@@ -414,11 +414,11 @@ class armReachAction(mpcBaseAction):
                 self.leftArmFeedingQuats[1][1],
                 self.leftArmFeedingQuats[1][2],
                 self.leftArmFeedingQuats[1][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[1])
-            print "Pausing for {} seconds ".format(pausesL[1])
-            time.sleep(pausesL[1])
+            self.setOrientGoal(posL, quatL, self.timeoutsFeeding[1])
+            print "Pausing for {} seconds ".format(self.pausesFeeding[1])
+            time.sleep(self.pausesFeeding[1])
 
-            print "#2 Moving away from mouth... "
+            print "#3 Moving away from mouth... "
             posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[2][0],
                 self.bowl_pos[1] + self.leftArmFeedingPos[2][1],
                 self.bowl_pos[2] + self.leftArmFeedingPos[2][2])
@@ -426,9 +426,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmFeedingQuats[2][1],
                 self.leftArmFeedingQuats[2][2],
                 self.leftArmFeedingQuats[2][3])
-            self.setOrientGoal(posL, quatL, timeoutsL[2])
-            print "Pausing for {} seconds ".format(pausesL[2])
-            time.sleep(pausesL[2])       
+            self.setOrientGoal(posL, quatL, self.timeoutsFeeding[2])
+            print "Pausing for {} seconds ".format(self.pausesFeeding[2])
+            time.sleep(self.pausesFeeding[2])       
 
             print "Feeding action completed"
 
