@@ -50,45 +50,84 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
 
 if __name__ == '__main__':
 
-    #Current method uses CSV file (Pandas format)
     current_user = getpass.getuser()
     folder_name = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
-    change_folder = raw_input("Current folder is: %s, press [y] to change ", % folder_name)
+    change_folder = raw_input("Current folder is: %s, press [y] to change " % folder_name)
     if change_folder == 'y':
         folder_name = raw_input("Enter new folder name and press [Enter] ")
-    csv_file_name = raw_input("Enter exact name of csv file, ex: [test.csv] ")
-    csv_file_path = folder_name + csv_file_name
+    # Current PICKLE file format method    
+    pkl_file_name = raw_input("Enter exact name of pkl file, ex: [test.pkl] ")
+    pkl_file_path = folder_name+pkl_file_name
+    print os.path.isfile(pkl_file_path)
+    d = ut.load_pickle(pkl_file_path)
 
-    df = pd.read_csv(csv_file_name)
-
-    print "Read CSV file as :"
-    print df
-
-    #Old method uses PKL file (Pickle format)
-    # pkl_file = raw_input("Enter exact name of pkl file, ex: './test.pkl: '")
-    # #pkl_file = './noise.pkl'
-    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/s_cup_human_b1.pkl'
-    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/drawer_cup_human_b3.pkl'
-    # ## pkl_file = '/home/dpark/svn/robot1/src/projects/anomaly/test_data/cup_cup_human_b1.pkl'
-    # print os.path.isfile(pkl_file)
-    # d = ut.load_pickle(pkl_file)
-
-    #** 6/20/15 Hyder – CAN'T EXTRACT CSV INFO BECAUSE I HAVEN'T TESTED RECORDING...
-    #** ... CSV FILES YET USING NEW RECORD_DATA.PY CODE. REMOVE WARNING WHEN FIXED!!!
+    # Alternate PANDAS file format method
+    # csv_file_name = raw_input("Enter exact name of csv file, ex: [test.csv] ")
+    # csv_file_path = folder_name + csv_file_name
+    # csv_file_path = csv_file_path.replace("\\", "\\\\")
+    # df = pd.read_csv(csv_file_path)
+    # print "Read CSV file as :"
+    # print df
 
     print d.keys()
     ft = True
     audio = True
+    kinematics = True
 
     if ft:
         ftime = d.get('ft_time',None)
         force = d.get('ft_force_raw',None)
+        torque = d.get('ft_torque_raw', None)
 
-        aForce = np.squeeze(force).T
-        print aForce.shape
+        # aForce = np.squeeze(force).T
+        # print aForce.shape
+
+        force_array = np.array(force)
+        torque_array = np.array(torque)
 
         pp.figure()
-        pp.plot(ftime, aForce[2])
+        pp.subplot(311)
+        pp.plot(ftime, force_array[:,0])
+        pp.title('Force X')
+
+        pp.subplot(312)
+        pp.plot(ftime, force_array[:,1])
+        pp.title('Force Y')
+
+        pp.subplot(313)
+        pp.plot(ftime, force_array[:,2])
+        pp.title('Force Z')
+
+        pp.show()
+
+    if kinematics:
+        kinematics_time = d.get('kinematics_time',None)
+        l_end_effector_pos = d.get('l_end_effector_pos')
+        l_end_effector_quat = d.get('l_end_effector_quat')
+        r_end_effector_pos = d.get('r_end_effector_pos')
+        r_end_effector_quat = d.get('r_end_effector_quat')
+
+        l_end_effector_pos_array = np.array(l_end_effector_pos)
+        l_end_effector_quat_array = np.array(l_end_effector_quat) 
+        r_end_effector_pos_array = np.array(r_end_effector_pos)
+        r_end_effector_quat_array = np.array(r_end_effector_quat) 
+
+        pp.figure()
+        pp.subplot(321)
+        pp.plot(kinematics_time, r_end_effector_pos_array[:,0], 'r')
+        pp.plot(ftime, force_array[:,0], 'y')
+        pp.title('R EE X - Red, F X - Yellow')
+
+        pp.subplot(322)
+        pp.plot(kinematics_time, r_end_effector_pos_array[:,1], 'r')
+        pp.plot(ftime, force_array[:,1], 'y')
+        pp.title('R EE Y - Red, F Y - Yellow')
+
+        pp.subplot(323)
+        pp.plot(kinematics_time, r_end_effector_pos_array[:,2], 'r')
+        pp.plot(ftime, force_array[:,2], 'y')
+        pp.title('R EE Z - Red, F Z - Yellow')
+
         pp.show()
 
     if audio:
@@ -124,32 +163,30 @@ if __name__ == '__main__':
 
 
         pp.figure()
-        pp.subplot(511)
+        pp.subplot(411)
         pp.plot(audio_data,'b.')
-	pp.xlabel('Time')
-	pp.ylabel('Audio Data... Amplitude?')
+        pp.xlabel('Time')
+        pp.ylabel('Audio Data... Amplitude?')
         pp.title("Audio Data")
 
-        pp.subplot(512)
+        pp.subplot(412)
         xs = audio_freq[:audio_chunk/16]
         ys = np.abs(audio_amp[:][:audio_chunk/16])
         ys = np.multiply(20,np.log10(ys))
         pp.plot(xs,ys,'y')
-	pp.xlabel('Audio freqs')
-	pp.ylabel('Amplitudes')
+        pp.xlabel('Audio freqs')
+        pp.ylabel('Amplitudes')
         pp.title("Audio Frequency and Amplitude")
-        
-	pp.subplot(513)
-	pp.plot(audio_freq, 'b')
-	pp.title('Raw audio_freq data')
 
-	pp.subplot(514)
-	pp.plot(audio_amp, 'y')
-	pp.title('Raw audio_amp data')
+        pp.subplot(413)
+        pp.plot(audio_freq, 'b')
+        pp.title('Raw audio_freq data')
 
-	pp.subplot(515)
-	pp.plot(audio_data, 'b')
-	pp.title('Raw audio_data data')
+        pp.subplot(414)
+        pp.plot(audio_amp, 'y')
+        pp.title('Raw audio_amp data')
+
+        pp.show()
 
 	#pp.subplot(616)
 	#p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))

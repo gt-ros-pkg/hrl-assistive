@@ -10,7 +10,7 @@ import tf
 from ar_track_alvar.msg import AlvarMarkers
 
 class arTagPoint:
-    def __init__(self, caller, targetFrame=None):
+    def __init__(self, caller, targetFrame=None, tfListener=None):
         # Recent Markers in last frame
         self.recentMarkers = None
         # All markers with past history
@@ -18,9 +18,13 @@ class arTagPoint:
         self.caller = caller
         # Transformations
         self.frameId = None
-        self.transformer = tf.TransformListener()
+        if tfListener is None:
+            self.transformer = tf.TransformListener()
+        else:
+            self.transformer = tfListener
         self.targetFrame = targetFrame
         self.transMatrix = None
+        self.updateNumber = 0
 
         # 'rostopic info /ar_pose_marker' -> 'rosmsg show ar_track_alvar/AlvarMarkers'
         rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.callback)
@@ -37,6 +41,7 @@ class arTagPoint:
         if self.frameId is None:
             self.frameId = self.recentMarkers[0].header.frame_id
             if self.targetFrame is not None:
+                self.transformer.waitForTransform(self.targetFrame, self.frameId, rospy.Time(0), rospy.Duration(5.0))
                 trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
                 self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
 
@@ -54,8 +59,11 @@ class arTagPoint:
             else:
                 marker.update(point)
 
+        self.updateNumber += 1
+
         # Call our caller now that new data has been collected
-        self.caller()
+        if self.caller is not None:
+            self.caller()
 
     def getRecentPoint(self, index):
         if index >= self.markerRecentCount():
@@ -67,18 +75,12 @@ class arTagPoint:
     def getAllRecentPoints(self):
         if self.markerRecentCount() == 0:
             return None
-        points = []
-        for i in xrange(self.markerRecentCount()):
-            points.append(self.getRecentPoint(i))
-        return points
+        return [self.getRecentPoint(i) for i in xrange(self.markerRecentCount())]
 
     def getAllMarkersWithHistory(self):
         if len(self.markers) <= 0:
             return None
-        markerSet = []
-        for marker in self.markers.values():
-            markerSet.append(marker)
-        return markerSet
+        return [marker for marker in self.markers.values()]
 
     def markerRecentCount(self):
         if self.recentMarkers is None:

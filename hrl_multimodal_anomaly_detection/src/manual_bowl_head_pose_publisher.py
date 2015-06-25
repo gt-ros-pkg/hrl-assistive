@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import roslib
+roslib.load_manifest("hrl_feeding_task")
+roslib.load_manifest("hrl_haptic_mpc")
+import rospy
+from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
+import std_msgs.msg
+
+
+class bowlPublisher():
+	def __init__(self):
+
+		#MAY NEED TO REMAP ROOT TOPIC NAME GROUP!
+		self.bowl_pub = rospy.Publisher('hrl_feeding_task/manual_bowl_location', PoseStamped, latch = True)
+		self.head_pub = rospy.Publisher('hrl_feeding_task/manual_head_position', PoseStamped, latch = True)
+		rospy.init_node('manual_bowl_head_pose_publisher', anonymous = True)
+		self.rate = rospy.Rate(10)
+		self.i = 0
+
+		#Trying to simplify code...
+		#Create PoseStamped() messages for bowl and head
+		self.bowl_pose_manual = PoseStamped()
+		self.head_pose_manual = PoseStamped()
+
+		#Instantiate each PoseStamped Header()
+		self.bowl_pose_manual.header = std_msgs.msg.Header()
+		self.head_pose_manual.header = std_msgs.msg.Header()
+		self.bowl_pose_manual.header.frame_id = '/torso_lift_link'
+		self.head_pose_manual.header.frame_id = '/torso_lift_link'
+		self.bowl_pose_manual.header.stamp = rospy.Time.now()
+		self.head_pose_manual.header.stamp = rospy.Time.now()
+		self.bowl_pose_manual.header.seq = self.i
+		self.head_pose_manual.header.seq = self.i
+		
+		#The manually set positions and orientations!!!
+		(self.bowl_pose_manual.pose.position.x, 
+			self.bowl_pose_manual.pose.position.y, 
+			self.bowl_pose_manual.pose.position.z) = (.806, .057, -.204)
+		(self.bowl_pose_manual.pose.orientation.x,
+			self.bowl_pose_manual.pose.orientation.y,
+			self.bowl_pose_manual.pose.orientation.z,
+			self.bowl_pose_manual.pose.orientation.w) = (0, 0, 0, 1)
+		(self.head_pose_manual.pose.position.x,
+			self.head_pose_manual.pose.position.y,
+			self.head_pose_manual.pose.position.z) = (.5, .1, -.1)
+		(self.head_pose_manual.pose.orientation.x,
+			self.head_pose_manual.pose.orientation.y,
+			self.head_pose_manual.pose.orientation.z,
+			self.head_pose_manual.pose.orientation.w) = (0, 0, 0, 1)
+
+
+	def publish(self):
+		while not rospy.is_shutdown():
+
+			self.bowl_pose_manual.header.stamp = rospy.Time.now()
+			self.head_pose_manual.header.stamp = rospy.Time.now()
+			self.bowl_pose_manual.header.seq = self.i
+			self.head_pose_manual.header.seq = self.i
+
+			self.bowl_pub.publish(self.bowl_pose_manual)
+			self.head_pub.publish(self.head_pose_manual)
+
+			rospy.loginfo(self.bowl_pose_manual)
+			rospy.loginfo(self.head_pose_manual)
+
+			self.i += 1 
+			self.rate.sleep()
+
+if __name__ == '__main__':
+	publisher = bowlPublisher()
+	try:
+		publisher.publish()
+	except rospy.ROSInterruptException:
+		pass

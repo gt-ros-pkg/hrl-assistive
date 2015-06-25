@@ -63,10 +63,7 @@ def calcLinearPath(data, verbose=False, plot=False):
 # y = np.mgrid[1:9:120j]
 # z = np.mgrid[-5:3:120j]
 
-# data = np.concatenate((x[:, np.newaxis],
-#                        y[:, np.newaxis],
-#                        z[:, np.newaxis]),
-#                       axis=1)
+# data = np.concatenate((x[:, np.newaxis], y[:, np.newaxis], z[:, np.newaxis]), axis=1)
 
 # Perturb with some Gaussian noise
 # data += np.random.normal(size=data.shape) * 0.4

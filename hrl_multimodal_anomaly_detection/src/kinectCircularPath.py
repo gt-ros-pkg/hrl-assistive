@@ -82,7 +82,7 @@ def calcCircularPath(data, normal=None, maxRadius=10, verbose=False, plot=False,
         print 'Radius:', radius, 'Center Point:', centerPoint, 'Error:', error
 
     # Verify that the approximated circle is close. If not, recreate a new path
-    if (radius > maxRadius or any(c > maxRadius for c in centerPoint)) and iteration < 10:
+    if (radius > maxRadius or any(c > maxRadius for c in centerPoint)) and iteration < 5:
         if verbose:
             print 'Unable to estimate a circle through data points. Attempting again.'
         # Slightly perturb a random data point in dataset
@@ -90,7 +90,7 @@ def calcCircularPath(data, normal=None, maxRadius=10, verbose=False, plot=False,
         j = random.randint(0, 2)
         data[i][j] = data[i][j] * 1.05
         return calcCircularPath(data, maxRadius=maxRadius, verbose=verbose, plot=plot, iteration=iteration+1)
-    elif iteration >= 3 and verbose:
+    elif iteration >= 5 and verbose:
         print 'Unable to converge to an adequate circular path.'
 
     # Synthetic Circle Data
