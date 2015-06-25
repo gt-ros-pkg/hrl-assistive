@@ -1090,7 +1090,7 @@ def animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, 
                 n = len(x_test1)
                 for i in range(n):
                     print "Visualize : ", i
-                    if i != 4: continue
+                    if i != 1: continue
                     lhm.simulation(x_test1[i], x_test2[i], min_ths, bSave=True)
     
 #-------------------------------------------------------------------------------------------------------
@@ -2251,9 +2251,10 @@ if __name__ == '__main__':
 
         animation(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
-                     opr='robot', attr='id', cov_mult=cov_mult[task], true_data=False)
+                     opr='robot', attr='id', cov_mult=cov_mult[task], true_data=True)
                         
         ## c0t1 - true=4, false=0
+        ## c0t2 - true=1, false=0
         ## c1t2 - true=2, false=0
                 
 

@@ -602,6 +602,7 @@ class ADL_log:
                 ## if ans == 'y':
                 confirm = True
 
+
     def init_log_file(self, subject=None, task=None, actor=None):
 
         #if self.test_mode is False:
