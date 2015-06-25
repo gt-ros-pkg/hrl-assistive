@@ -5,6 +5,7 @@ __author__ = 'zerickson'
 import cv2
 import math
 import rospy
+import random
 import numpy as np
 try :
     import sensor_msgs.point_cloud2 as pc2
@@ -38,9 +39,11 @@ class kanadeLucasPoint:
         self.lk_params = dict(winSize=(15,15), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
         # Variables to store past iteration output
         self.prevGray = None
-        self.prevFeats = None
+        self.currentIndex = 0
         # List of features we are tracking
-        self.features = None
+        self.activeFeatures = []
+        self.allFeatures = []
+        # self.features = []
         # PointCloud2 data used for determining 3D location from 2D pixel location
         self.pointCloud = None
         # Transformations
@@ -65,9 +68,11 @@ class kanadeLucasPoint:
         self.lGripY = None
         self.pinholeCamera = None
         self.rgbCameraFrame = None
+        self.box = None
 
         self.dbscan = DBSCAN(eps=2, min_samples=10)
         self.dbscan2D = DBSCAN(eps=0.6, min_samples=10)
+
         self.N = 30
 
         # XBox 360 Kinect
@@ -92,7 +97,7 @@ class kanadeLucasPoint:
     def getRecentPoint(self, index):
         if index >= self.markerRecentCount():
             return None
-        return self.features[index].recent3DPosition
+        return self.activeFeatures[index].recent3DPosition
 
     # Returns a dictionary, with keys as point indices and values as a 3D point
     def getAllRecentPoints(self):
@@ -107,15 +112,15 @@ class kanadeLucasPoint:
         return self.getNovelAndClusteredFeatures(returnFeatures=True)
 
     def markerRecentCount(self):
-        if self.features is None:
+        if self.activeFeatures is None:
             return 0
-        return len([feat for feat in self.features if feat.isNovel])
+        return len([feat for feat in self.activeFeatures if feat.isNovel])
 
     def getNovelAndClusteredFeatures(self, returnFeatures=False):
         # Cluster feature points
         points = []
         feats = []
-        for feat in self.features:
+        for feat in self.activeFeatures:
             if feat.isNovel:
                 points.append(feat.recent3DPosition)
                 feats.append(feat)
@@ -135,23 +140,19 @@ class kanadeLucasPoint:
         if self.lGripperTranslation is None:
             return None
 
-        # Used to verify that each point is within our defined box
-        box = self.boundingBox((self.lGripX, self.lGripY))
-
         if returnFeatures:
             # Return a list of features
-            return [feat for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, box)]
+            return [feat for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent3DPosition for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, box)}
+            return {feat.index: feat.recent3DPosition for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)}
 
     def determineGoodFeatures(self, imageGray):
-        # Determine a bounding box around spoon (or left gripper) to narrow search area
-        if self.lGripperTranslation is None:
+        if len(self.activeFeatures) >= self.N:
             return
 
-        # Find a bounding box
-        lowX, highX, lowY, highY = [int(x) for x in self.boundingBox((self.lGripX, self.lGripY))]
+        # Determine a bounding box around spoon (or left gripper) to narrow search area
+        lowX, highX, lowY, highY = self.box
         print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
@@ -159,75 +160,63 @@ class kanadeLucasPoint:
         print imageGray.shape
 
         # Take a frame and find corners in it
-        self.prevFeats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
+        feats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
 
         # Reposition features back into original image size
-        print self.prevFeats.shape
-        self.prevFeats[:, 0, 0] += lowX
-        self.prevFeats[:, 0, 1] += lowY
+        print feats.shape
+        feats[:, 0, 0] += lowX
+        feats[:, 0, 1] += lowY
+        feats = feats.tolist()
 
-        self.features = np.array([feature(i, self.prevFeats[i][0], self) for i in xrange(len(self.prevFeats))])
+        while len(self.activeFeatures) < self.N and len(feats) > 0:
+            feat = random.choice(feats)
+            newFeat = feature(self.currentIndex, feat[0], self)
+            self.activeFeatures.append(newFeat)
+            self.allFeatures.append(newFeat)
+            self.currentIndex += 1
+            feats.remove(feat)
 
     def opticalFlow(self, imageGray):
-        newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, self.prevFeats, None, **self.lk_params)
+        feats = []
+        for feat in self.activeFeatures:
+            feats.append([feat.recent2DPosition])
+        feats = np.array(feats, dtype=np.float32)
+
+        newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, feats, None, **self.lk_params)
         statusRemovals = [i for i, s in enumerate(status) if s == 0]
 
         # Update all features
-        for i, feat in enumerate(self.features):
+        for i, feat in enumerate(self.activeFeatures):
             feat.update(newFeats[i][0])
 
         # Remove all features that are no longer being tracked (ie. status == 0)
-        self.features = np.delete(self.features, statusRemovals, axis=0)
-        newFeats = np.delete(newFeats, statusRemovals, axis=0)
+        self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
+
+        # Remove all features outside the bounding box
+        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.recent2DPosition, self.box)]
 
         # Define features as novel if they meet a given criteria
-        for feat in self.features:
-            # Consider features that have traveled 15 cm
-            if feat.distance >= 0.15:
+        for feat in self.activeFeatures:
+            # Consider features that have traveled 5 cm
+            if feat.distance >= 0.05:
                 feat.isNovel = True
 
-        self.prevFeats = newFeats
-
     def drawOnImage(self, image):
-        # # Cluster feature points
-        # points = [feat.recent2DPosition for feat in self.features]# if feat.isNovel]
-        # if not points:
-        #     # No novel features
-        #     return image
-        # points = np.array(points)
-        #
-        # # Perform dbscan clustering
-        # X = StandardScaler().fit_transform(points)
-        # labels = self.dbscan2D.fit_predict(X)
-        #
-        # unique_labels = set(labels)
-        # colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))*255
-        # # Drop alpha channel
-        # colors = np.delete(colors, -1, 1)
-        # for k, col in zip(unique_labels, colors):
-        #     if k == -1:
-        #         # Black used for noise.
-        #         col = [0, 0, 0]
-        #     else:
-        #         continue
-        #
-        #     # Draw feature points
-        #     clusterPoints = points[labels==k]
-        #     for point in clusterPoints:
-        #         a, b = point
-        #         if a >= self.cameraWidth or b >= self.cameraHeight:
-        #             # Red used for features not within the camera's dimensions
-        #             col = [0, 0, 255]
-        #         cv2.circle(image, (a, b), 5, col, -1)
-
         # Draw all features
-        for feat in self.features:
+        for feat in self.activeFeatures:
             a, b = feat.recent2DPosition
-            cv2.circle(image, (a, b), 5, [0, 0, 0], -1)
+            cv2.circle(image, (a, b), 5, [0, 0, 255], -1)
+
+        # Draw an orange point on image for gripper
+        cv2.circle(image, (int(self.lGripX), int(self.lGripY)), 10, [0, 125, 255], -1)
+
+        # Draw a bounding box around spoon (or left gripper)
+        lowX, highX, lowY, highY = self.box
+        cv2.rectangle(image, (lowX, lowY), (highX, highY), color=[0, 150, 75], thickness=5)
 
         features = self.getNovelAndClusteredFeatures(returnFeatures=True)
         if features is None:
-            print 'no novel features to draw'
+            # print 'no novel features to draw'
             return image
 
         # Draw all novel and bounded box features
@@ -235,21 +224,13 @@ class kanadeLucasPoint:
             a, b = feat.recent2DPosition
             cv2.circle(image, (a, b), 5, [255, 125, 0], -1)
 
-
-        # Draw an orange point on image for gripper
-        cv2.circle(image, (int(self.lGripX), int(self.lGripY)), 10, [0, 125, 255], -1)
-
-        # Draw a bounding box around spoon (or left gripper)
-        lowX, highX, lowY, highY = self.boundingBox((self.lGripX, self.lGripY))
-        cv2.rectangle(image, (int(lowX), int(lowY)), (int(highX), int(highY)), color=[0, 150, 75], thickness=5)
-
         return image
 
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
         boxHalfWidth = self.cameraWidth/15.0
-        boxHalfHeight = self.cameraHeight/5.0
+        boxHalfHeight = self.cameraHeight/6.0
         px, py = point
 
         # Adjust box height to match spoon
@@ -294,7 +275,7 @@ class kanadeLucasPoint:
         marker.scale.y = 0.01
         marker.color.a = 1.0
         marker.color.b = 1.0
-        for feature in self.features:
+        for feature in self.activeFeatures:
             if not feature.isNovel:
                 continue
             x, y, depth = feature.recent3DPosition
@@ -328,7 +309,7 @@ class kanadeLucasPoint:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return None
         if any([math.isnan(v) for v in [px, py, depth]]):
-            # print 'NaN! Feature', ps, py, depth
+            # print 'NaN! Feature', px, py, depth
             return None
 
         xyz = None
@@ -354,8 +335,14 @@ class kanadeLucasPoint:
         # Convert to grayscale
         imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+        if self.lGripperTranslation is None:
+            return
+
+        # Used to verify that each point is within our defined box
+        self.box = [int(x) for x in self.boundingBox((self.lGripX, self.lGripY))]
+
         # Find frameId for transformations and determine a good set of starting features
-        if self.frameId is None or self.features is None:
+        if self.frameId is None or not self.activeFeatures:
             # Grab frame id for later transformations
             self.frameId = data.header.frame_id
             if self.targetFrame is not None:
@@ -368,7 +355,10 @@ class kanadeLucasPoint:
             self.prevGray = imageGray
             return
 
-        if len(self.features) > 0:
+        # Add new features to our feature tracker
+        self.determineGoodFeatures(imageGray)
+
+        if self.activeFeatures:
             self.opticalFlow(imageGray)
             if self.publish:
                 self.publishFeatures()
@@ -415,7 +405,7 @@ class feature:
         self.index = index
         self.kanadeLucas = kanadeLucas
         self.startPosition = None
-        self.recent2DPosition = np.array(position)
+        self.recent2DPosition = position
         self.recent3DPosition = None
         self.frame = 0
         self.distance = 0.0
