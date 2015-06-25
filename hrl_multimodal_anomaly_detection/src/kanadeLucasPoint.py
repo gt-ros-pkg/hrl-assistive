@@ -13,7 +13,6 @@ except:
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 from geometry_msgs.msg import Point, PointStamped
-from nav_msgs.msg import Odometry
 from roslib import message
 
 # Clustering
@@ -62,10 +61,12 @@ class kanadeLucasPoint:
         # Gripper data
         self.lGripperTranslation = None
         self.lGripperRotation = None
+        self.lGripX = None
+        self.lGripY = None
         self.pinholeCamera = None
         self.rgbCameraFrame = None
 
-        self.dbscan = DBSCAN(eps=5, min_samples=10)
+        self.dbscan = DBSCAN(eps=2, min_samples=10)
         self.dbscan2D = DBSCAN(eps=0.6, min_samples=10)
         self.N = 30
 
@@ -74,14 +75,13 @@ class kanadeLucasPoint:
         # rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
         # rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         # Kinect 2
-        # rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
-        # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        # rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-        # rospy.Subscriber('/l_gripper_palm_pose_ground_truth', Odometry, self.leftGripperCallback)
-        # PR2 Simulated
-        rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
         rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # PR2 Simulated
+        # rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
+        # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        # rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
 
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
@@ -125,16 +125,44 @@ class kanadeLucasPoint:
         X = StandardScaler().fit_transform(points)
         labels = self.dbscan.fit_predict(X)
 
+        # # Find the cluster closest to our gripper (To be continued possibly)
+        # unique_labels = set(labels)
+        # clusterPoints = points[labels==k]
+
+        if self.lGripperTranslation is None:
+            return None
+
+        # Used to verify that each point is within our defined box
+        box = self.boundingBox((self.lGripX, self.lGripY))
+
         if returnFeatures:
             # Return a list of features
-            return [feat for i, feat in enumerate(feats) if labels[i] != -1]
+            return [feat for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, box)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent3DPosition for i, feat in enumerate(feats) if labels[i] != -1}
+            return {feat.index: feat.recent3DPosition for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, box)}
 
     def determineGoodFeatures(self, imageGray):
+        # Determine a bounding box around spoon (or left gripper) to narrow search area
+        if self.lGripperTranslation is None:
+            return
+
+        # Find a bounding box
+        lowX, highX, lowY, highY = [int(x) for x in self.boundingBox((self.lGripX, self.lGripY))]
+        print lowX, highX, lowY, highY, imageGray.shape
+
+        # Crop imageGray to bounding box size
+        imageGray = imageGray[lowY:highY, lowX:highX]
+        print imageGray.shape
+
         # Take a frame and find corners in it
         self.prevFeats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
+
+        # Reposition features back into original image size
+        print self.prevFeats.shape
+        self.prevFeats[:, 0, 0] += lowX
+        self.prevFeats[:, 0, 1] += lowY
+
         self.features = np.array([feature(i, self.prevFeats[i][0], self) for i in xrange(len(self.prevFeats))])
 
     def opticalFlow(self, imageGray):
@@ -158,45 +186,58 @@ class kanadeLucasPoint:
         self.prevFeats = newFeats
 
     def drawOnImage(self, image):
-        # Cluster feature points
-        points = [feat.recent2DPosition for feat in self.features]# if feat.isNovel]
-        if not points:
-            # No novel features
+        # # Cluster feature points
+        # points = [feat.recent2DPosition for feat in self.features]# if feat.isNovel]
+        # if not points:
+        #     # No novel features
+        #     return image
+        # points = np.array(points)
+        #
+        # # Perform dbscan clustering
+        # X = StandardScaler().fit_transform(points)
+        # labels = self.dbscan2D.fit_predict(X)
+        #
+        # unique_labels = set(labels)
+        # colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))*255
+        # # Drop alpha channel
+        # colors = np.delete(colors, -1, 1)
+        # for k, col in zip(unique_labels, colors):
+        #     if k == -1:
+        #         # Black used for noise.
+        #         col = [0, 0, 0]
+        #     else:
+        #         continue
+        #
+        #     # Draw feature points
+        #     clusterPoints = points[labels==k]
+        #     for point in clusterPoints:
+        #         a, b = point
+        #         if a >= self.cameraWidth or b >= self.cameraHeight:
+        #             # Red used for features not within the camera's dimensions
+        #             col = [0, 0, 255]
+        #         cv2.circle(image, (a, b), 5, col, -1)
+
+        # Draw all features
+        for feat in self.features:
+            a, b = feat.recent2DPosition
+            cv2.circle(image, (a, b), 5, [0, 0, 0], -1)
+
+        features = self.getNovelAndClusteredFeatures(returnFeatures=True)
+        if features is None:
+            print 'no novel features to draw'
             return image
-        points = np.array(points)
 
-        # Perform dbscan clustering
-        X = StandardScaler().fit_transform(points)
-        labels = self.dbscan2D.fit_predict(X)
+        # Draw all novel and bounded box features
+        for feat in features:
+            a, b = feat.recent2DPosition
+            cv2.circle(image, (a, b), 5, [255, 125, 0], -1)
 
-        unique_labels = set(labels)
-        colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))*255
-        # Drop alpha channel
-        colors = np.delete(colors, -1, 1)
-        for k, col in zip(unique_labels, colors):
-            if k == -1:
-                # Black used for noise.
-                col = [0, 0, 0]
 
-            # Draw feature points
-            clusterPoints = points[labels==k]
-            for point in clusterPoints:
-                a, b = point
-                if a >= self.cameraWidth or b >= self.cameraHeight:
-                    # Red used for features not within the camera's dimensions
-                    col = [0, 0, 255]
-                cv2.circle(image, (a, b), 5, col, -1)
-
-        # Add position of left gripper to image
-        if self.lGripperTranslation is None:
-            return image
-        # Project 3D position to 2D
-        px, py = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
         # Draw an orange point on image for gripper
-        cv2.circle(image, (int(px), int(py)), 10, [0, 125, 255], -1)
+        cv2.circle(image, (int(self.lGripX), int(self.lGripY)), 10, [0, 125, 255], -1)
 
         # Draw a bounding box around spoon (or left gripper)
-        lowX, highX, lowY, highY = self.boundingBox((px, py))
+        lowX, highX, lowY, highY = self.boundingBox((self.lGripX, self.lGripY))
         cv2.rectangle(image, (int(lowX), int(lowY)), (int(highX), int(highY)), color=[0, 150, 75], thickness=5)
 
         return image
@@ -204,9 +245,13 @@ class kanadeLucasPoint:
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
-        boxHalfWidth = self.cameraWidth/8.0
-        boxHalfHeight = self.cameraHeight/6.0
+        boxHalfWidth = self.cameraWidth/10.0
+        boxHalfHeight = self.cameraHeight/5.0
         px, py = point
+
+        # Adjust box height to match spoon
+        if py + boxHalfHeight/2.0 <= self.cameraHeight:
+            py += boxHalfHeight/2.0
 
         # Determine X coordinates of bounding box
         if px <= boxHalfWidth:
@@ -227,6 +272,11 @@ class kanadeLucasPoint:
         highY = lowY + 2*boxHalfHeight
 
         return lowX, highX, lowY, highY
+
+    def pointInBoundingBox(self, point, boxPoints):
+        px, py = point
+        lowX, highX, lowY, highY = boxPoints
+        return lowX <= px <= highX and lowY <= py <= highY
 
     def publishFeatures(self):
         if self.cameraWidth is None:
@@ -301,20 +351,6 @@ class kanadeLucasPoint:
         # Convert to grayscale
         imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # Determine a bounding box around spoon (or left gripper) to narrow search area
-        if self.lGripperTranslation is None:
-            return
-        # Find 2D location of gripper
-        px, py = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
-
-        # Find a bounding box
-        lowX, highX, lowY, highY = [int(x) for x in self.boundingBox((px, py))]
-        print lowX, highX, lowY, highY, imageGray.shape
-
-        # Crop imageGray to bounding box size
-        imageGray = imageGray[lowY:highY, lowX:highX]
-        print imageGray.shape
-
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or self.features is None:
             # Grab frame id for later transformations
@@ -362,11 +398,15 @@ class kanadeLucasPoint:
         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
         try :
             self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            # Find 2D location of gripper
+            self.lGripX, self.lGripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
         except tf.ExtrapolationException:
             pass
 
 minDist = 0.015
 maxDist = 0.03
+# minDist = 0.05
+# maxDist = 0.1
 class feature:
     def __init__(self, index, position, kanadeLucas):
         self.index = index

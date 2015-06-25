@@ -82,6 +82,9 @@ class visionTracker:
 
                 radius, centerPoint, normal, circularError, synthetic = circularPath.calcCircularPath(marker.history, normal=None, maxRadius=10, verbose=False, plot=False)
                 if radius > 0.75:
+                    lines += 1
+                    ends.append(endPoints)
+                    self.publishLinearPath(endPoints, index)
                     continue
 
                 # Compare whether the linear or circular path provides a better fit
@@ -97,7 +100,7 @@ class visionTracker:
 
                 self.publishDataPoints(marker.history, index)
 
-            print circles, lines
+            print len(markers), circles, lines
             if circles > 0 and circles >= lines:
                 self.publishNormal(np.mean(centers, axis=0), np.mean(normals, axis=0))
             elif lines > 0:
