@@ -248,13 +248,13 @@ class kanadeLucasPoint:
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
-        boxHalfWidth = self.cameraWidth/10.0
+        boxHalfWidth = self.cameraWidth/15.0
         boxHalfHeight = self.cameraHeight/5.0
         px, py = point
 
         # Adjust box height to match spoon
-        if py + boxHalfHeight/2.0 <= self.cameraHeight:
-            py += boxHalfHeight/2.0
+        if py - boxHalfHeight*2.0/3.0 <= self.cameraHeight:
+            py -= boxHalfHeight*2.0/3.0
 
         # Determine X coordinates of bounding box
         if px <= boxHalfWidth:
