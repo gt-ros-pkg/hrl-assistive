@@ -76,8 +76,11 @@ class kanadeLucasPoint:
         # rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         # Kinect 2
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        print 'Connected to Kinect images'
         rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        print 'Connected to Kinect depth'
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        print 'Connected to Kinect camera info'
         # PR2 Simulated
         # rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
