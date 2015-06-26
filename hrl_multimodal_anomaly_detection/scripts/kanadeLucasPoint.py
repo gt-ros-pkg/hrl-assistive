@@ -154,7 +154,7 @@ class kanadeLucasPoint:
             return {feat.index: feat.recent3DPosition for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)}
 
     def determineGoodFeatures(self, imageGray):
-        if len(self.activeFeatures) >= self.N:
+        if len(self.activeFeatures) >= self.N or self.lGripperTranslation is None:
             return
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
@@ -176,11 +176,19 @@ class kanadeLucasPoint:
 
         while len(self.activeFeatures) < self.N and len(feats) > 0:
             feat = random.choice(feats)
+            feats.remove(feat)
+            # Check to make feature is near gripper when transformed into 3D
+            feat3D = self.get3DPointFromCloud(feat[0])
+            if feat3D is None:
+                continue
+            distFromGripper = np.linalg.norm(self.lGripperTranslation - feat3D)
+            if distFromGripper > 0.4:
+                continue
+            # Add feature to tracking list
             newFeat = feature(self.currentIndex, feat[0], self)
             self.activeFeatures.append(newFeat)
             self.allFeatures.append(newFeat)
             self.currentIndex += 1
-            feats.remove(feat)
 
     def opticalFlow(self, imageGray):
         feats = []
