@@ -70,8 +70,8 @@ class kanadeLucasPoint:
         self.rgbCameraFrame = None
         self.box = None
 
-        self.dbscan = DBSCAN(eps=2, min_samples=10)
-        self.dbscan2D = DBSCAN(eps=0.6, min_samples=10)
+        self.dbscan = DBSCAN(eps=2, min_samples=6)
+        # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
 
         self.N = 30
 
@@ -157,13 +157,13 @@ class kanadeLucasPoint:
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
-        print imageGray.shape
+        # print imageGray.shape
 
         # Take a frame and find corners in it
         feats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
 
         # Reposition features back into original image size
-        print feats.shape
+        # print feats.shape
         feats[:, 0, 0] += lowX
         feats[:, 0, 1] += lowY
         feats = feats.tolist()
@@ -229,33 +229,56 @@ class kanadeLucasPoint:
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
-        boxHalfWidth = self.cameraWidth/15.0
-        boxHalfHeight = self.cameraHeight/6.0
-        px, py = point
+        # Left is on +y axis
+        left3D = np.array(self.lGripperTranslation) - [0.2, 0, 0]
+        right3D = np.array(self.lGripperTranslation) + [0.2, 0, 0]
+        # Up is on +x axis
+        up3D = np.array(self.lGripperTranslation) - [0, 0.4, 0]
+        down3D = np.array(self.lGripperTranslation) + [0, 0.1, 0]
 
-        # Adjust box height to match spoon
-        if py - boxHalfHeight*2.0/3.0 <= self.cameraHeight:
-            py -= boxHalfHeight*2.0/3.0
+        left, _ = self.pinholeCamera.project3dToPixel(left3D)
+        right, _ = self.pinholeCamera.project3dToPixel(right3D)
+        _, top = self.pinholeCamera.project3dToPixel(up3D)
+        _, bottom = self.pinholeCamera.project3dToPixel(down3D)
 
-        # Determine X coordinates of bounding box
-        if px <= boxHalfWidth:
-            lowX = 0
-        elif px >= self.cameraWidth - boxHalfWidth - 1:
-            lowX = self.cameraWidth - 2*boxHalfWidth - 1
-        else:
-            lowX = px - boxHalfWidth
-        highX = lowX + 2*boxHalfWidth
+        if left < 0:
+            left = 0
+        if right > self.cameraWidth - 1:
+            right = self.cameraWidth - 1
+        if top < 0:
+            top = 0
+        if bottom > self.cameraHeight - 1:
+            bottom = self.cameraHeight - 1
 
-        # Determine Y coordinates of bounding box
-        if py <= boxHalfHeight:
-            lowY = 0
-        elif py >= self.cameraHeight - boxHalfHeight - 1:
-            lowY = self.cameraHeight - 2*boxHalfHeight - 1
-        else:
-            lowY = py - boxHalfHeight
-        highY = lowY + 2*boxHalfHeight
+        return left, right, top, bottom
 
-        return lowX, highX, lowY, highY
+        # boxHalfWidth = self.cameraWidth/15.0
+        # boxHalfHeight = self.cameraHeight/6.0
+        # px, py = point
+        #
+        # # Adjust box height to match spoon
+        # if py - boxHalfHeight*2.0/3.0 <= self.cameraHeight:
+        #     py -= boxHalfHeight*2.0/3.0
+        #
+        # # Determine X coordinates of bounding box
+        # if px <= boxHalfWidth:
+        #     lowX = 0
+        # elif px >= self.cameraWidth - boxHalfWidth - 1:
+        #     lowX = self.cameraWidth - 2*boxHalfWidth - 1
+        # else:
+        #     lowX = px - boxHalfWidth
+        # highX = lowX + 2*boxHalfWidth
+        #
+        # # Determine Y coordinates of bounding box
+        # if py <= boxHalfHeight:
+        #     lowY = 0
+        # elif py >= self.cameraHeight - boxHalfHeight - 1:
+        #     lowY = self.cameraHeight - 2*boxHalfHeight - 1
+        # else:
+        #     lowY = py - boxHalfHeight
+        # highY = lowY + 2*boxHalfHeight
+        #
+        # return lowX, highX, lowY, highY
 
     def pointInBoundingBox(self, point, boxPoints):
         px, py = point
