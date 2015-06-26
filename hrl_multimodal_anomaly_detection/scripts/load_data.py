@@ -70,20 +70,38 @@ if __name__ == '__main__':
     # print df
 
     print d.keys()
-    ft = True
-    audio = True
-    kinematics = True
 
-    if ft:
-        ftime = d.get('ft_time',None)
-        force = d.get('ft_force_raw',None)
-        torque = d.get('ft_torque_raw', None)
+    ft_kinematics = True
+    audio = False
+    vision = False
+
+
+    if ft_kinematics:
+
+        ft_time = d.get('ft_time',None)
+        ft_force = d.get('ft_force_raw',None)
+        ft_torque = d.get('ft_torque_raw', None)
+
+        tf_l_ee_pos = d.get('l_end_effector_pos', None)
+        tf_l_ee_quat = d.get('l_end_effector_quat', None)
+        tf_r_ee_pos = d.get('r_end_effector_pos', None)
+        tf_r_ee_quat = d.get('r_end_effector_quat', None)
+
+
+        ft_time_array = np.array(ft_time)
+        ft_force_array = np.array(ft_force)
+        ft_torque_array = np.array(ft_torque)
+
+        tf_l_ee_pos_array = np.array(tf_l_ee_pos)
+        tf_l_ee_quat_array = np.array(tf_l_ee_quat)
+        tf_r_ee_pos_array = np.array(tf_r_ee_pos)
+        tf_r_ee_quat_array = np.array(tf_r_ee_quat)
 
         # aForce = np.squeeze(force).T
         # print aForce.shape
 
-        force_array = np.array(force)
-        torque_array = np.array(torque)
+        # force_array = np.array(force)
+        # torque_array = np.array(torque)
 
         pp.figure()
         pp.subplot(311)
@@ -97,6 +115,38 @@ if __name__ == '__main__':
         pp.subplot(313)
         pp.plot(ftime, force_array[:,2])
         pp.title('Force Z')
+
+
+
+        fig, ax1 = pp.subplots()
+
+        # t = np.arange(0.01, 10.0, 0.01)
+        # s1 = np.exp(t)
+
+        ax1.plot(ft_time, ft_force_array[:,0], 'b-')
+        ax1.set_xlabel('time (s)')
+        # Make the y-axis label and tick labels match the line color.
+        ax1.set_ylabel('Force X', color='b')
+        for tl in ax1.get_yticklabels():
+            tl.set_color('b')
+
+        ax2 = ax1.twinx()
+        s2 = np.sin(2*np.pi*t)
+        ax2.plot(t, s2, 'r.')
+        ax2.set_ylabel('sin', color='r')
+        for tl in ax2.get_yticklabels():
+            tl.set_color('r')
+        pp.show()
+
+
+
+
+
+
+
+
+    if ft:
+        
 
         pp.show()
 
