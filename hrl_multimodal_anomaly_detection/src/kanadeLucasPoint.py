@@ -347,6 +347,7 @@ class kanadeLucasPoint:
     def imageCallback(self, data):
         # Grab image from Kinect sensor
         start = time.time()
+        tracker = time.time()
         print 'Time between image calls:', start - self.lastTime
         try:
             image = self.bridge.imgmsg_to_cv(data)
@@ -368,6 +369,9 @@ class kanadeLucasPoint:
         # Used to verify that each point is within our defined box
         self.box = [int(x) for x in self.boundingBox((self.lGripX, self.lGripY))]
 
+        print 'Time for first stage:', time.time() - tracker
+        tracker = time.time()
+
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
             # Grab frame id for later transformations
@@ -386,14 +390,21 @@ class kanadeLucasPoint:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
+        print 'Time for second stage:', time.time() - tracker
+        tracker = time.time()
+
         if self.activeFeatures:
             self.opticalFlow(imageGray)
             if self.publish:
                 self.publishFeatures()
+        print 'Time for third stage:', time.time() - tracker
+        tracker = time.time()
         if self.visual:
             image = self.drawOnImage(image)
             cv2.imshow('Image window', image)
             cv2.waitKey(30)
+
+        print 'Time for fourth stage:', time.time() - tracker
 
         self.updateNumber += 1
 
