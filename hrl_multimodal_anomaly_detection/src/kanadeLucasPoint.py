@@ -3,6 +3,7 @@
 __author__ = 'zerickson'
 
 import cv2
+import time
 import math
 import rospy
 import random
@@ -69,6 +70,7 @@ class kanadeLucasPoint:
         self.pinholeCamera = None
         self.rgbCameraFrame = None
         self.box = None
+        self.lastTime = time.time()
 
         self.dbscan = DBSCAN(eps=3, min_samples=6)
         # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
@@ -153,7 +155,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        print lowX, highX, lowY, highY, imageGray.shape
+        # print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
@@ -344,6 +346,8 @@ class kanadeLucasPoint:
 
     def imageCallback(self, data):
         # Grab image from Kinect sensor
+        start = time.time()
+        print 'Time between image calls:', start - self.lastTime
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
@@ -376,6 +380,7 @@ class kanadeLucasPoint:
             # Determine initial set of features
             self.determineGoodFeatures(imageGray)
             self.prevGray = imageGray
+            self.lastTime = time.time()
             return
 
         # Add new features to our feature tracker
@@ -393,6 +398,9 @@ class kanadeLucasPoint:
         self.updateNumber += 1
 
         self.prevGray = imageGray
+
+        print 'Image calculation time:', time.time() - start
+        self.lastTime = time.time()
 
         # Call our caller now that new data has been processed
         if self.caller is not None:
