@@ -178,12 +178,12 @@ class kanadeLucasPoint:
             feat = random.choice(feats)
             feats.remove(feat)
             # Check to make feature is near gripper when transformed into 3D
-            feat3D = self.get3DPointFromCloud(feat[0])
-            if feat3D is None:
-                continue
-            distFromGripper = np.linalg.norm(self.lGripperTranslation - feat3D)
-            if distFromGripper > 0.4:
-                continue
+            # feat3D = self.get3DPointFromCloud(feat[0])
+            # if feat3D is None:
+            #     continue
+            # distFromGripper = np.linalg.norm(self.lGripperTranslation - feat3D)
+            # if distFromGripper > 0.4:
+            #     continue
             # Add feature to tracking list
             newFeat = feature(self.currentIndex, feat[0], self)
             self.activeFeatures.append(newFeat)
@@ -301,6 +301,21 @@ class kanadeLucasPoint:
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
+
+        # Determine end of spoon for expanding box (follows +x axis for about 50 cm)
+        spoonEnd = self.lGripperTranslation + [0.5 , 0, 0]
+        # Project into 2D for camera
+        spoonX, spoonY = self.pinholeCamera.project3dToPixel(spoonEnd)
+
+        # Make sure box encompases the spoon
+        if spoonX < left:
+            left = spoonX - 15
+        if right < spoonX:
+            right = spoonX + 15
+        if spoonY < top:
+            top = spoonX - 15
+        if bottom < spoonY:
+            bottom = spoonY + 15
 
         # Check if box extrudes past image bounds
         if left < 0:
