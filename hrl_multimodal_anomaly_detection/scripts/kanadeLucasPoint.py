@@ -303,7 +303,7 @@ class kanadeLucasPoint:
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
 
         # Determine end of spoon for expanding box (follows +x axis for about 50 cm)
-        spoonEnd = self.lGripperTranslation + [0.5 , 0, 0]
+        spoonEnd = np.array(self.lGripperTranslation) + [0.5 , 0, 0]
         # Project into 2D for camera
         spoonX, spoonY = self.pinholeCamera.project3dToPixel(spoonEnd)
 
