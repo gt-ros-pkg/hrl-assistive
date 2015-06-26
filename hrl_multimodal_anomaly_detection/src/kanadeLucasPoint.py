@@ -70,7 +70,7 @@ class kanadeLucasPoint:
         self.rgbCameraFrame = None
         self.box = None
 
-        self.dbscan = DBSCAN(eps=2, min_samples=6)
+        self.dbscan = DBSCAN(eps=3, min_samples=6)
         # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
 
         self.N = 30
@@ -229,12 +229,12 @@ class kanadeLucasPoint:
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
-        # Left is on +y axis
+        # Left is on -x axis
         left3D = np.array(self.lGripperTranslation) - [0.1, 0, 0]
         right3D = np.array(self.lGripperTranslation) + [0.1, 0, 0]
-        # Up is on +x axis
+        # Up is on -y axis
         up3D = np.array(self.lGripperTranslation) - [0, 0.3, 0]
-        down3D = np.array(self.lGripperTranslation) + [0, 0.1, 0]
+        down3D = np.array(self.lGripperTranslation) + [0, 0.05, 0]
 
         left, _ = self.pinholeCamera.project3dToPixel(left3D)
         right, _ = self.pinholeCamera.project3dToPixel(right3D)
