@@ -198,7 +198,7 @@ class kanadeLucasPoint:
         # Define features as novel if they meet a given criteria
         for feat in self.activeFeatures:
             # Consider features that have traveled 5 cm
-            if feat.distance >= 0.05:
+            if feat.distance >= 0.15:
                 feat.isNovel = True
 
     def drawOnImage(self, image):
@@ -230,10 +230,10 @@ class kanadeLucasPoint:
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
         # Left is on +y axis
-        left3D = np.array(self.lGripperTranslation) - [0.2, 0, 0]
-        right3D = np.array(self.lGripperTranslation) + [0.2, 0, 0]
+        left3D = np.array(self.lGripperTranslation) - [0.1, 0, 0]
+        right3D = np.array(self.lGripperTranslation) + [0.1, 0, 0]
         # Up is on +x axis
-        up3D = np.array(self.lGripperTranslation) - [0, 0.4, 0]
+        up3D = np.array(self.lGripperTranslation) - [0, 0.3, 0]
         down3D = np.array(self.lGripperTranslation) + [0, 0.1, 0]
 
         left, _ = self.pinholeCamera.project3dToPixel(left3D)
