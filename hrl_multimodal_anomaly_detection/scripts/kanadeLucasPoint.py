@@ -27,6 +27,7 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
+from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class kanadeLucasPoint:
     def __init__(self, caller, targetFrame=None, publish=False, visual=False, tfListener=None):
@@ -34,6 +35,7 @@ class kanadeLucasPoint:
         self.bridge = CvBridge()
         # ROS publisher for data points
         self.publisher = rospy.Publisher('visualization_marker', Marker)
+        self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         # params for ShiTomasi corner detection
         self.feature_params = dict(maxCorners=100, qualityLevel=0.1, minDistance=7, blockSize=7)
         # Parameters for lucas kanade optical flow
@@ -228,6 +230,45 @@ class kanadeLucasPoint:
 
         return image
 
+    def publishImageFeatures(self):
+        imageFeatures = ImageFeatures()
+        # Draw all features (as red)
+        for feat in self.activeFeatures:
+            circle = Circle()
+            circle.x, circle.y = feat.recent2DPosition
+            circle.radius = 5
+            circle.r = 255
+            imageFeatures.circles.append(circle)
+
+        # Draw an orange point on image for gripper
+        circle = Circle()
+        circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+        circle.radius = 10
+        circle.r = 255
+        circle.g = 125
+        imageFeatures.circles.append(circle)
+
+        # Draw a bounding box around spoon (or left gripper)
+        rect = Rectangle()
+        rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
+        rect.r = 75
+        rect.g = 150
+        rect.thickness = 5
+        imageFeatures.rectangles.append(rect)
+
+        features = self.getNovelAndClusteredFeatures(returnFeatures=True)
+        if features is not None:
+            # Draw all novel and bounded box features
+            for feat in features:
+                circle = Circle()
+                circle.x, circle.y = feat.recent2DPosition
+                circle.radius = 5
+                circle.b = 255
+                circle.g = 125
+                imageFeatures.circles.append(circle)
+
+        self.publisher2D.publish(imageFeatures)
+
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
@@ -347,12 +388,10 @@ class kanadeLucasPoint:
     def imageCallback(self, data):
         # Grab image from Kinect sensor
         start = time.time()
-        tracker = time.time()
         print 'Time between image calls:', start - self.lastTime
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
-            # print data.header.frame_id
         except CvBridgeError, e:
             print e
             return
@@ -368,9 +407,6 @@ class kanadeLucasPoint:
 
         # Used to verify that each point is within our defined box
         self.box = [int(x) for x in self.boundingBox((self.lGripX, self.lGripY))]
-
-        print 'Time for first stage:', time.time() - tracker
-        tracker = time.time()
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
@@ -390,21 +426,16 @@ class kanadeLucasPoint:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
-        print 'Time for second stage:', time.time() - tracker
-        tracker = time.time()
-
         if self.activeFeatures:
             self.opticalFlow(imageGray)
             if self.publish:
                 self.publishFeatures()
-        print 'Time for third stage:', time.time() - tracker
-        tracker = time.time()
         if self.visual:
-            image = self.drawOnImage(image)
-            cv2.imshow('Image window', image)
-            cv2.waitKey(30)
-
-        print 'Time for fourth stage:', time.time() - tracker
+            self.publishImageFeatures()
+            # This takes a long time!! (Publish the information instead)
+            # image = self.drawOnImage(image)
+            # cv2.imshow('Image window', image)
+            # cv2.waitKey(30)
 
         self.updateNumber += 1
 
