@@ -67,6 +67,7 @@ class kanadeLucasPoint:
         # Gripper data
         self.lGripperTranslation = None
         self.lGripperRotation = None
+        self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
         self.pinholeCamera = None
@@ -94,6 +95,7 @@ class kanadeLucasPoint:
         # rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         # rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # print 'Connected to all topics'
 
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
@@ -272,18 +274,27 @@ class kanadeLucasPoint:
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
-        # Left is on -x axis
-        left3D = np.array(self.lGripperTranslation) - [0.1, 0, 0]
-        right3D = np.array(self.lGripperTranslation) + [0.1, 0, 0]
-        # Up is on -y axis
-        up3D = np.array(self.lGripperTranslation) - [0, 0.3, 0]
-        down3D = np.array(self.lGripperTranslation) + [0, 0.05, 0]
+        # Define a box with respect to the l_gripper_tool_frame
+        # Left is on +y axis
+        left3D =  [0, 0.1, 0]
+        right3D = [0, -0.1, 0]
+        # Up is on +x axis
+        up3D = [0.3, 0, 0]
+        down3D = [-0.05, 0, 0]
 
-        left, _ = self.pinholeCamera.project3dToPixel(left3D)
-        right, _ = self.pinholeCamera.project3dToPixel(right3D)
-        _, top = self.pinholeCamera.project3dToPixel(up3D)
-        _, bottom = self.pinholeCamera.project3dToPixel(down3D)
+        # Transpose box onto orientation of gripper
+        left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
+        right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
+        top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
+        bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
 
+        # Project 3D box locations to 2D for the camera
+        left, _ = self.pinholeCamera.project3dToPixel(left)
+        right, _ = self.pinholeCamera.project3dToPixel(right)
+        _, top = self.pinholeCamera.project3dToPixel(top)
+        _, bottom = self.pinholeCamera.project3dToPixel(bottom)
+
+        # Check if box extrudes past image bounds
         if left < 0:
             left = 0
         if right > self.cameraWidth - 1:
@@ -293,35 +304,25 @@ class kanadeLucasPoint:
         if bottom > self.cameraHeight - 1:
             bottom = self.cameraHeight - 1
 
-        return left, right, top, bottom
+        # Verify that the box bounds are not too small (50 pixels is smallest)
+        if np.abs(right - left) < 50:
+            if left < 25:
+                right += 50
+            elif right > self.cameraWidth - 26:
+                left -= 50
+            else:
+                left -= 25
+                right += 25
+        if np.abs(bottom - top) < 50:
+            if top < 25:
+                bottom += 50
+            elif bottom > self.cameraHeight - 26:
+                top -= 50
+            else:
+                top -= 25
+                bottom += 25
 
-        # boxHalfWidth = self.cameraWidth/15.0
-        # boxHalfHeight = self.cameraHeight/6.0
-        # px, py = point
-        #
-        # # Adjust box height to match spoon
-        # if py - boxHalfHeight*2.0/3.0 <= self.cameraHeight:
-        #     py -= boxHalfHeight*2.0/3.0
-        #
-        # # Determine X coordinates of bounding box
-        # if px <= boxHalfWidth:
-        #     lowX = 0
-        # elif px >= self.cameraWidth - boxHalfWidth - 1:
-        #     lowX = self.cameraWidth - 2*boxHalfWidth - 1
-        # else:
-        #     lowX = px - boxHalfWidth
-        # highX = lowX + 2*boxHalfWidth
-        #
-        # # Determine Y coordinates of bounding box
-        # if py <= boxHalfHeight:
-        #     lowY = 0
-        # elif py >= self.cameraHeight - boxHalfHeight - 1:
-        #     lowY = self.cameraHeight - 2*boxHalfHeight - 1
-        # else:
-        #     lowY = py - boxHalfHeight
-        # highY = lowY + 2*boxHalfHeight
-        #
-        # return lowX, highX, lowY, highY
+        return left, right, top, bottom
 
     def pointInBoundingBox(self, point, boxPoints):
         px, py = point
@@ -386,9 +387,9 @@ class kanadeLucasPoint:
         return xyz
 
     def imageCallback(self, data):
+        # start = time.time()
+        # print 'Time between image calls:', start - self.lastTime
         # Grab image from Kinect sensor
-        start = time.time()
-        print 'Time between image calls:', start - self.lastTime
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
@@ -441,8 +442,8 @@ class kanadeLucasPoint:
 
         self.prevGray = imageGray
 
-        print 'Image calculation time:', time.time() - start
-        self.lastTime = time.time()
+        # print 'Image calculation time:', time.time() - start
+        # self.lastTime = time.time()
 
         # Call our caller now that new data has been processed
         if self.caller is not None:
@@ -464,6 +465,8 @@ class kanadeLucasPoint:
         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
         try :
             self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+            self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
             # Find 2D location of gripper
             self.lGripX, self.lGripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
         except tf.ExtrapolationException:
