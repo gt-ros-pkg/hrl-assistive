@@ -300,7 +300,7 @@ class kanadeLucasPoint:
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.25, 0, 0]
+        spoon3D = [0.22, 0, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
@@ -343,22 +343,24 @@ class kanadeLucasPoint:
             bottom = self.cameraHeight - 1
 
         # Verify that the box bounds are not too small (50 pixels is smallest)
-        if np.abs(right - left) < 50:
-            if left < 25:
-                right += 50
-            elif right > self.cameraWidth - 26:
-                left -= 50
+        diff = 100 - np.abs(right - left)
+        if np.abs(right - left) < 100:
+            if left < diff/2.0:
+                right += diff
+            elif right > self.cameraWidth - diff/2.0 - 1:
+                left -= diff
             else:
-                left -= 25
-                right += 25
+                left -= diff/2.0
+                right += diff/2.0
+        diff = 50 - np.abs(bottom - top)
         if np.abs(bottom - top) < 50:
-            if top < 25:
-                bottom += 50
-            elif bottom > self.cameraHeight - 26:
-                top -= 50
+            if top < diff/2.0:
+                bottom += diff
+            elif bottom > self.cameraHeight - diff/2.0 - 1:
+                top -= diff
             else:
-                top -= 25
-                bottom += 25
+                top -= diff/2.0
+                bottom += diff/2.0
 
         return left, right, top, bottom
 
