@@ -309,18 +309,18 @@ class kanadeLucasPoint:
         bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
-        # Adjust incase hand is upside down
-        if left > right:
-            left, right = right, left
-        if top > bottom:
-            top, bottom = bottom, top
-
         # Project 3D box locations to 2D for the camera
         left, _ = self.pinholeCamera.project3dToPixel(left)
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+
+        # Adjust incase hand is upside down
+        if left > right:
+            left, right = right, left
+        if top > bottom:
+            top, bottom = bottom, top
 
         # Make sure box encompases the spoon
         if left > self.spoonX - 15:
