@@ -298,9 +298,9 @@ class kanadeLucasPoint:
         left3D =  [0, 0.1, 0]
         right3D = [0, -0.1, 0]
         # Up is on +x axis
-        up3D = [0.4, 0, 0]
+        up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.5, 0, 0]
+        spoon3D = [0.25, 0, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
