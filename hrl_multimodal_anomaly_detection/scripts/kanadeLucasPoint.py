@@ -70,6 +70,8 @@ class kanadeLucasPoint:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
+        self.spoonX = None
+        self.spoonY = None
         self.pinholeCamera = None
         self.rgbCameraFrame = None
         self.box = None
@@ -258,12 +260,13 @@ class kanadeLucasPoint:
         circle.g = 125
         imageFeatures.circles.append(circle)
 
-        # Draw an orange point on image for gripper
+        # Draw an blue point on image for spoon tip
         circle = Circle()
-        circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+        circle.x, circle.y = int(self.spoonX), int(self.spoonY)
         circle.radius = 10
-        circle.r = 255
-        circle.g = 125
+        circle.r = 50
+        circle.g = 255
+        circle.b = 255
         imageFeatures.circles.append(circle)
 
         # Draw a bounding box around spoon (or left gripper)
@@ -311,17 +314,17 @@ class kanadeLucasPoint:
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
-        spoonX, spoonY = self.pinholeCamera.project3dToPixel(spoon)
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Make sure box encompases the spoon
-        if left > spoonX - 15:
-            left = spoonX - 15
-        if right < spoonX + 15:
-            right = spoonX + 15
-        if top > spoonY - 15:
-            top = spoonY - 15
-        if bottom < spoonY + 15:
-            bottom = spoonY + 15
+        # if left > self.spoonX - 15:
+        #     left = self.spoonX - 15
+        # if right < self.spoonX + 15:
+        #     right = self.spoonX + 15
+        # if top > self.spoonY - 15:
+        #     top = self.spoonY - 15
+        # if bottom < self.spoonY + 15:
+        #     bottom = self.spoonY + 15
 
         # Check if box extrudes past image bounds
         if left < 0:
