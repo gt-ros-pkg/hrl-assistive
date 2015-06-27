@@ -298,7 +298,7 @@ class kanadeLucasPoint:
         left3D =  [0, 0.1, 0]
         right3D = [0, -0.1, 0]
         # Up is on +x axis
-        up3D = [0.6, 0, 0]
+        up3D = [0.4, 0, 0]
         down3D = [0.05, 0, 0]
         spoon3D = [0.5, 0, 0]
 
@@ -309,6 +309,12 @@ class kanadeLucasPoint:
         bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
+        # Adjust incase hand is upside down
+        if left > right:
+            left, right = right, left
+        if top > bottom:
+            top, bottom = bottom, top
+
         # Project 3D box locations to 2D for the camera
         left, _ = self.pinholeCamera.project3dToPixel(left)
         right, _ = self.pinholeCamera.project3dToPixel(right)
@@ -317,14 +323,14 @@ class kanadeLucasPoint:
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Make sure box encompases the spoon
-        # if left > self.spoonX - 15:
-        #     left = self.spoonX - 15
-        # if right < self.spoonX + 15:
-        #     right = self.spoonX + 15
-        # if top > self.spoonY - 15:
-        #     top = self.spoonY - 15
-        # if bottom < self.spoonY + 15:
-        #     bottom = self.spoonY + 15
+        if left > self.spoonX - 15:
+            left = self.spoonX - 15
+        if right < self.spoonX + 15:
+            right = self.spoonX + 15
+        if top > self.spoonY - 15:
+            top = self.spoonY - 15
+        if bottom < self.spoonY + 15:
+            bottom = self.spoonY + 15
 
         # Check if box extrudes past image bounds
         if left < 0:
