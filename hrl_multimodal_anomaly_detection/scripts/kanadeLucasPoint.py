@@ -258,6 +258,14 @@ class kanadeLucasPoint:
         circle.g = 125
         imageFeatures.circles.append(circle)
 
+        # Draw an orange point on image for gripper
+        circle = Circle()
+        circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+        circle.radius = 10
+        circle.r = 255
+        circle.g = 125
+        imageFeatures.circles.append(circle)
+
         # Draw a bounding box around spoon (or left gripper)
         rect = Rectangle()
         rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
@@ -287,34 +295,32 @@ class kanadeLucasPoint:
         left3D =  [0, 0.1, 0]
         right3D = [0, -0.1, 0]
         # Up is on +x axis
-        up3D = [0.3, 0, 0]
-        down3D = [-0.05, 0, 0]
+        up3D = [0.6, 0, 0]
+        down3D = [0.05, 0, 0]
+        spoon3D = [0.5, 0, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
         right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
         top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
         bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
+        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
         # Project 3D box locations to 2D for the camera
         left, _ = self.pinholeCamera.project3dToPixel(left)
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
-
-        # Determine end of spoon for expanding box (follows +x axis for about 50 cm)
-        spoonEnd = np.array(self.lGripperTranslation) + [0.5 , 0, 0]
-        # Project into 2D for camera
-        spoonX, spoonY = self.pinholeCamera.project3dToPixel(spoonEnd)
+        spoonX, spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Make sure box encompases the spoon
-        if spoonX < left:
+        if left > spoonX - 15:
             left = spoonX - 15
-        if right < spoonX:
+        if right < spoonX + 15:
             right = spoonX + 15
-        if spoonY < top:
-            top = spoonX - 15
-        if bottom < spoonY:
+        if top > spoonY - 15:
+            top = spoonY - 15
+        if bottom < spoonY + 15:
             bottom = spoonY + 15
 
         # Check if box extrudes past image bounds
