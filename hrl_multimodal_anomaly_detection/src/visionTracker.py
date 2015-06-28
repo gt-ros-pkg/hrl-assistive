@@ -11,7 +11,7 @@ from visualization_msgs.msg import Marker
 from arTagPoint import arTagPoint
 from kanadeLucasPoint import kanadeLucasPoint
 import kinectCircularPath as circularPath
-from hrl_multimodal_anomaly_detection.src import kinectLinearPath as linearPath
+import kinectLinearPath as linearPath
 
 
 class visionTracker:

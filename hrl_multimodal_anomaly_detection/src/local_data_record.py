@@ -4,8 +4,8 @@ import roslib; roslib.load_manifest('sandbox_dpark_darpa_m3')
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy
 
-from hrl_multimodal_anomaly_detection.src.record_data import *
-from hrl_multimodal_anomaly_detection.src.load_data import *
+from record_data import *
+from load_data import *
 
 class dataRecord():
 

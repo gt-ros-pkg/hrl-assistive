@@ -2,22 +2,21 @@
 
 __author__ = 'zerickson'
 
+import cv2
 import time
 import math
+import rospy
 import random
 import numpy as np
-
-import cv2
-
-import rospy
 
 try :
     import sensor_msgs.point_cloud2 as pc2
 except:
-    from hrl_multimodal_anomaly_detection.src import point_cloud2 as pc2
+    import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 from geometry_msgs.msg import Point
+from roslib import message
 
 # Clustering
 from sklearn.cluster import DBSCAN
