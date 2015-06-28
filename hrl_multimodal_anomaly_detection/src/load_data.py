@@ -78,115 +78,58 @@ if __name__ == '__main__':
 
     if ft_kinematics:
 
-        ft_time = d.get('ft_time',None)
-        ft_force = d.get('ft_force_raw',None)
-        ft_torque = d.get('ft_torque_raw', None)
+        ft_time = np.array(d.get('ft_time',None))
+        ft_force = np.array(d.get('ft_force_raw',None))
+        ft_torque = np.array(d.get('ft_torque_raw', None))
 
-        tf_l_ee_pos = d.get('l_end_effector_pos', None)
-        tf_l_ee_quat = d.get('l_end_effector_quat', None)
-        tf_r_ee_pos = d.get('r_end_effector_pos', None)
-        tf_r_ee_quat = d.get('r_end_effector_quat', None)
+        tf_l_ee_pos = np.array(d.get('l_end_effector_pos', None))
+        tf_l_ee_quat = np.array(d.get('l_end_effector_quat', None))
+        tf_r_ee_pos = np.array(d.get('r_end_effector_pos', None))
+        tf_r_ee_quat = np.array(d.get('r_end_effector_quat', None))
 
+        # Graphing X Force/Pos Data
+        fig1, (forceAx1, tfAx1) = pp.subplots(2, 1, sharex=True)
 
-        ft_time_array = np.array(ft_time)
-        ft_force_array = np.array(ft_force)
-        ft_torque_array = np.array(ft_torque)
+        forceAx1.plot(ft_time, ft_force[:,0], 'b-')
+        forceAx1.set_xlabel('time (s)')
+        forceAx1.set_ylabel('X Force')
+        tfAx1.plot(ft_time, tf_l_ee_pos[:,0], 'r-')
+        tfAx1.set_ylabel('X Pos')
 
-        tf_l_ee_pos_array = np.array(tf_l_ee_pos)
-        tf_l_ee_quat_array = np.array(tf_l_ee_quat)
-        tf_r_ee_pos_array = np.array(tf_r_ee_pos)
-        tf_r_ee_quat_array = np.array(tf_r_ee_quat)
+        fig1.subplots_adjust(hspace=0)
+        pp.setp([a.get_xticklabels() for a in fig1.axes[:-1]], visible=False)
 
-        # aForce = np.squeeze(force).T
-        # print aForce.shape
+        # Graphing Y Force/Pos Data
+        fig2, (forceAx2, tfAx2) = pp.subplots(2, 1, sharex=True)
 
-        # force_array = np.array(force)
-        # torque_array = np.array(torque)
+        forceAx2.plot(ft_time, ft_force[:,1], 'b-')
+        forceAx2.set_xlabel('time (s)')
+        forceAx2.set_ylabel('Y Force')
+        tfAx2.plot(ft_time, tf_l_ee_pos[:,1], 'r-')
+        tfAx2.set_ylabel('Y Pos')
 
-        pp.figure()
-        pp.subplot(311)
-        pp.plot(ftime, force_array[:,0])
-        pp.title('Force X')
+        fig2.subplots_adjust(hspace=0)
+        pp.setp([a.get_xticklabels() for a in fig2.axes[:-1]], visible=False)
 
-        pp.subplot(312)
-        pp.plot(ftime, force_array[:,1])
-        pp.title('Force Y')
+        # Graphing Z Force/Pos Data
+        fig3, (forceAx3, tfAx3) = pp.subplots(2, 1, sharex=True)
 
-        pp.subplot(313)
-        pp.plot(ftime, force_array[:,2])
-        pp.title('Force Z')
+        forceAx3.plot(ft_time, ft_force[:,2], 'b-')
+        forceAx3.set_xlabel('time (s)')
+        forceAx3.set_ylabel('Z Force')
+        tfAx3.plot(ft_time, tf_l_ee_pos[:,2], 'r-')
+        tfAx3.set_ylabel('Z Pos')
 
+        fig3.subplots_adjust(hspace=0)
+        pp.setp([a.get_xticklabels() for a in fig3.axes[:-1]], visible=False)
 
-
-        fig, ax1 = pp.subplots()
-
-        # t = np.arange(0.01, 10.0, 0.01)
-        # s1 = np.exp(t)
-
-        ax1.plot(ft_time, ft_force_array[:,0], 'b-')
-        ax1.set_xlabel('time (s)')
-        # Make the y-axis label and tick labels match the line color.
-        ax1.set_ylabel('Force X', color='b')
-        for tl in ax1.get_yticklabels():
-            tl.set_color('b')
-
-        ax2 = ax1.twinx()
-        s2 = np.sin(2*np.pi*t)
-        ax2.plot(t, s2, 'r.')
-        ax2.set_ylabel('sin', color='r')
-        for tl in ax2.get_yticklabels():
-            tl.set_color('r')
-        pp.show()
-
-
-
-
-
-
-
-
-    if ft:
-        
-
-        pp.show()
-
-    if kinematics:
-        kinematics_time = d.get('kinematics_time',None)
-        l_end_effector_pos = d.get('l_end_effector_pos')
-        l_end_effector_quat = d.get('l_end_effector_quat')
-        r_end_effector_pos = d.get('r_end_effector_pos')
-        r_end_effector_quat = d.get('r_end_effector_quat')
-
-        l_end_effector_pos_array = np.array(l_end_effector_pos)
-        l_end_effector_quat_array = np.array(l_end_effector_quat) 
-        r_end_effector_pos_array = np.array(r_end_effector_pos)
-        r_end_effector_quat_array = np.array(r_end_effector_quat) 
-
-        pp.figure()
-        pp.subplot(321)
-        pp.plot(kinematics_time, r_end_effector_pos_array[:,0], 'r')
-        pp.plot(ftime, force_array[:,0], 'y')
-        pp.title('R EE X - Red, F X - Yellow')
-
-        pp.subplot(322)
-        pp.plot(kinematics_time, r_end_effector_pos_array[:,1], 'r')
-        pp.plot(ftime, force_array[:,1], 'y')
-        pp.title('R EE Y - Red, F Y - Yellow')
-
-        pp.subplot(323)
-        pp.plot(kinematics_time, r_end_effector_pos_array[:,2], 'r')
-        pp.plot(ftime, force_array[:,2], 'y')
-        pp.title('R EE Z - Red, F Z - Yellow')
-
-        pp.show()
+        #pp.show()
 
     if audio:
         audio_data = d['audio_data']
         audio_amp = d['audio_amp']
         audio_freq = d['audio_freq']
         audio_chunk = d['audio_chunk']
-	#audio_data_raw = d['audio_data_raw']
-
 
         audio_data = np.array(audio_data).flatten()
 
@@ -236,7 +179,9 @@ if __name__ == '__main__':
         pp.plot(audio_amp, 'y')
         pp.title('Raw audio_amp data')
 
-        pp.show()
+        #pp.show()
+
+    pp.show()
 
 	#pp.subplot(616)
 	#p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))
