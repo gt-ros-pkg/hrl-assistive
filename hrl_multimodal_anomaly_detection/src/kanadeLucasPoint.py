@@ -523,6 +523,7 @@ class kanadeLucasPoint:
             distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
             timeChange = time.time() - self.lastGripTime
             self.gripperVelocity = distChange / timeChange
+            print distChange, timeChange
             print self.gripperVelocity
         self.lGripX, self.lGripY = gripX, gripY
         self.lastGripTime = time.time()
