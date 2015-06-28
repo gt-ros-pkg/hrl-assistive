@@ -557,7 +557,7 @@ class feature:
     def update(self, newPosition):
         newPosition = np.array(newPosition)
         # Update velocity of feature
-        if self.recent2DPosition is not None:
+        if self.lastTime is not None:
             distChange = newPosition - self.recent2DPosition
             timeChange = time.time() - self.lastTime
             self.velocity = distChange / timeChange
