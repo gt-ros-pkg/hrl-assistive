@@ -70,6 +70,8 @@ class kanadeLucasPoint:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
+        self.gripperVelocity = None
+        self.lastGripTime = None
         self.spoonX = None
         self.spoonY = None
         self.pinholeCamera = None
@@ -153,7 +155,7 @@ class kanadeLucasPoint:
             return [feat for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent3DPosition for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)}
+            return {feat.index: feat.recent3DPosition.tolist() for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)}
 
     def determineGoodFeatures(self, imageGray):
         if len(self.activeFeatures) >= self.N or self.lGripperTranslation is None:
@@ -161,7 +163,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        print lowX, highX, lowY, highY, imageGray.shape
+        # print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
@@ -210,6 +212,10 @@ class kanadeLucasPoint:
 
         # Remove all features outside the bounding box
         self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.recent2DPosition, self.box)]
+
+        # Remove all features whose velocity does not follow the spoon's velocity
+        # if self.gripperVelocity is not None:
+        #     self.activeFeatures = [feat for feat in self.activeFeatures if feat.velocity is None or np.linalg.norm(feat.velocity - self.gripperVelocity) <= 0.05]
 
         # Define features as novel if they meet a given criteria
         for feat in self.activeFeatures:
@@ -295,12 +301,12 @@ class kanadeLucasPoint:
     def boundingBox(self, point):
         # Define a box with respect to the l_gripper_tool_frame
         # Left is on +y axis
-        left3D =  [0, 0.1, 0]
-        right3D = [0, -0.1, 0]
+        left3D =  [0, 0.15, 0]
+        right3D = [0, -0.15, 0]
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.22, 0, 0]
+        spoon3D = [0.22, 0, -0.05]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
@@ -323,14 +329,15 @@ class kanadeLucasPoint:
             top, bottom = bottom, top
 
         # Make sure box encompases the spoon
-        if left > self.spoonX - 15:
-            left = self.spoonX - 15
-        if right < self.spoonX + 15:
-            right = self.spoonX + 15
-        if top > self.spoonY - 15:
-            top = self.spoonY - 15
-        if bottom < self.spoonY + 15:
-            bottom = self.spoonY + 15
+        margin = 20
+        if left > self.spoonX - margin:
+            left = self.spoonX - margin
+        if right < self.spoonX + margin:
+            right = self.spoonX + margin
+        if top > self.spoonY - margin:
+            top = self.spoonY - margin
+        if bottom < self.spoonY + margin:
+            bottom = self.spoonY + margin
 
         # Check if box extrudes past image bounds
         if left < 0:
@@ -507,10 +514,18 @@ class kanadeLucasPoint:
             self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
-            # Find 2D location of gripper
-            self.lGripX, self.lGripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
         except tf.ExtrapolationException:
             pass
+        # Find 2D location of gripper
+        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
+        # Determine current velocity of gripper
+        if self.lGripX is not None:
+            distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
+            timeChange = time.time() - self.lastGripTime
+            self.gripperVelocity = distChange / timeChange
+            print self.gripperVelocity
+        self.lGripX, self.lGripY = gripX, gripY
+        self.lastGripTime = time.time()
 
 minDist = 0.015
 maxDist = 0.03
@@ -529,6 +544,8 @@ class feature:
         self.history = []
         self.lastHistoryPosition = None
         self.lastHistoryCount = 0
+        self.velocity = None
+        self.lastTime = None
 
         self.setStartPosition()
 
@@ -539,6 +556,12 @@ class feature:
 
     def update(self, newPosition):
         newPosition = np.array(newPosition)
+        # Update velocity of feature
+        if self.recent2DPosition is not None:
+            distChange = newPosition - self.recent2DPosition
+            timeChange = time.time() - self.lastTime
+            self.velocity = distChange / timeChange
+        self.lastTime = time.time()
         self.recent2DPosition = newPosition
         self.frame += 1
         # Check if start position has been successfully set yet
