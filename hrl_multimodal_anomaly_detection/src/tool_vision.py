@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import rospy
 from threading import Thread
-from visionTracker import visionTracker
+
+import rospy
+from hrl_multimodal_anomaly_detection.src import visionTracker
+
 
 class tool_vision(Thread):
     def __init__(self, tfListener=None):

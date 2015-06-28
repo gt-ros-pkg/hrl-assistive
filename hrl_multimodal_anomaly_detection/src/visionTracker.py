@@ -3,15 +3,16 @@
 __author__ = 'zerickson'
 
 import time
-import rospy
 import numpy as np
+
+import rospy
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 from arTagPoint import arTagPoint
 from kanadeLucasPoint import kanadeLucasPoint
-
 import kinectCircularPath as circularPath
-import kinectLinearPath as linearPath
+from hrl_multimodal_anomaly_detection.src import kinectLinearPath as linearPath
+
 
 class visionTracker:
     def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, publish=False, visual=False, tfListener=None):

@@ -1,45 +1,34 @@
 #!/usr/bin/env python
 
 # System
-import numpy as np
-import time, sys
-import cPickle as pkl
-import pandas as pd
-from collections import deque
-import pyaudio
 import wave
 import struct
 import scipy.signal as signal
-import scipy.fftpack
-import operator
 from threading import Thread
 import glob
 import os
-import pwd
 import getpass
-from tool_vision import tool_vision
+
+import pyaudio
+from hrl_multimodal_anomaly_detection.src import tool_vision
+
 
 # ROS
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 roslib.load_manifest('geometry_msgs')
 roslib.load_manifest('hrl_lib')
-import rospy, optparse, math, time
+import rospy, optparse
 import tf
-from geometry_msgs.msg import Wrench
-from geometry_msgs.msg import TransformStamped, WrenchStamped
-from std_msgs.msg import Bool, Float32
+from geometry_msgs.msg import WrenchStamped
 import threading
 from sensor_msgs.msg import JointState
 
 # HRL
-from hrl_srvs.srv import None_Bool, None_BoolResponse
-from hrl_msgs.msg import FloatArray
+from hrl_srvs.srv import None_Bool
 import hrl_lib.util as ut
 
 # External Utils
-import matplotlib.pyplot as pp
-import matplotlib as mpl
 from pylab import *
 
 
