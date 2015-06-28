@@ -71,6 +71,8 @@ class kanadeLucasPoint:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
+        self.spoonX = None
+        self.spoonY = None
         self.pinholeCamera = None
         self.rgbCameraFrame = None
         self.box = None
@@ -160,7 +162,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        # print lowX, highX, lowY, highY, imageGray.shape
+        print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
@@ -259,6 +261,15 @@ class kanadeLucasPoint:
         circle.g = 125
         imageFeatures.circles.append(circle)
 
+        # Draw an blue point on image for spoon tip
+        circle = Circle()
+        circle.x, circle.y = int(self.spoonX), int(self.spoonY)
+        circle.radius = 10
+        circle.r = 50
+        circle.g = 255
+        circle.b = 255
+        imageFeatures.circles.append(circle)
+
         # Draw a bounding box around spoon (or left gripper)
         rect = Rectangle()
         rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
@@ -289,34 +300,38 @@ class kanadeLucasPoint:
         right3D = [0, -0.1, 0]
         # Up is on +x axis
         up3D = [0.3, 0, 0]
-        down3D = [-0.05, 0, 0]
+        down3D = [0.05, 0, 0]
+        spoon3D = [0.22, 0, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
         right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
         top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
         bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
+        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
         # Project 3D box locations to 2D for the camera
         left, _ = self.pinholeCamera.project3dToPixel(left)
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
-        # Determine end of spoon for expanding box (follows +x axis for about 50 cm)
-        spoonEnd = np.array(self.lGripperTranslation) + [0.5 , 0, 0]
-        # Project into 2D for camera
-        spoonX, spoonY = self.pinholeCamera.project3dToPixel(spoonEnd)
+        # Adjust incase hand is upside down
+        if left > right:
+            left, right = right, left
+        if top > bottom:
+            top, bottom = bottom, top
 
         # Make sure box encompases the spoon
-        if spoonX < left:
-            left = spoonX - 15
-        if right < spoonX:
-            right = spoonX + 15
-        if spoonY < top:
-            top = spoonX - 15
-        if bottom < spoonY:
-            bottom = spoonY + 15
+        if left > self.spoonX - 15:
+            left = self.spoonX - 15
+        if right < self.spoonX + 15:
+            right = self.spoonX + 15
+        if top > self.spoonY - 15:
+            top = self.spoonY - 15
+        if bottom < self.spoonY + 15:
+            bottom = self.spoonY + 15
 
         # Check if box extrudes past image bounds
         if left < 0:
@@ -329,22 +344,24 @@ class kanadeLucasPoint:
             bottom = self.cameraHeight - 1
 
         # Verify that the box bounds are not too small (50 pixels is smallest)
-        if np.abs(right - left) < 50:
-            if left < 25:
-                right += 50
-            elif right > self.cameraWidth - 26:
-                left -= 50
+        diff = 100 - np.abs(right - left)
+        if np.abs(right - left) < 100:
+            if left < diff/2.0:
+                right += diff
+            elif right > self.cameraWidth - diff/2.0 - 1:
+                left -= diff
             else:
-                left -= 25
-                right += 25
+                left -= diff/2.0
+                right += diff/2.0
+        diff = 50 - np.abs(bottom - top)
         if np.abs(bottom - top) < 50:
-            if top < 25:
-                bottom += 50
-            elif bottom > self.cameraHeight - 26:
-                top -= 50
+            if top < diff/2.0:
+                bottom += diff
+            elif bottom > self.cameraHeight - diff/2.0 - 1:
+                top -= diff
             else:
-                top -= 25
-                bottom += 25
+                top -= diff/2.0
+                bottom += diff/2.0
 
         return left, right, top, bottom
 
