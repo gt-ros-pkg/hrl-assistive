@@ -10,6 +10,7 @@ import getpass
 
 # ROS
 import roslib
+import random
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 roslib.load_manifest('geometry_msgs')
 roslib.load_manifest('hrl_lib')
@@ -21,8 +22,10 @@ from std_msgs.msg import Bool
 
 # HRL
 import hrl_lib.util as ut
+
 import matplotlib.pyplot as pp
 import matplotlib as mpl
+from mpl_toolkits.mplot3d import Axes3D
 
 from scipy.fftpack import fft
 
@@ -182,6 +185,30 @@ if __name__ == '__main__':
         #pp.show()
 
     pp.show()
+
+    if vision:
+        data = d['visual_points']
+        points = dict()
+        for dataSet in data:
+            for key, value in dataSet.iteritems():
+                if key in points:
+                    points[key].append(value)
+                else:
+                    points[key] = [value]
+
+        fig = pp.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        point = random.choice(points.keys())
+        point = np.array(points[point])
+        xs, ys ,zs = point[:, 0], point[:, 1], point[:, 2]
+        ax.scatter(xs, ys, zs, c='r')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        pp.show()
+
 
 	#pp.subplot(616)
 	#p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))

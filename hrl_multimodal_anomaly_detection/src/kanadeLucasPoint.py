@@ -347,7 +347,7 @@ class kanadeLucasPoint:
             top, bottom = bottom, top
 
         # Make sure box encompases the spoon
-        margin = 20
+        margin = 40
         if left > self.spoonX - margin:
             left = self.spoonX - margin
         if right < self.spoonX + margin:
@@ -367,7 +367,7 @@ class kanadeLucasPoint:
         if bottom > self.cameraHeight - 1:
             bottom = self.cameraHeight - 1
 
-        # Verify that the box bounds are not too small (50 pixels is smallest)
+        # Verify that the box bounds are not too small
         diff = 100 - np.abs(right - left)
         if np.abs(right - left) < 100:
             if left < diff/2.0:
