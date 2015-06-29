@@ -82,6 +82,8 @@ if __name__ == '__main__':
     if ft_kinematics:
 
         ft_time = np.array(d.get('ft_time',None))
+        kinematics_time = np.array(d.get('kinematics_time', None))
+
         ft_force = np.array(d.get('ft_force_raw',None))
         ft_torque = np.array(d.get('ft_torque_raw', None))
 

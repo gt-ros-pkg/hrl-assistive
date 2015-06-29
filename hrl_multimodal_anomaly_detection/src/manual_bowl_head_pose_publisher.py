@@ -36,7 +36,7 @@ class bowlPublisher():
 		#The manually set positions and orientations!!!
 		(self.bowl_pose_manual.pose.position.x, 
 			self.bowl_pose_manual.pose.position.y, 
-			self.bowl_pose_manual.pose.position.z) = (.806, .057, -.204)
+			self.bowl_pose_manual.pose.position.z) = (0.786, 0.482, -0.336)
 		(self.bowl_pose_manual.pose.orientation.x,
 			self.bowl_pose_manual.pose.orientation.y,
 			self.bowl_pose_manual.pose.orientation.z,
