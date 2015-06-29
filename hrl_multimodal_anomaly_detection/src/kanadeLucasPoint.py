@@ -318,21 +318,21 @@ class kanadeLucasPoint:
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        # spoon3D = [0.22, 0.05, 0]
+        spoon3D = [0.234, -0.030, 0.000]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
         right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
         top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
         bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
-        # spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
         # Project 3D box locations to 2D for the camera
         left, _ = self.pinholeCamera.project3dToPixel(left)
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
-        # self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Adjust incase hand is upside down
         if left > right:
@@ -554,10 +554,9 @@ class kanadeLucasPoint:
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
         # Transpose gripper position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(5.0))
-        # timeGripper = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
         try :
-            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
+            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
@@ -575,15 +574,14 @@ class kanadeLucasPoint:
         # self.lastGripTime = time.time()
 
         # Transpose spoon position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(5.0))
-        # timeSpoon = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
-        try :
-            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
-            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-            self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
-        except tf.ExtrapolationException:
-            pass
-        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
+        # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(5.0))
+        # try :
+        #     self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
+        #     # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+        #     self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
+        # except tf.ExtrapolationException:
+        #     pass
+        # self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
 
         # Define a line through these points
         # m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
