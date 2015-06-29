@@ -312,9 +312,9 @@ class kanadeLucasPoint:
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
         # These are dependent on the orientation of the gripper. This should be taken into account
-        # Left is on +y axis
-        left3D =  [0, 0.15, 0]
-        right3D = [0, -0.15, 0]
+        # Left is on -z axis
+        left3D =  [0, 0, -0.15]
+        right3D = [0, 0, 0.15]
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
