@@ -324,7 +324,7 @@ class kanadeLucasPoint:
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.22, 0, -0.03]
+        spoon3D = [0.22, 0.03, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
@@ -347,7 +347,7 @@ class kanadeLucasPoint:
             top, bottom = bottom, top
 
         # Make sure box encompases the spoon
-        margin = 40
+        margin = 20
         if left > self.spoonX - margin:
             left = self.spoonX - margin
         if right < self.spoonX + margin:
@@ -575,8 +575,8 @@ class kanadeLucasPoint:
             distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
             timeChange = time.time() - self.lastGripTime
             self.gripperVelocity = distChange / timeChange
-            print distChange, timeChange
-            print self.gripperVelocity
+            # print distChange, timeChange
+            # print self.gripperVelocity
         self.lGripX, self.lGripY = gripX, gripY
         self.lastGripTime = time.time()
 
