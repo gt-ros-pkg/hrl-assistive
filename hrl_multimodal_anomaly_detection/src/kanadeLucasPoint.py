@@ -553,6 +553,15 @@ class kanadeLucasPoint:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
+        # Transpose spoon position to camera frame
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
+        try :
+            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
+            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+            self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
+        except tf.ExtrapolationException:
+            pass
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
         # Transpose gripper position to camera frame
         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
         try :
@@ -572,15 +581,6 @@ class kanadeLucasPoint:
         #     # print self.gripperVelocity
         self.lGripX, self.lGripY = gripX, gripY
         # self.lastGripTime = time.time()
-        # Transpose spoon position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
-        try :
-            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
-            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-            self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
-        except tf.ExtrapolationException:
-            pass
-        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
 
 minDist = 0.015
 maxDist = 0.03
