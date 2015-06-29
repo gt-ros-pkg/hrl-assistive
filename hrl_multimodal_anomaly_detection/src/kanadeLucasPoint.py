@@ -580,7 +580,7 @@ class kanadeLucasPoint:
             self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
         except tf.ExtrapolationException:
             pass
-        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
 
 minDist = 0.015
 maxDist = 0.03
