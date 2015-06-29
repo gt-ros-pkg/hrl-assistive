@@ -70,13 +70,16 @@ class kanadeLucasPoint:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
-        # Used for gripper velocity
-        self.gripX = None
-        self.gripY = None
-        self.gripperVelocity = None
-        self.lastGripTime = None
+        # Spoon data
+        self.spoonTranslation = None
+        self.spoonRotation = None
+        self.spoonTransposeMatrix = None
         self.spoonX = None
         self.spoonY = None
+        # Used for gripper velocity
+        self.gripperVelocity = None
+        self.lastGripTime = None
+
         self.pinholeCamera = None
         self.rgbCameraFrame = None
         self.box = None
@@ -283,15 +286,6 @@ class kanadeLucasPoint:
             circle.b = 255
             imageFeatures.circles.append(circle)
 
-        if self.gripX is not None:
-            # Draw an blue point on image for spoon tip
-            circle = Circle()
-            circle.x, circle.y = int(self.gripX), int(self.gripY)
-            circle.radius = 10
-            circle.r = 50
-            circle.g = 255
-            imageFeatures.circles.append(circle)
-
         if self.box is not None:
             # Draw a bounding box around spoon (or left gripper)
             rect = Rectangle()
@@ -317,28 +311,28 @@ class kanadeLucasPoint:
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self, point):
-        # Define a box with respect to the l_gripper_tool_frame
+        # These are dependent on the orientation of the gripper. This should be taken into account
         # Left is on +y axis
         left3D =  [0, 0.15, 0]
         right3D = [0, -0.15, 0]
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.22, 0.05, 0]
+        # spoon3D = [0.22, 0.05, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
         right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
         top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
         bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
-        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        # spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
         # Project 3D box locations to 2D for the camera
         left, _ = self.pinholeCamera.project3dToPixel(left)
         right, _ = self.pinholeCamera.project3dToPixel(right)
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
-        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+        # self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Adjust incase hand is upside down
         if left > right:
@@ -569,15 +563,24 @@ class kanadeLucasPoint:
             pass
         # Find 2D location of gripper
         gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
-        # Determine current velocity of gripper
-        if self.lGripX is not None:
-            distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
-            timeChange = time.time() - self.lastGripTime
-            self.gripperVelocity = distChange / timeChange
-            # print distChange, timeChange
-            # print self.gripperVelocity
+        # # Determine current velocity of gripper
+        # if self.lGripX is not None:
+        #     distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
+        #     timeChange = time.time() - self.lastGripTime
+        #     self.gripperVelocity = distChange / timeChange
+        #     # print distChange, timeChange
+        #     # print self.gripperVelocity
         self.lGripX, self.lGripY = gripX, gripY
-        self.lastGripTime = time.time()
+        # self.lastGripTime = time.time()
+        # Transpose spoon position to camera frame
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
+        try :
+            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
+            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+            self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
+        except tf.ExtrapolationException:
+            pass
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
 
 minDist = 0.015
 maxDist = 0.03
