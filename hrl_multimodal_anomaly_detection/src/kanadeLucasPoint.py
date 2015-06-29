@@ -555,7 +555,7 @@ class kanadeLucasPoint:
             self.rgbCameraFrame = data.header.frame_id
         # Transpose gripper position to camera frame
         # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
-        timeGripper = self.tf.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
+        timeGripper = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
         try :
             self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', timeGripper)
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
@@ -576,7 +576,7 @@ class kanadeLucasPoint:
 
         # Transpose spoon position to camera frame
         # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
-        timeSpoon = self.tf.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
+        timeSpoon = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
         try :
             self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', timeSpoon)
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
