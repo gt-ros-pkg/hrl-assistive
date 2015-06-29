@@ -568,7 +568,8 @@ class kanadeLucasPoint:
         except tf.ExtrapolationException:
             pass
         # Find 2D location of gripper
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
+        gripperPos = np.dot(self.lGripperTransposeMatrix, np.array([0, 0, 0, 1.0]))[:3]
+        gripX, gripY = self.pinholeCamera.project3dToPixel(gripperPos)
         # Determine current velocity of gripper
         if self.lGripX is not None:
             distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
