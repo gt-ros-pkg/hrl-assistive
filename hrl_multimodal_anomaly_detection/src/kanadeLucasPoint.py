@@ -92,19 +92,20 @@ class kanadeLucasPoint:
         # rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
         # rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         # Kinect 2
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
-        print 'Connected to Kinect images'
-        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        print 'Connected to Kinect depth'
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-        print 'Connected to Kinect camera info'
-        rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
-        print 'Connected to joint state info'
-        # PR2 Simulated
-        # rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
+        # rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        # print 'Connected to Kinect images'
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        # rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-        # print 'Connected to all topics'
+        # print 'Connected to Kinect depth'
+        # rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # print 'Connected to Kinect camera info'
+        # rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
+        # print 'Connected to joint state info'
+        # PR2 Simulated
+        rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
+        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
+        print 'Connected to all topics'
 
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
@@ -263,38 +264,42 @@ class kanadeLucasPoint:
             circle.r = 255
             imageFeatures.circles.append(circle)
 
-        # Draw an orange point on image for gripper
-        circle = Circle()
-        circle.x, circle.y = int(self.lGripX), int(self.lGripY)
-        circle.radius = 10
-        circle.r = 255
-        circle.g = 125
-        imageFeatures.circles.append(circle)
+        if self.lGripX is not None:
+            # Draw an orange point on image for gripper
+            circle = Circle()
+            circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+            circle.radius = 10
+            circle.r = 255
+            circle.g = 125
+            imageFeatures.circles.append(circle)
 
-        # Draw an blue point on image for spoon tip
-        circle = Circle()
-        circle.x, circle.y = int(self.spoonX), int(self.spoonY)
-        circle.radius = 10
-        circle.r = 50
-        circle.g = 255
-        circle.b = 255
-        imageFeatures.circles.append(circle)
+        if self.spoonX is not None:
+            # Draw an blue point on image for spoon tip
+            circle = Circle()
+            circle.x, circle.y = int(self.spoonX), int(self.spoonY)
+            circle.radius = 10
+            circle.r = 50
+            circle.g = 255
+            circle.b = 255
+            imageFeatures.circles.append(circle)
 
-        # Draw an blue point on image for spoon tip
-        circle = Circle()
-        circle.x, circle.y = int(self.gripX), int(self.gripY)
-        circle.radius = 10
-        circle.r = 50
-        circle.g = 255
-        imageFeatures.circles.append(circle)
+        if self.gripX is not None:
+            # Draw an blue point on image for spoon tip
+            circle = Circle()
+            circle.x, circle.y = int(self.gripX), int(self.gripY)
+            circle.radius = 10
+            circle.r = 50
+            circle.g = 255
+            imageFeatures.circles.append(circle)
 
-        # Draw a bounding box around spoon (or left gripper)
-        rect = Rectangle()
-        rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
-        rect.r = 75
-        rect.g = 150
-        rect.thickness = 5
-        imageFeatures.rectangles.append(rect)
+        if self.box is not None:
+            # Draw a bounding box around spoon (or left gripper)
+            rect = Rectangle()
+            rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
+            rect.r = 75
+            rect.g = 150
+            rect.thickness = 5
+            imageFeatures.rectangles.append(rect)
 
         features = self.getNovelAndClusteredFeatures(returnFeatures=True)
         if features is not None:
@@ -514,43 +519,9 @@ class kanadeLucasPoint:
         self.pointCloud = data
 
     def jointsCallback(self, data):
-        for i, name in data.name:
-            if name != 'l_gripper_joint':
-                continue
-            velocity = data.velocity[i]
-            print velocity
-            position = data.position[i]
-            # Transpose gripper position to camera frame
-            self.transformer.waitForTransform(self.rgbCameraFrame, data.header.frame_id, rospy.Time(0), rospy.Duration(1.0))
-            try :
-                GripperTranslation, GripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, data.header.frame_id, rospy.Time(0))
-                # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-                GripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(GripperTranslation), tf.transformations.quaternion_matrix(GripperRotation))
-            except tf.ExtrapolationException:
-                print 'Error transforming from joint', data.header.frame_id, 'to', self.rgbCameraFrame
-                return
-            position = np.dot(GripperTransposeMatrix, np.array([position[0], position[1], position[2], 1.0]))[:3]
+        if self.rgbCameraFrame is None:
+            return
 
-            # Find 2D location of gripper
-            gripX, gripY = self.pinholeCamera.project3dToPixel(position)
-            # Determine current velocity of gripper
-            if self.gripX is not None:
-                distChange = np.array([gripX, gripY]) - np.array([self.gripX, self.gripY])
-                timeChange = time.time() - self.lastGripTime
-                self.gripperVelocity = distChange / timeChange
-                print distChange, timeChange
-                print self.gripperVelocity
-            self.gripX, self.gripY = gripX, gripY
-            self.lastGripTime = time.time()
-
-    def cameraRGBInfoCallback(self, data):
-        if self.cameraWidth is None:
-            self.cameraWidth = data.width
-            self.cameraHeight = data.height
-        if self.pinholeCamera is None:
-            self.pinholeCamera = image_geometry.PinholeCameraModel()
-            self.pinholeCamera.fromCameraInfo(data)
-            self.rgbCameraFrame = data.header.frame_id
         # Transpose gripper position to camera frame
         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
         try :
@@ -562,14 +533,52 @@ class kanadeLucasPoint:
         # Find 2D location of gripper
         gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
         # Determine current velocity of gripper
-        # if self.lGripX is not None:
-        #     distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
-        #     timeChange = time.time() - self.lastGripTime
-        #     self.gripperVelocity = distChange / timeChange
-        #     # print distChange, timeChange
-        #     # print self.gripperVelocity
+        if self.lGripX is not None:
+            distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
+            timeChange = time.time() - self.lastGripTime
+            self.gripperVelocity = distChange / timeChange
+            print distChange, timeChange
+            print self.gripperVelocity
         self.lGripX, self.lGripY = gripX, gripY
-        # self.lastGripTime = time.time()
+        self.lastGripTime = time.time()
+
+        # for i, name in enumerate(data.name):
+        #     if name != 'l_gripper_joint':
+        #         continue
+        #     velocity = data.velocity[i]
+        #     print velocity
+        #     position = data.position[i]
+        #     # Transpose gripper position to camera frame
+        #     try :
+        #         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
+        #         GripperTranslation, GripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+        #         # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+        #         GripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(GripperTranslation), tf.transformations.quaternion_matrix(GripperRotation))
+        #     except Exception:
+        #         print 'Error transforming from joint', '/l_gripper_tool_frame', 'to', self.rgbCameraFrame
+        #         return
+        #     position = np.dot(GripperTransposeMatrix, np.array([position[0], position[1], position[2], 1.0]))[:3]
+        #
+        #     # Find 2D location of gripper
+        #     gripX, gripY = self.pinholeCamera.project3dToPixel(position)
+        #     # Determine current velocity of gripper
+        #     if self.gripX is not None:
+        #         distChange = np.array([gripX, gripY]) - np.array([self.gripX, self.gripY])
+        #         timeChange = time.time() - self.lastGripTime
+        #         self.gripperVelocity = distChange / timeChange
+        #         print distChange, timeChange
+        #         print self.gripperVelocity
+        #     self.gripX, self.gripY = gripX, gripY
+        #     self.lastGripTime = time.time()
+
+    def cameraRGBInfoCallback(self, data):
+        if self.cameraWidth is None:
+            self.cameraWidth = data.width
+            self.cameraHeight = data.height
+        if self.pinholeCamera is None:
+            self.pinholeCamera = image_geometry.PinholeCameraModel()
+            self.pinholeCamera.fromCameraInfo(data)
+            self.rgbCameraFrame = data.header.frame_id
 
 minDist = 0.015
 maxDist = 0.03
