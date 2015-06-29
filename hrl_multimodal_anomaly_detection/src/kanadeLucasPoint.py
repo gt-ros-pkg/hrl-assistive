@@ -522,26 +522,6 @@ class kanadeLucasPoint:
         if self.rgbCameraFrame is None:
             return
 
-        # Transpose gripper position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
-        try :
-            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
-            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-            self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
-        except tf.ExtrapolationException:
-            pass
-        # Find 2D location of gripper
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
-        # Determine current velocity of gripper
-        if self.lGripX is not None:
-            distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
-            timeChange = time.time() - self.lastGripTime
-            self.gripperVelocity = distChange / timeChange
-            print distChange, timeChange
-            print self.gripperVelocity
-        self.lGripX, self.lGripY = gripX, gripY
-        self.lastGripTime = time.time()
-
         # for i, name in enumerate(data.name):
         #     if name != 'l_gripper_joint':
         #         continue
@@ -579,6 +559,25 @@ class kanadeLucasPoint:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
+        # Transpose gripper position to camera frame
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
+        try :
+            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+            self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
+        except tf.ExtrapolationException:
+            pass
+        # Find 2D location of gripper
+        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
+        # Determine current velocity of gripper
+        if self.lGripX is not None:
+            distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
+            timeChange = time.time() - self.lastGripTime
+            self.gripperVelocity = distChange / timeChange
+            print distChange, timeChange
+            print self.gripperVelocity
+        self.lGripX, self.lGripY = gripX, gripY
+        self.lastGripTime = time.time()
 
 minDist = 0.015
 maxDist = 0.03
