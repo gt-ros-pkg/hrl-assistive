@@ -324,7 +324,7 @@ class kanadeLucasPoint:
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.22, 0.03, 0]
+        spoon3D = [0.22, 0.05, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
@@ -568,8 +568,7 @@ class kanadeLucasPoint:
         except tf.ExtrapolationException:
             pass
         # Find 2D location of gripper
-        gripperPos = np.dot(self.lGripperTransposeMatrix, np.array([0, 0, 0, 1.0]))[:3]
-        gripX, gripY = self.pinholeCamera.project3dToPixel(gripperPos)
+        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
         # Determine current velocity of gripper
         if self.lGripX is not None:
             distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
