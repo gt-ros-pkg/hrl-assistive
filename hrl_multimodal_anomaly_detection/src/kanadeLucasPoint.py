@@ -554,10 +554,10 @@ class kanadeLucasPoint:
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
         # Transpose gripper position to camera frame
-        # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
-        timeGripper = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(5.0))
+        # timeGripper = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
         try :
-            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', timeGripper)
+            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
@@ -575,10 +575,10 @@ class kanadeLucasPoint:
         # self.lastGripTime = time.time()
 
         # Transpose spoon position to camera frame
-        # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
-        timeSpoon = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(5.0))
+        # timeSpoon = self.transformer.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
         try :
-            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', timeSpoon)
+            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
             self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
         except tf.ExtrapolationException:
