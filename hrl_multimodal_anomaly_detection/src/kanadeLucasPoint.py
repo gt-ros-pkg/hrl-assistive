@@ -553,19 +553,11 @@ class kanadeLucasPoint:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
-        # Transpose spoon position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
-        try :
-            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0))
-            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-            self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
-        except tf.ExtrapolationException:
-            pass
-        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
         # Transpose gripper position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
+        # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(1.0))
+        timeGripper = self.tf.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_tool_frame')
         try :
-            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', timeGripper)
             # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
@@ -581,6 +573,22 @@ class kanadeLucasPoint:
         #     # print self.gripperVelocity
         self.lGripX, self.lGripY = gripX, gripY
         # self.lastGripTime = time.time()
+
+        # Transpose spoon position to camera frame
+        # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(1.0))
+        timeSpoon = self.tf.getLatestCommonTime(self.rgbCameraFrame, '/l_gripper_spoon_frame')
+        try :
+            self.spoonTranslation, self.spoonRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', timeSpoon)
+            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+            self.spoonTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.spoonTranslation), tf.transformations.quaternion_matrix(self.spoonRotation))
+        except tf.ExtrapolationException:
+            pass
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
+
+        # Define a line through these points
+        m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
+        xs = np.linspace(self.lGripX, self.spoonX, 25)
+        ys = m * (xs - self.lGripX) + self.lGripY
 
 minDist = 0.015
 maxDist = 0.03
