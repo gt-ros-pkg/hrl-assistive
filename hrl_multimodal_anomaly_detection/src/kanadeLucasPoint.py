@@ -586,9 +586,9 @@ class kanadeLucasPoint:
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
 
         # Define a line through these points
-        m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
-        xs = np.linspace(self.lGripX, self.spoonX, 25)
-        ys = m * (xs - self.lGripX) + self.lGripY
+        # m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
+        # xs = np.linspace(self.lGripX, self.spoonX, 25)
+        # ys = m * (xs - self.lGripX) + self.lGripY
 
 minDist = 0.015
 maxDist = 0.03
