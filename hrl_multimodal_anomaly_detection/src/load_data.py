@@ -1,43 +1,29 @@
 #!/usr/bin/env python
 
 # System
-import numpy as np
-import time, sys, os
-import cPickle as pkl
-import pandas as pd
+import os
+import random
 import getpass
-
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.fftpack import fft
+# import yaafelib as yaafe
+# from yaafelib import AudioFeature, check_dataflow_params, dataflow_safe_append, DataFlow
+# import yaafefeatures as yf
 
 # ROS
 import roslib
-import random
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
-roslib.load_manifest('geometry_msgs')
-roslib.load_manifest('hrl_lib')
-import rospy, optparse, math, time
-import tf
-from geometry_msgs.msg import Wrench
-from geometry_msgs.msg import TransformStamped, WrenchStamped
-from std_msgs.msg import Bool
 
 # HRL
 import hrl_lib.util as ut
 
-import matplotlib.pyplot as pp
-import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
-
-from scipy.fftpack import fft
-
-# External lib
-## import yaafelib as yaafe
-## from yaafelib import AudioFeature, check_dataflow_params, dataflow_safe_append, DataFlow
-## import yaafefeatures as yf
-
 def butter_bandpass(lowcut, highcut, fs, order=5):
-    '''
+    """
     fs: sampling frequency
-    '''
+    """
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
@@ -93,7 +79,7 @@ if __name__ == '__main__':
         tf_r_ee_quat = np.array(d.get('r_end_effector_quat', None))
 
         # Graphing X Force/Pos Data
-        fig1, (forceAx1, tfAx1) = pp.subplots(2, 1, sharex=True)
+        fig1, (forceAx1, tfAx1) = plt.subplots(2, 1, sharex=True)
 
         forceAx1.plot(ft_time, ft_force[:,0], 'b-')
         forceAx1.set_xlabel('time (s)')
@@ -102,10 +88,10 @@ if __name__ == '__main__':
         tfAx1.set_ylabel('X Pos')
 
         fig1.subplots_adjust(hspace=0)
-        pp.setp([a.get_xticklabels() for a in fig1.axes[:-1]], visible=False)
+        plt.setp([a.get_xticklabels() for a in fig1.axes[:-1]], visible=False)
 
         # Graphing Y Force/Pos Data
-        fig2, (forceAx2, tfAx2) = pp.subplots(2, 1, sharex=True)
+        fig2, (forceAx2, tfAx2) = plt.subplots(2, 1, sharex=True)
 
         forceAx2.plot(ft_time, ft_force[:,1], 'b-')
         forceAx2.set_xlabel('time (s)')
@@ -114,10 +100,10 @@ if __name__ == '__main__':
         tfAx2.set_ylabel('Y Pos')
 
         fig2.subplots_adjust(hspace=0)
-        pp.setp([a.get_xticklabels() for a in fig2.axes[:-1]], visible=False)
+        plt.setp([a.get_xticklabels() for a in fig2.axes[:-1]], visible=False)
 
         # Graphing Z Force/Pos Data
-        fig3, (forceAx3, tfAx3) = pp.subplots(2, 1, sharex=True)
+        fig3, (forceAx3, tfAx3) = plt.subplots(2, 1, sharex=True)
 
         forceAx3.plot(ft_time, ft_force[:,2], 'b-')
         forceAx3.set_xlabel('time (s)')
@@ -126,9 +112,9 @@ if __name__ == '__main__':
         tfAx3.set_ylabel('Z Pos')
 
         fig3.subplots_adjust(hspace=0)
-        pp.setp([a.get_xticklabels() for a in fig3.axes[:-1]], visible=False)
+        plt.setp([a.get_xticklabels() for a in fig3.axes[:-1]], visible=False)
 
-        #pp.show()
+        #plt.show()
 
     if audio:
         audio_data = d['audio_data']
@@ -160,33 +146,33 @@ if __name__ == '__main__':
         ##     rms.append(np.log(np.abs(fft)))
 
 
-        pp.figure()
-        pp.subplot(411)
-        pp.plot(audio_data,'b.')
-        pp.xlabel('Time')
-        pp.ylabel('Audio Data... Amplitude?')
-        pp.title("Audio Data")
+        plt.figure()
+        plt.subplot(411)
+        plt.plot(audio_data,'b.')
+        plt.xlabel('Time')
+        plt.ylabel('Audio Data... Amplitude?')
+        plt.title("Audio Data")
 
-        pp.subplot(412)
+        plt.subplot(412)
         xs = audio_freq[:audio_chunk/16]
         ys = np.abs(audio_amp[:][:audio_chunk/16])
         ys = np.multiply(20,np.log10(ys))
-        pp.plot(xs,ys,'y')
-        pp.xlabel('Audio freqs')
-        pp.ylabel('Amplitudes')
-        pp.title("Audio Frequency and Amplitude")
+        plt.plot(xs,ys,'y')
+        plt.xlabel('Audio freqs')
+        plt.ylabel('Amplitudes')
+        plt.title("Audio Frequency and Amplitude")
 
-        pp.subplot(413)
-        pp.plot(audio_freq, 'b')
-        pp.title('Raw audio_freq data')
+        plt.subplot(413)
+        plt.plot(audio_freq, 'b')
+        plt.title('Raw audio_freq data')
 
-        pp.subplot(414)
-        pp.plot(audio_amp, 'y')
-        pp.title('Raw audio_amp data')
+        plt.subplot(414)
+        plt.plot(audio_amp, 'y')
+        plt.title('Raw audio_amp data')
 
-        #pp.show()
+        #plt.show()
 
-    pp.show()
+    plt.show()
 
     if vision:
         data = d['visual_points']
@@ -198,7 +184,7 @@ if __name__ == '__main__':
                 else:
                     points[key] = [value]
 
-        fig = pp.figure()
+        fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
         point = random.choice(points.keys())
@@ -209,19 +195,19 @@ if __name__ == '__main__':
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
 
-        pp.show()
+        plt.show()
 
 
-	#pp.subplot(616)
-	#p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))
-	#f = np.linspace(0, rate/2.0, len(p))
-	#pp.plot(f, p)
-	#pp.xlabel("Frequency(Hz)")
-	#pp.ylabel("Power(dB)")
-	#pp.title("Raw audio_data (same as wav data)")
+    #plt.subplot(616)
+    #p = 20*np.log10(np.abs(np.fft.rfft(audio_data_raw[:2048, 0])))
+    #f = np.linspace(0, rate/2.0, len(p))
+    #plt.plot(f, p)
+    #plt.xlabel("Frequency(Hz)")
+    #plt.ylabel("Power(dB)")
+    #plt.title("Raw audio_data (same as wav data)")
         
-	## pp.plot(rms)
-        ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)
+    ## plt.plot(rms)
+        ## plt.stem(noise_freq_l, values, 'k-*', bottom=0)
 
         ## import pyaudio
         ## MAX_INT = 32768.0

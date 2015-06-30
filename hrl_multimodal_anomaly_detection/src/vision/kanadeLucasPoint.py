@@ -14,7 +14,7 @@ try :
 except:
     import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
-from sensor_msgs.msg import Image, CameraInfo, PointCloud2, JointState
+from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 from geometry_msgs.msg import Point
 from roslib import message
 
@@ -299,7 +299,7 @@ class kanadeLucasPoint:
 
     # Finds a bounding box around a given point
     # Returns coordinates (lowX, highX, lowY, highY)
-    def boundingBox(self, point):
+    def boundingBox(self):
         # These are dependent on the orientation of the gripper. This should be taken into account
         # Left is on -z axis
         left3D =  [0, 0, -0.2]
@@ -326,7 +326,7 @@ class kanadeLucasPoint:
         # Define a line through gripper and spoon
         m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
         xs = np.linspace(self.lGripX, self.spoonX, 25)
-        ys = m * (xs - self.lGripX) + self.lGripY
+        ys = m * (xs + -self.lGripX) + self.lGripY
         self.linePoints = np.reshape(np.hstack((xs, ys)), (xs.size, 2), order='F')
 
         # Adjust incase hand is upside down
@@ -378,7 +378,8 @@ class kanadeLucasPoint:
 
         return left, right, top, bottom
 
-    def pointInBoundingBox(self, point, boxPoints):
+    @staticmethod
+    def pointInBoundingBox(point, boxPoints):
         px, py = point
         lowX, highX, lowY, highY = boxPoints
         return lowX <= px <= highX and lowY <= py <= highY
@@ -486,7 +487,7 @@ class kanadeLucasPoint:
             return
 
         # Used to verify that each point is within our defined box
-        self.box = [int(x) for x in self.boundingBox((self.lGripX, self.lGripY))]
+        self.box = [int(x) for x in self.boundingBox()]
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
@@ -494,7 +495,7 @@ class kanadeLucasPoint:
             self.frameId = data.header.frame_id
             if self.targetFrame is not None:
                 t = rospy.Time(0)
-                self.transformer.waitForTransform(self.targetFrame, self.frameId, t, rospy.Duration(5.0))
+                self.transformer.waitForTransform(self.targetFrame, self.frameId, t, rospy.Duration(5))
                 trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, t)
                 self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
             # Determine initial set of features

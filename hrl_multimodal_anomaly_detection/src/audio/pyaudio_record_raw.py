@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
-import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
-import rospy
-import numpy as np, math
-import time
-
 import pyaudio
 import wave
+
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16

@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
-import roslib; roslib.load_manifest('sandbox_dpark_darpa_m3')
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
-import rospy
-
 from record_data import *
-from load_data import *
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
 
-class dataRecord():
+class dataRecord:
 
     AUDIO = True
     AUDIORECORD = True
@@ -20,14 +17,13 @@ class dataRecord():
 
     def __init__(self):
 
-        self.subject = raw_input("Enter subject name: ")
-        self.task = raw_input("Enter task name: ")
-        self.actor = raw_input("Enter actor name: ")
+        subject = raw_input("Enter subject name: ")
+        task = raw_input("Enter task name: ")
+        actor = raw_input("Enter actor name: ")
         self.trial_name = raw_input("Enter trial name: ")
 
-        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION,  ft=self.FT, kinematics=self.KINEMATICS,  manip=self.MANIP, test_mode=self.TEST_MODE)
-
-        self.log.init_log_file(self.subject, self.task, self.actor)
+        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION, ft=self.FT, kinematics=self.KINEMATICS,
+                                manip=self.MANIP, test_mode=self.TEST_MODE, subject=subject, task=task, actor=actor)
 
         #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
         repeatAns = raw_input("Change trial name before starting? [y/n]")

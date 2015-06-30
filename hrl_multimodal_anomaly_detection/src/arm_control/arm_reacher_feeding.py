@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-import roslib
-roslib.load_manifest('sandbox_dpark_darpa_m3')
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
-import rospy
-import numpy as np, math
+import sys
 import time
-import tf
+import rospy
+import numpy as np
 
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import tf
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
-import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
@@ -17,8 +16,6 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
-from pr2_controllers_msgs.msg import JointTrajectoryGoal
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class armReachAction(mpcBaseAction):
@@ -108,12 +105,12 @@ class armReachAction(mpcBaseAction):
         self.head_pos_kinect = None
 
         #How much to offset Kinect provided bowl position
-    	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
+        self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
         #^ MAY BE REDUNDANT SINCE WE CAN ADD/SUBTRACT
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-    	self.timeoutsScooping = [17, 10, 4, 4, 4]
+        self.timeoutsScooping = [17, 10, 4, 4, 4]
         self.timeoutsFeeding = [10, 7, 5]
 
         #Paused used between each motion
@@ -121,13 +118,13 @@ class armReachAction(mpcBaseAction):
         self.pausesScooping = [1, 1, 1, 1, 1]
         self.pausesFeeding = [1, 1, 1]
 
-    	print "Calculated quaternions: \n"
-    	print "leftArmScoopingQuats -"
+        print "Calculated quaternions: \n"
+        print "leftArmScoopingQuats -"
         print self.leftArmScoopingQuats
-    	print "leftArmFeedingQuats -"
-    	print self.leftArmFeedingQuats
-    	print "leftArmStopQuats -"
-    	print self.leftArmStopQuats
+        print "leftArmFeedingQuats -"
+        print self.leftArmFeedingQuats
+        print "leftArmStopQuats -"
+        print self.leftArmStopQuats
 
         try:
                 print "--------------------------------"
@@ -272,7 +269,7 @@ class armReachAction(mpcBaseAction):
                 self.head_frame = self.head_frame_kinect
                 self.head_pos = self.head_pos_kinect
                 self.head_quat = self.head_quat_kinect
-            elif which_bowl == 'm':
+            elif which_head == 'm':
                 self.head_frame = self.head_frame_manual
                 self.head_pos = self.head_pos_manual
                 self.head_frame = self.head_quat_manual
@@ -470,17 +467,17 @@ class armReachAction(mpcBaseAction):
     #converts an array of euler angles (in degrees) to array of quaternions
     def euler2quatArray(self, eulersIn): 
 
-    	(rows, cols) = np.shape(eulersIn)
-    	quatArray = np.zeros((rows, cols+1))
-    	for r in xrange(0, rows):
-    	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
-    	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
-    	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = (quats[0], 
+        (rows, cols) = np.shape(eulersIn)
+        quatArray = np.zeros((rows, cols+1))
+        for r in xrange(0, rows):
+            rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
+            quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
+            quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = (quats[0],
                                                                                   quats[1], 
                                                                                   quats[2], 
                                                                                   quats[3])
 
-    	return quatArray
+        return quatArray
 
     def initJoints(self):
 
@@ -525,8 +522,6 @@ class armReachAction(mpcBaseAction):
         elif whichTask == 'x':
             print "Exiting program! "
             sys.exit()
-
-            return True
 
 if __name__ == '__main__':
 

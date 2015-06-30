@@ -8,8 +8,9 @@ Author: Tim Field
 
 import roslib; roslib.load_manifest('sensor_msgs')
 
-import ctypes
+import sys
 import math
+import ctypes
 import struct
 
 from sensor_msgs.msg import PointCloud2, PointField

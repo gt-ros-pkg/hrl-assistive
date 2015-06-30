@@ -4,11 +4,11 @@ import roslib
 roslib.load_manifest("hrl_feeding_task")
 roslib.load_manifest("hrl_haptic_mpc")
 import rospy
-from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
+from geometry_msgs.msg import PoseStamped
 import std_msgs.msg
 
 
-class bowlPublisher():
+class bowlPublisher:
 	def __init__(self):
 
 		#MAY NEED TO REMAP ROOT TOPIC NAME GROUP!

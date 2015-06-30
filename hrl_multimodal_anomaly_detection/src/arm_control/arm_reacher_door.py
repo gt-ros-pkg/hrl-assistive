@@ -1,38 +1,30 @@
 #!/usr/bin/env python
 
-import roslib; roslib.load_manifest('sandbox_dpark_darpa_m3')
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy
-import numpy as np, math
-import time
-import tf
+import numpy as np
 
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import tf
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-from hrl_feeding_task.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
-from hrl_multimodal_anomaly_detection.src.record_data import robot_kinematics as kinematicsRecord
-from hrl_multimodal_anomaly_detection.src.record_data import tool_audio as audioRecord
-from hrl_multimodal_anomaly_detection.src.record_data import tool_ft as ftRecord
 
 import hrl_lib.quaternion as quatMath
-from std_msgs.msg import String
-from pr2_controllers_msgs.msg import JointTrajectoryGoal
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 class leftArmDoor(mpcBaseAction):
 
-        def __init__(self, d_robot, controller, arm): #removed arm= 'l' so I can use right arm as well as an option
-            mpcBaseAction.__init__(self, d_robot, controller, arm)
-            self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
+    def __init__(self, d_robot, controller, arm): #removed arm= 'l' so I can use right arm as well as an option
+        mpcBaseAction.__init__(self, d_robot, controller, arm)
+        self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
 
-            handlePos = np.array[[0, 0, 0]]
-            framePos = np.array[[0, 0, 0]]
-            actionPositions = np.array[[0, 0, 0]]
-            actionEulers = np.array[[90, 0, 0]]
-            actionQuats = euler2quatArray(actionEulers)
+        handlePos = np.array[[0, 0, 0]]
+        framePos = np.array[[0, 0, 0]]
+        actionPositions = np.array[[0, 0, 0]]
+        actionEulers = np.array[[90, 0, 0]]
+        actionQuats = euler2quatArray(actionEulers)
 
     def start_cb(self, req):
 

@@ -47,27 +47,27 @@ def calcLinearPath(data, verbose=False, plot=False):
 
     return endPoints, error
 
+if __name__ == '__main__':
+    # Test data (Generate points on circle with random deviation)
+    r = 1.5
+    i, j, k = [3.1, 3.2, 3.3]
+    binormal = np.array([1.0, 0.0, 1.0])
+    binormal = binormal / np.linalg.norm(binormal)
+    tangent = np.array([0.0, 1.0, 0.0])
 
-# Test data (Generate points on circle with random deviation)
-# r = 1.5
-# i, j, k = [3.1, 3.2, 3.3]
-# binormal = np.array([1.0, 0.0, 1.0])
-# binormal = binormal / np.linalg.norm(binormal)
-# tangent = np.array([0.0, 1.0, 0.0])
-#
-# x = np.array([i + (r*cos(phi)*binormal+r*sin(phi)*tangent)[0] + np.random.rand()/4 for phi in np.linspace(0, np.pi, 25)])
-# y = np.array([j + (r*cos(phi)*binormal+r*sin(phi)*tangent)[1] + np.random.rand()/4 for phi in np.linspace(0, np.pi, 25)])
-# z = np.array([k + (r*cos(phi)*binormal+r*sin(phi)*tangent)[2] + np.random.rand()/4 for phi in np.linspace(0, np.pi, 25)])
+    x = np.array([i + (r*cos(phi)*binormal+r*sin(phi)*tangent)[0] + np.random.rand()/4 for phi in np.linspace(0, np.pi, 25)])
+    y = np.array([j + (r*cos(phi)*binormal+r*sin(phi)*tangent)[1] + np.random.rand()/4 for phi in np.linspace(0, np.pi, 25)])
+    z = np.array([k + (r*cos(phi)*binormal+r*sin(phi)*tangent)[2] + np.random.rand()/4 for phi in np.linspace(0, np.pi, 25)])
 
-# x = np.mgrid[-2:5:120j]
-# y = np.mgrid[1:9:120j]
-# z = np.mgrid[-5:3:120j]
+    # x = np.mgrid[-2:5:120j]
+    # y = np.mgrid[1:9:120j]
+    # z = np.mgrid[-5:3:120j]
 
-# data = np.concatenate((x[:, np.newaxis], y[:, np.newaxis], z[:, np.newaxis]), axis=1)
+    data = np.concatenate((x[:, np.newaxis], y[:, np.newaxis], z[:, np.newaxis]), axis=1)
 
-# Perturb with some Gaussian noise
-# data += np.random.normal(size=data.shape) * 0.4
+    # Perturb with some Gaussian noise
+    data += np.random.normal(size=data.shape) * 0.4
 
-# startTime = time.time()
-# print calcLinearPath(data, verbose=True, plot=True)
-# print 'Execution time:', time.time() - startTime
+    startTime = time.time()
+    print calcLinearPath(data, verbose=True, plot=True)
+    print 'Execution time:', time.time() - startTime

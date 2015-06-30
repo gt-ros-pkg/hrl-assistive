@@ -4,7 +4,6 @@ import rospy
 from threading import Thread
 from visionTracker import visionTracker
 
-
 class tool_vision(Thread):
     def __init__(self, tfListener=None):
         super(tool_vision, self).__init__()

@@ -137,23 +137,23 @@ def calcCircularPath(data, normal=None, maxRadius=10, verbose=False, plot=False,
 
     return radius, centerPoint, normal, error, synthetic
 
+if __name__ == '__main__':
+    # Test data (Generate points on circle with random deviation)
+    r = 1.5
+    i, j, k = [3.1, 3.2, 3.3]
+    binormal = np.array([1.0, 0.0, 1.0])
+    binormal = binormal / np.linalg.norm(binormal)
+    tangent = np.array([0.0, 1.0, 0.0])
 
-# Test data (Generate points on circle with random deviation)
-# r = 1.5
-# i, j, k = [3.1, 3.2, 3.3]
-# binormal = np.array([1.0, 0.0, 1.0])
-# binormal = binormal / np.linalg.norm(binormal)
-# tangent = np.array([0.0, 1.0, 0.0])
-#
-# data = [list([i, j, k] + r*cos(phi)*binormal+r*sin(phi)*tangent + np.random.rand(3)/4) for phi in np.linspace(0, np.pi, 25)]
+    data = [list([i, j, k] + r*cos(phi)*binormal+r*sin(phi)*tangent + np.random.rand(3)/4) for phi in np.linspace(0, np.pi, 25)]
 
-# x = np.mgrid[-2:5:120j]
-# y = np.mgrid[1:9:120j]
-# z = np.mgrid[-5:3:120j]
-#
-# data = [list([x[i], y[i], z[i]] + np.random.rand(3)*0.4) for i in xrange(x.size)]
+    # x = np.mgrid[-2:5:120j]
+    # y = np.mgrid[1:9:120j]
+    # z = np.mgrid[-5:3:120j]
+    #
+    # data = [list([x[i], y[i], z[i]] + np.random.rand(3)*0.4) for i in xrange(x.size)]
 
-# startTime = time.time()
-# vals = calcCircularPath(data, verbose=True, plot=True)
-# print vals[3]
-# print 'Execution time:', time.time() - startTime
+    startTime = time.time()
+    vals = calcCircularPath(data, verbose=True, plot=True)
+    print vals[3]
+    print 'Execution time:', time.time() - startTime

@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-import roslib; roslib.load_manifest('sandbox_dpark_darpa_m3')
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
-import rospy
-import numpy as np, math
-import time
 
+import rospy
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 

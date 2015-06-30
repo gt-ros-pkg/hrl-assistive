@@ -41,7 +41,7 @@ class arTagPoint:
         if self.frameId is None:
             self.frameId = self.recentMarkers[0].header.frame_id
             if self.targetFrame is not None:
-                self.transformer.waitForTransform(self.targetFrame, self.frameId, rospy.Time(0), rospy.Duration(5.0))
+                self.transformer.waitForTransform(self.targetFrame, self.frameId, rospy.Time(0), rospy.Duration(5))
                 trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, rospy.Time(0))
                 self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
 
