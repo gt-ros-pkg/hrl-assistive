@@ -85,7 +85,9 @@ class kanadeLucasPoint:
         self.box = None
         self.lastTime = time.time()
 
-        self.dbscan = DBSCAN(eps=3, min_samples=6)
+        self.linePoints = None
+
+        # self.dbscan = DBSCAN(eps=3, min_samples=6)
         # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
 
         self.N = 30
@@ -101,13 +103,10 @@ class kanadeLucasPoint:
         print 'Connected to Kinect depth'
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
-        rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
-        print 'Connected to joint state info'
         # PR2 Simulated
         # rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         # rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-        # rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
         # print 'Connected to all topics'
 
         # spin() simply keeps python from exiting until this node is stopped
@@ -137,34 +136,31 @@ class kanadeLucasPoint:
 
     def getNovelAndClusteredFeatures(self, returnFeatures=False):
         # Cluster feature points
-        points = []
-        feats = []
-        for feat in self.activeFeatures:
-            if feat.isNovel:
-                points.append(feat.recent3DPosition)
-                feats.append(feat)
-        if not points:
+        # points = np.array([feat.recent3DPosition for feat in self.activeFeatures if feat.isNovel])
+        feats = [feat for feat in self.activeFeatures if feat.isNovel]
+        if not feats:
             # No novel features
             return None
-        points = np.array(points)
 
         # Perform dbscan clustering
-        X = StandardScaler().fit_transform(points)
-        labels = self.dbscan.fit_predict(X)
+        # X = StandardScaler().fit_transform(points)
+        # labels = self.dbscan.fit_predict(X)
 
         # # Find the cluster closest to our gripper (To be continued possibly)
         # unique_labels = set(labels)
         # clusterPoints = points[labels==k]
 
-        if self.lGripperTranslation is None:
+        if self.lGripperTranslation is None or self.linePoints is None:
             return None
 
         if returnFeatures:
             # Return a list of features
-            return [feat for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)]
+            # labels[i] != -1
+            return [feat for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box) and self.closeToLine(feat.recent2DPosition)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent3DPosition.tolist() for i, feat in enumerate(feats) if labels[i] != -1 and self.pointInBoundingBox(feat.recent2DPosition, self.box)}
+            return {feat.index: feat.recent3DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box)
+                        and self.closeToLine(feat.recent2DPosition)}
 
     def determineGoodFeatures(self, imageGray):
         if len(self.activeFeatures) >= self.N or self.lGripperTranslation is None:
@@ -191,6 +187,11 @@ class kanadeLucasPoint:
         while len(self.activeFeatures) < self.N and len(feats) > 0:
             feat = random.choice(feats)
             feats.remove(feat)
+
+            # Verify that the feature is near the 'spoon' line
+            if not self.closeToLine(feat[0]):
+                continue
+
             # Check to make feature is near gripper when transformed into 3D
             # feat3D = self.get3DPointFromCloud(feat[0])
             # if feat3D is None:
@@ -198,6 +199,7 @@ class kanadeLucasPoint:
             # distFromGripper = np.linalg.norm(self.lGripperTranslation - feat3D)
             # if distFromGripper > 0.4:
             #     continue
+
             # Add feature to tracking list
             newFeat = feature(self.currentIndex, feat[0], self)
             self.activeFeatures.append(newFeat)
@@ -230,33 +232,8 @@ class kanadeLucasPoint:
         # Define features as novel if they meet a given criteria
         for feat in self.activeFeatures:
             # Consider features that have traveled 5 cm
-            if feat.distance >= 0.15:
+            if not feat.isNovel and feat.distance >= 0.15 and self.closeToLine(feat.recent2DPosition):
                 feat.isNovel = True
-
-    def drawOnImage(self, image):
-        # Draw all features
-        for feat in self.activeFeatures:
-            a, b = feat.recent2DPosition
-            cv2.circle(image, (a, b), 5, [0, 0, 255], -1)
-
-        # Draw an orange point on image for gripper
-        cv2.circle(image, (int(self.lGripX), int(self.lGripY)), 10, [0, 125, 255], -1)
-
-        # Draw a bounding box around spoon (or left gripper)
-        lowX, highX, lowY, highY = self.box
-        cv2.rectangle(image, (lowX, lowY), (highX, highY), color=[0, 150, 75], thickness=5)
-
-        features = self.getNovelAndClusteredFeatures(returnFeatures=True)
-        if features is None:
-            # print 'no novel features to draw'
-            return image
-
-        # Draw all novel and bounded box features
-        for feat in features:
-            a, b = feat.recent2DPosition
-            cv2.circle(image, (a, b), 5, [255, 125, 0], -1)
-
-        return image
 
     def publishImageFeatures(self):
         imageFeatures = ImageFeatures()
@@ -274,7 +251,7 @@ class kanadeLucasPoint:
             circle.x, circle.y = int(self.lGripX), int(self.lGripY)
             circle.radius = 10
             circle.r = 255
-            circle.g = 125
+            circle.g = 128
             imageFeatures.circles.append(circle)
 
         if self.spoonX is not None:
@@ -286,6 +263,17 @@ class kanadeLucasPoint:
             circle.g = 255
             circle.b = 255
             imageFeatures.circles.append(circle)
+
+        if self.linePoints is not None:
+            # Draw purple points on image for spoon structure
+            for point in self.linePoints:
+                circle = Circle()
+                circle.x, circle.y = int(point[0]), int(point[0])
+                circle.radius = 5
+                circle.r = 128
+                circle.g = 255
+                circle.b = 128
+                imageFeatures.circles.append(circle)
 
         if self.box is not None:
             # Draw a bounding box around spoon (or left gripper)
@@ -304,7 +292,7 @@ class kanadeLucasPoint:
                 circle.x, circle.y = feat.recent2DPosition
                 circle.radius = 5
                 circle.b = 255
-                circle.g = 125
+                circle.g = 128
                 imageFeatures.circles.append(circle)
 
         self.publisher2D.publish(imageFeatures)
@@ -314,10 +302,10 @@ class kanadeLucasPoint:
     def boundingBox(self, point):
         # These are dependent on the orientation of the gripper. This should be taken into account
         # Left is on -z axis
-        left3D =  [0, 0, -0.15]
-        right3D = [0, 0, 0.15]
+        left3D =  [0, 0, -0.2]
+        right3D = [0, 0, 0.2]
         # Up is on +x axis
-        up3D = [0.3, 0, 0]
+        up3D = [0.4, 0, 0]
         down3D = [0.05, 0, 0]
         spoon3D = [0.234, -0.030, 0]
 
@@ -334,6 +322,12 @@ class kanadeLucasPoint:
         _, top = self.pinholeCamera.project3dToPixel(top)
         _, bottom = self.pinholeCamera.project3dToPixel(bottom)
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+
+        # Define a line through gripper and spoon
+        m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
+        xs = np.linspace(self.lGripX, self.spoonX, 25)
+        ys = m * (xs - self.lGripX) + self.lGripY
+        self.linePoints = np.reshape(np.hstack((xs, ys)), (xs.size, 2), order='F')
 
         # Adjust incase hand is upside down
         if left > right:
@@ -363,7 +357,7 @@ class kanadeLucasPoint:
             bottom = self.cameraHeight - 1
 
         # Verify that the box bounds are not too small
-        diff = 100 - np.abs(right - left)
+        diff = 150 - np.abs(right - left)
         if np.abs(right - left) < 100:
             if left < diff/2.0:
                 right += diff
@@ -372,7 +366,7 @@ class kanadeLucasPoint:
             else:
                 left -= diff/2.0
                 right += diff/2.0
-        diff = 50 - np.abs(bottom - top)
+        diff = 100 - np.abs(bottom - top)
         if np.abs(bottom - top) < 50:
             if top < diff/2.0:
                 bottom += diff
@@ -388,6 +382,10 @@ class kanadeLucasPoint:
         px, py = point
         lowX, highX, lowY, highY = boxPoints
         return lowX <= px <= highX and lowY <= py <= highY
+
+    def closeToLine(self, point):
+        distances = np.linalg.norm(self.linePoints - point)
+        return any(distances < 10)
 
     def publishFeatures(self):
         if self.cameraWidth is None:
@@ -446,6 +444,27 @@ class kanadeLucasPoint:
 
         return xyz
 
+    def transposeGripperToCamera(self):
+        # Transpose gripper position to camera frame
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
+        try :
+            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
+            self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
+        except tf.ExtrapolationException:
+            pass
+        # Find 2D location of gripper
+        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
+        # # Determine current velocity of gripper
+        # if self.lGripX is not None:
+        #     distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
+        #     timeChange = time.time() - self.lastGripTime
+        #     self.gripperVelocity = distChange / timeChange
+        #     # print distChange, timeChange
+        #     # print self.gripperVelocity
+        self.lGripX, self.lGripY = gripX, gripY
+        # self.lastGripTime = time.time()
+
     def imageCallback(self, data):
         # start = time.time()
         # print 'Time between image calls:', start - self.lastTime
@@ -487,16 +506,14 @@ class kanadeLucasPoint:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
+        self.transposeGripperToCamera()
+
         if self.activeFeatures:
             self.opticalFlow(imageGray)
             if self.publish:
                 self.publishFeatures()
         if self.visual:
             self.publishImageFeatures()
-            # This takes a long time!! (Publish the information instead)
-            # image = self.drawOnImage(image)
-            # cv2.imshow('Image window', image)
-            # cv2.waitKey(30)
 
         self.updateNumber += 1
 
@@ -513,39 +530,6 @@ class kanadeLucasPoint:
         # Store PointCloud2 data for use when determining 3D locations
         self.pointCloud = data
 
-    def jointsCallback(self, data):
-        if self.rgbCameraFrame is None:
-            return
-
-        # for i, name in enumerate(data.name):
-        #     if name != 'l_gripper_joint':
-        #         continue
-        #     velocity = data.velocity[i]
-        #     print velocity
-        #     position = data.position[i]
-        #     # Transpose gripper position to camera frame
-        #     try :
-        #         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
-        #         GripperTranslation, GripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
-        #         # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-        #         GripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(GripperTranslation), tf.transformations.quaternion_matrix(GripperRotation))
-        #     except Exception:
-        #         print 'Error transforming from joint', '/l_gripper_tool_frame', 'to', self.rgbCameraFrame
-        #         return
-        #     position = np.dot(GripperTransposeMatrix, np.array([position[0], position[1], position[2], 1.0]))[:3]
-        #
-        #     # Find 2D location of gripper
-        #     gripX, gripY = self.pinholeCamera.project3dToPixel(position)
-        #     # Determine current velocity of gripper
-        #     if self.gripX is not None:
-        #         distChange = np.array([gripX, gripY]) - np.array([self.gripX, self.gripY])
-        #         timeChange = time.time() - self.lastGripTime
-        #         self.gripperVelocity = distChange / timeChange
-        #         print distChange, timeChange
-        #         print self.gripperVelocity
-        #     self.gripX, self.gripY = gripX, gripY
-        #     self.lastGripTime = time.time()
-
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
             self.cameraWidth = data.width
@@ -554,25 +538,6 @@ class kanadeLucasPoint:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
-        # Transpose gripper position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
-        try :
-            self.lGripperTranslation, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
-            # print self.lGripperTranslation, tf.transformations.euler_from_quaternion(self.lGripperRotation)
-            self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperTranslation), tf.transformations.quaternion_matrix(self.lGripperRotation))
-        except tf.ExtrapolationException:
-            pass
-        # Find 2D location of gripper
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
-        # # Determine current velocity of gripper
-        # if self.lGripX is not None:
-        #     distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
-        #     timeChange = time.time() - self.lastGripTime
-        #     self.gripperVelocity = distChange / timeChange
-        #     # print distChange, timeChange
-        #     # print self.gripperVelocity
-        self.lGripX, self.lGripY = gripX, gripY
-        # self.lastGripTime = time.time()
 
         # Transpose spoon position to camera frame
         # self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_spoon_frame', rospy.Time(0), rospy.Duration(5.0))
@@ -584,15 +549,8 @@ class kanadeLucasPoint:
         #     pass
         # self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(self.spoonTranslation)
 
-        # Define a line through these points
-        # m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
-        # xs = np.linspace(self.lGripX, self.spoonX, 25)
-        # ys = m * (xs - self.lGripX) + self.lGripY
-
 minDist = 0.015
 maxDist = 0.03
-# minDist = 0.05
-# maxDist = 0.1
 class feature:
     def __init__(self, index, position, kanadeLucas):
         self.index = index
