@@ -95,20 +95,20 @@ class kanadeLucasPoint:
         # rospy.Subscriber('/camera/depth_registered/points', PointCloud2, self.cloudCallback)
         # rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         # Kinect 2
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
-        print 'Connected to Kinect images'
-        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        print 'Connected to Kinect depth'
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-        print 'Connected to Kinect camera info'
-        rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
-        print 'Connected to joint state info'
-        # PR2 Simulated
-        # rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
+        # rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        # print 'Connected to Kinect images'
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        # rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # print 'Connected to Kinect depth'
+        # rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        # print 'Connected to Kinect camera info'
         # rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
-        # print 'Connected to all topics'
+        # print 'Connected to joint state info'
+        # PR2 Simulated
+        rospy.Subscriber('/head_mount_kinect/rgb/image_color', Image, self.imageCallback)
+        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        rospy.Subscriber('/head_mount_kinect/rgb/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        rospy.Subscriber('/joint_states', JointState, self.jointsCallback)
+        print 'Connected to all topics'
 
         # spin() simply keeps python from exiting until this node is stopped
         # rospy.spin()
@@ -172,7 +172,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        # print lowX, highX, lowY, highY, imageGray.shape
+        print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
@@ -180,7 +180,7 @@ class kanadeLucasPoint:
 
         # Take a frame and find corners in it
         feats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
-        print imageGray.shape, feats
+        # print imageGray.shape, feats
 
         # Reposition features back into original image size
         # print feats.shape

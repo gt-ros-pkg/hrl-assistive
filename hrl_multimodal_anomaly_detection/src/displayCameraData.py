@@ -32,9 +32,6 @@ class displayCameraData:
         rospy.spin()
 
     def imageCallback(self, data):
-        if self.featureData is None:
-            return
-
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
@@ -42,15 +39,16 @@ class displayCameraData:
             print e
             return
 
-        # Draw all rectangles (bounding boxes)
-        for rect in self.featureData.rectangles:
-            rgb = [rect.b, rect.g, rect.r]
-            cv2.rectangle(image, (rect.lowX, rect.lowY), (rect.highX, rect.highY), color=rgb, thickness=rect.thickness)
+        if self.featureData is not None:
+            # Draw all rectangles (bounding boxes)
+            for rect in self.featureData.rectangles:
+                rgb = [rect.b, rect.g, rect.r]
+                cv2.rectangle(image, (rect.lowX, rect.lowY), (rect.highX, rect.highY), color=rgb, thickness=rect.thickness)
 
-        # Draw all circles (features)
-        for circle in self.featureData.circles:
-            rgb = [circle.b, circle.g, circle.r]
-            cv2.circle(image, (circle.x, circle.y), circle.radius, rgb, -1)
+            # Draw all circles (features)
+            for circle in self.featureData.circles:
+                rgb = [circle.b, circle.g, circle.r]
+                cv2.circle(image, (circle.x, circle.y), circle.radius, rgb, -1)
 
         cv2.imshow('Image window', image)
         cv2.waitKey(30)
