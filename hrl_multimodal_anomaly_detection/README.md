@@ -44,6 +44,14 @@ Calibrate arms:
     1) roscd hrl_multimodal_anomaly_detection/launch/arm_control
     2) ./change_gains_pr2.sh
 
+Launch FT node:
+
+    1) rosrun netft_rdt_driver netft_node 10.68.0.120 --rate 10
+
+Bowl publisher
+
+    1) rosrun hrl_multimodal_anomaly_detection manual_bowl_head_pose_publisher.py
+
 Launch arm code:
 
     First, press Start on runstop

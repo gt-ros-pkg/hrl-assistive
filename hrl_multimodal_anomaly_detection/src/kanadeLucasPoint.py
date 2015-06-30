@@ -172,7 +172,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        # print lowX, highX, lowY, highY, imageGray.shape
+        print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
@@ -318,7 +318,7 @@ class kanadeLucasPoint:
         # Up is on +x axis
         up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
-        spoon3D = [0.234, -0.030, 0.000]
+        spoon3D = [0.234, -0.030, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
