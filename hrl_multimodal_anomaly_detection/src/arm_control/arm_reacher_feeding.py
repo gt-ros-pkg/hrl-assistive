@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import sys
-import time
-import rospy
-import numpy as np
-
 import roslib
+roslib.load_manifest('sandbox_dpark_darpa_m3')
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import rospy
+import numpy as np, math
+import time
 import tf
+
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
+import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
@@ -16,6 +17,8 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
+from pr2_controllers_msgs.msg import JointTrajectoryGoal
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class armReachAction(mpcBaseAction):
@@ -69,20 +72,20 @@ class armReachAction(mpcBaseAction):
 
         #Array of offsets from bowl/head positions
         #Used to perform motions relative to bowl/head positions
-        self.leftArmScoopingPos = np.array([[-.01,	0,	   .4],
-                                            [-.01,	0,   .008], #Moving down into bowl
-                                            [.05,	0,    .4], #Moving forward in bowl
-                                            [.05,   0,   .008], #While rotating spoon to scoop out
-                                            [-.01,  0,	   .4]]) #Moving up out of bowl
+        self.leftArmScoopingPos = np.array([[-.02,	0,	   .2],
+                                            [-.02,	0,   -.02], #Moving down into bowl
+                                            [.07,	0,    -.01], #Moving forward in bowl
+                                            [.03,   0,   .05], #While rotating spoon to scoop out
+                                            [.03,  0,	   .2]]) #Moving up out of bowl
 
         self.leftArmFeedingPos = np.array([[.01,    .2,   -.01],
                                            [.01,    .085, -.01],
                                            [.01,    .2,   -.01]])
 
-        self.leftArmScoopingEulers = np.array([[90, -40,    0],
-                                               [90, -40,	0], #Moving down into bowl
+        self.leftArmScoopingEulers = np.array([[90, -70,    0],
+                                               [90, -70,	0], #Moving down into bowl
                                                [90,	  0,	0], #Moving forward in bowl
-                                               [90,	-40,	0], #Rotating spoon to scoop out of bowl
+                                               [90,	0,	0], #Rotating spoon to scoop out of bowl
                                                [90,	  0,    0]]) #Moving up out of bowl
 
         self.leftArmFeedingEulers = np.array([[90, 0, -90],
@@ -105,12 +108,12 @@ class armReachAction(mpcBaseAction):
         self.head_pos_kinect = None
 
         #How much to offset Kinect provided bowl position
-        self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
+    	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
         #^ MAY BE REDUNDANT SINCE WE CAN ADD/SUBTRACT
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-        self.timeoutsScooping = [17, 10, 4, 4, 4]
+    	self.timeoutsScooping = [10, 5, 4, 4, 4]
         self.timeoutsFeeding = [10, 7, 5]
 
         #Paused used between each motion
@@ -118,13 +121,13 @@ class armReachAction(mpcBaseAction):
         self.pausesScooping = [1, 1, 1, 1, 1]
         self.pausesFeeding = [1, 1, 1]
 
-        print "Calculated quaternions: \n"
-        print "leftArmScoopingQuats -"
+    	print "Calculated quaternions: \n"
+    	print "leftArmScoopingQuats -"
         print self.leftArmScoopingQuats
-        print "leftArmFeedingQuats -"
-        print self.leftArmFeedingQuats
-        print "leftArmStopQuats -"
-        print self.leftArmStopQuats
+    	print "leftArmFeedingQuats -"
+    	print self.leftArmFeedingQuats
+    	print "leftArmStopQuats -"
+    	print self.leftArmStopQuats
 
         try:
                 print "--------------------------------"
@@ -269,7 +272,7 @@ class armReachAction(mpcBaseAction):
                 self.head_frame = self.head_frame_kinect
                 self.head_pos = self.head_pos_kinect
                 self.head_quat = self.head_quat_kinect
-            elif which_head == 'm':
+            elif which_bowl == 'm':
                 self.head_frame = self.head_frame_manual
                 self.head_pos = self.head_pos_manual
                 self.head_frame = self.head_quat_manual
@@ -333,29 +336,29 @@ class armReachAction(mpcBaseAction):
             print "Pausing for {} seconds ".format(self.pausesScooping[2])
             time.sleep(self.pausesScooping[2])
 
-            # print "#4 Scooping in bowl... "
-            # posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[3][0],
-            #     self.bowl_pos[1] + self.leftArmScoopingPos[3][1],
-            #     self.bowl_pos[2] + self.leftArmScoopingPos[3][2])
-            # quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[3][0],
-            #     self.leftArmScoopingQuats[3][1],
-            #     self.leftArmScoopingQuats[3][2],
-            #     self.leftArmScoopingQuats[3][3])
-            # self.setOrientGoal(posL, quatL, self.timeoutsScooping[3])
-            # print "Pausing for {} seconds ".format(self.pausesScooping[3])
-            # time.sleep(self.pausesScooping[3])
+            print "#4 Scooping in bowl... "
+            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[3][0],
+                self.bowl_pos[1] + self.leftArmScoopingPos[3][1],
+                self.bowl_pos[2] + self.leftArmScoopingPos[3][2])
+            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[3][0],
+                self.leftArmScoopingQuats[3][1],
+                self.leftArmScoopingQuats[3][2],
+                self.leftArmScoopingQuats[3][3])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[3])
+            print "Pausing for {} seconds ".format(self.pausesScooping[3])
+            time.sleep(self.pausesScooping[3])
 
-            # print "#5 Moving out of bowl... "
-            # posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[4][0],
-            #     self.bowl_pos[1] + self.leftArmScoopingPos[4][1],
-            #     self.bowl_pos[2] + self.leftArmScoopingPos[4][2])
-            # quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[4][0],
-            #     self.leftArmScoopingQuats[4][1],
-            #     self.leftArmScoopingQuats[4][2],
-            #     self.leftArmScoopingQuats[4][3])
-            # self.setOrientGoal(posL, quatL, self.timeoutsScooping[4])
-            # print "Pausing for {} seconds ".format(self.pausesScooping[4])
-            # time.sleep(self.pausesScooping[4])
+            print "#5 Moving out of bowl... "
+            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[4][0],
+                self.bowl_pos[1] + self.leftArmScoopingPos[4][1],
+                self.bowl_pos[2] + self.leftArmScoopingPos[4][2])
+            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[4][0],
+                self.leftArmScoopingQuats[4][1],
+                self.leftArmScoopingQuats[4][2],
+                self.leftArmScoopingQuats[4][3])
+            self.setOrientGoal(posL, quatL, self.timeoutsScooping[4])
+            print "Pausing for {} seconds ".format(self.pausesScooping[4])
+            time.sleep(self.pausesScooping[4])
 
             print "Scooping action completed"
 
@@ -467,17 +470,17 @@ class armReachAction(mpcBaseAction):
     #converts an array of euler angles (in degrees) to array of quaternions
     def euler2quatArray(self, eulersIn): 
 
-        (rows, cols) = np.shape(eulersIn)
-        quatArray = np.zeros((rows, cols+1))
-        for r in xrange(0, rows):
-            rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
-            quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
-            quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = (quats[0],
+    	(rows, cols) = np.shape(eulersIn)
+    	quatArray = np.zeros((rows, cols+1))
+    	for r in xrange(0, rows):
+    	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
+    	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
+    	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = (quats[0], 
                                                                                   quats[1], 
                                                                                   quats[2], 
                                                                                   quats[3])
 
-        return quatArray
+    	return quatArray
 
     def initJoints(self):
 
@@ -522,6 +525,8 @@ class armReachAction(mpcBaseAction):
         elif whichTask == 'x':
             print "Exiting program! "
             sys.exit()
+
+            return True
 
 if __name__ == '__main__':
 
