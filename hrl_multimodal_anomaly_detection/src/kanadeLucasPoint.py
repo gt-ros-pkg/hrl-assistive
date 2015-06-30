@@ -172,7 +172,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        print lowX, highX, lowY, highY, imageGray.shape
+        # print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
