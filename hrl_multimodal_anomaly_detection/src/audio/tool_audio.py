@@ -19,11 +19,10 @@ class tool_audio(Thread):
     FORMAT  = pyaudio.paInt16
     DTYPE   = np.int16
 
-    def __init__(self, audioRecord):
+    def __init__(self):
         super(tool_audio, self).__init__()
         self.daemon = True
         self.cancelled = False
-        self.audioRec = audioRecord
 
         self.init_time = 0.
         self.noise_freq_l = None
@@ -49,10 +48,6 @@ class tool_audio(Thread):
         rospy.logout('Done subscribing audio')
         print 'Done subscribing audio'
 
-        if self.audioRec:
-            print 'Recording raw audio file to .wav'
-            self.audio_wav_frames = []
-
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
@@ -66,13 +61,12 @@ class tool_audio(Thread):
 
     def log(self):
 
-        data=self.stream.read(self.CHUNK)
-        self.time_data.append(rospy.get_time()-self.init_time)
+        data = self.stream.read(self.CHUNK)
+        self.time_data.append(rospy.get_time() - self.init_time)
+        self.audio_data_raw.append(data)
 
         audio_data = np.fromstring(data, self.DTYPE)
         ## audio_data = signal.lfilter(self.b, self.a, audio_data)
-
-        self.audio_data_raw.append(data)
 
         # Exclude low rms data
         ## amp = self.get_rms(data)
@@ -86,17 +80,11 @@ class tool_audio(Thread):
         ## for noise_freq in self.noise_freq_l:
         ##     new_F = np.array([self.filter_rule(x,self.audio_freq[j], noise_freq, self.noise_band) for j, x in enumerate(new_F)])
 
-        ## frame = np.fft.ifft(new_F)*float(self.MAX_INT)
-        frame = audio_data
+        ## audio_data = np.fft.ifft(new_F)*float(self.MAX_INT)
 
         self.audio_amp.append(new_F)
-        self.audio_data.append(frame)
-
-        if self.audioRec:
-            wav_data = data
-            self.audio_wav_frames.append(wav_data)
-
-        ## self.time_data.append(self.time)
+        # TODO This can be removed to save space
+        self.audio_data.append(audio_data)
 
     def cancel(self):
         """End this timer thread"""

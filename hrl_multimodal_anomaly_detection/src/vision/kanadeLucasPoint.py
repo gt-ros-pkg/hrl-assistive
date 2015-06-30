@@ -159,7 +159,7 @@ class kanadeLucasPoint:
             return [feat for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box) and self.closeToLine(feat.recent2DPosition)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent3DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box)
+            return {feat.index: feat.recent2DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box)
                         and self.closeToLine(feat.recent2DPosition)}
 
     def determineGoodFeatures(self, imageGray):
