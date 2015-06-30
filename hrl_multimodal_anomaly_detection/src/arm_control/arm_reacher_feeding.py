@@ -11,7 +11,8 @@ import tf
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
-from hrl_srvs.srv import None_Bool, None_BoolResponse
+from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
+from hrl_python_servicer.srv import String_String 
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
@@ -41,7 +42,29 @@ class armReachAction(mpcBaseAction):
         rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
 
         # service request
-        self.reach_service = rospy.Service('/arm_reach_enable', None_Bool, self.start_cb)
+        self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
+
+        # #-------------------------------------------
+        # arm_reach_enable *requests* and expected ...
+        # ... actions from arm_reacher_feeding server:
+        # * 1 - Calibrate left arm for scooping
+        # * 2 - Calibrate left arm for feeding
+        # * 3 - Calibrate right arm for scooping
+        # * 4 - Calibrate right arm for feeding
+        # * 5 - Choose manually provided bowl position
+        # * 6 - Choose kinect provided bowl position
+        # * 7 - Begin scooping
+        # * 8 - Begin feeding
+        # #--------------------------------------------
+        # arm_reach_enable *responses* and expected ...
+        # ... meanings from arm_reacher_feeding server:
+        # * 1 - Manually provided bowl position available
+        # * 2 - Kinect provided bowl position available
+        # * 3 - Finished scooping
+        # * 4 - Finished feeding
+        # * 5 - Initialized left arm
+        # * 6 - Initialized right arm
+        # #--------------------------------------------
 
         rArmServersRunning = False
 
@@ -63,12 +86,18 @@ class armReachAction(mpcBaseAction):
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
         self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-        self.rightArmInitialJointAnglesHoldingBowl = [0, 0, 0, 0, 0, 0, 0]
-        self.rightArmInitialJointAnglesFoldingUp = [0, 0, 0, 0, 0, 0, 0]
+        self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
+        self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
 
         #Variables...! #
         armReachAction.iteration = 0
+
+        self.posL = Point()
+        self.quatL = Quaternion()
+        self.posR = Point()
+        self.quatR = Quaternion()
+
 
         #Array of offsets from bowl/head positions
         #Used to perform motions relative to bowl/head positions
@@ -159,13 +188,86 @@ class armReachAction(mpcBaseAction):
 
         rospy.spin()
 
-    def start_cb(self, req):
+    def serverCallback(self, req):
 
-        # Run manipulation tasks
-        if self.run():
-            return None_BoolResponse(True)
-        else:
-            return None_BoolResponse(False)
+    	if req == "leftArmInitScooping":
+    		self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
+    		return "Initialized left arm for scooping!"
+
+    	elif req == "leftArmInitFeeding":
+    		self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+    		return "Initialized left arm for feeding!"
+
+    	elif req == "rightArmInitScooping":
+    		self.setPostureGoal(self.rightArmInitialJointAnglesScooping, 10)
+    		return "Initialized right arm for scooping!"
+
+    	elif req == "rightArmInitFeeding":
+    		self.setPostureGoal(self.rightArmInitialJointAnglesFeeding, 10)
+    		return "Initialized right arm for feeding!"
+
+    	elif req == "getBowlPosType":
+    		if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
+    			return "manual"
+			elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
+				return "kinect"
+			elif self.bowl_pos_manual is not None and self.bowl_pos_kinect is not None:
+				return "both"
+
+    	elif req == "getHeadPosType":
+    		if self.head_pos_kinect is None and self.head_pos_manual is not None:
+    			return "manual"
+        	elif self.head_pos_manual is None and self.head_pos_kinect is not None:
+        		return "kinect"
+        	elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
+        		return "both"
+
+    	elif req == "chooseManualBowlPos":
+    		if self.bowl_pos_manual is not None:
+	    		self.bowl_frame = self.bowl_frame_manual
+	            self.bowl_pos = self.bowl_pos_manual
+	            self.bowl_quat = self.bowl_quat_manual
+	            return "Chose manual bowl position"
+	        else:
+	        	return "No manual bowl position available! \n Code won't work! \n Provide bowl position and try again!"
+
+    	elif req == "chooseKinectBowlPos":
+    		if self.bowl_pos_kinect is not None:
+	    		self.bowl_frame = self.bowl_frame_kinect
+	            self.bowl_pos = self.bowl_pos_kinect
+	            self.bowl_quat = self.bowl_quat_kinect
+	            return "Chose kinect bowl position"
+	        else:
+	        	return "No kinect bowl position available! \n Code won't work! \n Provide bowl position and try again!"
+
+    	elif req == "chooseManualHeadPos":
+    		if self.head_pos_manual is not None:
+	    		self.head_frame = self.head_frame_manual
+	            self.head_pos = self.head_pos_manual
+	            self.head_quat = self.head_quat_manual
+	            return "Chose manual head position"
+	        else:
+	        	return "No manual head position available! \n Code won't work! \n Provide head position and try again!"
+
+    	elif req == "chooseKinectHeadPos":
+    		if self.head_pos_kinect is not None:
+	    		self.head_frame = self.head_frame_kinect
+	            self.head_pos = self.head_pos_kinect
+	            self.head_quat = self.head_quat_kinect
+	            return "Chose kinect head position"
+	        else:
+	        	return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
+
+    	elif req == "runScooping":
+    		self.scooping()
+    		return "Finished scooping!"
+
+    	elif req == "runFeeding":
+    		self.feeding()
+    		return "Finished feeding!"
+
+    	else:
+    		return "Request not understood by server!!!"
 
     def bowlPoseManualCallback(self, data):
 
@@ -200,250 +302,222 @@ class armReachAction(mpcBaseAction):
         self.head_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
 
-    def chooseBowlPose(self):
+    # def chooseBowlPose(self):
 
-        if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
-            print "No Kinect provided bowl information, using manually provided bowl information"
-            print 'Manually Provided Bowl Pos: '
-            print self.bowl_pos_manual
-            print 'Manually Provided Bowl Quaternions: '
-            print self.bowl_quat_manual
+    #     if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
+    #         print "No Kinect provided bowl information, using manually provided bowl information"
+    #         print 'Manually Provided Bowl Pos: '
+    #         print self.bowl_pos_manual
+    #         print 'Manually Provided Bowl Quaternions: '
+    #         print self.bowl_quat_manual
             
-            self.bowl_frame = self.bowl_frame_manual
-            self.bowl_pos = self.bowl_pos_manual
-            self.bowl_quat = self.bowl_quat_manual
-        elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
-            print "No manually provided bowl information, using Kinect provided bowl information"
-            print 'Kinect Provided Bowl Pos: '
-            print self.bowl_pos_kinect
-            print 'Kinect Provided Bowl Quaternions: '
-            print self.bowl_quat_kinect
             
-            self.bowl_frame = self.bowl_frame_kinect
-            self.bowl_pos = self.bowl_pos_kinect
-            self.bowl_quat = self.bowl_quat_kinect
-        elif self.bowl_pos_manual is not None and self.bowl_pos_kinect is not None:
-            which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
-            while which_bowl != 'k' and which_bowl != 'm':
-                which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
-            if which_bowl == 'k':
-                
-                print 'Kinect Provided Bowl Pos: '
-                print self.bowl_pos_kinect
-                print 'Kinect Provided Bowl Quaternions: '
-                print self.bowl_quat_kinect
-                
-                self.bowl_frame = self.bowl_frame_kinect
-                self.bowl_pos = self.bowl_pos_kinect
-                self.bowl_quat = self.bowl_quat_kinect
-            elif which_bowl == 'm':
-                
-                print 'Manually Provided Bowl Pos: '
-                print self.bowl_pos_manual
-                print 'Manually Provided Bowl Quaternions: '
-                print self.bowl_quat_manua
-                
-                self.bowl_frame = self.bowl_frame_manual
-                self.bowl_pos = self.bowl_pos_manual
-                self.bowl_frame = self.bowl_quat_manual
-        else:
-            print "No bowl information available, publish info before running client/run again!! "
+    #     elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
+    #         print "No manually provided bowl information, using Kinect provided bowl information"
+    #         print 'Kinect Provided Bowl Pos: '
+    #         print self.bowl_pos_kinect
+    #         print 'Kinect Provided Bowl Quaternions: '
+    #         print self.bowl_quat_kinect
             
-            return False
-            #sys.exit()
+    #     elif self.bowl_pos_manual is not None and self.bowl_pos_kinect is not None:
+    #         which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
+    #         while which_bowl != 'k' and which_bowl != 'm':
+    #             which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
+    #         if which_bowl == 'k':
+                
+    #             print 'Kinect Provided Bowl Pos: '
+    #             print self.bowl_pos_kinect
+    #             print 'Kinect Provided Bowl Quaternions: '
+    #             print self.bowl_quat_kinect
+                
+    #             self.bowl_frame = self.bowl_frame_kinect
+    #             self.bowl_pos = self.bowl_pos_kinect
+    #             self.bowl_quat = self.bowl_quat_kinect
+    #         elif which_bowl == 'm':
+                
+    #             print 'Manually Provided Bowl Pos: '
+    #             print self.bowl_pos_manual
+    #             print 'Manually Provided Bowl Quaternions: '
+    #             print self.bowl_quat_manua
+                
+    #             self.bowl_frame = self.bowl_frame_manual
+    #             self.bowl_pos = self.bowl_pos_manual
+    #             self.bowl_frame = self.bowl_quat_manual
+    #     else:
+    #         print "No bowl information available, publish info before running client/run again!! "
+            
+    #         return False
+    #         #sys.exit()
 
-    def chooseHeadPose(self):
+    # def chooseHeadPose(self):
 
-        if self.head_pos_kinect is None and self.head_pos_manual is not None:
-            print "No Kinect provided head information, using manually provided head information"
-            self.head_frame = self.head_frame_manual
-            self.head_pos = self.head_pos_manual
-            self.head_quat = self.head_quat_manual
-        elif self.head_pos_manual is None and self.head_pos_kinect is not None:
-            print "No manually provided head information, using Kinect provided head information"
-            self.head_frame = self.head_frame_kinect
-            self.head_pos = self.head_pos_kinect
-            self.head_quat = self.head_quat_kinect
-        elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
-            which_head = raw_input("Use Kinect or manually provided head position? [k/m] ")
-            while which_head != 'k' and which_head != 'm':
-                which_head = raw_input("Use Kinect or manually provided head position? [k/m] ")
-            if which_head == 'k':
-                self.head_frame = self.head_frame_kinect
-                self.head_pos = self.head_pos_kinect
-                self.head_quat = self.head_quat_kinect
-            elif which_bowl == 'm':
-                self.head_frame = self.head_frame_manual
-                self.head_pos = self.head_pos_manual
-                self.head_frame = self.head_quat_manual
-        else:
-            print "No head information available, publish info before running client/run again!! "
-            #sys.exit()
+    #     if self.head_pos_kinect is None and self.head_pos_manual is not None:
+    #         print "No Kinect provided head information, using manually provided head information"
+            
+    #     elif self.head_pos_manual is None and self.head_pos_kinect is not None:
+    #         print "No manually provided head information, using Kinect provided head information"
+            
+    #     elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
+    #         which_head = raw_input("Use Kinect or manually provided head position? [k/m] ")
+    #         while which_head != 'k' and which_head != 'm':
+    #             which_head = raw_input("Use Kinect or manually provided head position? [k/m] ")
+    #         if which_head == 'k':
+    #             self.head_frame = self.head_frame_kinect
+    #             self.head_pos = self.head_pos_kinect
+    #             self.head_quat = self.head_quat_kinect
+    #         elif which_bowl == 'm':
+    #             self.head_frame = self.head_frame_manual
+    #             self.head_pos = self.head_pos_manual
+    #             self.head_frame = self.head_quat_manual
+    #     else:
+    #         print "No head information available, publish info before running client/run again!! "
+    #         #sys.exit()
 
 
     def scooping(self):
 
-        self.chooseBowlPose()
+        #self.chooseBowlPose()
 
-        posL = Point()
-        quatL = Quaternion()
+        #runScooping = True
+        #while runScooping:
+            # print "Initializing left arm for scooping... "
+            # self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
 
-        runScooping = True
-        while runScooping:
-            print "Initializing left arm for scooping... "
-            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
+            # print "Current joint angles: "
+            # print self.getJointAngles()
+            # print "Current end effector pose: "
+            # print self.getEndeffectorPose()
 
-            print "Current joint angles: "
-            print self.getJointAngles()
-            print "Current end effector pose: "
-            print self.getEndeffectorPose()
+            # raw_input("Press anything to continue... ")
 
-            raw_input("Press anything to continue... ")
+        print "#1 Moving over bowl... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[0][0],
+            self.bowl_pos[1] + self.leftArmScoopingPos[0][1],
+            self.bowl_pos[2] + self.leftArmScoopingPos[0][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[0][0],
+            self.leftArmScoopingQuats[0][1],
+            self.leftArmScoopingQuats[0][2],
+            self.leftArmScoopingQuats[0][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[0])
+        print "Pausing for {} seconds ".format(self.pausesScooping[0])
+        time.sleep(self.pausesScooping[0])
 
-            print "#1 Moving over bowl... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[0][0],
-                self.bowl_pos[1] + self.leftArmScoopingPos[0][1],
-                self.bowl_pos[2] + self.leftArmScoopingPos[0][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[0][0],
-                self.leftArmScoopingQuats[0][1],
-                self.leftArmScoopingQuats[0][2],
-                self.leftArmScoopingQuats[0][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsScooping[0])
-            print "Pausing for {} seconds ".format(self.pausesScooping[0])
-            time.sleep(self.pausesScooping[0])
+        print "#2 Moving down into bowl... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[1][0],
+            self.bowl_pos[1] + self.leftArmScoopingPos[1][1],
+            self.bowl_pos[2] + self.leftArmScoopingPos[1][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[1][0],
+            self.leftArmScoopingQuats[1][1],
+            self.leftArmScoopingQuats[1][2],
+            self.leftArmScoopingQuats[1][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[1])
+        print "Pausing for {} seconds ".format(self.pausesScooping[1])
+        time.sleep(self.pausesScooping[1])
 
-            print "#2 Moving down into bowl... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[1][0],
-                self.bowl_pos[1] + self.leftArmScoopingPos[1][1],
-                self.bowl_pos[2] + self.leftArmScoopingPos[1][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[1][0],
-                self.leftArmScoopingQuats[1][1],
-                self.leftArmScoopingQuats[1][2],
-                self.leftArmScoopingQuats[1][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsScooping[1])
-            print "Pausing for {} seconds ".format(self.pausesScooping[1])
-            time.sleep(self.pausesScooping[1])
+        print "#3 Moving forward in bowl... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[2][0],
+            self.bowl_pos[1] + self.leftArmScoopingPos[2][1],
+            self.bowl_pos[2] + self.leftArmScoopingPos[2][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[2][0],
+            self.leftArmScoopingQuats[2][1],
+            self.leftArmScoopingQuats[2][2],
+            self.leftArmScoopingQuats[2][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[2])
+        print "Pausing for {} seconds ".format(self.pausesScooping[2])
+        time.sleep(self.pausesScooping[2])
 
-            print "#3 Moving forward in bowl... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[2][0],
-                self.bowl_pos[1] + self.leftArmScoopingPos[2][1],
-                self.bowl_pos[2] + self.leftArmScoopingPos[2][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[2][0],
-                self.leftArmScoopingQuats[2][1],
-                self.leftArmScoopingQuats[2][2],
-                self.leftArmScoopingQuats[2][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsScooping[2])
-            print "Pausing for {} seconds ".format(self.pausesScooping[2])
-            time.sleep(self.pausesScooping[2])
+        print "#4 Scooping in bowl... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[3][0],
+            self.bowl_pos[1] + self.leftArmScoopingPos[3][1],
+            self.bowl_pos[2] + self.leftArmScoopingPos[3][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[3][0],
+            self.leftArmScoopingQuats[3][1],
+            self.leftArmScoopingQuats[3][2],
+            self.leftArmScoopingQuats[3][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[3])
+        print "Pausing for {} seconds ".format(self.pausesScooping[3])
+        time.sleep(self.pausesScooping[3])
 
-            print "#4 Scooping in bowl... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[3][0],
-                self.bowl_pos[1] + self.leftArmScoopingPos[3][1],
-                self.bowl_pos[2] + self.leftArmScoopingPos[3][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[3][0],
-                self.leftArmScoopingQuats[3][1],
-                self.leftArmScoopingQuats[3][2],
-                self.leftArmScoopingQuats[3][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsScooping[3])
-            print "Pausing for {} seconds ".format(self.pausesScooping[3])
-            time.sleep(self.pausesScooping[3])
+        print "#5 Moving out of bowl... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[4][0],
+            self.bowl_pos[1] + self.leftArmScoopingPos[4][1],
+            self.bowl_pos[2] + self.leftArmScoopingPos[4][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[4][0],
+            self.leftArmScoopingQuats[4][1],
+            self.leftArmScoopingQuats[4][2],
+            self.leftArmScoopingQuats[4][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[4])
+        print "Pausing for {} seconds ".format(self.pausesScooping[4])
+        time.sleep(self.pausesScooping[4])
 
-            print "#5 Moving out of bowl... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[4][0],
-                self.bowl_pos[1] + self.leftArmScoopingPos[4][1],
-                self.bowl_pos[2] + self.leftArmScoopingPos[4][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmScoopingQuats[4][0],
-                self.leftArmScoopingQuats[4][1],
-                self.leftArmScoopingQuats[4][2],
-                self.leftArmScoopingQuats[4][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsScooping[4])
-            print "Pausing for {} seconds ".format(self.pausesScooping[4])
-            time.sleep(self.pausesScooping[4])
-
-            print "Scooping action completed"
-
-            runScoopingAns = raw_input("Run scooping again? [y/n] ")
-            while runScoopingAns != 'y' and runScoopingAns != 'n':
-                print "Please enter 'y' or 'n' ! "
-                runScoopingAns = raw_input("Run scooping again? [y/n] ")
-            if runScoopingAns == 'y':
-                runScooping = True
-            elif runScoopingAns == 'n':
-                runScooping = False
-
-        print "Done running scooping!"
+        print "Scooping action completed"
 
         return True
 
     def feeding(self):
 
-        self.chooseHeadPose()
+        #self.chooseHeadPose()
 
-        posL = Point()
-        quatL = Quaternion()
+        # runFeeding = True
+        # while runFeeding:
+            # print "Initializing left arm for feeding... "
+            # self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
 
-        runFeeding = True
-        while runFeeding:
-            print "Initializing left arm for feeding... "
-            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+            # print "Current joint angles: "
+            # print self.getJointAngles()
+            # print "Current end effector pose: "
+            # print self.getEndeffectorPose()
 
-            print "Current joint angles: "
-            print self.getJointAngles()
-            print "Current end effector pose: "
-            print self.getEndeffectorPose()
+            # raw_input("Press anything to continue... ")
 
-            raw_input("Press anything to continue... ")
+        print "#1 Moving in front of mouth... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[0][0],
+            self.bowl_pos[1] + self.leftArmFeedingPos[0][1],
+            self.bowl_pos[2] + self.leftArmFeedingPos[0][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
+            self.leftArmFeedingQuats[0][1],
+            self.leftArmFeedingQuats[0][2],
+            self.leftArmFeedingQuats[0][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[0])
+        print "Pausing for {} seconds ".format(self.pausesFeeding[0])
+        time.sleep(self.pausesFeeding[0])
 
-            print "#1 Moving in front of mouth... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[0][0],
-                self.bowl_pos[1] + self.leftArmFeedingPos[0][1],
-                self.bowl_pos[2] + self.leftArmFeedingPos[0][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmFeedingQuats[0][0],
-                self.leftArmFeedingQuats[0][1],
-                self.leftArmFeedingQuats[0][2],
-                self.leftArmFeedingQuats[0][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsFeeding[0])
-            print "Pausing for {} seconds ".format(self.pausesFeeding[0])
-            time.sleep(self.pausesFeeding[0])
+        print "#2 Moving into mouth... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[1][0],
+            self.bowl_pos[1] + self.leftArmFeedingPos[1][1],
+            self.bowl_pos[2] + self.leftArmFeedingPos[1][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[1][0],
+            self.leftArmFeedingQuats[1][1],
+            self.leftArmFeedingQuats[1][2],
+            self.leftArmFeedingQuats[1][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[1])
+        print "Pausing for {} seconds ".format(self.pausesFeeding[1])
+        time.sleep(self.pausesFeeding[1])
 
-            print "#2 Moving into mouth... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[1][0],
-                self.bowl_pos[1] + self.leftArmFeedingPos[1][1],
-                self.bowl_pos[2] + self.leftArmFeedingPos[1][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmFeedingQuats[1][0],
-                self.leftArmFeedingQuats[1][1],
-                self.leftArmFeedingQuats[1][2],
-                self.leftArmFeedingQuats[1][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsFeeding[1])
-            print "Pausing for {} seconds ".format(self.pausesFeeding[1])
-            time.sleep(self.pausesFeeding[1])
+        print "#3 Moving away from mouth... "
+        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[2][0],
+            self.bowl_pos[1] + self.leftArmFeedingPos[2][1],
+            self.bowl_pos[2] + self.leftArmFeedingPos[2][2])
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[2][0],
+            self.leftArmFeedingQuats[2][1],
+            self.leftArmFeedingQuats[2][2],
+            self.leftArmFeedingQuats[2][3])
+        self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[2])
+        print "Pausing for {} seconds ".format(self.pausesFeeding[2])
+        time.sleep(self.pausesFeeding[2])       
 
-            print "#3 Moving away from mouth... "
-            posL.x, posL.y, posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[2][0],
-                self.bowl_pos[1] + self.leftArmFeedingPos[2][1],
-                self.bowl_pos[2] + self.leftArmFeedingPos[2][2])
-            quatL.x, quatL.y, quatL.z, quatL.w = (self.leftArmFeedingQuats[2][0],
-                self.leftArmFeedingQuats[2][1],
-                self.leftArmFeedingQuats[2][2],
-                self.leftArmFeedingQuats[2][3])
-            self.setOrientGoal(posL, quatL, self.timeoutsFeeding[2])
-            print "Pausing for {} seconds ".format(self.pausesFeeding[2])
-            time.sleep(self.pausesFeeding[2])       
+        print "Feeding action completed"
 
-            print "Feeding action completed"
+            # runFeedingAns = raw_input("Run feeding again? [y/n] ")
+            # while runFeedingAns != 'y' and runFeedingAns != 'n':
+            #     print "Please enter 'y' or 'n' ! "
+            #     runFeedingAns = raw_input("Run feeding again? [y/n] ")
+            # if runFeedingAns == 'y':
+            #     runFeeding = True
+            # elif runFeedingAns == 'n':
+            #     runFeeding = False
 
-            runFeedingAns = raw_input("Run feeding again? [y/n] ")
-            while runFeedingAns != 'y' and runFeedingAns != 'n':
-                print "Please enter 'y' or 'n' ! "
-                runFeedingAns = raw_input("Run feeding again? [y/n] ")
-            if runFeedingAns == 'y':
-                runFeeding = True
-            elif runFeedingAns == 'n':
-                runFeeding = False
-
-        print "Done running feeding!"
-
-        return True
+	    return True
 
     def stopCallback(self, msg):
 
@@ -482,51 +556,51 @@ class armReachAction(mpcBaseAction):
 
     	return quatArray
 
-    def initJoints(self):
+    # def initJoints(self):
 
-        initLeft = raw_input("Initialize left arm joint angles? [y/n]")
-        if initLeft == 'y':
-            initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
-            while initKind != 'f' and initKind != 's':
-                print "Please enter 'f' or 's' !"
-                initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
-            if initKind == 'f':
-                print "Initializing left arm for feeding"
-                self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
-            elif initKind == 's':
-                print "Initializing left arm for scooping"
-                self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
-        initRight = raw_input("Initialize right arm joint angles? [y/n]")
-        if initRight == 'y':
-            initKind = raw_input("Initialize for holding bowl or folding up? [b/f]")
-            while initKind != 'b' and initKind != 'f':
-                print "Please enter 'b' or 'f' !"
-                initKind = raw_input("Initialize for holding bowl or folding up? [b/f]")
-            if initKind == 'b':
-                print "Initializing for holding bowl"
-                self.setPostureGoalRight(self.rightArmInitialJointAnglesHoldingBowl)
-            elif initKind == 'f':
-                print "Initializing for folding up out of the way"
-                self.setPostureGoalRight(self.rightArmInitialJointAnglesFoldingUp)
-        print "initialization completed"
+    #     initLeft = raw_input("Initialize left arm joint angles? [y/n]")
+    #     if initLeft == 'y':
+    #         initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
+    #         while initKind != 'f' and initKind != 's':
+    #             print "Please enter 'f' or 's' !"
+    #             initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
+    #         if initKind == 'f':
+    #             print "Initializing left arm for feeding"
+    #             self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+    #         elif initKind == 's':
+    #             print "Initializing left arm for scooping"
+    #             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
+    #     initRight = raw_input("Initialize right arm joint angles? [y/n]")
+    #     if initRight == 'y':
+    #         initKind = raw_input("Initialize for feeding or scooping? [f/s]")
+    #         while initKind != 'f' and initKind != 's':
+    #             print "Please enter 'f' or 's' !"
+    #             initKind = raw_input("Initialize for scooping or feeding? [f/s]")
+    #         if initKind == 'f':
+    #             print "Initializing right arm for feeding"
+    #             self.setPostureGoalRight(self.rightArmInitialJointAnglesFeeding)
+    #         elif initKind == 's':
+    #             print "Initializing right arm for scooping"
+    #             self.setPostureGoalRight(self.rightArmInitialJointAnglesScooping)
+    #     print "initialization completed"
 
-    def run(self):
+    # def run(self):
 
-        whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-        while whichTask != 's' and whichTask != 'f' and whichTask != 'x':
-            print "Please enter 's' or 'f' or 'x' ! "
-            whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-        if whichTask == 's':
-            print "Running scooping! "
-            self.scooping()
-        elif whichTask == 'f':
-            print "Running feeding! "
-            self.feeding()
-        elif whichTask == 'x':
-            print "Exiting program! "
-            sys.exit()
+    #     whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
+    #     while whichTask != 's' and whichTask != 'f' and whichTask != 'x':
+    #         print "Please enter 's' or 'f' or 'x' ! "
+    #         whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
+    #     if whichTask == 's':
+    #         print "Running scooping! "
+    #         self.scooping()
+    #     elif whichTask == 'f':
+    #         print "Running feeding! "
+    #         self.feeding()
+    #     elif whichTask == 'x':
+    #         print "Exiting program! "
+    #         sys.exit()
 
-            return True
+    #         return True
 
 if __name__ == '__main__':
 
