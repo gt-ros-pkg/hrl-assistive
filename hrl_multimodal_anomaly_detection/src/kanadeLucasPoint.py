@@ -172,7 +172,7 @@ class kanadeLucasPoint:
 
         # Determine a bounding box around spoon (or left gripper) to narrow search area
         lowX, highX, lowY, highY = self.box
-        print lowX, highX, lowY, highY, imageGray.shape
+        # print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
@@ -180,6 +180,7 @@ class kanadeLucasPoint:
 
         # Take a frame and find corners in it
         feats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
+        print imageGray.shape, feats
 
         # Reposition features back into original image size
         # print feats.shape
