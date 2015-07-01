@@ -185,6 +185,7 @@ class armReachAction(mpcBaseAction):
         rospy.spin()
 
     def serverCallback(self, req):
+    	req = req.data
 
         if req == "leftArmInitScooping":
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)

@@ -60,8 +60,8 @@ class dataRecord:
             print "Initializing left arm for scooping"
             print self.armReachAction("leftArmInitScooping")
 
-            print "Initializing right arm for scooping"
-            print self.armReachAction("rightArmInitScooping")
+            #print "Initializing right arm for scooping"
+            #print self.armReachAction("rightArmInitScooping")
 
             time.sleep(1)
 
@@ -97,8 +97,8 @@ class dataRecord:
             print "Initializing left arm for feeding"
             print self.armReachAction("leftArmInitFeeding")
 
-            print "Initializing right arm for feeding"
-            print self.armReachAction("rightArmInitFeeding")
+            #print "Initializing right arm for feeding"
+            #print self.armReachAction("rightArmInitFeeding")
 
             time.sleep(1)
 
