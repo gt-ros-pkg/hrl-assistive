@@ -3,8 +3,7 @@
 from record_data import *
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
-#* Added by Hyder
-from hrl_python_servicer.srv import String_String
+from hrl_multimodal_anomaly_detection.srv import String_String
 
 class dataRecord:
 

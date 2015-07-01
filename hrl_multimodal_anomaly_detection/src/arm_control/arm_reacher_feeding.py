@@ -1,25 +1,21 @@
 #!/usr/bin/env python
 
 import roslib
-roslib.load_manifest('sandbox_dpark_darpa_m3')
+# roslib.load_manifest('sandbox_dpark_darpa_m3')
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy
-import numpy as np, math
+import numpy as np
 import time
 import tf
 
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
-import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
-from hrl_python_servicer.srv import String_String 
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv
+from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv, String_String
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
-from pr2_controllers_msgs.msg import JointTrajectoryGoal
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class armReachAction(mpcBaseAction):
@@ -137,12 +133,12 @@ class armReachAction(mpcBaseAction):
         self.head_pos_kinect = None
 
         #How much to offset Kinect provided bowl position
-    	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
+        self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
         #^ MAY BE REDUNDANT SINCE WE CAN ADD/SUBTRACT
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-    	self.timeoutsScooping = [10, 5, 4, 4, 4]
+        self.timeoutsScooping = [10, 5, 4, 4, 4]
         self.timeoutsFeeding = [10, 7, 5]
 
         #Paused used between each motion
@@ -150,13 +146,13 @@ class armReachAction(mpcBaseAction):
         self.pausesScooping = [1, 1, 1, 1, 1]
         self.pausesFeeding = [1, 1, 1]
 
-    	print "Calculated quaternions: \n"
-    	print "leftArmScoopingQuats -"
+        print "Calculated quaternions: \n"
+        print "leftArmScoopingQuats -"
         print self.leftArmScoopingQuats
-    	print "leftArmFeedingQuats -"
-    	print self.leftArmFeedingQuats
-    	print "leftArmStopQuats -"
-    	print self.leftArmStopQuats
+        print "leftArmFeedingQuats -"
+        print self.leftArmFeedingQuats
+        print "leftArmStopQuats -"
+        print self.leftArmStopQuats
 
         try:
                 print "--------------------------------"
@@ -190,84 +186,84 @@ class armReachAction(mpcBaseAction):
 
     def serverCallback(self, req):
 
-    	if req == "leftArmInitScooping":
-    		self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
-    		return "Initialized left arm for scooping!"
+        if req == "leftArmInitScooping":
+            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
+            return "Initialized left arm for scooping!"
 
-    	elif req == "leftArmInitFeeding":
-    		self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
-    		return "Initialized left arm for feeding!"
+        elif req == "leftArmInitFeeding":
+            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+            return "Initialized left arm for feeding!"
 
-    	elif req == "rightArmInitScooping":
-    		self.setPostureGoal(self.rightArmInitialJointAnglesScooping, 10)
-    		return "Initialized right arm for scooping!"
+        elif req == "rightArmInitScooping":
+            self.setPostureGoal(self.rightArmInitialJointAnglesScooping, 10)
+            return "Initialized right arm for scooping!"
 
-    	elif req == "rightArmInitFeeding":
-    		self.setPostureGoal(self.rightArmInitialJointAnglesFeeding, 10)
-    		return "Initialized right arm for feeding!"
+        elif req == "rightArmInitFeeding":
+            self.setPostureGoal(self.rightArmInitialJointAnglesFeeding, 10)
+            return "Initialized right arm for feeding!"
 
-    	elif req == "getBowlPosType":
-    		if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
-    			return "manual"
-			elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
-				return "kinect"
-			elif self.bowl_pos_manual is not None and self.bowl_pos_kinect is not None:
-				return "both"
+        elif req == "getBowlPosType":
+            if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
+                return "manual"
+            elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
+                return "kinect"
+            elif self.bowl_pos_manual is not None and self.bowl_pos_kinect is not None:
+                return "both"
 
-    	elif req == "getHeadPosType":
-    		if self.head_pos_kinect is None and self.head_pos_manual is not None:
-    			return "manual"
-        	elif self.head_pos_manual is None and self.head_pos_kinect is not None:
-        		return "kinect"
-        	elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
-        		return "both"
+        elif req == "getHeadPosType":
+            if self.head_pos_kinect is None and self.head_pos_manual is not None:
+                return "manual"
+            elif self.head_pos_manual is None and self.head_pos_kinect is not None:
+                return "kinect"
+            elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
+                return "both"
 
-    	elif req == "chooseManualBowlPos":
-    		if self.bowl_pos_manual is not None:
-	    		self.bowl_frame = self.bowl_frame_manual
-	            self.bowl_pos = self.bowl_pos_manual
-	            self.bowl_quat = self.bowl_quat_manual
-	            return "Chose manual bowl position"
-	        else:
-	        	return "No manual bowl position available! \n Code won't work! \n Provide bowl position and try again!"
+        elif req == "chooseManualBowlPos":
+            if self.bowl_pos_manual is not None:
+                self.bowl_frame = self.bowl_frame_manual
+                self.bowl_pos = self.bowl_pos_manual
+                self.bowl_quat = self.bowl_quat_manual
+                return "Chose manual bowl position"
+            else:
+                return "No manual bowl position available! \n Code won't work! \n Provide bowl position and try again!"
 
-    	elif req == "chooseKinectBowlPos":
-    		if self.bowl_pos_kinect is not None:
-	    		self.bowl_frame = self.bowl_frame_kinect
-	            self.bowl_pos = self.bowl_pos_kinect
-	            self.bowl_quat = self.bowl_quat_kinect
-	            return "Chose kinect bowl position"
-	        else:
-	        	return "No kinect bowl position available! \n Code won't work! \n Provide bowl position and try again!"
+        elif req == "chooseKinectBowlPos":
+            if self.bowl_pos_kinect is not None:
+                self.bowl_frame = self.bowl_frame_kinect
+                self.bowl_pos = self.bowl_pos_kinect
+                self.bowl_quat = self.bowl_quat_kinect
+                return "Chose kinect bowl position"
+            else:
+                return "No kinect bowl position available! \n Code won't work! \n Provide bowl position and try again!"
 
-    	elif req == "chooseManualHeadPos":
-    		if self.head_pos_manual is not None:
-	    		self.head_frame = self.head_frame_manual
-	            self.head_pos = self.head_pos_manual
-	            self.head_quat = self.head_quat_manual
-	            return "Chose manual head position"
-	        else:
-	        	return "No manual head position available! \n Code won't work! \n Provide head position and try again!"
+        elif req == "chooseManualHeadPos":
+            if self.head_pos_manual is not None:
+                self.head_frame = self.head_frame_manual
+                self.head_pos = self.head_pos_manual
+                self.head_quat = self.head_quat_manual
+                return "Chose manual head position"
+            else:
+                return "No manual head position available! \n Code won't work! \n Provide head position and try again!"
 
-    	elif req == "chooseKinectHeadPos":
-    		if self.head_pos_kinect is not None:
-	    		self.head_frame = self.head_frame_kinect
-	            self.head_pos = self.head_pos_kinect
-	            self.head_quat = self.head_quat_kinect
-	            return "Chose kinect head position"
-	        else:
-	        	return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
+        elif req == "chooseKinectHeadPos":
+            if self.head_pos_kinect is not None:
+                self.head_frame = self.head_frame_kinect
+                self.head_pos = self.head_pos_kinect
+                self.head_quat = self.head_quat_kinect
+                return "Chose kinect head position"
+            else:
+                return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
 
-    	elif req == "runScooping":
-    		self.scooping()
-    		return "Finished scooping!"
+        elif req == "runScooping":
+            self.scooping()
+            return "Finished scooping!"
 
-    	elif req == "runFeeding":
-    		self.feeding()
-    		return "Finished feeding!"
+        elif req == "runFeeding":
+            self.feeding()
+            return "Finished feeding!"
 
-    	else:
-    		return "Request not understood by server!!!"
+        else:
+            return "Request not understood by server!!!"
 
     def bowlPoseManualCallback(self, data):
 
@@ -517,7 +513,7 @@ class armReachAction(mpcBaseAction):
             # elif runFeedingAns == 'n':
             #     runFeeding = False
 
-	    return True
+        return True
 
     def stopCallback(self, msg):
 
@@ -544,17 +540,17 @@ class armReachAction(mpcBaseAction):
     #converts an array of euler angles (in degrees) to array of quaternions
     def euler2quatArray(self, eulersIn): 
 
-    	(rows, cols) = np.shape(eulersIn)
-    	quatArray = np.zeros((rows, cols+1))
-    	for r in xrange(0, rows):
-    	    rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
-    	    quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
-    	    quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = (quats[0], 
+        (rows, cols) = np.shape(eulersIn)
+        quatArray = np.zeros((rows, cols+1))
+        for r in xrange(0, rows):
+            rads = np.radians([eulersIn[r][0], eulersIn[r][2], eulersIn[r][1]]) #CHECK THIS ORDER!!!
+            quats = quatMath.euler2quat(rads[2], rads[1], rads[0])
+            quatArray[r][0], quatArray[r][1], quatArray[r][2], quatArray[r][3] = (quats[0],
                                                                                   quats[1], 
                                                                                   quats[2], 
                                                                                   quats[3])
 
-    	return quatArray
+        return quatArray
 
     # def initJoints(self):
 
