@@ -37,6 +37,34 @@ Start robot (**new** terminal window, ssh'd into **robot**):
     1) ssh dpark@pr2c1
     2) roslaunch pr2_teleop teleop_joystick.launch
 
+Record proper bowl position manually:
+
+	*NOTE* Do this *before* changing custom gains since by default, the arms are stiffer and will provide a more accurate end effector position
+	(Arm will sag after letting go, otherwise have someone else hold the arm/gripper in the proper place while recording tf spoon position)
+
+	1) Make sure runstop is on **STOP**
+	2) Position end of spoon to align with yellow markers on sides of bowl and bottom lip of bowl
+	3) Press **START** on runstop
+
+	On the **laptop** run
+	4) rosrun tf tf_echo /torso_lift_link /l_gripper_spoon_frame
+	
+	5) Record position of "l_gripper_spoon_frame" ie: 
+
+		At time 1435778466.052
+			- Translation: [**0.923,** **0.286,** **-0.325**]
+			- Rotation: in Quaternion [0.631, 0.324, -0.367, 0.602]
+            	in RPY [1.582, 1.023, -0.064] 
+
+    On the **laptop** (because we run this file from the laptop, not the robot)
+    6) Enter this position into line 37-39 of manual_bowl_head_pose_publisher.py ie:
+
+    	37| (self.bowl_pose_manual.pose.position.x, 
+		38|	self.bowl_pose_manual.pose.position.y, 
+		39|	self.bowl_pose_manual.pose.position.z) = (**0.923,** **0.286,** **-0.325**)
+
+	7) If necessary, perform similiar steps for setting the head/mouth position
+
 Change arm gains and start mpc (**new** terminal window, ssh'd into **robot**):
     
     1) ssh dpark@pr2c1
