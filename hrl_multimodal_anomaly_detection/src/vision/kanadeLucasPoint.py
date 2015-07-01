@@ -190,7 +190,9 @@ class kanadeLucasPoint:
 
             # Verify that the feature is near the 'spoon' line
             if not self.closeToLine(feat[0]):
+                print 'Feature not added'
                 continue
+            print 'Feature added!'
 
             # Check to make feature is near gripper when transformed into 3D
             # feat3D = self.get3DPointFromCloud(feat[0])
@@ -488,6 +490,7 @@ class kanadeLucasPoint:
 
         # Used to verify that each point is within our defined box
         self.box = [int(x) for x in self.boundingBox()]
+        print 'New box defined'
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
@@ -501,7 +504,7 @@ class kanadeLucasPoint:
             # Determine initial set of features
             self.determineGoodFeatures(imageGray)
             self.prevGray = imageGray
-            self.lastTime = time.time()
+            # self.lastTime = time.time()
             return
 
         # Add new features to our feature tracker
