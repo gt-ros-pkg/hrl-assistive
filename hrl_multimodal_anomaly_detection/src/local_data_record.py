@@ -23,15 +23,15 @@ class dataRecord:
         rospy.loginfo("arm reach server connected!!")
 
         subject = raw_input("Enter subject name: ")
-        task = raw_input("Enter task name [s or f]: ")
+        task = raw_input("Running scooping or feeding? [s/f]: ")
 
         self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=task)
 
         #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
-        repeatAns = raw_input("Change trial name before starting? [y/n]")
-        while repeatAns != 'n':
-            self.trial_name = raw_input("Enter trial name: ")
-            repeatAns = raw_input("Change trial name before starting? [y/n]")
+        # repeatAns = raw_input("Change trial name before starting? [y/n]")
+        # while repeatAns != 'n':
+        #     self.trial_name = raw_input("Enter trial name: ")
+        #     repeatAns = raw_input("Change trial name before starting? [y/n]")
 
     def run(self):
 
