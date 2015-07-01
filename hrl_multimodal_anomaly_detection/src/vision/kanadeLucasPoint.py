@@ -270,7 +270,7 @@ class kanadeLucasPoint:
             # Draw purple points on image for spoon structure
             for point in self.linePoints:
                 circle = Circle()
-                circle.x, circle.y = int(point[0]), int(point[0])
+                circle.x, circle.y = int(point[0]), int(point[1])
                 circle.radius = 5
                 circle.r = 128
                 circle.g = 255
@@ -304,8 +304,8 @@ class kanadeLucasPoint:
     def boundingBox(self):
         # These are dependent on the orientation of the gripper. This should be taken into account
         # Left is on -z axis
-        left3D =  [0, 0, -0.2]
-        right3D = [0, 0, 0.2]
+        left3D =  [0, 0, -0.15]
+        right3D = [0, 0, 0.15]
         # Up is on +x axis
         up3D = [0.4, 0, 0]
         down3D = [0.05, 0, 0]
@@ -338,7 +338,7 @@ class kanadeLucasPoint:
             top, bottom = bottom, top
 
         # Make sure box encompases the spoon
-        margin = 20
+        margin = 40
         if left > self.spoonX - margin:
             left = self.spoonX - margin
         if right < self.spoonX + margin:
@@ -359,7 +359,7 @@ class kanadeLucasPoint:
             bottom = self.cameraHeight - 1
 
         # Verify that the box bounds are not too small
-        diff = 150 - np.abs(right - left)
+        diff = 100 - np.abs(right - left)
         if np.abs(right - left) < 100:
             if left < diff/2.0:
                 right += diff
@@ -388,7 +388,7 @@ class kanadeLucasPoint:
 
     def closeToLine(self, point):
         distances = np.linalg.norm(self.linePoints - point, axis=1)
-        return any(distances < 10)
+        return any(distances < 15)
 
     def publishFeatures(self):
         if self.cameraWidth is None:
