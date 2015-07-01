@@ -83,6 +83,7 @@ class kanadeLucasPoint:
         self.pinholeCamera = None
         self.rgbCameraFrame = None
         self.box = None
+        self.minibox = None
         self.lastTime = time.time()
 
         self.linePoints = None
@@ -156,18 +157,18 @@ class kanadeLucasPoint:
         if returnFeatures:
             # Return a list of features
             # labels[i] != -1
-            return [feat for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box) and self.closeToLine(feat.recent2DPosition)]
+            return [feat for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.minibox) and self.closeToLine(feat.recent2DPosition)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent2DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.box)
+            return {feat.index: feat.recent2DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.minibox)
                         and self.closeToLine(feat.recent2DPosition)}
 
     def determineGoodFeatures(self, imageGray):
         if len(self.activeFeatures) >= self.N or self.lGripperTranslation is None:
             return
 
-        # Determine a bounding box around spoon (or left gripper) to narrow search area
-        lowX, highX, lowY, highY = self.box
+        # Use the mini bounding box to determine what new features to add
+        lowX, highX, lowY, highY = self.minibox
         # print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
@@ -239,13 +240,6 @@ class kanadeLucasPoint:
 
     def publishImageFeatures(self):
         imageFeatures = ImageFeatures()
-        # Draw all features (as red)
-        for feat in self.activeFeatures:
-            circle = Circle()
-            circle.x, circle.y = feat.recent2DPosition
-            circle.radius = 5
-            circle.r = 255
-            imageFeatures.circles.append(circle)
 
         if self.lGripX is not None:
             # Draw an orange point on image for gripper
@@ -277,6 +271,14 @@ class kanadeLucasPoint:
                 circle.b = 128
                 imageFeatures.circles.append(circle)
 
+        # Draw all features (as red)
+        for feat in self.activeFeatures:
+            circle = Circle()
+            circle.x, circle.y = feat.recent2DPosition
+            circle.radius = 5
+            circle.r = 255
+            imageFeatures.circles.append(circle)
+
         if self.box is not None:
             # Draw a bounding box around spoon (or left gripper)
             rect = Rectangle()
@@ -284,6 +286,15 @@ class kanadeLucasPoint:
             rect.r = 75
             rect.g = 150
             rect.thickness = 5
+            imageFeatures.rectangles.append(rect)
+
+        if self.minibox is not None:
+            # Draw a bounding box around spoon (or left gripper)
+            rect = Rectangle()
+            rect.lowX, rect.highX, rect.lowY, rect.highY = self.minibox
+            rect.r = 128
+            rect.b = 128
+            rect.thickness = 3
             imageFeatures.rectangles.append(rect)
 
         features = self.getNovelAndClusteredFeatures(returnFeatures=True)
@@ -369,6 +380,78 @@ class kanadeLucasPoint:
                 left -= diff/2.0
                 right += diff/2.0
         diff = 100 - np.abs(bottom - top)
+        if np.abs(bottom - top) < 50:
+            if top < diff/2.0:
+                bottom += diff
+            elif bottom > self.cameraHeight - diff/2.0 - 1:
+                top -= diff
+            else:
+                top -= diff/2.0
+                bottom += diff/2.0
+
+        return left, right, top, bottom
+
+    # Finds a small bounding box for specifically finding new features
+    # Returns coordinates (lowX, highX, lowY, highY)
+    def boundingBoxMini(self):
+        # These are dependent on the orientation of the gripper. This should be taken into account
+        # Left is on -z axis
+        left3D =  [0, 0, -0.15]
+        right3D = [0, 0, 0.15]
+        # Up is on +x axis
+        up3D = [0.4, 0, 0]
+        down3D = [0.05, 0, 0]
+
+        # Transpose box onto orientation of gripper
+        left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
+        right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
+        top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
+        bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
+
+        # Project 3D box locations to 2D for the camera
+        left, _ = self.pinholeCamera.project3dToPixel(left)
+        right, _ = self.pinholeCamera.project3dToPixel(right)
+        _, top = self.pinholeCamera.project3dToPixel(top)
+        _, bottom = self.pinholeCamera.project3dToPixel(bottom)
+
+        # Adjust incase hand is upside down
+        if left > right:
+            left, right = right, left
+        if top > bottom:
+            top, bottom = bottom, top
+
+        # Make sure box encompases the spoon
+        margin = 20
+        if left > self.spoonX - margin:
+            left = self.spoonX - margin
+        if right < self.spoonX + margin:
+            right = self.spoonX + margin
+        if top > self.spoonY - margin:
+            top = self.spoonY - margin
+        if bottom < self.spoonY + margin:
+            bottom = self.spoonY + margin
+
+        # Check if box extrudes past image bounds
+        if left < 0:
+            left = 0
+        if right > self.cameraWidth - 1:
+            right = self.cameraWidth - 1
+        if top < 0:
+            top = 0
+        if bottom > self.cameraHeight - 1:
+            bottom = self.cameraHeight - 1
+
+        # Verify that the box bounds are not too small
+        diff = 100 - np.abs(right - left)
+        if np.abs(right - left) < 100:
+            if left < diff/2.0:
+                right += diff
+            elif right > self.cameraWidth - diff/2.0 - 1:
+                left -= diff
+            else:
+                left -= diff/2.0
+                right += diff/2.0
+        diff = 50 - np.abs(bottom - top)
         if np.abs(bottom - top) < 50:
             if top < diff/2.0:
                 bottom += diff
@@ -492,6 +575,7 @@ class kanadeLucasPoint:
 
         # Used to verify that each point is within our defined box
         self.box = [int(x) for x in self.boundingBox()]
+        self.minibox = [int(x) for x in self.boundingBoxMini()]
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
