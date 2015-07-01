@@ -52,6 +52,13 @@ class ADL_log:
         self.subject = subject.replace(' ', '')
         self.task = 'scooping' if task == 's' else 'feeding'
 
+        directory = os.path.join(os.path.dirname(__file__), '../recordings/')
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
+        if not os.path.exists(self.folderName):
+            os.makedirs(self.folderName)
+
         # raw_input('press Enter to reset')
         # if ft: self.ft.reset()
         # if audio: self.audio.reset()
@@ -112,13 +119,7 @@ class ADL_log:
         elif flag == '3': sys.exit()
         else: status = flag
 
-        directory = os.path.join(os.path.dirname(__file__), '../recordings/')
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
-        if not os.path.exists(folderName):
-            os.makedirs(folderName)
-        fileName = os.path.join(folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
+        fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
         ut.save_pickle(data, fileName)
         self.iteration += 1
 
