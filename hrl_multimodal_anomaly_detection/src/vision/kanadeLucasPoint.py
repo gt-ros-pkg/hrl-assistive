@@ -387,6 +387,7 @@ class kanadeLucasPoint:
         return lowX <= px <= highX and lowY <= py <= highY
 
     def closeToLine(self, point):
+        print self.linePoints - point
         distances = np.linalg.norm(self.linePoints - point)
         print distances
         return any(distances < 10)
