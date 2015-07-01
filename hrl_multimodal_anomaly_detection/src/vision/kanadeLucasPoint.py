@@ -190,9 +190,9 @@ class kanadeLucasPoint:
 
             # Verify that the feature is near the 'spoon' line
             if not self.closeToLine(feat[0]):
-                print 'Feature not added'
+                # print 'Feature not added'
                 continue
-            print 'Feature added!'
+            # print 'Feature added!'
 
             # Check to make feature is near gripper when transformed into 3D
             # feat3D = self.get3DPointFromCloud(feat[0])
@@ -388,6 +388,7 @@ class kanadeLucasPoint:
 
     def closeToLine(self, point):
         distances = np.linalg.norm(self.linePoints - point)
+        print distances
         return any(distances < 10)
 
     def publishFeatures(self):
@@ -472,7 +473,6 @@ class kanadeLucasPoint:
         # start = time.time()
         # print 'Time between image calls:', start - self.lastTime
         # Grab image from Kinect sensor
-        print 'Image callback'
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
@@ -493,7 +493,6 @@ class kanadeLucasPoint:
 
         # Used to verify that each point is within our defined box
         self.box = [int(x) for x in self.boundingBox()]
-        print 'New box defined'
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
@@ -532,7 +531,6 @@ class kanadeLucasPoint:
             self.caller()
 
     def cloudCallback(self, data):
-        print 'Cloud callback'
         # Store PointCloud2 data for use when determining 3D locations
         self.pointCloud = data
 

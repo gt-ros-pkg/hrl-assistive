@@ -3,10 +3,9 @@
 # System
 import os
 import sys
-import glob
 import time
-import getpass
 from pylab import *
+import cPickle as pickle
 
 from audio.tool_audio import tool_audio
 from vision.tool_vision import tool_vision
@@ -18,9 +17,6 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy, optparse
 import tf
-
-# HRL
-import hrl_lib.util as ut
 
 def log_parse():
     parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
@@ -89,6 +85,9 @@ class ADL_log:
             data['ft_force_raw']  = self.ft.force_raw_data
             data['ft_torque_raw'] = self.ft.torque_raw_data
             data['ft_time']       = self.ft.time_data
+            print 'ft_force_raw', len(self.ft.force_raw_data)
+            print 'ft_torque_raw', len(self.ft.torque_raw_data)
+            print 'ft_time', len(self.ft.time_data)
 
         if self.audio is not None:
             self.audio.cancel()
@@ -98,11 +97,19 @@ class ADL_log:
             data['audio_chunk'] = self.audio.CHUNK
             data['audio_time']  = self.audio.time_data
             data['audio_data_raw'] = self.audio.audio_data_raw
+            print 'audio_data', len(self.audio.audio_data)
+            print 'audio_amp', len(self.audio.audio_amp)
+            print 'audio_freq', len(self.audio.audio_freq)
+            print 'audio_chunk', len(self.audio.CHUNK)
+            print 'audio_time', len(self.audio.time_data)
+            print 'audio_data_raw', len(self.audio.audio_data_raw)
 
         if self.vision is not None:
             self.vision.cancel()
             data['visual_points'] = self.vision.visual_points
             data['visual_time'] = self.vision.time_data
+            print 'visual_points', len(self.vision.visual_points)
+            print 'visual_time', len(self.vision.time_data)
 
         if self.kinematics:
             self.kinematics.cancel()
@@ -112,6 +119,12 @@ class ADL_log:
             data['l_end_effector_quat'] = self.kinematics.l_end_effector_quat
             data['r_end_effector_pos'] = self.kinematics.r_end_effector_pos
             data['r_end_effector_quat'] = self.kinematics.r_end_effector_quat
+            print 'kinematics_time', len(self.kinematics.time_data)
+            print 'kinematics_joint', len(self.kinematics.joint_data)
+            print 'l_end_effector_pos', len(self.kinematics.l_end_effector_pos)
+            print 'l_end_effector_quat', len(self.kinematics.l_end_effector_quat)
+            print 'r_end_effector_pos', len(self.kinematics.r_end_effector_pos)
+            print 'r_end_effector_quat', len(self.kinematics.r_end_effector_quat)
 
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1': status = 'success'
@@ -120,7 +133,9 @@ class ADL_log:
         else: status = flag
 
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
-        ut.save_pickle(data, fileName)
+        with open(fileName, 'wb'):
+            pickle.dump(data, fileName, protocol=pickle.HIGHEST_PROTOCOL)
+
         self.iteration += 1
 
         # Reinitialize all sensors
