@@ -396,10 +396,10 @@ class kanadeLucasPoint:
     def boundingBoxMini(self):
         # These are dependent on the orientation of the gripper. This should be taken into account
         # Left is on -z axis
-        left3D =  [0, 0, -0.15]
-        right3D = [0, 0, 0.15]
+        left3D =  [0, 0, -0.05]
+        right3D = [0, 0, 0.05]
         # Up is on +x axis
-        up3D = [0.4, 0, 0]
+        up3D = [0.3, 0, 0]
         down3D = [0.05, 0, 0]
 
         # Transpose box onto orientation of gripper
@@ -442,24 +442,24 @@ class kanadeLucasPoint:
             bottom = self.cameraHeight - 1
 
         # Verify that the box bounds are not too small
-        # diff = 100 - np.abs(right - left)
-        # if np.abs(right - left) < 100:
-        #     if left < diff/2.0:
-        #         right += diff
-        #     elif right > self.cameraWidth - diff/2.0 - 1:
-        #         left -= diff
-        #     else:
-        #         left -= diff/2.0
-        #         right += diff/2.0
-        # diff = 50 - np.abs(bottom - top)
-        # if np.abs(bottom - top) < 50:
-        #     if top < diff/2.0:
-        #         bottom += diff
-        #     elif bottom > self.cameraHeight - diff/2.0 - 1:
-        #         top -= diff
-        #     else:
-        #         top -= diff/2.0
-        #         bottom += diff/2.0
+        diff = 100 - np.abs(right - left)
+        if np.abs(right - left) < 100:
+            if left < diff/2.0:
+                right += diff
+            elif right > self.cameraWidth - diff/2.0 - 1:
+                left -= diff
+            else:
+                left -= diff/2.0
+                right += diff/2.0
+        diff = 50 - np.abs(bottom - top)
+        if np.abs(bottom - top) < 50:
+            if top < diff/2.0:
+                bottom += diff
+            elif bottom > self.cameraHeight - diff/2.0 - 1:
+                top -= diff
+            else:
+                top -= diff/2.0
+                bottom += diff/2.0
 
         return left, right, top, bottom
 
