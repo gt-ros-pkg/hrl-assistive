@@ -186,6 +186,8 @@ class armReachAction(mpcBaseAction):
 
     def serverCallback(self, req):
 
+    	return str(req) + str(type(req))
+    	
         if req == "leftArmInitScooping":
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
             return "Initialized left arm for scooping!"
