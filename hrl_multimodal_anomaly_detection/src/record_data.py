@@ -116,6 +116,8 @@ class ADL_log:
         if not os.path.exists(directory):
             os.makedirs(directory)
         folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
+        if not os.path.exists(folderName):
+            os.makedirs(folderName)
         fileName = os.path.join(folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
         ut.save_pickle(data, fileName)
         self.iteration += 1
