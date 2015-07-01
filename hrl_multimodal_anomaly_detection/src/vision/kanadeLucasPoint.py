@@ -486,6 +486,8 @@ class kanadeLucasPoint:
         # Convert to grayscale
         imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+        self.transposeGripperToCamera()
+
         if self.lGripperTranslation is None:
             return
 
@@ -510,8 +512,6 @@ class kanadeLucasPoint:
 
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
-
-        self.transposeGripperToCamera()
 
         if self.activeFeatures:
             self.opticalFlow(imageGray)
