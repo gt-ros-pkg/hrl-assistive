@@ -472,6 +472,7 @@ class kanadeLucasPoint:
         # start = time.time()
         # print 'Time between image calls:', start - self.lastTime
         # Grab image from Kinect sensor
+        print 'Image callback'
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
@@ -531,6 +532,7 @@ class kanadeLucasPoint:
             self.caller()
 
     def cloudCallback(self, data):
+        print 'Cloud callback'
         # Store PointCloud2 data for use when determining 3D locations
         self.pointCloud = data
 
