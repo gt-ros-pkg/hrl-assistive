@@ -4,7 +4,7 @@
     
     <node name="manual_bowl_head_pose_publisher" pkg="hrl_multimodal_anomaly_detection" type="manual_bowl_head_pose_publisher.py" />
 
-	<node name="local_data_record" pkg="hrl_multimodal_anomaly_detection" type="local_data_record.py" output="screen" />
+    <node name="local_data_record" pkg="hrl_multimodal_anomaly_detection" type="local_data_record.py" output="screen" />
 
     
 </launch>
