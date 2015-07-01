@@ -20,7 +20,6 @@ import rospy, optparse
 import tf
 
 # HRL
-from hrl_srvs.srv import None_Bool, None_BoolResponse
 import hrl_lib.util as ut
 
 def log_parse():

@@ -4,7 +4,6 @@ from record_data import *
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 #* Added by Hyder
-from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
 from hrl_python_servicer.srv import String_String
 
 class dataRecord:
@@ -24,20 +23,15 @@ class dataRecord:
         rospy.loginfo("arm reach server connected!!")
 
         subject = raw_input("Enter subject name: ")
-        task = raw_input("Enter task name: ")
-        actor = raw_input("Enter actor name: ")
-        self.trial_name = raw_input("Enter trial name: ")
+        task = raw_input("Enter task name [s or f]: ")
 
-        self.log = ADL_log(audio=self.AUDIO, audioRecord=self.AUDIORECORD, vision=self.VISION, ft=self.FT, kinematics=self.KINEMATICS,
-                                manip=self.MANIP, test_mode=self.TEST_MODE, subject=subject, task=task, actor=actor)
+        self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=task)
 
         #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
         repeatAns = raw_input("Change trial name before starting? [y/n]")
         while repeatAns != 'n':
             self.trial_name = raw_input("Enter trial name: ")
             repeatAns = raw_input("Change trial name before starting? [y/n]")
-
-        self.log.log_start(self.trial_name)
 
     def run(self):
 
@@ -72,13 +66,13 @@ class dataRecord:
 
             time.sleep(1)
 
-            # * Open log file with new name
+            self.log.log_start()
 
             print "Running scooping!"
             print self.armReachAction("runScooping")
             #print "Finished running scooping!"
 
-            # * Close log file with same new name
+            self.log.close_log_file()
 
             runScoopingAns = raw_input("Run scooping again? [y/n] ")
             while runScoopingAns != 'y' and runScoopingAns != 'n':
@@ -90,7 +84,6 @@ class dataRecord:
                 runScooping = False
 
         print "Finished scooping trials!"
-        #sys.exit()
 
 
     def feeding(self):
@@ -110,13 +103,13 @@ class dataRecord:
 
             time.sleep(1)
 
-            # * Open log file with new name
+            self.log.log_start()
 
             print "Running feeding!"
             print self.armReachAction("runFeeding")
             #print "Finished running feeding!"
 
-            # * Close log file with same new name
+            self.log.close_log_file()
 
             runFeedingAns = raw_input("Run feeding again? [y/n] ")
             while runFeedingAns != 'y' and runFeedingAns != 'n':
@@ -128,12 +121,9 @@ class dataRecord:
                 runFeeding = False
 
         print "Finished feeding trials!"
-        #sys.exit()
 
 if __name__ == '__main__':
     rospy.init_node('local_data_record')
 
     recorder = dataRecord()
     recorder.run()
-
-    #rospy.spin()
