@@ -22,45 +22,70 @@ Steps to run feeding code on PR2 and computer:
 ----------------------------------------------
 
 
-Start robot (first terminal window, ssh'd into **robot**):
+Start robot (**new** terminal window, ssh'd into **robot**):
 
     1) Set proper environment variables via .bashrc
        If using epipac via hhasnain3 user, run command "pr2"
        If using laptop via primary user, run command "pr2c1"
-    2) **ssh dpark@pr2c1**
+    2) ssh dpark@pr2c1
     3) robot claim
     4) robot start
     5) rosrun pr2_dashboard pr2_dashboard 
 
-Launch joystick teleop (second terminal window, ssh'd into **robot**):
+*OPTIONAL*: Launch joystick teleop (**new** terminal window, ssh'd into **robot**):
 
-    1) roslaunch pr2_teleop teleop_joystick.launch
+    1) ssh dpark@pr2c1
+    2) roslaunch pr2_teleop teleop_joystick.launch
 
-Change arm gains and start mpc (third terminal window, ssh'd into **robot**):
+Record proper bowl position manually:
+
+	*NOTE* Do this *before* changing custom gains since by default, the arms are stiffer and will provide a more accurate end effector position
+	(Arm will sag after letting go, otherwise have someone else hold the arm/gripper in the proper place while recording tf spoon position)
+
+	1) Make sure runstop is on **STOP**
+	2) Position end of spoon to align with yellow markers on sides of bowl and bottom lip of bowl
+	3) Press **START** on runstop
+
+	On the **laptop** run
+	4) rosrun tf tf_echo /torso_lift_link /l_gripper_spoon_frame
+	
+	5) Record position of "l_gripper_spoon_frame" ie: 
+
+		At time 1435778466.052
+			- Translation: [**0.923,** **0.286,** **-0.325**]
+			- Rotation: in Quaternion [0.631, 0.324, -0.367, 0.602]
+            	in RPY [1.582, 1.023, -0.064] 
+
+    On the **laptop** (because we run this file from the laptop, not the robot)
+    6) Enter this position into line 37-39 of manual_bowl_head_pose_publisher.py ie:
+
+    	37| (self.bowl_pose_manual.pose.position.x, 
+		38|	self.bowl_pose_manual.pose.position.y, 
+		39|	self.bowl_pose_manual.pose.position.z) = (**0.923,** **0.286,** **-0.325**)
+
+	7) If necessary, perform similiar steps for setting the head/mouth position
+
+Change arm gains and start mpc (**new** terminal window, ssh'd into **robot**):
     
-    1) roscd hrl_multimodal_anomaly_detection/launch/arm_control
-    2) ./change_gains_pr2.sh
-    3) PRESS START ON RUNSTOP
-    4) roslaunch hrl_multimodal_anomaly_detection start_pr2_mpc_all.launch
+    1) ssh dpark@pr2c1
+    2) roscd hrl_multimodal_anomaly_detection/launch/arm_control
+    3) ./change_gains_pr2.sh
+    4) PRESS START ON RUNSTOP
+    5) roslaunch hrl_multimodal_anomaly_detection start_pr2_mpc_all.launch
 
 
-*OPTIONAL*: Launch Kinect files for bowl and head registration:
+*OPTIONAL*: Launch Kinect files for bowl and head registration (**new** terminal window, ssh'd into **robot**):
     
-    1) roslaunch hrl_feeding_task Feeding_Visual_Kinect2.launch
+    1) ssh dpark@pr2c1
+    2) roslaunch hrl_feeding_task Feeding_Visual_Kinect2.launch
 
-Launch FT node (fourth terminal window, running on **laptop**):
-
-    1) rosrun netft_rdt_driver netft_node 10.68.0.120 --rate 10
-
-Launch bowl publisher (fifth terminal window, running on **laptop**):
-
-    1) rosrun hrl_multimodal_anomaly_detection manual_bowl_head_pose_publisher.py
-
-Launch arm feeding server (sixth terminal window, ssh'd into **robot**):
+Launch arm feeding server (**new** terminal window, ssh'd into **robot**):
    
-    1) Both arms: roslaunch hrl_multimodal_anomaly_detection arm_reacher_all.launch
+    1) ssh dpark@pr2c1
+    2) Both arms: roslaunch hrl_multimodal_anomaly_detection arm_reacher_all.launch
+    
+Launch combined FT node, bowl publisher and data recording (**new** terminal window, running on **laptop**):
+    
+    1) roslaunch hrl_multimodal_anomaly_detection record_feeding_full.py
         
-Launch data recording and **RUN** (seventh terminal window, running on **laptop**):
 
-    1) rosrun hrl_multimodal_anomaly_detection local_data_record.py
-    2) *Follow prompts on terminal screen*
