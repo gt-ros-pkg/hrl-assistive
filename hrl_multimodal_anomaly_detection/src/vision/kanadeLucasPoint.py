@@ -336,17 +336,25 @@ class kanadeLucasPoint:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
 
+        print 'Number of 3D points:', points3D.shape
+
         # Perform dbscan clustering
         X = StandardScaler().fit_transform(points3D)
         labels = self.dbscan.fit_predict(X)
+        unique_labels = set(labels)
+
+        print 'Number of unique labels:', len(unique_labels)
 
         # Find the point closest to our gripper and it's corresponding label
         index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
         closeLabel = labels[index]
 
+        print 'Closest point:', closePoint, 'index:', index, 'label:', closeLabel
+
         # Find the cluster closest to our gripper (To be continued possibly)
-        unique_labels = set(labels)
         clusterPoints = points3D[labels==closeLabel]
+
+        print 'Number of clustered points near spoon:', clusterPoints.shape
 
         for point in clusterPoints:
             p = Point()
@@ -355,6 +363,7 @@ class kanadeLucasPoint:
             p.z = point[2]
             marker.points.append(p)
 
+        print 'Published 3D spoon points'
         self.publisher.publish(marker)
 
         # Publish depth features for non spoon features
@@ -375,7 +384,7 @@ class kanadeLucasPoint:
             p.z = point[2]
             marker.points.append(p)
 
-        print 'Published 3D points'
+        print 'Published 3D non spoon points'
         self.publisher.publish(marker)
 
     # Finds a bounding box given defined features
