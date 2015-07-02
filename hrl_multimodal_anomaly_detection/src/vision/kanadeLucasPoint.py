@@ -361,7 +361,7 @@ class kanadeLucasPoint:
         nonClusterPoints = points3D[labels!=closeLabel]
         marker = Marker()
         marker.header.frame_id = self.frameId
-        marker.ns = 'spoonPoints'
+        marker.ns = 'nonSpoonPoints'
         marker.type = marker.POINTS
         marker.action = marker.ADD
         marker.scale.x = 0.01
