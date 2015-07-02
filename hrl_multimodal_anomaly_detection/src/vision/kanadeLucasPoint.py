@@ -226,7 +226,7 @@ class kanadeLucasPoint:
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
 
         # Remove all features outside the bounding box
-        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.recent2DPosition, self.box)]
+        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.recent2DPosition, self.box) and self.closeToLine(feat.recent2DPosition, 40)]
 
         # Remove all features whose velocity does not follow the spoon's velocity
         # if self.gripperVelocity is not None:
@@ -469,9 +469,9 @@ class kanadeLucasPoint:
         lowX, highX, lowY, highY = boxPoints
         return lowX <= px <= highX and lowY <= py <= highY
 
-    def closeToLine(self, point):
+    def closeToLine(self, point, value=15):
         distances = np.linalg.norm(self.linePoints - point, axis=1)
-        return any(distances < 15)
+        return any(distances < value)
 
     def publishFeatures(self):
         if self.cameraWidth is None:
