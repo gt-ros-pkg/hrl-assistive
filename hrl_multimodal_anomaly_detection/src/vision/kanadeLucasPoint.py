@@ -90,7 +90,7 @@ class kanadeLucasPoint:
 
         self.linePoints = None
 
-        self.dbscan = DBSCAN(eps=0.05, min_samples=6)
+        self.dbscan = DBSCAN(eps=0.025, min_samples=6)
         # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
 
         self.N = 30
