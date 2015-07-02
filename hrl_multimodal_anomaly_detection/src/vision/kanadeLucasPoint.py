@@ -334,7 +334,7 @@ class kanadeLucasPoint:
         try:
             print 'Reading 3D points'
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
+            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[int(self.lGripX), int(self.lGripY)]]).next()
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
