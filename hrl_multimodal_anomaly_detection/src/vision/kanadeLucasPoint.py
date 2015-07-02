@@ -311,6 +311,9 @@ class kanadeLucasPoint:
 
         self.publisher2D.publish(imageFeatures)
 
+        if self.pointCloud is None:
+            return
+
         # Publish depth features for spoon
         marker = Marker()
         marker.header.frame_id = self.frameId
@@ -329,7 +332,7 @@ class kanadeLucasPoint:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-            return None
+            return
 
         for point in points3D:
             p = Point()
