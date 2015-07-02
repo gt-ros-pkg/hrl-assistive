@@ -22,9 +22,15 @@ class dataRecord:
         rospy.loginfo("arm reach server connected!!")
 
         subject = raw_input("Enter subject name: ")
-        task = raw_input("Running scooping or feeding? [s/f]: ")
+        self.task = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
+        while self.task != 's' and self.task != 'f' and self.task != 'x':
+            print "Please enter 's' or 'f' or 'x' ! "
+            self.task = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
+        if self.task == 'x':
+            print "Exiting program!"
+            sys.exit()
 
-        self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=task)
+        self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=self.task)
 
         #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
         # repeatAns = raw_input("Change trial name before starting? [y/n]")
@@ -34,19 +40,12 @@ class dataRecord:
 
     def run(self):
 
-        whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-        while whichTask != 's' and whichTask != 'f' and whichTask != 'x':
-            print "Please enter 's' or 'f' or 'x' ! "
-            whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-        if whichTask == 's':
+        if self.task == 's':
             print "Running scooping! "
             self.scooping()
-        elif whichTask == 'f':
+        elif self.task == 'f':
             print "Running feeding! "
             self.feeding()
-        elif whichTask == 'x':
-            print "Exiting program! "
-            sys.exit()
 
     def scooping(self):
 
