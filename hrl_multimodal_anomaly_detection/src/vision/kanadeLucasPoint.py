@@ -329,7 +329,9 @@ class kanadeLucasPoint:
 
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
+            print 'Reading 3D points'
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+            print 'Read 3D points'
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
@@ -341,6 +343,7 @@ class kanadeLucasPoint:
             p.z = point[2]
             marker.points.append(p)
 
+        print 'Published 3D points'
         self.publisher.publish(marker)
 
     # Finds a bounding box given defined features
@@ -471,7 +474,7 @@ class kanadeLucasPoint:
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return None
-        if any([math.isnan(v) for v in point]):
+        if point is None:
             # print 'NaN! Feature', px, py, depth
             return None
 
