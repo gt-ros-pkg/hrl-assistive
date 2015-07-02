@@ -49,6 +49,7 @@ class kanadeLucasPoint:
         # self.features = []
         # PointCloud2 data used for determining 3D location from 2D pixel location
         self.pointCloud = None
+        self.pointCloudFrame = None
         # Transformations
         self.frameId = None
         self.cameraWidth = None
@@ -310,97 +311,44 @@ class kanadeLucasPoint:
 
         self.publisher2D.publish(imageFeatures)
 
-    # Finds a bounding box around a given point
+        # Publish depth features for spoon
+        marker = Marker()
+        marker.header.frame_id = self.frameId
+        marker.ns = 'spoonPoints'
+        marker.type = marker.POINTS
+        marker.action = marker.ADD
+        marker.scale.x = 0.01
+        marker.scale.y = 0.01
+        marker.color.a = 1.0
+        marker.color.g = 1.0
+
+        lowX, highX, lowY, highY = self.minibox
+
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        try:
+            points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+        except:
+            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+            return None
+
+        for point in points3D:
+            p = Point()
+            p.x = point[0]
+            p.y = point[1]
+            p.z = point[2]
+            marker.points.append(p)
+
+        self.publisher.publish(marker)
+
+    # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
-    def boundingBox(self):
-        # These are dependent on the orientation of the gripper. This should be taken into account
+    def boundingBox(self, leftRight, up, down, margin, widthDiff, heightDiff):
         # Left is on -z axis
-        left3D =  [0, 0, -0.15]
-        right3D = [0, 0, 0.15]
+        left3D =  [0, 0, -leftRight]
+        right3D = [0, 0, leftRight]
         # Up is on +x axis
-        up3D = [0.4, 0, 0]
-        down3D = [-0.05, 0, 0]
-        spoon3D = [0.22, -0.050, 0]
-
-        # Transpose box onto orientation of gripper
-        left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
-        right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
-        top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
-        bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
-        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
-
-        # Project 3D box locations to 2D for the camera
-        left, _ = self.pinholeCamera.project3dToPixel(left)
-        right, _ = self.pinholeCamera.project3dToPixel(right)
-        _, top = self.pinholeCamera.project3dToPixel(top)
-        _, bottom = self.pinholeCamera.project3dToPixel(bottom)
-        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
-
-        # Define a line through gripper and spoon
-        m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
-        xs = np.linspace(self.lGripX, self.spoonX, 25)
-        ys = m * (xs + -self.lGripX) + self.lGripY
-        self.linePoints = np.reshape(np.hstack((xs, ys)), (xs.size, 2), order='F')
-
-        # Adjust incase hand is upside down
-        if left > right:
-            left, right = right, left
-        if top > bottom:
-            top, bottom = bottom, top
-
-        # Make sure box encompases the spoon
-        margin = 40
-        if left > self.spoonX - margin:
-            left = self.spoonX - margin
-        if right < self.spoonX + margin:
-            right = self.spoonX + margin
-        if top > self.spoonY - margin:
-            top = self.spoonY - margin
-        if bottom < self.spoonY + margin:
-            bottom = self.spoonY + margin
-
-        # Check if box extrudes past image bounds
-        if left < 0:
-            left = 0
-        if right > self.cameraWidth - 1:
-            right = self.cameraWidth - 1
-        if top < 0:
-            top = 0
-        if bottom > self.cameraHeight - 1:
-            bottom = self.cameraHeight - 1
-
-        # Verify that the box bounds are not too small
-        diff = 100 - np.abs(right - left)
-        if np.abs(right - left) < 100:
-            if left < diff/2.0:
-                right += diff
-            elif right > self.cameraWidth - diff/2.0 - 1:
-                left -= diff
-            else:
-                left -= diff/2.0
-                right += diff/2.0
-        diff = 100 - np.abs(bottom - top)
-        if np.abs(bottom - top) < 50:
-            if top < diff/2.0:
-                bottom += diff
-            elif bottom > self.cameraHeight - diff/2.0 - 1:
-                top -= diff
-            else:
-                top -= diff/2.0
-                bottom += diff/2.0
-
-        return left, right, top, bottom
-
-    # Finds a small bounding box for specifically finding new features
-    # Returns coordinates (lowX, highX, lowY, highY)
-    def boundingBoxMini(self):
-        # These are dependent on the orientation of the gripper. This should be taken into account
-        # Left is on -z axis
-        left3D =  [0, 0, -0.05]
-        right3D = [0, 0, 0.05]
-        # Up is on +x axis
-        up3D = [0.3, 0, 0]
-        down3D = [0.05, 0, 0]
+        up3D = [up, 0, 0]
+        down3D = [down, 0, 0]
 
         # Transpose box onto orientation of gripper
         left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
@@ -421,7 +369,6 @@ class kanadeLucasPoint:
             top, bottom = bottom, top
 
         # Make sure box encompases the spoon
-        margin = 20
         if left > self.spoonX - margin:
             left = self.spoonX - margin
         if right < self.spoonX + margin:
@@ -442,7 +389,7 @@ class kanadeLucasPoint:
             bottom = self.cameraHeight - 1
 
         # Verify that the box bounds are not too small
-        diff = 100 - np.abs(right - left)
+        diff = widthDiff - np.abs(right - left)
         if np.abs(right - left) < 100:
             if left < diff/2.0:
                 right += diff
@@ -451,7 +398,7 @@ class kanadeLucasPoint:
             else:
                 left -= diff/2.0
                 right += diff/2.0
-        diff = 50 - np.abs(bottom - top)
+        diff = heightDiff - np.abs(bottom - top)
         if np.abs(bottom - top) < 50:
             if top < diff/2.0:
                 bottom += diff
@@ -461,7 +408,7 @@ class kanadeLucasPoint:
                 top -= diff/2.0
                 bottom += diff/2.0
 
-        return left, right, top, bottom
+        return int(left), int(right), int(top), int(bottom)
 
     @staticmethod
     def pointInBoundingBox(point, boxPoints):
@@ -513,20 +460,22 @@ class kanadeLucasPoint:
             # print 'AHH! The PointCloud2 data is not available!'
             return None
         try:
-            points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=False, uvs=[[x, y]])
-            # Grab the first 3D point received from PointCloud2
-            px, py, depth = points.next()
+            points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[x, y]])
+            point = None
+            for p in points:
+                point = p
+                break
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return None
-        if any([math.isnan(v) for v in [px, py, depth]]):
+        if any([math.isnan(v) for v in point]):
             # print 'NaN! Feature', px, py, depth
             return None
 
         xyz = None
         # Transpose point to targetFrame
         if self.targetFrame is not None:
-            xyz = np.dot(self.transMatrix, np.array([px, py, depth, 1.0]))[:3]
+            xyz = np.dot(self.transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3]
 
         return xyz
 
@@ -573,9 +522,20 @@ class kanadeLucasPoint:
         if self.lGripperTranslation is None:
             return
 
+        # Determine location of spoon
+        spoon3D = [0.22, -0.050, 0]
+        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+
+        # Define a line through gripper and spoon
+        m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
+        xs = np.linspace(self.lGripX, self.spoonX, 25)
+        ys = m * (xs + -self.lGripX) + self.lGripY
+        self.linePoints = np.reshape(np.hstack((xs, ys)), (xs.size, 2), order='F')
+
         # Used to verify that each point is within our defined box
-        self.box = [int(x) for x in self.boundingBox()]
-        self.minibox = [int(x) for x in self.boundingBoxMini()]
+        self.box = self.boundingBox(0.15, 0.4, -0.05, 40, 100, 100)
+        self.minibox = self.boundingBox(0.05, 0.3, 0.05, 20, 100, 50)
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
@@ -616,6 +576,7 @@ class kanadeLucasPoint:
     def cloudCallback(self, data):
         # Store PointCloud2 data for use when determining 3D locations
         self.pointCloud = data
+        self.pointCloudFrame = data.header.frame_id
 
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
