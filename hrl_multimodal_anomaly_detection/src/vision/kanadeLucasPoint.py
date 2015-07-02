@@ -339,7 +339,7 @@ class kanadeLucasPoint:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
 
-        print 'Number of 3D points:', points3D.shape
+        points3D = np.array([point for point in points3D])
 
         # Perform dbscan clustering
         X = StandardScaler().fit_transform(points3D)
