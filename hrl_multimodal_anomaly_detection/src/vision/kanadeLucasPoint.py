@@ -357,7 +357,7 @@ class kanadeLucasPoint:
             p.z = point[2]
             marker.points.append(p)
 
-        print 'Published 3D spoon points'
+        # print 'Published 3D spoon points'
         self.publisher.publish(marker)
 
         # Publish depth features for non spoon features
