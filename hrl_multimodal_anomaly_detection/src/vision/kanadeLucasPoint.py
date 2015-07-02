@@ -312,6 +312,8 @@ class kanadeLucasPoint:
 
         self.publisher2D.publish(imageFeatures)
 
+        print 'Published 2D points'
+
         if self.pointCloud is None:
             return
 
@@ -330,6 +332,7 @@ class kanadeLucasPoint:
 
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
+            print 'Reading 3D points'
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
             gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
         except:
