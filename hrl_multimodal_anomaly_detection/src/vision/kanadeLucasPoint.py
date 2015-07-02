@@ -7,6 +7,7 @@ import time
 import math
 import rospy
 import random
+import operator
 import numpy as np
 
 try :
@@ -89,7 +90,7 @@ class kanadeLucasPoint:
 
         self.linePoints = None
 
-        # self.dbscan = DBSCAN(eps=3, min_samples=6)
+        self.dbscan = DBSCAN(eps=3, min_samples=6)
         # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
 
         self.N = 30
@@ -329,14 +330,45 @@ class kanadeLucasPoint:
 
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
-            print 'Reading 3D points'
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            print 'Read 3D points'
+            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
 
-        for point in points3D:
+        # Perform dbscan clustering
+        X = StandardScaler().fit_transform(points3D)
+        labels = self.dbscan.fit_predict(X)
+
+        # Find the point closest to our gripper and it's corresponding label
+        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+        closeLabel = labels[index]
+
+        # Find the cluster closest to our gripper (To be continued possibly)
+        unique_labels = set(labels)
+        clusterPoints = points3D[labels==closeLabel]
+
+        for point in clusterPoints:
+            p = Point()
+            p.x = point[0]
+            p.y = point[1]
+            p.z = point[2]
+            marker.points.append(p)
+
+        self.publisher.publish(marker)
+
+        # Publish depth features for non spoon features
+        nonClusterPoints = points3D[labels!=closeLabel]
+        marker = Marker()
+        marker.header.frame_id = self.frameId
+        marker.ns = 'spoonPoints'
+        marker.type = marker.POINTS
+        marker.action = marker.ADD
+        marker.scale.x = 0.01
+        marker.scale.y = 0.01
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        for point in nonClusterPoints:
             p = Point()
             p.x = point[0]
             p.y = point[1]
