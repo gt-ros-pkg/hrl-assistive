@@ -15,6 +15,7 @@ from forces.tool_ft import tool_ft
 # ROS
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
+from geometry_msgs.msg import PoseStamped
 import rospy, optparse
 import tf
 
@@ -55,6 +56,14 @@ class ADL_log:
         if not os.path.exists(self.folderName):
             os.makedirs(self.folderName)
 
+        self.bowlPos = None
+        self.headPos = None
+
+        rospy.Subscriber('hrl_feeding_task/manual_bowl_location',
+                         PoseStamped, self.bowlPoseManualCallback)
+        rospy.Subscriber('hrl_feeding_task/manual_head_location',
+                         PoseStamped, self.headPoseManualCallback)
+
         # raw_input('press Enter to reset')
         # if ft: self.ft.reset()
         # if audio: self.audio.reset()
@@ -78,13 +87,13 @@ class ADL_log:
         data = dict()
         data['init_time'] = self.init_time
 
-        if self.ft is not None:
-            self.ft.cancel()
-            ## data['force'] = self.ft.force_data
-            ## data['torque'] = self.ft.torque_data
-            data['ft_force_raw']  = self.ft.force_raw_data
-            data['ft_torque_raw'] = self.ft.torque_raw_data
-            data['ft_time']       = self.ft.time_data
+        # if self.ft is not None:
+        #     self.ft.cancel()
+        #     ## data['force'] = self.ft.force_data
+        #     ## data['torque'] = self.ft.torque_data
+        #     data['ft_force_raw']  = self.ft.force_raw_data
+        #     data['ft_torque_raw'] = self.ft.torque_raw_data
+        #     data['ft_time']       = self.ft.time_data
 
         if self.audio is not None:
             self.audio.cancel()
@@ -109,6 +118,9 @@ class ADL_log:
             data['r_end_effector_pos'] = self.kinematics.r_end_effector_pos
             data['r_end_effector_quat'] = self.kinematics.r_end_effector_quat
 
+        data['bowl_position'] = self.bowlPos
+        data['head_position'] = self.headPos
+
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1': status = 'success'
         elif flag == '2': status = 'failure'
@@ -131,6 +143,11 @@ class ADL_log:
         if self.kinematics is not None:
             self.kinematics = robot_kinematics(self.tf_listener)
 
+    def bowlPoseManualCallback(self, data):
+        self.bowlPos = np.matrix([[data.pose.position.x], [data.pose.position.y], [data.pose.position.z]])
+
+    def headPoseManualCallback(self, data):
+        self.headPos = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
 
 if __name__ == '__main__':
     subject = 'gatsbii'
