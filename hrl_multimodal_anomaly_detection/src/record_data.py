@@ -116,8 +116,8 @@ class ADL_log:
         else: status = flag
 
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
-        with open(fileName, 'wb'):
-            pickle.dump(data, fileName, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(fileName, 'wb') as f:
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
         self.iteration += 1
 

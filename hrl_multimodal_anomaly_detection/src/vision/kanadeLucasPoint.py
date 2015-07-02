@@ -541,8 +541,8 @@ class kanadeLucasPoint:
         # self.lastGripTime = time.time()
 
     def imageCallback(self, data):
-        start = time.time()
-        print 'Time between image calls:', start - self.lastTime
+        # start = time.time()
+        # print 'Time between image calls:', start - self.lastTime
         # Grab image from Kinect sensor
         try:
             image = self.bridge.imgmsg_to_cv(data)
@@ -562,8 +562,8 @@ class kanadeLucasPoint:
         if self.lGripperTranslation is None:
             return
 
-        print 'Time for first step:', time.time() - start
-        timeStamp = time.time()
+        # print 'Time for first step:', time.time() - start
+        # timeStamp = time.time()
 
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
@@ -580,8 +580,8 @@ class kanadeLucasPoint:
         self.box = self.boundingBox(0.15, 0.4, -0.05, 40, 100, 100)
         self.minibox = self.boundingBox(0.05, 0.3, 0.05, 20, 100, 50)
 
-        print 'Time for second step:', time.time() - timeStamp
-        timeStamp = time.time()
+        # print 'Time for second step:', time.time() - timeStamp
+        # timeStamp = time.time()
 
         # Find frameId for transformations and determine a good set of starting features
         if self.frameId is None or not self.activeFeatures:
@@ -601,25 +601,25 @@ class kanadeLucasPoint:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
-        print 'Time for third step:', time.time() - timeStamp
-        timeStamp = time.time()
+        # print 'Time for third step:', time.time() - timeStamp
+        # timeStamp = time.time()
 
         if self.activeFeatures:
             self.opticalFlow(imageGray)
             if self.publish:
                 self.publishFeatures()
-        print 'Time for fourth step:', time.time() - timeStamp
-        timeStamp = time.time()
+        # print 'Time for fourth step:', time.time() - timeStamp
+        # timeStamp = time.time()
         if self.visual:
             self.publishImageFeatures()
-        print 'Time for fifth step:', time.time() - timeStamp
+        # print 'Time for fifth step:', time.time() - timeStamp
 
         self.updateNumber += 1
 
         self.prevGray = imageGray
 
-        print 'Image calculation time:', time.time() - start
-        self.lastTime = time.time()
+        # print 'Image calculation time:', time.time() - start
+        # self.lastTime = time.time()
 
         # Call our caller now that new data has been processed
         if self.caller is not None:

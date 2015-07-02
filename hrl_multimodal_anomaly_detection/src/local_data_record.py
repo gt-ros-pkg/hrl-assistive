@@ -23,7 +23,7 @@ class dataRecord:
 
         subject = raw_input("Enter subject name: ")
         self.task = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-        while self.task != 's' and self.task != 'f' and self.task != 'x':
+        while not any(self.task == s for s in ['s', 'f', 'x']):
             print "Please enter 's' or 'f' or 'x' ! "
             self.task = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
         if self.task == 'x':
@@ -76,10 +76,7 @@ class dataRecord:
             while runScoopingAns != 'y' and runScoopingAns != 'n':
                 print "Please enter 'y' or 'n' ! "
                 runScoopingAns = raw_input("Run scooping again? [y/n] ")
-            if runScoopingAns == 'y':
-                runScooping = True
-            elif runScoopingAns == 'n':
-                runScooping = False
+            runScooping = runScoopingAns == 'y'
 
         print "Finished scooping trials!"
 
@@ -113,10 +110,7 @@ class dataRecord:
             while runFeedingAns != 'y' and runFeedingAns != 'n':
                 print "Please enter 'y' or 'n' ! "
                 runFeedingAns = raw_input("Run feeding again? [y/n] ")
-            if runFeedingAns == 'y':
-                runFeeding = True
-            elif runFeedingAns == 'n':
-                runFeeding = False
+            runFeeding = runFeedingAns == 'y'
 
         print "Finished feeding trials!"
 
