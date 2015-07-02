@@ -87,13 +87,13 @@ class ADL_log:
         data = dict()
         data['init_time'] = self.init_time
 
-        # if self.ft is not None:
-        #     self.ft.cancel()
-        #     ## data['force'] = self.ft.force_data
-        #     ## data['torque'] = self.ft.torque_data
-        #     data['ft_force_raw']  = self.ft.force_raw_data
-        #     data['ft_torque_raw'] = self.ft.torque_raw_data
-        #     data['ft_time']       = self.ft.time_data
+        if self.ft is not None:
+            self.ft.cancel()
+            ## data['force'] = self.ft.force_data
+            ## data['torque'] = self.ft.torque_data
+            data['ft_force_raw']  = self.ft.force_raw_data
+            data['ft_torque_raw'] = self.ft.torque_raw_data
+            data['ft_time']       = self.ft.time_data
 
         if self.audio is not None:
             self.audio.cancel()
