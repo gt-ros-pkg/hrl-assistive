@@ -34,7 +34,7 @@ class depthPerception:
         # List of features we are tracking
         self.clusterPoints = None
 
-        self.dbscan = DBSCAN(eps=0.1, min_samples=10)
+        self.dbscan = DBSCAN(eps=0.15, min_samples=10)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.visual = visual
@@ -102,6 +102,13 @@ class depthPerception:
         # Find the point closest to our gripper and it's corresponding label
         index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
         closeLabel = labels[index]
+        while closeLabel == -1 and points3D.size > 0:
+            np.delete(points3D, [index])
+            np.delete(labels, [index])
+            index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+            closeLabel = labels[index]
+        if points3D.size <= 0:
+            return
         print 'Label:', closeLabel
 
         # Find the cluster closest to our gripper
