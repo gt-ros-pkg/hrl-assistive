@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 __author__ = 'zerickson'
 
 import time
