@@ -71,9 +71,10 @@ class depthPerception:
         return self.clusterPoints
 
     def cloudCallback(self, data):
-        print 'Time between cloud calls:', time.time() - self.cloudTime
+        # print 'Time between cloud calls:', time.time() - self.cloudTime
+        # startTime = time.time()
+
         self.pointCloud = data
-        startTime = time.time()
 
         self.transposeGripperToCamera()
 
@@ -123,8 +124,8 @@ class depthPerception:
             self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
 
         self.updateNumber += 1
-        print 'Cloud computation time:', time.time() - startTime
-        self.cloudTime = time.time()
+        # print 'Cloud computation time:', time.time() - startTime
+        # self.cloudTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
