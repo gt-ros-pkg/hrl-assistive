@@ -25,7 +25,7 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <pcl_ros/transforms.h>
 
-#include <hrl_feeding_task/CupFinder.h>
+#include <hrl_multimodal_anomaly_detection/CupFinder.h>
 
 #include <iostream>
 #include <pcl/ModelCoefficients.h>
@@ -50,7 +50,7 @@
 #define SQ(x) ((x) * (x))
 typedef pcl::PointXYZRGB PRGB;
 
-namespace hrl_feeding_task {
+namespace hrl_multimodal_anomaly_detection {
 
     class CupFinderServer {
         public:
@@ -105,7 +105,7 @@ namespace hrl_feeding_task {
         l_click_sub = nh.subscribe("/l_mouse_click", 1, &CupFinderServer::lClickCallback, this);
         confirm_sub = nh.subscribe("/RYDS_Confirm", 1, &CupFinderServer::confirmCallback, this);
         action_sub = nh.subscribe("/RYDS_Action", 1, &CupFinderServer::actionCallback, this);
-        ROS_INFO("[hrl_feeding_task] CupFinderServer loaded");
+        ROS_INFO("[hrl_multimodal_anomaly_detection] CupFinderServer loaded");
 	cup_found = false;
 	working = false;
 	cup_est = false;
@@ -140,7 +140,7 @@ namespace hrl_feeding_task {
         img_height = info_msg->height;
         cam_called = true;
         camera_info_sub.shutdown();
-        ROS_INFO("[hrl_feeding_task] Camera Info Received");
+        ROS_INFO("[hrl_multimodal_anomaly_detection] Camera Info Received");
     }
 
 /*
@@ -548,11 +548,11 @@ namespace hrl_feeding_task {
 };
 
 
-using namespace hrl_feeding_task;
+using namespace hrl_multimodal_anomaly_detection;
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "hrl_feeding_task");
+    ros::init(argc, argv, "hrl_multimodal_anomaly_detection");
     // note. It might beed to be some differnet name.
     CupFinderServer p3d;
     ros::spin();

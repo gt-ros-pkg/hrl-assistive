@@ -108,11 +108,11 @@ class armReachAction(mpcBaseAction):
                                            [.01,    .085, -.01],
                                            [.01,    .2,   -.01]])
 
-        self.leftArmScoopingEulers = np.array([[90,	-60,    0],
-                                               [90,	-60,	0], #Moving down into bowl
-                                               [90,	-30,	0], #Moving forward in bowl
-                                               [90,	  0,	0], #Rotating spoon to scoop out of bowl
-                                               [90,	  0,    0]]) #Moving up out of bowl
+        self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
+                                               [90,	-50,	-30], #Moving down into bowl
+                                               [90,	-30,	-30], #Moving forward in bowl
+                                               [90,	  0,	-30], #Rotating spoon to scoop out of bowl
+                                               [90,	  0,    -30]]) #Moving up out of bowl
 
         self.leftArmFeedingEulers = np.array([[90, 0, -90],
                                               [90, 0, -90],
@@ -139,7 +139,7 @@ class armReachAction(mpcBaseAction):
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-        self.timeoutsScooping = [10, 10,6, 5, 5]
+        self.timeoutsScooping = [6, 3, 3, 2, 2]
         self.timeoutsFeeding = [10, 7, 5]
 
         #Paused used between each motion

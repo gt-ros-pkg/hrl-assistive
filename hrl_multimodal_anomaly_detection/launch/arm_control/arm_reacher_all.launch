@@ -26,8 +26,6 @@
   
   </group>
 
-  <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.120 --rate 50" respawn="true" />
-
 </launch>
 
 <!--group ns="right" >
