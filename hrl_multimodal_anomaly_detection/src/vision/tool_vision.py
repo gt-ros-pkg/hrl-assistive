@@ -16,7 +16,7 @@ class tool_vision(Thread):
         # A set of 3D points
         self.visual_points = []
 
-        self.visionTracker = visionTracker(useARTags=False, targetFrame='/torso_lift_link', shouldSpin=False, publish=True, visual=True, tfListener=tfListener)
+        self.visionTracker = visionTracker(useARTags=False, targetFrame='/torso_lift_link', shouldSpin=False, publish=False, visual=True, tfListener=tfListener)
 
     def reset(self):
         pass
