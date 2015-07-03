@@ -102,6 +102,7 @@ class depthPerception:
         # Find the point closest to our gripper and it's corresponding label
         index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
         closeLabel = labels[index]
+        print 'Label:', closeLabel
 
         # Find the cluster closest to our gripper
         self.clusterPoints = points3D[labels==closeLabel]
