@@ -73,6 +73,8 @@ class depthPerception:
         self.pointCloud = data
         startTime = time.time()
 
+        self.transposeGripperToCamera()
+
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
