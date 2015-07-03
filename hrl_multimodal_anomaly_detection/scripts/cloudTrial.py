@@ -1,8 +1,10 @@
-__author__ = 'zerickson'
+#!/usr/bin/env python
 
 import time
 import rospy
 from sensor_msgs.msg import PointCloud2
+
+__author__ = 'zerickson'
 
 class cloudTrial:
     def __init__(self):
