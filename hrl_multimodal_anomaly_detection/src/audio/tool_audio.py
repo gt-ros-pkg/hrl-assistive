@@ -32,7 +32,7 @@ class tool_audio(Thread):
         self.noise_amp_mult = 2.0
         self.noise_bias = 0.0
 
-        self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME)
+        # self.audio_freq = np.fft.fftfreq(self.CHUNK, self.UNIT_SAMPLE_TIME)
         self.audio_data = []
         self.audio_amp  = []
 
@@ -65,7 +65,7 @@ class tool_audio(Thread):
         self.time_data.append(rospy.get_time() - self.init_time)
         self.audio_data_raw.append(data)
 
-        audio_data = np.fromstring(data, self.DTYPE)
+        # audio_data = np.fromstring(data, self.DTYPE)
         ## audio_data = signal.lfilter(self.b, self.a, audio_data)
 
         # Exclude low rms data
@@ -74,7 +74,7 @@ class tool_audio(Thread):
         ##     audio_data = audio_data*np.exp( - self.noise_amp_mult*(self.noise_amp_thres - amp))
 
         ## audio_data -= self.noise_bias
-        new_F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
+        # new_F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
 
         # Remove noise
         ## for noise_freq in self.noise_freq_l:
@@ -82,9 +82,9 @@ class tool_audio(Thread):
 
         ## audio_data = np.fft.ifft(new_F)*float(self.MAX_INT)
 
-        self.audio_amp.append(new_F)
+        # self.audio_amp.append(new_F)
         # TODO This can be removed to save space
-        self.audio_data.append(audio_data)
+        # self.audio_data.append(audio_data)
 
     def cancel(self):
         """End this timer thread"""

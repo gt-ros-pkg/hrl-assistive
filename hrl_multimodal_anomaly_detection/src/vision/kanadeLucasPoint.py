@@ -8,6 +8,7 @@ import math
 import rospy
 import random
 import operator
+import threading
 import numpy as np
 
 try :
@@ -30,6 +31,124 @@ import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
+
+frameId = None
+minibox = None
+pointCloud = None
+lGripX = None
+lGripY = None
+clusterPoints = None
+
+class cloudThread(threading.Thread):
+    def __init__(self):
+        super(cloudThread, self).__init__()
+        self.daemon = True
+        self.cancelled = False
+        self.cloudTime = time.time()
+        rospy.init_node('listener_cloud')
+        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+
+    def run(self):
+        rate = rospy.Rate(1000) # 25Hz, nominally.
+        while not self.cancelled:
+            # rate.sleep()
+            pass
+
+    def cancel(self):
+        self.cancelled = True
+
+    def cloudCallback(self, data):
+        global pointCloud
+        print 'Time between cloud calls:', time.time() - self.cloudTime
+        self.cloudTime = time.time()
+        pointCloud = data
+
+class cloudProcess(threading.Thread):
+    def __init__(self):
+        super(cloudProcess, self).__init__()
+        self.daemon = True
+        self.cancelled = False
+        self.dbscan = DBSCAN(eps=0.06, min_samples=10)
+        rospy.init_node('publisher_cloud')
+        self.publisher = rospy.Publisher('visualization_marker', Marker)
+
+    def run(self):
+        global clusterPoints
+        rate = rospy.Rate(1000) # 25Hz, nominally.
+        while not self.cancelled:
+            if pointCloud is None:
+                continue
+            startTime = time.time()
+
+            # Publish depth features for spoon
+            marker = Marker()
+            marker.header.frame_id = frameId
+            marker.ns = 'spoonPoints'
+            marker.type = marker.POINTS
+            marker.action = marker.ADD
+            marker.scale.x = 0.01
+            marker.scale.y = 0.01
+            marker.color.a = 1.0
+            marker.color.g = 1.0
+
+            lowX, highX, lowY, highY = minibox
+
+            points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+            try:
+                points3D = pc2.read_points(pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+                gripperPoint = pc2.read_points(pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[int(lGripX), int(lGripY)]]).next()
+            except:
+                # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+                continue
+
+            points3D = np.array([point for point in points3D])
+
+            # Perform dbscan clustering
+            X = StandardScaler().fit_transform(points3D)
+            labels = self.dbscan.fit_predict(X)
+            # unique_labels = set(labels)
+
+            # Find the point closest to our gripper and it's corresponding label
+            index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+            closeLabel = labels[index]
+
+            # Find the cluster closest to our gripper
+            clusterPoints = points3D[labels==closeLabel]
+
+            for point in clusterPoints:
+                p = Point()
+                p.x = point[0]
+                p.y = point[1]
+                p.z = point[2]
+                marker.points.append(p)
+
+            # print 'Published 3D spoon points'
+            self.publisher.publish(marker)
+
+            # Publish depth features for non spoon features
+            nonClusterPoints = points3D[labels!=closeLabel]
+            marker = Marker()
+            marker.header.frame_id = frameId
+            marker.ns = 'nonSpoonPoints'
+            marker.type = marker.POINTS
+            marker.action = marker.ADD
+            marker.scale.x = 0.01
+            marker.scale.y = 0.01
+            marker.color.a = 1.0
+            marker.color.r = 1.0
+            for point in nonClusterPoints:
+                p = Point()
+                p.x = point[0]
+                p.y = point[1]
+                p.z = point[2]
+                marker.points.append(p)
+
+            self.publisher.publish(marker)
+            print 'Cloud computation time:', time.time() - startTime
+
+    def cancel(self):
+        self.cancelled = True
+
 class kanadeLucasPoint:
     def __init__(self, caller, targetFrame=None, publish=False, visual=False, tfListener=None):
         self.caller = caller
@@ -49,10 +168,12 @@ class kanadeLucasPoint:
         self.allFeatures = []
         # self.features = []
         # PointCloud2 data used for determining 3D location from 2D pixel location
-        self.pointCloud = None
+        self.cloud = cloudThread()
+        self.cloud.start()
+        self.cloudProcess = cloudProcess()
+        self.cloudProcess.start()
         self.pointCloudFrame = None
         # Transformations
-        self.frameId = None
         self.cameraWidth = None
         self.cameraHeight = None
         if tfListener is None:
@@ -70,29 +191,20 @@ class kanadeLucasPoint:
         self.lGripperTranslation = None
         self.lGripperRotation = None
         self.lGripperTransposeMatrix = None
-        self.lGripX = None
-        self.lGripY = None
         # Spoon data
         self.spoonTranslation = None
         self.spoonRotation = None
         self.spoonTransposeMatrix = None
         self.spoonX = None
         self.spoonY = None
-        # Used for gripper velocity
-        self.gripperVelocity = None
-        self.lastGripTime = None
 
         self.pinholeCamera = None
         self.rgbCameraFrame = None
         self.box = None
-        self.minibox = None
         self.lastTime = time.time()
         self.cloudTime = time.time()
 
         self.linePoints = None
-
-        self.dbscan = DBSCAN(eps=0.06, min_samples=10)
-        # self.dbscan2D = DBSCAN(eps=0.6, min_samples=6)
 
         self.N = 30
 
@@ -103,8 +215,8 @@ class kanadeLucasPoint:
         # Kinect 2
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
         print 'Connected to Kinect images'
-        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        print 'Connected to Kinect depth'
+        # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        # print 'Connected to Kinect depth'
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
         # PR2 Simulated
@@ -119,12 +231,12 @@ class kanadeLucasPoint:
     def getRecentPoint(self, index):
         if index >= self.markerRecentCount():
             return None
-        return self.activeFeatures[index].recent3DPosition
+        return self.activeFeatures[index].recent2DPosition
 
     # Returns a dictionary, with keys as point indices and values as a 3D point
     def getAllRecentPoints(self):
         if self.markerRecentCount() <= 0:
-            print 'No novel features'
+            # print 'No novel features'
             return None
         return self.getNovelAndClusteredFeatures(returnFeatures=False)
 
@@ -160,10 +272,10 @@ class kanadeLucasPoint:
         if returnFeatures:
             # Return a list of features
             # labels[i] != -1
-            return [feat for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.minibox) and self.closeToLine(feat.recent2DPosition)]
+            return [feat for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, minibox) and self.closeToLine(feat.recent2DPosition)]
         else:
             # Return a dictionary of indices and 3D points
-            return {feat.index: feat.recent2DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, self.minibox)
+            return {feat.index: feat.recent2DPosition.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.recent2DPosition, minibox)
                         and self.closeToLine(feat.recent2DPosition)}
 
     def determineGoodFeatures(self, imageGray):
@@ -171,7 +283,7 @@ class kanadeLucasPoint:
             return
 
         # Use the mini bounding box to determine what new features to add
-        lowX, highX, lowY, highY = self.minibox
+        lowX, highX, lowY, highY = minibox
         # print lowX, highX, lowY, highY, imageGray.shape
 
         # Crop imageGray to bounding box size
@@ -244,10 +356,10 @@ class kanadeLucasPoint:
     def publishImageFeatures(self):
         imageFeatures = ImageFeatures()
 
-        if self.lGripX is not None:
+        if lGripX is not None:
             # Draw an orange point on image for gripper
             circle = Circle()
-            circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+            circle.x, circle.y = int(lGripX), int(lGripY)
             circle.radius = 10
             circle.r = 255
             circle.g = 128
@@ -291,10 +403,10 @@ class kanadeLucasPoint:
             rect.thickness = 5
             imageFeatures.rectangles.append(rect)
 
-        if self.minibox is not None:
+        if minibox is not None:
             # Draw a bounding box around spoon (or left gripper)
             rect = Rectangle()
-            rect.lowX, rect.highX, rect.lowY, rect.highY = self.minibox
+            rect.lowX, rect.highX, rect.lowY, rect.highY = minibox
             rect.r = 128
             rect.b = 128
             rect.thickness = 3
@@ -393,66 +505,41 @@ class kanadeLucasPoint:
         distances = np.linalg.norm(self.linePoints - point, axis=1)
         return any(distances < value)
 
-    def publishFeatures(self):
-        if self.cameraWidth is None:
-            return
-        # Display all novel (object) features that we are tracking.
-        marker = Marker()
-        marker.header.frame_id = self.targetFrame
-        marker.ns = 'points'
-        marker.type = marker.POINTS
-        marker.action = marker.ADD
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.color.a = 1.0
-        marker.color.b = 1.0
-        for feature in self.activeFeatures:
-            if not feature.isNovel:
-                continue
-            x, y, depth = feature.recent3DPosition
-            # Create 3d point
-            p = Point()
-            p.x = x
-            p.y = y
-            p.z = depth
-            marker.points.append(p)
-
-        self.publisher.publish(marker)
-
-    def get3DPointFromCloud(self, feature2DPosition):
-        if self.cameraWidth is None:
-            return None
-        # Grab x, y values from feature and verify they are within the image bounds
-        x, y = feature2DPosition
-        x, y = int(x), int(y)
-        if x >= self.cameraWidth or y >= self.cameraHeight:
-            # print 'x, y greater than camera size! Feature', x, y, self.cameraWidth, self.cameraHeight
-            return None
-        # Retrieve 3d location of feature from PointCloud2
-        if self.pointCloud is None:
-            # print 'AHH! The PointCloud2 data is not available!'
-            return None
-        try:
-            points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[x, y]])
-            point = None
-            for p in points:
-                point = p
-                break
-        except:
-            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-            return None
-        if point is None:
-            # print 'NaN! Feature', px, py, depth
-            return None
-
-        xyz = None
-        # Transpose point to targetFrame
-        if self.targetFrame is not None:
-            xyz = np.dot(self.transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3]
-
-        return xyz
+    # def get3DPointFromCloud(self, feature2DPosition):
+    #     if self.cameraWidth is None:
+    #         return None
+    #     # Grab x, y values from feature and verify they are within the image bounds
+    #     x, y = feature2DPosition
+    #     x, y = int(x), int(y)
+    #     if x >= self.cameraWidth or y >= self.cameraHeight:
+    #         # print 'x, y greater than camera size! Feature', x, y, self.cameraWidth, self.cameraHeight
+    #         return None
+    #     # Retrieve 3d location of feature from PointCloud2
+    #     if self.pointCloud is None:
+    #         # print 'AHH! The PointCloud2 data is not available!'
+    #         return None
+    #     try:
+    #         points = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[x, y]])
+    #         point = None
+    #         for p in points:
+    #             point = p
+    #             break
+    #     except:
+    #         # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+    #         return None
+    #     if point is None:
+    #         # print 'NaN! Feature', px, py, depth
+    #         return None
+    #
+    #     xyz = None
+    #     # Transpose point to targetFrame
+    #     if self.targetFrame is not None:
+    #         xyz = np.dot(self.transMatrix, np.array([point[0], point[1], point[2], 1.0]))[:3]
+    #
+    #     return xyz
 
     def transposeGripperToCamera(self):
+        global lGripX, lGripY
         # Transpose gripper position to camera frame
         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
         try :
@@ -463,19 +550,12 @@ class kanadeLucasPoint:
             pass
         # Find 2D location of gripper
         gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperTranslation)
-        # # Determine current velocity of gripper
-        # if self.lGripX is not None:
-        #     distChange = np.array([gripX, gripY]) - np.array([self.lGripX, self.lGripY])
-        #     timeChange = time.time() - self.lastGripTime
-        #     self.gripperVelocity = distChange / timeChange
-        #     # print distChange, timeChange
-        #     # print self.gripperVelocity
-        self.lGripX, self.lGripY = gripX, gripY
-        # self.lastGripTime = time.time()
+        lGripX, lGripY = gripX, gripY
 
     def imageCallback(self, data):
-        # start = time.time()
-        # print 'Time between image calls:', start - self.lastTime
+        global frameId, minibox
+        start = time.time()
+        print 'Time between image calls:', start - self.lastTime
         # Grab image from Kinect sensor
         try:
             image = self.bridge.imgmsg_to_cv(data)
@@ -495,8 +575,8 @@ class kanadeLucasPoint:
         if self.lGripperTranslation is None:
             return
 
-        # print 'Time for first step:', time.time() - start
-        # timeStamp = time.time()
+        print 'Time for first step:', time.time() - start
+        timeStamp = time.time()
 
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
@@ -504,26 +584,26 @@ class kanadeLucasPoint:
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Define a line through gripper and spoon
-        m = (self.spoonY - self.lGripY) / (self.spoonX - self.lGripX)
-        xs = np.linspace(self.lGripX, self.spoonX, 25)
-        ys = m * (xs + -self.lGripX) + self.lGripY
+        m = (self.spoonY - lGripY) / (self.spoonX - lGripX)
+        xs = np.linspace(lGripX, self.spoonX, 25)
+        ys = m * (xs + -lGripX) + lGripY
         self.linePoints = np.reshape(np.hstack((xs, ys)), (xs.size, 2), order='F')
 
         # Used to verify that each point is within our defined box
         self.box = self.boundingBox(0.15, 0.4, -0.05, 40, 100, 100)
-        self.minibox = self.boundingBox(0.05, 0.3, 0.05, 20, 100, 50)
+        minibox = self.boundingBox(0.05, 0.3, 0.05, 20, 100, 50)
 
-        # print 'Time for second step:', time.time() - timeStamp
-        # timeStamp = time.time()
+        print 'Time for second step:', time.time() - timeStamp
+        timeStamp = time.time()
 
         # Find frameId for transformations and determine a good set of starting features
-        if self.frameId is None or not self.activeFeatures:
+        if frameId is None or not self.activeFeatures:
             # Grab frame id for later transformations
-            self.frameId = data.header.frame_id
+            frameId = data.header.frame_id
             if self.targetFrame is not None:
                 t = rospy.Time(0)
-                self.transformer.waitForTransform(self.targetFrame, self.frameId, t, rospy.Duration(5))
-                trans, rot = self.transformer.lookupTransform(self.targetFrame, self.frameId, t)
+                self.transformer.waitForTransform(self.targetFrame, frameId, t, rospy.Duration(5))
+                trans, rot = self.transformer.lookupTransform(self.targetFrame, frameId, t)
                 self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
             # Determine initial set of features
             self.determineGoodFeatures(imageGray)
@@ -534,113 +614,34 @@ class kanadeLucasPoint:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
-        # print 'Time for third step:', time.time() - timeStamp
-        # timeStamp = time.time()
+        print 'Time for third step:', time.time() - timeStamp
+        timeStamp = time.time()
 
         if self.activeFeatures:
             self.opticalFlow(imageGray)
-            if self.publish:
-                self.publishFeatures()
-        # print 'Time for fourth step:', time.time() - timeStamp
-        # timeStamp = time.time()
+        print 'Time for fourth step:', time.time() - timeStamp
+        timeStamp = time.time()
         if self.visual:
             self.publishImageFeatures()
-        # print 'Time for fifth step:', time.time() - timeStamp
+        print 'Time for fifth step:', time.time() - timeStamp
 
         self.updateNumber += 1
 
         self.prevGray = imageGray
 
-        # print 'Image calculation time:', time.time() - start
-        # self.lastTime = time.time()
+        print 'Image calculation time:', time.time() - start
+        self.lastTime = time.time()
 
         # Call our caller now that new data has been processed
         if self.caller is not None:
             self.caller()
 
-    def cloudCallback(self, data):
-        start = time.time()
-        print 'Time between cloud calls:', start - self.cloudTime
-        # Store PointCloud2 data for use when determining 3D locations
-        self.pointCloud = data
-        self.pointCloudFrame = data.header.frame_id
-
-        if self.pointCloud is None:
-            return
-
-        # Publish depth features for spoon
-        marker = Marker()
-        marker.header.frame_id = self.frameId
-        marker.ns = 'spoonPoints'
-        marker.type = marker.POINTS
-        marker.action = marker.ADD
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.color.a = 1.0
-        marker.color.g = 1.0
-
-        lowX, highX, lowY, highY = self.minibox
-
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
-        timeStamp = time.time()
-        try:
-            points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[int(self.lGripX), int(self.lGripY)]]).next()
-        except:
-            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-            return
-        print 'Point Cloud time:', time.time() - timeStamp
-        timeStamp = time.time()
-
-        points3D = np.array([point for point in points3D])
-
-        # Perform dbscan clustering
-        X = StandardScaler().fit_transform(points3D)
-        labels = self.dbscan.fit_predict(X)
-        unique_labels = set(labels)
-
-        # Find the point closest to our gripper and it's corresponding label
-        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        closeLabel = labels[index]
-        print 'Clustering time:', time.time() - timeStamp
-        timeStamp = time.time()
-
-        # Find the cluster closest to our gripper (To be continued possibly)
-        clusterPoints = points3D[labels==closeLabel]
-
-        for point in clusterPoints:
-            p = Point()
-            p.x = point[0]
-            p.y = point[1]
-            p.z = point[2]
-            marker.points.append(p)
-
-        # print 'Published 3D spoon points'
-        self.publisher.publish(marker)
-
-        # Publish depth features for non spoon features
-        nonClusterPoints = points3D[labels!=closeLabel]
-        marker = Marker()
-        marker.header.frame_id = self.frameId
-        marker.ns = 'nonSpoonPoints'
-        marker.type = marker.POINTS
-        marker.action = marker.ADD
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.color.a = 1.0
-        marker.color.r = 1.0
-        for point in nonClusterPoints:
-            p = Point()
-            p.x = point[0]
-            p.y = point[1]
-            p.z = point[2]
-            marker.points.append(p)
-
-        self.publisher.publish(marker)
-
-        print 'Publishing time:', time.time() - timeStamp
-        print 'Cloud calculation time:', time.time() - start
-        self.cloudTime = time.time()
+    # def cloudCallback(self, data):
+    #     start = time.time()
+    #     print 'Time between cloud calls:', start - self.cloudTime
+    #     # Store PointCloud2 data for use when determining 3D locations
+    #     self.pointCloud = data
+    #     self.pointCloudFrame = data.header.frame_id
 
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
@@ -682,7 +683,8 @@ class feature:
         self.setStartPosition()
 
     def setStartPosition(self):
-        self.startPosition = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
+        # self.startPosition = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
+        self.startPosition = self.recent2DPosition
         self.history = [self.startPosition] if self.startPosition is not None else []
         self.lastHistoryPosition = self.startPosition
 
@@ -701,17 +703,17 @@ class feature:
             self.setStartPosition()
             return
         # Grab 3D location for this feature
-        position3D = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
-        if position3D is None:
-            return
-        self.recent3DPosition = position3D
+        # position3D = self.kanadeLucas.get3DPointFromCloud(self.recent2DPosition)
+        # if position3D is None:
+        #     return
+        # self.recent3DPosition = position3D
         # Update total distance traveled
-        self.distance = np.linalg.norm(self.recent3DPosition - self.startPosition)
+        self.distance = np.linalg.norm(self.recent2DPosition - self.startPosition)
         # Check if the point has traveled far enough to add a new history point
-        dist = np.linalg.norm(self.recent3DPosition - self.lastHistoryPosition)
+        dist = np.linalg.norm(self.recent2DPosition - self.lastHistoryPosition)
         if minDist <= dist <= maxDist:
-            self.history.append(self.recent3DPosition)
-            self.lastHistoryPosition = self.recent3DPosition
+            self.history.append(self.recent2DPosition)
+            self.lastHistoryPosition = self.recent2DPosition
 
     def isAvailableForNewPath(self):
         if len(self.history) - self.lastHistoryCount >= 10:
@@ -719,16 +721,3 @@ class feature:
             return True
         return False
 
-
-''' sensor_msgs/Image data
-std_msgs/Header header
-  uint32 seq
-  time stamp
-  string frame_id
-uint32 height
-uint32 width
-string encoding
-uint8 is_bigendian
-uint32 step
-uint8[] data
-'''

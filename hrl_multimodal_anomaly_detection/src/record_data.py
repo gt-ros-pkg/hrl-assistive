@@ -97,10 +97,11 @@ class ADL_log:
 
         if self.audio is not None:
             self.audio.cancel()
-            data['audio_data']  = self.audio.audio_data
-            data['audio_amp']   = self.audio.audio_amp
-            data['audio_freq']  = self.audio.audio_freq
+            # data['audio_data']  = self.audio.audio_data
+            # data['audio_amp']   = self.audio.audio_amp
+            # data['audio_freq']  = self.audio.audio_freq
             data['audio_chunk'] = self.audio.CHUNK
+            data['audio_sample_time'] = self.audio.UNIT_SAMPLE_TIME
             data['audio_time']  = self.audio.time_data
             data['audio_data_raw'] = self.audio.audio_data_raw
 

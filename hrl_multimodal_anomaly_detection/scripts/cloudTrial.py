@@ -14,8 +14,8 @@ class cloudTrial:
         rospy.spin()
 
     def cloudCallback(self, data):
-        start = time.time()
-        print 'Time between cloud calls:', start - self.cloudTime
+        print 'Time between cloud calls:', time.time() - self.cloudTime
+        self.cloudTime = time.time()
 
 if __name__ == '__main__':
     cloudTrial()
