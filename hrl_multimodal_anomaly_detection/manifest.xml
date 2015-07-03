@@ -15,7 +15,7 @@
     <depend package="pcl"/>
     <depend package="pcl_ros"/>
     <depend package="image_transport"/>
-    <!--depend package="image_geometry"/-->
+    <depend package="image_geometry"/>
     <depend package="tf"/>
     <depend package="geometry_msgs"/>
 
