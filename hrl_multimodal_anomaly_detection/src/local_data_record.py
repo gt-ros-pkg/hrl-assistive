@@ -79,6 +79,9 @@ class dataRecord:
             runScooping = runScoopingAns == 'y'
 
         print "Finished scooping trials!"
+        print "Exiting program!"
+
+        sys.exit()
 
 
     def feeding(self):
@@ -113,6 +116,8 @@ class dataRecord:
             runFeeding = runFeedingAns == 'y'
 
         print "Finished feeding trials!"
+        print "Exiting program!"
+        sys.exit()
 
 if __name__ == '__main__':
     rospy.init_node('local_data_record')
