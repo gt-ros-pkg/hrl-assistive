@@ -56,6 +56,8 @@ class depthPerception:
         self.lGripperPosition = None
         self.lGripperRotation = None
         self.lGripperTransposeMatrix = None
+        self.lGripX = None
+        self.lGripY = None
         # Spoon
         self.spoonX = None
         self.spoonY = None
@@ -85,7 +87,7 @@ class depthPerception:
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            # gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
+            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
         except:
             # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
@@ -98,7 +100,7 @@ class depthPerception:
         # unique_labels = set(labels)
 
         # Find the point closest to our gripper and it's corresponding label
-        index, closePoint = min(enumerate(np.linalg.norm(points3D - self.lGripperPosition, axis=1)), key=operator.itemgetter(1))
+        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
         closeLabel = labels[index]
 
         # Find the cluster closest to our gripper
@@ -142,6 +144,8 @@ class depthPerception:
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
             pass
+        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
+        self.lGripX, self.lGripY = int(gripX), int(gripY)
 
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
