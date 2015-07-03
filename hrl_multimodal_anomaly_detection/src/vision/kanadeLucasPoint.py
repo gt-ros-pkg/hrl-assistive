@@ -60,8 +60,8 @@ class cloudThread(threading.Thread):
 
     def cloudCallback(self, data):
         global pointCloud
-        print 'Time between cloud calls:', time.time() - self.cloudTime
-        self.cloudTime = time.time()
+        # print 'Time between cloud calls:', time.time() - self.cloudTime
+        # self.cloudTime = time.time()
         pointCloud = data
 
 class cloudProcess(threading.Thread):
@@ -79,7 +79,7 @@ class cloudProcess(threading.Thread):
         while not self.cancelled:
             if pointCloud is None:
                 continue
-            startTime = time.time()
+            # startTime = time.time()
 
             # Publish depth features for spoon
             marker = Marker()
@@ -145,7 +145,7 @@ class cloudProcess(threading.Thread):
                 marker.points.append(p)
 
             self.publisher.publish(marker)
-            print 'Cloud computation time:', time.time() - startTime
+            # print 'Cloud computation time:', time.time() - startTime
 
     def cancel(self):
         self.cancelled = True
