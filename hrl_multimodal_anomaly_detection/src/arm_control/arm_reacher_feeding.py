@@ -139,7 +139,7 @@ class armReachAction(mpcBaseAction):
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-        self.timeoutsScooping = [10, 10,6, 3, 2]
+        self.timeoutsScooping = [6, 3, 3, 2, 2]
         self.timeoutsFeeding = [10, 7, 5]
 
         #Paused used between each motion
@@ -189,19 +189,19 @@ class armReachAction(mpcBaseAction):
     	req = req.data
 
         if req == "leftArmInitScooping":
-            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 15)
+            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
             return "Initialized left arm for scooping!"
 
         elif req == "leftArmInitFeeding":
-            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 15)
+            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
             return "Initialized left arm for feeding!"
 
         elif req == "rightArmInitScooping":
-            self.setPostureGoal(self.rightArmInitialJointAnglesScooping, 15)
+            self.setPostureGoal(self.rightArmInitialJointAnglesScooping, 10)
             return "Initialized right arm for scooping!"
 
         elif req == "rightArmInitFeeding":
-            self.setPostureGoal(self.rightArmInitialJointAnglesFeeding, 15)
+            self.setPostureGoal(self.rightArmInitialJointAnglesFeeding, 10)
             return "Initialized right arm for feeding!"
 
         elif req == "getBowlPosType":
