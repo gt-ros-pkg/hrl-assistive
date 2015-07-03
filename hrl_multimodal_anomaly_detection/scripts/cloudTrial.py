@@ -9,6 +9,7 @@ __author__ = 'zerickson'
 class cloudTrial:
     def __init__(self):
         self.cloudTime = time.time()
+        rospy.init_node('listener_cloud')
         rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         rospy.spin()
 
