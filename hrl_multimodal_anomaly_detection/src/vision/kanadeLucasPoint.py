@@ -87,6 +87,7 @@ class kanadeLucasPoint:
         self.box = None
         self.minibox = None
         self.lastTime = time.time()
+        self.cloudTime = time.time()
 
         self.linePoints = None
 
@@ -311,74 +312,6 @@ class kanadeLucasPoint:
                 imageFeatures.circles.append(circle)
 
         self.publisher2D.publish(imageFeatures)
-
-        if self.pointCloud is None:
-            return
-
-        # Publish depth features for spoon
-        marker = Marker()
-        marker.header.frame_id = self.frameId
-        marker.ns = 'spoonPoints'
-        marker.type = marker.POINTS
-        marker.action = marker.ADD
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.color.a = 1.0
-        marker.color.g = 1.0
-
-        lowX, highX, lowY, highY = self.minibox
-
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
-        try:
-            points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[int(self.lGripX), int(self.lGripY)]]).next()
-        except:
-            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-            return
-
-        points3D = np.array([point for point in points3D])
-
-        # Perform dbscan clustering
-        X = StandardScaler().fit_transform(points3D)
-        labels = self.dbscan.fit_predict(X)
-        unique_labels = set(labels)
-
-        # Find the point closest to our gripper and it's corresponding label
-        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        closeLabel = labels[index]
-
-        # Find the cluster closest to our gripper (To be continued possibly)
-        clusterPoints = points3D[labels==closeLabel]
-
-        for point in clusterPoints:
-            p = Point()
-            p.x = point[0]
-            p.y = point[1]
-            p.z = point[2]
-            marker.points.append(p)
-
-        # print 'Published 3D spoon points'
-        self.publisher.publish(marker)
-
-        # Publish depth features for non spoon features
-        nonClusterPoints = points3D[labels!=closeLabel]
-        marker = Marker()
-        marker.header.frame_id = self.frameId
-        marker.ns = 'nonSpoonPoints'
-        marker.type = marker.POINTS
-        marker.action = marker.ADD
-        marker.scale.x = 0.01
-        marker.scale.y = 0.01
-        marker.color.a = 1.0
-        marker.color.r = 1.0
-        for point in nonClusterPoints:
-            p = Point()
-            p.x = point[0]
-            p.y = point[1]
-            p.z = point[2]
-            marker.points.append(p)
-
-        self.publisher.publish(marker)
 
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
@@ -626,9 +559,88 @@ class kanadeLucasPoint:
             self.caller()
 
     def cloudCallback(self, data):
+        start = time.time()
+        print 'Time between cloud calls:', start - self.cloudTime
         # Store PointCloud2 data for use when determining 3D locations
         self.pointCloud = data
         self.pointCloudFrame = data.header.frame_id
+
+        if self.pointCloud is None:
+            return
+
+        # Publish depth features for spoon
+        marker = Marker()
+        marker.header.frame_id = self.frameId
+        marker.ns = 'spoonPoints'
+        marker.type = marker.POINTS
+        marker.action = marker.ADD
+        marker.scale.x = 0.01
+        marker.scale.y = 0.01
+        marker.color.a = 1.0
+        marker.color.g = 1.0
+
+        lowX, highX, lowY, highY = self.minibox
+
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        timeStamp = time.time()
+        try:
+            points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+            gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[int(self.lGripX), int(self.lGripY)]]).next()
+        except:
+            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+            return
+        print 'Point Cloud time:', time.time() - timeStamp
+        timeStamp = time.time()
+
+        points3D = np.array([point for point in points3D])
+
+        # Perform dbscan clustering
+        X = StandardScaler().fit_transform(points3D)
+        labels = self.dbscan.fit_predict(X)
+        unique_labels = set(labels)
+
+        # Find the point closest to our gripper and it's corresponding label
+        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+        closeLabel = labels[index]
+        print 'Clustering time:', time.time() - timeStamp
+        timeStamp = time.time()
+
+        # Find the cluster closest to our gripper (To be continued possibly)
+        clusterPoints = points3D[labels==closeLabel]
+
+        for point in clusterPoints:
+            p = Point()
+            p.x = point[0]
+            p.y = point[1]
+            p.z = point[2]
+            marker.points.append(p)
+
+        # print 'Published 3D spoon points'
+        self.publisher.publish(marker)
+
+        # Publish depth features for non spoon features
+        nonClusterPoints = points3D[labels!=closeLabel]
+        marker = Marker()
+        marker.header.frame_id = self.frameId
+        marker.ns = 'nonSpoonPoints'
+        marker.type = marker.POINTS
+        marker.action = marker.ADD
+        marker.scale.x = 0.01
+        marker.scale.y = 0.01
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        for point in nonClusterPoints:
+            p = Point()
+            p.x = point[0]
+            p.y = point[1]
+            p.z = point[2]
+            marker.points.append(p)
+
+        self.publisher.publish(marker)
+
+        print 'Publishing time:', time.time() - timeStamp
+        print 'Cloud calculation time:', time.time() - start
+        self.cloudTime = time.time()
 
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
