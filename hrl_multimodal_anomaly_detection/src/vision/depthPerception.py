@@ -110,7 +110,7 @@ class depthPerception:
             closeLabel = labels[index]
         if points3D.size <= 0:
             return
-        print 'Label:', closeLabel
+        # print 'Label:', closeLabel
 
         # Find the cluster closest to our gripper
         self.clusterPoints = points3D[labels==closeLabel]
