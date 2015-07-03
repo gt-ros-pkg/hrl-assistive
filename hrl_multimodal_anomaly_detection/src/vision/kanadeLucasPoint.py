@@ -45,7 +45,7 @@ class cloudThread(threading.Thread):
         self.daemon = True
         self.cancelled = False
         self.cloudTime = time.time()
-        rospy.init_node('listener_cloud')
+        # rospy.init_node('listener_cloud')
         rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
 
     def run(self):
@@ -69,7 +69,7 @@ class cloudProcess(threading.Thread):
         self.daemon = True
         self.cancelled = False
         self.dbscan = DBSCAN(eps=0.06, min_samples=10)
-        rospy.init_node('publisher_cloud')
+        # rospy.init_node('publisher_cloud')
         self.publisher = rospy.Publisher('visualization_marker', Marker)
 
     def run(self):
