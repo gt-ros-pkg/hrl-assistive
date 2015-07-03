@@ -34,7 +34,7 @@ class depthPerception:
         # List of features we are tracking
         self.clusterPoints = None
 
-        self.dbscan = DBSCAN(eps=0.06, min_samples=10)
+        self.dbscan = DBSCAN(eps=0.1, min_samples=10)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.visual = visual
