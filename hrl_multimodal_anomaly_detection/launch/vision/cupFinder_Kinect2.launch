@@ -1,0 +1,15 @@
+<launch>
+    <node pkg="hrl_feeding_task" type="CupFinder" name="CupFinder" output="screen" respawn="true">
+        <remap from="info_topic" to="/head_mount_kinect/rgb_lowres/camera_info"/>
+        <remap from="image" to="/head_mount_kinect/rgb_lowres/image"/>
+        <remap from="point_cloud" to="/head_mount_kinect/depth_registered/points"/>
+        <remap from="l_mouse_click" to="/clickable_display/l_mouse_click"/>
+        <remap from="r_mouse_click" to="/clickable_display/r_mouse_click"/>
+        <remap from="RYDS_CupLocation" to="/hrl_feeding_task/RYDS_CupLocation"/>
+        <param name="normal_radius" type="double" value="0.035" />
+        <param name="output_frame" value="/torso_lift_link"/>
+        <param name="use_closest_pixel" value="True"/>
+    </node>
+
+
+</launch>

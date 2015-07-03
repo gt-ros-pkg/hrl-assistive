@@ -1,6 +1,6 @@
 <launch>
   <arg name="subject" default="dummy_1" />
-  <arg name="data_pkg" value="$(find hrl_feeding_task)/bag" />
+  <arg name="data_pkg" value="$(find hrl_multimodal_anomaly_detection)/bag" />
   <arg name="head_pcs_dir" default="$(arg data_pkg)" />
   <arg name="kinect_points" default="/head_mount_kinect/depth_registered/points" />
   <arg name="kinect_camera" default="/head_mount_kinect/rgb_lowres/image" />
@@ -8,7 +8,7 @@
 
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
 
-  <include file="$(find hrl_feeding_task)/launch/cupFinder_Kinect2.launch" />
+  <include file="$(find hrl_multimodal_anomaly_detection)/launch/vision/cupFinder_Kinect2.launch" />
 
 
   <node pkg="hrl_head_registration" name="l_head_registration_srv" type="head_registration_srv"
@@ -39,7 +39,7 @@
       <remap from="/points" to="$(arg kinect_points)" />
   </node>
 
-  <node pkg="hrl_feeding_task" name="registration_loader" type="registration_loader.py"
+  <node pkg="hrl_multimodal_anomaly_detection" name="registration_loader" type="registration_loader.py"
         output="screen" >
       <remap from="/feedback" to="/wt_log_out" />
       <param name="registration_dir" value="$(arg head_pcs_dir)" />
