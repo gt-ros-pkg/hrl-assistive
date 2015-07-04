@@ -354,7 +354,7 @@ class rgbPerception:
 
 class feature:
     def __init__(self, index, position, lowX, lowY):
-        # position = np.array(position)
+        position = np.array(position)
         self.index = index
         self.position = position
         self.globalStart = position + [lowX, lowY]
