@@ -2,7 +2,12 @@
 
 import time
 import rospy
+import numpy as np
 from sensor_msgs.msg import PointCloud2, Image
+
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
+from cv_bridge import CvBridge, CvBridgeError
 
 __author__ = 'zerickson'
 
@@ -18,7 +23,16 @@ class cloudTrial:
         print 'Time between cloud calls:', time.time() - self.cloudTime
         self.cloudTime = time.time()
         print data.width, data.height, type(data.data)
-        print data.data.shape
+
+        # Grab image from Kinect sensor
+        try:
+            image = self.bridge.imgmsg_to_cv(data)
+            image = np.asarray(image[:,:])
+        except CvBridgeError, e:
+            print e
+            return
+
+        print len(data.data), image.shape
 
 if __name__ == '__main__':
     cloudTrial()
