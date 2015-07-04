@@ -95,13 +95,13 @@ class depthPerceptionTrials:
         # Grab image from Kinect sensor
         try:
             image = self.bridge.imgmsg_to_cv(data)
-            image = np.asarray(image[:,:]) / 1000.0
+            image = np.asarray(image[:,:])
         except CvBridgeError, e:
             print e
             return
 
         print self.pinholeCamera.projectPixelTo3dRay((200, 200))
-        print image[200, 200]
+        print image[200, 200:205]
 
         points3D = np.array([self.pinholeCamera.projectPixelTo3dRay((x, y))*image[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         gripperPoint = self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY))*image[self.lGripX, self.lGripY]
