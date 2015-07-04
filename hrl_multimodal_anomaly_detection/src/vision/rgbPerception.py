@@ -74,7 +74,7 @@ class rgbPerception:
         # Parameters for Lucas Kanade optical flow
         self.lk_params = dict(winSize=(15,15), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
-        self.N = 5
+        self.N = 50
 
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
         print 'Connected to Kinect images'
@@ -124,7 +124,7 @@ class rgbPerception:
             gripperFeature = feature(0, [self.lGripX, self.lGripY], lowX, lowY)
         if gripperFeature is not None:
             gripperFeature.update([self.lGripX, self.lGripY], lowX, lowY)
-            print 'Gripper velocity:', gripperFeature.speed
+            # print 'Gripper velocity:', gripperFeature.speed
 
         # print 'Time for first step:', time.time() - startTime
         # timeStamp = time.time()
@@ -163,7 +163,7 @@ class rgbPerception:
             self.publishImageFeatures()
         # print 'Time for fourth step:', time.time() - timeStamp
 
-        print ['%.3f' % feat.speed for feat in self.activeFeatures if feat.isNovel]
+        # print ['%.3f' % feat.speed for feat in self.activeFeatures if feat.isNovel]
 
         self.prevGray = imageGray
 
@@ -212,7 +212,6 @@ class rgbPerception:
         for i, feat in enumerate(self.activeFeatures):
             feat.update(newFeats[i][0], lowX, lowY)
 
-        size = len(self.activeFeatures)
         # Remove all features that are no longer being tracked (ie. status == 0)
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
 
@@ -405,7 +404,7 @@ class feature:
             self.lastTime = time.time()
             self.speed = np.linalg.norm(self.velocity)
             # Check if velocity is wildly different than that of the gripper's
-            if np.abs(gripperFeature.speed - self.speed) > 15:
+            if np.abs(gripperFeature.speed - self.speed) > 20:
                 self.strikes += 1
             else:
                 self.strikes = 0
