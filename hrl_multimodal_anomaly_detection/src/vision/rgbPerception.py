@@ -392,7 +392,7 @@ class feature:
         self.position = newPosition
         self.globalPos = newPosition + [lowX, lowY]
         # Update velocity of feature
-        if self.posCount >= 3:
+        if self.posCount >= 5:
             self.posCount = 0
             distChange = self.globalPos - self.lastGlobalPos
             timeChange = time.time() - self.lastTime
@@ -401,7 +401,7 @@ class feature:
             self.lastTime = time.time()
             self.speed = np.linalg.norm(self.velocity)
             # Check if velocity is wildly different than that of the gripper's
-            if np.abs(gripperFeature.speed - self.speed) > 10:
+            if np.abs(gripperFeature.speed - self.speed) > 15:
                 self.strikes += 1
             else:
                 self.strikes = 0
