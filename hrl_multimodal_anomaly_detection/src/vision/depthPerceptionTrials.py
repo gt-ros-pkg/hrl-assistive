@@ -103,8 +103,8 @@ class depthPerceptionTrials:
         print self.pinholeCamera.projectPixelTo3dRay((200, 200))
         print image[200, 200:205]
 
-        points3D = np.array([self.pinholeCamera.projectPixelTo3dRay((x, y))*image[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
-        gripperPoint = self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY))*image[self.lGripX, self.lGripY]
+        # points3D = np.array([self.pinholeCamera.projectPixelTo3dRay((x, y))*image[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
+        # gripperPoint = self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY))*image[self.lGripX, self.lGripY]
 
         # try:
         #     points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
@@ -115,7 +115,7 @@ class depthPerceptionTrials:
 
         # points3D = np.array([point for point in points3D])
         #
-        self.clusterPoints = points3D
+        # self.clusterPoints = points3D
         #
         # # Perform dbscan clustering
         # X = StandardScaler().fit_transform(points3D)
@@ -137,13 +137,13 @@ class depthPerceptionTrials:
         # # Find the cluster closest to our gripper
         # self.clusterPoints = points3D[labels==closeLabel]
 
-        if self.visual:
-            # Publish depth features for spoon features
-            self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
-
-            # Publish depth features for non spoon features
-            # nonClusterPoints = points3D[labels!=closeLabel]
-            # self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
+        # if self.visual:
+        #     # Publish depth features for spoon features
+        #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
+        #
+        #     # Publish depth features for non spoon features
+        #     # nonClusterPoints = points3D[labels!=closeLabel]
+        #     # self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
 
         self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
