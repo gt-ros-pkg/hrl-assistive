@@ -169,7 +169,7 @@ class depthPerceptionTrials:
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
-        marker.header.frame_id = '/head_mount_kinect_depth_optical_frame'
+        marker.header.frame_id = self.rgbCameraFrame
         marker.ns = name
         marker.type = marker.POINTS
         marker.action = marker.ADD
