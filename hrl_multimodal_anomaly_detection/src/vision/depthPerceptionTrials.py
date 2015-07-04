@@ -266,3 +266,4 @@ class depthPerceptionTrials:
             self.cameraHeight = data.height
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
+            print 'rgb frame:', data.header.frame_id
