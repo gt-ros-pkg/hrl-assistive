@@ -111,37 +111,37 @@ class depthPerceptionTrials:
         #     # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
         #     return
 
-        points3D = np.array([point for point in points3D])
-
+        # points3D = np.array([point for point in points3D])
+        #
         self.clusterPoints = points3D
-
-        # Perform dbscan clustering
-        X = StandardScaler().fit_transform(points3D)
-        labels = self.dbscan.fit_predict(X)
-        # unique_labels = set(labels)
-
-        # Find the point closest to our gripper and it's corresponding label
-        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        closeLabel = labels[index]
-        while closeLabel == -1 and points3D.size > 0:
-            np.delete(points3D, [index])
-            np.delete(labels, [index])
-            index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-            closeLabel = labels[index]
-        if points3D.size <= 0:
-            return
-        # print 'Label:', closeLabel
-
-        # Find the cluster closest to our gripper
-        self.clusterPoints = points3D[labels==closeLabel]
+        #
+        # # Perform dbscan clustering
+        # X = StandardScaler().fit_transform(points3D)
+        # labels = self.dbscan.fit_predict(X)
+        # # unique_labels = set(labels)
+        #
+        # # Find the point closest to our gripper and it's corresponding label
+        # index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+        # closeLabel = labels[index]
+        # while closeLabel == -1 and points3D.size > 0:
+        #     np.delete(points3D, [index])
+        #     np.delete(labels, [index])
+        #     index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+        #     closeLabel = labels[index]
+        # if points3D.size <= 0:
+        #     return
+        # # print 'Label:', closeLabel
+        #
+        # # Find the cluster closest to our gripper
+        # self.clusterPoints = points3D[labels==closeLabel]
 
         if self.visual:
             # Publish depth features for spoon features
             self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
 
             # Publish depth features for non spoon features
-            nonClusterPoints = points3D[labels!=closeLabel]
-            self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
+            # nonClusterPoints = points3D[labels!=closeLabel]
+            # self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
 
         self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
