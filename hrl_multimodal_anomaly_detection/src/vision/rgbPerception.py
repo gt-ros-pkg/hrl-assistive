@@ -189,6 +189,8 @@ class rgbPerception:
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
 
+        print self.prevGray.shape, imageGray.shape
+
         newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, feats, None, **self.lk_params)
         statusRemovals = [i for i, s in enumerate(status) if s == 0]
 
