@@ -22,7 +22,7 @@ import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
-class depthPerception:
+class rgbPerception:
     def __init__(self, targetFrame=None, visual=False, tfListener=None):
         # ROS publisher for data points
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
