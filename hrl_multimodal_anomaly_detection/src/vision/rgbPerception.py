@@ -206,7 +206,7 @@ class rgbPerception:
         print 'First difference:', size, len(self.activeFeatures)
 
         # Remove all features outside the bounding box
-        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.position, self.box)]
+        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalNow, self.box)]
         print 'Size difference:', size, len(self.activeFeatures)
 
     def getNovelAndClusteredFeatures(self):
@@ -214,7 +214,7 @@ class rgbPerception:
         if not feats:
             # No novel features
             return None
-        return {feat.index: feat.position.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.position, self.box)}
+        return {feat.index: feat.position.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.globalNow, self.box)}
 
     def transposeGripperToCamera(self):
         # Transpose gripper position to camera frame
