@@ -65,7 +65,7 @@ class depthPerceptionTrials:
 
         rospy.Subscriber('/head_mount_kinect/depth_lowres/image', Image, self.cloudCallback)
         print 'Connected to Kinect depth'
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
@@ -82,10 +82,6 @@ class depthPerceptionTrials:
         # startTime = time.time()
 
         self.pointCloud = data
-
-        if self.rgbCameraFrame is None:
-            self.rgbCameraFrame = data.header.frame_id
-            print self.rgbCameraFrame
 
         self.transposeGripperToCamera()
 
@@ -266,4 +262,4 @@ class depthPerceptionTrials:
             self.cameraHeight = data.height
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
-            print 'rgb frame:', data.header.frame_id
+            self.rgbCameraFrame = data.header.frame_id
