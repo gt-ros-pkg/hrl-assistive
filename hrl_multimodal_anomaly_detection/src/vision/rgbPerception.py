@@ -55,6 +55,7 @@ class rgbPerception:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
+        self.gripperFeature = None
         # Spoon
         self.spoonX = None
         self.spoonY = None
@@ -115,6 +116,13 @@ class rgbPerception:
 
         # Crop imageGray to bounding box size
         self.imageData = image[lowY:highY, lowX:highX, :]
+
+        # Find velocity of the gripper
+        if self.gripperFeature is None and self.lGripX is not None:
+            self.gripperFeature = feature(0, [self.lGripX, self.lGripY], lowX, lowY)
+        if self.gripperFeature is not None:
+            self.gripperFeature.update([self.lGripX, self.lGripY], lowX, lowY)
+            print 'Gripper velocity:', self.gripperFeature.velocity
 
         # print 'Time for first step:', time.time() - startTime
         # timeStamp = time.time()
@@ -214,7 +222,7 @@ class rgbPerception:
         if not feats:
             # No novel features
             return None
-        return {feat.index: feat.globalPos.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.globalPos, self.box)}
+        return {feat.index: (feat.globalPos.tolist(), feat.position.tolist()) for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.globalPos, self.box)}
 
     def transposeGripperToCamera(self):
         # Transpose gripper position to camera frame
@@ -345,7 +353,7 @@ class rgbPerception:
             # Draw all novel and bounded box features
             for feat in features.values():
                 circle = Circle()
-                circle.x, circle.y = feat
+                circle.x, circle.y = feat[0]
                 circle.radius = 5
                 circle.b = 255
                 circle.g = 128
