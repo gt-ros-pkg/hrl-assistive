@@ -90,7 +90,7 @@ class depthPerceptionTrials:
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
-        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.35, 0.00, 20, 100, 100)
+        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.35, 0.00, 20, 100, 50)
 
         # Grab image from Kinect sensor
         try:
@@ -99,6 +99,9 @@ class depthPerceptionTrials:
         except CvBridgeError, e:
             print e
             return
+
+        print 'Time for first call:', time.time() - startTime
+        ticker = time.time()
 
         # self.transformer.waitForTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0), rospy.Duration(5))
         # try :
@@ -129,10 +132,16 @@ class depthPerceptionTrials:
         #
         self.clusterPoints = points3D
 
+        print 'Time for second call:', time.time() - ticker
+        ticker = time.time()
+
         # Perform dbscan clustering
         X = StandardScaler().fit_transform(points3D)
         labels = self.dbscan.fit_predict(X)
         # unique_labels = set(labels)
+
+        print 'Time for third call:', time.time() - ticker
+        ticker = time.time()
 
         # Find the point closest to our gripper and it's corresponding label
         index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
@@ -146,6 +155,9 @@ class depthPerceptionTrials:
             return
         # print 'Label:', closeLabel
 
+        print 'Time for fourth call:', time.time() - ticker
+        ticker = time.time()
+
         # Find the cluster closest to our gripper
         self.clusterPoints = points3D[labels==closeLabel]
 
@@ -156,6 +168,8 @@ class depthPerceptionTrials:
             # Publish depth features for non spoon features
             nonClusterPoints = points3D[labels!=closeLabel]
             self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
+
+        print 'Time for fifth call:', time.time() - ticker
 
         self.updateNumber += 1
         print 'Cloud computation time:', time.time() - startTime
