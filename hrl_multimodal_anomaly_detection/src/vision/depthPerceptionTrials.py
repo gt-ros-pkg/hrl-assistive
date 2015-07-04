@@ -33,9 +33,10 @@ class depthPerceptionTrials:
         self.publisher = rospy.Publisher('visualization_marker', Marker)
         # List of features we are tracking
         self.clusterPoints = None
+        self.nonClusterPoints = None
         self.bridge = CvBridge()
 
-        self.dbscan = DBSCAN(eps=0.15, min_samples=10)
+        self.dbscan = DBSCAN(eps=0.12, min_samples=10)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.visual = visual
@@ -75,7 +76,8 @@ class depthPerceptionTrials:
             transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
         except tf.ExtrapolationException:
             return None
-        return [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.clusterPoints]
+        return [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.clusterPoints], \
+                    [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.nonClusterPoints]
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
@@ -90,7 +92,7 @@ class depthPerceptionTrials:
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
-        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.35, 0.00, 20, 100, 50)
+        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.30, 0.05, 20, 100, 50)
 
         # Grab image from Kinect sensor
         try:
@@ -160,14 +162,14 @@ class depthPerceptionTrials:
 
         # Find the cluster closest to our gripper
         self.clusterPoints = points3D[labels==closeLabel]
+        self.nonClusterPoints = points3D[labels!=closeLabel]
 
-        if self.visual:
-            # Publish depth features for spoon features
-            self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
-
-            # Publish depth features for non spoon features
-            nonClusterPoints = points3D[labels!=closeLabel]
-            self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
+        # if self.visual:
+        #     # Publish depth features for spoon features
+        #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
+        #
+        #     # Publish depth features for non spoon features
+        #     self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
 
         # print 'Time for fifth call:', time.time() - ticker
 
