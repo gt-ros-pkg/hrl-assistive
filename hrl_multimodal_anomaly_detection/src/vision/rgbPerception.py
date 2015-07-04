@@ -205,14 +205,14 @@ class rgbPerception:
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
 
         # Remove all features outside the bounding box
-        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalNow, self.box)]
+        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalPos, self.box)]
 
     def getNovelAndClusteredFeatures(self):
         feats = [feat for feat in self.activeFeatures if feat.isNovel]
         if not feats:
             # No novel features
             return None
-        return {feat.index: feat.position.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.globalNow, self.box)}
+        return {feat.index: feat.globalPos.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.globalPos, self.box)}
 
     def transposeGripperToCamera(self):
         # Transpose gripper position to camera frame
@@ -317,7 +317,7 @@ class rgbPerception:
         # Draw all features (as red)
         for feat in self.activeFeatures:
             circle = Circle()
-            circle.x, circle.y = feat.position
+            circle.x, circle.y = feat.globalPos
             circle.radius = 5
             circle.r = 255
             imageFeatures.circles.append(circle)
@@ -357,21 +357,21 @@ class feature:
         self.index = index
         self.position = position
         self.globalStart = position + [lowX, lowY]
-        self.globalNow = position + [lowX, lowY]
+        self.globalPos = position + [lowX, lowY]
         self.isNovel = False
         self.velocity = None
         self.lastTime = None
 
     def update(self, newPosition, lowX, lowY):
         newPosition = np.array(newPosition)
-        # Update velocity of feature
-        if self.lastTime is not None:
-            distChange = newPosition - self.position
-            timeChange = time.time() - self.lastTime
-            self.velocity = distChange / timeChange
         self.lastTime = time.time()
         self.position = newPosition
-        self.globalNow = newPosition + [lowX, lowY]
-        distance = np.linalg.norm(self.globalNow - self.globalStart)
+        globalPos = newPosition + [lowX, lowY]
+        # Update velocity of feature
+        if self.lastTime is not None:
+            distChange = globalPos - self.globalPos
+            timeChange = time.time() - self.lastTime
+            self.velocity = distChange / timeChange
+        distance = np.linalg.norm(self.globalPos - self.globalStart)
         if distance >= 15:
             self.isNovel = True
