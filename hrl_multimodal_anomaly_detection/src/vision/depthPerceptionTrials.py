@@ -52,6 +52,7 @@ class depthPerceptionTrials:
         self.cameraWidth = None
         self.cameraHeight = None
         self.pinholeCamera = None
+        self.stereoCamera = None
 
         # Gripper
         self.lGripperPosition = None
@@ -278,3 +279,6 @@ class depthPerceptionTrials:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
+
+            self.stereoCamera = image_geometry.StereoCameraModel()
+            self.stereoCamera.fromCameraInfo(data, data)
