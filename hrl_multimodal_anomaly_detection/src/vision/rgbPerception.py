@@ -181,7 +181,7 @@ class rgbPerception:
             feats.remove(feat)
 
             # Add feature to tracking list
-            print 'Feature added:', feat
+            # print 'Feature added:', feat
             newFeat = feature(self.currentIndex, feat[0], boxX, boxY)
             self.activeFeatures.append(newFeat)
             self.currentIndex += 1
@@ -200,11 +200,13 @@ class rgbPerception:
         for i, feat in enumerate(self.activeFeatures):
             feat.update(newFeats[i][0], lowX, lowY)
 
+        size = len(self.activeFeatures)
         # Remove all features that are no longer being tracked (ie. status == 0)
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
 
         # Remove all features outside the bounding box
         self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.position, self.box)]
+        print 'Size difference:', size, len(self.activeFeatures)
 
     def getNovelAndClusteredFeatures(self):
         feats = [feat for feat in self.activeFeatures if feat.isNovel]
