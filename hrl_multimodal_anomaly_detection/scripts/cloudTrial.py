@@ -17,7 +17,8 @@ class cloudTrial:
     def cloudCallback(self, data):
         print 'Time between cloud calls:', time.time() - self.cloudTime
         self.cloudTime = time.time()
-        print help(data)
+        print data.width, data.height, type(data.data)
+        print data.data.shape
 
 if __name__ == '__main__':
     cloudTrial()
