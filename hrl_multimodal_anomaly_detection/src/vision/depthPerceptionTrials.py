@@ -95,7 +95,7 @@ class depthPerceptionTrials:
         # Grab image from Kinect sensor
         try:
             image = self.bridge.imgmsg_to_cv(data)
-            image = np.asarray(image[:,:])
+            image = np.asarray(image[:,:], dtype=np.float32) / 1000.0
         except CvBridgeError, e:
             print e
             return
