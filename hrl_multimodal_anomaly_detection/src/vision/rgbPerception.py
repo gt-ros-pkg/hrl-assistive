@@ -6,21 +6,14 @@ import cv2
 import time
 import rospy
 import random
-import operator
 import numpy as np
 
 try :
     import sensor_msgs.point_cloud2 as pc2
 except:
     import point_cloud2 as pc2
-from visualization_msgs.msg import Marker
 from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Point
 from roslib import message
-
-# Clustering
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
@@ -87,7 +80,7 @@ class depthPerception:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        return self.imageData
+        return self.imageData, self.getNovelAndClusteredFeatures()
 
     def imageCallback(self, data):
         startTime = time.time()
@@ -124,6 +117,8 @@ class depthPerception:
         # Crop imageGray to bounding box size
         self.imageData = image[lowY:highY, lowX:highX, :]
 
+        print 'Time for first step:', time.time() - startTime
+        timeStamp = time.time()
         # TODO This is all optional
 
         # Convert to grayscale
@@ -141,13 +136,15 @@ class depthPerception:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
+        print 'Time for second step:', time.time() - timeStamp
+        timeStamp = time.time()
         if self.activeFeatures:
             self.opticalFlow(imageGray)
-        # print 'Time for fourth step:', time.time() - timeStamp
-        # timeStamp = time.time()
+        print 'Time for third step:', time.time() - timeStamp
+        timeStamp = time.time()
         if self.visual:
             self.publishImageFeatures()
-        # print 'Time for fifth step:', time.time() - timeStamp
+        print 'Time for fourth step:', time.time() - timeStamp
 
         self.prevGray = imageGray
 
@@ -177,7 +174,7 @@ class depthPerception:
             feats.remove(feat)
 
             # Add feature to tracking list
-            newFeat = feature(self.currentIndex, feat[0])
+            newFeat = feature(self.currentIndex, feat[0], boxX, boxY)
             self.activeFeatures.append(newFeat)
             self.currentIndex += 1
 
@@ -187,12 +184,17 @@ class depthPerception:
             feats.append([feat.position])
         feats = np.array(feats, dtype=np.float32)
 
+        lowX, highX, lowY, highY = self.box
+
+        # Crop imageGray to bounding box size
+        imageGray = imageGray[lowY:highY, lowX:highX]
+
         newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, feats, None, **self.lk_params)
         statusRemovals = [i for i, s in enumerate(status) if s == 0]
 
         # Update all features
         for i, feat in enumerate(self.activeFeatures):
-            feat.update(newFeats[i][0])
+            feat.update(newFeats[i][0], lowX, lowY)
 
         # Remove all features that are no longer being tracked (ie. status == 0)
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
@@ -200,12 +202,12 @@ class depthPerception:
         # Remove all features outside the bounding box
         self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.position, self.box)]
 
-        # TODO Move to feature
-        # Define features as novel if they meet a given criteria
-        for feat in self.activeFeatures:
-            # Consider features that have traveled 5 cm
-            if not feat.isNovel and feat.distance >= 0.15:
-                feat.isNovel = True
+    def getNovelAndClusteredFeatures(self):
+        feats = [feat for feat in self.activeFeatures if feat.isNovel]
+        if not feats:
+            # No novel features
+            return None
+        return {feat.index: feat.position.tolist() for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.position, self.box)}
 
     def transposeGripperToCamera(self):
         # Transpose gripper position to camera frame
@@ -221,7 +223,7 @@ class depthPerception:
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
-        size = 100
+        size = 150
         left = self.lGripX - 10
         right = left + size
         bottom = self.lGripY + 10
@@ -274,6 +276,12 @@ class depthPerception:
 
         return int(left), int(right), int(top), int(bottom)
 
+    @staticmethod
+    def pointInBoundingBox(point, boxPoints):
+        px, py = point
+        lowX, highX, lowY, highY = boxPoints
+        return lowX <= px <= highX and lowY <= py <= highY
+
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
             self.cameraWidth = data.width
@@ -281,16 +289,75 @@ class depthPerception:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
 
+    def publishImageFeatures(self):
+        imageFeatures = ImageFeatures()
+
+        # Draw an orange point on image for gripper
+        circle = Circle()
+        circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+        circle.radius = 10
+        circle.r = 255
+        circle.g = 128
+        imageFeatures.circles.append(circle)
+
+        # Draw an blue point on image for spoon tip
+        circle = Circle()
+        circle.x, circle.y = int(self.spoonX), int(self.spoonY)
+        circle.radius = 10
+        circle.r = 50
+        circle.g = 255
+        circle.b = 255
+        imageFeatures.circles.append(circle)
+
+        # Draw all features (as red)
+        for feat in self.activeFeatures:
+            circle = Circle()
+            circle.x, circle.y = feat.position
+            circle.radius = 5
+            circle.r = 255
+            imageFeatures.circles.append(circle)
+
+        # Draw a bounding box around spoon (or left gripper)
+        rect = Rectangle()
+        rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
+        rect.r = 75
+        rect.g = 150
+        rect.thickness = 5
+        imageFeatures.rectangles.append(rect)
+
+        # Draw a bounding box around spoon (or left gripper)
+        rect = Rectangle()
+        rect.lowX, rect.highX, rect.lowY, rect.highY = self.spoonBox
+        rect.r = 128
+        rect.b = 128
+        rect.thickness = 3
+        imageFeatures.rectangles.append(rect)
+
+        features = self.getNovelAndClusteredFeatures()
+        if features is not None:
+            # Draw all novel and bounded box features
+            for feat in features.values():
+                circle = Circle()
+                circle.x, circle.y = feat
+                circle.radius = 5
+                circle.b = 255
+                circle.g = 128
+                imageFeatures.circles.append(circle)
+
+        self.publisher2D.publish(imageFeatures)
+
 class feature:
-    def __init__(self, index, position):
+    def __init__(self, index, position, lowX, lowY):
+        # position = np.array(position)
         self.index = index
-        self.startPosition = position
         self.position = position
+        self.globalStart = position + [lowX, lowY, 0]
+        self.globalNow = position + [lowX, lowY, 0]
         self.isNovel = False
         self.velocity = None
         self.lastTime = None
 
-    def update(self, newPosition):
+    def update(self, newPosition, lowX, lowY):
         newPosition = np.array(newPosition)
         # Update velocity of feature
         if self.lastTime is not None:
@@ -299,3 +366,7 @@ class feature:
             self.velocity = distChange / timeChange
         self.lastTime = time.time()
         self.position = newPosition
+        self.globalNow = newPosition + [lowX, lowY, 0]
+        distance = np.linalg.norm(self.globalNow - self.globalStart)
+        if distance >= 15:
+            self.isNovel = True
