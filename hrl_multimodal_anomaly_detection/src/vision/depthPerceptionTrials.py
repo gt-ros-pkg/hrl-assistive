@@ -164,6 +164,8 @@ class depthPerceptionTrials:
         for point in points:
             if len(point) <= 0:
                 continue
+            if len(point) > 3:
+                print point
             p = Point()
             p.x, p.y, p.z = point
             marker.points.append(p)
