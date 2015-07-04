@@ -107,7 +107,14 @@ class depthPerceptionTrials:
         #     for x in xrange(lowX, highX):
         #         print type(image[x, y]), np.array(self.pinholeCamera.projectPixelTo3dRay((x, y))), np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[x, y]
 
-        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0), rospy.Duration(5))
+        try :
+            pos ,rot = self.transformer.lookupTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0))
+            matrix = np.dot(tf.transformations.translation_matrix(pos), tf.transformations.quaternion_matrix(rot))
+        except tf.ExtrapolationException:
+            return
+
+        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay(np.dot(matrix, np.array([x, y, 0, 1.0]))[:2]))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
 
         # try:
@@ -155,7 +162,7 @@ class depthPerceptionTrials:
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
-        marker.header.frame_id = '/head_mount_link'
+        marker.header.frame_id = '/head_mount_kinect_depth_optical_frame'
         marker.ns = name
         marker.type = marker.POINTS
         marker.action = marker.ADD
