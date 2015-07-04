@@ -153,7 +153,7 @@ class rgbPerception:
             self.publishImageFeatures()
         # print 'Time for fourth step:', time.time() - timeStamp
 
-        print [feat.velocity for feat in self.activeFeatures if feat.isNovel]
+        print [np.linalg.norm(feat.velocity) for feat in self.activeFeatures if feat.isNovel]
 
         self.prevGray = imageGray
 
