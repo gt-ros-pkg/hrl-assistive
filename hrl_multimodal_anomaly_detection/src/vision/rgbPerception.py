@@ -72,7 +72,7 @@ class rgbPerception:
         # Parameters for Lucas Kanade optical flow
         self.lk_params = dict(winSize=(15,15), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
-        self.N = 50
+        self.N = 5
 
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
         print 'Connected to Kinect images'
@@ -360,21 +360,26 @@ class feature:
         self.position = position
         self.globalStart = position + [lowX, lowY]
         self.globalPos = position + [lowX, lowY]
+        self.lastGlobalPos = position + [lowX, lowY]
+        self.posCount = 0
         self.isNovel = False
         self.velocity = None
-        self.lastTime = None
+        self.lastTime = time.time()
 
     def update(self, newPosition, lowX, lowY):
         newPosition = np.array(newPosition)
-        self.lastTime = time.time()
         self.position = newPosition
-        globalPos = newPosition + [lowX, lowY]
+        self.globalPos = newPosition + [lowX, lowY]
         # Update velocity of feature
-        if self.lastTime is not None:
-            distChange = globalPos - self.globalPos
+        if self.posCount >= 5:
+            self.posCount = 0
+            distChange = self.globalPos - self.lastGlobalPos
             timeChange = time.time() - self.lastTime
             self.velocity = distChange / timeChange
-        self.globalPos = globalPos
+            self.lastGlobalPos = self.globalPos
+            self.lastTime = time.time()
+        self.posCount += 1
+        # Check if feature has moved far enough to become novel
         distance = np.linalg.norm(self.globalPos - self.globalStart)
-        if distance >= 15:
+        if distance >= 20:
             self.isNovel = True
