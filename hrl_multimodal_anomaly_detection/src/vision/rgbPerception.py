@@ -203,11 +203,9 @@ class rgbPerception:
         size = len(self.activeFeatures)
         # Remove all features that are no longer being tracked (ie. status == 0)
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
-        print 'First difference:', size, len(self.activeFeatures)
 
         # Remove all features outside the bounding box
         self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalNow, self.box)]
-        print 'Size difference:', size, len(self.activeFeatures)
 
     def getNovelAndClusteredFeatures(self):
         feats = [feat for feat in self.activeFeatures if feat.isNovel]
@@ -316,8 +314,6 @@ class rgbPerception:
         circle.b = 255
         imageFeatures.circles.append(circle)
 
-        if self.activeFeatures:
-            print 'Publishing all features!'
         # Draw all features (as red)
         for feat in self.activeFeatures:
             circle = Circle()
@@ -345,7 +341,6 @@ class rgbPerception:
         features = self.getNovelAndClusteredFeatures()
         if features is not None:
             # Draw all novel and bounded box features
-            print 'Publishing novel features!'
             for feat in features.values():
                 circle = Circle()
                 circle.x, circle.y = feat
