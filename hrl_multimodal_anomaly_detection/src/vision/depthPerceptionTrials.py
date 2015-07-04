@@ -78,8 +78,8 @@ class depthPerceptionTrials:
         return [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.clusterPoints]
 
     def cloudCallback(self, data):
-        print 'Time between cloud calls:', time.time() - self.cloudTime
-        startTime = time.time()
+        # print 'Time between cloud calls:', time.time() - self.cloudTime
+        # startTime = time.time()
 
         self.pointCloud = data
 
@@ -100,8 +100,8 @@ class depthPerceptionTrials:
             print e
             return
 
-        print 'Time for first call:', time.time() - startTime
-        ticker = time.time()
+        # print 'Time for first call:', time.time() - startTime
+        # ticker = time.time()
 
         # self.transformer.waitForTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0), rospy.Duration(5))
         # try :
@@ -130,18 +130,18 @@ class depthPerceptionTrials:
 
         # points3D = np.array([point for point in points3D])
         #
-        self.clusterPoints = points3D
+        # self.clusterPoints = points3D
 
-        print 'Time for second call:', time.time() - ticker
-        ticker = time.time()
+        # print 'Time for second call:', time.time() - ticker
+        # ticker = time.time()
 
         # Perform dbscan clustering
         X = StandardScaler().fit_transform(points3D)
         labels = self.dbscan.fit_predict(X)
         # unique_labels = set(labels)
 
-        print 'Time for third call:', time.time() - ticker
-        ticker = time.time()
+        # print 'Time for third call:', time.time() - ticker
+        # ticker = time.time()
 
         # Find the point closest to our gripper and it's corresponding label
         index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
@@ -155,8 +155,8 @@ class depthPerceptionTrials:
             return
         # print 'Label:', closeLabel
 
-        print 'Time for fourth call:', time.time() - ticker
-        ticker = time.time()
+        # print 'Time for fourth call:', time.time() - ticker
+        # ticker = time.time()
 
         # Find the cluster closest to our gripper
         self.clusterPoints = points3D[labels==closeLabel]
@@ -169,11 +169,11 @@ class depthPerceptionTrials:
             nonClusterPoints = points3D[labels!=closeLabel]
             self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
 
-        print 'Time for fifth call:', time.time() - ticker
+        # print 'Time for fifth call:', time.time() - ticker
 
         self.updateNumber += 1
-        print 'Cloud computation time:', time.time() - startTime
-        self.cloudTime = time.time()
+        # print 'Cloud computation time:', time.time() - startTime
+        # self.cloudTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
