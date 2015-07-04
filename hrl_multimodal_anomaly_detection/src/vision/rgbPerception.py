@@ -110,7 +110,6 @@ class rgbPerception:
         except CvBridgeError, e:
             print e
             return
-        print image.shape
 
         lowX, highX, lowY, highY = self.box
 
@@ -191,8 +190,6 @@ class rgbPerception:
         for feat in self.activeFeatures:
             feats.append([feat.position])
         feats = np.array(feats, dtype=np.float32)
-
-        print self.prevGray.shape, imageGray.shape
 
         newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, feats, None, **self.lk_params)
         statusRemovals = [i for i, s in enumerate(status) if s == 0]
