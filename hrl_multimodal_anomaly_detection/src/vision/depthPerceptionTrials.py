@@ -114,14 +114,14 @@ class depthPerceptionTrials:
         except tf.ExtrapolationException:
             return
 
-        points3D = []
-        for y in xrange(lowY, highY):
-            for x in xrange(lowX, highX):
-                pixel = self.pinholeCamera.projectPixelTo3dRay((x, y))
-                points3D.append(np.dot(matrix, np.array([pixel[0], pixel[1], pixel[2], 1.0]))[:3]*image[y, x])
-        points3D = np.array(points3D)
+        # points3D = []
+        # for y in xrange(lowY, highY):
+        #     for x in xrange(lowX, highX):
+        #         pixel = self.pinholeCamera.projectPixelTo3dRay((x, y))
+        #         points3D.append(np.dot(matrix, np.array([pixel[0], pixel[1], pixel[2], 1.0]))[:3]*image[y, x])
+        # points3D = np.array(points3D)
 
-        # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay(np.dot(matrix, np.array([x, y, 0, 1.0]))[:3]))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
+        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay(np.dot(matrix, np.array([x, y, 0, 1.0]))[:3]))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         # gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
 
