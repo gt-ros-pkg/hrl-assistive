@@ -153,6 +153,8 @@ class rgbPerception:
             self.publishImageFeatures()
         # print 'Time for fourth step:', time.time() - timeStamp
 
+        print [feat.velocity for feat in self.activeFeatures if feat.isNovel]
+
         self.prevGray = imageGray
 
         self.updateNumber += 1
@@ -228,10 +230,10 @@ class rgbPerception:
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
-        size = 150
-        left = self.lGripX - 10
+        size = 200
+        left = self.lGripX - 50
         right = left + size
-        bottom = self.lGripY + 10
+        bottom = self.lGripY + 50
         top = bottom - size
 
         # Check if box extrudes past image bounds
