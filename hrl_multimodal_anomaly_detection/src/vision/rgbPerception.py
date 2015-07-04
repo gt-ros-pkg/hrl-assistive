@@ -136,6 +136,11 @@ class rgbPerception:
         # Add new features to our feature tracker
         self.determineGoodFeatures(imageGray)
 
+        lowX, highX, lowY, highY = self.box
+
+        # Crop imageGray to bounding box size
+        imageGray = imageGray[lowY:highY, lowX:highX]
+
         print 'Time for second step:', time.time() - timeStamp
         timeStamp = time.time()
         if self.activeFeatures:
@@ -184,16 +189,10 @@ class rgbPerception:
             feats.append([feat.position])
         feats = np.array(feats, dtype=np.float32)
 
-        lowX, highX, lowY, highY = self.box
-
-        # Crop imageGray to bounding box size
-        imageGray = imageGray[lowY:highY, lowX:highX]
-
-        print self.prevGray.shape, imageGray.shape
-
         newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, feats, None, **self.lk_params)
         statusRemovals = [i for i, s in enumerate(status) if s == 0]
 
+        lowX, highX, lowY, highY = self.box
         # Update all features
         for i, feat in enumerate(self.activeFeatures):
             feat.update(newFeats[i][0], lowX, lowY)
