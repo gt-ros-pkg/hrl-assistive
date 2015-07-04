@@ -162,6 +162,8 @@ class depthPerceptionTrials:
         marker.color.g = g
         marker.color.b = b
         for point in points:
+            if len(point) <= 0:
+                continue
             p = Point()
             p.x, p.y, p.z = point
             marker.points.append(p)
