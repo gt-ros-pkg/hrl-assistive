@@ -34,6 +34,7 @@ class cloudTrial:
             return
 
         print len(data.data), image.shape
+        print image[200, 200:205]
 
 if __name__ == '__main__':
     cloudTrial()
