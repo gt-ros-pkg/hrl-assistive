@@ -17,7 +17,7 @@ class cloudTrial:
         self.bridge = CvBridge()
         rospy.init_node('listener_cloud')
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        rospy.Subscriber('/head_mount_kinect/ir/image', Image, self.cloudCallback)
+        rospy.Subscriber('/head_mount_kinect/depth_lowres/image', Image, self.cloudCallback)
         rospy.spin()
 
     def cloudCallback(self, data):
