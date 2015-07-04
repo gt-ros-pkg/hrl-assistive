@@ -357,8 +357,8 @@ class feature:
         # position = np.array(position)
         self.index = index
         self.position = position
-        self.globalStart = position + [lowX, lowY, 0]
-        self.globalNow = position + [lowX, lowY, 0]
+        self.globalStart = position + [lowX, lowY]
+        self.globalNow = position + [lowX, lowY]
         self.isNovel = False
         self.velocity = None
         self.lastTime = None
@@ -372,7 +372,7 @@ class feature:
             self.velocity = distChange / timeChange
         self.lastTime = time.time()
         self.position = newPosition
-        self.globalNow = newPosition + [lowX, lowY, 0]
+        self.globalNow = newPosition + [lowX, lowY]
         distance = np.linalg.norm(self.globalNow - self.globalStart)
         if distance >= 15:
             self.isNovel = True
