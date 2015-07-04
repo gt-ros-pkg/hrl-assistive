@@ -107,7 +107,7 @@ class depthPerceptionTrials:
         #     for x in xrange(lowX, highX):
         #         print type(image[x, y]), np.array(self.pinholeCamera.projectPixelTo3dRay((x, y))), np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[x, y]
 
-        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
+        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
 
         # try:
