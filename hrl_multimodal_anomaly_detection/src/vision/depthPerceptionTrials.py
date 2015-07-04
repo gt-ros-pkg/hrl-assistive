@@ -78,8 +78,8 @@ class depthPerceptionTrials:
         return [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.clusterPoints]
 
     def cloudCallback(self, data):
-        # print 'Time between cloud calls:', time.time() - self.cloudTime
-        # startTime = time.time()
+        print 'Time between cloud calls:', time.time() - self.cloudTime
+        startTime = time.time()
 
         self.pointCloud = data
 
@@ -90,7 +90,7 @@ class depthPerceptionTrials:
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
-        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.3, 0.05, 20, 100, 50)
+        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.35, 0.00, 20, 100, 100)
 
         # Grab image from Kinect sensor
         try:
@@ -100,19 +100,12 @@ class depthPerceptionTrials:
             print e
             return
 
-        # print self.pinholeCamera.projectPixelTo3dRay((200, 200))
-        # print image[200, 200:205]
-
-        # for y in xrange(lowY, highY):
-        #     for x in xrange(lowX, highX):
-        #         print type(image[x, y]), np.array(self.pinholeCamera.projectPixelTo3dRay((x, y))), np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[x, y]
-
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0), rospy.Duration(5))
-        try :
-            pos ,rot = self.transformer.lookupTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0))
-            matrix = np.dot(tf.transformations.translation_matrix(pos), tf.transformations.quaternion_matrix(rot))
-        except tf.ExtrapolationException:
-            return
+        # self.transformer.waitForTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0), rospy.Duration(5))
+        # try :
+        #     pos ,rot = self.transformer.lookupTransform(self.rgbCameraFrame, '/head_mount_kinect_depth_optical_frame', rospy.Time(0))
+        #     matrix = np.dot(tf.transformations.translation_matrix(pos), tf.transformations.quaternion_matrix(rot))
+        # except tf.ExtrapolationException:
+        #     return
 
         # points3D = []
         # for y in xrange(lowY, highY):
@@ -123,7 +116,7 @@ class depthPerceptionTrials:
 
         # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay(np.dot(matrix, np.array([x, y, 0, 1.0]))[:3]))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
-        # gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
+        gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
 
         # try:
         #     points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
@@ -135,38 +128,38 @@ class depthPerceptionTrials:
         # points3D = np.array([point for point in points3D])
         #
         self.clusterPoints = points3D
-        #
-        # # Perform dbscan clustering
-        # X = StandardScaler().fit_transform(points3D)
-        # labels = self.dbscan.fit_predict(X)
-        # # unique_labels = set(labels)
-        #
-        # # Find the point closest to our gripper and it's corresponding label
-        # index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        # closeLabel = labels[index]
-        # while closeLabel == -1 and points3D.size > 0:
-        #     np.delete(points3D, [index])
-        #     np.delete(labels, [index])
-        #     index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        #     closeLabel = labels[index]
-        # if points3D.size <= 0:
-        #     return
-        # # print 'Label:', closeLabel
-        #
-        # # Find the cluster closest to our gripper
-        # self.clusterPoints = points3D[labels==closeLabel]
+
+        # Perform dbscan clustering
+        X = StandardScaler().fit_transform(points3D)
+        labels = self.dbscan.fit_predict(X)
+        # unique_labels = set(labels)
+
+        # Find the point closest to our gripper and it's corresponding label
+        index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+        closeLabel = labels[index]
+        while closeLabel == -1 and points3D.size > 0:
+            np.delete(points3D, [index])
+            np.delete(labels, [index])
+            index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
+            closeLabel = labels[index]
+        if points3D.size <= 0:
+            return
+        # print 'Label:', closeLabel
+
+        # Find the cluster closest to our gripper
+        self.clusterPoints = points3D[labels==closeLabel]
 
         if self.visual:
             # Publish depth features for spoon features
             self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
 
             # Publish depth features for non spoon features
-            # nonClusterPoints = points3D[labels!=closeLabel]
-            # self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
+            nonClusterPoints = points3D[labels!=closeLabel]
+            self.publishPoints('nonSpoonPoints', nonClusterPoints, r=1.0)
 
         self.updateNumber += 1
-        # print 'Cloud computation time:', time.time() - startTime
-        # self.cloudTime = time.time()
+        print 'Cloud computation time:', time.time() - startTime
+        self.cloudTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
