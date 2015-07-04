@@ -83,15 +83,15 @@ class rgbPerception:
         return self.imageData, self.getNovelAndClusteredFeatures()
 
     def imageCallback(self, data):
-        startTime = time.time()
-        print 'Time between rgb calls:', time.time() - self.rgbTime
+        # startTime = time.time()
+        # print 'Time between rgb calls:', time.time() - self.rgbTime
         if self.rgbCameraFrame is None:
             self.rgbCameraFrame = data.header.frame_id
 
         self.transposeGripperToCamera()
 
         # Determine location of spoon
-        spoon3D = [0.22, -0.050, 0]
+        spoon3D = [0.21, -0.050, 0]
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
@@ -116,8 +116,8 @@ class rgbPerception:
         # Crop imageGray to bounding box size
         self.imageData = image[lowY:highY, lowX:highX, :]
 
-        print 'Time for first step:', time.time() - startTime
-        timeStamp = time.time()
+        # print 'Time for first step:', time.time() - startTime
+        # timeStamp = time.time()
         # TODO This is all optional
 
         # Convert to grayscale
@@ -143,21 +143,21 @@ class rgbPerception:
         # Crop imageGray to bounding box size
         imageGray = imageGray[lowY:highY, lowX:highX]
 
-        print 'Time for second step:', time.time() - timeStamp
-        timeStamp = time.time()
+        # print 'Time for second step:', time.time() - timeStamp
+        # timeStamp = time.time()
         if self.activeFeatures:
             self.opticalFlow(imageGray)
-        print 'Time for third step:', time.time() - timeStamp
-        timeStamp = time.time()
+        # print 'Time for third step:', time.time() - timeStamp
+        # timeStamp = time.time()
         if self.visual:
             self.publishImageFeatures()
-        print 'Time for fourth step:', time.time() - timeStamp
+        # print 'Time for fourth step:', time.time() - timeStamp
 
         self.prevGray = imageGray
 
         self.updateNumber += 1
-        print 'RGB computation time:', time.time() - startTime
-        self.rgbTime = time.time()
+        # print 'RGB computation time:', time.time() - startTime
+        # self.rgbTime = time.time()
 
     def determineGoodFeatures(self, imageGray):
         if len(self.activeFeatures) >= self.N:
@@ -181,6 +181,7 @@ class rgbPerception:
             feats.remove(feat)
 
             # Add feature to tracking list
+            print 'Feature added:', feat
             newFeat = feature(self.currentIndex, feat[0], boxX, boxY)
             self.activeFeatures.append(newFeat)
             self.currentIndex += 1
@@ -252,9 +253,9 @@ class rgbPerception:
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBoxSpoon(self):
         left = self.lGripX + 10
-        right = self.spoonX + 10
+        right = self.spoonX + 25
         bottom = self.lGripY - 10
-        top = self.spoonY - 10
+        top = self.spoonY - 25
 
         # Check if box extrudes past image bounds
         if left < 0:
@@ -312,6 +313,8 @@ class rgbPerception:
         circle.b = 255
         imageFeatures.circles.append(circle)
 
+        if self.activeFeatures:
+            print 'Publishing all features!'
         # Draw all features (as red)
         for feat in self.activeFeatures:
             circle = Circle()
@@ -339,6 +342,7 @@ class rgbPerception:
         features = self.getNovelAndClusteredFeatures()
         if features is not None:
             # Draw all novel and bounded box features
+            print 'Publishing novel features!'
             for feat in features.values():
                 circle = Circle()
                 circle.x, circle.y = feat
