@@ -372,6 +372,7 @@ class feature:
             distChange = globalPos - self.globalPos
             timeChange = time.time() - self.lastTime
             self.velocity = distChange / timeChange
+        self.globalPos = globalPos
         distance = np.linalg.norm(self.globalPos - self.globalStart)
         if distance >= 15:
             self.isNovel = True
