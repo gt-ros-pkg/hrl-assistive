@@ -203,6 +203,7 @@ class rgbPerception:
         size = len(self.activeFeatures)
         # Remove all features that are no longer being tracked (ie. status == 0)
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
+        print 'First difference:', size, len(self.activeFeatures)
 
         # Remove all features outside the bounding box
         self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.position, self.box)]
