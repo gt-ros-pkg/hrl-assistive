@@ -22,6 +22,8 @@ import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
+gripperFeature = None
+
 class rgbPerception:
     def __init__(self, targetFrame=None, visual=False, tfListener=None):
         # ROS publisher for data points
@@ -55,7 +57,6 @@ class rgbPerception:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
-        self.gripperFeature = None
         # Spoon
         self.spoonX = None
         self.spoonY = None
@@ -84,6 +85,7 @@ class rgbPerception:
         return self.imageData, self.getNovelAndClusteredFeatures()
 
     def imageCallback(self, data):
+        global gripperFeature
         # startTime = time.time()
         # print 'Time between rgb calls:', time.time() - self.rgbTime
         if self.rgbCameraFrame is None:
@@ -118,11 +120,11 @@ class rgbPerception:
         self.imageData = image[lowY:highY, lowX:highX, :]
 
         # Find velocity of the gripper
-        if self.gripperFeature is None and self.lGripX is not None:
-            self.gripperFeature = feature(0, [self.lGripX, self.lGripY], lowX, lowY)
-        if self.gripperFeature is not None:
-            self.gripperFeature.update([self.lGripX, self.lGripY], lowX, lowY)
-            print 'Gripper velocity:', self.gripperFeature.velocity
+        if gripperFeature is None and self.lGripX is not None:
+            gripperFeature = feature(0, [self.lGripX, self.lGripY], lowX, lowY)
+        if gripperFeature is not None:
+            gripperFeature.update([self.lGripX, self.lGripY], lowX, lowY)
+            print 'Gripper velocity:', gripperFeature.speed
 
         # print 'Time for first step:', time.time() - startTime
         # timeStamp = time.time()
@@ -161,7 +163,7 @@ class rgbPerception:
             self.publishImageFeatures()
         # print 'Time for fourth step:', time.time() - timeStamp
 
-        print [np.linalg.norm(feat.velocity) for feat in self.activeFeatures if feat.isNovel]
+        print ['%.3f' % feat.speed for feat in self.activeFeatures if feat.isNovel]
 
         self.prevGray = imageGray
 
@@ -215,7 +217,7 @@ class rgbPerception:
         self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
 
         # Remove all features outside the bounding box
-        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalPos, self.box)]
+        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalPos, self.box) and not feat.removal]
 
     def getNovelAndClusteredFeatures(self):
         feats = [feat for feat in self.activeFeatures if feat.isNovel]
@@ -267,6 +269,14 @@ class rgbPerception:
         right = self.spoonX + 25
         bottom = self.lGripY - 10
         top = self.spoonY - 25
+
+        # Check for minimum sizes
+        if np.abs(left - right) < 60:
+            left -= 10
+            right += 40
+        if np.abs(top - bottom) < 60:
+            bottom += 10
+            top -= 40
 
         # Check if box extrudes past image bounds
         if left < 0:
@@ -372,20 +382,32 @@ class feature:
         self.posCount = 0
         self.isNovel = False
         self.velocity = None
+        self.speed = 0
         self.lastTime = time.time()
+        self.strikes = 0
+        self.removal = False
 
     def update(self, newPosition, lowX, lowY):
         newPosition = np.array(newPosition)
         self.position = newPosition
         self.globalPos = newPosition + [lowX, lowY]
         # Update velocity of feature
-        if self.posCount >= 5:
+        if self.posCount >= 3:
             self.posCount = 0
             distChange = self.globalPos - self.lastGlobalPos
             timeChange = time.time() - self.lastTime
             self.velocity = distChange / timeChange
             self.lastGlobalPos = self.globalPos
             self.lastTime = time.time()
+            self.speed = np.linalg.norm(self.velocity)
+            # Check if velocity is wildly different than that of the gripper's
+            if np.abs(gripperFeature.speed - self.speed) > 10:
+                self.strikes += 1
+            else:
+                self.strikes = 0
+            # Too many strikes causes a removal of this feature
+            if self.strikes >= 2:
+                self.removal = True
         self.posCount += 1
         # Check if feature has moved far enough to become novel
         distance = np.linalg.norm(self.globalPos - self.globalStart)
