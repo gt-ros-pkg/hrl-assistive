@@ -83,6 +83,10 @@ class depthPerceptionTrials:
 
         self.pointCloud = data
 
+        if self.rgbCameraFrame is None:
+            self.rgbCameraFrame = data.header.frame_id
+            print self.rgbCameraFrame
+
         self.transposeGripperToCamera()
 
         # Determine location of spoon
@@ -262,4 +266,3 @@ class depthPerceptionTrials:
             self.cameraHeight = data.height
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
-            self.rgbCameraFrame = data.header.frame_id
