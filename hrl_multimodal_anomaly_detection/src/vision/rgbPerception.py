@@ -291,13 +291,17 @@ class rgbPerception:
         # Check if spoon box extrudes past large bounding box
         lowX, highX, lowY, highY = self.box
         if left < lowX:
-            print 'Spoon left is less than bounding box!'
+            left = lowX
+            # print 'Spoon left is less than bounding box!'
         if right > highX:
-            print 'Spoon right is greater than bounding box!'
+            right = highX
+            # print 'Spoon right is greater than bounding box!'
         if top < lowY:
-            print 'Spoon top is less than bounding box!'
+            top = lowY
+            # print 'Spoon top is less than bounding box!'
         if bottom > highY:
-            print 'Spoon bottom is greater than bounding box!'
+            bottom = highY
+            # print 'Spoon bottom is greater than bounding box!'
 
         return int(left), int(right), int(top), int(bottom)
 
