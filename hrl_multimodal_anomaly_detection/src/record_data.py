@@ -57,8 +57,6 @@ class ADL_log:
         if not os.path.exists(directory):
             os.makedirs(directory)
         self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
-        if not os.path.exists(self.folderName):
-            os.makedirs(self.folderName)
 
         self.bowlPos = None
         self.headPos = None
@@ -132,6 +130,8 @@ class ADL_log:
         elif flag == '3': sys.exit()
         else: status = flag
 
+        if not os.path.exists(self.folderName):
+            os.makedirs(self.folderName)
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
         with open(fileName, 'wb') as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
