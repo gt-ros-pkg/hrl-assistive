@@ -93,6 +93,8 @@ class depthPerceptionTrials:
         if self.rgbInfo is not None and self.cameraDepthInfo is not None and self.stereo is None:
             self.stereo = image_geometry.StereoCameraModel()
             self.stereo.fromCameraInfo(self.rgbInfo, self.cameraDepthInfo)
+        elif self.stereo is None:
+            return
 
         self.transposeGripperToCamera()
 
