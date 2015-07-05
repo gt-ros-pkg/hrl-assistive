@@ -32,8 +32,8 @@ class armReachAction(mpcBaseAction):
         rospy.Subscriber('hrl_feeding_task/manual_head_location',
                          PoseStamped, self.headPoseManualCallback)
 
-        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
-                         PoseStamped, self.bowlPoseKinectCallback)
+        # rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
+        #                  PoseStamped, self.bowlPoseKinectCallback)
 
         rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
 
@@ -366,65 +366,27 @@ class armReachAction(mpcBaseAction):
 
             # raw_input("Press anything to continue... ")
 
-        print "#1 Moving over bowl... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[0][0],
-            self.bowl_pos[1] + self.leftArmScoopingPos[0][1],
-            self.bowl_pos[2] + self.leftArmScoopingPos[0][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[0][0],
-            self.leftArmScoopingQuats[0][1],
-            self.leftArmScoopingQuats[0][2],
-            self.leftArmScoopingQuats[0][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[0])
-        print "Pausing for {} seconds ".format(self.pausesScooping[0])
-        time.sleep(self.pausesScooping[0])
+        for i in xrange(len(self.pausesScooping)):
+            self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[i][0],
+                self.bowl_pos[1] + self.leftArmScoopingPos[i][1],
+                self.bowl_pos[2] + self.leftArmScoopingPos[i][2])
+            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[i][0],
+                self.leftArmScoopingQuats[i][1],
+                self.leftArmScoopingQuats[i][2],
+                self.leftArmScoopingQuats[i][3])
+            self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
+            print "Pausing for {} seconds ".format(self.pausesScooping[i])
+            time.sleep(self.pausesScooping[i])
 
-        print "#2 Moving down into bowl... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[1][0],
-            self.bowl_pos[1] + self.leftArmScoopingPos[1][1],
-            self.bowl_pos[2] + self.leftArmScoopingPos[1][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[1][0],
-            self.leftArmScoopingQuats[1][1],
-            self.leftArmScoopingQuats[1][2],
-            self.leftArmScoopingQuats[1][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[1])
-        print "Pausing for {} seconds ".format(self.pausesScooping[1])
-        time.sleep(self.pausesScooping[1])
-
-        print "#3 Moving forward in bowl... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[2][0],
-            self.bowl_pos[1] + self.leftArmScoopingPos[2][1],
-            self.bowl_pos[2] + self.leftArmScoopingPos[2][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[2][0],
-            self.leftArmScoopingQuats[2][1],
-            self.leftArmScoopingQuats[2][2],
-            self.leftArmScoopingQuats[2][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[2])
-        print "Pausing for {} seconds ".format(self.pausesScooping[2])
-        time.sleep(self.pausesScooping[2])
-
-        print "#4 Scooping in bowl... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[3][0],
-            self.bowl_pos[1] + self.leftArmScoopingPos[3][1],
-            self.bowl_pos[2] + self.leftArmScoopingPos[3][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[3][0],
-            self.leftArmScoopingQuats[3][1],
-            self.leftArmScoopingQuats[3][2],
-            self.leftArmScoopingQuats[3][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[3])
-        print "Pausing for {} seconds ".format(self.pausesScooping[3])
-        time.sleep(self.pausesScooping[3])
-
-        print "#5 Moving out of bowl... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[4][0],
-            self.bowl_pos[1] + self.leftArmScoopingPos[4][1],
-            self.bowl_pos[2] + self.leftArmScoopingPos[4][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmScoopingQuats[4][0],
-            self.leftArmScoopingQuats[4][1],
-            self.leftArmScoopingQuats[4][2],
-            self.leftArmScoopingQuats[4][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[4])
-        print "Pausing for {} seconds ".format(self.pausesScooping[4])
-        time.sleep(self.pausesScooping[4])
+        # print "#1 Moving over bowl... "
+        #
+        # print "#2 Moving down into bowl... "
+        #
+        # print "#3 Moving forward in bowl... "
+        #
+        # print "#4 Scooping in bowl... "
+        #
+        # print "#5 Moving out of bowl... "
 
         print "Scooping action completed"
 
