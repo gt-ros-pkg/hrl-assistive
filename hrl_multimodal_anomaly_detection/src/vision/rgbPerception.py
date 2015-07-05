@@ -82,7 +82,8 @@ class rgbPerception:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        return self.imageData, self.getNovelAndClusteredFeatures()
+        lowX, highX, lowY, highY = self.box
+        return self.imageData, self.getNovelAndClusteredFeatures(), [self.lGripX - lowX, self.lGripY - lowY], [self.spoonX - lowX, self.spoonY - lowY]
 
     def imageCallback(self, data):
         global gripperFeature
@@ -266,8 +267,16 @@ class rgbPerception:
     def boundingBoxSpoon(self):
         left = self.lGripX + 10
         right = self.spoonX + 25
-        bottom = self.lGripY - 10
-        top = self.spoonY - 25
+        if self.spoonY < self.lGripY - 20:
+            bottom = self.lGripY - 10
+            top = self.spoonY - 25
+        else:
+            if self.spoonY < self.lGripY:
+                bottom = self.lGripY + 5
+                top = self.spoonY - 25
+            else:
+                bottom = self.spoonY + 25
+                top = self.lGripY - 5
 
         # Check for minimum sizes
         if np.abs(left - right) < 60:
