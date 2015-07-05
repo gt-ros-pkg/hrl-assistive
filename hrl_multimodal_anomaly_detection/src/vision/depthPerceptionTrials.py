@@ -96,7 +96,8 @@ class depthPerceptionTrials:
         spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
-        lowX, highX, lowY, highY = self.boundingBox(0.05, 0.30, 0.05, 20, 100, 50)
+        # lowX, highX, lowY, highY = self.boundingBox(0.05, 0.30, 0.05, 20, 100, 50)
+        lowX, highX, lowY, highY = self.boundingBox()
 
         # Grab image from Kinect sensor
         try:
@@ -215,75 +216,99 @@ class depthPerceptionTrials:
         gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
         self.lGripX, self.lGripY = int(gripX), int(gripY)
 
-    # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
-    def boundingBox(self, leftRight, up, down, margin, widthDiff, heightDiff):
-        # Left is on -z axis
-        left3D =  [0, 0, -leftRight]
-        right3D = [0, 0, leftRight]
-        # Up is on +x axis
-        up3D = [up, 0, 0]
-        down3D = [down, 0, 0]
-
-        # Transpose box onto orientation of gripper
-        left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
-        right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
-        top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
-        bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
-
-        # Project 3D box locations to 2D for the camera
-        left, _ = self.pinholeCamera.project3dToPixel(left)
-        right, _ = self.pinholeCamera.project3dToPixel(right)
-        _, top = self.pinholeCamera.project3dToPixel(top)
-        _, bottom = self.pinholeCamera.project3dToPixel(bottom)
-
-        # Adjust incase hand is upside down
-        if left > right:
-            left, right = right, left
-        if top > bottom:
-            top, bottom = bottom, top
-
-        # Make sure box encompases the spoon
-        if left > self.spoonX - margin:
-            left = self.spoonX - margin
-        if right < self.spoonX + margin:
-            right = self.spoonX + margin
-        if top > self.spoonY - margin:
-            top = self.spoonY - margin
-        if bottom < self.spoonY + margin:
-            bottom = self.spoonY + margin
+    def boundingBox(self):
+        size = 150
+        left = self.lGripX - 20
+        right = left + size
+        bottom = self.lGripY + 20
+        top = bottom - size
 
         # Check if box extrudes past image bounds
         if left < 0:
             left = 0
+            right = left + size
         if right > self.cameraWidth - 1:
             right = self.cameraWidth - 1
+            left = right - size
         if top < 0:
             top = 0
+            bottom = top + size
         if bottom > self.cameraHeight - 1:
             bottom = self.cameraHeight - 1
-
-        # Verify that the box bounds are not too small
-        diff = widthDiff - np.abs(right - left)
-        if np.abs(right - left) < 100:
-            if left < diff/2.0:
-                right += diff
-            elif right > self.cameraWidth - diff/2.0 - 1:
-                left -= diff
-            else:
-                left -= diff/2.0
-                right += diff/2.0
-        diff = heightDiff - np.abs(bottom - top)
-        if np.abs(bottom - top) < 50:
-            if top < diff/2.0:
-                bottom += diff
-            elif bottom > self.cameraHeight - diff/2.0 - 1:
-                top -= diff
-            else:
-                top -= diff/2.0
-                bottom += diff/2.0
+            top = bottom - size
 
         return int(left), int(right), int(top), int(bottom)
+
+    # # Finds a bounding box given defined features
+    # # Returns coordinates (lowX, highX, lowY, highY)
+    # def boundingBox(self, leftRight, up, down, margin, widthDiff, heightDiff):
+    #     # Left is on -z axis
+    #     left3D =  [0, 0, -leftRight]
+    #     right3D = [0, 0, leftRight]
+    #     # Up is on +x axis
+    #     up3D = [up, 0, 0]
+    #     down3D = [down, 0, 0]
+    #
+    #     # Transpose box onto orientation of gripper
+    #     left = np.dot(self.lGripperTransposeMatrix, np.array([left3D[0], left3D[1], left3D[2], 1.0]))[:3]
+    #     right = np.dot(self.lGripperTransposeMatrix, np.array([right3D[0], right3D[1], right3D[2], 1.0]))[:3]
+    #     top = np.dot(self.lGripperTransposeMatrix, np.array([up3D[0], up3D[1], up3D[2], 1.0]))[:3]
+    #     bottom = np.dot(self.lGripperTransposeMatrix, np.array([down3D[0], down3D[1], down3D[2], 1.0]))[:3]
+    #
+    #     # Project 3D box locations to 2D for the camera
+    #     left, _ = self.pinholeCamera.project3dToPixel(left)
+    #     right, _ = self.pinholeCamera.project3dToPixel(right)
+    #     _, top = self.pinholeCamera.project3dToPixel(top)
+    #     _, bottom = self.pinholeCamera.project3dToPixel(bottom)
+    #
+    #     # Adjust incase hand is upside down
+    #     if left > right:
+    #         left, right = right, left
+    #     if top > bottom:
+    #         top, bottom = bottom, top
+    #
+    #     # Make sure box encompases the spoon
+    #     if left > self.spoonX - margin:
+    #         left = self.spoonX - margin
+    #     if right < self.spoonX + margin:
+    #         right = self.spoonX + margin
+    #     if top > self.spoonY - margin:
+    #         top = self.spoonY - margin
+    #     if bottom < self.spoonY + margin:
+    #         bottom = self.spoonY + margin
+    #
+    #     # Check if box extrudes past image bounds
+    #     if left < 0:
+    #         left = 0
+    #     if right > self.cameraWidth - 1:
+    #         right = self.cameraWidth - 1
+    #     if top < 0:
+    #         top = 0
+    #     if bottom > self.cameraHeight - 1:
+    #         bottom = self.cameraHeight - 1
+    #
+    #     # Verify that the box bounds are not too small
+    #     diff = widthDiff - np.abs(right - left)
+    #     if np.abs(right - left) < 100:
+    #         if left < diff/2.0:
+    #             right += diff
+    #         elif right > self.cameraWidth - diff/2.0 - 1:
+    #             left -= diff
+    #         else:
+    #             left -= diff/2.0
+    #             right += diff/2.0
+    #     diff = heightDiff - np.abs(bottom - top)
+    #     if np.abs(bottom - top) < 50:
+    #         if top < diff/2.0:
+    #             bottom += diff
+    #         elif bottom > self.cameraHeight - diff/2.0 - 1:
+    #             top -= diff
+    #         else:
+    #             top -= diff/2.0
+    #             bottom += diff/2.0
+    #
+    #     return int(left), int(right), int(top), int(bottom)
 
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
