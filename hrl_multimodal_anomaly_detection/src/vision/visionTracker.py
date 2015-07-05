@@ -36,8 +36,8 @@ class visionTracker:
         #     self.tracker = kanadeLucasPoint(self.multispinner if publish else None, targetFrame=targetFrame, publish=publish, visual=visual, tfListener=tfListener)
 
         # self.tracker = depthPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
-        # self.tracker = rgbPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
-        self.tracker = depthPerceptionTrials(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        self.tracker = rgbPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        # self.tracker = depthPerceptionTrials(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
         if shouldSpin:
             rospy.spin()
 
