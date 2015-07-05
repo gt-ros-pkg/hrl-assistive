@@ -164,12 +164,12 @@ class depthPerceptionTrials:
         self.clusterPoints = points3D[labels==closeLabel]
         self.nonClusterPoints = points3D[labels!=closeLabel]
 
-        # if self.visual:
-        #     # Publish depth features for spoon features
-        #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
-        #
-        #     # Publish depth features for non spoon features
-        #     self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
+        if self.visual:
+            # Publish depth features for spoon features
+            self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
+
+            # Publish depth features for non spoon features
+            self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
 
         # print 'Time for fifth call:', time.time() - ticker
 
