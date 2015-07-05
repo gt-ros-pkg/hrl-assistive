@@ -70,9 +70,9 @@ class rgbPerception:
         self.diffY = None
 
         # Parameters for ShiTomasi corner detection
-        self.feature_params = dict(maxCorners=100, qualityLevel=0.1, minDistance=7, blockSize=7)
+        self.feature_params = dict(maxCorners=100, qualityLevel=0.05, minDistance=3, blockSize=7)
         # Parameters for Lucas Kanade optical flow
-        self.lk_params = dict(winSize=(15,15), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+        self.lk_params = dict(winSize=(20, 20), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
         self.N = 50
 
@@ -269,13 +269,13 @@ class rgbPerception:
     # Finds a tighter bounding box around the spoon
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBoxSpoon(self):
-        left = self.lGripX + 10
+        left = self.lGripX
         right = self.spoonX + 25
         if self.spoonY < self.lGripY - 20:
-            bottom = self.lGripY - 10
+            bottom = self.lGripY
             top = self.spoonY - 25
         else:
-            if self.spoonY < self.lGripY:
+            if self.spoonY < self.lGripY + 5:
                 bottom = self.lGripY + 5
                 top = self.spoonY - 25
             else:
@@ -283,12 +283,12 @@ class rgbPerception:
                 top = self.lGripY - 5
 
         # Check for minimum sizes
-        if np.abs(left - right) < 60:
-            left -= 10
-            right += 40
-        if np.abs(top - bottom) < 60:
-            bottom += 10
-            top -= 40
+        if np.abs(left - right) < 40:
+            left -= 20
+            right += 20
+        if np.abs(top - bottom) < 40:
+            bottom += 20
+            top -= 20
 
         # Check if box extrudes past image bounds
         if left < 0:
