@@ -14,6 +14,9 @@ from depthPerception import depthPerception
 from depthPerceptionTrials import depthPerceptionTrials
 from rgbPerception import rgbPerception
 from wideStereoDepth import wideStereoDepth
+
+from cloudTrial import cloudTrial
+
 import kinectCircularPath as circularPath
 import kinectLinearPath as linearPath
 
@@ -40,15 +43,17 @@ class visionTracker:
         # self.tracker = rgbPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
         # self.tracker = depthPerceptionTrials(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
-        self.tracker = wideStereoDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        # self.tracker = wideStereoDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        self.tracker = cloudTrial(False)
         if shouldSpin:
             rospy.spin()
 
     def getLogData(self):
-        if self.tracker.updateNumber <= self.lastUpdateNumber:
-            return None
-        self.lastUpdateNumber = self.tracker.updateNumber
-        return self.tracker.getAllRecentPoints()
+        return None
+        # if self.tracker.updateNumber <= self.lastUpdateNumber:
+        #     return None
+        # self.lastUpdateNumber = self.tracker.updateNumber
+        # return self.tracker.getAllRecentPoints()
 
     # def spinner(self):
     #     markers = self.tracker.getAllMarkersWithHistory()
