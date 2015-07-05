@@ -54,6 +54,11 @@ class depthPerceptionTrials:
         self.cameraHeight = None
         self.pinholeCamera = None
 
+        # Stereo Camera
+        self.rgbInfo = None
+        self.cameraDepthInfo = None
+        self.stereo = None
+
         # Gripper
         self.lGripperPosition = None
         self.lGripperRotation = None
@@ -84,6 +89,10 @@ class depthPerceptionTrials:
         # startTime = time.time()
 
         self.pointCloud = data
+
+        if self.rgbInfo is not None and self.cameraDepthInfo is not None and self.stereo is None:
+            self.stereo = image_geometry.StereoCameraModel()
+            self.stereo.fromCameraInfo(self.rgbInfo, self.cameraDepthInfo)
 
         self.transposeGripperToCamera()
 
@@ -287,3 +296,7 @@ class depthPerceptionTrials:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
+            self.rgbInfo = None
+
+    def cameraDepthInfoCallback(self, data):
+        self.cameraDepthInfo = data
