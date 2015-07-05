@@ -20,6 +20,12 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 # HRL
 import hrl_lib.util as ut
 
+class graphing():
+    def __init__(self):
+
+        self.DTYPE = np.int16
+
+
 def butter_bandpass(lowcut, highcut, fs, order=5):
     """
     fs: sampling frequency
@@ -44,26 +50,17 @@ if __name__ == '__main__':
     change_folder = raw_input("Current folder is: %s, press [y] to change " % folder_name)
     if change_folder == 'y':
         folder_name = raw_input("Enter new folder name and press [Enter] ")
-    # Current PICKLE file format method    
+   
     pkl_file_name = raw_input("Enter exact name of pkl file, ex: [test.pkl] ")
     pkl_file_path = folder_name+pkl_file_name
     print os.path.isfile(pkl_file_path)
     d = ut.load_pickle(pkl_file_path)
-
-    # Alternate PANDAS file format method
-    # csv_file_name = raw_input("Enter exact name of csv file, ex: [test.csv] ")
-    # csv_file_path = folder_name + csv_file_name
-    # csv_file_path = csv_file_path.replace("\\", "\\\\")
-    # df = pd.read_csv(csv_file_path)
-    # print "Read CSV file as :"
-    # print df
 
     print d.keys()
 
     ft_kinematics = True
     audio = False
     vision = False
-
 
     if ft_kinematics:
 
@@ -114,13 +111,19 @@ if __name__ == '__main__':
         fig3.subplots_adjust(hspace=0)
         plt.setp([a.get_xticklabels() for a in fig3.axes[:-1]], visible=False)
 
-        #plt.show()
+        plt.show()
 
     if audio:
-        audio_data = d['audio_data']
-        audio_amp = d['audio_amp']
-        audio_freq = d['audio_freq']
-        audio_chunk = d['audio_chunk']
+
+
+
+        audio_data_raw = d.get('audio_data_raw')
+        audio_time = d.get('audio_time')
+        audio_sample_time = d.get('audio_sample_time')
+        audio_chunk = d.get('audio_chunk')
+
+        audio_data = np.
+
 
         audio_data = np.array(audio_data).flatten()
 

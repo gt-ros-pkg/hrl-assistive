@@ -68,7 +68,6 @@ class dataRecord:
 
             print "Running scooping!"
             print self.armReachAction("runScooping")
-            #print "Finished running scooping!"
 
             self.log.close_log_file()
 
@@ -91,21 +90,19 @@ class dataRecord:
 
         print self.armReachAction("chooseManualHeadPos")
 
+        print "Initializing left arm for feeding"
+        print self.armReachAction("leftArmInitFeeding")
+
+        #print "Initializing right arm for feeding"
+        #print self.armReachAction("rightArmInitFeeding")
+
         runFeeding = True
         while runFeeding:
-            print "Initializing left arm for feeding"
-            print self.armReachAction("leftArmInitFeeding")
-
-            #print "Initializing right arm for feeding"
-            #print self.armReachAction("rightArmInitFeeding")
-
-            time.sleep(1)
 
             self.log.log_start()
 
             print "Running feeding!"
             print self.armReachAction("runFeeding")
-            #print "Finished running feeding!"
 
             self.log.close_log_file()
 
@@ -117,6 +114,7 @@ class dataRecord:
 
         print "Finished feeding trials!"
         print "Exiting program!"
+        
         sys.exit()
 
 if __name__ == '__main__':

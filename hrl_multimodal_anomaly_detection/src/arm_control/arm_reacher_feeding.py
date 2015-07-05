@@ -40,28 +40,6 @@ class armReachAction(mpcBaseAction):
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
 
-        # #-------------------------------------------
-        # arm_reach_enable *requests* and expected ...
-        # ... actions from arm_reacher_feeding server:
-        # * 1 - Calibrate left arm for scooping
-        # * 2 - Calibrate left arm for feeding
-        # * 3 - Calibrate right arm for scooping
-        # * 4 - Calibrate right arm for feeding
-        # * 5 - Choose manually provided bowl position
-        # * 6 - Choose kinect provided bowl position
-        # * 7 - Begin scooping
-        # * 8 - Begin feeding
-        # #--------------------------------------------
-        # arm_reach_enable *responses* and expected ...
-        # ... meanings from arm_reacher_feeding server:
-        # * 1 - Manually provided bowl position available
-        # * 2 - Kinect provided bowl position available
-        # * 3 - Finished scooping
-        # * 4 - Finished feeding
-        # * 5 - Initialized left arm
-        # * 6 - Initialized right arm
-        # #--------------------------------------------
-
         rArmServersRunning = False
 
         # Service Proxies for controlling right arm
@@ -81,7 +59,7 @@ class armReachAction(mpcBaseAction):
 
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-	self.leftArmInitialJointAnglesScoopingOLD = [0, 1.0235755880202777, 0.10226744833266554, -1.9549568933614168, -3.1258149274104086, -1.1960677168318734, -1.6808367644408335]
+	    self.leftArmInitialJointAnglesScoopingOLD = [0, 1.0235755880202777, 0.10226744833266554, -1.9549568933614168, -3.1258149274104086, -1.1960677168318734, -1.6808367644408335]
         self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
@@ -102,11 +80,11 @@ class armReachAction(mpcBaseAction):
                                             [-.015,	0,	-.065], #Moving down into bowl
                                             [.01,	0,	-.045], #Moving forward in bowl
                                             [0,		0,	  .05], #While rotating spoon to scoop out
-                                            [0,		0,   	  .15]]) #Moving up out of bowl
+                                            [0,		0,    .15]]) #Moving up out of bowl
 
-        self.leftArmFeedingPos = np.array([[.01,    .2,   -.01],
-                                           [.01,    .085, -.01],
-                                           [.01,    .2,   -.01]])
+        self.leftArmFeedingPos = np.array([[0,    .2,   0],
+                                           [0,    .01,  0],
+                                           [0,    .2,   0]])
 
         self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
                                                [90,	-50,	-30], #Moving down into bowl
@@ -140,7 +118,7 @@ class armReachAction(mpcBaseAction):
 
         #Timeouts used in setOrientGoal() function for each motion
         self.timeoutsScooping = [6, 3, 3, 2, 2]
-        self.timeoutsFeeding = [10, 7, 5]
+        self.timeoutsFeeding = [7, 7, 7]
 
         #Paused used between each motion
         #... for automatic movement
