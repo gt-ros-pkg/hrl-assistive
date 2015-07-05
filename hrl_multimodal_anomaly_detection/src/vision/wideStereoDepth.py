@@ -78,8 +78,8 @@ class wideStereoDepth:
                     np.dot(transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
 
     def cloudCallback(self, data):
-        # print 'Time between cloud calls:', time.time() - self.cloudTime
-        # startTime = time.time()
+        print 'Time between cloud calls:', time.time() - self.cloudTime
+        startTime = time.time()
 
         self.pointCloud = data
 
@@ -95,9 +95,13 @@ class wideStereoDepth:
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+        except:
+            print 'Cloud reading error'
+            return
+        try:
             self.gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
         except:
-            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+            print 'Gripper reading error'
             return
 
         self.cloudPoints = np.array([point for point in points3D])
@@ -108,8 +112,8 @@ class wideStereoDepth:
         # print 'Cloud publishing time:', time.time() - stepTime
 
         self.updateNumber += 1
-        # print 'Cloud computation time:', time.time() - startTime
-        # self.cloudTime = time.time()
+        print 'Cloud computation time:', time.time() - startTime
+        self.cloudTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
