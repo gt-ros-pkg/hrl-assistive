@@ -100,10 +100,10 @@ class rgbPerception:
         self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
 
         # Find half way point between spoon end and gripper
-        self.centerX = (self.lGripX + self.spoonX) / 2.0
-        self.centerY = (self.lGripY + self.spoonY) / 2.0
-        self.diffX = np.abs(self.centerX - self.lGripX)
-        self.diffY = np.abs(self.centerY - self.lGripY)
+        # self.centerX = (self.lGripX + self.spoonX) / 2.0
+        # self.centerY = (self.lGripY + self.spoonY) / 2.0
+        # self.diffX = np.abs(self.centerX - self.lGripX)
+        # self.diffY = np.abs(self.centerY - self.lGripY)
 
         self.box = self.boundingBox()
 
@@ -236,6 +236,10 @@ class rgbPerception:
             pass
         gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
         self.lGripX, self.lGripY = int(gripX), int(gripY)
+
+        mic = [0.10, 0, 0]
+        micLoc = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        self.lGripX, self.lGripY = self.pinholeCamera.project3dToPixel(micLoc)
 
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
