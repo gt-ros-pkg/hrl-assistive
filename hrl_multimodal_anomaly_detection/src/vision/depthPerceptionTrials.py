@@ -219,9 +219,9 @@ class depthPerceptionTrials:
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
         size = 150
-        left = self.lGripX - 20
+        left = self.lGripX - 40
         right = left + size
-        bottom = self.lGripY + 20
+        bottom = self.lGripY + 40
         top = bottom - size
 
         # Check if box extrudes past image bounds
