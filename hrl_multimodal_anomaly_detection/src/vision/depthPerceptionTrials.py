@@ -129,8 +129,11 @@ class depthPerceptionTrials:
         # points3D = np.array(points3D)
 
         # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay(np.dot(matrix, np.array([x, y, 0, 1.0]))[:3]))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
-        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
+
+        # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
+
+        points3D = np.array([self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
 
         # try:
         #     points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
