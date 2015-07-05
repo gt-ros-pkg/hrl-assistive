@@ -90,7 +90,7 @@ class wideStereoDepth:
 
         lowX, highX, lowY, highY = self.boundingBox()
 
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
             gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
@@ -100,7 +100,10 @@ class wideStereoDepth:
 
         self.cloudPoints = np.array([point for point in points3D])
 
+        print 'Cloud gathering time:', time.time() - startTime
+        stepTime = time.time()
         self.publishPoints('points', self.cloudPoints, g=1.0)
+        print 'Cloud publishing time:', time.time() - stepTime
 
         self.updateNumber += 1
         print 'Cloud computation time:', time.time() - startTime
@@ -142,9 +145,9 @@ class wideStereoDepth:
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
         size = 150
-        left = self.lGripX - 40
+        left = self.lGripX
         right = left + size
-        bottom = self.lGripY + 40
+        bottom = self.lGripY + 60
         top = bottom - size
 
         # Check if box extrudes past image bounds
