@@ -43,10 +43,10 @@ class ADL_log:
         # self.audio = tool_audio() if audio else None
         # self.vision = tool_vision(self.tf_listener) if vision else None
         # self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
-        self.ft = tool_ft('/netft_data')
-        self.audio = tool_audio()
+        # self.ft = tool_ft('/netft_data')
+        # self.audio = tool_audio()
+        # self.kinematics = robot_kinematics(self.tf_listener)
         self.vision = tool_vision(self.tf_listener)
-        self.kinematics = robot_kinematics(self.tf_listener)
 
         # File saving
         self.iteration = 0
@@ -72,54 +72,54 @@ class ADL_log:
 
     def log_start(self):
         self.init_time = rospy.get_time()
-        # if self.ft is not None:
-        self.ft.init_time = self.init_time
-        self.ft.start()
-        # if self.audio is not None:
-        self.audio.init_time = self.init_time
-        self.audio.start()
+        # # if self.ft is not None:
+        # self.ft.init_time = self.init_time
+        # self.ft.start()
+        # # if self.audio is not None:
+        # self.audio.init_time = self.init_time
+        # self.audio.start()
+        # # if self.kinematics is not None:
+        # self.kinematics.init_time = self.init_time
+        # self.kinematics.start()
         # if self.vision is not None:
         self.vision.init_time = self.init_time
         self.vision.start()
-        # if self.kinematics is not None:
-        self.kinematics.init_time = self.init_time
-        self.kinematics.start()
 
     def close_log_file(self):
         data = dict()
         data['init_time'] = self.init_time
 
-        if self.ft is not None:
-            self.ft.cancel()
-            ## data['force'] = self.ft.force_data
-            ## data['torque'] = self.ft.torque_data
-            data['ft_force_raw']  = self.ft.force_raw_data
-            data['ft_torque_raw'] = self.ft.torque_raw_data
-            data['ft_time']       = self.ft.time_data
-
-        if self.audio is not None:
-            self.audio.cancel()
-            # data['audio_data']  = self.audio.audio_data
-            # data['audio_amp']   = self.audio.audio_amp
-            # data['audio_freq']  = self.audio.audio_freq
-            data['audio_chunk'] = self.audio.CHUNK
-            data['audio_sample_time'] = self.audio.UNIT_SAMPLE_TIME
-            data['audio_time']  = self.audio.time_data
-            data['audio_data_raw'] = self.audio.audio_data_raw
+        # if self.ft is not None:
+        #     self.ft.cancel()
+        #     ## data['force'] = self.ft.force_data
+        #     ## data['torque'] = self.ft.torque_data
+        #     data['ft_force_raw']  = self.ft.force_raw_data
+        #     data['ft_torque_raw'] = self.ft.torque_raw_data
+        #     data['ft_time']       = self.ft.time_data
+        #
+        # if self.audio is not None:
+        #     self.audio.cancel()
+        #     # data['audio_data']  = self.audio.audio_data
+        #     # data['audio_amp']   = self.audio.audio_amp
+        #     # data['audio_freq']  = self.audio.audio_freq
+        #     data['audio_chunk'] = self.audio.CHUNK
+        #     data['audio_sample_time'] = self.audio.UNIT_SAMPLE_TIME
+        #     data['audio_time']  = self.audio.time_data
+        #     data['audio_data_raw'] = self.audio.audio_data_raw
+        #
+        # if self.kinematics:
+        #     self.kinematics.cancel()
+        #     data['kinematics_time']  = self.kinematics.time_data
+        #     data['kinematics_joint'] = self.kinematics.joint_data
+        #     data['l_end_effector_pos'] = self.kinematics.l_end_effector_pos
+        #     data['l_end_effector_quat'] = self.kinematics.l_end_effector_quat
+        #     data['r_end_effector_pos'] = self.kinematics.r_end_effector_pos
+        #     data['r_end_effector_quat'] = self.kinematics.r_end_effector_quat
 
         if self.vision is not None:
             self.vision.cancel()
             data['visual_points'] = self.vision.visual_points
             data['visual_time'] = self.vision.time_data
-
-        if self.kinematics:
-            self.kinematics.cancel()
-            data['kinematics_time']  = self.kinematics.time_data
-            data['kinematics_joint'] = self.kinematics.joint_data
-            data['l_end_effector_pos'] = self.kinematics.l_end_effector_pos
-            data['l_end_effector_quat'] = self.kinematics.l_end_effector_quat
-            data['r_end_effector_pos'] = self.kinematics.r_end_effector_pos
-            data['r_end_effector_quat'] = self.kinematics.r_end_effector_quat
 
         data['bowl_position'] = self.bowlPos
         data['head_position'] = self.headPos
@@ -140,14 +140,14 @@ class ADL_log:
         self.iteration += 1
 
         # Reinitialize all sensors
-        # if self.ft is not None:
-        self.ft = tool_ft('/netft_data')
-        # if self.audio is not None:
-        self.audio = tool_audio()
+        # # if self.ft is not None:
+        # self.ft = tool_ft('/netft_data')
+        # # if self.audio is not None:
+        # self.audio = tool_audio()
+        # # if self.kinematics is not None:
+        # self.kinematics = robot_kinematics(self.tf_listener)
         # if self.vision is not None:
         self.vision = tool_vision(self.tf_listener)
-        # if self.kinematics is not None:
-        self.kinematics = robot_kinematics(self.tf_listener)
 
     def bowlPoseManualCallback(self, data):
         self.bowlPos = np.matrix([[data.pose.position.x], [data.pose.position.y], [data.pose.position.z]])
