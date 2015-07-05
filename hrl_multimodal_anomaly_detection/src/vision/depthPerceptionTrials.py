@@ -80,8 +80,8 @@ class depthPerceptionTrials:
                     [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.nonClusterPoints]
 
     def cloudCallback(self, data):
-        # print 'Time between cloud calls:', time.time() - self.cloudTime
-        # startTime = time.time()
+        print 'Time between cloud calls:', time.time() - self.cloudTime
+        startTime = time.time()
 
         self.pointCloud = data
 
@@ -174,8 +174,8 @@ class depthPerceptionTrials:
         # print 'Time for fifth call:', time.time() - ticker
 
         self.updateNumber += 1
-        # print 'Cloud computation time:', time.time() - startTime
-        # self.cloudTime = time.time()
+        print 'Cloud computation time:', time.time() - startTime
+        self.cloudTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
