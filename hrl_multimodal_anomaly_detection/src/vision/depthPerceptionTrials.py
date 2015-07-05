@@ -54,11 +54,6 @@ class depthPerceptionTrials:
         self.cameraHeight = None
         self.pinholeCamera = None
 
-        # Stereo Camera
-        self.rgbInfo = None
-        self.cameraDepthInfo = None
-        self.stereo = None
-
         # Gripper
         self.lGripperPosition = None
         self.lGripperRotation = None
@@ -89,12 +84,6 @@ class depthPerceptionTrials:
         # startTime = time.time()
 
         self.pointCloud = data
-
-        if self.rgbInfo is not None and self.cameraDepthInfo is not None and self.stereo is None:
-            self.stereo = image_geometry.StereoCameraModel()
-            self.stereo.fromCameraInfo(self.rgbInfo, self.cameraDepthInfo)
-        elif self.stereo is None:
-            return
 
         self.transposeGripperToCamera()
 
@@ -131,11 +120,8 @@ class depthPerceptionTrials:
         # points3D = np.array(points3D)
 
         # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay(np.dot(matrix, np.array([x, y, 0, 1.0]))[:3]))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
-
-        # points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
+        points3D = np.array([np.array(self.pinholeCamera.projectPixelTo3dRay((x, y)))*image[y, x] for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
         gripperPoint = np.array(self.pinholeCamera.projectPixelTo3dRay((self.lGripX, self.lGripY)))*image[self.lGripX, self.lGripY]
-
-        points3D = np.array([self.stereo.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX)])
 
         # try:
         #     points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
@@ -301,7 +287,3 @@ class depthPerceptionTrials:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
-            self.rgbInfo = None
-
-    def cameraDepthInfoCallback(self, data):
-        self.cameraDepthInfo = data
