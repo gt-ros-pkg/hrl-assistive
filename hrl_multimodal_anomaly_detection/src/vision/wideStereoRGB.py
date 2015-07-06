@@ -92,8 +92,8 @@ class wideStereoRGB:
         elif self.camera is None:
             return
 
-        print 'Time between image calls:', time.time() - self.imageTime
-        startTime = time.time()
+        # print 'Time between image calls:', time.time() - self.imageTime
+        # startTime = time.time()
 
         try:
             image = self.bridge.imgmsg_to_cv(data.image)
@@ -120,8 +120,8 @@ class wideStereoRGB:
         # print 'Cloud publishing time:', time.time() - stepTime
 
         self.updateNumber += 1
-        print 'Image computation time:', time.time() - startTime
-        self.imageTime = time.time()
+        # print 'Image computation time:', time.time() - startTime
+        # self.imageTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
