@@ -63,7 +63,7 @@ class wideStereoRGB:
         self.lGripX = None
         self.lGripY = None
         self.gripperPoint = None
-        self.grips = None
+        self.grips = []
         # Spoon
         self.spoonX = None
         self.spoonY = None
