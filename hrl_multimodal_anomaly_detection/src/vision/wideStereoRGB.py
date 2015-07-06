@@ -82,7 +82,8 @@ class wideStereoRGB:
             transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
         except tf.ExtrapolationException:
             return None
-        return [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
+        return [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D], \
+               np.dot(transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
 
     def imageCallback(self, data):
         if self.camera is None and self.leftInfo is not None and self.rightInfo is not None:
@@ -91,8 +92,8 @@ class wideStereoRGB:
         elif self.camera is None:
             return
 
-        print 'Time between image calls:', time.time() - self.imageTime
-        startTime = time.time()
+        # print 'Time between image calls:', time.time() - self.imageTime
+        # startTime = time.time()
 
         try:
             image = self.bridge.imgmsg_to_cv(data.image)
@@ -111,15 +112,16 @@ class wideStereoRGB:
         lowX, highX, lowY, highY = self.boundingBox()
 
         self.points3D = [self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        self.gripperPoint = self.camera.projectPixelTo3d((self.lGripX, self.lGripY), image[self.lGripY, self.lGripX])
 
-        print 'Cloud gathering time:', time.time() - startTime
-        stepTime = time.time()
-        self.publishPoints('points', self.points3D, g=1.0)
-        print 'Cloud publishing time:', time.time() - stepTime
+        # print 'Cloud gathering time:', time.time() - startTime
+        # stepTime = time.time()
+        # self.publishPoints('points', self.points3D, g=1.0)
+        # print 'Cloud publishing time:', time.time() - stepTime
 
         self.updateNumber += 1
-        print 'Image computation time:', time.time() - startTime
-        self.imageTime = time.time()
+        # print 'Image computation time:', time.time() - startTime
+        # self.imageTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
