@@ -87,7 +87,7 @@ class wideStereoRGB:
         values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
         print 'Recent points computation time:', time.time() - startTime
         self.imageTime = time.time()
-        return self.points3D, self.gripperPoint
+        return values, self.gripperPoint
 
     def imageCallback(self, data):
         if self.camera is None and self.leftInfo is not None and self.rightInfo is not None:
