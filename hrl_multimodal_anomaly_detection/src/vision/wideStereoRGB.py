@@ -75,8 +75,8 @@ class wideStereoRGB:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        print 'Time between recent point calls:', time.time() - self.imageTime
-        startTime = time.time()
+        # print 'Time between recent point calls:', time.time() - self.imageTime
+        # startTime = time.time()
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
@@ -84,14 +84,11 @@ class wideStereoRGB:
             print transMatrix
         except tf.ExtrapolationException:
             return None
-        print 'Transform computation time:', time.time() - startTime
-        tempTime = time.time()
         points = np.c_[self.points3D, np.ones(len(self.points3D))]
         values = np.dot(transMatrix, points.T).T[:, :3]
-        print 'Dot computation time:', time.time() - tempTime
         # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
-        print 'Recent points computation time:', time.time() - startTime
-        self.imageTime = time.time()
+        # print 'Recent points computation time:', time.time() - startTime
+        # self.imageTime = time.time()
         return values, np.dot(transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
 
     def imageCallback(self, data):
