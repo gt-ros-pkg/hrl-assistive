@@ -57,6 +57,7 @@ class rgbPerception:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
+        self.grips = []
         # Spoon
         self.spoonX = None
         self.spoonY = None
@@ -234,12 +235,16 @@ class rgbPerception:
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
             pass
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
-        self.lGripX, self.lGripY = int(gripX), int(gripY)
+        # gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
 
         mic = [0.10, 0, 0]
         micLoc = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        self.lGripX, self.lGripY = self.pinholeCamera.project3dToPixel(micLoc)
+        gripX, gripY = self.pinholeCamera.project3dToPixel(micLoc)
+        if len(self.grips) >= 2:
+            self.lGripX, self.lGripY = self.grips[-2]
+        else:
+            self.lGripX, self.lGripY = int(gripX), int(gripY)
+        self.grips.append((int(gripX), int(gripY)))
 
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
