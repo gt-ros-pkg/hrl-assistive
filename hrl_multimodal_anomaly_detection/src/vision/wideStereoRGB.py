@@ -78,6 +78,13 @@ class wideStereoRGB:
     def getAllRecentPoints(self):
         print 'Time between recent point calls:', time.time() - self.imageTime
         startTime = time.time()
+        self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
+        try :
+            targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
+            transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+        except tf.ExtrapolationException:
+            return None
+        values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
         print 'Recent points computation time:', time.time() - startTime
         self.imageTime = time.time()
         return self.points3D, self.gripperPoint
@@ -108,7 +115,7 @@ class wideStereoRGB:
 
         lowX, highX, lowY, highY = self.boundingBox()
 
-        self.points3D = [self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        self.points3D = [self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
         self.gripperPoint = self.camera.projectPixelTo3d((self.lGripX, self.lGripY), image[self.lGripY, self.lGripX])
 
         # print 'Cloud gathering time:', time.time() - startTime
@@ -155,10 +162,10 @@ class wideStereoRGB:
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
-        size = 150
-        left = self.lGripX
+        size = 200
+        left = self.lGripX - 50
         right = left + size
-        bottom = self.lGripY + 60
+        bottom = self.lGripY + 100
         top = bottom - size
 
         # Check if box extrudes past image bounds

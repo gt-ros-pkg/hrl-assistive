@@ -134,7 +134,7 @@ class ADL_log:
             os.makedirs(self.folderName)
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
         with open(fileName, 'wb') as f:
-            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(data, f)
         print 'Data saved to', fileName
 
         self.iteration += 1
