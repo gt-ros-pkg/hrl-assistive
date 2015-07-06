@@ -2,9 +2,16 @@
 
 __author__ = 'zerickson'
 
+import cv2
 import time
 import rospy
+import operator
+import numpy as np
 import cPickle as pickle
+
+# Clustering
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
 
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
@@ -39,12 +46,58 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker.points.append(p)
     publisher.publish(marker)
 
-fileName = '/home/zerickson/Downloads/full_sixth_run_SHORTER_PAUSES_scooping_07-03-2015_15-51-33/iteration_1_success.pkl'
-with open(fileName, 'rb') as f:
-    data = pickle.load(f)
-    visual = data['visual_points']
-    # print visual
-    for pointSet in visual:
-        print 'Number of points:', len(pointSet)
-        publishPoints('points', pointSet, g=1.0)
-        time.sleep(1)
+dbscan = DBSCAN(eps=0.12, min_samples=10)
+fileName = '/home/zerickson/Downloads/rgbfun_scooping_07-06-2015_11-07-36/iteration_0_success.pkl'
+
+def readDepth():
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f)
+        visual = data['visual_points']
+        # print visual
+        for pointSet, gripper, spoon in visual:
+            print 'Number of points:', len(pointSet)
+
+            # Perform dbscan clustering
+            # X = StandardScaler().fit_transform(pointSet)
+            # labels = dbscan.fit_predict(X)
+            #
+            # index, closePoint = min(enumerate(np.linalg.norm(pointSet - np.array(gripper), axis=1)), key=operator.itemgetter(1))
+            # closeLabel = labels[index]
+            # while closeLabel == -1 and pointSet.size > 0:
+            #     np.delete(pointSet, [index])
+            #     np.delete(labels, [index])
+            #     index, closePoint = min(enumerate(np.linalg.norm(pointSet - np.array(gripper), axis=1)), key=operator.itemgetter(1))
+            #     closeLabel = labels[index]
+            # if pointSet.size <= 0:
+            #     return
+            # clusterPoints = pointSet[labels==closeLabel]
+            # nonClusterPoints = pointSet[labels!=closeLabel]
+
+            publishPoints('points', pointSet, g=1.0)
+            # publishPoints('nonpoints', nonClusterPoints, r=1.0)
+
+            publishPoints('gripper', [gripper], size=0.05, g=1.0, b=1.0)
+            publishPoints('spoon', [spoon], size=0.05, b=1.0)
+            time.sleep(0.25)
+
+def readVisual():
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f)
+        visual = data['visual_points']
+        for image, points, gripper, spoon in visual:
+            rgb = [255, 128, 0]
+            cv2.circle(image, (int(gripper[0]), int(gripper[1])), 5, rgb, -1)
+            rgb = [0, 128, 255]
+            cv2.circle(image, (int(spoon[0]), int(spoon[1])), 5, rgb, -1)
+            if points is None:
+                continue
+            for point in points.values():
+                # Get the non global point
+                p = point[1]
+                rgb = [0, 255, 0]
+                cv2.circle(image, (int(p[0]), int(p[1])), 5, rgb, -1)
+            cv2.imshow('Image window', image)
+            cv2.waitKey(100)
+
+readDepth()
+# readVisual()
