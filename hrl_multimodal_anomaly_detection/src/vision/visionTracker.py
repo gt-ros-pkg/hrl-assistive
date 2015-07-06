@@ -17,6 +17,8 @@ from wideStereoDepth import wideStereoDepth
 
 from cloudTrial import cloudTrial
 
+from wideStereoRGB import wideStereoRGB
+
 import kinectCircularPath as circularPath
 import kinectLinearPath as linearPath
 
@@ -44,7 +46,10 @@ class visionTracker:
         # self.tracker = depthPerceptionTrials(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         # self.tracker = wideStereoDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
-        self.tracker = cloudTrial(False)
+        # self.tracker = cloudTrial(False)
+
+        self.tracker = wideStereoRGB(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+
         if shouldSpin:
             rospy.spin()
 
