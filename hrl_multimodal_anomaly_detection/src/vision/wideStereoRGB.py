@@ -151,8 +151,7 @@ class wideStereoRGB:
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
             pass
-        print self.camera.project3dToPixel(self.lGripperPosition)
-        gripX, gripY = self.camera.project3dToPixel(self.lGripperPosition)
+        gripX, gripY = self.camera.project3dToPixel(self.lGripperPosition)[0]
         self.lGripX, self.lGripY = int(gripX), int(gripY)
 
     # Returns coordinates (lowX, highX, lowY, highY)
