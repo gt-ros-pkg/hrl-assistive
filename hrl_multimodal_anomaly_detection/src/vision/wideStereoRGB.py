@@ -42,8 +42,6 @@ class wideStereoRGB:
         self.cameraHeight = None
         self.bridge = CvBridge()
 
-
-
         # self.dbscan = DBSCAN(eps=0.12, min_samples=10)
         self.imageTime = time.time()
         self.visual = visual
@@ -65,6 +63,7 @@ class wideStereoRGB:
         self.lGripX = None
         self.lGripY = None
         self.gripperPoint = None
+        self.grips = None
         # Spoon
         self.spoonX = None
         self.spoonY = None
@@ -82,12 +81,15 @@ class wideStereoRGB:
         try :
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
             transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+            print transMatrix
         except tf.ExtrapolationException:
             return None
+        # points = np.c_[self.points3D, np.ones(self.points3D.shape[0])]
+        # values = np.dot(transMatrix, points.T)
         values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
         print 'Recent points computation time:', time.time() - startTime
         self.imageTime = time.time()
-        return values, self.gripperPoint
+        return values, np.dot(transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
 
     def imageCallback(self, data):
         if self.camera is None and self.leftInfo is not None and self.rightInfo is not None:
@@ -157,13 +159,22 @@ class wideStereoRGB:
             self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
             pass
-        gripX, gripY = self.camera.project3dToPixel(self.lGripperPosition)[0]
+        # gripX, gripY = self.camera.project3dToPixel(self.lGripperPosition)[0]
+
+        mic = [0.10, 0, 0]
+        micLoc = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        gripX, gripY = self.camera.project3dToPixel(micLoc)[0]
+        if len(self.grips) >= 3:
+            self.lGripX, self.lGripY = self.grips[-3]
+        else:
+            self.lGripX, self.lGripY = int(gripX), int(gripY)
+        self.grips.append((int(gripX), int(gripY)))
         self.lGripX, self.lGripY = int(gripX), int(gripY)
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
         size = 200
-        left = self.lGripX - 50
+        left = self.lGripX - 75
         right = left + size
         bottom = self.lGripY + 100
         top = bottom - size
