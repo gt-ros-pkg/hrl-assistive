@@ -32,8 +32,8 @@ class armReachAction(mpcBaseAction):
         rospy.Subscriber('hrl_feeding_task/manual_head_location',
                          PoseStamped, self.headPoseManualCallback)
 
-        # rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
-        #                  PoseStamped, self.bowlPoseKinectCallback)
+        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
+                         PoseStamped, self.bowlPoseKinectCallback)
 
         rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
 
