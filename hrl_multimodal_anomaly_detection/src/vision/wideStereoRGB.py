@@ -12,6 +12,7 @@ except:
     import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import CameraInfo
+from stereo_msgs.msg import DisparityImage
 from geometry_msgs.msg import Point
 from roslib import message
 
@@ -23,7 +24,6 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
-from stereo_msgs import DisparityImage
 from cv_bridge import CvBridge, CvBridgeError
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
