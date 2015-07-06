@@ -41,7 +41,7 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
     marker.color.b = b
     for point in points:
         p = Point()
-        # print point
+        print point
         p.x, p.y, p.z = point
         marker.points.append(p)
     publisher.publish(marker)
@@ -53,28 +53,33 @@ def readDepth():
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
         visual = data['visual_points']
+        times = data['visual_time']
         # print visual
-        for pointSet, gripper, spoon in visual:
-            print 'Number of points:', len(pointSet)
+        for (pointSet, gripper, spoon), t in zip(visual, times):
+            # print 'Number of points:', len(pointSet)
+            print 'Time:', t
+
+            # Check for invalid points
+            pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
             # Perform dbscan clustering
-            # X = StandardScaler().fit_transform(pointSet)
-            # labels = dbscan.fit_predict(X)
-            #
-            # index, closePoint = min(enumerate(np.linalg.norm(pointSet - np.array(gripper), axis=1)), key=operator.itemgetter(1))
-            # closeLabel = labels[index]
-            # while closeLabel == -1 and pointSet.size > 0:
-            #     np.delete(pointSet, [index])
-            #     np.delete(labels, [index])
-            #     index, closePoint = min(enumerate(np.linalg.norm(pointSet - np.array(gripper), axis=1)), key=operator.itemgetter(1))
-            #     closeLabel = labels[index]
-            # if pointSet.size <= 0:
-            #     return
-            # clusterPoints = pointSet[labels==closeLabel]
-            # nonClusterPoints = pointSet[labels!=closeLabel]
+            X = StandardScaler().fit_transform(pointSet)
+            labels = dbscan.fit_predict(X)
 
-            publishPoints('points', pointSet, g=1.0)
-            # publishPoints('nonpoints', nonClusterPoints, r=1.0)
+            index, closePoint = min(enumerate(np.linalg.norm(pointSet - np.array(gripper), axis=1)), key=operator.itemgetter(1))
+            closeLabel = labels[index]
+            while closeLabel == -1 and pointSet.size > 0:
+                np.delete(pointSet, [index])
+                np.delete(labels, [index])
+                index, closePoint = min(enumerate(np.linalg.norm(pointSet - np.array(gripper), axis=1)), key=operator.itemgetter(1))
+                closeLabel = labels[index]
+            if pointSet.size <= 0:
+                return
+            clusterPoints = pointSet[labels==closeLabel]
+            nonClusterPoints = pointSet[labels!=closeLabel]
+
+            publishPoints('points', clusterPoints, g=1.0)
+            publishPoints('nonpoints', nonClusterPoints, r=1.0)
 
             publishPoints('gripper', [gripper], size=0.05, g=1.0, b=1.0)
             publishPoints('spoon', [spoon], size=0.05, b=1.0)

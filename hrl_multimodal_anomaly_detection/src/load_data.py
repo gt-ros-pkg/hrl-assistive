@@ -34,16 +34,16 @@ class graphing():
         #change_folder = raw_input("Current folder is: %s, press [y] to change " % folder_name)
         #if change_folder == 'y':
             #folder_name = raw_input("Enter new folder name and press [Enter] ")
-	#trial_name = raw("Enter trial name")
-	#folder_name = folder_name + trial_name + "/"
-	#print "Current folder is %s " % folder_name
+    #trial_name = raw("Enter trial name")
+    #folder_name = folder_name + trial_name + "/"
+    #print "Current folder is %s " % folder_name
        
         #pkl_file_name = raw_input("Enter exact name of pkl file, ex: [test.pkl] ")
         
-	
-	#pkl_file_path = folder_name+pkl_file_name
+
+    #pkl_file_path = folder_name+pkl_file_name
         pkl_file_path = raw_input("Enter full path of pickle file to load: ")
-	print os.path.isfile(pkl_file_path)
+    print os.path.isfile(pkl_file_path)
         self.d = ut.load_pickle(pkl_file_path)
 
         print self.d.keys()
