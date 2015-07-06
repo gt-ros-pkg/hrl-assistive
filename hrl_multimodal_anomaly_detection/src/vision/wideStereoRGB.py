@@ -112,10 +112,10 @@ class wideStereoRGB:
 
         self.points3D = [self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
 
-        # print 'Cloud gathering time:', time.time() - startTime
-        # stepTime = time.time()
-        # self.publishPoints('points', self.cloudPoints, g=1.0)
-        # print 'Cloud publishing time:', time.time() - stepTime
+        print 'Cloud gathering time:', time.time() - startTime
+        stepTime = time.time()
+        self.publishPoints('points', self.points3D, g=1.0)
+        print 'Cloud publishing time:', time.time() - stepTime
 
         self.updateNumber += 1
         print 'Image computation time:', time.time() - startTime
