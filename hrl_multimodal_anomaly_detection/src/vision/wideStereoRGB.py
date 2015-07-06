@@ -81,7 +81,7 @@ class wideStereoRGB:
         try:
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
             transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
-            print transMatrix
+            # print transMatrix
         except tf.ExtrapolationException:
             return None
         points = np.c_[self.points3D, np.ones(len(self.points3D))]
