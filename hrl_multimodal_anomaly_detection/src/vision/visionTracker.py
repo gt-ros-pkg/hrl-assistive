@@ -54,11 +54,10 @@ class visionTracker:
             rospy.spin()
 
     def getLogData(self):
-        return None
-        # if self.tracker.updateNumber <= self.lastUpdateNumber:
-        #     return None
-        # self.lastUpdateNumber = self.tracker.updateNumber
-        # return self.tracker.getAllRecentPoints()
+        if self.tracker.updateNumber <= self.lastUpdateNumber:
+            return None
+        self.lastUpdateNumber = self.tracker.updateNumber
+        return self.tracker.getAllRecentPoints()
 
     # def spinner(self):
     #     markers = self.tracker.getAllMarkersWithHistory()
