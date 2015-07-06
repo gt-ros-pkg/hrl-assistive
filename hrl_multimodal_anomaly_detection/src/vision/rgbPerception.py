@@ -249,10 +249,10 @@ class rgbPerception:
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
-        size = 200
-        left = self.lGripX - 75
+        size = 150
+        left = self.lGripX - 50
         right = left + size
-        bottom = self.lGripY + 100
+        bottom = self.lGripY + 75
         top = bottom - size
 
         # Check if box extrudes past image bounds

@@ -68,6 +68,8 @@ class wideStereoRGB:
         self.spoonX = None
         self.spoonY = None
 
+        self.transMatrix = None
+
         rospy.Subscriber('/wide_stereo/disparity', DisparityImage, self.imageCallback)
         print 'Connected to Kinect depth'
         rospy.Subscriber('/wide_stereo/left/camera_info', CameraInfo, self.cameraInfoLeftCallback)
@@ -80,16 +82,17 @@ class wideStereoRGB:
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
-            transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+            self.transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
             # print transMatrix
         except tf.ExtrapolationException:
-            return None
+            print 'TF Error!'
+            pass
         points = np.c_[self.points3D, np.ones(len(self.points3D))]
-        values = np.dot(transMatrix, points.T).T[:, :3]
+        values = np.dot(self.transMatrix, points.T).T[:, :3]
         # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
         # print 'Recent points computation time:', time.time() - startTime
         # self.imageTime = time.time()
-        return values, np.dot(transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
+        return values, np.dot(self.transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
 
     def imageCallback(self, data):
         if self.camera is None and self.leftInfo is not None and self.rightInfo is not None:
