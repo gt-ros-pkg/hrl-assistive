@@ -245,7 +245,7 @@ class rgbPerception:
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
         size = 200
-        left = self.lGripX - 50
+        left = self.lGripX - 75
         right = left + size
         bottom = self.lGripY + 100
         top = bottom - size
