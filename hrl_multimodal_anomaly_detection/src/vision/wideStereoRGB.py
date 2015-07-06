@@ -62,11 +62,12 @@ class wideStereoRGB:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
-        self.gripperPoint = None
+        # self.gripperPoint = None
         self.grips = []
         # Spoon
         self.spoonX = None
         self.spoonY = None
+        self.spoon3D = None
 
         self.transMatrix = None
 
@@ -92,7 +93,8 @@ class wideStereoRGB:
         # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
         # print 'Recent points computation time:', time.time() - startTime
         # self.imageTime = time.time()
-        return values, np.dot(self.transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist()
+        return values, np.dot(self.transMatrix, np.array([self.lGripperPosition[0], self.lGripperPosition[1], self.lGripperPosition[2], 1.0]))[:3].tolist(), \
+               np.dot(self.transMatrix, np.array([self.spoon3D[0], self.spoon3D[1], self.spoon3D[2], 1.0]))[:3].tolist()
 
     def imageCallback(self, data):
         if self.camera is None and self.leftInfo is not None and self.rightInfo is not None:
@@ -115,13 +117,13 @@ class wideStereoRGB:
 
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
-        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
-        self.spoonX, self.spoonY = self.camera.project3dToPixel(spoon)
+        self.spoon3D = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        self.spoonX, self.spoonY = self.camera.project3dToPixel(self.spoon3D)
 
         lowX, highX, lowY, highY = self.boundingBox()
 
-        self.points3D = [self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
-        self.gripperPoint = self.camera.projectPixelTo3d((self.lGripX, self.lGripY), image[self.lGripY, self.lGripX])
+        self.points3D = [self.camera.projectPixelTo3d((x, y), image[y, x]) for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 3 == 0]
+        # self.gripperPoint = self.camera.projectPixelTo3d((self.lGripX, self.lGripY), image[self.lGripY, self.lGripX])
 
         # print 'Cloud gathering time:', time.time() - startTime
         # stepTime = time.time()
@@ -176,10 +178,10 @@ class wideStereoRGB:
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
-        size = 200
-        left = self.lGripX - 75
+        size = 150
+        left = self.lGripX - 50
         right = left + size
-        bottom = self.lGripY + 100
+        bottom = self.lGripY + 75
         top = bottom - size
 
         # Check if box extrudes past image bounds
