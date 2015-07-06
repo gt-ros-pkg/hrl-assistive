@@ -86,7 +86,7 @@ class wideStereoRGB:
             return None
         print 'Transform computation time:', time.time() - startTime
         tempTime = time.time()
-        points = np.c_[self.points3D, np.ones(self.points3D.shape[0])]
+        points = np.c_[self.points3D, np.ones(len(self.points3D))]
         values = np.dot(transMatrix, points.T).T[:, :3]
         print 'Dot computation time:', time.time() - tempTime
         # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
