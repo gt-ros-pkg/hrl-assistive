@@ -232,19 +232,19 @@ class rgbPerception:
         self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
         try :
             self.lGripperPosition, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
-            self.lGripperTransposeMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
+            transMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
             pass
         # gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
 
         mic = [0.10, 0, 0]
-        micLoc = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        micLoc = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
         gripX, gripY = self.pinholeCamera.project3dToPixel(micLoc)
         if len(self.grips) >= 3:
-            self.lGripX, self.lGripY = self.grips[-3]
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-3]
         else:
-            self.lGripX, self.lGripY = int(gripX), int(gripY)
-        self.grips.append((int(gripX), int(gripY)))
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        self.grips.append((int(gripX), int(gripY), transMatrix))
 
     # Finds a bounding box given defined features
     # Returns coordinates (lowX, highX, lowY, highY)
