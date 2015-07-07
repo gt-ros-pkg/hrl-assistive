@@ -12,7 +12,7 @@ try :
 except:
     import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
-from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import PointCloud2, CameraInfo
 from geometry_msgs.msg import Point
 from roslib import message
 
@@ -68,7 +68,7 @@ class kinectDepth:
 
         self.transMatrix = None
 
-        rospy.Subscriber('/head_mount_kinect/depth_registered/points', Image, self.cloudCallback)
+        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
         rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
