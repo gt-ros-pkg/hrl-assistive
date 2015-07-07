@@ -75,6 +75,8 @@ class kinectDepth:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
+        print 'Time between read calls:', time.time() - self.cloudTime
+        startTime = time.time()
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
@@ -85,9 +87,8 @@ class kinectDepth:
             pass
         points = np.c_[self.points3D, np.ones(len(self.points3D))]
         values = np.dot(self.transMatrix, points.T).T[:, :3]
-        # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
-        # print 'Recent points computation time:', time.time() - startTime
-        # self.imageTime = time.time()
+        print 'Read computation time:', time.time() - startTime
+        self.cloudTime = time.time()
         return values, np.dot(self.transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist(), \
                np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
 
@@ -106,7 +107,7 @@ class kinectDepth:
 
         lowX, highX, lowY, highY = self.boundingBox()
 
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
             self.gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
