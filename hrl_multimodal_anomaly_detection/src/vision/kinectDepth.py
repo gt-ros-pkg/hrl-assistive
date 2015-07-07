@@ -60,7 +60,7 @@ class kinectDepth:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
-        self.gripperPoint = None
+        self.micLocation = None
         self.grips = []
         # Spoon
         self.spoonX = None
@@ -75,8 +75,8 @@ class kinectDepth:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        print 'Time between read calls:', time.time() - self.cloudTime
-        startTime = time.time()
+        # print 'Time between read calls:', time.time() - self.cloudTime
+        # startTime = time.time()
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
@@ -87,9 +87,9 @@ class kinectDepth:
             pass
         points = np.c_[self.points3D, np.ones(len(self.points3D))]
         values = np.dot(self.transMatrix, points.T).T[:, :3]
-        print 'Read computation time:', time.time() - startTime
-        self.cloudTime = time.time()
-        return values, np.dot(self.transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist(), \
+        # print 'Read computation time:', time.time() - startTime
+        # self.cloudTime = time.time()
+        return values, np.dot(self.transMatrix, np.array([self.micLocation[0], self.micLocation[1], self.micLocation[2], 1.0]))[:3].tolist(), \
                np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
 
     def cloudCallback(self, data):
@@ -110,8 +110,6 @@ class kinectDepth:
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            # self.gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
-            self.gripperPoint = [0.2, 0.2, 0.2]
         except:
             print 'Unable to unpack from PointCloud2!', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
@@ -190,15 +188,17 @@ class kinectDepth:
             self.lGripperPosition, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
             transMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
+            print 'Transpose of gripper failed!'
             return
 
         mic = [0.12, -0.02, 0]
-        micLoc = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        gripX, gripY = self.pinholeCamera.project3dToPixel(micLoc)
+        gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
         if len(self.grips) >= 3:
             self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-3]
+            self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
         else:
             self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+            self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
         self.grips.append((int(gripX), int(gripY), transMatrix))
 
     # Returns coordinates (lowX, highX, lowY, highY)
