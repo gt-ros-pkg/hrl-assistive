@@ -15,6 +15,8 @@ from depthPerceptionTrials import depthPerceptionTrials
 from rgbPerception import rgbPerception
 from wideStereoDepth import wideStereoDepth
 
+from kinectDepth import kinectDepth
+
 from cloudTrial import cloudTrial
 
 from wideStereoRGB import wideStereoRGB
@@ -42,13 +44,15 @@ class visionTracker:
         #     self.tracker = kanadeLucasPoint(self.multispinner if publish else None, targetFrame=targetFrame, publish=publish, visual=visual, tfListener=tfListener)
 
         # self.tracker = depthPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
-        self.tracker = rgbPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        # self.tracker = rgbPerception(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
         # self.tracker = depthPerceptionTrials(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         # self.tracker = wideStereoDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
         # self.tracker = cloudTrial(False)
 
         # self.tracker = wideStereoRGB(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+
+        self.tracker = kinectDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         if shouldSpin:
             rospy.spin()
