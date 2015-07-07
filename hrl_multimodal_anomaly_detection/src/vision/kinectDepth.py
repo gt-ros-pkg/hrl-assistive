@@ -192,13 +192,14 @@ class kinectDepth:
             return
 
         mic = [0.12, -0.02, 0]
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
         if len(self.grips) >= 3:
             self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-3]
             self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
         else:
+            self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
             self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
-            self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
         self.grips.append((int(gripX), int(gripY), transMatrix))
 
     # Returns coordinates (lowX, highX, lowY, highY)
