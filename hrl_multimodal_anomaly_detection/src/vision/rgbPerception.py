@@ -237,7 +237,7 @@ class rgbPerception:
             pass
         # gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
 
-        mic = [0.10, 0, 0]
+        mic = [0.12, -0.02, 0]
         micLoc = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
         gripX, gripY = self.pinholeCamera.project3dToPixel(micLoc)
         if len(self.grips) >= 3:

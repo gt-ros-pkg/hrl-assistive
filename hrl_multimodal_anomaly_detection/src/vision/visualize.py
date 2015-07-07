@@ -8,6 +8,8 @@ import rospy
 import operator
 import numpy as np
 import cPickle as pickle
+from scipy import ndimage
+import matplotlib.pyplot as plt
 
 # Clustering
 from sklearn.cluster import DBSCAN
@@ -47,7 +49,7 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
     publisher.publish(marker)
 
 dbscan = DBSCAN(eps=0.12, min_samples=10)
-fileName = '/home/zerickson/Downloads/rgbfun_scooping_07-06-2015_11-07-36/iteration_0_success.pkl'
+fileName = '/home/zerickson/Downloads/rgbPerception2_scooping_07-07-2015_13-13-00/iteration_0_success.pkl'
 
 def readDepth():
     with open(fileName, 'rb') as f:
@@ -86,21 +88,72 @@ def readDepth():
             time.sleep(0.25)
 
 def readVisual():
-    fgbg = cv2.createBackgroundSubtractorMOG()
+    # fgbg = cv2.BackgroundSubtractorMOG()
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
         visual = data['visual_points']
+        print len(visual)
+        kernel = np.ones((2, 2), np.uint8)
+        # kernel[[0, 0, 2, 2], [0, 2, 0, 2]] = 0
+        print kernel
         for image, points, gripper, spoon in visual:
-            fgmask = fgbg.apply(image)
-            cv2.imshow('Image window', fgmask)
-            cv2.waitKey(100)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image = cv2.Canny(image, 200, 200)
+            image = 255 - image
 
-            th3 = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+            # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 0)
+            # Opening
+            # image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel, iterations=1)
 
-            # rgb = [255, 128, 0]
-            # cv2.circle(image, (int(gripper[0]), int(gripper[1])), 5, rgb, -1)
-            # rgb = [0, 128, 255]
-            # cv2.circle(image, (int(spoon[0]), int(spoon[1])), 5, rgb, -1)
+            # Erosion
+            image = cv2.erode(image, kernel, iterations=1)
+            # Dilation
+            # image = cv2.dilate(image, kernel, iterations=1)
+            # Closing
+            image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+            # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+
+            # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+
+            # global thresholding
+            # ret1, image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+
+            # Otsu's thresholding
+            # ret2, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+            # # Otsu's thresholding after Gaussian filtering
+            # image = cv2.GaussianBlur(image, (5, 5), 0)
+            # ret3, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+            contourImage = image.copy()
+            contours, hierarchy = cv2.findContours(contourImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            grip = np.array(gripper)
+            minIndex = -1
+            minDist = 20000
+            for index, contour in enumerate(contours):
+                if len(contour) < 30 or len(contour) > 100:
+                    continue
+                contour = np.reshape(contour, (len(contour), 2))
+                distances = np.linalg.norm(grip - contour, axis=1)
+                if np.max(distances) > 50:
+                    continue
+                dist = np.min(distances)
+                if dist < minDist:
+                    minDist = dist
+                    minIndex = index
+
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+            if minIndex >= 0:
+                print contours[minIndex].shape
+                cv2.drawContours(image, contours, minIndex, (255, 0, 0), thickness=-1)
+
+            rgb = [255, 128, 0]
+            cv2.circle(image, (int(gripper[0]), int(gripper[1])), 5, rgb, -1)
+            rgb = [0, 128, 255]
+            cv2.circle(image, (int(spoon[0]), int(spoon[1])), 5, rgb, -1)
             # if points is None:
             #     continue
             # for point in points.values():
@@ -108,8 +161,8 @@ def readVisual():
             #     p = point[1]
             #     rgb = [0, 255, 0]
             #     cv2.circle(image, (int(p[0]), int(p[1])), 5, rgb, -1)
-            # cv2.imshow('Image window', image)
-            # cv2.waitKey(100)
+            cv2.imshow('Image window', image)
+            cv2.waitKey(500)
 
 # readDepth()
 readVisual()
