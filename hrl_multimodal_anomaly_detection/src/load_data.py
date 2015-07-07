@@ -7,6 +7,7 @@ import getpass
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.fftpack import fft
 # import yaafelib as yaafe
@@ -29,34 +30,42 @@ class graphing():
         self.AUDIO = False
         self.VISION = False
 
-        #current_user = getpass.getuser()
-        #folder_name = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
-        #change_folder = raw_input("Current folder is: %s, press [y] to change " % folder_name)
-        #if change_folder == 'y':
-            #folder_name = raw_input("Enter new folder name and press [Enter] ")
-    #trial_name = raw("Enter trial name")
-    #folder_name = folder_name + trial_name + "/"
-    #print "Current folder is %s " % folder_name
+        current_user = getpass.getuser()
+        folder_name_main = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
+        change_folder = raw_input("Current recordings folder is: %s, press [y] to change " % folder_name_main)
+        if change_folder == 'y':
+            folder_name_main = raw_input("Enter new folder name and press [Enter] ")
+        trial_name = raw_input("Enter trial name and press [Enter] ")
+
+        folder_name_trial = folder_name_main + trial_name + "/"
+        print "Current trial folder is %s " % folder_name_trial
        
-        #pkl_file_name = raw_input("Enter exact name of pkl file, ex: [test.pkl] ")
+        pkl_file_name = raw_input("Enter exact name of pkl file, ex: [test.pkl] ")
         
 
-    #pkl_file_path = folder_name+pkl_file_name
-        pkl_file_path = raw_input("Enter full path of pickle file to load: ")
-    print os.path.isfile(pkl_file_path)
+        pkl_file_path = folder_name_trial + pkl_file_name
+        # pkl_file_path = raw_input("Enter full path of pickle file to load: ")
+        print os.path.isfile(pkl_file_path)
         self.d = ut.load_pickle(pkl_file_path)
 
         print self.d.keys()
 
     def run(self):
+
+        self.gs = gridspec.GridSpec(2,3)
+        #self.gs.update(left = 0.4, right = 0.5, bottom = 0.05, hspace=0)
+        self.gs2 = gridspec.GridSpec(3,1)
+
         if self.FT_KINEMATICS:
-            ft_kinematics()
+            self.ft_kinematics()
         if self.AUDIO:
-            audio()
+            self.audio()
         if self.VISION:
-            vision()
+            self.vision()
         else: 
             print "No graphing selected, not doing anything"
+
+        plt.show()
 
     def ft_kinematics(self):
 
@@ -71,47 +80,35 @@ class graphing():
         tf_r_ee_pos = np.array(self.d.get('r_end_effector_pos', None))
         tf_r_ee_quat = np.array(self.d.get('r_end_effector_quat', None))
 
-        # Graphing X Force/Pos Data
-        fig1, (forceAx1, tfAx1) = plt.subplots(2, 1)
+        forceAx1 = plt.subplot(self.gs[1,0])
+        tfAx1 = plt.subplot(self.gs[0,0])
+
+        forceAx2 = plt.subplot(self.gs[1,1])
+        tfAx2 = plt.subplot(self.gs[0,1])
+
+        forceAx3 = plt.subplot(self.gs[1,2])
+        tfAx3 = plt.subplot(self.gs[0,2])
 
         forceAx1.plot(ft_time, ft_force[:,0], 'b-')
         forceAx1.set_xlabel('time (s)')
-        forceAx1.set_ylabel('X Force')
+        forceAx1.set_title('X Force')
         tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
-        tfAx1.set_ylabel('X Pos')
-
-        fig1.subplots_adjust(hspace=0)
-        plt.setp([a.get_xticklabels() for a in fig1.axes[:-1]], visible=False)
-
-        # Graphing Y Force/Pos Data
-        fig2, (forceAx2, tfAx2) = plt.subplots(2, 1)
+        tfAx1.set_title('X Pos')
 
         forceAx2.plot(ft_time, ft_force[:,1], 'b-')
         forceAx2.set_xlabel('time (s)')
-        forceAx2.set_ylabel('Y Force')
+        forceAx2.set_title('Y Force')
         tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
-        tfAx2.set_ylabel('Y Pos')
-
-        fig2.subplots_adjust(hspace=0)
-        plt.setp([a.get_xticklabels() for a in fig2.axes[:-1]], visible=False)
-
-        # Graphing Z Force/Pos Data
-        fig3, (forceAx3, tfAx3) = plt.subplots(2, 1)
+        tfAx2.set_title('Y Pos')
 
         forceAx3.plot(ft_time, ft_force[:,2], 'b-')
         forceAx3.set_xlabel('time (s)')
-        forceAx3.set_ylabel('Z Force')
+        forceAx3.set_title('Z Force')
         tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
-        tfAx3.set_ylabel('Z Pos')
+        tfAx3.set_title('Z Pos')
 
-        fig3.subplots_adjust(hspace=0)
-        plt.setp([a.get_xticklabels() for a in fig3.axes[:-1]], visible=False)
-
-        plt.show()
-
-
-
-
+        return True
+        # plt.show()
 
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
