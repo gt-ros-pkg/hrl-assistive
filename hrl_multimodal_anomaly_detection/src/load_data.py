@@ -2,14 +2,16 @@
 
 # System
 import os
-import random
+import fnmatch
+#import random
 import getpass
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.fftpack import fft
+#import glob 
 # import yaafelib as yaafe
 # from yaafelib import AudioFeature, check_dataflow_params, dataflow_safe_append, DataFlow
 # import yaafefeatures as yf
@@ -27,34 +29,60 @@ class graphing():
         self.DTYPE = np.int16
 
         self.FT_KINEMATICS = True
-        self.AUDIO = False
+        self.AUDIO = True
         self.VISION = False
 
-        current_user = getpass.getuser()
-        folder_name_main = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
-        change_folder = raw_input("Current recordings folder is: %s, press [y] to change " % folder_name_main)
-        if change_folder == 'y':
-            folder_name_main = raw_input("Enter new folder name and press [Enter] ")
-        trial_name = raw_input("Enter trial name and press [Enter] ")
-
-        folder_name_trial = folder_name_main + trial_name + "/"
-        print "Current trial folder is %s " % folder_name_trial
-       
-        pkl_file_name = raw_input("Enter exact name of pkl file, ex: [test.pkl] ")
-        
-
-        pkl_file_path = folder_name_trial + pkl_file_name
-        # pkl_file_path = raw_input("Enter full path of pickle file to load: ")
-        print os.path.isfile(pkl_file_path)
-        self.d = ut.load_pickle(pkl_file_path)
-
-        print self.d.keys()
-
-    def run(self):
+        self.numPkls = 0
+        self.pklsList = []
 
         self.gs = gridspec.GridSpec(2,3)
         #self.gs.update(left = 0.4, right = 0.5, bottom = 0.05, hspace=0)
         self.gs2 = gridspec.GridSpec(3,1)
+
+        current_user = getpass.getuser()
+        folder_name_recordings = '/home/' + current_user + '/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/'
+        change_folder = raw_input("Current recordings folder is: %s, press [y] to change " % folder_name_recordings)
+        if change_folder == 'y':
+            folder_name_recordings = raw_input("Enter new recordings folder name and press [Enter] ")
+        trial_name = raw_input("Enter trial name and press [Enter] ")
+
+        folder_name_trial = folder_name_recordings + trial_name + "/"
+        print "Current trial folder is %s " % folder_name_trial
+
+        whichOpen = raw_input("Load all pickle files, only successful, or only failed? [a/s/f] ")
+        while whichOpen != 'a' and whichOpen != 's' and whichOpen != 'f':
+            print "Please enter 'a' or 's' or 'f' ! "
+            whichOpen = raw_input("Load all pickle files, only successful, or only failed? [a/s/f] ")
+
+        if whichOpen == 'a':
+            pkl_file_pattern = 'iteration_*_*.pkl'
+            print "Loading all pickle files \n"
+        elif whichOpen == 's':
+            pkl_file_pattern = 'iteration_*_success.pkl'
+            print "Only loading successful pickle files \n"
+        elif whichOpen == 'f':
+            pkl_file_pattern = 'iteration_*_failure.pkl'
+            print "Only loading successful pickle files \n"
+
+        for file in os.listdir(folder_name_trial):
+            if fnmatch.fnmatch(file, pkl_file_pattern):
+                self.numPkls += 1
+                pkl_file_path = folder_name_trial + file
+                d = ut.load_pickle(pkl_file_path)
+                self.pklsList.append(d)
+
+        print "Number of pickle files loaded: %d \n" % self.numPkls
+
+        if self.numPkls == 0:
+            print "NO PICKLE FILES LOADED! CHECK YOU HAVE APPROPRIATE FILES!"
+            sys.exit()
+
+        for iterations in self.pklsList:
+            print "Contents: "
+            print iterations.keys()
+            print "\n"
+
+    def run(self):
 
         if self.FT_KINEMATICS:
             self.ft_kinematics()
@@ -62,70 +90,98 @@ class graphing():
             self.audio()
         if self.VISION:
             self.vision()
-        else: 
-            print "No graphing selected, not doing anything"
-
-        plt.show()
+        # Uncomment next line if you want to display all graphs at once...
+        # ... otherwise ft/kinematics and sound graphs will display separately
+        #plt.show()
 
     def ft_kinematics(self):
 
-        ft_time = np.array(self.d.get('ft_time',None))
-        kinematics_time = np.array(self.d.get('kinematics_time', None))
-
-        ft_force = np.array(self.d.get('ft_force_raw',None))
-        ft_torque = np.array(self.d.get('ft_torque_raw', None))
-
-        tf_l_ee_pos = np.array(self.d.get('l_end_effector_pos', None))
-        tf_l_ee_quat = np.array(self.d.get('l_end_effector_quat', None))
-        tf_r_ee_pos = np.array(self.d.get('r_end_effector_pos', None))
-        tf_r_ee_quat = np.array(self.d.get('r_end_effector_quat', None))
-
         forceAx1 = plt.subplot(self.gs[1,0])
         tfAx1 = plt.subplot(self.gs[0,0])
+        forceAx1.set_xlabel('time (s)')
+        forceAx1.set_title('X Force')
+        tfAx1.set_title('X Pos')
+
 
         forceAx2 = plt.subplot(self.gs[1,1])
         tfAx2 = plt.subplot(self.gs[0,1])
+        forceAx2.set_xlabel('time (s)')
+        forceAx2.set_title('Y Force')
+        tfAx2.set_title('Y Pos')
 
         forceAx3 = plt.subplot(self.gs[1,2])
         tfAx3 = plt.subplot(self.gs[0,2])
-
-        forceAx1.plot(ft_time, ft_force[:,0], 'b-')
-        forceAx1.set_xlabel('time (s)')
-        forceAx1.set_title('X Force')
-        tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
-        tfAx1.set_title('X Pos')
-
-        forceAx2.plot(ft_time, ft_force[:,1], 'b-')
-        forceAx2.set_xlabel('time (s)')
-        forceAx2.set_title('Y Force')
-        tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
-        tfAx2.set_title('Y Pos')
-
-        forceAx3.plot(ft_time, ft_force[:,2], 'b-')
         forceAx3.set_xlabel('time (s)')
         forceAx3.set_title('Z Force')
-        tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
         tfAx3.set_title('Z Pos')
 
+        for iterations in self.pklsList:
+            ft_time = np.array(iterations.get('ft_time',None))
+            kinematics_time = np.array(iterations.get('kinematics_time', None))
+
+            ft_force = np.array(iterations.get('ft_force_raw',None))
+            ft_torque = np.array(iterations.get('ft_torque_raw', None))
+
+            tf_l_ee_pos = np.array(iterations.get('l_end_effector_pos', None))
+            tf_l_ee_quat = np.array(iterations.get('l_end_effector_quat', None))
+            tf_r_ee_pos = np.array(iterations.get('r_end_effector_pos', None))
+            tf_r_ee_quat = np.array(iterations.get('r_end_effector_quat', None))
+
+            forceAx1.plot(ft_time, ft_force[:,0], 'b-')
+            tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
+            
+
+            forceAx2.plot(ft_time, ft_force[:,1], 'b-')
+            tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
+            
+
+            forceAx3.plot(ft_time, ft_force[:,2], 'b-')
+            tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
+            plt.show()
+
         return True
-        # plt.show()
+        
+    def audio(self):
+
+        audioDataAx = plt.subplot(self.gs2[0,0])
+        audioAmpAx = plt.subplot(self.gs2[1,0])
+        audioFreqAx = plt.subplot(self.gs2[2,0])
+
+        audioDataAx.set_title('Audio Data')
+        audioAmpAx.set_title('Audio Amplitude')
+        audioFreqAx.set_title('Audio Frequency')
+
+        for iterations in self.pklsList:
+            audio_data_raw = iterations.get('audio_data_raw')
+            audio_time = iterations.get('audio_time')
+            audio_sample_time = iterations.get('audio_sample_time')
+            audio_chunk = iterations.get('audio_chunk')
+
+            audio_data = np.fromstring(audio_data_raw, self.DTYPE)
+            audio_data = np.array(audio_data).flatten()
+
+            audioDataAx.plot(audio_time, audio_data, 'y-')
+
+            plt.show()
+
+        return True
 
 
-def butter_bandpass(lowcut, highcut, fs, order=5):
-    """
-    fs: sampling frequency
-    """
-    nyq = 0.5 * fs
-    low = lowcut / nyq
-    high = highcut / nyq
-    b, a = signal.butter(order, [low, high], btype='band')
+    def butter_bandpass(lowcut, highcut, fs, order=5):
+        """
+        fs: sampling frequency
+        """
+        nyq = 0.5 * fs
+        low = lowcut / nyq
+        high = highcut / nyq
+        b, a = signal.butter(order, [low, high], btype='band')
 
-    ## print low, high
-    ## wp = [low, high]
-    ## ws = [0., high+0.05]
-    ## b, a = signal.iirdesign(wp, ws, 10, 1, ftype='butter')
+        ## print low, high
+        ## wp = [low, high]
+        ## ws = [0., high+0.05]
+        ## b, a = signal.iirdesign(wp, ws, 10, 1, ftype='butter')
 
-    return b, a
+        return b, a
 
 
 if __name__ == '__main__':
