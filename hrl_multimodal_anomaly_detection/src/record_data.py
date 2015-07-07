@@ -39,14 +39,10 @@ class ADL_log:
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
 
-        # self.ft = tool_ft('/netft_data') if ft else None
-        # self.audio = tool_audio() if audio else None
-        # self.vision = tool_vision(self.tf_listener) if vision else None
-        # self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
-        self.ft = tool_ft('/netft_data')
-        self.audio = tool_audio()
-        self.vision = tool_vision(self.tf_listener)
-        self.kinematics = robot_kinematics(self.tf_listener)
+        self.ft = tool_ft('/netft_data') if ft else None
+        self.audio = tool_audio() if audio else None
+        self.vision = tool_vision(self.tf_listener) if vision else None
+        self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
 
         # File saving
         self.iteration = 0
@@ -72,18 +68,18 @@ class ADL_log:
 
     def log_start(self):
         self.init_time = rospy.get_time()
-        # if self.ft is not None:
-        self.ft.init_time = self.init_time
-        self.ft.start()
-        # if self.audio is not None:
-        self.audio.init_time = self.init_time
-        self.audio.start()
-        # if self.vision is not None:
-        self.vision.init_time = self.init_time
-        self.vision.start()
-        # if self.kinematics is not None:
-        self.kinematics.init_time = self.init_time
-        self.kinematics.start()
+        if self.ft is not None:
+            self.ft.init_time = self.init_time
+            self.ft.start()
+        if self.audio is not None:
+            self.audio.init_time = self.init_time
+            self.audio.start()
+        if self.vision is not None:
+            self.vision.init_time = self.init_time
+            self.vision.start()
+        if self.kinematics is not None:
+            self.kinematics.init_time = self.init_time
+            self.kinematics.start()
 
     def close_log_file(self):
         data = dict()
@@ -140,14 +136,14 @@ class ADL_log:
         self.iteration += 1
 
         # Reinitialize all sensors
-        # if self.ft is not None:
-        self.ft = tool_ft('/netft_data')
-        # if self.audio is not None:
-        self.audio = tool_audio()
-        # if self.vision is not None:
-        self.vision = tool_vision(self.tf_listener)
-        # if self.kinematics is not None:
-        self.kinematics = robot_kinematics(self.tf_listener)
+        if self.ft is not None:
+            self.ft = tool_ft('/netft_data')
+        if self.audio is not None:
+            self.audio = tool_audio()
+        if self.vision is not None:
+            self.vision = tool_vision(self.tf_listener)
+        if self.kinematics is not None:
+            self.kinematics = robot_kinematics(self.tf_listener)
 
     def bowlPoseManualCallback(self, data):
         self.bowlPos = np.matrix([[data.pose.position.x], [data.pose.position.y], [data.pose.position.z]])
