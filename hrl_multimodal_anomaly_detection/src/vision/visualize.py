@@ -86,23 +86,30 @@ def readDepth():
             time.sleep(0.25)
 
 def readVisual():
+    fgbg = cv2.createBackgroundSubtractorMOG()
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
         visual = data['visual_points']
         for image, points, gripper, spoon in visual:
-            rgb = [255, 128, 0]
-            cv2.circle(image, (int(gripper[0]), int(gripper[1])), 5, rgb, -1)
-            rgb = [0, 128, 255]
-            cv2.circle(image, (int(spoon[0]), int(spoon[1])), 5, rgb, -1)
-            if points is None:
-                continue
-            for point in points.values():
-                # Get the non global point
-                p = point[1]
-                rgb = [0, 255, 0]
-                cv2.circle(image, (int(p[0]), int(p[1])), 5, rgb, -1)
-            cv2.imshow('Image window', image)
+            fgmask = fgbg.apply(image)
+            cv2.imshow('Image window', fgmask)
             cv2.waitKey(100)
 
-readDepth()
-# readVisual()
+            th3 = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+
+            # rgb = [255, 128, 0]
+            # cv2.circle(image, (int(gripper[0]), int(gripper[1])), 5, rgb, -1)
+            # rgb = [0, 128, 255]
+            # cv2.circle(image, (int(spoon[0]), int(spoon[1])), 5, rgb, -1)
+            # if points is None:
+            #     continue
+            # for point in points.values():
+            #     # Get the non global point
+            #     p = point[1]
+            #     rgb = [0, 255, 0]
+            #     cv2.circle(image, (int(p[0]), int(p[1])), 5, rgb, -1)
+            # cv2.imshow('Image window', image)
+            # cv2.waitKey(100)
+
+# readDepth()
+readVisual()
