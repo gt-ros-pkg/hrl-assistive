@@ -60,6 +60,7 @@ class kinectDepth:
         self.lGripperTransposeMatrix = None
         self.lGripX = None
         self.lGripY = None
+        self.gripperPoint = None
         self.grips = []
         # Spoon
         self.spoonX = None
@@ -74,61 +75,57 @@ class kinectDepth:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        return None
-        # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
-        # try:
-        #     targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
-        #     self.transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
-        #     # print transMatrix
-        # except tf.ExtrapolationException:
-        #     print 'TF Error!'
-        #     pass
-        # points = np.c_[self.points3D, np.ones(len(self.points3D))]
-        # values = np.dot(self.transMatrix, points.T).T[:, :3]
-        # # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
-        # # print 'Recent points computation time:', time.time() - startTime
-        # # self.imageTime = time.time()
-        # return values, np.dot(self.transMatrix, np.array([self.lGripperPosition[0], self.lGripperPosition[1], self.lGripperPosition[2], 1.0]))[:3].tolist(), \
-        #        np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
+        self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
+        try:
+            targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
+            self.transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+            # print transMatrix
+        except tf.ExtrapolationException:
+            print 'TF Error!'
+            pass
+        points = np.c_[self.points3D, np.ones(len(self.points3D))]
+        values = np.dot(self.transMatrix, points.T).T[:, :3]
+        # values = [np.dot(transMatrix, np.array([p[0], p[1], p[2], 1.0]))[:3].tolist() for p in self.points3D]
+        # print 'Recent points computation time:', time.time() - startTime
+        # self.imageTime = time.time()
+        return values, np.dot(self.transMatrix, np.array([self.gripperPoint[0], self.gripperPoint[1], self.gripperPoint[2], 1.0]))[:3].tolist(), \
+               np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
 
     def cloudCallback(self, data):
-        print 'Time between cloud calls:', time.time() - self.cloudTime
-        startTime = time.time()
+        # print 'Time between cloud calls:', time.time() - self.cloudTime
+        # startTime = time.time()
 
         self.pointCloud = data
 
-        # self.transposeGripperToCamera()
-        #
-        # # Determine location of spoon
-        # spoon3D = [0.22, -0.050, 0]
-        # self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
-        # # self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
-        #
-        # # lowX, highX, lowY, highY = self.boundingBox(0.05, 0.30, 0.05, 20, 100, 50)
-        # lowX, highX, lowY, highY = self.boundingBox()
-        #
-        # points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
-        # try:
-        #     points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-        #     gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
-        # except:
-        #     # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-        #     return
-        #
-        # points3D = np.array([point for point in points3D])
-        #
-        # self.clusterPoints = points3D
-        #
-        # print 'Time for second call:', time.time() - ticker
+        self.transposeGripperToCamera()
+
+        # Determine location of spoon
+        spoon3D = [0.22, -0.050, 0]
+        self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        # self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+
+        lowX, highX, lowY, highY = self.boundingBox()
+
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        try:
+            points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+            self.gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
+        except:
+            # print 'Unable to unpack from PointCloud2.', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+            return
+
+        self.points3D = np.array([point for point in points3D])
+
+        # print 'Time for second call:', time.time() - startTime
         # ticker = time.time()
-        #
+
         # # Perform dbscan clustering
-        # X = StandardScaler().fit_transform(points3D)
+        # X = StandardScaler().fit_transform(self.points3D)
         # labels = self.dbscan.fit_predict(X)
         # # unique_labels = set(labels)
         #
-        # # print 'Time for third call:', time.time() - ticker
-        # # ticker = time.time()
+        # print 'Time for third call:', time.time() - ticker
+        # ticker = time.time()
         #
         # # Find the point closest to our gripper and it's corresponding label
         # index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
@@ -142,25 +139,25 @@ class kinectDepth:
         #     return
         # # print 'Label:', closeLabel
         #
-        # # print 'Time for fourth call:', time.time() - ticker
-        # # ticker = time.time()
+        # print 'Time for fourth call:', time.time() - ticker
+        # ticker = time.time()
         #
         # # Find the cluster closest to our gripper
         # self.clusterPoints = points3D[labels==closeLabel]
         # self.nonClusterPoints = points3D[labels!=closeLabel]
+
+        # if self.visual:
+        #     # Publish depth features for spoon features
+        #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
         #
-        # # if self.visual:
-        # #     # Publish depth features for spoon features
-        # #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
-        # #
-        # #     # Publish depth features for non spoon features
-        # #     self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
-        #
-        # # print 'Time for fifth call:', time.time() - ticker
+        #     # Publish depth features for non spoon features
+        #     self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
+
+        # print 'Time for fifth call:', time.time() - ticker
 
         self.updateNumber += 1
-        print 'Cloud computation time:', time.time() - startTime
-        self.cloudTime = time.time()
+        # print 'Cloud computation time:', time.time() - startTime
+        # self.cloudTime = time.time()
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
