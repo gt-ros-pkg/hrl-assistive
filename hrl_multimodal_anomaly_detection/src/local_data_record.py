@@ -9,7 +9,7 @@ class dataRecord:
 
     AUDIO = False
     FT = False
-    VISION = False
+    VISION = True
     KINEMATICS = True
     TEST_MODE = False
 
