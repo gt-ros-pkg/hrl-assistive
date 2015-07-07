@@ -110,7 +110,8 @@ class kinectDepth:
         points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-            self.gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
+            # self.gripperPoint = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=[[self.lGripX, self.lGripY]]).next()
+            self.gripperPoint = [0.2, 0.2, 0.2]
         except:
             print 'Unable to unpack from PointCloud2!', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
             return
