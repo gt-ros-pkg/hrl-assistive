@@ -26,7 +26,7 @@ import tf
 import image_geometry
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
-class depthPerceptionTrials:
+class kinectDepth:
     def __init__(self, targetFrame=None, visual=False, tfListener=None):
         # ROS publisher for data points
         self.publisher = rospy.Publisher('visualization_marker', Marker)
