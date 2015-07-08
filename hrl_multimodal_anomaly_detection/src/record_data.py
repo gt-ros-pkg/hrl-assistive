@@ -52,7 +52,12 @@ class ADL_log:
         directory = os.path.join(os.path.dirname(__file__), '../recordings/')
         if not os.path.exists(directory):
             os.makedirs(directory)
-        self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
+        sensors = ''
+        if self.ft is not None: sensors += 'f'
+        if self.audio is not None: sensors += 'a'
+        if self.vision is not None: sensors += 'v'
+        if self.kinematics is not None: sensors += 'k'
+        self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + sensors + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
 
         self.bowlPos = None
         self.headPos = None
