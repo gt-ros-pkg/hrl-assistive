@@ -24,20 +24,28 @@ def pose_relative_trans(pose, x=0., y=0., z=0.):
 
 def pose_relative_rot(pose, r=0., p=0., y=0., degrees=True):
     """Return a pose rotated relative to a given pose."""
-    ps = deepcopy(pose) 
+    ps = deepcopy(pose)
     if degrees:
         r = math.radians(r)
         p = math.radians(p)
         y = math.radians(y)
-    des_rot_mat = tft.euler_matrix(r,p,y) 
-    q_ps = [ps.pose.orientation.x, 
-            ps.pose.orientation.y, 
-            ps.pose.orientation.z, 
+    des_rot_mat = tft.euler_matrix(r,p,y)
+    q_ps = [ps.pose.orientation.x,
+            ps.pose.orientation.y,
+            ps.pose.orientation.z,
             ps.pose.orientation.w]
-    state_rot_mat = tft.quaternion_matrix(q_ps) 
-    final_rot_mat = np.dot(state_rot_mat, des_rot_mat) 
+    state_rot_mat = tft.quaternion_matrix(q_ps)
+    final_rot_mat = np.dot(state_rot_mat, des_rot_mat)
     ps.pose.orientation = Quaternion(
                             *tft.quaternion_from_matrix(final_rot_mat))
+    return ps
+
+def find_approach(pose, standoff=0., axis='x'):
+    """Return a PoseStamped pointed down the z-axis of input pose."""
+    ps = deepcopy(pose)
+    if axis == 'x':
+        ps = pose_relative_rot(ps, p=90)
+        ps = pose_relative_trans(ps, -standoff)
     return ps
 
 def aim_frame_to(target_pt, point_dir=(1,0,0)):
@@ -78,14 +86,7 @@ def aim_pose_to(ps, pts, point_dir=(1,0,0)):
     new_quat = tft.quaternion_multiply(quat, base_quat)
     ps.pose.orientation = Quaternion(*new_quat)
 
-def find_approach(pose, standoff=0., axis='x'):
-    """Return a PoseStamped pointed down the z-axis of input pose."""
-    ps = deepcopy(pose)
-    if axis == 'x':
-        ps = pose_relative_rot(ps, p=90)
-        ps = pose_relative_trans(ps, -standoff)
-    return ps
-    
+
 def calc_dist(ps1, ps2):
     """ Return the cartesian distance between the points of 2 poses."""
     p1 = ps1.pose.position

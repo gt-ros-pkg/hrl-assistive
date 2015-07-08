@@ -28,7 +28,7 @@ build
 msg_gen
 srv_gen
 
-# specific to the hrl_haptic_manipulation_in_clutter git repository #
-#####################################################################
-#hrl_software_simulation_darpa_m3/bin
+# Files specific to this repo #
+###############################
 
+assistive_teleop/www/jqueryui

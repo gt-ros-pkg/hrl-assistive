@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+  
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Video-centric Web Interface</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link type="text/css" href="jqueryui/themes/sunny/jquery-ui.min.css" rel="stylesheet" />
+  <script type="text/javascript" src="jqueryui/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="jqueryui/ui/minified/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="js/numeric-1.2.6.js"></script>
+  <script type="text/javascript" src="js/snap/snap.svg.js"></script>
+  <link type="text/css" href="js/circular-slider-master/circular-slider.min.css" rel="stylesheet" />
+  <script type="text/javascript" src="js/circular-slider-master/circular-slider.js"></script>
+
+  <script type="text/javascript" src="js/ros/EventEmitter2/eventemitter2.js"></script>
+<!--  <script type="text/javascript" src="js/ros/ros.js"></script>-->
+  <script type="text/javascript" src="js/ros/roslibjs/roslib.js"></script>
+  <script type="text/javascript" src="js/ros/extend_ros.js"></script>
+  <script type="text/javascript" src="js/ros/actionclient.js"></script>
+  <script type="text/javascript" src="js/ros/threejs/three.js"></script>
+  <script type="text/javascript" src="js/ros/ros3d.js"></script>
+  <script type="text/javascript" src="js/video/markers.js"></script>
+
+  <script type="text/javascript" src="js/init.js"></script>
+  <script type="text/javascript" src="js/log.js"></script>
+  <script type="text/javascript" src="js/connection_monitor.js"></script>
+  <script type="text/javascript" src="js/battery_monitor.js"></script>
+  <script type="text/javascript" src="js/teleop/pr2.js"></script>
+  <script type="text/javascript" src="js/tasks/look.js"></script>
+  <script type="text/javascript" src="js/tasks/drive2.js"></script>
+  <script type="text/javascript" src="js/tasks/torso.js"></script>
+  <script type="text/javascript" src="js/tasks/gripper.js"></script>
+  <script type="text/javascript" src="js/tasks/ee_cart.js"></script>
+  <script type="text/javascript" src="js/tasks/ee_rotation.js"></script>
+  <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
+  <script type="text/javascript" src="js/tasks/menu.js"></script>
+
+  <script type="text/javascript" src="js/video/mjpeg_client.js"></script>
+  <script type="text/javascript" src="js/video/pixel23D.js"></script>
+  <link type="text/css" href="css/notifications.css" rel="stylesheet" />
+  <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
+  <link type="text/css" href="css/look.css" rel="stylesheet" />
+  <link type="text/css" href="css/torso.css" rel="stylesheet" />
+  <link type="text/css" href="css/drive.css" rel="stylesheet" />
+  <link type="text/css" href="css/battery.css" rel="stylesheet" />
+  <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
+  <link type="text/css" href="css/focus.css" rel="stylesheet" />
+  
+</head>
+
+<body onload="RFH.init()">
+ <div id="status-bar">
+     <div id="notifications"></div>
+     <div id="network-status"></div>
+     <div id='battery-status'>
+         <div class='battery-contact'></div>
+         <div class='battery-main'>
+             <span class="time">?</SPan>
+             <div class="charge-bolt">
+                 <div class="triangle tri-up"></div>
+                 <div class="triangle tri-down"></div>
+             </div>
+         </div>
+     </div>
+ </div>
+ <div id="left-col">
+     <div id="main-menu">
+        <h3>Main Menu</h3>
+     </div>
+     <div id="controls">
+        <h3>Controls</h3>
+        <!-- Driving Controls -->
+        <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
+        <!-- EE Cart Controls -->
+        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
+        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>
+        <div id="ee-mode-set" class="arm-ctrl" style="display:none">
+            <input class="menu-item" id="ee-mode-table" type="radio" name="ee-mode-radio" checked="checked">
+            <label for="ee-mode-table">Table</label>
+<!--            <input class="menu-item" id="ee-mode-wall" type="radio" name="ee-mode-radio">
+            <label for="ee-mode-wall">Wall</label>
+            <input class="menu-item" id="ee-mode-free" type="radio" name="ee-mode-radio">
+            <label for="ee-mode-free">Free</label>-->
+        </div>
+        <div id="posrot-set" class="arm-ctrl" style="display:none">
+            <input class="menu-item" id="posrot-pos" type="radio" name="posrot-radio" checked="checked">
+            <label for="posrot-pos">Position</label>
+            <input class="menu-item" id="posrot-rot" type="radio" name="posrot-radio">
+            <label for="posrot-rot">Rotation</label>
+        </div>
+        <div id="r-rot-ctrls" class="r-arm-ctrl">
+            <div class="wrist-rot-slider"></div>
+            <div class="wrist-lon-slider"></div>
+            <div class="wrist-lat-slider"></div>
+        </div>
+        <div id="l-rot-ctrls" class="l-arm-ctrl">
+            <div class="wrist-rot-slider"></div>
+            <div class="wrist-lon-slider"></div>
+            <div class="wrist-lat-slider"></div>
+        </div>
+<!--        <input type="checkbox" id="select-focus-toggle"/>
+        <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
+        <button id="wristCW" style="display:none">CW</button>
+        <button id="wristCCW" style="display:none">CCW</button>-->
+        <div id="speedOptions" class="r-arm-ctrl">
+            <h4>Step Size</h4>
+            <div id="speedOptions-buttons">
+              <form id="speedOptions-form">
+                <input type="radio" id="tiny" class="speed-option" name="speedOption"/>
+                <label for="tiny">XS</label>
+                <input type="radio" id="small" class="speed-option" name="speedOption"/>
+                <label for="small">S</label>
+                <input type="radio" id="medium" class="speed-option" name="speedOption" checked="checked"/>
+                <label for="medium">M</label>
+                <input type="radio" id="large" class="speed-option" name="speedOption"/>
+                <label for="large">L</label>
+              </form>
+            </div>
+        </div>
+     </div>
+ </div>
+ <div id="video-main">
+     <div id='mjpeg'>
+         <img id="mjpeg-image"></img>
+         <!--<div id="markers"></div>-->
+         <!-- Divs for selecting eyeballs for looking task -->
+         <div class="map-look top left cursor-eyes-up-left"></div>
+         <div class="map-look top center cursor-eyes-up"></div>
+         <div class="map-look top right cursor-eyes-up-right"></div>
+         <div class="map-look middle left cursor-eyes-left"></div>
+         <div class="map-look middle right cursor-eyes-right"></div>
+         <div class="map-look bottom left cursor-eyes-down-left"></div>
+         <div class="map-look bottom center cursor-eyes-down"></div>
+         <div class="map-look bottom right cursor-eyes-down-right"></div>
+         <!-- divs for driving controls -->
+         <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+         </svg>
+         <svg id="arm-svg" class="arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+         </svg>
+         <div class="drive-ctrl drive-look left"></div>
+         <div class="drive-ctrl drive-look right"></div>
+         <div class="drive-ctrl turn-signal left"></div>
+         <div class="drive-ctrl turn-signal right"></div>
+         <!-- divs for torso controls -->
+         <img id="tallIcon" src="./css/icons/tall.png"></img>
+         <img id="shortIcon" src="./css/icons/short.png"></img>
+         <div id="torsoSlider"></div>
+         <!-- divs for arm controls -->
+<!--         <img id="rightFocusPoint" class="focus-point r-arm-ctrl" src="./css/icons/focus-point.png"></img>
+         <img id="leftFocusPoint" class="focus-point l-ARM-Ctrl" src="./css/icons/focus-point.png"></img>
+         <div id="depthMaskLeft" class="depth-mask arm-ctrl" ></div>
+         <div id="depthMaskRight" class="depth-mask arm-ctrl" ></div>-->
+         <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
+             <!--<div class="slider"></div>-->
+             <div id="ctrl-ring" class="default">
+                 <div class="arrow left default"></div>
+                 <div class="arrow right default"></div>
+                 <div class="arrow up default"></div>
+                 <div class="arrow down default"></div>
+             </div>
+             <div class="center"></div>
+             <div id="away-button"></div>
+             <div id="toward-button"></div>
+         </div>
+     </div>
+ </div>
+
+</body>
+
+</html>

@@ -1,0 +1,65 @@
+.map-look {
+    position: absolute;
+}
+
+.cursor-eyes {
+    cursor: url(cursors/eyes/eyes.png) 27 16, auto;
+}
+
+.cursor-eyes-left {
+    cursor: url(cursors/eyes/eyes-left.png) 27 16, auto;
+    left: 0%;
+    width: 15%;
+    top: 15%;
+    height: 70%;
+}
+.cursor-eyes-right {
+    cursor: url(cursors/eyes/eyes-right.png) 27 16, auto;
+    right: 0%;
+    width: 15%;
+    top: 15%;
+    height: 70%;
+}
+.cursor-eyes-up {
+    cursor: url(cursors/eyes/eyes-up.png) 27 16, auto;
+    left: 15%;
+    width: 70%;
+    top: 0%;
+    height: 15%;
+}
+.cursor-eyes-down {
+    cursor: url(cursors/eyes/eyes-down.png) 27 16, auto;
+    left: 15%;
+    width: 70%;
+    bottom: 0%;
+    height: 15%;
+}
+.cursor-eyes-up-left {
+    cursor: url(cursors/eyes/eyes-up-left.png) 27 16, auto;
+    left: 0%;
+    width: 15%;
+    top: 0%;
+    height: 15%;
+}
+.cursor-eyes-up-right {
+    cursor: url(cursors/eyes/eyes-up-right.png) 27 16, auto;
+    right: 0%;
+    top: 0%;
+    width: 15%;
+    height: 15%;
+}
+.cursor-eyes-down-left {
+    cursor: url(cursors/eyes/eyes-down-left.png) 27 16, auto;
+    left: 0%;
+    bottom: 0%;
+    width: 15%;
+    height: 15%;
+}
+.cursor-eyes-down-right {
+    cursor: url(cursors/eyes/eyes-down-right.png) 27 16, auto;
+    right: 0%;
+    bottom: 0%;
+    width: 15%;
+    height: 15%;
+}
+

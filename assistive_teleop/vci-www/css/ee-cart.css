@@ -1,0 +1,296 @@
+#markers {
+    position:absolute;
+    top:0px;
+    left:0px;
+    width: 100%;
+    height: 100%;
+}
+
+#arm-svg {
+    display:none;
+    position:absolute;
+    top:0px;
+    left:0px;
+    width: 100%;
+    height: 100%;
+}
+
+#xn {
+    fill: #ee4444;
+    stroke: #ee4444;
+}
+#xp {
+    fill: #ff3333;
+    stroke: #ff3333;
+}
+
+#xp:hover, #xn:hover{
+    fill: #ee1111;
+    stroke: #ee1111;
+}
+
+#xp:active, #xn:active{
+    fill: #aa4444;
+    stroke: #aa4444;
+}
+
+#yn {
+    fill: #44ee44;
+    stroke: #44ee44;
+}
+
+#yp {
+    fill: #33ff33;
+    stroke: #43ff33;
+}
+
+#yp:hover, #yn:hover{
+    fill: #11ee11;
+    stroke: #11ee11;
+}
+
+#yp:active, #yn:active{
+    fill: #44aa44;
+    stroke: #44aa44;
+}
+
+#zn {
+    fill: #4444ee;
+    stroke: #4444ee;
+}
+
+#zp {
+    fill: #3333ff;
+    stroke: #4333ff;
+}
+
+#zp:hover, #zn:hover{
+    fill: #1111ee;
+    stroke: #1111ee;
+}
+
+#zp:active, #zn:active{
+    fill: #4444aa;
+    stroke: #4444aa;
+}
+
+.r-arm-rot-icon, .l-arm-rot-icon {
+    display:none;
+    stroke-width:8;
+}
+
+.r-arm-rot-icon-baseline, .l-arm-rot-icon-baseline {
+    display:none;
+    stroke: black;
+    stroke-width:8;
+}
+
+#select-focus-toggle-label{
+    width: 80%;
+    margin-left: 10%;
+}
+
+#speedOptions {
+    display:none; /* Do not display initially */
+    margin-left: 2%;
+}
+
+#speedOptions label{
+    width: 24%;
+}
+
+#speedOptions-buttons .ui-button-text{
+   padding: 0.14em 0.14em; 
+   font-size: 1.0em;
+}
+
+#speedOptions-buttons{
+    width: 100%;
+}
+
+#speedOptions-form{
+    width: 100%;
+}
+
+#posrot-set label{
+    width: 48%;
+    margin-bottom: 0.3em;
+}
+
+#posrot-set .ui-button-text{
+    padding: 0.2em 1em;
+}
+
+#posrot-set{
+    margin-left:2%;
+    margin-right:2%;
+}
+
+#away-button {
+   position: absolute;
+   left: 31.7%;
+   top: 11.2%;
+   height: 16%;
+   width: 36%;
+   -webkit-clip-path: circle( 120% at center 235%);
+   opacity: 0.5;
+   background-image: url('./icons/arrow-away-3d.png');
+   background-size: 75% 60%;
+   background-position: 50% 85%;
+   background-repeat: no-repeat;
+}
+
+#toward-button {
+   font-size: x-large;
+   position: absolute;
+   left: 31.6%;
+   bottom: 12%;
+   height: 16%;
+   width: 36%;
+   -webkit-clip-path: circle( 120% at center -134%);
+   opacity: 0.5;
+   background-image: url('./icons/arrow-toward-3d.png');
+   background-size: 70% 60%;
+   background-position: 50% 20%;
+   background-repeat: no-repeat;
+}
+
+#ctrl-ring > .arrow{
+    position: absolute;
+    height: 0px;
+    width: 0px;
+    cursor: pointer;
+    pointer-events:none;
+}
+
+#ctrl-ring.default > .arrow.left{
+    top: calc(50% - 10px);
+    left: 5%;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 20px solid rgba(76, 48, 19, 0.87);
+}
+
+#ctrl-ring.active > .arrow.left{
+    top: calc(50% - 10px);
+    left: 5%;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 20px solid rgba(0, 116, 199, 0.5);
+}
+
+#ctrl-ring.default > .arrow.right{
+    top: calc(50% - 10px);
+    right: 5%;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 20px solid rgba(76, 48, 19, 0.87);
+}
+
+#ctrl-ring.active > .arrow.right{
+    top: calc(50% - 10px);
+    right: 5%;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 20px solid rgba(0, 116, 199, 0.5);
+}
+
+#ctrl-ring.default > .arrow.up{
+    top: 5%;
+    left: calc(50% - 15px);
+    border-right: 15px solid transparent;
+    border-left: 15px solid transparent;
+    border-bottom: 30px solid rgba(76, 48, 19, 0.87);
+}
+
+#ctrl-ring.active > .arrow.up{
+    top: 5%;
+    left: calc(50% - 15px);
+    border-right: 15px solid transparent;
+    border-left: 15px solid transparent;
+    border-bottom: 30px solid rgba(0, 116, 199, 0.5);
+}
+
+#ctrl-ring.default > .arrow.down{
+    bottom: 5%;
+    left: calc(50% - 15px);
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+    border-top: 20px solid rgba(76, 48, 19, 0.87);
+}
+
+#ctrl-ring.active > .arrow.down{
+    bottom: 5%;
+    left: calc(50% - 15px);
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+    border-top: 20px solid rgba(0, 116, 199, 0.5);
+}
+
+#armCtrlContainer > .center{
+    position:absolute;
+    top:15%;
+    left:15%;
+    height: 70%;
+    width:70%;
+    border-radius: 50%;
+    cursor: default;
+}
+
+#ctrl-ring:active{
+    border:solid 1px rgba(0,0,0,0.94);
+    box-shadow: inset 0px 2px 0px #888888;
+    background: radial-gradient(closest-side, 
+    rgba(0,0,0,0) 70%,
+    rgba(0, 0, 0, 0.25) 70%,
+    rgba(255, 245, 206, 0.30) 71%,
+    rgba(255, 2250, 245, 0.30) 100%);    
+}
+
+#ctrl-ring:hover {
+    border: 1px solid #d19405;
+    box-shadow: 0px 2px 0px  #888888;
+    background: radial-gradient(closest-side, 
+    rgba(0,0,0,0) 70%,
+    rgba(209, 148, 5, 0.2) 0%,
+    rgba(255, 233, 146, 0.35) 71%,
+    rgba(255, 226, 111, 0.38) 100%);   
+}
+
+#ctrl-ring {
+    border: 1px solid #d19405;
+    box-shadow: 0px 2px 0px  #888888;
+    background: radial-gradient(closest-side, 
+    rgba(0,0,0,0) 70%,
+    rgba(209, 148, 5, 0.2) 0%,
+    rgba(254, 206, 47, 0.35) 71%,
+    rgba(255, 226, 111, 0.38) 100%);   
+}
+
+#ctrl-ring {
+    position: absolute;
+    top:calc(1% - 1px);
+    left:calc(1% - 1px);
+    height: calc(98% - 2px);
+    width: calc(98% - 2px);
+    border-radius:50%;
+    cursor: pointer;
+}
+
+#armCtrlContainer {
+    height: 100%;
+    width: 56.25%;
+    position: absolute;
+    left: 21.875%;    
+    bottom: 0%;
+    transition: transform 0.3s ease;
+}
+
+.cart-ctrl-container {
+    position: absolute;
+    bottom: 60px;
+    width: 60%;
+    height: 60%;
+    top:20%;
+    left:20%;
+}

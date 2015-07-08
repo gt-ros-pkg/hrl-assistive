@@ -1,0 +1,461 @@
+<html>
+<head>
+  <title>Robots for Humanity Web Page</title>
+    <link type="text/css" href="jqueryui/css/sunny/jquery-ui-1.8.10.custom.css" rel="stylesheet" />   
+    <script type="text/javascript" src="jqueryui/js/jquery-1.4.4.min.js"></script> 
+    <script type="text/javascript" src="jqueryui/js/jquery-ui-1.8.10.custom.min.js"></script> 
+    
+    <script type="text/javascript" src="js/ros/eventemitter2.js"></script>
+    <script type="text/javascript" src="js/ros/ros.js"></script>
+    <script type="text/javascript" src="js/ros/extend_ros.js"></script>
+    <script type="text/javascript" src="js/ros/actionclient.js"></script>
+
+    <script type="text/javascript" src="js/init.js"></script>
+    
+    <script type="text/javascript" src="js/video/mjpegcanvas.js"></script>
+    <script type="text/javascript" src="js/video/mjpeg_client.js"> </script>
+    <script type="text/javascript" src="js/video/clickable_element.js"> </script>
+
+    <script type="text/javascript" src="js/teleop/pr2.js"></script>
+    <script type="text/javascript" src="js/teleop/pr2_teleop.js"> </script>
+    <script type="text/javascript" src="js/teleop/cart_control.js"> </script>
+    <script type="text/javascript" src="js/tts.js"> </script>
+    <script type="text/javascript" src="js/ar_servo.js"> </script>
+    <script type="text/javascript" src="js/run_stop.js"> </script>
+    <script type="text/javascript" src="js/ell_control.js"> </script>
+    <script type="text/javascript" src="js/force_level_widget.js"> </script>
+    <script type="text/javascript" src="js/skin_util.js"> </script>
+
+    <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
+	<script src="js/keyboard/js/jquery.keyboard.js"></script>
+    <script type="text/javascript" src="js/traj_play.js"> </script>
+    <link type="text/css" href="css/rfh_interface.css" rel="stylesheet" />   
+
+<script type="text/javascript">
+var log = function (message) {
+    $('#console').html("<big><strong>" + message.toString() + "</strong></big>"); 
+    console.log("Log to user: " + message.toString());
+};
+
+var ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot via roswww
+var PORT = '9091';//Must match port on which rosbridge is being served
+
+$(function(){
+    $("#tabs").tabs().tabs({select: tab_select_cb});
+    $('#cont_sel_container').buttonset();
+    $('label:first','#cont_sel_container').removeClass('ui-corner-left')
+                                          .addClass('ui-corner-top centered');
+    $('label:last','#cont_sel_container').removeClass('ui-corner-right')
+                                         .addClass('ui-corner-bottom centered');
+    $('#scale_slider').slider({
+        value:0.5,
+        min:0,
+        max:1.0,
+        step:0.01,
+        orientation:'vertical'}); 
+    $('.bpd, #cart_controller, .ar_servo_button, .traj_play_cont,'+
+      '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
+      '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power')
+      .button();
+});
+
+var item_grid = function (target, type, idPrefix, rows, cols) {
+    var html = '';
+    html = html + '<table>';
+    for (var i=0; i<rows; i += 1) {
+        html = html + '<tr>';
+        for (var j=0; j<cols; j += 1) {
+            html = html + '<td>';
+            html = html + '<'+type+' id='+idPrefix+'_r'+i+'c'+j+' ></'+type+'>';
+            html = html + '</td>';
+        };
+        html = html + '</tr>';
+    };
+    html = html + '</table>';
+    $('#'+target).html(html);
+};
+
+var tab_select_cb = function (eve, ui) {
+    if (ui.panel.id === 'tab_ellipse') {
+        window.mjpeg.setCamera('head_registration/confirmation');
+    } else {
+       window.ellControl.toggle(false);
+    }; 
+    if (ui.panel.id === 'tabARServoing') {
+        window.mjpeg.setCamera('ar_servo/confirmation_rotated');
+    };
+};
+</script>
+</head>
+<body onload="RFH.start()">
+    <table>
+      <tr>
+        <td colspan='7'> <!-- Start Cell for video -->
+          <canvas id="mjpeg_canvas" width="640" height="480">
+            Your browser does not support HTML5 canvas
+          </canvas>
+        </td><!-- End Cell for video -->
+        <td>
+          <div id="FTDisplay"></div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div>
+            <table>
+              <tr id="underVideoBar">
+                <td style="text-align:right">On Image Click:</td>
+                <td id="image_click_select"></td>
+              </tr>
+            </table>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+<hr>
+  <div id="console"></div>
+<hr>
+
+<table id="gross_formatting">
+<tr>
+<td>
+<div id="tabs">
+    <ul>
+        <li><a href="#tab_cart_control">Default Controls</a></li>
+        <li><a href="#tabARServoing">AR Servoing</a></li>
+        <li><a href="#tab_traj_play">Traj. Playback</a></li>
+        <li><a href="#tab_ellipse">Ellipsoidal Control</a></li>
+        <li><a href="#tabTTS">TTS</a></li>
+    </ul>
+
+    <div id="tab_cart_control">
+      <table>
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td colspan=2>
+                  <div id='cont_sel_container' style="width:300px">
+                    <div>
+                      <input type="radio" class="cont_sel" id="cont_head" name="cont_sel" onclick="teleopHead()"/>
+                      <label class="cont_sel_label" for="cont_head">Control Head</label>
+                    </div>
+                    <div>
+                      <input type="radio" class="cont_sel" id="cont_l_arm" name="cont_sel" style="width:50%; height:100%"/>
+                      <label class="cont_sel_label" for="cont_l_arm" style="width:50%; height:100%">Control Left Hand</label>
+                      <input type="radio" class="cont_sel" id="cont_r_arm" name="cont_sel" style="width:50%; height:100%"/>
+                      <label class="cont_sel_label" for="cont_r_arm" style="width:49.5%; height:100%">Control Right Hand</label>
+                    </div>
+                    <div>
+                      <input type="radio" class="cont_sel" id="cont_base" name="cont_sel" onclick="teleopBase()">
+                      <label class="cont_sel_label" for="cont_base">Control Base</label>
+                    </div>
+                  </div> 
+                </td>
+              </tr>
+              <tr>
+                 <td id='cart_frame_select_label'><b>Movement Frame:</b></td>
+                 <td>
+                   <select class="centered cart_control" id='cart_frame_select'>
+                     <option id="frame_opt_torso" value="/torso_lift_link"> Torso </option> 
+                     <option id="frame_opt_hand"> Hand </option> 
+                   </select>
+                 </td>
+               </tr>
+            </table>
+          </td>
+          <td>
+            <div class="default_control" id='bpd_default'> <!-- Translate Cartesian Buttonpad-->
+              <table>
+                <tr>
+                  <td rowspan="3">
+                    <div class="slider" id="scale_slider" style="height:235px" ></div>
+                  </td>
+                  <td><button class="bpd arrow_trans_in" id="b7"/></td>
+                  <td><button class="bpd arrow_trans_up" id="b8"/></td>
+                  <td><button class="bpd arrow_trans_out" id="b9"/></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd arrow_trans_left" id="b4"/></td>
+                  <td><button class="bpd" id="b5"/></td>
+                  <td><button class="bpd arrow_trans_right" id="b6"/></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd" id="b1"/></td>
+                  <td><button class="bpd arrow_trans_down" id="b2"/></td>
+                  <td><button class="bpd" id="b3"/></td>
+                </tr>
+              </table>
+            </div> <!--END Translate Cart Buttonpad -->
+          </td>
+          <td> 
+            <div class="default_control" id='bpd_default_rot'> <!--Rotate Cart Buttonpad-->
+              <table>
+                <tr>
+                  <td rowspan="3">
+                    <div class="slider" id="default_rot_slider" style="height:235px" ></div>
+                  </td>
+                  <td><button class="bpd arrow_rot_x_neg" id="b7"/></td>
+                  <td><button class="bpd arrow_rot_y_pos" id="b8"/></td>
+                  <td><button class="bpd arrow_rot_x_pos" id="b9"/></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd arrow_rot_z_neg" id="b4"/></td>
+                  <td><button class="bpd" id="b5"/></td>
+                  <td><button class="bpd arrow_rot_z_pos" id="b6"/></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd" id="b1"/></td>
+                  <td><button class="bpd arrow_rot_y_neg" id="b2"/>
+                  <td><button class="bpd" id="b3"></td>
+                </tr>
+              </table>
+            </div> <!--END Cart Rotate buttonpad -->
+          </td>
+       </tr>
+     </table>
+    </div><!-- END TAB CART CONTROL -->
+
+    <div id="tabARServoing"></div>
+
+    <div id="tab_traj_play">
+      <table id="traj_play_layout">
+        <tr>
+          <td>
+            <table id="traj_play_selectors">
+              <tr><th style="text-align:left">1. Activity</th></tr>
+              <tr><td><select id="traj_play_act_sel"/></td></tr>
+              <tr><th style="text-align:left">2. Arm</th></tr>
+              <tr><td>
+                <select id="traj_play_arm_sel"/>
+                  <option value="Right">Right</option>
+                  <option value="Left">Left</option>
+              </td></tr>
+              <tr><th style="text-align:left">3. Trajectory</th></tr>
+              <tr><td><select id="traj_play_select"/></td></tr>
+            </table>
+          </td>
+          <td>
+            <table id="traj_play_buttons">
+              <tr>
+                <td>
+                  <button class="centered traj_play_cont" id='traj_play_play' style="font-size:150%"> Play </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button class="centered traj_play_cont" id='traj_play_pause' style="font-size:150%"> Pause </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button class="centered traj_play_cont" id='traj_play_stop' style="font-size:150%"> Stop </button>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <form id="traj_play_radio">
+              <table>
+                <tr>
+                  <td>
+                    <div id="traj_radio">
+                    <div>
+                      <input type="radio" id="traj_play_setup" value='1' name="traj_radio"/>
+                      <label class="traj_play_radio_label" for="traj_play_setup"> Move to Setup </label>
+                    </div>
+                    <div>
+                      <input type="radio" id="traj_play_exec" value="2" name="traj_radio">
+                      <label class="traj_play_radio_label" for="traj_play_exec"> Execute Traj. </label>
+                    </div>
+                    <div>
+                      <input type="radio" id="traj_play_set_and_exec" value="3" name="traj_radio" checked="checked"/>
+                      <label class="traj_play_radio_label" for="traj_play_set_and_exec"> Setup AND Execute </label>
+                    </div>
+                  </div>
+                </td></tr>
+              </table>
+            </form>
+          </td>
+        </tr>
+      </table>
+    </div> <!-- End Tab Traj Playbak -->
+
+    <div id="tab_ellipse">
+      <table>
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td>
+                  <button class="centered" id="reg_head"> Register Head </button>
+                </td>
+              <tr>
+              <tr>
+                <td>
+                  <select class="centered" id="ell_mode_sel"> 
+                   <!-- <option id="mode_opt_wiping" value="wiping"> Wiping </option>-->        
+                    <option id="mode_opt_shaving" value="shaving" selected="selected"> Shaving </option>
+                    <!--<option id="mode_opt_scratching" value="scratching"> Scratching </option>-->
+                    <!--<option id="mode_opt_feeding" value="feeding"> Feeding </option>-->
+                  </select>
+                </td>
+              <tr>
+                <td>
+                  <input type="checkbox" class="centered ell_control" id="ell_controller"/>
+                  <label id="ell_cont_state_check" for="ell_controller">Ellipsoid Controller</label>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button class="centered ell_control" id="adj_mirror">Adjust Mirror</button>
+                </td>
+              </tr>
+              <tr>
+              <tr>
+                <td>
+                   <button class="centered ell_control" id="tool_power">Start/Stop Razor</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div id='shave_select'>  <!--Shaving Selection Drop-Down and Entry -->
+                    <table class='centered' frame=box rules=none border=3>
+                    <tr>
+                      <td>
+                        <select class="centered ell_control" id='shave_list'></select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <button class="centered ell_control" id="send_shave_select">Move to Selection</button>
+                      </td>
+                    </tr>
+                  </table>
+                </div><!--End Shaving Drop-Down -->
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <button class="centered ell_control" id="shave_stop">Stop</button>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td>
+          <div class="ell_control" id='bpd_ell_trans'> <!-- Translate Ellipse Buttonpad-->
+              <table>
+                <tr>
+                  <th colspan="4"> Translate </th>
+                </tr>
+                <tr><td rowspan="4">
+                  <div class="slider" id="ell_trans_slider" style="height:235px" ></div>
+                </td></tr>
+                <tr>
+                  <td><button class="bpd arrow_trans_in" id="b7" value=1 /></td>
+                  <td><button class="bpd arrow_trans_up" id="b8" value=1 /></td>
+                  <td><button class="bpd arrow_trans_out" id="b9" value=1 /></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd arrow_trans_left" id="b4" value="1"/></td>
+                  <td><img id="gripper_icon" src="css/arrows/gripper_icon.png"/></td>
+                  <td><button class="bpd arrow_trans_right" id="b6" value="-1"/></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td><button class="bpd arrow_trans_down" id="b2"/></td>
+                  <td></td>
+                </tr>
+              </table>
+            </div> <!--END Translate Ellipse Buttonpad -->
+          </td>
+          <td> 
+            <div class="ell_control" id='bpd_ell_rot'> <!--Rotate Ellipse Buttonpad-->
+              <table>
+                <tr>
+                  <th colspan="4"> Rotate </th>
+                </tr>
+                <tr><td rowspan="4">
+                  <div class="slider" id="ell_rot_slider" style="height:235px" ></div>
+                </td></tr>
+                <tr>
+                  <td><button class="bpd arrow_rot_x_pos" id="b7" value=1 /></td>
+                  <td><button class="bpd arrow_rot_y_pos" id="b8" value=1 /></td>
+                  <td><button class="bpd arrow_rot_x_neg" id="b9" value=1 /></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd arrow_rot_z_pos" id="b4" value=1 /></td>
+                  <td><img id="gripper_icon" src="css/arrows/gripper_icon.png" /></td>
+                  <td><button class="bpd arrow_rot_z_neg" id="b6" value=-1 /></td>
+                </tr>
+                <tr>
+                  <td><button class="bpd" id="b1" value=1>Reset </button></td>
+                  <td><button class="bpd arrow_rot_y_neg" id="b2"/>
+                  <td></td>
+                </tr>
+              </table>
+            </div> <!--END Ellipse Rotate buttonpad -->
+          </td>
+        </tr>
+      </table>
+    </div><!--END Tab ellipse -->
+    
+    <div id="tabTTS" />
+
+  </div> <!-- END Tabs -->
+</td>
+    
+    <td rowspan='3'> <!-- Gross Formatting-->
+      <div id='gripper_controls'>
+        <table border='1'>
+          <th colspan='2' align='center'> Grippers </th>
+          <th align='center'>Torso</th>
+          <tr>
+            <td align='center'>Left</td>
+            <td align='center'>Right</td>
+            <td align='center'>U/D</td>
+          </tr>
+          <tr>
+            <td>
+              <button id='l_gripper_open'>Open</button>
+            </td><td>
+              <button id='r_gripper_open'>Open</button>
+            </td><td>
+              <button id='torso_max'>Max</button>
+            </td>
+          </tr>
+          <tr>
+            <td rowspan="1" align='center'>
+              <div style="margin:5px;height:150px" class="slider" id="l_gripper_slider"></div>
+            </td>
+            <td rowspan="1" align='center'>
+              <div style="margin:5px;height:150px" class="slider" id="r_gripper_slider"></div>
+            </td>
+            <td rowspan="1" align='center'>
+              <div style="margin:5px;height:150px" class="slider" id="torso_slider"></div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <button id='l_gripper_close'>Close</button>
+            </td>
+            <td>
+              <button id='r_gripper_close'>Close</button>
+            </td>
+            <td>
+              <button id='torso_min'>Min</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td> <!-- Gross Formating-->
+      <div id="runStopDiv">
+    </td>
+  </tr>
+</table> <!--END Gross Formating-->
+</body>
+</html>
