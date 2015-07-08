@@ -44,9 +44,28 @@ class tool_audio(Thread):
 
 
         self.p = pyaudio.PyAudio()
+        print 'Audio device:', self.find_input_device()
+
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
         rospy.logout('Done subscribing audio')
         print 'Done subscribing audio'
+
+    def find_input_device(self):
+        device_index = None
+        for i in range(self.p.get_device_count()):
+            devinfo = self.p.get_device_info_by_index(i)
+            print('Device %d: %s'%(i, devinfo['name']))
+
+            for keyword in ['mic', 'input']:
+                if keyword in devinfo['name'].lower():
+                    print('Found an input: device %d - %s'%(i, devinfo['name']))
+                    device_index = i
+                    return device_index
+
+        if device_index is None:
+            print('No preferred input found; using default input device.')
+
+        return device_index
 
     def run(self):
         """Overloaded Thread.run, runs the update
