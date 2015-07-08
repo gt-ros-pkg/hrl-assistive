@@ -90,7 +90,7 @@ class kinectDepth:
 
         self.transformer.waitForTransform('/l_gripper_tool_frame', self.targetFrame, rospy.Time(0), rospy.Duration(5))
         try:
-            self.gripperTrans, self.gripperRot = self.transformer.lookupTransform('/l_gripper_tool_frame', self.rgbCameraFrame, rospy.Time(0))
+            self.gripperTrans, self.gripperRot = self.transformer.lookupTransform('/l_gripper_tool_frame', self.targetFrame, rospy.Time(0))
         except tf.ExtrapolationException:
             print 'TF Gripper Error!'
             pass
