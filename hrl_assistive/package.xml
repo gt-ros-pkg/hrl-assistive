@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package>
+  <name>hrl_assistive</name>
+  <version>0.0.0</version>
+  <description>
+      hrl_assistive contains interfaces and control schemes for assistive mobile manipulators.
+  </description>
+  <url type="website">http://ros.org/wiki/hrl_assistive</url>
+
+  <license>BSD</license>
+
+  <maintainer email="Phillip.Grice@gatech.edu">Phillip Grice</maintainer>
+
+  <author email="kphawkins@gatech.edu">Kelsey Hawkins</author>
+  <author email="Phillip.Grice@gatech.edu">Phillip Grice</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>assistive_teleop</run_depend>
+  <run_depend>hrl_ellipsoidal_control</run_depend>
+  <run_depend>hrl_face_adls</run_depend>
+  <run_depend>hrl_head_registration</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
