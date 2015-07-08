@@ -166,7 +166,10 @@ class ADL_log:
         self.headPos = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
 
     def scoopingStepsTimesCallback(self, data):
+        print "RECORD DATA GOT SCOOPINGS STEPS TIMES CALLBACK!"
         self.scooping_steps_times.append(rospy.get_time() - self.init_time)
+        print "FROM RECORD DATA, SCOOPING STEPS TIMES = "
+        print self.scooping_steps_times
         return None_BoolResponse(True)
 
 if __name__ == '__main__':
