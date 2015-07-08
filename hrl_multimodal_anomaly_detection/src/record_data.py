@@ -134,6 +134,7 @@ class ADL_log:
         data['head_position'] = self.headPos
 
         data['scooping_steps_times'] = self.scooping_steps_times
+	self.scooping_steps_times = []
 
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1': status = 'success'
