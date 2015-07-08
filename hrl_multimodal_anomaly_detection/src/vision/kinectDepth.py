@@ -125,7 +125,7 @@ class kinectDepth:
         self.cameraSub.unregister()
         self.imageSub.unregister()
 
-    def cloudCallback(self, data):
+    def imageCallback(self, data):
         try:
             image = self.bridge.imgmsg_to_cv(data)
             image = np.asarray(image[:,:])
