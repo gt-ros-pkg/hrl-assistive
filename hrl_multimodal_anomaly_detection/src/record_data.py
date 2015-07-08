@@ -167,7 +167,7 @@ class ADL_log:
 
     def scoopingStepsTimesCallback(self, data):
         self.scooping_steps_times.append(rospy.get_time() - self.init_time)
-        return True
+        return None_BoolResponse(True)
 
 if __name__ == '__main__':
     subject = 'gatsbii'
