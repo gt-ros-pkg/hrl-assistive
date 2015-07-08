@@ -67,7 +67,10 @@ class kinectDepth:
         self.spoonY = None
         self.spoon = None
 
-        self.transMatrix = None
+        self.targetTrans = None
+        self.targetRot = None
+        self.gripperTrans = None
+        self.gripperRot = None
 
         rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
@@ -77,20 +80,38 @@ class kinectDepth:
     def getAllRecentPoints(self):
         # print 'Time between read calls:', time.time() - self.cloudTime
         # startTime = time.time()
+
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
-            targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
-            self.transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
-            # print transMatrix
+            self.targetTrans, self.targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
         except tf.ExtrapolationException:
-            print 'TF Error!'
+            print 'TF Target Error!'
             pass
-        points = np.c_[self.points3D, np.ones(len(self.points3D))]
-        values = np.dot(self.transMatrix, points.T).T[:, :3]
-        # print 'Read computation time:', time.time() - startTime
-        # self.cloudTime = time.time()
-        return values, np.dot(self.transMatrix, np.array([self.micLocation[0], self.micLocation[1], self.micLocation[2], 1.0]))[:3].tolist(), \
-               np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
+
+        self.transformer.waitForTransform('/l_gripper_tool_frame', self.targetFrame, rospy.Time(0), rospy.Duration(5))
+        try:
+            self.gripperTrans, self.gripperRot = self.transformer.lookupTransform('/l_gripper_tool_frame', self.rgbCameraFrame, rospy.Time(0))
+        except tf.ExtrapolationException:
+            print 'TF Gripper Error!'
+            pass
+
+        return self.points3D, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
+
+
+        # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
+        # try:
+        #     targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
+        #     self.transMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+        #     # print transMatrix
+        # except tf.ExtrapolationException:
+        #     print 'TF Error!'
+        #     pass
+        # points = np.c_[self.points3D, np.ones(len(self.points3D))]
+        # values = np.dot(self.transMatrix, points.T).T[:, :3]
+        # # print 'Read computation time:', time.time() - startTime
+        # # self.cloudTime = time.time()
+        # return values, np.dot(self.transMatrix, np.array([self.micLocation[0], self.micLocation[1], self.micLocation[2], 1.0]))[:3].tolist(), \
+        #        np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime

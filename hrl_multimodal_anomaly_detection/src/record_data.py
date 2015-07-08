@@ -59,6 +59,7 @@ class ADL_log:
         if self.kinematics is not None: sensors += 'k'
         self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + sensors + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
 
+        # With respect to torso_lift_link
         self.bowlPos = None
         self.headPos = None
 
