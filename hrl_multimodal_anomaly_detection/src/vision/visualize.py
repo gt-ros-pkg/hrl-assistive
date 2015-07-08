@@ -20,6 +20,7 @@ from geometry_msgs.msg import Point
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import tf
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 
@@ -49,7 +50,8 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
     publisher.publish(marker)
 
 dbscan = DBSCAN(eps=0.12, min_samples=10)
-fileName = '/home/zerickson/Recordings/fantasticFruit_scooping_vk_07-07-2015_18-36-21/iteration_1_failure.pkl'
+# fileName = '/home/zerickson/Recordings/beanScooper_scooping_fvk_07-08-2015_13-10-23/iteration_0_success.pkl'
+fileName = '/home/zerickson/Recordings/beanScooperFailure_scooping_fvk_07-08-2015_13-29-40/iteration_0_failure.pkl'
 
 def readDepth():
     with open(fileName, 'rb') as f:
@@ -57,18 +59,22 @@ def readDepth():
         visual = data['visual_points']
         times = data['visual_time']
         time.sleep(3)
-        for (pointSet, gripper, spoon), t in zip(visual, times):
-            # print 'Number of points:', len(pointSet)
-            print 'Time:', t
-            gripper = np.array(gripper)
-            spoon = np.array(spoon)
+        for (pointSet, mic, spoon, (targetTrans, targetRot), gripperTF), timeStamp in zip(visual, times):
+            print 'Time:', timeStamp
+            # Transform mic and spoon into torso_lift_link
+            targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+            mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            spoon = np.dot(targetMatrix, np.array([spoon[0], spoon[1], spoon[2], 1.0]))[:3]
+
+            pointSet = np.c_[pointSet, np.ones(len(pointSet))]
+            pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
 
             # Check for invalid points
             pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
             # Determine a line between the gripper and spoon
-            directionVector = spoon - gripper
-            linePoints = gripper + [t*directionVector for t in np.linspace(0, 1, 5)]
+            directionVector = spoon - mic
+            linePoints = mic + [t*directionVector for t in np.linspace(0, 1, 5)]
 
             # Find points within a sphere of radius 6 cm around each point on the line
             nearbyPoints = None
@@ -86,7 +92,8 @@ def readDepth():
 
             # publishPoints('gripper', [gripper], size=0.05, g=1.0, b=1.0)
             # publishPoints('spoon', [spoon], size=0.05, b=1.0)
-            time.sleep(0.4)
+
+            time.sleep(0.15) if timeStamp < 19 else time.sleep(0.4)
 
 def readVisual():
     # fgbg = cv2.BackgroundSubtractorMOG()

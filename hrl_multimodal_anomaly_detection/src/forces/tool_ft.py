@@ -75,6 +75,7 @@ class tool_ft(Thread):
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
+        self.force_raw_sub.unregister()
         rospy.sleep(1.0)
 
 

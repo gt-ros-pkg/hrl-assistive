@@ -72,9 +72,9 @@ class kinectDepth:
         self.gripperTrans = None
         self.gripperRot = None
 
-        rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+        self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
-        rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
@@ -112,6 +112,11 @@ class kinectDepth:
         # # self.cloudTime = time.time()
         # return values, np.dot(self.transMatrix, np.array([self.micLocation[0], self.micLocation[1], self.micLocation[2], 1.0]))[:3].tolist(), \
         #        np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
+
+    def cancel(self):
+        self.publisher.unregister()
+        self.cloudSub.unregister()
+        self.cameraSub.unregister()
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
