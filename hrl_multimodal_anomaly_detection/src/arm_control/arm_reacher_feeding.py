@@ -379,7 +379,8 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[i][3])
 
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
-            scoopingStepsClient()
+            scoopingTimes = scoopingStepsClient()
+            print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             time.sleep(self.pausesScooping[i])
             

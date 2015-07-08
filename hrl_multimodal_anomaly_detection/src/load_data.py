@@ -133,6 +133,11 @@ class graphing():
 
             ft_force_mag = np.linalg.norm(ft_force, axis=1)
 
+            scooping_steps_times = np.array(iterations.get('scooping_steps_times'), None)
+
+            print "scooping_steps_times: "
+            print scooping_steps_times
+
             forceAx1.plot(ft_time, ft_force[:,0], 'b-')
             tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
             
