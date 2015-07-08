@@ -76,8 +76,7 @@ class armReachAction(mpcBaseAction):
 
         #Array of offsets from bowl/head positions
         #Used to perform motions relative to bowl/head positions
-        self.leftArmScoopingPos = np.array([[-.015, 0,    .15],
-                                            [-.015,	0,	  .15],
+        self.leftArmScoopingPos = np.array([[-.015,	0,	  .15],
                                             [-.015,	0,	-.065], #Moving down into bowl
                                             [.01,	0,	-.045], #Moving forward in bowl
                                             [0,		0,	  .05], #While rotating spoon to scoop out
@@ -87,8 +86,7 @@ class armReachAction(mpcBaseAction):
                                            [0,   .01,   0],
                                            [0,    .2,   0]])
 
-        self.leftArmScoopingEulers = np.array([[90,   0,      0],
-                                               [90,	-50,    -30],
+        self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
                                                [90,	-50,	-30], #Moving down into bowl
                                                [90,	-30,	-30], #Moving forward in bowl
                                                [90,	  0,	-30], #Rotating spoon to scoop out of bowl
@@ -119,7 +117,7 @@ class armReachAction(mpcBaseAction):
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-        self.timeoutsScooping = [6, 6, 3, 3, 2, 2]
+        self.timeoutsScooping = [6, 3, 3, 2, 2]
         self.timeoutsFeeding = [7, 7, 7]
 
         #Paused used between each motion
@@ -380,11 +378,7 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             time.sleep(self.pausesScooping[i])
-            if i == 0:
-                print "Pausing to hold 'normal' spoon condition"
-                self.setStop()
-                time.sleep(2)
-
+            
         # print "#1 Moving over bowl... "
         #
         # print "#2 Moving down into bowl... "
