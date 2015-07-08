@@ -19,6 +19,8 @@ from geometry_msgs.msg import PoseStamped
 import rospy, optparse
 import tf
 
+from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
+
 def log_parse():
     parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
 
@@ -63,10 +65,14 @@ class ADL_log:
         self.bowlPos = None
         self.headPos = None
 
+        self.scooping_steps_times = []
+
         rospy.Subscriber('hrl_feeding_task/manual_bowl_location',
                          PoseStamped, self.bowlPoseManualCallback)
         rospy.Subscriber('hrl_feeding_task/manual_head_location',
                          PoseStamped, self.headPoseManualCallback)
+
+        self.scoopingStepsService = rospy.Service('/scooping_steps_service', None_Bool, self.scoopingStepsTimesCallback)
 
         # raw_input('press Enter to reset')
         # if ft: self.ft.reset()
@@ -126,6 +132,8 @@ class ADL_log:
         data['bowl_position'] = self.bowlPos
         data['head_position'] = self.headPos
 
+        data['scooping_steps_times'] = self.scooping_steps_times
+
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1': status = 'success'
         elif flag == '2': status = 'failure'
@@ -156,6 +164,10 @@ class ADL_log:
 
     def headPoseManualCallback(self, data):
         self.headPos = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+
+    def scoopingStepsTimesCallback(self, data):
+        self.scooping_steps_times.append(rospy.get_time() - self.init_time)
+        return True
 
 if __name__ == '__main__':
     subject = 'gatsbii'

@@ -40,6 +40,8 @@ class armReachAction(mpcBaseAction):
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
 
+        self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
+
         rArmServersRunning = False
 
         # Service Proxies for controlling right arm
@@ -375,7 +377,9 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[i][1],
                 self.leftArmScoopingQuats[i][2],
                 self.leftArmScoopingQuats[i][3])
+
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
+            scoopingStepsClient()
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             time.sleep(self.pausesScooping[i])
             
