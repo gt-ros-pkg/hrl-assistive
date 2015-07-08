@@ -61,13 +61,15 @@ class dataRecord:
             #print "Initializing right arm for scooping"
             #print self.armReachAction("rightArmInitScooping")
 
-            time.sleep(1)
+            #time.sleep(1)
 
             self.log.log_start()
             time.sleep(2)
 
             print "Running scooping!"
             print self.armReachAction("runScooping")
+
+            time.sleep(2)
 
             self.log.close_log_file()
 
