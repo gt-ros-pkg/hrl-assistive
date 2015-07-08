@@ -76,17 +76,19 @@ class armReachAction(mpcBaseAction):
 
         #Array of offsets from bowl/head positions
         #Used to perform motions relative to bowl/head positions
-        self.leftArmScoopingPos = np.array([[-.015,	0,	  .15],
+        self.leftArmScoopingPos = np.array([[-.015, 0,    .15],
+                                            [-.015,	0,	  .15],
                                             [-.015,	0,	-.065], #Moving down into bowl
                                             [.01,	0,	-.045], #Moving forward in bowl
                                             [0,		0,	  .05], #While rotating spoon to scoop out
                                             [0,		0,    .15]]) #Moving up out of bowl
 
         self.leftArmFeedingPos = np.array([[0,    .2,   0],
-                                           [0,    .01,  0],
+                                           [0,   .01,   0],
                                            [0,    .2,   0]])
 
-        self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
+        self.leftArmScoopingEulers = np.array([[90,   0,      0],
+                                               [90,	-50,    -30],
                                                [90,	-50,	-30], #Moving down into bowl
                                                [90,	-30,	-30], #Moving forward in bowl
                                                [90,	  0,	-30], #Rotating spoon to scoop out of bowl
@@ -117,12 +119,12 @@ class armReachAction(mpcBaseAction):
         # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
-        self.timeoutsScooping = [6, 3, 3, 2, 2]
+        self.timeoutsScooping = [6, 6, 3, 3, 2, 2]
         self.timeoutsFeeding = [7, 7, 7]
 
         #Paused used between each motion
         #... for automatic movement
-        self.pausesScooping = [1, 1, 1, 1, 1]
+        self.pausesScooping = [0, 0, 0, 0, 0]
         self.pausesFeeding = [1, 1, 1]
 
         print "Calculated quaternions: \n"
@@ -367,6 +369,7 @@ class armReachAction(mpcBaseAction):
             # raw_input("Press anything to continue... ")
 
         for i in xrange(len(self.pausesScooping)):
+            print "Scooping step #%d " % i
             self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[i][0],
                 self.bowl_pos[1] + self.leftArmScoopingPos[i][1],
                 self.bowl_pos[2] + self.leftArmScoopingPos[i][2])
@@ -377,6 +380,10 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             time.sleep(self.pausesScooping[i])
+            if i == 0:
+                print "Pausing to hold 'normal' spoon condition"
+                self.setStop()
+                time.sleep(2)
 
         # print "#1 Moving over bowl... "
         #

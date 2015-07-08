@@ -35,7 +35,7 @@ class graphing():
         self.numPkls = 0
         self.pklsList = []
 
-        self.gs = gridspec.GridSpec(2,3)
+        self.gs = gridspec.GridSpec(3,3)
         #self.gs.update(left = 0.4, right = 0.5, bottom = 0.05, hspace=0)
         self.gs2 = gridspec.GridSpec(3,1)
 
@@ -115,6 +115,10 @@ class graphing():
         forceAx3.set_title('Z Force')
         tfAx3.set_title('Z Pos')
 
+        forceMagAx4 = plt.subplot(self.gs[2,:])
+        forceMagAx4.set_xlabel('time (s)')
+        forceMagAx4.set_title('Force Normalization (Magnitude)')
+
         for iterations in self.pklsList:
             ft_time = np.array(iterations.get('ft_time',None))
             kinematics_time = np.array(iterations.get('kinematics_time', None))
@@ -139,7 +143,10 @@ class graphing():
 
             forceAx3.plot(ft_time, ft_force[:,2], 'b-')
             tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
-            plt.show()
+
+            forceMagAx4.plot(ft_time, ft_force_mag, 'y-')
+
+        plt.show()
 
         return True
         
