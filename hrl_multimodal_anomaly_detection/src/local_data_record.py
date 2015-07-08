@@ -11,7 +11,6 @@ class dataRecord:
     FT = True
     VISION = True
     KINEMATICS = True
-    TEST_MODE = False
 
 
     def __init__(self):

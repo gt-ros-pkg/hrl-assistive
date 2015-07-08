@@ -38,4 +38,5 @@ class tool_vision(Thread):
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
+        self.visionTracker.cancel()
         rospy.sleep(1.0)

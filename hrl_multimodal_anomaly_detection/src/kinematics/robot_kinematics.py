@@ -34,7 +34,7 @@ class robot_kinematics(threading.Thread):
             elif group['name'] == 'right_arm_joints' and self.arm == 'r':
                 self.joint_names_list = group['joints']
 
-        rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
+        self.jointSub = rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
 
     def jointStatesCallback(self, data):
         joint_angles = []
@@ -80,5 +80,6 @@ class robot_kinematics(threading.Thread):
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
+        self.jointSub.unregister()
         rospy.sleep(1.0)
 

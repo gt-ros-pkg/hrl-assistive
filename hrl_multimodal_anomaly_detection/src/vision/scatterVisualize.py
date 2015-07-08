@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
@@ -19,7 +21,7 @@ def plot3dPoints(fileName, title=None):
         visual = data['visual_points']
         times = data['visual_time']
         bowl = data['bowl_position']
-        # print visual
+        # print np.array(visual).shape
         i = 0
         for (pointSet, mic, spoon, (targetTrans, targetRot), (gripTrans, gripRot)), timeStamp in zip(visual, times):
             print 'Time:', timeStamp
@@ -27,6 +29,9 @@ def plot3dPoints(fileName, title=None):
             targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
             mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
             spoon = np.dot(targetMatrix, np.array([spoon[0], spoon[1], spoon[2], 1.0]))[:3]
+
+            pointSet = np.c_[pointSet, np.ones(len(pointSet))]
+            pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
 
             distances.append(np.linalg.norm(mic - bowl))
             # Find angle between gripper-bowl vector and gripper-spoon vector
@@ -48,10 +53,15 @@ def plot3dPoints(fileName, title=None):
                 pointsNear = np.linalg.norm(pointSet - linePoint, axis=1) < 0.06
                 nearbyPoints = nearbyPoints + pointsNear if nearbyPoints is not None else pointsNear
 
-            # Points near spoon (with respect to the gripper location)
-            clusterPoints = pointSet[nearbyPoints] - mic
+            # Points near spoon
+            clusterPoints = pointSet[nearbyPoints]
             # Points outside of spoon radius
             # nonClusterPoints = pointSet[nearbyPoints == False]
+
+            # Transpose all points to gripper frame
+            gripMatrix = np.dot(tf.transformations.translation_matrix(gripTrans), tf.transformations.quaternion_matrix(gripRot))
+            clusterPoints = np.c_[clusterPoints, np.ones(len(clusterPoints))]
+            clusterPoints = np.dot(gripMatrix, clusterPoints.T).T[:, :3]
 
             xs = np.concatenate((xs, clusterPoints[:, 0]))
             ys = np.concatenate((ys, clusterPoints[:, 1]))
@@ -61,10 +71,10 @@ def plot3dPoints(fileName, title=None):
             #     break
             # i += 1
 
-    return xs, ys, zs, ts
+    return xs, ys, zs, ts, distances, angles
 
-xs, ys, zs, ts = plot3dPoints('/home/zerickson/Recordings/fantasticFruit_scooping_vk_07-07-2015_18-36-21/iteration_0_success.pkl')
-xss, yss, zss, tss = plot3dPoints('/home/zerickson/Recordings/fantasticFruit_scooping_vk_07-07-2015_18-36-21/iteration_1_failure.pkl')
+xs, ys, zs, ts, distances, angles = plot3dPoints('/home/zerickson/Recordings/RecordingScoopingTimes2DaehyungROXLOL_scooping_fvk_07-08-2015_14-17-42/iteration_0_success.pkl')
+xss, yss, zss, tss, distances2, angles2 = plot3dPoints('/home/zerickson/Recordings/RecordingScoopingTimes2DaehyungROXLOL_scooping_fvk_07-08-2015_14-17-42/iteration_3_success.pkl')
 
 f, ((ax1, ax4), (ax2, ax5), (ax3, ax6)) = plt.subplots(3, 2, sharex=True)
 plt.subplots_adjust(hspace=0.1)

@@ -2,6 +2,7 @@
 
 # System
 import os
+import gc
 import sys
 import time
 from pylab import *
@@ -158,6 +159,8 @@ class ADL_log:
             self.vision = tool_vision(self.tf_listener)
         if self.kinematics is not None:
             self.kinematics = robot_kinematics(self.tf_listener)
+
+        gc.collect()
 
     def bowlPoseManualCallback(self, data):
         self.bowlPos = np.matrix([[data.pose.position.x], [data.pose.position.y], [data.pose.position.z]])

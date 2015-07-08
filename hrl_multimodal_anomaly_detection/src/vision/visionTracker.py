@@ -63,6 +63,9 @@ class visionTracker:
         self.lastUpdateNumber = self.tracker.updateNumber
         return self.tracker.getAllRecentPoints()
 
+    def cancel(self):
+        self.tracker.cancel()
+
     # def spinner(self):
     #     markers = self.tracker.getAllMarkersWithHistory()
     #     if markers is None:
