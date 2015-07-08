@@ -8,7 +8,7 @@ from hrl_multimodal_anomaly_detection.srv import String_String
 class dataRecord:
 
     AUDIO = True
-    FT = False
+    FT = True
     VISION = True
     KINEMATICS = True
     TEST_MODE = False
@@ -64,6 +64,7 @@ class dataRecord:
             time.sleep(1)
 
             self.log.log_start()
+            time.sleep(2)
 
             print "Running scooping!"
             print self.armReachAction("runScooping")
@@ -99,6 +100,7 @@ class dataRecord:
         while runFeeding:
 
             self.log.log_start()
+            time.sleep(2)
 
             print "Running feeding!"
             print self.armReachAction("runFeeding")
