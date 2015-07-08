@@ -127,6 +127,8 @@ class graphing():
             tf_r_ee_pos = np.array(iterations.get('r_end_effector_pos', None))
             tf_r_ee_quat = np.array(iterations.get('r_end_effector_quat', None))
 
+            ft_force_mag = np.linalg.norm(ft_force, axis=1)
+
             forceAx1.plot(ft_time, ft_force[:,0], 'b-')
             tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
             
