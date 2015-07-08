@@ -12,7 +12,7 @@ try :
 except:
     import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
-from sensor_msgs.msg import PointCloud2, CameraInfo
+from sensor_msgs.msg import PointCloud2, Image, CameraInfo
 from geometry_msgs.msg import Point
 from roslib import message
 
@@ -24,6 +24,7 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
+from cv_bridge import CvBridge, CvBridgeError
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class kinectDepth:
@@ -47,6 +48,9 @@ class kinectDepth:
             self.transformer = tf.TransformListener()
         else:
             self.transformer = tfListener
+
+        self.bridge = CvBridge()
+        self.imageData = None
 
         # RGB Camera
         self.rgbCameraFrame = None
@@ -74,12 +78,14 @@ class kinectDepth:
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
+        self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        print 'Connected to Kinect depth'
         self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        # print 'Time between read calls:', time.time() - self.cloudTime
-        # startTime = time.time()
+        print 'Time between read calls:', time.time() - self.cloudTime
+        startTime = time.time()
 
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
@@ -95,7 +101,9 @@ class kinectDepth:
             print 'TF Gripper Error!'
             pass
 
-        return self.points3D, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
+        print 'Read computation time:', time.time() - startTime
+        self.cloudTime = time.time()
+        return self.points3D, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
 
 
         # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
@@ -108,8 +116,6 @@ class kinectDepth:
         #     pass
         # points = np.c_[self.points3D, np.ones(len(self.points3D))]
         # values = np.dot(self.transMatrix, points.T).T[:, :3]
-        # # print 'Read computation time:', time.time() - startTime
-        # # self.cloudTime = time.time()
         # return values, np.dot(self.transMatrix, np.array([self.micLocation[0], self.micLocation[1], self.micLocation[2], 1.0]))[:3].tolist(), \
         #        np.dot(self.transMatrix, np.array([self.spoon[0], self.spoon[1], self.spoon[2], 1.0]))[:3].tolist()
 
@@ -117,6 +123,19 @@ class kinectDepth:
         self.publisher.unregister()
         self.cloudSub.unregister()
         self.cameraSub.unregister()
+        self.imageSub.unregister()
+
+    def cloudCallback(self, data):
+        try:
+            image = self.bridge.imgmsg_to_cv(data)
+            image = np.asarray(image[:,:])
+        except CvBridgeError, e:
+            print e
+            return
+
+        # Crop imageGray to bounding box size
+        lowX, highX, lowY, highY = self.boundingBox()
+        self.imageData = image[lowY:highY, lowX:highX, :]
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
