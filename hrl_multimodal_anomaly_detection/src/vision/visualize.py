@@ -49,14 +49,14 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
     publisher.publish(marker)
 
 dbscan = DBSCAN(eps=0.12, min_samples=10)
-fileName = '/home/zerickson/Recordings/fancyFruits_scooping_07-07-2015_16-42-15/iteration_0_success.pkl'
+fileName = '/home/zerickson/Recordings/fantasticFruit_scooping_vk_07-07-2015_18-36-21/iteration_1_failure.pkl'
 
 def readDepth():
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
         visual = data['visual_points']
         times = data['visual_time']
-        # print visual
+        time.sleep(3)
         for (pointSet, gripper, spoon), t in zip(visual, times):
             # print 'Number of points:', len(pointSet)
             print 'Time:', t
@@ -84,9 +84,9 @@ def readDepth():
             publishPoints('points', clusterPoints, g=1.0)
             publishPoints('nonpoints', nonClusterPoints, r=1.0)
 
-            publishPoints('gripper', [gripper], size=0.05, g=1.0, b=1.0)
-            publishPoints('spoon', [spoon], size=0.05, b=1.0)
-            time.sleep(0.25)
+            # publishPoints('gripper', [gripper], size=0.05, g=1.0, b=1.0)
+            # publishPoints('spoon', [spoon], size=0.05, b=1.0)
+            time.sleep(0.4)
 
 def readVisual():
     # fgbg = cv2.BackgroundSubtractorMOG()
