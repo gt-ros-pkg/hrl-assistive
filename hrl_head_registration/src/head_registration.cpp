@@ -1,4 +1,3 @@
-
 #include <hrl_head_registration/head_registration.h>
 
 #define USE_COLOR_MODEL
@@ -119,7 +118,7 @@ void computeICPRegistration(const PCRGB::Ptr& target_pc, const PCRGB::Ptr& sourc
         pt_rep(new pcl::ColorPointRepresentation(color_weight, color_weight, color_weight));
     icp.setPointRepresentation(pt_rep);
     icp.setInputTarget(target_pc);
-    icp.setInputCloud(source_pc);
+    icp.setInputSource(source_pc);
     icp.setTransformationEpsilon(icp_trans_eps);
     icp.setMaxCorrespondenceDistance(icp_max_corresp);
     icp.setMaximumIterations(max_iters);
