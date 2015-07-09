@@ -76,8 +76,6 @@ class kinectDepth:
         self.gripperTrans = None
         self.gripperRot = None
 
-        self.gripperPoints = None
-
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
         # self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
@@ -105,7 +103,7 @@ class kinectDepth:
 
         # print 'Read computation time:', time.time() - startTime
         # self.cloudTime = time.time()
-        return self.points3D, self.gripperPoints, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
+        return self.points3D, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
 
 
         # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
@@ -165,16 +163,6 @@ class kinectDepth:
             return
 
         self.points3D = np.array([point for point in points3D])
-
-        self.gripperPoints = []
-        # Transform all points into gripper frame
-        for point in self.points3D:
-            pointStamped = PointStamped()
-            pointStamped.header.frame_id = self.rgbCameraFrame
-            pointStamped.point.x = point[0]
-            pointStamped.point.y = point[1]
-            pointStamped.point.z = point[2]
-            self.gripperPoints.append(self.transformer.transformPoint('/l_gripper_tool_frame', pointStamped))
 
         self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
