@@ -241,19 +241,19 @@ class kinectDepth:
 
         mic = [0.12, -0.02, 0]
 
-        self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
-        self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        # self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        # gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+        # self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
 
-        # if len(self.grips) >= 2:
-        #     self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-2]
-        #     self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        #     gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
-        # else:
-        #     self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        #     gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
-        #     self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
-        # self.grips.append((int(gripX), int(gripY), transMatrix))
+        if len(self.grips) >= 1:
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-1]
+            self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+        else:
+            self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        self.grips.append((int(gripX), int(gripY), transMatrix))
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
