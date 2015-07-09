@@ -13,7 +13,7 @@ except:
     import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import PointCloud2, Image, CameraInfo
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 from roslib import message
 
 # Clustering
@@ -105,7 +105,7 @@ class kinectDepth:
 
         # print 'Read computation time:', time.time() - startTime
         # self.cloudTime = time.time()
-        return self.points3D, self.gripperPoints, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot], values
+        return self.points3D, self.gripperPoints, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
 
 
         # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
@@ -166,51 +166,15 @@ class kinectDepth:
 
         self.points3D = np.array([point for point in points3D])
 
-        try:
-            points3D = pc2.read_points(self.transformer.transformPointCloud('/l_gripper_tool_frame', self.pointCloud), field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-        except:
-            print 'Unable to unpack from PointCloud2!', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-            return
-        self.gripperPoints = np.array([point for point in points3D])
-
-        # print 'Time for second call:', time.time() - startTime
-        # ticker = time.time()
-
-        # # Perform dbscan clustering
-        # X = StandardScaler().fit_transform(self.points3D)
-        # labels = self.dbscan.fit_predict(X)
-        # # unique_labels = set(labels)
-        #
-        # print 'Time for third call:', time.time() - ticker
-        # ticker = time.time()
-        #
-        # # Find the point closest to our gripper and it's corresponding label
-        # index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        # closeLabel = labels[index]
-        # while closeLabel == -1 and points3D.size > 0:
-        #     np.delete(points3D, [index])
-        #     np.delete(labels, [index])
-        #     index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        #     closeLabel = labels[index]
-        # if points3D.size <= 0:
-        #     return
-        # # print 'Label:', closeLabel
-        #
-        # print 'Time for fourth call:', time.time() - ticker
-        # ticker = time.time()
-        #
-        # # Find the cluster closest to our gripper
-        # self.clusterPoints = points3D[labels==closeLabel]
-        # self.nonClusterPoints = points3D[labels!=closeLabel]
-
-        # if self.visual:
-        #     # Publish depth features for spoon features
-        #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
-        #
-        #     # Publish depth features for non spoon features
-        #     self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
-
-        # print 'Time for fifth call:', time.time() - ticker
+        self.gripperPoints = []
+        # Transform all points into gripper frame
+        for point in self.points3D:
+            pointStamped = PointStamped()
+            pointStamped.header.frame_id = self.rgbCameraFrame
+            pointStamped.point.x = point[0]
+            pointStamped.point.y = point[1]
+            pointStamped.point.z = point[2]
+            self.gripperPoints.append(self.transformer.transformPoint('/l_gripper_tool_frame', pointStamped))
 
         self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
