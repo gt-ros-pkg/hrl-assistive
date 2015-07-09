@@ -11,6 +11,9 @@ import cPickle as pickle
 from scipy import ndimage
 import matplotlib.pyplot as plt
 
+from skimage.segmentation import slic, felzenszwalb, quickshift
+from skimage.segmentation import mark_boundaries
+
 # Clustering
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
@@ -50,8 +53,8 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
     publisher.publish(marker)
 
 dbscan = DBSCAN(eps=0.12, min_samples=10)
-# fileName = '/home/zerickson/Recordings/beanScooper_scooping_fvk_07-08-2015_13-10-23/iteration_0_success.pkl'
-fileName = '/home/zerickson/Recordings/beanScooperFailure_scooping_fvk_07-08-2015_13-29-40/iteration_0_failure.pkl'
+fileName = '/home/zerickson/Recordings/Ahh_scooping_fvk_07-09-2015_02-04-05/iteration_0_success.pkl'
+# fileName = '/home/zerickson/Downloads/RecordingScoopingTimesFasterResponseTries1_scooping_fvk_07-08-2015_14-55-28/iteration_0_success.pkl'
 
 def readDepth():
     with open(fileName, 'rb') as f:
@@ -59,8 +62,20 @@ def readDepth():
         visual = data['visual_points']
         times = data['visual_time']
         time.sleep(3)
-        for (pointSet, mic, spoon, (targetTrans, targetRot), gripperTF), timeStamp in zip(visual, times):
+        for (pointSet, image, mic, spoon, (targetTrans, targetRot), gripperTF), timeStamp in zip(visual, times):
             print 'Time:', timeStamp
+
+            # segments = slic(image, sigma=5)
+            # segments_fz = felzenszwalb(image, scale=50, sigma=1, min_size=50)
+            # segments_slic = slic(image, n_segments=250, compactness=10, sigma=1)
+            # segments_quick = quickshift(image, kernel_size=6, max_dist=6, ratio=1)
+            # image = mark_boundaries(image, segments_quick)
+
+
+            # cv2.imshow('Image window', image)
+            # cv2.waitKey(200)
+            # continue
+
             # Transform mic and spoon into torso_lift_link
             targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
             mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
@@ -90,10 +105,11 @@ def readDepth():
             publishPoints('points', clusterPoints, g=1.0)
             publishPoints('nonpoints', nonClusterPoints, r=1.0)
 
-            # publishPoints('gripper', [gripper], size=0.05, g=1.0, b=1.0)
-            # publishPoints('spoon', [spoon], size=0.05, b=1.0)
+            publishPoints('gripper', [mic], size=0.05, g=1.0, b=1.0)
+            publishPoints('spoon', [spoon], size=0.05, b=1.0)
 
-            time.sleep(0.15) if timeStamp < 19 else time.sleep(0.4)
+            time.sleep(0.4)
+            # time.sleep(0.15) if timeStamp < 19 else time.sleep(0.4)
 
 def readVisual():
     # fgbg = cv2.BackgroundSubtractorMOG()
