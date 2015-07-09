@@ -54,7 +54,9 @@ void pubLoop(PCRGB::Ptr& pc, const std::string& topic, double rate, int number_r
     ros::Publisher pub_pc = nh.advertise<PCRGB>(topic, 1);
     ros::Rate r(rate);
     while(ros::ok() && number_runs-- > 0) {
-        pc->header.stamp = ros::Time::now();
+        //Hack for Hydro to adapt time formats:
+        ros::Time time_stamp = ros::Time::now();
+        pc->header.stamp = time_stamp.toNSec()/1e3;
         pub_pc.publish(pc);
         r.sleep();
     }
@@ -69,7 +71,9 @@ void pubLoop(vector<PCRGB::Ptr> &pcs, const vector<std::string>& topics, double 
     ros::Rate r(rate);
     while(ros::ok() && number_runs-- > 0) {
         for(size_t i=0;i<pcs.size();i++) {
-            pcs[i]->header.stamp = ros::Time::now();
+            //Hack for Hydro to adapt time formats:
+            ros::Time time_stamp = ros::Time::now();
+            pcs[i]->header.stamp = time_stamp.toNSec()/1e3;
             pub_pcs[i].publish(*pcs[i]);
         }
         r.sleep();
