@@ -84,8 +84,8 @@ class kinectDepth:
         print 'Connected to Kinect camera info'
 
     def getAllRecentPoints(self):
-        print 'Time between read calls:', time.time() - self.cloudTime
-        startTime = time.time()
+        # print 'Time between read calls:', time.time() - self.cloudTime
+        # startTime = time.time()
 
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
@@ -101,8 +101,8 @@ class kinectDepth:
             print 'TF Gripper Error!'
             pass
 
-        print 'Read computation time:', time.time() - startTime
-        self.cloudTime = time.time()
+        # print 'Read computation time:', time.time() - startTime
+        # self.cloudTime = time.time()
         return self.points3D, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
 
 
