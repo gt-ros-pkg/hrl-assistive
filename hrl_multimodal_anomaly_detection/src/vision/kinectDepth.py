@@ -75,11 +75,12 @@ class kinectDepth:
         self.targetRot = None
         self.gripperTrans = None
         self.gripperRot = None
+        self.transMatrix = None
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
-        self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
-        print 'Connected to Kinect depth'
+        # self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        # print 'Connected to Kinect image'
         self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
 
@@ -101,9 +102,20 @@ class kinectDepth:
             print 'TF Gripper Error!'
             pass
 
+        self.transformer.waitForTransform('/l_gripper_tool_frame', self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
+        try:
+            trans, rot = self.transformer.lookupTransform('/l_gripper_tool_frame', self.rgbCameraFrame, rospy.Time(0))
+            self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
+            # print transMatrix
+        except tf.ExtrapolationException:
+            print 'TF Error!'
+            pass
+        points = np.c_[self.points3D, np.ones(len(self.points3D))]
+        values = np.dot(self.transMatrix, points.T).T[:, :3]
+
         # print 'Read computation time:', time.time() - startTime
         # self.cloudTime = time.time()
-        return self.points3D, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot]
+        return self.points3D, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot], values
 
 
         # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
@@ -123,7 +135,7 @@ class kinectDepth:
         self.publisher.unregister()
         self.cloudSub.unregister()
         self.cameraSub.unregister()
-        self.imageSub.unregister()
+        # self.imageSub.unregister()
 
     def imageCallback(self, data):
         if self.lGripX is None:
@@ -155,7 +167,7 @@ class kinectDepth:
 
         lowX, highX, lowY, highY = self.boundingBox()
 
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
         except:
