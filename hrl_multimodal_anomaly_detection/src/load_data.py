@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.fftpack import fft
+import sys
 #import glob 
 # import yaafelib as yaafe
 # from yaafelib import AudioFeature, check_dataflow_params, dataflow_safe_append, DataFlow
@@ -44,9 +45,9 @@ class graphing():
         change_folder = raw_input("Current recordings folder is: %s, press [y] to change " % folder_name_recordings)
         if change_folder == 'y':
             folder_name_recordings = raw_input("Enter new recordings folder name and press [Enter] ")
-        trial_name = raw_input("Enter trial name and press [Enter] ")
+        self.trial_name = raw_input("Enter trial name and press [Enter] ")
 
-        folder_name_trial = folder_name_recordings + trial_name + "/"
+        folder_name_trial = folder_name_recordings + self.trial_name + "/"
         print "Current trial folder is %s " % folder_name_trial
 
         whichOpen = raw_input("Load all pickle files, only successful, or only failed? [a/s/f] ")
@@ -56,12 +57,15 @@ class graphing():
 
         if whichOpen == 'a':
             pkl_file_pattern = 'iteration_*_*.pkl'
+            self.whichOpenString = "successful and failed"
             print "Loading all pickle files \n"
         elif whichOpen == 's':
             pkl_file_pattern = 'iteration_*_success.pkl'
+            self.whichOpenString = "only successful"
             print "Only loading successful pickle files \n"
         elif whichOpen == 'f':
             pkl_file_pattern = 'iteration_*_failure.pkl'
+            self.whichOpenString = "only failed"
             print "Only loading successful pickle files \n"
 
         for file in os.listdir(folder_name_trial):
@@ -96,6 +100,7 @@ class graphing():
 
     def ft_kinematics(self):
 
+        # self.gs.title('test')
         forceAx1 = plt.subplot(self.gs[1,0])
         tfAx1 = plt.subplot(self.gs[0,0])
         forceAx1.set_xlabel('time (s)')
@@ -116,7 +121,7 @@ class graphing():
         tfAx3.set_title('Z Pos')
 
         forceMagAx4 = plt.subplot(self.gs[2,:])
-        forceMagAx4.set_xlabel('time (s)')
+        forceMagAx4.set_xlabel('time (s) \n \n Trial Name: ' + self.trial_name + '\n Loaded ' + self.whichOpenString + ' iterations')
         forceMagAx4.set_title('Force Normalization (Magnitude)')
 
         for iterations in self.pklsList:
@@ -133,23 +138,28 @@ class graphing():
 
             ft_force_mag = np.linalg.norm(ft_force, axis=1)
 
-            scooping_steps_times = np.array(iterations.get('scooping_steps_times'), None)
-
-            print "scooping_steps_times: "
-            print scooping_steps_times
+            scooping_steps_times = np.array(self.pklsList[0].get('scooping_steps_times'), None)
 
             forceAx1.plot(ft_time, ft_force[:,0], 'b-')
             tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
-            
 
             forceAx2.plot(ft_time, ft_force[:,1], 'b-')
             tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
-            
 
             forceAx3.plot(ft_time, ft_force[:,2], 'b-')
             tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
 
             forceMagAx4.plot(ft_time, ft_force_mag, 'y-')
+
+            for i in range(0, len(scooping_steps_times)):
+                forceAx1.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
+                tfAx1.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
+                forceAx2.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
+                tfAx2.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
+                forceAx3.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
+                tfAx3.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
+                forceMagAx4.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
+
 
         plt.show()
 
