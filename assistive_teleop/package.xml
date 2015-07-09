@@ -28,13 +28,11 @@
   <build_depend>pr2_controllers_msgs</build_depend>
   <build_depend>control_msgs</build_depend>
   <build_depend>pr2_common_action_msgs</build_depend>
-  <build_depend>arm_navigation_msgs</build_depend>
-  <build_depend>kinematics_msgs</build_depend>
   <build_depend>topic_tools</build_depend>
   <build_depend>sound_play</build_depend>
   <build_depend>pixel_2_3d</build_depend>
   <build_depend>rosbridge_server</build_depend>
-  <build_depend>mjpeg_server</build_depend>
+  <build_depend>web_video_server</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>rospy</run_depend>
@@ -47,12 +45,10 @@
   <run_depend>pr2_controllers_msgs</run_depend>
   <run_depend>control_msgs</run_depend>
   <run_depend>pr2_common_action_msgs</run_depend>
-  <run_depend>arm_navigation_msgs</run_depend>
-  <run_depend>kinematics_msgs</run_depend>
   <run_depend>topic_tools</run_depend>
   <run_depend>sound_play</run_depend>
   <run_depend>pixel_2_3d</run_depend>
   <run_depend>rosbridge_server</run_depend>
-  <run_depend>mjpeg_server</run_depend>
+  <run_depend>web_video_server</run_depend>
 
 </package>

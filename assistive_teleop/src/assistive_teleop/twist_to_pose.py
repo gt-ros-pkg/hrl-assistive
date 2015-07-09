@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-import sys
-
-import roslib; roslib.load_manifest('assistive_teleop')
 import rospy
 from geometry_msgs.msg import PoseStamped, TwistStamped, Quaternion
 from tf import (TransformListener, ExtrapolationException,
                 LookupException, ConnectivityException)
 from tf import transformations as trans
+
 
 class TwistToPoseConverter(object):
     def __init__(self):
@@ -24,7 +22,7 @@ class TwistToPoseConverter(object):
             pos, quat = self.tf_listener.lookupTransform(frame, self.ee_frame, now)
         except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
             rospy.logwarn("[%s] TF Failure getting current end-effector pose:\r\n %s"
-                            %(rospy.get_name(), e))
+                          % (rospy.get_name(), e))
             return None, None
         return pos, quat
 
@@ -49,9 +47,10 @@ class TwistToPoseConverter(object):
             self.pose_pub.publish(pose_out)
         except (LookupException, ConnectivityException, ExtrapolationException, Exception) as e:
             rospy.logwarn("[%s] TF Failure transforming goal pose to torso_lift_link:\r\n %s"
-                           %(rospy.get_name(), e))
+                          % (rospy.get_name(), e))
 
-if __name__=='__main__':
+
+def main():
     rospy.init_node('twist_to_pose_node')
     converter = TwistToPoseConverter()
     rospy.spin()

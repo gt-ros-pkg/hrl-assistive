@@ -3,53 +3,55 @@
 import sys
 from threading import Lock
 
-import roslib; roslib.load_manifest('assistive_teleop')
 import rospy
 import actionlib
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from  kinematics_msgs.srv import (GetKinematicSolverInfo,
-                                  GetPositionIK,
-                                  GetPositionIKRequest)
+from kinematics_msgs.srv import (GetKinematicSolverInfo,
+                                 GetPositionIK,
+                                 GetPositionIKRequest)
 from pr2_controllers_msgs.msg import (JointTrajectoryAction,
                                       JointTrajectoryGoal,
                                       JointTrajectoryControllerState)
 
+
 class IKGoalSender(object):
+
     """A class for performing IK with the PR2 """
+
     def __init__(self, arm):
         """Initialize IK Services, arm trajectory client, state, and
         feedback"""
         self.arm = arm
         self.joint_state_lock = Lock()
-        #Setup action client for arm joint trajectories
-        self.traj_client = actionlib.SimpleActionClient(self.arm[0]+
-                '_arm_controller/joint_trajectory_action',
-                JointTrajectoryAction)
+        # Setup action client for arm joint trajectories
+        self.traj_client = actionlib.SimpleActionClient(self.arm[0] +
+                                                        '_arm_controller/joint_trajectory_action',
+                                                        JointTrajectoryAction)
         if not self.traj_client.wait_for_server(rospy.Duration(5)):
-            rospy.loginfo('[IKGoalSender] Timed Out waiting for '+
+            rospy.loginfo('[IKGoalSender] Timed Out waiting for ' +
                           'JointTrajectoryAction Server')
-        #Connect to IK services
-        prefix =  'pr2_'+self.arm+'_arm_kinematics/'
+        # Connect to IK services
+        prefix = 'pr2_' + self.arm + '_arm_kinematics/'
         try:
             rospy.loginfo('Waiting for IK services')
-            rospy.wait_for_service(prefix+'get_ik_solver_info')
-            rospy.wait_for_service(prefix+'get_ik')
+            rospy.wait_for_service(prefix + 'get_ik_solver_info')
+            rospy.wait_for_service(prefix + 'get_ik')
             rospy.loginfo("Found IK services")
-            self.ik_info_proxy = rospy.ServiceProxy(prefix+"get_ik_solver_info",
+            self.ik_info_proxy = rospy.ServiceProxy(prefix + "get_ik_solver_info",
                                                     GetKinematicSolverInfo)
             self.ik_info = self.ik_info_proxy().kinematic_solver_info
-            self.ik_client = rospy.ServiceProxy(prefix+"get_ik",
+            self.ik_client = rospy.ServiceProxy(prefix + "get_ik",
                                                 GetPositionIK,
                                                 True)
         except:
             rospy.logerr("Could not find IK services")
 
         self.log_pub = rospy.Publisher('log_out', String)
-        self.joint_state = {'positions':[],'velocities':[]}
+        self.joint_state = {'positions': [], 'velocities': []}
         self.joint_state_received = False
-        self.joint_state_sub = rospy.Subscriber(self.arm[0]+
+        self.joint_state_sub = rospy.Subscriber(self.arm[0] +
                                                 '_arm_controller/state',
                                                 JointTrajectoryControllerState,
                                                 self.joint_state_cb)
@@ -70,18 +72,18 @@ class IKGoalSender(object):
         req = self.form_ik_request(ps)
         ik_goal = self.ik_client(req)
         if ik_goal.error_code.val == 1:
-           traj_point = JointTrajectoryPoint()
-           traj_point.positions = ik_goal.solution.joint_state.position
-           traj_point.velocities = ik_goal.solution.joint_state.velocity
-           traj_point.time_from_start = rospy.Duration(1)
+            traj_point = JointTrajectoryPoint()
+            traj_point.positions = ik_goal.solution.joint_state.position
+            traj_point.velocities = ik_goal.solution.joint_state.velocity
+            traj_point.time_from_start = rospy.Duration(1)
 
-           traj = JointTrajectory()
-           traj.joint_names = self.ik_info.joint_names
-           traj.points.append(traj_point)
+            traj = JointTrajectory()
+            traj.joint_names = self.ik_info.joint_names
+            traj.points.append(traj_point)
 
-           traj_goal = JointTrajectoryGoal()
-           traj_goal.trajectory = traj
-           self.traj_client.send_goal(traj_goal)
+            traj_goal = JointTrajectoryGoal()
+            traj_goal.trajectory = traj
+            self.traj_client.send_goal(traj_goal)
         else:
             rospy.loginfo('[IKGoalSender] IK Failed: Cannot reach goal')
             self.log_pub.publish(String('IK Failed: Cannot reach goal'))
@@ -100,7 +102,8 @@ class IKGoalSender(object):
         req.ik_request.ik_seed_state.joint_state.velocity = velocities
         return req
 
-if __name__=='__main__':
+
+def main():
     rospy.init_node('ik_goal_relay')
-    sender = IKGoalSender(sys.argv[sys.argv.index('--arm')+1])
+    sender = IKGoalSender(sys.argv[sys.argv.index('--arm') + 1])
     rospy.spin()

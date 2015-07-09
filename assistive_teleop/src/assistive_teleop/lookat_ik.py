@@ -1,23 +1,19 @@
 #!/usr/bin/env python
 
-import sys
 import copy
 
 import numpy as np
 import openravepy as op
 
-import roslib
-roslib.load_manifest('assistive_teleop')
 import rospy
 from geometry_msgs.msg import PointStamped
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pr2_controllers_msgs.msg import JointTrajectoryControllerState
 from tf import TransformListener, LookupException, ConnectivityException, ExtrapolationException
 
-from assistive_teleop.srv import LookatIk, LookatIkResponse
-
 FORCE_REBUILD = False
 TEST = False
+
 
 class IkError(Exception):
     pass
@@ -26,9 +22,9 @@ class IkError(Exception):
 class CameraLookatIk(object):
     def __init__(self, robotfile, manipname, freeindices,
                  freeinc=[0.75, 0.75, 0.75],
-                 weights = [1.0, 0.95, 0.8, 0.66, 0.2]):
+                 weights=[1.0, 0.95, 0.8, 0.66, 0.2]):
         self.side = side
-        self.weights=weights
+        self.weights = weights
         self.env = op.Environment()
         self.env.Load(robotfile)
         self.robot = self.env.GetRobots()[0]
@@ -70,7 +66,7 @@ class CameraLookatIk(object):
         self.robot.SetDOFValues(current_angles, self.arm_indices)
         # Solve IK
         sols = self.manip.FindIKSolutions(op.IkParameterization(target, op.IkParameterizationType.Lookat3D),
-                                                                 op.IkFilterOptions.CheckEnvCollisions)
+                                          op.IkFilterOptions.CheckEnvCollisions)
         if not np.any(sols):
             raise IkError("[{0}] Could not find an IK solution.".format(rospy.get_name()))
         # Weed out solutions which don't point directly at the target point
@@ -93,7 +89,7 @@ class CameraPointer(object):
         while self.joint_names is None and not rospy.is_shutdown():
             rospy.sleep(0.5)
             rospy.loginfo("[{0}] Waiting for joint state from arm controller.".format(rospy.get_name()))
-        #Set rate limits on a per-joint basis
+        # Set rate limits on a per-joint basis
         self.max_vel_rot = [np.pi]*len(self.joint_names)
         self.target_sub = rospy.Subscriber('{0}/lookat_ik/goal'.format(rospy.get_name()), PointStamped, self.goal_cb)
         rospy.loginfo("[{0}] Ready.".format(rospy.get_name()))
@@ -137,16 +133,15 @@ class CameraPointer(object):
         self.joint_traj_pub.publish(jt)
 
 
-
 def test(camera_ik, ntrials):
     camera_ik.env.SetViewer('qtcoin')
-    pointer_vec = np.array([0,0,5])
+    pointer_vec = np.array([0, 0, 5])
     xbounds, ybounds, zbounds = [-3, 3], [-3, 3], [-3, 3]
     for i in xrange(ntrials):
         target = np.array([np.random.uniform(*xbounds),
                            np.random.uniform(*ybounds),
                            np.random.uniform(*zbounds)])
-        print "Target #{0:d}: ({1:.2f}, {2:.2f}, {3:.2f})".format(i,*target)
+        print "Target #{0:d}: ({1:.2f}, {2:.2f}, {3:.2f})".format(i, *target)
         # Get IK Solution
         try:
             iksol = camera_ik.lookat_ik(target)
@@ -157,18 +152,18 @@ def test(camera_ik, ntrials):
         # Draw arrows from camera to target, and on camera z axis (should align through target)
         camera_ik.robot.SetDOFValues(iksol, camera_ik.arm_indices)
         cam_tf = camera_ik.manip.GetEndEffectorTransform()
-        cam_pt = cam_tf[:3,3]
-        target_handle = camera_ik.env.plot3(np.array([target]), 15, np.array([[1.,0.,0.,1.]]))
-        cam_handle = camera_ik.env.plot3(np.array([cam_pt]), 15, np.array([[0.,1.,0.,1.]]))
+        cam_pt = cam_tf[:3, 3]
+        target_handle = camera_ik.env.plot3(np.array([target]), 15, np.array([[1., 0., 0., 1.]]))
+        cam_handle = camera_ik.env.plot3(np.array([cam_pt]), 15, np.array([[0., 1., 0., 1.]]))
         pointed_vec = op.transformPoints(cam_tf, np.array([pointer_vec]))[0]
-        arrow_handle = camera_ik.env.drawarrow(cam_pt, pointed_vec, 0.01, np.array([0.,0.,1.,1.]))
-        arrow_handle2 = camera_ik.env.drawarrow(cam_pt, target, 0.02, np.array([0.,1.,0.,1.]))
-        inp = raw_input("Check camera pointing. Enter 'q' to quit, or just [Enter] to continue.");
-        if inp in ['q','Q', 'quit','Quit']:
+        arrow_handle = camera_ik.env.drawarrow(cam_pt, pointed_vec, 0.01, np.array([0., 0., 1., 1.]))
+        arrow_handle2 = camera_ik.env.drawarrow(cam_pt, target, 0.02, np.array([0., 1., 0., 1.]))
+        inp = raw_input("Check camera pointing. Enter 'q' to quit, or just [Enter] to continue.")
+        if inp in ['q', 'Q', 'quit', 'Quit']:
             break
 
 
-if __name__ == '__main__':
+def main():
     robot = "PR2"
     side = 'r'
     freeindices = [27, 28, 30]
@@ -189,4 +184,3 @@ if __name__ == '__main__':
     else:
         camera_pointer = CameraPointer(side, camera_ik)
         rospy.spin()
-

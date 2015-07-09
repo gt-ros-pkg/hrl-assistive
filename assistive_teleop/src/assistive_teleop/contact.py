@@ -3,7 +3,6 @@
 from collections import deque
 from math import sqrt
 
-import roslib; roslib.load_manifest('assistive_teleop')
 import rospy
 from pr2_msgs.msg import AccelerometerState
 from std_msgs.msg import Bool, Float64
@@ -50,7 +49,7 @@ class ContactNode(Contact):
                 self.contact_pub.publish(True)
 
 
-if __name__=='__main__':
+def main():
     rospy.init_node('r_accelerometer_contact')
     contact_node = ContactNode();
     rospy.spin()

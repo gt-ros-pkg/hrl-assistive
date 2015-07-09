@@ -58,20 +58,20 @@
   </node>
 -->
   <!-- Text-to-speech backend 
-  <node pkg="assistive_teleop" type="speech_intermediary.py" name="wt_speech_intermediary">
+  <node pkg="assistive_teleop" type="speech_intermediary" name="wt_speech_intermediary">
     <param name="voice" value="kal_diphone"/>
   </node>
 -->
 
 
 <!--
-  <node name="l_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
+  <node name="l_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay" 
         args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >
       <remap from="pose_in" to="/wt_l_click_pose" />
       <remap from="pose_out" to="/haptic_mpc/goal_pose" />
   </node>
 
-  <node name="r_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay.py" 
+  <node name="r_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay" 
         args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >
       <remap from="pose_in" to="/wt_r_click_pose" />
       <remap from="pose_out" to="/r_cart/command_pose" />
@@ -90,14 +90,14 @@
     <arg name="l_cart_step_pose_goal" default="haptic_mpc/goal_pose" />
     <arg name="r_cart_step_pose_goal" default="r_cart/command_pose" />
 
-    <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose.py" output="screen">
+    <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose" output="screen">
       <remap from="twist_in" to="r_cart/web_commands" />
       <remap from="pose_out" to="$(arg r_cart_step_pose_goal)"/>
       <param name="ee_frame" value="/r_gripper_tool_frame"/>
     </node>
     
 
-    <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose.py" output="screen">
+    <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
       <remap from="twist_in" to="l_cart/web_commands" />
       <remap from="pose_out" to="$(arg l_cart_step_pose_goal)" />
       <param name="ee_frame" value="/l_gripper_tool_frame"/>
@@ -118,24 +118,24 @@
       <param name="root_name" value="torso_lift_link" />
     </node>
 
-    <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose.py" output="screen">
+    <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
       <remap from="twist_in" to="l_cart/web_commands" />
       <remap from="pose_out" to="l_step_pose_goal" />
       <param name="ee_frame" value="/l_wrist_roll_link" />
     </node>
 
-    <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose.py" output="screen">
+    <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose" output="screen">
       <remap from="twist_in" to="r_cart/web_commands" />
       <remap from="pose_out" to="r_step_pose_goal"/>
       <param name="ee_frame" value="/r_wrist_roll_link" />
     </node>
 
-    <node pkg="assistive_teleop" type="ik_move.py" name="left_arm_pose_to_ik" output="screen" args="arm left">
+    <node pkg="assistive_teleop" type="ik_move" name="left_arm_pose_to_ik" output="screen" args="arm left">
       <remap from="pose_in" to="l_step_pose_goal" />
       <remap from="log_out" to="wt_log_out" />
     </node>
         
-    <node pkg="assistive_teleop" type="ik_move.py" name="right_arm_pose_to_ik" output="screen" args="arm right">
+    <node pkg="assistive_teleop" type="ik_move" name="right_arm_pose_to_ik" output="screen" args="arm right">
       <remap from="pose_in" to="r_step_pose_goal" />
       <remap from="log_out" to="wt_log_out" />
     </node>
