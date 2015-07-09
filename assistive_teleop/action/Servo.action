@@ -1,5 +1,0 @@
-geometry_msgs/PoseStamped goal
----
-std_msgs/Bool arrived
----
-std_msgs/String current_action

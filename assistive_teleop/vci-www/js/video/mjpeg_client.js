@@ -38,10 +38,10 @@ RFH.MjpegClient = function (options) {
 
     // Update the server and display to reflect the current properties
     self.update = function () {
-        var srcStr = self.server+ "/stream"
+        var srcStr = self.server+ "/stream?"
         for (var param in self.activeParams)
         {
-            srcStr += "?" + param + '=' + self.activeParams[param]
+            srcStr += param + '=' + self.activeParams[param] + '&'
         }
         $("#"+self.imageId).attr("src", srcStr);
         $("#"+self.divId).width(self.activeParams['width'])

@@ -74,10 +74,10 @@ var MjpegClient = function (options) {
     $("#"+self.divId).append("<img id="+self.imageId+"></img>");
 
     self.update = function () {
-        var srcStr = self.server+ "/stream"
+        var srcStr = self.server+ "/stream?"
         for (param in self.activeParams)
         {
-            srcStr += "?" + param + '=' + self.activeParams[param]
+            srcStr += param + '=' + self.activeParams[param] + '&'
         }
         $("#"+self.imageId).attr("src", srcStr)
                                   .width(self.activeParams['width'])

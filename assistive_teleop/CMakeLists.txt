@@ -1,34 +1,19 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(assistive_teleop)
+find_package(catkin REQUIRED COMPONENTS geometry_msgs std_msgs message_generation rospy tf image_rotate pr2_msgs pr2_controllers_msgs control_msgs pr2_common_action_msgs arm_navigation_msgs kinematics_msgs topic_tools sound_play pixel_2_3d rosbridge_server mjpeg_server message_runtime)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+add_service_files(
+  DIRECTORY srv
+  FILES LookatIk.srv
+)
 
-rosbuild_find_ros_package(actionlib_msgs)
-include(${actionlib_msgs_PACKAGE_PATH}/cmake/actionbuild.cmake)
-genaction()
+generate_messages(
+    DEPENDENCIES geometry_msgs std_msgs
+)
 
-rosbuild_init()
-
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-#uncomment if you have defined messages
-rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
-
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+catkin_package(
+    DEPENDS 
+    CATKIN_DEPENDS rospy tf std_msgs geometry_msgs image_rotate pr2_msgs pr2_controllers_msgs control_msgs pr2_common_action_msgs arm_navigation_msgs kinematics_msgs topic_tools sound_play pixel_2_3d rosbridge_server mjpeg_server message_runtime
+    INCLUDE_DIRS
+    LIBRARIES
+)

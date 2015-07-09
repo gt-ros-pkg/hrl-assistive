@@ -1,8 +1,5 @@
 <launch>
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
-  <!--<include file="$(find assistive_teleop)/launch/tilt_camera.launch"/>-->
-  <!--<include file="$(find assistive_teleop)/launch/base_camera.launch"/>-->
-  <!--<include file="$(find assistive_teleop)/launch/head_wfov_camera.launch"/>-->
   <arg name="launch_kinect" default="false" />
   <arg name="kinect_ns" default="head_mount_kinect" />
   <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
@@ -11,20 +8,14 @@
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
 
-  <!-- Rosbridge, Rosapi, Webserver (roswww), and mjpeg_server -->
-  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
+  <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
+  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
       <param name="port" type="int" value="9091" />
   </node>
-  <node name="rosapi" pkg="rosapi" type="rosapi.py" output="screen"/>
-  <rosparam> 'http/default': 8000 </rosparam>
-  <node name="roswww" pkg="roswww" type="webserver.py" output="screen"/>
-  <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
-      <param name="port" type="int" value="8080" />
-  </node>
-  <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf_web_republisher" output="screen" />
-
-  <!-- Launch Kinect (needed for pixel_2_3d -->
-  <include if="$(arg launch_kinect)" file="/etc/ros/distro/openni_head.launch" />
+  <node name="rosapi" pkg="rosapi" type="rosapi" output="screen"/>
+  <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port 8000 --webpath vci-www"/>
+  <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
+  <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
@@ -48,18 +39,6 @@
 
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
-
-    <!-- Right Arm Controller -->
-   <include file="$(find assistive_teleop)/launch/jttask_cart_controller.launch" >
-      <arg name="use_left_arm" default="false" />
-      <arg name="use_right_arm" default="true" />
-    </include>
-
-  <node name="r_cart_posture" pkg="assistive_teleop" type="jttask_posture.py" output="screen">
-      <remap from="shakeout_cmd" to="/r_cart/reset_command" />
-      <param name="posture" value="elbowupr" />
-      <param name="shakeout_posture" value="elbowdownr" />
-  </node>
 
   <!-- Throttling nodes for robot state 
 

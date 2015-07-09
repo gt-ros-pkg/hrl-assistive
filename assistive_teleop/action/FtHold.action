@@ -1,8 +1,0 @@
-float32 activity_thresh
-float32 z_thresh
-float32 mag_thresh
-duration timeout
----
-bool unsafe
-bool timeout
----

@@ -1,0 +1,58 @@
+<package>
+  <name>assistive_teleop</name>
+  <version>0.0.0</version>
+  <description>Assistive_teleop provides an accessible interface for control of a PR2 by persons with severe motor disabilities. It is designed for use with an assistive HCI device providing control of mouse movement and a single (left) click. The interface is presented in a web browser, requiring no installation by users, and allows low-level control of all degrees of freedom in the PR2, provides visual feedback, and provides semi-autonomous functions for general manipulation and performance of Activities of Daily Living (ADLs), with the intention of allowing users greater control over their environment as well as their own bodies, and providing increased independence. 
+
+    This package is a direct product of the Robots for Humanity effort, a collaboration between Willow Garage and the Healthcare Robotics Lab at Georgia Tech.</description>
+  <maintainer email="Phillip.Grice@gatech.edu">Phillip Grice</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/assistive_teleop</url>
+
+  <author>Phillip M. Grice</author>
+  <author>Advisor: Prof. Charlie Kemp</author>
+  <author>Lab: The Healthcare Robotoics Lab at Georgia Tech.</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>rospy</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>image_rotate</build_depend>
+  <build_depend>pr2_msgs</build_depend>
+  <build_depend>pr2_controllers_msgs</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>pr2_common_action_msgs</build_depend>
+  <build_depend>arm_navigation_msgs</build_depend>
+  <build_depend>kinematics_msgs</build_depend>
+  <build_depend>topic_tools</build_depend>
+  <build_depend>sound_play</build_depend>
+  <build_depend>pixel_2_3d</build_depend>
+  <build_depend>rosbridge_server</build_depend>
+  <build_depend>mjpeg_server</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>rospy</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>image_rotate</run_depend>
+  <run_depend>pr2_msgs</run_depend>
+  <run_depend>pr2_controllers_msgs</run_depend>
+  <run_depend>control_msgs</run_depend>
+  <run_depend>pr2_common_action_msgs</run_depend>
+  <run_depend>arm_navigation_msgs</run_depend>
+  <run_depend>kinematics_msgs</run_depend>
+  <run_depend>topic_tools</run_depend>
+  <run_depend>sound_play</run_depend>
+  <run_depend>pixel_2_3d</run_depend>
+  <run_depend>rosbridge_server</run_depend>
+  <run_depend>mjpeg_server</run_depend>
+
+</package>

@@ -1,9 +1,0 @@
-geometry_msgs/PoseStamped[] poses
-float32 force_thresh
-bool ignore_ft
----
-bool contact
-bool all_sent
----
-int32 current
-int32 total
