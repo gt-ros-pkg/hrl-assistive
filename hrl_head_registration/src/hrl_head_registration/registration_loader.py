@@ -1,8 +1,7 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import copy
 
-import roslib; roslib.load_manifest('hrl_head_registration')
 import rospy
 import rosbag
 from std_msgs.msg import String
@@ -12,9 +11,11 @@ from tf import TransformBroadcaster, TransformListener
 from hrl_head_registration.srv import HeadRegistration, ConfirmRegistration
 from hrl_geom.pose_converter import PoseConv
 
+
 class RegistrationLoader(object):
     WORLD_FRAME = "odom_combined"
     HEAD_FRAME = "head_frame"
+
     def __init__(self):
         self.head_pose = None
         self.head_pc_reg = None
@@ -39,7 +40,7 @@ class RegistrationLoader(object):
         self.publish_feedback("Performing Head Registration. Please Wait.")
         self.face_side = rospy.get_param("/face_side", 'r')
         bag_str = self.reg_dir + '/' + '_'.join([self.subject, self.face_side, "head_transform"]) + ".bag"
-        rospy.loginfo("[%s] Loading %s" %(rospy.get_name(), bag_str))
+        rospy.loginfo("[%s] Loading %s" % (rospy.get_name(), bag_str))
         try:
             bag = rosbag.Bag(bag_str, 'r')
             for topic, msg, ts in bag.read_messages():
@@ -57,16 +58,16 @@ class RegistrationLoader(object):
         else:
             head_registration = self.head_registration_l
         try:
-            rospy.loginfo("[%s] Requesting head registration for %s at pixel (%d, %d)." %(rospy.get_name(),
-                                                                                          self.subject,
-                                                                                          req.u, req.v))
+            rospy.loginfo("[%s] Requesting head registration for %s at pixel (%d, %d)." % (rospy.get_name(),
+                                                                                           self.subject,
+                                                                                           req.u, req.v))
             self.head_pc_reg = head_registration(req.u, req.v).reg_pose
             if ((self.head_pc_reg.pose.position == Point(0.0, 0.0, 0.0)) and
-                (self.head_pc_reg.pose.orientation == Quaternion(0.0, 0.0, 0.0, 1.0))):
-               raise rospy.ServiceException("Unable to find a good match.")
-               self.head_pc_reg = None
+               (self.head_pc_reg.pose.orientation == Quaternion(0.0, 0.0, 0.0, 1.0))):
+                raise rospy.ServiceException("Unable to find a good match.")
+                self.head_pc_reg = None
         except rospy.ServiceException as se:
-            self.publish_feedback("Registration failed: %s" %se)
+            self.publish_feedback("Registration failed: %s" % se)
             return (False, PoseStamped())
 
         pc_reg_mat = PoseConv.to_homo_mat(self.head_pc_reg)
@@ -77,14 +78,14 @@ class RegistrationLoader(object):
         self.head_pose.header.stamp = self.head_pc_reg.header.stamp
 
         side = "right" if (self.face_side == 'r') else "left"
-        self.publish_feedback("Registered head using %s cheek model, please check and confirm." %side)
+        self.publish_feedback("Registered head using %s cheek model, please check and confirm." % side)
 #        rospy.loginfo('[%s] Head frame registered at:\r\n %s' %(rospy.get_name(), self.head_pose))
         self.test_pose.publish(self.head_pose)
         return (True, self.head_pose)
 
     def confirm_reg_cb(self, req):
         if self.head_pose is None:
-            raise rospy.ServiceException("Head has not been registered.");
+            raise rospy.ServiceException("Head has not been registered.")
             return False
         try:
             hp = copy.copy(self.head_pose)
@@ -96,13 +97,14 @@ class RegistrationLoader(object):
             quat = (hp_world.pose.orientation.x, hp_world.pose.orientation.y,
                     hp_world.pose.orientation.z, hp_world.pose.orientation.w)
             self.head_frame_tf = (pos, quat)
-            self.publish_feedback("Head registration confirmed.");
+            self.publish_feedback("Head registration confirmed.")
             return True
         except Exception as e:
-            rospy.logerr("[%s] Error: %s" %(rospy.get_name(), e))
+            rospy.logerr("[%s] Error: %s" % (rospy.get_name(), e))
             raise rospy.ServiceException("Error confirming head registration.")
 
-if __name__ == "__main__":
+
+def main():
     rospy.init_node("registration_loader")
     rl = RegistrationLoader()
     rate = rospy.Rate(10)

@@ -1,0 +1,49 @@
+<package>
+  <name>hrl_head_registration</name>
+  <version>0.0.0</version>
+  <description>A package for registering the location of a head by ICP against a saved pointcloud.</description>
+  <maintainer email="phillip.grice@gatech.edu">Phillip Grice</maintainer>
+  <maintainer>Advisor: Prof. Charlie Kemp</maintainer>
+  <maintainer>Lab: The Healthcare Robotoics Lab at Georgia Tech.</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/hrl_head_registration</url>
+
+  <author>Kelsey Hawkins</author>
+  <author>Phillip M. Grice</author>
+  <author>Advisor: Prof. Charlie Kemp</author>
+  <author>Lab: The Healthcare Robotoics Lab at Georgia Tech.</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>std_srvs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>eigen_conversions</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>image_geometry</build_depend>
+  <build_depend>hrl_geom</build_depend>
+  <build_depend>hrl_lib</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>rospy</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>std_srvs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>hrl_geom</run_depend>
+  <run_depend>hrl_lib</run_depend>
+
+</package>

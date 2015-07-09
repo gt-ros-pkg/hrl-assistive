@@ -1,42 +1,51 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(hrl_head_registration)
+find_package(catkin REQUIRED COMPONENTS rospy std_msgs std_srvs tf roscpp pcl_ros eigen_conversions cv_bridge image_transport image_geometry hrl_geom hrl_lib)
+find_package(OpenCV)
+find_package(PCL)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+catkin_python_setup()
 
-rosbuild_init()
+add_service_files(
+  DIRECTORY srv
+  FILES 
+  ConfirmRegistration.srv 
+  HeadRegistration.srv 
+)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+generate_messages(
+    TODO DEPENDENCIES geometry_msgs std_msgs
+)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
 
-rosbuild_add_boost_directories()
-rosbuild_add_library(${PROJECT_NAME} src/pcl_basic.cpp)
-rosbuild_add_library(${PROJECT_NAME} src/head_registration.cpp)
+add_library(${PROJECT_NAME} src/pcl_basic.cpp)
+add_library(${PROJECT_NAME} src/head_registration.cpp)
 
-#rosbuild_add_executable(test_face_detect src/test_face_detect.cpp)
-rosbuild_add_executable(head_registration src/head_registration.cpp)
-rosbuild_add_executable(head_registration_srv src/head_registration_srv.cpp)
-rosbuild_add_executable(head_training src/head_training.cpp)
-rosbuild_add_executable(pub_pc src/pub_pc.cpp)
-rosbuild_add_executable(clickable_pc src/clickable_pc.cpp)
-rosbuild_add_executable(capture_pc src/capture_pc.cpp)
-rosbuild_add_executable(head_alignment_confirm src/head_alignment_confirm.cpp)
-rosbuild_add_executable(head_bowl_alignment_confirm src/head_bowl_alignment_confirm.cpp)
+#add_executable(test_face_detect src/test_face_detect.cpp)
+add_executable(head_registration src/head_registration.cpp)
+add_executable(head_registration_srv src/head_registration_srv.cpp)
+add_executable(head_training src/head_training.cpp)
+add_executable(pub_pc src/pub_pc.cpp)
+add_executable(clickable_pc src/clickable_pc.cpp)
+add_executable(capture_pc src/capture_pc.cpp)
+add_executable(head_alignment_confirm src/head_alignment_confirm.cpp)
+add_executable(head_bowl_alignment_confirm src/head_bowl_alignment_confirm.cpp)
 target_link_libraries(head_registration ${PROJECT_NAME})
 target_link_libraries(head_registration_srv ${PROJECT_NAME})
 target_link_libraries(head_training ${PROJECT_NAME})
 target_link_libraries(pub_pc ${PROJECT_NAME})
 target_link_libraries(clickable_pc ${PROJECT_NAME})
 target_link_libraries(capture_pc ${PROJECT_NAME})
+
+catkin_package(
+    DEPENDS pcl opencv2
+    CATKIN_DEPENDS rospy std_msgs std_srvs tf roscpp pcl_ros eigen_conversions cv_bridge image_transport image_geometry hrl_geom hrl_lib 
+    INCLUDE_DIRS include
+    LIBRARIES 
+)
+
+catkin_install_python(PROGRAMS scripts/registration_loader
+                    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
