@@ -75,7 +75,8 @@ class kinectDepth:
         self.targetRot = None
         self.gripperTrans = None
         self.gripperRot = None
-        self.transMatrix = None
+
+        self.gripperPoints = None
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
@@ -102,20 +103,9 @@ class kinectDepth:
             print 'TF Gripper Error!'
             pass
 
-        self.transformer.waitForTransform('/l_gripper_tool_frame', self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
-        try:
-            trans, rot = self.transformer.lookupTransform('/l_gripper_tool_frame', self.rgbCameraFrame, rospy.Time(0))
-            self.transMatrix = np.dot(tf.transformations.translation_matrix(trans), tf.transformations.quaternion_matrix(rot))
-            # print transMatrix
-        except tf.ExtrapolationException:
-            print 'TF Error!'
-            pass
-        points = np.c_[self.points3D, np.ones(len(self.points3D))]
-        values = np.dot(self.transMatrix, points.T).T[:, :3]
-
         # print 'Read computation time:', time.time() - startTime
         # self.cloudTime = time.time()
-        return self.points3D, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot], values
+        return self.points3D, self.gripperPoints, self.imageData, self.micLocation, self.spoon, [self.targetTrans, self.targetRot], [self.gripperTrans, self.gripperRot], values
 
 
         # self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
@@ -175,6 +165,13 @@ class kinectDepth:
             return
 
         self.points3D = np.array([point for point in points3D])
+
+        try:
+            points3D = pc2.read_points(self.transformer.transformPointCloud('/l_gripper_tool_frame', self.pointCloud), field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
+        except:
+            print 'Unable to unpack from PointCloud2!', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
+            return
+        self.gripperPoints = np.array([point for point in points3D])
 
         # print 'Time for second call:', time.time() - startTime
         # ticker = time.time()
