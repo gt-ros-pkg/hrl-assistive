@@ -56,7 +56,7 @@ bool extractPCFromColorModel(const PCRGB::Ptr& pc_in, PCRGB::Ptr& pc_out,
 {
     double hue_weight;
     ros::param::param<double>("~hue_weight", hue_weight, 1.0);
-    printf("%f\n", hue_weight);
+//    printf("Hue Weight: %f\n", hue_weight);
 
     Eigen::Vector3d x, x_m;
     Eigen::Matrix3d cov_inv = cov.inverse();
@@ -222,25 +222,6 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "head_registration");
     ros::NodeHandle nh;
-
-#if 0
-    PCRGB::Ptr input_pc, template_pc;
-    readPCBag(argv[1], template_pc);
-    readPCBag(argv[2], input_pc);
-    int u, v;
-    FILE* file = fopen(argv[3], "r");
-    fscanf(file, "%d,%d\n", &u, &v);
-    fclose(file);
-
-    Eigen::Affine3d tf_mat;
-    findFaceRegistration(template_pc, input_pc, u, v, tf_mat);
-
-    PCRGB::Ptr tf_pc(new PCRGB());
-    transformPC(*input_pc, *tf_pc, tf_mat);
-    tf_pc->header.frame_id = "/base_link";
-    pubLoop(tf_pc, "test", 5);
-    return 0;
-#endif
 
 #if 1
     PCRGB::Ptr input_pc(new PCRGB()), face_extract_pc(new PCRGB());
