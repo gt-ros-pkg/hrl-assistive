@@ -27,11 +27,13 @@ boost::shared_ptr<tf::TransformListener> tf_list;
 void subAlignCallback(const PCRGB::Ptr& aligned_pc_)
 {
     tf::StampedTransform transform;
+    ros::Time pc_time;
+    pc_time.fromNSec(aligned_pc_->header.stamp * 1000ull);
     if(!tf_list->waitForTransform("/base_link", aligned_pc_->header.frame_id,
-                                 aligned_pc_->header.stamp, ros::Duration(3)))
+                                  pc_time, ros::Duration(3)))
         return;
     tf_list->lookupTransform("/base_link", aligned_pc_->header.frame_id, 
-                            aligned_pc_->header.stamp, transform);
+                             pc_time, transform);
     aligned_pc = boost::shared_ptr<PCRGB>(new PCRGB());
     pcl_ros::transformPointCloud<PRGB>(*aligned_pc_, *aligned_pc, transform);
 }

@@ -1,6 +1,6 @@
 #include <hrl_head_registration/head_registration.h>
-//#include <hrl_head_registration/HeadRegistration.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <hrl_head_registration/HeadRegistration.h>
 
 typedef hrl_head_registration::HeadRegistration HeadRegSrv;
 

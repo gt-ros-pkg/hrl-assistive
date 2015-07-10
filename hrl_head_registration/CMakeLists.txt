@@ -36,26 +36,30 @@ add_library(head_registration_lib src/head_registration.cpp)
 target_link_libraries(head_registration_lib pcl_basic ${catkin_LIBRARIES} ${pcl_LIBRARIES})
 
 add_executable(head_registration src/head_registration.cpp)
-#add_executable(test_face_detect src/test_face_detect.cpp)
-#add_executable(head_registration src/head_registration.cpp)
-#add_executable(head_registration_srv src/head_registration_srv.cpp)
-#add_executable(head_training src/head_training.cpp)
+add_executable(head_registration_srv src/head_registration_srv.cpp)
+add_dependencies(head_registration_srv ${catkin_EXPORTED_TARGETS})
 add_executable(pub_pc src/pub_pc.cpp)
 add_executable(clickable_pc src/clickable_pc.cpp)
 add_executable(capture_pc src/capture_pc.cpp)
-#add_executable(head_alignment_confirm src/head_alignment_confirm.cpp)
+add_executable(head_alignment_confirm src/head_alignment_confirm.cpp)
 #add_executable(head_bowl_alignment_confirm src/head_bowl_alignment_confirm.cpp)
-#target_link_libraries(head_registration_srv head_registration_lib ${catkin_LIBRARIES})
+target_link_libraries(head_registration_srv head_registration_lib ${catkin_LIBRARIES})
 target_link_libraries(head_registration head_registration_lib ${catkin_LIBRARIES})
-#target_link_libraries(head_training ${PROJECT_NAME})
 target_link_libraries(pub_pc pcl_basic)
 target_link_libraries(clickable_pc head_registration_lib)
 target_link_libraries(capture_pc head_registration_lib)
+target_link_libraries(head_alignment_confirm ${catkin_LIBRARIES})
 
 install(TARGETS pcl_basic head_registration_lib
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
-install(TARGETS pub_pc clickable_pc capture_pc head_registration
+install(TARGETS
+        pub_pc
+        clickable_pc 
+        capture_pc 
+        head_registration 
+        head_registration_srv
+        head_alignment_confirm
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY include/${PROJECT_NAME}/
