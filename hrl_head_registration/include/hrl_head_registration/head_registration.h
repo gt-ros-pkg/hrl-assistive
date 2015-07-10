@@ -1,4 +1,3 @@
-
 #ifndef HEAD_TRACKING_H
 #define HEAD_TRACKING_H
 #include <pcl/kdtree/kdtree_flann.h>

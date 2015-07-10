@@ -1,7 +1,5 @@
-
-
 #include <hrl_head_registration/head_registration.h>
-#include <hrl_head_registration/HeadRegistration.h>
+//#include <hrl_head_registration/HeadRegistration.h>
 #include <geometry_msgs/TransformStamped.h>
 
 typedef hrl_head_registration::HeadRegistration HeadRegSrv;
@@ -63,24 +61,6 @@ bool regCallback(HeadRegSrv::Request& req, HeadRegSrv::Response& resp)
     aligned_pc->header.frame_id = cur_pc->header.frame_id;
     aligned_pub.publish(aligned_pc);
 
-#if 0
-    vector<PCRGB::Ptr> pcs;
-    vector<string> pc_topics;
-
-    PCRGB::Ptr skin_pc(new PCRGB());
-    extractFaceColorModel(cur_pc, skin_pc, req.u, req.v);
-    skin_pc->header.frame_id = "/openni_rgb_optical_frame";
-    pcs.push_back(skin_pc);
-    pc_topics.push_back("/target_pc");
-
-    PCRGB::Ptr tf_pc(new PCRGB());
-    transformPC(*template_pc, *tf_pc, tf_mat);
-    tf_pc->header.frame_id = "/openni_rgb_optical_frame";
-    pcs.push_back(tf_pc);
-    pc_topics.push_back("/template_pc");
-
-    pubLoop(pcs, pc_topics, 5);
-#endif
     return true;
 }
 

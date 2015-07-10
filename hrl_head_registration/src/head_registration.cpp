@@ -26,7 +26,9 @@ void extractSkinPC(const PCRGB::Ptr& pc_in, PCRGB::Ptr& pc_out, double thresh)
 int32_t findClosestPoint(const PCRGB::Ptr& pc, uint32_t u, uint32_t v)
 {
     if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u))
+    {
         return v*KINECT_WIDTH + u;
+    }
     for(uint32_t i=1;i<5;i++) {
         for(uint32_t j=1;j<5;j++) {
             if(PT_IS_NOT_NAN(pc, v*KINECT_WIDTH + u + i))
@@ -97,12 +99,6 @@ public:
         out[0] = p.x; out[1] = p.y; out[2] = p.z;
         out[3] = h; out[4] = s; out[5] = l;
     }
-    //bool isValid<PRGB>(const PRGB& p) const {
-    //    if(p.x == p.x && p.y == p.y && p.z == p.z)
-    //        return true;
-    //    else
-    //        return false;
-    //}
 };
 }
 
@@ -124,41 +120,6 @@ void computeICPRegistration(const PCRGB::Ptr& target_pc, const PCRGB::Ptr& sourc
     icp.setMaximumIterations(max_iters);
     icp.align(*aligned_pc);
     tf_mat = icp.getFinalTransformation().cast<double>();
-    /*
-    icp.setTransformationEpsilon(1e-4);
-    icp.setMaxCorrespondenceDistance(0.5);
-    Eigen::Matrix4f cur_tf = Eigen::Matrix4f::Identity(), last_tf;
-    PCRGB::Ptr last_aligned_pc;
-
-    for(int i=0;i<max_iters;i++) {
-        last_aligned_pc = aligned_pc;
-        icp.setInputCloud(last_aligned_pc);
-        
-        icp.setMaximumIterations(2);
-        icp.align(*aligned_pc);
-        cur_tf = icp.getFinalTransformation() * cur_tf;
-        if (fabs ((icp.getLastIncrementalTransformation () - last_tf).sum ()) < 
-                   icp.getTransformationEpsilon ())
-            icp.setMaxCorrespondenceDistance (icp.getMaxCorrespondenceDistance () - 0.001);
-        last_tf = icp.getLastIncrementalTransformation();
-    }
-    tf_mat = cur_tf.cast<double>();
-    */
-
-#if 0
-    vector<PCRGB::Ptr> pcs;
-    vector<string> pc_topics;
-    aligned_pc->header.frame_id = "/openni_rgb_optical_frame";
-    source_pc->header.frame_id = "/openni_rgb_optical_frame";
-    target_pc->header.frame_id = "/openni_rgb_optical_frame";
-    pcs.push_back(aligned_pc);
-    pcs.push_back(source_pc);
-    pcs.push_back(target_pc);
-    pc_topics.push_back("/aligned_pc");
-    pc_topics.push_back("/source_pc");
-    pc_topics.push_back("/target_pc");
-    pubLoop(pcs, pc_topics, 5.0, 5);
-#endif
 }
 
 void extractFace(const PCRGB::Ptr& input_pc, PCRGB::Ptr& out_pc, int u_click, int v_click)
@@ -184,7 +145,9 @@ void extractFaceColorModel(const PCRGB::Ptr& input_pc, PCRGB::Ptr& out_pc, int u
 
     int32_t closest_ind = findClosestPoint(input_pc, u_click, v_click);
     if(closest_ind < 0)
+    {
         return;
+     }
 
     PCRGB::Ptr model_pc(new PCRGB());
     sphereTrim(input_pc, model_pc, closest_ind, model_radius);
@@ -221,6 +184,11 @@ bool findFaceRegistration(const PCRGB::Ptr& template_pc, const PCRGB::Ptr& input
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "head_registration");
+    if (argc != 3)
+    {
+        ROS_ERROR("Usage: rosrun hrl_head_registration head_registration <full_pointcloud.bag> <filename_with_'u,v'>");
+        return 1;
+    }
     ros::NodeHandle nh;
 
 #if 1
@@ -230,9 +198,11 @@ int main(int argc, char **argv)
     FILE* file = fopen(argv[2], "r");
     fscanf(file, "%d,%d\n", &u, &v);
     fclose(file);
+    ROS_INFO("Read U:%d, V:%d", u, v);
     Eigen::Affine3d tf_mat;
     extractFaceColorModel(input_pc, face_extract_pc, u, v);
     face_extract_pc->header.frame_id = "/base_link";
+    ROS_INFO("Publishing extracted face point cloud.");
     pubLoop(face_extract_pc, "/test", 5);
 #endif
 
