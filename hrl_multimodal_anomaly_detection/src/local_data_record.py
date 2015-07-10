@@ -7,9 +7,9 @@ from hrl_multimodal_anomaly_detection.srv import String_String
 
 class dataRecord:
 
-    AUDIO = False
+    AUDIO = True
     FT = True
-    VISION = True
+    VISION = False
     KINEMATICS = True
 
 
@@ -105,6 +105,8 @@ class dataRecord:
 
             print "Running feeding!"
             print self.armReachAction("runFeeding")
+
+            time.sleep(2)
 
             self.log.close_log_file()
 

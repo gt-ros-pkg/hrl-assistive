@@ -9,6 +9,9 @@ import numpy as np
 #import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import plotly.plotly as pltly
+import plotly.tools as tls   
+from plotly.graph_objs import *
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.fftpack import fft
 import sys
@@ -20,6 +23,7 @@ import sys
 # ROS
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import rospy
 
 # HRL
 import hrl_lib.util as ut
@@ -36,6 +40,7 @@ class graphing():
         self.numPkls = 0
         self.pklsList = []
 
+        self.fig = plt.figure()
         self.gs = gridspec.GridSpec(3,3)
         #self.gs.update(left = 0.4, right = 0.5, bottom = 0.05, hspace=0)
         self.gs2 = gridspec.GridSpec(3,1)
@@ -101,26 +106,26 @@ class graphing():
     def ft_kinematics(self):
 
         # self.gs.title('test')
-        forceAx1 = plt.subplot(self.gs[1,0])
-        tfAx1 = plt.subplot(self.gs[0,0])
+        forceAx1 = self.fig.add_subplot(self.gs[1,0])
+        tfAx1 = self.fig.add_subplot(self.gs[0,0])
         forceAx1.set_xlabel('time (s)')
         forceAx1.set_title('X Force')
         tfAx1.set_title('X Pos')
 
 
-        forceAx2 = plt.subplot(self.gs[1,1])
-        tfAx2 = plt.subplot(self.gs[0,1])
+        forceAx2 = self.fig.add_subplot(self.gs[1,1])
+        tfAx2 = self.fig.add_subplot(self.gs[0,1])
         forceAx2.set_xlabel('time (s)')
         forceAx2.set_title('Y Force')
         tfAx2.set_title('Y Pos')
 
-        forceAx3 = plt.subplot(self.gs[1,2])
-        tfAx3 = plt.subplot(self.gs[0,2])
+        forceAx3 = self.fig.add_subplot(self.gs[1,2])
+        tfAx3 = self.fig.add_subplot(self.gs[0,2])
         forceAx3.set_xlabel('time (s)')
         forceAx3.set_title('Z Force')
         tfAx3.set_title('Z Pos')
 
-        forceMagAx4 = plt.subplot(self.gs[2,:])
+        forceMagAx4 = self.fig.add_subplot(self.gs[2,:])
         forceMagAx4.set_xlabel('time (s) \n \n Trial Name: ' + self.trial_name + '\n Loaded ' + self.whichOpenString + ' iterations')
         forceMagAx4.set_title('Force Normalization (Magnitude)')
 
@@ -161,7 +166,18 @@ class graphing():
                 forceMagAx4.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
 
 
-        plt.show()
+        forceAx1.set_xlim([0,30])
+        forceAx2.set_xlim([0,30])
+        forceAx3.set_xlim([0,30])
+        tfAx1.set_xlim([0,30])
+        tfAx2.set_xlim([0,30])
+        tfAx3.set_xlim([0,30])
+        forceMagAx4.set_xlim([0,30])
+
+        #plt_fig = self.gs.gcf()
+        pltly.iplot_mpl(self.fig, filename='hyder_ft-kinematics_test_one')
+
+        #plt.show()
 
         return True
         
@@ -182,7 +198,7 @@ class graphing():
             audio_chunk = iterations.get('audio_chunk')
 
             audio_data = np.fromstring(audio_data_raw, self.DTYPE)
-            audio_data = np.array(audio_data).flatten()
+            # audio_data = np.array(audio_data).flatten()
 
             audioDataAx.plot(audio_time, audio_data, 'y-')
 
@@ -207,10 +223,9 @@ class graphing():
 
         return b, a
 
-
 if __name__ == '__main__':
 
-    #rospy.init_node("data_visualization")
+    rospy.init_node("data_visualization")
     grapher = graphing()
     grapher.run()
 
