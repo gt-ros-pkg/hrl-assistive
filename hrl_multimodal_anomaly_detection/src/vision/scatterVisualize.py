@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import cv2
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
@@ -21,10 +22,15 @@ def plot3dPoints(fileName, title=None):
         visual = data['visual_points']
         times = data['visual_time']
         bowl = data['bowl_position']
+        bowl = np.array([x[0, 0] for x in bowl])
         # print np.array(visual).shape
         i = 0
-        for (pointSet, mic, spoon, (targetTrans, targetRot), (gripTrans, gripRot)), timeStamp in zip(visual, times):
+        for (pointSet, image, mic, spoon, (targetTrans, targetRot), (gripTrans, gripRot)), timeStamp in zip(visual, times):
             print 'Time:', timeStamp
+
+            # cv2.imshow('Image window', image)
+            # cv2.waitKey(200)
+
             # Transform mic and spoon into torso_lift_link
             targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
             mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
@@ -71,10 +77,10 @@ def plot3dPoints(fileName, title=None):
             #     break
             # i += 1
 
-    return xs, ys, zs, ts, distances, angles
+    return xs, ys, zs, ts, distances, angles, times
 
-xs, ys, zs, ts, distances, angles = plot3dPoints('/home/zerickson/Recordings/RecordingScoopingTimes2DaehyungROXLOL_scooping_fvk_07-08-2015_14-17-42/iteration_0_success.pkl')
-xss, yss, zss, tss, distances2, angles2 = plot3dPoints('/home/zerickson/Recordings/RecordingScoopingTimes2DaehyungROXLOL_scooping_fvk_07-08-2015_14-17-42/iteration_3_success.pkl')
+xs, ys, zs, ts, distances, angles, times = plot3dPoints('/home/zerickson/Recordings/AHH_scooping_fvk_07-08-2015_21-46-41/iteration_0_success.pkl')
+xss, yss, zss, tss, distances2, angles2, times2 = plot3dPoints('/home/zerickson/Recordings/ger_scooping_fvk_07-08-2015_21-42-09/iteration_1_failure.pkl')
 
 f, ((ax1, ax4), (ax2, ax5), (ax3, ax6)) = plt.subplots(3, 2, sharex=True)
 plt.subplots_adjust(hspace=0.1)
@@ -95,5 +101,18 @@ ax5.scatter(tss, yss, s=0.01, alpha=0.5)
 ax6.set_xlabel('time')
 ax6.set_ylabel('z')
 ax6.scatter(tss, zss, s=0.01, alpha=0.5)
+
+plt.show()
+
+f, (ax1, ax2) = plt.subplots(2, sharex=True)
+ax1.plot(times, distances)
+ax1.plot(times2, distances2)
+ax1.set_xlabel('time')
+ax1.set_ylabel('distance')
+
+ax2.plot(times, angles)
+ax2.plot(times2, angles2)
+ax2.set_xlabel('time')
+ax2.set_ylabel('angle')
 
 plt.show()

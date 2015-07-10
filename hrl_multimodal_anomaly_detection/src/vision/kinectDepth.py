@@ -13,7 +13,7 @@ except:
     import point_cloud2 as pc2
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import PointCloud2, Image, CameraInfo
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 from roslib import message
 
 # Clustering
@@ -78,8 +78,8 @@ class kinectDepth:
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
-        self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
-        print 'Connected to Kinect depth'
+        # self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        # print 'Connected to Kinect image'
         self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
 
@@ -123,7 +123,7 @@ class kinectDepth:
         self.publisher.unregister()
         self.cloudSub.unregister()
         self.cameraSub.unregister()
-        self.imageSub.unregister()
+        # self.imageSub.unregister()
 
     def imageCallback(self, data):
         if self.lGripX is None:
@@ -155,7 +155,7 @@ class kinectDepth:
 
         lowX, highX, lowY, highY = self.boundingBox()
 
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX) if x % 2 == 0]
+        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
         try:
             points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
         except:
@@ -163,45 +163,6 @@ class kinectDepth:
             return
 
         self.points3D = np.array([point for point in points3D])
-
-        # print 'Time for second call:', time.time() - startTime
-        # ticker = time.time()
-
-        # # Perform dbscan clustering
-        # X = StandardScaler().fit_transform(self.points3D)
-        # labels = self.dbscan.fit_predict(X)
-        # # unique_labels = set(labels)
-        #
-        # print 'Time for third call:', time.time() - ticker
-        # ticker = time.time()
-        #
-        # # Find the point closest to our gripper and it's corresponding label
-        # index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        # closeLabel = labels[index]
-        # while closeLabel == -1 and points3D.size > 0:
-        #     np.delete(points3D, [index])
-        #     np.delete(labels, [index])
-        #     index, closePoint = min(enumerate(np.linalg.norm(points3D - gripperPoint, axis=1)), key=operator.itemgetter(1))
-        #     closeLabel = labels[index]
-        # if points3D.size <= 0:
-        #     return
-        # # print 'Label:', closeLabel
-        #
-        # print 'Time for fourth call:', time.time() - ticker
-        # ticker = time.time()
-        #
-        # # Find the cluster closest to our gripper
-        # self.clusterPoints = points3D[labels==closeLabel]
-        # self.nonClusterPoints = points3D[labels!=closeLabel]
-
-        # if self.visual:
-        #     # Publish depth features for spoon features
-        #     self.publishPoints('spoonPoints', self.clusterPoints, g=1.0)
-        #
-        #     # Publish depth features for non spoon features
-        #     self.publishPoints('nonSpoonPoints', self.nonClusterPoints, r=1.0)
-
-        # print 'Time for fifth call:', time.time() - ticker
 
         self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
@@ -241,19 +202,19 @@ class kinectDepth:
 
         mic = [0.12, -0.02, 0]
 
-        self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
-        self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        # self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        # gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+        # self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
 
-        # if len(self.grips) >= 2:
-        #     self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-2]
-        #     self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        #     gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
-        # else:
-        #     self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        #     gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
-        #     self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
-        # self.grips.append((int(gripX), int(gripY), transMatrix))
+        if len(self.grips) >= 2:
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-2]
+            self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+        else:
+            self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        self.grips.append((int(gripX), int(gripY), transMatrix))
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
