@@ -9,8 +9,8 @@ class dataRecord:
 
     AUDIO = True
     FT = True
-    VISION = False
-    KINEMATICS = True
+    VISION = True
+    KINEMATICS = False
 
 
     def __init__(self):
