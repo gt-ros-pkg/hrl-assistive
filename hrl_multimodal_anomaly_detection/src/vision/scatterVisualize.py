@@ -4,10 +4,14 @@ import cv2
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
+
+# listener = tf.TransformListener()
+# help(listener)
 
 def plot3dPoints(fileName, title=None):
     xs = []
@@ -69,7 +73,10 @@ def plot3dPoints(fileName, title=None):
             clusterPoints = np.c_[clusterPoints, np.ones(len(clusterPoints))]
             clusterPoints = np.dot(gripMatrix, clusterPoints.T).T[:, :3]
 
-            xs = np.concatenate((xs, clusterPoints[:, 0]))
+            pca = PCA(n_components=1)
+            pcaPoints = pca.fit(clusterPoints).transform(clusterPoints)
+
+            xs = np.concatenate((xs, pcaPoints.flatten()))
             ys = np.concatenate((ys, clusterPoints[:, 1]))
             zs = np.concatenate((zs, clusterPoints[:, 2]))
             ts = np.concatenate((ts, [timeStamp]*clusterPoints.shape[0]))
@@ -79,8 +86,8 @@ def plot3dPoints(fileName, title=None):
 
     return xs, ys, zs, ts, distances, angles, times
 
-xs, ys, zs, ts, distances, angles, times = plot3dPoints('/home/zerickson/Recordings/AHH_scooping_fvk_07-08-2015_21-46-41/iteration_0_success.pkl')
-xss, yss, zss, tss, distances2, angles2, times2 = plot3dPoints('/home/zerickson/Recordings/ger_scooping_fvk_07-08-2015_21-42-09/iteration_1_failure.pkl')
+xs, ys, zs, ts, distances, angles, times = plot3dPoints('/home/zerickson/Recordings/pca_scooping_fvk_07-09-2015_16-01-32/iteration_0_success.pkl')
+xss, yss, zss, tss, distances2, angles2, times2 = plot3dPoints('/home/zerickson/Recordings/pca_scooping_fvk_07-09-2015_16-01-32/iteration_1_failure.pkl')
 
 f, ((ax1, ax4), (ax2, ax5), (ax3, ax6)) = plt.subplots(3, 2, sharex=True)
 plt.subplots_adjust(hspace=0.1)
