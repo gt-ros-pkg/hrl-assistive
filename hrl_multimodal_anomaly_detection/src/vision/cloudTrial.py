@@ -15,7 +15,6 @@ class cloudTrial:
     def __init__(self, solo):
         self.cloudTime = time.time()
         self.bridge = CvBridge()
-        self.publisher = rospy.Publisher('visualization_marker', PointCloud2)
         if solo:
             rospy.init_node('listener_cloud')
         # rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
@@ -27,7 +26,6 @@ class cloudTrial:
     def cloudCallback(self, data):
         print 'Time between cloud calls:', time.time() - self.cloudTime
         self.cloudTime = time.time()
-        self.publisher.publish(data)
         # print data.width, data.height, type(data.data)
         #
         # # Grab image from Kinect sensor
