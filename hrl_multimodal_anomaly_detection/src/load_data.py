@@ -93,17 +93,308 @@ class graphing():
 
     def run(self):
 
+        #self.plotlyTest()
+
         if self.FT_KINEMATICS:
-            self.ft_kinematics()
-        if self.AUDIO:
-            self.audio()
-        if self.VISION:
-            self.vision()
+            self.ft_kinematics_PLOTLY_RAW()
+        # if self.AUDIO:
+        #     self.audio()
+        # if self.VISION:
+        #     self.vision()
         # Uncomment next line if you want to display all graphs at once...
         # ... otherwise ft/kinematics and sound graphs will display separately
         #plt.show()
 
-    def ft_kinematics(self):
+    def plotlyTest(self):
+
+        trace1 = Scatter(
+            x=timenp,
+            y=forcenp[:,0],
+            fill='tozeroy'
+        )
+        trace2 = Scatter(
+            x=[1, 2, 3, 4],
+            y=[3, 5, 1, 7],
+            fill='tonexty'
+        )
+        data = Data([trace1])
+        plot_url = pltly.plot(data, filename='basic-area')
+
+
+    def ft_kinematics_PLOTLY_RAW(self):
+
+        for iterations in self.pklsList:
+
+            ft_time = np.array(iterations.get('ft_time',None))
+            kinematics_time = np.array(iterations.get('kinematics_time', None))
+
+            ft_force = np.array(iterations.get('ft_force_raw',None))
+            ft_torque = np.array(iterations.get('ft_torque_raw', None))
+
+            tf_l_ee_pos = np.array(iterations.get('l_end_effector_pos', None))
+            tf_l_ee_quat = np.array(iterations.get('l_end_effector_quat', None))
+            tf_r_ee_pos = np.array(iterations.get('r_end_effector_pos', None))
+            tf_r_ee_quat = np.array(iterations.get('r_end_effector_quat', None))
+
+            ft_force_mag = np.linalg.norm(ft_force, axis=1)
+
+            scooping_steps_times = np.array(self.pklsList[0].get('scooping_steps_times'), None)
+
+            forceXTrace = Scatter(
+                name='X Force',
+                x = ft_time,
+                y = ft_force[:,0],
+                # fill = 'tozeroy',
+                xaxis = 'x4',
+                yaxis = 'y4'
+            )
+
+            forceYTrace = Scatter(
+                name='Y Force',
+                x = ft_time,
+                y = ft_force[:,1],
+                # fill = 'tozeroy',
+                xaxis = 'x5',
+                yaxis = 'y5'
+            )
+
+            forceZTrace = Scatter(
+                name='Z Force',
+                x = ft_time,
+                y = ft_force[:,2],
+                # fill = 'tozeroy',
+                xaxis = 'x6',
+                yaxis = 'y6'
+            )
+
+            tfXTrace = Scatter(
+                name='X Pos of Spoon',
+                x = kinematics_time,
+                y = tf_l_ee_pos[:,0],
+                # fill = 'tozeroy',
+                xaxis = 'x1',
+                yaxis = 'y1'
+            )
+
+            tfYTrace = Scatter(
+                name='Y Pos of Spoon',
+                x = kinematics_time,
+                y = tf_l_ee_pos[:,1],
+                # fill = 'tozeroy',
+                xaxis = 'x2',
+                yaxis = 'y2'
+            )
+
+            tfZTrace = Scatter(
+                name='Z Pos of Spoon',
+                x = kinematics_time,
+                y = tf_l_ee_pos[:,2],
+                # fill = 'tozeroy',
+                xaxis = 'x3',
+                yaxis = 'y3'
+            )
+
+            forceMagTrace = Scatter(
+                name='Overall Magnitude of Forces',
+                x = ft_time,
+                y = ft_force_mag,
+                # fill = 'tozeroy',
+                xaxis = 'x7',
+                yaxis = 'y7' 
+            )
+
+            scoopingTimesTrace = Scatter(
+                x = scooping_steps_times,
+                y = 0,
+                xaxis = 'x1, x2, x3, x4, x5, x6, x7',
+                yaxis = 'y1, y2, y3, y4, y5, y6, y7'
+
+            )
+
+            data = Data([forceXTrace, forceYTrace, forceZTrace, tfXTrace, tfYTrace, tfZTrace, forceMagTrace])
+
+            layout = Layout(
+                title='Kinematics and Force When Scooping Yogurt',
+                showlegend=True,
+                autosize=True,
+
+                xaxis=XAxis(
+                    # title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0, 0.30],
+                    range=[0, 30],
+                    anchor = 'y1'
+                ),
+                yaxis=YAxis(
+                    title='distance (m)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.70, 1],
+                    anchor = 'x1'
+                ),
+                xaxis2=XAxis(
+                    # title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.35, 0.65],
+                    range=[0, 30],
+                    anchor = 'y2'
+                ),
+                yaxis2=YAxis(
+                    # title='distance (m)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.70, 1],
+                    anchor='x2'
+                ),
+                xaxis3=XAxis(
+                    # title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.70, 1],
+                    range=[0, 30],
+                    anchor='y3'
+                ),
+                yaxis3=YAxis(
+                    # title='distance (m)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.70, 1],
+                    anchor='x3'
+                ),
+                #Second row, FT
+                xaxis4=XAxis(
+                    # title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0, 0.30],
+                    range=[0, 30],
+                    anchor='y4'
+                ),
+                yaxis4=YAxis(
+                    title='force (N)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.35, 0.60],
+                    anchor='x4'
+                ),
+                xaxis5=XAxis(
+                    # title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.35, 0.65],
+                    range=[0, 30],
+                    anchor='y5'
+                ),
+                yaxis5=YAxis(
+                    # title='force (N)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.35, 0.60],
+                    anchor='x5'
+                ),
+                xaxis6=XAxis(
+                    # title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.70, 1],
+                    range=[0, 30],
+                    anchor='y6'
+                ),
+                yaxis6=YAxis(
+                    # title='force (N)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0.35, 0.60],
+                    anchor='x6'
+                ),
+                #Third row, FT magnitude
+                xaxis7=XAxis(
+                    title='time (s)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0, 1],
+                    range=[0, 30],
+                    anchor='y7'
+                ),
+                yaxis7=YAxis(
+                    title='force (N)',
+                    titlefont=Font(
+                        size=10
+                    ),
+                    tickfont=Font(
+                        size=10
+                    ),
+                    domain=[0, 0.25],
+                    anchor='x7'
+                )   
+
+                # https://plot.ly/~Dreamshot/494/water-consumption-in-berlin-during-world-cup-germany-vs-ghana-june-21st-2014/
+                # https://plot.ly/python/shapes/
+
+
+            )
+            
+
+            fig = Figure(data=data, layout=layout)
+        
+        plot_url = pltly.plot(fig, filename='new_ft_tf_plotly_plot')
+
+
+    def ft_kinematics_MATPLOTLIB_TO_PLOTLY(self):
 
         # self.gs.title('test')
         forceAx1 = self.fig.add_subplot(self.gs[1,0])
@@ -125,9 +416,9 @@ class graphing():
         forceAx3.set_title('Z Force')
         tfAx3.set_title('Z Pos')
 
-        forceMagAx4 = self.fig.add_subplot(self.gs[2,:])
-        forceMagAx4.set_xlabel('time (s) \n \n Trial Name: ' + self.trial_name + '\n Loaded ' + self.whichOpenString + ' iterations')
-        forceMagAx4.set_title('Force Normalization (Magnitude)')
+        # forceMagAx4 = self.fig.add_subplot(self.gs[2,:])
+        # # forceMagAx4.set_xlabel('time (s) \n \n Trial Name: ' + self.trial_name + '\n Loaded ' + self.whichOpenString + ' iterations')
+        # forceMagAx4.set_title('Force Normalization (Magnitude)')
 
         for iterations in self.pklsList:
             ft_time = np.array(iterations.get('ft_time',None))
@@ -146,15 +437,15 @@ class graphing():
             scooping_steps_times = np.array(self.pklsList[0].get('scooping_steps_times'), None)
 
             forceAx1.plot(ft_time, ft_force[:,0], 'b-')
-            tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
+            # tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
 
             forceAx2.plot(ft_time, ft_force[:,1], 'b-')
-            tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
+            # tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
 
             forceAx3.plot(ft_time, ft_force[:,2], 'b-')
-            tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
+            # tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
 
-            forceMagAx4.plot(ft_time, ft_force_mag, 'y-')
+            # forceMagAx4.plot(ft_time, ft_force_mag, 'y-')
 
             for i in range(0, len(scooping_steps_times)):
                 forceAx1.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
@@ -163,18 +454,20 @@ class graphing():
                 tfAx2.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
                 forceAx3.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
                 tfAx3.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
-                forceMagAx4.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
+                # forceMagAx4.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
 
 
-        forceAx1.set_xlim([0,30])
-        forceAx2.set_xlim([0,30])
-        forceAx3.set_xlim([0,30])
-        tfAx1.set_xlim([0,30])
-        tfAx2.set_xlim([0,30])
-        tfAx3.set_xlim([0,30])
-        forceMagAx4.set_xlim([0,30])
+        # forceAx1.set_xlim([0,30])
+        # forceAx2.set_xlim([0,30])
+        # forceAx3.set_xlim([0,30])
+        # tfAx1.set_xlim([0,30])
+        # tfAx2.set_xlim([0,30])
+        # tfAx3.set_xlim([0,30])
+        # forceMagAx4.set_xlim([0,30])
 
         #plt_fig = self.gs.gcf()
+
+        self.fig = plt.gcf()
         pltly.iplot_mpl(self.fig, filename='hyder_ft-kinematics_test_one')
 
         #plt.show()
