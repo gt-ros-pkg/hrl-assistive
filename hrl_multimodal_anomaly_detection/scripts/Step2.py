@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.mlab
 import cPickle as pickle
-from sklearn import mixture
+from sklearn import mixture, preprocessing
 from scipy.stats import norm, entropy
 import matplotlib.pyplot as plt
 from scipy.optimize import leastsq
@@ -82,17 +82,26 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
             ts.append(timeStamp)
 
             # Define activation cells along spoon
-            actCells = mic + [t*directionVector for t in np.linspace(0, 1, 9)]
+            actCells = mic + [t*directionVector for t in np.linspace(0, 1, 15)]
             activations = []
             for index, cell in enumerate(actCells):
                 # Cell activations defined by number of points in the cell
                 pointsInCell = np.linalg.norm(pointSet - cell, axis=1) < 0.06
                 count = sum([1 for v in pointsInCell if v])
+                # if len(pdfs) == 47:
+                #     print count
                 # Count the points in this activation cell and divide by 10
                 activations = activations + [index] * int(count / 10.0)
 
+            activations = np.array(activations)
+            activations = (activations - np.average(activations, axis=0)) / np.std(activations, axis=0)
+            # activations = preprocessing.scale(activations)
             clf = mixture.GMM(n_components=3, covariance_type='full')
             clf.fit(activations)
+
+            # if len(pdfs) == 46:
+            #     print activations
+            #     plot = True
 
             if plot:
                 # Plot the histogram.
@@ -113,13 +122,18 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
                 mu, std = m[0], np.sqrt(c)[0, 0]
                 # print mu, std
                 pdf = w * norm.pdf(linspace, mu, std)
+                pdf = [v if v != 0 else np.exp(-20) for v in pdf]
                 pdfSet.append(pdf)
+                # if len(pdfs) == 46:
+                #     print pdf
+                #     print m, w, c, mu, std
                 if plot:
                     plt.plot(linspace, pdf, linewidth=2)
             pdfs.append(pdfSet)
 
             if plot:
                 plt.show()
+                # plot = False
 
             # Radial Basis Function
             # xs = clusterPoints[:, 0]
@@ -173,36 +187,28 @@ print len(ts1), len(ts2), len(ts3)
 # Determine entropies when using activation cells
 print 'Entropies for two successful trials'
 entropies = []
-for (pdf1, pdf2, pdf3), (pdf4, pdf5, pdf6) in zip(successpdfs, successpdfs2):
-    ent1 = entropy(pdf1, pdf4)
-    ent2 = entropy(pdf2, pdf5)
-    ent3 = entropy(pdf3, pdf6)
-    print ent1, ent2, ent3
-    entropies.append(ent1 + ent2 + ent3)
+for index, (pdfs1, pdfs2) in enumerate(zip(successpdfs, successpdfs2)):
+    ent = 0
+    for pdf1, pdf2 in zip(pdfs1, pdfs2):
+        ent += entropy(pdf1, pdf2)
+    entropies.append(ent)
+    print 'Time:', ts1[index], 'Entropy:', ent
 print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 
 print 'Entropies for one successful and one failure trial'
 entropies = []
-for index, ((pdf1, pdf2, pdf3), (pdf4, pdf5, pdf6)) in enumerate(zip(successpdfs, failurepdfs)):
-    ent1 = entropy(pdf1, pdf4)
-    ent2 = entropy(pdf2, pdf5)
-    ent3 = entropy(pdf3, pdf6)
-    if np.isinf(ent1):
-        print 'ent1 was infinity at index', index
-        print pdf1
-        print pdf4
-    if np.isinf(ent2):
-        print 'ent2 was infinity at index', index
-        print pdf2
-        print pdf5
-    if np.isinf(ent3):
-        print 'ent3 was infinity at index', index
-        print pdf3
-        print pdf6
-    if np.isinf(ent1) or np.isinf(ent2) or np.isinf(ent3):
-        exit()
-    print 'Time:', ts1[index], 'Entropy:', ent1 + ent2 + ent3
-    entropies.append(ent1 + ent2 + ent3)
+for index, (pdfs1, pdfs2) in enumerate(zip(successpdfs, failurepdfs)):
+    ent = 0
+    for pdf1, pdf2 in zip(pdfs1, pdfs2):
+        entro = entropy(pdf1, pdf2)
+        if np.isinf(entro):
+            print 'Entropy at index %d was infinity' % index
+            print pdf1
+            print pdf2
+            exit()
+        ent += entro
+    entropies.append(ent)
+    print 'Time:', ts1[index], 'Index:', index, 'Entropy:', ent
 print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 
 # Determine entropies when using PCA
