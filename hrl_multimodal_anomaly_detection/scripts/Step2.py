@@ -25,6 +25,7 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
     angles = []
     pdfs = []
     rbfs = []
+    linspace = None
 
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
@@ -80,6 +81,46 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
 
             ts.append(timeStamp)
 
+            # Define activation cells along spoon
+            actCells = mic + [t*directionVector for t in np.linspace(0, 1, 9)]
+            activations = []
+            for index, cell in enumerate(actCells):
+                # Cell activations defined by number of points in the cell
+                pointsInCell = np.linalg.norm(pointSet - cell, axis=1) < 0.06
+                count = sum([1 for v in pointsInCell if v])
+                # Count the points in this activation cell and divide by 10
+                activations = activations + [index] * int(count / 10.0)
+
+            clf = mixture.GMM(n_components=3, covariance_type='full')
+            clf.fit(activations)
+
+            if plot:
+                # Plot the histogram.
+                plt.hist(activations, bins=9, normed=True, alpha=0.6, color='g')
+                title = 'Gaussian Mixture Model for Distance Values'
+                plt.title(title)
+
+            # Setup bounds for probability density function
+            if linspace is None:
+                linspace = np.linspace(np.min(activations), np.max(activations), 100)
+
+            # Sort list based on means
+            order = np.argsort(clf.means_.flatten())
+            pdfSet = []
+            # Determine all (3) PDFs for activation cells
+            for m, w, c in zip(clf.means_[order], clf.weights_[order], clf.covars_[order]):
+                # Fit a normal distribution to the data
+                mu, std = m[0], np.sqrt(c)[0, 0]
+                # print mu, std
+                pdf = w * norm.pdf(linspace, mu, std)
+                pdfSet.append(pdf)
+                if plot:
+                    plt.plot(linspace, pdf, linewidth=2)
+            pdfs.append(pdfSet)
+
+            if plot:
+                plt.show()
+
             # Radial Basis Function
             # xs = clusterPoints[:, 0]
             # ys = clusterPoints[:, 1]
@@ -88,57 +129,96 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
             # rbfs.append(interpolate.Rbf(xs, ys, zs, d))
 
 
-            pca = PCA(n_components=1)
-            pcaPoints = pca.fit(clusterPoints).transform(clusterPoints).flatten()
-            # Normalize points
-            # pcaPoints = (pcaPoints - np.average(pcaPoints, axis=0)) / np.std(pcaPoints, axis=0)
-
-            # Fit a normal distribution to the data:
-            mu, std = norm.fit(pcaPoints)
-            x = np.linspace(np.min(pcaPoints), np.max(pcaPoints), 100)
-            pdf = norm.pdf(x, mu, std)
-            # print pcaPoints
-            # print pdf
-            # exit()
-            pdfs.append(pdf)
-            mus.append(mu)
-            stds.append(std)
-
-            if plot:
-                # Plot the histogram.
-                plt.hist(pcaPoints, bins=25, normed=True, alpha=0.6, color='g')
-
-                # Plot the PDF.
-                xmin, xmax = plt.xlim()
-                x = np.linspace(xmin, xmax, 100)
-                p = norm.pdf(x, mu, std)
-                plt.plot(x, p, 'k', linewidth=2)
-                title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
-                plt.title(title)
-
-                plt.show()
+            # pca = PCA(n_components=1)
+            # pcaPoints = pca.fit(clusterPoints).transform(clusterPoints).flatten()
+            # # Normalize points
+            # # pcaPoints = (pcaPoints - np.average(pcaPoints, axis=0)) / np.std(pcaPoints, axis=0)
+            #
+            # # Fit a normal distribution to the data:
+            # mu, std = norm.fit(pcaPoints)
+            # if linspace is None:
+            #     linspace = np.linspace(np.min(pcaPoints), np.max(pcaPoints), 100)
+            # pdf = norm.pdf(linspace, mu, std)
+            # # print pcaPoints
+            # # print pdf
+            # # exit()
+            # pdfs.append(pdf)
+            # mus.append(mu)
+            # stds.append(std)
+            #
+            # if plot:
+            #     # Plot the histogram.
+            #     plt.hist(pcaPoints, bins=25, normed=True, alpha=0.6, color='g')
+            #
+            #     # Plot the PDF.
+            #     xmin, xmax = plt.xlim()
+            #     x = np.linspace(xmin, xmax, 100)
+            #     p = norm.pdf(x, mu, std)
+            #     plt.plot(x, p, 'k', linewidth=2)
+            #     title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
+            #     plt.title(title)
+            #
+            #     plt.show()
 
     return mus, stds, distances, angles, pdfs, ts, rbfs
 
 print '-- Set of times one --'
-mus1, stds1, distances1, angles1, successpdfs, ts1, rbfs1 = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl', n=1)
+mus1, stds1, distances1, angles1, successpdfs, ts1, rbfs1 = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl', n=1, plot=False)
 print '-- Set of times two --'
 mus2, stds2, distances2, angles2, successpdfs2, ts2, _ = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_1_success.pkl', n=1, testRBFs=rbfs1)
 print '-- Set of times three --'
 mus3, stds3, distances3, angles3, failurepdfs, ts3, _ = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_2_failure.pkl', n=1)
 print len(ts1), len(ts2), len(ts3)
 
+# Determine entropies when using activation cells
 print 'Entropies for two successful trials'
-ent = []
-for pdf1, pdf2 in zip(successpdfs, successpdfs2):
-    ent.append(entropy(pdf1, pdf2))
-print np.mean(ent)
+entropies = []
+for (pdf1, pdf2, pdf3), (pdf4, pdf5, pdf6) in zip(successpdfs, successpdfs2):
+    ent1 = entropy(pdf1, pdf4)
+    ent2 = entropy(pdf2, pdf5)
+    ent3 = entropy(pdf3, pdf6)
+    print ent1, ent2, ent3
+    entropies.append(ent1 + ent2 + ent3)
+print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 
 print 'Entropies for one successful and one failure trial'
-ent = []
-for pdf1, pdf2 in zip(successpdfs, failurepdfs):
-    ent.append(entropy(pdf1, pdf2))
-print np.mean(ent)
+entropies = []
+for index, ((pdf1, pdf2, pdf3), (pdf4, pdf5, pdf6)) in enumerate(zip(successpdfs, failurepdfs)):
+    ent1 = entropy(pdf1, pdf4)
+    ent2 = entropy(pdf2, pdf5)
+    ent3 = entropy(pdf3, pdf6)
+    if np.isinf(ent1):
+        print 'ent1 was infinity at index', index
+        print pdf1
+        print pdf4
+    if np.isinf(ent2):
+        print 'ent2 was infinity at index', index
+        print pdf2
+        print pdf5
+    if np.isinf(ent3):
+        print 'ent3 was infinity at index', index
+        print pdf3
+        print pdf6
+    if np.isinf(ent1) or np.isinf(ent2) or np.isinf(ent3):
+        exit()
+    print 'Time:', ts1[index], 'Entropy:', ent1 + ent2 + ent3
+    entropies.append(ent1 + ent2 + ent3)
+print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
+
+# Determine entropies when using PCA
+# print 'Entropies for two successful trials'
+# ent = []
+# for pdf1, pdf2 in zip(successpdfs, successpdfs2):
+#     ent.append(entropy(pdf1, pdf2))
+#     # print entropy(pdf1, pdf2)
+# print 'Average:', np.mean(ent), 'Max:', np.max(ent)
+#
+# print 'Entropies for one successful and one failure trial'
+# ent = []
+# for index, (pdf1, pdf2) in enumerate(zip(successpdfs, failurepdfs)):
+#     ent.append(entropy(pdf1, pdf2))
+#     print 'Time:', ts1[index], 'Entropy:', entropy(pdf1, pdf2)
+# print 'Average:', np.mean(ent), 'Max:', np.max(ent)
 
 
 # f, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2, sharey=True)
