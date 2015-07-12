@@ -7,6 +7,7 @@ from sklearn import mixture
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from scipy.optimize import leastsq
+import pypr.clustering.gmm as gmm
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
@@ -91,6 +92,15 @@ def generate_GMM(fileName, n=3, plot=False):
                 title = 'Gaussian Mixture Model for Distance Values'
                 plt.title(title)
 
+            # cen_lst, cov_lst, p_k, logL = gmm.em_gm(clusterPoints, K=3, verbose=True)
+            # con_cen, con_cov, new_p_k = gmm.cond_dist(np.array([np.nan, -1]), cen_lst, cov_lst, p_k)
+            # pdf = gmm.gmm_pdf(np.c_[x], con_cen, con_cov, new_p_k)
+            # print pdf
+            # plt.plot(x, pdf, linewidth=2)
+            # plt.show()
+            # exit()
+
+
             # mu, std = norm.fit(xs)
 
             # Sort list based on means
@@ -110,33 +120,33 @@ def generate_GMM(fileName, n=3, plot=False):
                 plt.show()
     return mus, stds, ts
 
-mus, stds, ts = generate_GMM('/home/zerickson/Recordings/Ahh_scooping_fvk_07-09-2015_02-04-05/iteration_0_success.pkl', n=4)
-mus2, stds2, ts2 = generate_GMM('/home/zerickson/Recordings/AHH_scooping_fvk_07-08-2015_21-46-41/iteration_0_success.pkl', n=4)
+mus, stds, ts = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl', n=2, plot=True)
+mus2, stds2, ts2 = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_1_success.pkl', n=2)
 
 f, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2, sharey=True)
-ax1.set_title('Mu\'s')
-ax1.set_ylabel('Mu')
-ax1.set_xlabel('Time')
+ax1.set_title('Means of Two Gaussian Density Functions over Time\n(Trial 1)')
+ax1.set_ylabel('Mu (m)')
+ax1.set_xlabel('Time (sec)')
 print np.array(mus).shape
 for mu in mus:
     print np.array(ts).shape, np.array(mu).shape
     ax1.plot(ts, mu, label='Gripper')
 
-ax2.set_title('Standard Deviation\'s')
-ax2.set_ylabel('Standard Deviation')
-ax2.set_xlabel('Time')
+ax2.set_title('Standard Deviations of Two Gaussian Density Functions over Time\n(Trial 1)')
+ax2.set_ylabel('Standard Deviation (m)')
+ax2.set_xlabel('Time (sec)')
 for std in stds:
     ax2.plot(ts, std, label='Gripper')
 
-ax3.set_title('Mu\'s')
-ax3.set_ylabel('Mu')
-ax3.set_xlabel('Time')
+ax3.set_title('Means of Two Gaussian Density Functions over Time\n(Trial 2)')
+ax3.set_ylabel('Mu (m)')
+ax3.set_xlabel('Time (sec)')
 for mu in mus2:
     ax3.plot(ts2, mu, label='Gripper')
 
-ax4.set_title('Standard Deviation\'s')
-ax4.set_ylabel('Standard Deviation')
-ax4.set_xlabel('Time')
+ax4.set_title('Standard Deviations of Two Gaussian Density Functions over Time\n(Trial 2)')
+ax4.set_ylabel('Standard Deviation (m)')
+ax4.set_xlabel('Time (sec)')
 for std in stds2:
     ax4.plot(ts2, std, label='Gripper')
 

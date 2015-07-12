@@ -7,9 +7,9 @@ from hrl_multimodal_anomaly_detection.srv import String_String
 
 class dataRecord:
 
-    AUDIO = True
+    AUDIO = False
     FT = True
-    VISION = False
+    VISION = True
     KINEMATICS = True
 
 

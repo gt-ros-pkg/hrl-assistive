@@ -53,7 +53,7 @@ def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
     publisher.publish(marker)
 
 dbscan = DBSCAN(eps=0.12, min_samples=10)
-fileName = '/home/zerickson/Recordings/Ahh_scooping_fvk_07-09-2015_02-04-05/iteration_0_success.pkl'
+fileName = '/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl'
 # fileName = '/home/zerickson/Downloads/RecordingScoopingTimesFasterResponseTries1_scooping_fvk_07-08-2015_14-55-28/iteration_0_success.pkl'
 
 def readDepth():
