@@ -32,7 +32,7 @@
         <remap from="/points" to="$(arg kinect_points)" />
     </node>
 
-    <node pkg="hrl_head_registration" name="registration_loader" type="registration_loader.py"
+    <node pkg="hrl_head_registration" name="registration_loader" type="registration_loader"
           output="screen" >
         <remap from="/feedback" to="/wt_log_out" />
         <param name="registration_dir" value="$(arg head_pcs_dir)" />

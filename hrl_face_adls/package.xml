@@ -1,0 +1,47 @@
+<package>
+  <name>hrl_face_adls</name>
+  <version>0.0.0</version>
+  <description>hrl_face_adls</description>
+  <maintainer email="phillip.grice@gatech.edu">Phillip GRice</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/hrl_face_adls</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Kelsey Hawkins</author>
+  <author>Phillip Grice</author>
+  <author>Advisor: Prof. Charlie Kemp</author>
+  <author>Lab: Healthcare Robotics Lab</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>rospy</run_depend>
+  <run_depend>rosparam</run_depend>
+  <run_depend>roslaunch</run_depend>
+  <run_depend>rosbag</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>pr2_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>ar_pose</run_depend>
+  <run_depend>pykdl_utils</run_depend>
+  <run_depend>hrl_ellipsoidal_control</run_depend>
+  <run_depend>hrl_head_registration</run_depend>
+  <run_depend>hrl_pr2_traj_playback</run_depend>
+  <run_depend>hrl_pr2_ar_servo</run_depend>
+  <run_depend>assistive_teleop</run_depend>
+  <run_depend>hrl_pr2_arms</run_depend>
+  <run_depend>hrl_geom</run_depend>
+  <run_depend>hrl_haptic_manipulation_in_clutter_srvs</run_depend>
+
+</package>

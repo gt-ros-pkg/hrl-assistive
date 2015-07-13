@@ -53,7 +53,7 @@
         <remap from="rotated/image" to="/ar_servo/confirmation_rotated"/>
     </node>
 
-    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
+    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing"
           output="screen" >
     </node>
 

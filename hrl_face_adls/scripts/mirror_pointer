@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from hrl_head_registration.registration_loader import main
+from hrl_face_adls.mirror_pointer import main
 
 if __name__ == '__main__':
     main()

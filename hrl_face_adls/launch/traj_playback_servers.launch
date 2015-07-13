@@ -2,12 +2,12 @@
     <arg name="subject" />
     <arg name="arm_traj_dir" default="$(find rfh_data)/gt_arm_trajectories"/>
     
-    <node pkg="hrl_pr2_traj_playback" name="l_arm_pose_move_controller" type="traj_playback.py"
+    <node pkg="hrl_pr2_traj_playback" name="l_arm_pose_move_controller" type="traj_playback"
           output="screen" args="-v -l -c 'l_arm_controller'" >
         <remap from="/trajectory_playback_l/feedback" to="/wt_log_out" />
         <param name="traj_directory" value="$(arg arm_traj_dir)" />
     </node>
-    <node pkg="hrl_pr2_traj_playback" name="r_arm_pose_move_controller" type="traj_playback.py"
+    <node pkg="hrl_pr2_traj_playback" name="r_arm_pose_move_controller" type="traj_playback"
           output="screen" args="-v -r -c 'r_arm_controller'" >
         <remap from="/trajectory_playback_r/feedback" to="/wt_log_out" />
         <param name="traj_directory" value="$(arg arm_traj_dir)" />

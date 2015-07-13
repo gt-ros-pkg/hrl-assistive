@@ -1,22 +1,21 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import yaml
 import numpy as np
 
-import roslib
-roslib.load_manifest("hrl_face_adls")
 import rospy
 
 from hrl_pr2_arms.ep_arm_base import create_ep_arm
 from hrl_ellipsoidal_control.ellipsoid_controller import EllipsoidParamServer
 from hrl_face_adls.srv import RequestRegistration
 
+
 def main():
     rospy.init_node("record_ell_poses")
     assert len(sys.argv) == 4
     tool = sys.argv[1]
-    modes = {"shaver" : "shaving", "spoon" : "feeding", "scratcher" : "scratching" }
+    modes = {"shaver": "shaving", "spoon": "feeding", "scratcher": "scratching"}
     mode = modes[tool]
     side = sys.argv[2]
 
@@ -31,7 +30,7 @@ def main():
     eps = EllipsoidParamServer()
     eps.load_params(reg_resp.e_params)
     end_link = "l_gripper_%s45_frame" % tool
-    arm = create_pr2_arm('l', end_link=end_link, timeout=1.)
+    arm = create_ep_arm('l', end_link=end_link, timeout=1.)
     poses = {}
     while not rospy.is_shutdown():
         name = raw_input("Type name for this pose (Enter nothing to stop): ")
@@ -42,6 +41,3 @@ def main():
     f = file(sys.argv[3], 'w')
     yaml.dump(poses, f)
     f.close()
-
-if __name__ == "__main__":
-    main()

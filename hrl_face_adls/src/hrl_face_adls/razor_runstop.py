@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import roslib; roslib.load_manifest('hrl_face_adls')
 import rospy
 from std_msgs.msg import Bool
 from pr2_msgs.msg import PowerBoardState
+
 
 class RazorRunStop(object):
     def __init__(self):
@@ -22,14 +22,15 @@ class RazorRunStop(object):
 
     def stop_razor(self):
         """Toggle Tool State to False if True"""
-        #TODO: TOOLSTATE VARIABLE HAS NO CONNECTION TO REAL ON/OFF STATE OF TOOL
+        # TODO: TOOLSTATE VARIABLE HAS NO CONNECTION TO REAL ON/OFF STATE OF TOOL
         # THIS MAKES IT IMPOSSIBLE TO SET THE TOOL TO OFF, WE CAN ONLY TOGGLE
         # THIS MAKES THE CURRENT NODE USELESS, NEED TO FIX @ Arduino level first
         if self.tool_state:
             self.tool_pub.publish(Bool(False))
             rospy.loginfo("RUN-STOP DETECTED: Turning off razor")
-           
-if __name__=='__main__':
+
+
+def main():
     rospy.init_node('razor_runstop')
-    rrs=RazorRunStop()
+    rrs = RazorRunStop()
     rospy.spin()

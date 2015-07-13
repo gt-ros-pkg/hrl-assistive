@@ -1,2 +1,0 @@
-string[] keys
-string[] vals

@@ -1,11 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import yaml
-import numpy as np
 
-import roslib
-roslib.load_manifest("hrl_ellipsoidal_control")
 import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Vector3, PoseStamped
@@ -14,6 +11,7 @@ import rosbag
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 from hrl_geom.pose_converter import PoseConv
 from std_msgs.msg import ColorRGBA
+
 
 def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
     m = Marker()
@@ -28,6 +26,7 @@ def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
     m.pose = PoseConv.to_pose_msg(pose)
     return m
 
+
 def main():
     rospy.init_node("visualize_poses")
     pose_file = file(sys.argv[1], 'r')
@@ -39,6 +38,7 @@ def main():
 
     pub_head_pose = rospy.Publisher("/head_center_test", PoseStamped)
     pub_arrows = rospy.Publisher("visualization_markers_array", MarkerArray)
+
     def create_tool_arrow():
         arrows = MarkerArray()
         color = ColorRGBA(0., 0., 1., 1.)
@@ -46,7 +46,7 @@ def main():
             ell_pos, ell_rot = params[param]
             _, ell_rot_mat = PoseConv.to_pos_rot([0]*3, ell_rot)
             cart_pose = PoseConv.to_homo_mat(ell_space.ellipsoidal_to_pose(*ell_pos))
-            cart_pose[:3,:3] = cart_pose[:3,:3] * ell_rot_mat
+            cart_pose[:3, :3] = cart_pose[:3, :3] * ell_rot_mat
             arrow = create_arrow_marker(cart_pose, i, color)
             arrow.header.stamp = rospy.Time.now()
             arrows.markers.append(arrow)
@@ -57,6 +57,3 @@ def main():
         arrows = create_tool_arrow()
         pub_arrows.publish(arrows)
         r.sleep()
-
-if __name__ == "__main__":
-    main()
