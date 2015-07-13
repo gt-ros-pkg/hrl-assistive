@@ -32,7 +32,7 @@ catkin_package(
 
 catkin_install_python(PROGRAMS 
                       scripts/cartesian_manager
-                      scripts/mirrir_pointer
+                      scripts/mirror_pointer
                       scripts/razor_runstop
                       scripts/visualize_poses
                       scripts/record_ell_poses
