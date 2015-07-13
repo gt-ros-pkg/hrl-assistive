@@ -88,6 +88,7 @@ def plot3dPoints(fileName, title=None):
 
 xs, ys, zs, ts, distances, angles, times = plot3dPoints('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl')
 xss, yss, zss, tss, distances2, angles2, times2 = plot3dPoints('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_2_failure.pkl')
+xs3, ys3, zs3, ts3, distances3, angles3, times3 = plot3dPoints('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_1_success.pkl')
 
 f, ((ax1, ax4), (ax2, ax5), (ax3, ax6)) = plt.subplots(3, 2, sharex=True)
 plt.subplots_adjust(hspace=0.1)
@@ -117,13 +118,16 @@ ax1.set_title('Position Plot Of Each Point On Spoon Throughout Time', y=1.1)
 ax1.set_ylabel('x')
 ax1.scatter(ts, xs, s=0.01, alpha=0.5)
 ax1.scatter(tss, xss, s=0.01, color='r', alpha=0.5)
+# ax1.scatter(ts3, xs3, s=0.01, color='r', alpha=0.5)
 ax2.set_ylabel('y')
 ax2.scatter(ts, ys, s=0.01, alpha=0.5)
 ax2.scatter(tss, yss, s=0.01, color='r', alpha=0.5)
+# ax2.scatter(ts3, ys3, s=0.01, color='r', alpha=0.5)
 ax3.set_xlabel('time')
 ax3.set_ylabel('z')
 ax3.scatter(ts, zs, s=0.01, alpha=0.5)
 ax3.scatter(tss, zss, s=0.01, color='r', alpha=0.5)
+# ax3.scatter(ts3, zs3, s=0.01, color='r', alpha=0.5)
 
 plt.show()
 

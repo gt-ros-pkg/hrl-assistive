@@ -2,13 +2,12 @@
 
 import numpy as np
 import cPickle as pickle
-from learning_hmm import learning_hmm
+from mvpa2.datasets.base import Dataset
+from learning_hmm_multi import learning_hmm_multi
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
-
-hmm = learning_hmm(aXData=None, nState=6, nMaxStep=15)
 
 def launch(fileName):
     dataPoints = []
@@ -61,19 +60,48 @@ def launch(fileName):
         angles = tempAngles
 
         # Create set of data points for the hidden Markov model
-        dataPoints = np.array([[f, d, a] for f, d, a in zip(forces, distances, angles)])
+        # dataPoints = np.array([[f, d, a] for f, d, a in zip(forces, distances, angles)])
 
-        return dataPoints
+        return forces, distances, angles
 
+def create_mvpa_dataset(aXData1, aXData2, chunks, labels):
+    feat_list = []
+    for x1, x2, chunk in zip(aXData1, aXData2, chunks):
+        feat_list.append([x1, x2])
+
+    data = Dataset(samples=feat_list)
+    data.sa['id'] = range(0,len(labels))
+    data.sa['chunks'] = chunks
+    data.sa['targets'] = labels
+
+    return data
 
 fileName = '/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl'
 
-dataPoints = launch(fileName)
+forces, distances, angles = launch(fileName)
+forcesList = [forces, forces, forces]
+distancesList = [distances, distances, distances]
 
-print dataPoints.shape, dataPoints.dtype
+print np.shape(forces), np.shape(distances), np.shape(angles)
 
-hmm.fit(dataPoints)
+hmm = learning_hmm_multi(nState=3)
 
-# print len(test_seq)
-#
+# scale = 10.0
+# forces = preprocessing.scale(forces) * scale
+# distances = preprocessing.scale(distances) * scale
+# angles = preprocessing.scale(angles) * scale
+chunks = [10]*len(forcesList)
+labels = [True]*len(forcesList)
+trainDataSet = create_mvpa_dataset(forcesList, distancesList, chunks, labels)
+
+print trainDataSet.samples.shape
+forcesSample = trainDataSet.samples[:,0,:]
+distancesSample = trainDataSet.samples[:,1,:]
+
+hmm.fit(aXData1=forcesSample, aXData2=distancesSample)
+
+testSet = hmm.convert_sequence(forces, distances)
+
+print hmm.predict(testSet)
+
 # print hmm.score(test_seq)
