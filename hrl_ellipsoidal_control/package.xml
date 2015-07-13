@@ -1,0 +1,51 @@
+<package>
+  <name>hrl_ellipsoidal_control</name>
+  <version>0.0.0</version>
+  <description>Provides a controller which operates in an ellipsoidal coordinate space.
+      Tool orientations remain perpendicular to the surface of an ellipsoid and
+      reduced dimensionality controls are given to the user for task-specific
+      control.</description>
+  <maintainer email="phillip.grice@gatech.edu">Phillip Grice</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/hrl_ellipsoidal_control</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Kelsey Hawkins</author>
+  <author>Phillip Grice</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>rosbag</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>actionlib_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>interactive_markers</build_depend>
+  <build_depend>eigen_conversions</build_depend>
+  <build_depend>tf_conversions</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>pykdl_utils</build_depend>
+  <build_depend>hrl_pr2_arms</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>rosbag</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>actionlib_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>interactive_markers</run_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <run_depend>tf_conversions</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>pykdl_utils</run_depend>
+  <run_depend>hrl_pr2_arms</run_depend>
+
+</package>

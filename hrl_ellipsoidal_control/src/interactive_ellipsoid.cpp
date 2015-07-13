@@ -1,6 +1,6 @@
 #include <Eigen/Eigen>
-#include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+//#include <boost/format.hpp>
+////#include <boost/make_shared.hpp>
 #include <boost/foreach.hpp>
 
 #include <ros/ros.h>
@@ -14,7 +14,6 @@
 
 #include <hrl_ellipsoidal_control/EllipsoidParams.h>
 #include <hrl_ellipsoidal_control/LoadEllipsoidParams.h>
-//#include <hrl_ellipsoidal_control/utils.h>
 
 using namespace std;
 
@@ -177,10 +176,10 @@ void InteractiveEllipse::publishTF(const ros::TimerEvent& event)
     tf::transformMsgToTF(tf_msg_.transform, cur_tf);
     tf::transformMsgToTF(old_marker_tf_, old_tf);
     Eigen::Affine3d cur_tf_eig, old_tf_eig;
-    tf::TransformTFToEigen(cur_tf, cur_tf_eig);
-    tf::TransformTFToEigen(old_tf, old_tf_eig);
+    tf::transformTFToEigen(cur_tf, cur_tf_eig);
+    tf::transformTFToEigen(old_tf, old_tf_eig);
     cur_tf_eig = cur_tf_eig;
-    tf::TransformEigenToTF(cur_tf_eig, cur_tf);
+    tf::transformEigenToTF(cur_tf_eig, cur_tf);
     tf::transformTFToMsg(cur_tf, tf_msg_.transform);
     tf_broad_.sendTransform(tf_msg_);
     hrl_ellipsoidal_control::EllipsoidParams e_params;

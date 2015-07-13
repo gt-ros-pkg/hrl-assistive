@@ -5,7 +5,6 @@
 #include <pcl/point_types.h>
 
 #include <hrl_ellipsoidal_control/EllipsoidParams.h>
-//#include <hrl_ellipsoidal_control/utils.h>
 #include <hrl_ellipsoidal_control/ellipsoid_space.h>
 
 typedef pcl::PointXYZRGB PRGB;
@@ -61,7 +60,7 @@ void publishEllipsoid(hrl_ellipsoidal_control::EllipsoidParams::ConstPtr e_param
     double B = sqrt(1 - SQ(E));
     sampleEllipse(A, B, e_params->height, pc);
     pc->header.frame_id = "/ellipse_frame";
-    pc->header.stamp = ros::Time::now();
+    pc->header.stamp = ros::Time::now().toNSec()/1e3;
     pub_pc.publish(pc);
 }
 
