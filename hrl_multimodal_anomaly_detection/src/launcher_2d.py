@@ -3,7 +3,7 @@
 import numpy as np
 import cPickle as pickle
 from mvpa2.datasets.base import Dataset
-from learning_hmm_multi import learning_hmm_multi
+from learning_hmm_multi_2d import learning_hmm_multi
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
