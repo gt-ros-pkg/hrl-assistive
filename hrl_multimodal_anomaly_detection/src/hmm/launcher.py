@@ -71,7 +71,7 @@ def create_mvpa_dataset(aXData1, aXData2, aXData3, chunks, labels):
         feat_list.append([x1, x2, x3])
 
     data = Dataset(samples=feat_list)
-    data.sa['id'] = range(0,len(labels))
+    data.sa['id'] = range(0, len(labels))
     data.sa['chunks'] = chunks
     data.sa['targets'] = labels
 
@@ -91,7 +91,7 @@ anglesList = [angles, angles, angles]
 
 print np.shape(forces), np.shape(distances), np.shape(angles)
 
-hmm = learning_hmm_multi_3d(nState=3)
+hmm = learning_hmm_multi_3d(nState=3, nEmissionDim=3)
 
 chunks = [10]*len(forcesList)
 labels = [True]*len(forcesList)
@@ -101,6 +101,10 @@ print trainDataSet.samples.shape
 forcesSample = trainDataSet.samples[:,0,:]
 distancesSample = trainDataSet.samples[:,1,:]
 anglesSample = trainDataSet.samples[:,2,:]
+
+print 'Forces Sample:', forcesSample[:, :20]
+print 'Distances Sample:', distancesSample[:, :20]
+print 'Angles Sample:', anglesSample[:, :20]
 
 hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample)
 

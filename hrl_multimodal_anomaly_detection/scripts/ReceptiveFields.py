@@ -85,9 +85,9 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
             ts.append(timeStamp)
 
             # Scale all points to prevent division by small numbers and singular matrices
-            spoon *= 10
-            mic *= 10
-            points *= 10
+            spoon *= 20
+            mic *= 20
+            points *= 20
             directionVector = spoon - mic
 
             # Define receptive fields along spoon
@@ -121,13 +121,14 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
                     # print constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
                 pdfList.append(pdfValue)
 
-            print pdfList
+            # print pdfList
+            # pdfList = np.array(pdfList)
+            # pdfList = (pdfList - np.average(pdfList, axis=0)) / np.std(pdfList, axis=0)
+            # pdfList = preprocessing.scale(pdfList)
+            # print pdfList
             pdfs.append(pdfList)
 
 
-            # pdfList = np.array(pdfList)
-            # pdfList = (pdfList - np.average(pdfList, axis=0)) / np.std(pdfList, axis=0)
-            # # activations = preprocessing.scale(activations)
             # clf = mixture.GMM(n_components=3, covariance_type='full')
             # clf.fit(pdfList)
             #
@@ -180,57 +181,54 @@ print len(ts1), len(ts2), len(ts3)
 # Determine entropies using receptive fields
 print 'Entropies for two successful trials'
 entropies = []
-for i in xrange(len(successpdfs)):
-    if i >= len(successpdfs2):
-        break
-    ent = 0
-    for pdf1, pdf2 in zip(successpdfs[i], successpdfs2[i]):
-        ent += entropy(pdf1, pdf2)
-    if ent > 2 and i > 0:
-        ent2 = 0
-        for pdf1, pdf2 in zip(successpdfs[i-1], successpdfs2[i]):
-            ent2 += entropy(pdf1, pdf2)
-        if ent2 < ent:
-            ent = ent2
+for index, (pdf1, pdf2) in enumerate(zip(successpdfs, successpdfs2)):
+    ent = round(entropy(pdf1, pdf2) * 10, 3)
     entropies.append(ent)
-    print 'Time:', ts1[i], 'Entropy:', ent
-print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
-
-
-# Determine entropies when using activation cells
-print 'Entropies for two successful trials'
-entropies = []
-for i in xrange(len(successpdfs)):
-    if i >= len(successpdfs2):
-        break
-    ent = 0
-    for pdf1, pdf2 in zip(successpdfs[i], successpdfs2[i]):
-        ent += entropy(pdf1, pdf2)
-    if ent > 2 and i > 0:
-        ent2 = 0
-        for pdf1, pdf2 in zip(successpdfs[i-1], successpdfs2[i]):
-            ent2 += entropy(pdf1, pdf2)
-        if ent2 < ent:
-            ent = ent2
-    entropies.append(ent)
-    print 'Time:', ts1[i], 'Entropy:', ent
+    print 'Time:', round(ts1[index], 3), 'Entropy:', ent
 print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 
 print 'Entropies for one successful and one failure trial'
 entropies = []
-for i in xrange(len(successpdfs)):
-    if i >= len(successpdfs2):
-        break
-    ent = 0
-    for pdf1, pdf2 in zip(successpdfs[i], failurepdfs[i]):
-        ent += entropy(pdf1, pdf2)
-    if ent > 2 and i > 0:
-        ent2 = 0
-        for pdf1, pdf2 in zip(successpdfs[i-1], failurepdfs[i]):
-            ent2 += entropy(pdf1, pdf2)
-        if ent2 < ent:
-            ent = ent2
+for index, (pdf1, pdf2) in enumerate(zip(successpdfs, failurepdfs)):
+    ent = round(entropy(pdf1, pdf2) * 10, 4)
     entropies.append(ent)
-    print 'Time:', ts1[i], 'Entropy:', ent
+    print 'Time:', round(ts1[index], 3), 'Entropy:', ent
 print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
+
+# Determine entropies when using activation cells
+# print 'Entropies for two successful trials'
+# entropies = []
+# for i in xrange(len(successpdfs)):
+#     if i >= len(successpdfs2):
+#         break
+#     ent = 0
+#     for pdf1, pdf2 in zip(successpdfs[i], successpdfs2[i]):
+#         ent += entropy(pdf1, pdf2)
+#     if ent > 2 and i > 0:
+#         ent2 = 0
+#         for pdf1, pdf2 in zip(successpdfs[i-1], successpdfs2[i]):
+#             ent2 += entropy(pdf1, pdf2)
+#         if ent2 < ent:
+#             ent = ent2
+#     entropies.append(ent)
+#     print 'Time:', ts1[i], 'Entropy:', ent
+# print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
+#
+# print 'Entropies for one successful and one failure trial'
+# entropies = []
+# for i in xrange(len(successpdfs)):
+#     if i >= len(successpdfs2):
+#         break
+#     ent = 0
+#     for pdf1, pdf2 in zip(successpdfs[i], failurepdfs[i]):
+#         ent += entropy(pdf1, pdf2)
+#     if ent > 2 and i > 0:
+#         ent2 = 0
+#         for pdf1, pdf2 in zip(successpdfs[i-1], failurepdfs[i]):
+#             ent2 += entropy(pdf1, pdf2)
+#         if ent2 < ent:
+#             ent = ent2
+#     entropies.append(ent)
+#     print 'Time:', ts1[i], 'Entropy:', ent
+# print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 

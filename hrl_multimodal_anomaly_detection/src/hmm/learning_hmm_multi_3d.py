@@ -45,7 +45,7 @@ class learning_hmm_multi_3d:
 
         print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, xData2, xData3, A=None, B=None, pi=None, cov_mult=[10.0]*9, verbose=False, ml_pkl='ml_temp.pkl', use_pkl=False):
+    def fit(self, xData1, xData2, xData3, A=None, B=None, pi=None, cov_mult=[1.0]*9, verbose=False, ml_pkl='ml_temp.pkl', use_pkl=False):
         X1 = np.array(xData1)
         X2 = np.array(xData2)
         X3 = np.array(xData3)
@@ -54,6 +54,8 @@ class learning_hmm_multi_3d:
             if verbose: print "Generating a new A matrix"
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
+
+            print 'A', A
 
         if B is None:
             if verbose: print "Generating a new B matrix"
@@ -69,6 +71,11 @@ class learning_hmm_multi_3d:
             cov[:, 0, 2] *= cov_mult[6]
             cov[:, 1, 2] *= cov_mult[7]
             cov[:, 2, 2] *= cov_mult[8]
+
+            print 'mu1:', mu1
+            print 'mu2:', mu2
+            print 'mu3:', mu3
+            print 'cov', cov
 
             # Emission probability matrix
             B = [0.0] * self.nState
@@ -87,7 +94,6 @@ class learning_hmm_multi_3d:
         X_train = self.convert_sequence(X1, X2, X3) # Training input
         X_train = X_train.tolist()
         
-            
         print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
         final_seq = ghmm.SequenceSet(self.F, X_train)        
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
@@ -143,6 +149,9 @@ class learning_hmm_multi_3d:
             self.std_coff  = 1.0
             g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
             g_sig = float(m) / float(self.nGaussian) * self.std_coff
+
+            print 'g_mu_list:', g_mu_list
+            print 'g_sig:', g_sig
 
             ######################################################################################
             if os.path.isfile(ml_pkl) and use_pkl:
@@ -516,7 +525,7 @@ class learning_hmm_multi_3d:
 ####################################################################
         
 def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
-    if nEmissionDim == 2:
+    if nEmissionDim >= 2:
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
     else:
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
@@ -532,7 +541,7 @@ def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu
         g_lhood2 = 0.0
         prop_sum = 0.0
 
-        for k in xrange(1,m):
+        for k in xrange(1, m):
             final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
             logp = ml.loglikelihoods(final_ts_obj)[0]
             post = np.array(ml.posterior(final_ts_obj))
