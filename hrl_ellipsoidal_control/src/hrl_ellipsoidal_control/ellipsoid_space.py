@@ -1,22 +1,20 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import numpy as np
 
-import roslib
-roslib.load_manifest('hrl_ellipsoidal_control')
 import rospy
 from tf import TransformBroadcaster
 
-import hrl_geom.transformations as trans
 from hrl_geom.pose_converter import PoseConv
 from hrl_geom import transformations as trans
 from hrl_ellipsoidal_control.controller_base import min_jerk_traj
+
 
 class EllipsoidSpace(object):
     def __init__(self, E=1, is_oblate=False):
         self.A = 1
         self.E = E
-        #self.B = np.sqrt(1. - E**2)
+        # self.B = np.sqrt(1. - E**2)
         self.a = self.A * self.E
         self.is_oblate = is_oblate
         self.center = None
@@ -32,10 +30,12 @@ class EllipsoidSpace(object):
         self.height = height
 
     def set_center(self, pose_stamped):
-        rospy.loginfo("[ellipsoid_space] Setting center to:\r\n %s" %pose_stamped)
+        rospy.loginfo(
+            "[ellipsoid_space] Setting center to:\r\n %s" % pose_stamped)
         if self.center_tf_timer is not None:
             self.center_tf_timer.shutdown()
         self.center = pose_stamped
+
         def broadcast_ell_center(event):
             tr = (pose_stamped.pose.position.x,
                   pose_stamped.pose.position.y,
@@ -47,7 +47,8 @@ class EllipsoidSpace(object):
             self.frame_broadcaster.sendTransform(tr, quat, rospy.Time.now(),
                                                  '/ellipse_frame',
                                                  self.center.header.frame_id)
-        self.center_tf_timer = rospy.Timer(rospy.Duration(0.01), broadcast_ell_center)
+        self.center_tf_timer = rospy.Timer(
+            rospy.Duration(0.01), broadcast_ell_center)
 
     def set_bounds(self, lat_bounds=None, lon_bounds=None, height_bounds=None):
         assert lon_bounds[1] >= 0
@@ -69,41 +70,46 @@ class EllipsoidSpace(object):
                     lon = min_lon
                 else:
                     lon = self._lon_bounds[1]
-        height = np.clip(ell_pos[2], self._height_bounds[0], self._height_bounds[1])
+        height = np.clip(
+            ell_pos[2], self._height_bounds[0], self._height_bounds[1])
         return np.array([lat, lon, height])
 
     def ellipsoidal_to_cart(self, lat, lon, height):
-        #assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi
+        # assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi
         if not self.is_oblate:
             x = self.a * np.sinh(height) * np.sin(lat) * np.cos(lon)
             y = self.a * np.sinh(height) * np.sin(lat) * np.sin(lon)
             z = self.a * np.cosh(height) * np.cos(lat)
         else:
-            x = self.a * np.cosh(height) * np.cos(lat-np.pi/2) * np.cos(lon)
-            y = self.a * np.cosh(height) * np.cos(lat-np.pi/2) * np.sin(lon)
-            z = self.a * np.sinh(height) * np.sin(lat-np.pi/2)
+            x = self.a * np.cosh(height) * \
+                np.cos(lat - np.pi / 2) * np.cos(lon)
+            y = self.a * np.cosh(height) * \
+                np.cos(lat - np.pi / 2) * np.sin(lon)
+            z = self.a * np.sinh(height) * np.sin(lat - np.pi / 2)
         pos_local = np.mat([x, y, z]).T
         return pos_local
 
     def partial_height(self, lat, lon, height):
-        #assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi
+        # assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi
         if not self.is_oblate:
             x = self.a * np.cosh(height) * np.sin(lat) * np.cos(lon)
             y = self.a * np.cosh(height) * np.sin(lat) * np.sin(lon)
             z = self.a * np.sinh(height) * np.cos(lat)
         else:
-            x = self.a * np.sinh(height) * np.sin(lat-np.pi/2) * np.cos(lon)
-            y = self.a * np.sinh(height) * np.sin(lat-np.pi/2) * np.sin(lon)
-            z = self.a * np.cosh(height) * np.cos(lat-np.pi/2)
+            x = self.a * np.sinh(height) * \
+                np.sin(lat - np.pi / 2) * np.cos(lon)
+            y = self.a * np.sinh(height) * \
+                np.sin(lat - np.pi / 2) * np.sin(lon)
+            z = self.a * np.cosh(height) * np.cos(lat - np.pi / 2)
         return np.mat([x, y, z]).T
 
-    #def partial_v(self, lat, lon, height):
+    # def partial_v(self, lat, lon, height):
     #    #assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi
     #    x = self.a * np.sinh(height) * np.cos(lat) * np.cos(lon)
     #    y = self.a * np.sinh(height) * np.cos(lat) * np.sin(lon)
     #    z = self.a * np.cosh(height) * -np.sin(lat)
     #    return np.mat([x, y, z]).T
-    #def partial_p(self, lat, lon, height):
+    # def partial_p(self, lat, lon, height):
     #    #assert height > 0 and lat >= 0 and lat <= np.pi and lon >= 0 and lon < 2 * np.pi
     #    x = self.a * np.sinh(height) * np.sin(lat) * -np.sin(lon)
     #    y = self.a * np.sinh(height) * np.sin(lat) * np.cos(lon)
@@ -121,27 +127,31 @@ class EllipsoidSpace(object):
         pos = self.ellipsoidal_to_cart(ell_pos[0], ell_pos[1], ell_pos[2])
         df_du = self.partial_height(ell_pos[0], ell_pos[1], ell_pos[2])
         nx, ny, nz = df_du.T.A[0] / np.linalg.norm(df_du)
-        j = np.sqrt(1./(1.+ny*ny/(nz*nz)))
-        k = -ny*j/nz
-        norm_rot = np.mat([[-nx,  ny*k - nz*j,  0],      
-                           [-ny,  -nx*k,        j],      
-                           [-nz,  nx*j,         k]])
+        j = np.sqrt(1. / (1. + ny * ny / (nz * nz)))
+        k = -ny * j / nz
+        norm_rot = np.mat([[-nx,  ny * k - nz * j,  0],
+                           [-ny,  -nx * k,        j],
+                           [-nz,  nx * j,         k]])
         _, norm_quat = PoseConv.to_pos_quat(np.mat([0, 0, 0]).T, norm_rot)
-        rot_angle = np.arctan(-norm_rot[2,1] / norm_rot[2,2])
-        #print norm_rot
-        quat_ortho_rot = trans.quaternion_from_euler(rot_angle + np.pi, 0.0, 0.0)
+        rot_angle = np.arctan(-norm_rot[2, 1] / norm_rot[2, 2])
+        # print norm_rot
+        quat_ortho_rot = trans.quaternion_from_euler(
+            rot_angle + np.pi, 0.0, 0.0)
         norm_quat_ortho = trans.quaternion_multiply(norm_quat, quat_ortho_rot)
-        norm_rot_ortho = np.mat(trans.quaternion_matrix(norm_quat_ortho)[:3,:3])
+        norm_rot_ortho = np.mat(
+            trans.quaternion_matrix(norm_quat_ortho)[:3, :3])
         if norm_rot_ortho[2, 2] > 0:
             flip_axis_ang = 0
         else:
             flip_axis_ang = np.pi
         quat_flip = trans.quaternion_from_euler(flip_axis_ang, 0.0, 0.0)
-        norm_quat_ortho_flipped = trans.quaternion_multiply(norm_quat_ortho, quat_flip)
-        ell_frame_quat = trans.quaternion_multiply(norm_quat_ortho_flipped, ell_quat)
+        norm_quat_ortho_flipped = trans.quaternion_multiply(
+            norm_quat_ortho, quat_flip)
+        ell_frame_quat = trans.quaternion_multiply(
+            norm_quat_ortho_flipped, ell_quat)
         pose = PoseConv.to_pos_quat(pos, ell_frame_quat)
-        
-        #print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
+
+        # print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
         #       (lat, lon, height) +
         #       str(PoseConv.to_homo_mat(pose)))
         return pose
@@ -150,27 +160,26 @@ class EllipsoidSpace(object):
         pos = self.ellipsoidal_to_cart(ell_pos[0], ell_pos[1], ell_pos[2])
         df_du = self.partial_height(-ell_pos[0], ell_pos[1], ell_pos[2])
         nx, ny, nz = df_du.T.A[0] / np.linalg.norm(df_du)
-        j = np.sqrt(1./(1.+ny*ny/(nz*nz)))
-        k = -ny*j/nz
-        norm_rot = np.mat([[-nx,  ny*k - nz*j,  0],      
-                           [-ny,  -nx*k,        j],      
-                           [-nz,  nx*j,         k]])
+        j = np.sqrt(1. / (1. + ny * ny / (nz * nz)))
+        k = -ny * j / nz
+        norm_rot = np.mat([[-nx,  ny * k - nz * j,  0],
+                           [-ny,  -nx * k,        j],
+                           [-nz,  nx * j,         k]])
         _, norm_quat = PoseConv.to_pos_quat(np.mat([0, 0, 0]).T, norm_rot)
-        rot_angle = np.arctan(-norm_rot[2,1] / norm_rot[2,2])
-        #print norm_rot
+        rot_angle = np.arctan(-norm_rot[2, 1] / norm_rot[2, 2])
+        # print norm_rot
         quat_ortho_rot = trans.quaternion_from_euler(rot_angle, 0.0, 0.0)
         norm_quat_ortho = trans.quaternion_multiply(norm_quat, quat_ortho_rot)
-        quat_ortho_rot2 = trans.quaternion_from_euler(0.0, np.pi/2, 0.0)
-        norm_quat_ortho = trans.quaternion_multiply(norm_quat_ortho, quat_ortho_rot2)
+        quat_ortho_rot2 = trans.quaternion_from_euler(0.0, np.pi / 2, 0.0)
+        norm_quat_ortho = trans.quaternion_multiply(
+            norm_quat_ortho, quat_ortho_rot2)
         if lon >= np.pi:
             quat_flip = trans.quaternion_from_euler(0.0, 0.0, np.pi)
-            norm_quat_ortho = trans.quaternion_multiply(norm_quat_ortho, quat_flip)
-        ell_frame_quat = trans.quaternion_multiply(norm_quat_ortho, ell_quat)
+            norm_quat_ortho = trans.quaternion_multiply(
+                norm_quat_ortho, quat_flip)
+        trans.quaternion_multiply(norm_quat_ortho, ell_quat)
 
         pose = PoseConv.to_pos_quat(pos, norm_quat_ortho)
-        #print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
-        #       (lat, lon, height) +
-        #       str(PoseConv.to_homo_mat(pose)))
         return pose
 
     def normal_to_ellipse(self, lat, lon, height):
@@ -184,26 +193,29 @@ class EllipsoidSpace(object):
         pos = self.ellipsoidal_to_cart(lat, lon, height)
         df_du = self.partial_height(lat, lon, height)
         nx, ny, nz = df_du.T.A[0] / np.linalg.norm(df_du)
-        j = np.sqrt(1./(1.+ny*ny/(nz*nz)))
-        k = -ny*j/nz
-        norm_rot = np.mat([[-nx,  ny*k - nz*j,  0],      
-                           [-ny,  -nx*k,        j],      
-                           [-nz,  nx*j,         k]])
+        j = np.sqrt(1. / (1. + ny * ny / (nz * nz)))
+        k = -ny * j / nz
+        norm_rot = np.mat([[-nx,  ny * k - nz * j,  0],
+                           [-ny,  -nx * k,        j],
+                           [-nz,  nx * j,         k]])
         _, norm_quat = PoseConv.to_pos_quat(np.mat([0, 0, 0]).T, norm_rot)
-        rot_angle = np.arctan(-norm_rot[2,1] / norm_rot[2,2])
-        #print norm_rot
-        quat_ortho_rot = trans.quaternion_from_euler(rot_angle + np.pi, 0.0, 0.0)
+        rot_angle = np.arctan(-norm_rot[2, 1] / norm_rot[2, 2])
+        # print norm_rot
+        quat_ortho_rot = trans.quaternion_from_euler(
+            rot_angle + np.pi, 0.0, 0.0)
         norm_quat_ortho = trans.quaternion_multiply(norm_quat, quat_ortho_rot)
-        norm_rot_ortho = np.mat(trans.quaternion_matrix(norm_quat_ortho)[:3,:3])
+        norm_rot_ortho = np.mat(
+            trans.quaternion_matrix(norm_quat_ortho)[:3, :3])
         if norm_rot_ortho[2, 2] > 0:
             flip_axis_ang = 0
         else:
             flip_axis_ang = np.pi
         quat_flip = trans.quaternion_from_euler(flip_axis_ang, 0.0, 0.0)
-        norm_quat_ortho_flipped = trans.quaternion_multiply(norm_quat_ortho, quat_flip)
+        norm_quat_ortho_flipped = trans.quaternion_multiply(
+            norm_quat_ortho, quat_flip)
 
         pose = PoseConv.to_pos_quat(pos, norm_quat_ortho_flipped)
-        #print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
+        # print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
         #       (lat, lon, height) +
         #       str(PoseConv.to_homo_mat(pose)))
         return pose
@@ -212,33 +224,38 @@ class EllipsoidSpace(object):
         pos = self.ellipsoidal_to_cart(lat, lon, height)
         df_du = self.partial_height(-lat, lon, height)
         nx, ny, nz = df_du.T.A[0] / np.linalg.norm(df_du)
-        j = np.sqrt(1./(1.+ny*ny/(nz*nz)))
-        k = -ny*j/nz
-        norm_rot = np.mat([[-nx,  ny*k - nz*j,  0],      
-                           [-ny,  -nx*k,        j],      
-                           [-nz,  nx*j,         k]])
+        j = np.sqrt(1. / (1. + ny * ny / (nz * nz)))
+        k = -ny * j / nz
+        norm_rot = np.mat([[-nx,  ny * k - nz * j,  0],
+                           [-ny,  -nx * k,        j],
+                           [-nz,  nx * j,         k]])
         _, norm_quat = PoseConv.to_pos_quat(np.mat([0, 0, 0]).T, norm_rot)
-        rot_angle = np.arctan(-norm_rot[2,1] / norm_rot[2,2])
-        #print norm_rot
+        rot_angle = np.arctan(-norm_rot[2, 1] / norm_rot[2, 2])
+        # print norm_rot
         quat_ortho_rot = trans.quaternion_from_euler(rot_angle, 0.0, 0.0)
         norm_quat_ortho = trans.quaternion_multiply(norm_quat, quat_ortho_rot)
-        quat_ortho_rot2 = trans.quaternion_from_euler(0.0, np.pi/2, 0.0)
-        norm_quat_ortho = trans.quaternion_multiply(norm_quat_ortho, quat_ortho_rot2)
+        quat_ortho_rot2 = trans.quaternion_from_euler(0.0, np.pi / 2, 0.0)
+        norm_quat_ortho = trans.quaternion_multiply(
+            norm_quat_ortho, quat_ortho_rot2)
         if lon >= np.pi:
             quat_flip = trans.quaternion_from_euler(0.0, 0.0, np.pi)
-            norm_quat_ortho = trans.quaternion_multiply(norm_quat_ortho, quat_flip)
+            norm_quat_ortho = trans.quaternion_multiply(
+                norm_quat_ortho, quat_flip)
 
         pose = PoseConv.to_pos_quat(pos, norm_quat_ortho)
-        #print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
+        # print ("ellipsoidal_to_pose: latlonheight: %f, %f, %f" %
         #       (lat, lon, height) +
         #       str(PoseConv.to_homo_mat(pose)))
         return pose
 
     def pose_to_ellipsoidal(self, pose):
         pose_pos, pose_rot = PoseConv.to_pos_rot(pose)
-        lat, lon, height = self.pos_to_ellipsoidal(pose_pos[0,0], pose_pos[1,0], pose_pos[2,0])
-        _, ell_rot = PoseConv.to_pos_rot(self.normal_to_ellipse(lat, lon, height))
-        _, quat_rot = PoseConv.to_pos_quat(np.mat([0]*3).T, ell_rot.T * pose_rot)
+        lat, lon, height = self.pos_to_ellipsoidal(
+            pose_pos[0, 0], pose_pos[1, 0], pose_pos[2, 0])
+        _, ell_rot = PoseConv.to_pos_rot(
+            self.normal_to_ellipse(lat, lon, height))
+        _, quat_rot = PoseConv.to_pos_quat(
+            np.mat([0] * 3).T, ell_rot.T * pose_rot)
         return [lat, lon, height], quat_rot
 
     def pos_to_ellipsoidal(self, x, y, z):
@@ -257,7 +274,7 @@ class EllipsoidSpace(object):
                          (z / a)**2 - (p / a)**2 + 1) / 2.)
         assert inner < 1.0001
         if inner > 0.9999:
-            lat = np.pi/2.
+            lat = np.pi / 2.
         else:
             lat = np.arcsin(inner)
         if z < 0.:
@@ -280,7 +297,7 @@ class EllipsoidSpace(object):
         print ("%s pos_to_ellipsoidal: xyz: %f, %f, %f; latlonheight: %f, %f, %f" %
                (use_case, x, y, z, lat, lon, height))
         assert not np.any(np.isnan([lat, lon, height])), ("cosh_height %f, a %f, x %f, y %f, z %f, lat %f, lon %f" %
-                                               (cosh_height, a, x, y, z, lat, lon))
+                                                          (cosh_height, a, x, y, z, lat, lon))
         return lat, lon, height
 
     def _pos_to_ellipsoidal_oblate(self, x, y, z):
@@ -305,48 +322,54 @@ class EllipsoidSpace(object):
 
         return lat, lon, height
 
-
     def create_ellipsoidal_path(self, start_ell_pos, start_ell_quat,
-                                      end_ell_pos, end_ell_quat,
-                                      velocity=0.001, min_jerk=True):
+                                end_ell_pos, end_ell_quat,
+                                velocity=0.001, min_jerk=True):
 
-        print "Start rot (%s):\r\n%s" %(type(start_ell_quat),start_ell_quat)
-        print "End rot (%s):\r\n%s" %(type(end_ell_quat),end_ell_quat)
-        
-        _, start_ell_rot = PoseConv.to_pos_rot((start_ell_pos,start_ell_quat))
-        _, end_ell_rot = PoseConv.to_pos_rot((end_ell_pos,end_ell_quat))
-        rpy = trans.euler_from_matrix(start_ell_rot.T * end_ell_rot) # get roll, pitch, yaw of angle diff
-        end_ell_pos[1] = np.mod(end_ell_pos[1], 2 * np.pi) # wrap longitude value
-        ell_init = np.mat(start_ell_pos).T 
+        print "Start rot (%s):\r\n%s" % (type(start_ell_quat), start_ell_quat)
+        print "End rot (%s):\r\n%s" % (type(end_ell_quat), end_ell_quat)
+
+        _, start_ell_rot = PoseConv.to_pos_rot((start_ell_pos, start_ell_quat))
+        _, end_ell_rot = PoseConv.to_pos_rot((end_ell_pos, end_ell_quat))
+        # get roll, pitch, yaw of angle diff
+        rpy = trans.euler_from_matrix(start_ell_rot.T * end_ell_rot)
+        # wrap longitude value
+        end_ell_pos[1] = np.mod(end_ell_pos[1], 2 * np.pi)
+        ell_init = np.mat(start_ell_pos).T
         ell_final = np.mat(end_ell_pos).T
 
         # find the closest longitude angle to interpolate to
-        if np.fabs(2 * np.pi + ell_final[1,0] - ell_init[1,0]) < np.pi:
-            ell_final[1,0] += 2 * np.pi
-        elif np.fabs(-2 * np.pi + ell_final[1,0] - ell_init[1,0]) < np.pi:
-            ell_final[1,0] -= 2 * np.pi
+        if np.fabs(2 * np.pi + ell_final[1, 0] - ell_init[1, 0]) < np.pi:
+            ell_final[1, 0] += 2 * np.pi
+        elif np.fabs(-2 * np.pi + ell_final[1, 0] - ell_init[1, 0]) < np.pi:
+            ell_final[1, 0] -= 2 * np.pi
         if np.any(np.isnan(ell_init)) or np.any(np.isnan(ell_final)):
             rospy.logerr("[ellipsoid_space] Nan values in ellipsoid. " +
-                         "ell_init: %f, %f, %f; " % (ell_init[0,0], ell_init[1,0], ell_init[2,0]) +
-                         "ell_final: %f, %f, %f; " % (ell_final[0,0], ell_final[1,0], ell_final[2,0]))
+                         "ell_init: %f, %f, %f; " % (ell_init[0, 0], ell_init[1, 0], ell_init[2, 0]) +
+                         "ell_final: %f, %f, %f; " % (ell_final[0, 0], ell_final[1, 0], ell_final[2, 0]))
             return None
-        
-        num_samps = np.max([2, int(np.linalg.norm(ell_final - ell_init) / velocity), 
-                               int(np.linalg.norm(rpy) / velocity)])
+
+        num_samps = np.max([2, int(np.linalg.norm(ell_final - ell_init) / velocity),
+                            int(np.linalg.norm(rpy) / velocity)])
         if min_jerk:
             t_vals = min_jerk_traj(num_samps)
         else:
-            t_vals = np.linspace(0,1,num_samps)
+            t_vals = np.linspace(0, 1, num_samps)
 
         # smoothly interpolate from init to final
-        ell_lat_traj = np.interp(t_vals, (0,1),(start_ell_pos[0], end_ell_pos[0]))
-        ell_lon_traj = np.interp(t_vals, (0,1),(start_ell_pos[1], end_ell_pos[1]))
-        ell_height_traj = np.interp(t_vals, (0,1),(start_ell_pos[2], end_ell_pos[2]))
+        ell_lat_traj = np.interp(
+            t_vals, (0, 1), (start_ell_pos[0], end_ell_pos[0]))
+        ell_lon_traj = np.interp(
+            t_vals, (0, 1), (start_ell_pos[1], end_ell_pos[1]))
+        ell_height_traj = np.interp(
+            t_vals, (0, 1), (start_ell_pos[2], end_ell_pos[2]))
         ell_pos_traj = np.vstack((ell_lat_traj, ell_lon_traj, ell_height_traj))
 
-        ell_quat_traj = [trans.quaternion_slerp(start_ell_quat, end_ell_quat, t) for t in t_vals]
-        return [(ell_pos_traj[:,i], ell_quat_traj[i]) for i in xrange(num_samps)]
-        
+        ell_quat_traj = [
+            trans.quaternion_slerp(start_ell_quat, end_ell_quat, t) for t in t_vals]
+        return [(ell_pos_traj[:, i], ell_quat_traj[i]) for i in xrange(num_samps)]
+
+
 def main():
     e_space = EllipsoidSpace(1)
     # test pos_to_ellipsoidal
@@ -355,14 +378,11 @@ def main():
             for zm in range(2):
                 for i in range(10000):
                     x, y, z = np.random.uniform(-2.5, 2.5, 3)
-                    lat, lon, height = e_space.pos_to_ellipsoidal(xm*x, ym*y, zm*z)
-                    assert lat >= 0 and lat <= np.pi*1.0001, ("latlonheight: %f, %f, %f" %
-                                                       (lat, lon, height))
-                    assert lon >= 0 and lon < 2*np.pi*1.0001, ("latlonheight: %f, %f, %f" %
-                                                       (lat, lon, height))
+                    lat, lon, height = e_space.pos_to_ellipsoidal(
+                        xm * x, ym * y, zm * z)
+                    assert lat >= 0 and lat <= np.pi * 1.0001, ("latlonheight: %f, %f, %f" %
+                                                                (lat, lon, height))
+                    assert lon >= 0 and lon < 2 * np.pi * 1.0001, ("latlonheight: %f, %f, %f" %
+                                                                   (lat, lon, height))
                     assert height >= 0, ("latlonheight: %f, %f, %f" %
-                                                       (lat, lon, height))
-                    #print lat, lon, height
-
-if __name__ == "__main__":
-    main()
+                                         (lat, lon, height))

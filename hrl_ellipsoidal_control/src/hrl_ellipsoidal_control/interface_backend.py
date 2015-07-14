@@ -1,9 +1,8 @@
-import roslib
-roslib.load_manifest("hrl_ellipsoidal_control")
 import rospy
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 from arm_cart_control_interface import MOVE_BUTTONS, TEXT_BUTTONS
+
 
 class ControllerInterfaceBackend(object):
     def __init__(self, name, hidden_buttons=[], use_service=True):
@@ -35,15 +34,15 @@ class ControllerInterfaceBackend(object):
         self.set_ctrl_name_pub.publish(self.ctrl_name)
         self.buttons_enable_srv()
 
-    def _buttons_enable_srv():
+    def _buttons_enable_srv(self):
         self.buttons_enable_pub.publish("")
 
-    def _buttons_disable_srv():
+    def _buttons_disable_srv(self):
         self.buttons_disable_pub.publish("")
 
     def set_arm(self, cart_arm):
         rospy.logerr("set_arm not implemented!")
-        
+
     def _button_clk_cb(self, msg):
         self.set_ctrl_name_pub.publish(self.ctrl_name)
         self.set_status_pub.publish("Moving arm.")
@@ -67,4 +66,3 @@ class ControllerInterfaceBackend(object):
             self.show_button_pub.publish(button)
         self.buttons_enable_srv()
         self.set_status_pub.publish(status_message)
-

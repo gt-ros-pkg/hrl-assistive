@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+from hrl_ellipsoidal_control.ellipsoid_controller import main
+
+if __name__ == '__main__':
+    main()

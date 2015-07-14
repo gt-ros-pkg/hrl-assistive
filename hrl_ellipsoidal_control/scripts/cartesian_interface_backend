@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+from hrl_ellipsoidal_control.cartesian_interface_backend import main
+
+if __name__ == '__main__':
+    main()

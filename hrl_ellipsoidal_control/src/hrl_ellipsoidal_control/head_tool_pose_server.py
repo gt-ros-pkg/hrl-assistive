@@ -1,32 +1,31 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import numpy as np
 import copy
 
-import roslib
-roslib.load_manifest('hrl_ellipsoidal_control')
 import rospy
 import tf.transformations as tf_trans
 
 from hrl_ellipsoidal_control.msg import EllipsoidParams
-from geometry_msgs.msg import PoseStamped, PoseArray, Vector3
+from geometry_msgs.msg import Vector3
 from hrl_geom.pose_converter import PoseConv
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
-#from hrl_rfh_fall_2011.srv import GetHeadPose 
+
 
 head_poses = {
     #             lat   lon    height    roll   pitch   yaw
-    "near_ear" : [(4 * np.pi/8,   -3 * np.pi/8,     1),      (0,     0,      0)],
-    "upper_cheek" : [(4 * np.pi/8,   -1.5 * np.pi/8,     1),      (0,     0,      0)],
-    "middle_cheek" : [(4.5 * np.pi/8,   -2 * np.pi/8,     1),      (0,     0,      0)],
-    "jaw_bone" : [(5.1 * np.pi/8,   -2 * np.pi/8,     1),      (0,     0,      0)],
-    "back_neck" : [(5.1 * np.pi/8,   -3 * np.pi/8,     1),      (0,     0,      0)],
-    "nose" : [(4 * np.pi/8,    0 * np.pi/8,     1),      (0,     0,      0)],
-    "chin" : [(5.4 * np.pi/8,    0 * np.pi/8,     1),      (0 * np.pi / 2,    np.pi/8,      0)],
-    "mouth_corner" : [(4.5 * np.pi/8,   -0.9 * np.pi/8,     1),      (0,     0,      0)]
+    "near_ear": [(4 * np.pi/8,   -3 * np.pi/8,     1),      (0,     0,      0)],
+    "upper_cheek": [(4 * np.pi/8,   -1.5 * np.pi/8,     1),      (0,     0,      0)],
+    "middle_cheek": [(4.5 * np.pi/8,   -2 * np.pi/8,     1),      (0,     0,      0)],
+    "jaw_bone": [(5.1 * np.pi/8,   -2 * np.pi/8,     1),      (0,     0,      0)],
+    "back_neck": [(5.1 * np.pi/8,   -3 * np.pi/8,     1),      (0,     0,      0)],
+    "nose": [(4 * np.pi/8,    0 * np.pi/8,     1),      (0,     0,      0)],
+    "chin": [(5.4 * np.pi/8,    0 * np.pi/8,     1),      (0 * np.pi / 2,    np.pi/8,      0)],
+    "mouth_corner": [(4.5 * np.pi/8,   -0.9 * np.pi/8,     1),      (0,     0,      0)]
 }
+
 
 def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
     m = Marker()
@@ -41,14 +40,14 @@ def create_arrow_marker(pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
     m.pose = PoseConv.to_pose_msg(pose)
     return m
 
+
 class HeadToolPoseServer(object):
     def __init__(self):
         self.ell_space = EllipsoidSpace()
         self.ell_sub = rospy.Subscriber("/ellipsoid_params", EllipsoidParams, self.read_params)
-        #self.head_pose_srv = rospy.Service("/get_head_pose", GetHeadPose, self.get_head_pose_srv)
+        # self.head_pose_srv = rospy.Service("/get_head_pose", GetHeadPose, self.get_head_pose_srv)
         self.lock_ell = False
         self.found_params = False
-#self.tmp_pub = rospy.Publisher("/toolpose", PoseStamped)
 
     def lock_ell_model(self, lock_model):
         self.lock_ell = lock_model
@@ -66,17 +65,16 @@ class HeadToolPoseServer(object):
         for lat in np.linspace(0, np.pi, 10):
             color.g += 0.1
             color.b = 0
-            for lon in np.linspace(0, 2 * np.pi , 10):
+            for lon in np.linspace(0, 2 * np.pi, 10):
                 color.b += 0.1
                 coords.append((lat, lon, 1, i, copy.copy(color)))
                 i += 1
-        arrows.markers = [create_arrow_marker(self.ell_space.ellipsoidal_to_pose(lat, lon, height), i, clr)
-                          for lat, lon, height, i, clr in coords] 
+        arrows.markers = [create_arrow_marker(self.ell_space.ellipsoidal_to_pose(lat, lon, height), j, clr)
+                          for lat, lon, height, j, clr in coords]
         return arrows
 
     def get_pose_markers(self):
         arrows = MarkerArray()
-        coords = []
         i = 0
         color = ColorRGBA(0., 1., 0., 1.)
         for name in head_poses:
@@ -88,7 +86,7 @@ class HeadToolPoseServer(object):
         lat, lon, height = head_poses[name][0]
         roll, pitch, yaw = head_poses[name][1]
         pos, rot = PoseConv.to_pos_rot(self.ell_space.ellipsoidal_to_pose(lat, lon, height))
-        rot = rot * tf_trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'rzyx')[:3, :3] 
+        rot = rot * tf_trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'rzyx')[:3, :3]
         return pos, rot
 
     def get_head_pose_srv(self, req):
@@ -98,8 +96,8 @@ class HeadToolPoseServer(object):
             pose = self.get_head_pose(req.name, req.gripper_rot)
         frame = "/ellipse_frame"
         pose_stamped = PoseConv.to_pose_stamped_msg(frame, pose)
-#self.tmp_pub.publish(pose_stamped)
         return pose_stamped
+
 
 def main():
     rospy.init_node("head_tool_pose_server")
@@ -119,6 +117,3 @@ def main():
                 arrow.header.stamp = rospy.Time.now()
             pub_arrows.publish(arrows)
             rospy.sleep(1)
-
-if __name__ == "__main__":
-    main()

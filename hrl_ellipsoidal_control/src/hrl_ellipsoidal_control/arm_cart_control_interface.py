@@ -1,7 +1,7 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import sys
-from PyQt4 import QtCore, QtGui, uic
+from PyQt4 import QtCore, QtGui
 import functools
 
 import roslib
@@ -14,24 +14,25 @@ from std_srvs.srv import Empty, EmptyResponse
 
 from arm_cart_control_gui import Ui_Frame as QTArmControlGUIFrame
 
-MOVE_BUTTONS = ['translate_up', 
+MOVE_BUTTONS = ['translate_up',
                 'translate_down',
-                'translate_left', 
-                'translate_right', 
-                'translate_in', 
+                'translate_left',
+                'translate_right',
+                'translate_in',
                 'translate_out',
-                'rotate_x_pos', 
-                'rotate_x_neg', 
-                'rotate_y_pos', 
-                'rotate_y_neg', 
-                'rotate_z_pos', 
-                'rotate_z_neg'] 
+                'rotate_x_pos',
+                'rotate_x_neg',
+                'rotate_y_pos',
+                'rotate_y_neg',
+                'rotate_z_pos',
+                'rotate_z_neg']
 
 TEXT_BUTTONS = ['reset_rotation']
 
 BUTTON_STYLESHEET = """image: url(:/resources/%s_%s.png);
                        background-image: url(:/resources/empty.png);"""
 MONITOR_RATE = 20.
+
 
 class ArmCartControlGUIFrame(QtGui.QFrame):
     def __init__(self):
@@ -44,7 +45,7 @@ class ArmCartControlGUIFrame(QtGui.QFrame):
         self.show_button = None
 
         self.button_clk_pub = rospy.Publisher("/arm_ctrl_gui/button_clk", String)
-        self.buttons_enable_srv = rospy.Service("/arm_ctrl_gui/buttons_enable", Empty, 
+        self.buttons_enable_srv = rospy.Service("/arm_ctrl_gui/buttons_enable", Empty,
                                                 self._buttons_enable_cb)
         self.buttons_disable_srv = rospy.Service("/arm_ctrl_gui/buttons_disable", Empty,
                                                  self._buttons_disable_cb)
@@ -130,12 +131,10 @@ class ArmCartControlGUIFrame(QtGui.QFrame):
             else:
                 cur_button.setDisabled(True)
 
+
 def main():
     rospy.init_node("arm_cart_control_interface")
     app = QtGui.QApplication(sys.argv)
     frame = ArmCartControlGUIFrame()
     frame.show()
     sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    main()

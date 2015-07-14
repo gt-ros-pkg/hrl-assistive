@@ -1,15 +1,11 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import numpy as np
-import copy
-
-import roslib
-roslib.load_manifest('hrl_ellipsoidal_control')
 
 import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
-from geometry_msgs.msg import PoseStamped, PoseArray, Vector3
+from geometry_msgs.msg import Vector3
 
 import hrl_geom.transformations as trans
 from hrl_ellipsoidal_control.msg import EllipsoidParams
@@ -17,31 +13,39 @@ from hrl_geom.pose_converter import PoseConv
 from hrl_ellipsoidal_control.ellipsoid_space import EllipsoidSpace
 
 eye_scale = Vector3(0.02, 0.01, 0.010)
-l_eye_loc = [(3.5 * np.pi/8, -0.9 * np.pi/8,     1.20), (    np.pi/2,    np.pi/2,     0)]
-r_eye_loc = [(3.5 * np.pi/8,  0.9 * np.pi/8,     1.20), (    np.pi/2,    np.pi/2,     0)]
+l_eye_loc = [(3.5 * np.pi / 8, -0.9 * np.pi / 8,     1.20),
+             (np.pi / 2,    np.pi / 2,     0)]
+r_eye_loc = [(3.5 * np.pi / 8,  0.9 * np.pi / 8,     1.20),
+             (np.pi / 2,    np.pi / 2,     0)]
 
 mouth_scale = Vector3(0.05, 0.01, 0.010)
-mouth_loc = [(4.7 * np.pi/8,    0 * np.pi/8,     1.25), (    np.pi/2,    np.pi/2,     0)]
+mouth_loc = [(4.7 * np.pi / 8,    0 * np.pi / 8,     1.25),
+             (np.pi / 2,    np.pi / 2,     0)]
 
 ear_scale = Vector3(0.06, 0.03, 0.030)
-l_ear_loc = [(  4 * np.pi/8,   -3.9 * np.pi/8,     1.10), (  0,    np.pi/2,   0)]
-r_ear_loc = [(  4 * np.pi/8,    3.9 * np.pi/8,     1.10), (  0,    np.pi/2,   0)]
+l_ear_loc = [
+    (4 * np.pi / 8,   -3.9 * np.pi / 8,     1.10), (0,    np.pi / 2,   0)]
+r_ear_loc = [
+    (4 * np.pi / 8,    3.9 * np.pi / 8,     1.10), (0,    np.pi / 2,   0)]
+
 
 class HeadMarkers(object):
+
     def __init__(self):
         self.ell_space = EllipsoidSpace(1)
-        self.ell_sub = rospy.Subscriber("/ellipsoid_params", EllipsoidParams, self.read_params)
+        self.ell_sub = rospy.Subscriber(
+            "/ellipsoid_params", EllipsoidParams, self.read_params)
         self.found_params = False
 
     def read_params(self, e_params):
-        self.ell_space.load_ell_params(e_params.E, e_params.is_oblate, e_params.height)
+        self.ell_space.load_ell_params(
+            e_params.E, e_params.is_oblate, e_params.height)
         if not self.found_params:
             rospy.loginfo("[head_markers] Found params from /ellipsoid_params")
         self.found_params = True
 
     def create_eye_marker(self, pose, m_id, color=ColorRGBA(1., 1., 1., 1.)):
         m = Marker()
-#m.header.frame_id = "/base_link"
         m.header.frame_id = "/ellipse_frame"
         m.header.stamp = rospy.Time.now()
         m.ns = "head_markers"
@@ -55,7 +59,6 @@ class HeadMarkers(object):
 
     def create_mouth_marker(self, pose, m_id, color=ColorRGBA(1., 0., 0., 1.)):
         m = Marker()
-#m.header.frame_id = "/base_link"
         m.header.frame_id = "/ellipse_frame"
         m.header.stamp = rospy.Time.now()
         m.ns = "head_markers"
@@ -69,7 +72,6 @@ class HeadMarkers(object):
 
     def create_ear_marker(self, pose, m_id, color=ColorRGBA(0., 1., 1., 1.)):
         m = Marker()
-#m.header.frame_id = "/base_link"
         m.header.frame_id = "/ellipse_frame"
         m.header.stamp = rospy.Time.now()
         m.ns = "head_markers"
@@ -86,23 +88,26 @@ class HeadMarkers(object):
             return
         head_array = MarkerArray()
         head_array.markers.append(
-                self.create_eye_marker(self.get_head_pose(l_eye_loc), 0))
+            self.create_eye_marker(self.get_head_pose(l_eye_loc), 0))
         head_array.markers.append(
-                self.create_eye_marker(self.get_head_pose(r_eye_loc), 1))
+            self.create_eye_marker(self.get_head_pose(r_eye_loc), 1))
         head_array.markers.append(
-                self.create_mouth_marker(self.get_head_pose(mouth_loc), 2))
+            self.create_mouth_marker(self.get_head_pose(mouth_loc), 2))
         head_array.markers.append(
-                self.create_ear_marker(self.get_head_pose(l_ear_loc), 3))
+            self.create_ear_marker(self.get_head_pose(l_ear_loc), 3))
         head_array.markers.append(
-                self.create_ear_marker(self.get_head_pose(r_ear_loc), 4))
+            self.create_ear_marker(self.get_head_pose(r_ear_loc), 4))
         return head_array
 
     def get_head_pose(self, ell_coords_rot, gripper_rot=0.):
         lat, lon, height = ell_coords_rot[0]
         roll, pitch, yaw = ell_coords_rot[1]
-        pos, rot = PoseConv.to_pos_rot(self.ell_space.ellipsoidal_to_pose(lat, lon, height))
-        rot = rot * trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'szyx')[:3, :3] 
+        pos, rot = PoseConv.to_pos_rot(
+            self.ell_space.ellipsoidal_to_pose(lat, lon, height))
+        rot = rot * \
+            trans.euler_matrix(yaw, pitch, roll + gripper_rot, 'szyx')[:3, :3]
         return pos, rot
+
 
 def main():
     rospy.init_node("head_markers")
@@ -112,7 +117,3 @@ def main():
         head = hm.get_head()
         pub_head.publish(head)
         rospy.sleep(0.1)
-    
-
-if __name__ == "__main__":
-    main()

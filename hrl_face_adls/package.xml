@@ -33,7 +33,6 @@
   <run_depend>tf</run_depend>
   <run_depend>pr2_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
-  <run_depend>ar_pose</run_depend>
   <run_depend>pykdl_utils</run_depend>
   <run_depend>hrl_ellipsoidal_control</run_depend>
   <run_depend>hrl_head_registration</run_depend>

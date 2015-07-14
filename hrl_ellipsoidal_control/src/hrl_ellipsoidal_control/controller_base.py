@@ -1,10 +1,5 @@
-
 import numpy as np
-import sys
 from threading import Lock
-
-import roslib
-roslib.load_manifest('hrl_ellipsoidal_control')
 
 import rospy
 from geometry_msgs.msg import PoseStamped
@@ -12,9 +7,11 @@ from geometry_msgs.msg import PoseStamped
 import hrl_geom.transformations as trans
 from hrl_geom.pose_converter import PoseConv
 
+
 def min_jerk_traj(n):
     return [(10 * t**3 - 15 * t**4 + 6 * t**5)
             for t in np.linspace(0, 1, n)]
+
 
 class CartTrajController(object):
     def __init__(self):
@@ -37,6 +34,7 @@ class CartTrajController(object):
         if self._moving_lock.acquire(False):
             self._stop_moving = False
             self._is_blocking = blocking
+
             def execute_cart_traj_cb(event):
                 self._cur_result = self._execute_cart_traj(cart_arm, traj, time_step)
                 self._timer = None
@@ -62,6 +60,7 @@ class CartTrajController(object):
             rate.sleep()
         return True
 
+
 class CartesianStepController(CartTrajController):
     def __init__(self):
         super(CartesianStepController, self).__init__()
@@ -76,10 +75,8 @@ class CartesianStepController(CartTrajController):
         self.arm = arm
 
     def _run_traj(self, traj, blocking=True):
-        self.start_pub.publish(
-                PoseConv.to_pose_stamped_msg("/torso_lift_link", traj[0]))
-        self.end_pub.publish(
-                PoseConv.to_pose_stamped_msg("/torso_lift_link", traj[-1]))
+        self.start_pub.publish(PoseConv.to_pose_stamped_msg("/torso_lift_link", traj[0]))
+        self.end_pub.publish(PoseConv.to_pose_stamped_msg("/torso_lift_link", traj[-1]))
         # make sure traj beginning is close to current end effector position
         init_pos_tolerance = rospy.get_param("~init_pos_tolerance", 0.05)
         init_rot_tolerance = rospy.get_param("~init_rot_tolerance", np.pi/12)
@@ -87,12 +84,12 @@ class CartesianStepController(CartTrajController):
         _, rot_diff = PoseConv.to_pos_euler((ee_pos, ee_rot * traj[0][1].T))
         pos_diff = np.linalg.norm(ee_pos - traj[0][0])
         if pos_diff > init_pos_tolerance:
-            rospy.logwarn("[controller_base] End effector too far from current position. " + 
+            rospy.logwarn("[controller_base] End effector too far from current position. " +
                           "Pos diff: %.3f, Tolerance: %.3f" % (pos_diff, init_pos_tolerance))
             return False
         if np.linalg.norm(rot_diff) > init_rot_tolerance:
-            rospy.logwarn("[controller_base] End effector too far from current rotation. " + 
-                          "Rot diff: %.3f, Tolerance: %.3f" % (np.linalg.norm(rot_diff), 
+            rospy.logwarn("[controller_base] End effector too far from current rotation. " +
+                          "Rot diff: %.3f, Tolerance: %.3f" % (np.linalg.norm(rot_diff),
                                                                init_rot_tolerance))
             return False
         return self.execute_cart_traj(self.arm, traj, self.time_step, blocking=blocking)
@@ -104,14 +101,14 @@ class CartesianStepController(CartTrajController):
         cur_pos, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
         change_pos_ep, change_rot_ep = change_ep
         abs_cart_ep_sel, is_abs_rot = abs_sel
-        pos_f = np.where(abs_cart_ep_sel, change_pos_ep, 
+        pos_f = np.where(abs_cart_ep_sel, change_pos_ep,
                          np.array(cur_pos + cur_rot * np.mat(change_pos_ep).T).T[0])
         if is_abs_rot:
             rot_mat_f = change_rot_ep
         else:
             rpy = change_rot_ep
             _, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
-            rot_mat = np.mat(trans.euler_matrix(*rpy))[:3,:3]
+            rot_mat = np.mat(trans.euler_matrix(*rpy))[:3, :3]
             rot_mat_f = cur_rot * rot_mat
         traj = self._create_cart_trajectory(pos_f, rot_mat_f, velocity, num_samps)
         retval = self._run_traj(traj, blocking=blocking)
@@ -121,13 +118,13 @@ class CartesianStepController(CartTrajController):
     def _create_cart_trajectory(self, pos_f, rot_mat_f, velocity=0.001, num_samps=None):
         cur_pos, cur_rot = PoseConv.to_pos_rot(self.arm.get_ep())
 
-        rpy = trans.euler_from_matrix(cur_rot.T * rot_mat_f) # get roll, pitch, yaw of angle diff
+        rpy = trans.euler_from_matrix(cur_rot.T * rot_mat_f)  # get roll, pitch, yaw of angle diff
 
         if num_samps is None:
-            num_samps = np.max([2, int(np.linalg.norm(pos_f - cur_pos) / velocity), 
-                                   int(np.linalg.norm(rpy) / velocity)])
+            num_samps = np.max([2, int(np.linalg.norm(pos_f - cur_pos) / velocity),
+                                int(np.linalg.norm(rpy) / velocity)])
 
-        traj = self.arm.interpolate_ep([cur_pos, cur_rot], 
-                                       [np.mat(pos_f).T, rot_mat_f], 
+        traj = self.arm.interpolate_ep([cur_pos, cur_rot],
+                                       [np.mat(pos_f).T, rot_mat_f],
                                        min_jerk_traj(num_samps))
         return traj
