@@ -9,8 +9,8 @@
     </node>
     <node pkg="hrl_ellipsoidal_control" type="interactive_ellipsoid" name="interactive_ellipsoid"
           args="openni_rgb_optical_frame ellipse_frame 8 $(find hrl_ellipsoidal_control)/params/init_prolate_ellipsoid_registration.bag $(find hrl_ellipsoidal_control)/data/$(arg subject)_$(arg tool)_$(arg side)_ellipsoid_registration.bag 0" />
-    <node pkg="hrl_ellipsoidal_control" type="head_tool_pose_server.py" name="head_tool_pose_server" />
-    <node pkg="hrl_ellipsoidal_control" type="head_markers.py" name="head_markers" output="screen" />
+    <node pkg="hrl_ellipsoidal_control" type="head_tool_pose_server" name="head_tool_pose_server" />
+    <node pkg="hrl_ellipsoidal_control" type="head_markers" name="head_markers" output="screen" />
     <node pkg="hrl_head_tracking" type="pub_pc" name="pub_pc"
           args="$(find hrl_head_tracking)/data/$(arg subject)_$(arg side)_orig.bag /reg_pc" />
 </launch>
