@@ -84,26 +84,32 @@ def trainMultiHMM():
     for i in xrange(3):
         fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i
         forces, distances, angles = launch(fileName)
-        scale = 1.0
-        # Scale features
+        scale = 0.6
+        # forces = np.array(forces) * scale
+        # distances = np.array(distances) * scale
+        # angles = np.array(angles) * scale
+        # # Scale features
         forces = preprocessing.scale(forces) * scale
         distances = preprocessing.scale(distances) * scale
         angles = preprocessing.scale(angles) * scale
 
-        print 'Forces shape:', forces.shape
-        print 'Distances shape:', distances.shape
-        print 'Angles shape:', angles.shape
+        # print 'Forces shape:', forces.shape
+        # print 'Distances shape:', distances.shape
+        # print 'Angles shape:', angles.shape
 
-        if i == 2:
-            print forces
-
-        forcesList.append(forces)
-        distancesList.append(distances)
-        anglesList.append(angles)
+        forcesList.append(forces.tolist())
+        distancesList.append(distances.tolist())
+        anglesList.append(angles.tolist())
 
         # print np.shape(forces), np.shape(distances), np.shape(angles)
 
-    print np.array(forcesList, dtype=np.float32).shape
+    # Each training iteration may have a different number of time steps (align by chopping)
+    # Find the smallest iteration
+    minsize = min([len(x) for x in forcesList])
+    # Drop extra time steps beyond minsize for each iteration
+    forcesList = [x[:minsize] for x in forcesList]
+    distancesList = [x[:minsize] for x in distancesList]
+    anglesList = [x[:minsize] for x in anglesList]
 
     # Setup training data
     chunks = [10]*len(forcesList)
@@ -115,17 +121,18 @@ def trainMultiHMM():
     distancesSample = trainDataSet.samples[:,1,:]
     anglesSample = trainDataSet.samples[:,2,:]
 
-    # print 'Forces Sample:', forcesSample[:, :20]
-    # print 'Distances Sample:', distancesSample[:, :20]
-    # print 'Angles Sample:', anglesSample[:, :20]
+    print 'Forces Sample:', forcesSample[:, :5]
+    print 'Distances Sample:', distancesSample[:, :5]
+    print 'Angles Sample:', anglesSample[:, :5]
 
     hmm = learning_hmm_multi_3d(nState=6, nEmissionDim=3)
 
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample)
 
-    testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0])
+    # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0])
 
-    print hmm.predict(testSet)
+    # print hmm.predict(testSet)
+    print hmm.anomaly_check(forcesList[0], distancesList[0], anglesList[0], 1)
     # print hmm.score(test_seq)
 
 trainMultiHMM()

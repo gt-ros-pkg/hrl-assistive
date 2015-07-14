@@ -461,7 +461,7 @@ class learning_hmm_multi_3d:
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-            logp         = self.ml.loglikelihood(final_ts_obj)
+            logp = self.ml.loglikelihood(final_ts_obj)
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
@@ -511,12 +511,19 @@ class learning_hmm_multi_3d:
                 dist = entropy(post[n-1], self.l_statePosterior[j])
                 if min_dist > dist:
                     min_index = j
-                    min_dist  = dist 
+                    min_dist  = dist
+
+            print 'Computing anomaly'
+            print logp
+            print self.ll_mu[min_index]
+            print self.ll_std[min_index]
 
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
+
+            print 'Error', err
                     
         if err < 0.0: return 1.0, 0.0 # anomaly
         else: return 0.0, err # normal    
