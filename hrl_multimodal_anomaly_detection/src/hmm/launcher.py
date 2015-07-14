@@ -30,7 +30,7 @@ def launch(fileName):
 
         # Compute kinematic distances and angles
         for (pointSet, image, mic, spoon, (targetTrans, targetRot), (gripTrans, gripRot)), timeStamp in zip(visual, visualTimes):
-            print 'Time:', timeStamp
+            # print 'Time:', timeStamp
             # Transform mic and spoon into torso_lift_link
             targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
             mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
@@ -77,39 +77,55 @@ def create_mvpa_dataset(aXData1, aXData2, aXData3, chunks, labels):
 
     return data
 
-fileName = '/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl'
+def trainMultiHMM():
+    forcesList = []
+    distancesList = []
+    anglesList = []
+    for i in xrange(3):
+        fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i
+        forces, distances, angles = launch(fileName)
+        scale = 1.0
+        # Scale features
+        forces = preprocessing.scale(forces) * scale
+        distances = preprocessing.scale(distances) * scale
+        angles = preprocessing.scale(angles) * scale
 
-forces, distances, angles = launch(fileName)
-scale = 1.0
-forces = preprocessing.scale(forces) * scale
-distances = preprocessing.scale(distances) * scale
-angles = preprocessing.scale(angles) * scale
+        print 'Forces shape:', forces.shape
+        print 'Distances shape:', distances.shape
+        print 'Angles shape:', angles.shape
 
-forcesList = [forces, forces, forces]
-distancesList = [distances, distances, distances]
-anglesList = [angles, angles, angles]
+        if i == 2:
+            print forces
 
-print np.shape(forces), np.shape(distances), np.shape(angles)
+        forcesList.append(forces)
+        distancesList.append(distances)
+        anglesList.append(angles)
 
-hmm = learning_hmm_multi_3d(nState=3, nEmissionDim=3)
+        # print np.shape(forces), np.shape(distances), np.shape(angles)
 
-chunks = [10]*len(forcesList)
-labels = [True]*len(forcesList)
-trainDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, chunks, labels)
+    print np.array(forcesList, dtype=np.float32).shape
 
-print trainDataSet.samples.shape
-forcesSample = trainDataSet.samples[:,0,:]
-distancesSample = trainDataSet.samples[:,1,:]
-anglesSample = trainDataSet.samples[:,2,:]
+    # Setup training data
+    chunks = [10]*len(forcesList)
+    labels = [True]*len(forcesList)
+    trainDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, chunks, labels)
 
-print 'Forces Sample:', forcesSample[:, :20]
-print 'Distances Sample:', distancesSample[:, :20]
-print 'Angles Sample:', anglesSample[:, :20]
+    print trainDataSet.samples.shape
+    forcesSample = trainDataSet.samples[:,0,:]
+    distancesSample = trainDataSet.samples[:,1,:]
+    anglesSample = trainDataSet.samples[:,2,:]
 
-hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample)
+    # print 'Forces Sample:', forcesSample[:, :20]
+    # print 'Distances Sample:', distancesSample[:, :20]
+    # print 'Angles Sample:', anglesSample[:, :20]
 
-testSet = hmm.convert_sequence(forces, distances, angles)
+    hmm = learning_hmm_multi_3d(nState=6, nEmissionDim=3)
 
-print hmm.predict(testSet)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample)
 
-# print hmm.score(test_seq)
+    testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0])
+
+    print hmm.predict(testSet)
+    # print hmm.score(test_seq)
+
+trainMultiHMM()

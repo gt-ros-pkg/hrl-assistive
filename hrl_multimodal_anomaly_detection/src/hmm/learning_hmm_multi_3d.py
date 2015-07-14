@@ -172,6 +172,7 @@ class learning_hmm_multi_3d:
                 d['state_post'] = self.l_statePosterior
                 d['ll_mu'] = self.ll_mu
                 d['ll_std'] = self.ll_std
+                ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
                 with open(ml_pkl, 'wb') as f:
                     pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 

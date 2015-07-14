@@ -14,30 +14,17 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 
-# Calculate variance given a specified mean
-def calcVariance(xs, mu):
-    return np.mean((xs - mu)**2)
-
-def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
-    # mus = [[] for i in xrange(n)]
-    # stds = [[] for i in xrange(n)]
-    mus = []
-    stds = []
+def generate_GMM(fileName, plot=False):
     ts = []
-    distances = []
-    angles = []
     pdfs = []
-    rbfs = []
     linspace = None
 
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
         visual = data['visual_points']
         times = data['visual_time']
-        bowl = data['bowl_position']
-        bowl = np.array([x[0, 0] for x in bowl])
         for (pointSet, image, mic, spoon, (targetTrans, targetRot), (gripTrans, gripRot)), timeStamp in zip(visual, times):
-            print 'Time:', timeStamp
+            # print 'Time:', timeStamp
             # cv2.imshow('Image window', image)
             # cv2.waitKey(200)
 
@@ -48,13 +35,6 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
 
             pointSet = np.c_[pointSet, np.ones(len(pointSet))]
             pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
-
-            distances.append(np.linalg.norm(mic - bowl))
-            # Find angle between gripper-bowl vector and gripper-spoon vector
-            micSpoonVector = spoon - mic
-            micBowlVector = bowl - mic
-            angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
-            angles.append(angle)
 
             # Check for invalid points
             pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
@@ -128,72 +108,60 @@ def generate_GMM(fileName, n=3, plot=False, testRBFs=None):
             # print pdfList
             pdfs.append(pdfList)
 
+    return pdfs, ts
 
-            # clf = mixture.GMM(n_components=3, covariance_type='full')
-            # clf.fit(pdfList)
-            #
-            # # if len(pdfs) == 46:
-            # #     print activations
-            # #     plot = True
-            #
-            # if plot:
-            #     # Plot the histogram.
-            #     plt.hist(pdfList, bins=9, normed=True, alpha=0.6, color='g')
-            #     title = 'Gaussian Mixture Model for Distance Values'
-            #     plt.title(title)
-            #
-            # # Setup bounds for probability density function
-            # # if linspace is None:
-            # linspace = np.linspace(np.min(pdfList), np.max(pdfList), 100)
-            #
-            # # Sort list based on means
-            # order = np.argsort(clf.means_.flatten())
-            # pdfSet = []
-            # # Determine all (3) PDFs for activation cells
-            # for m, w, c in zip(clf.means_[order], clf.weights_[order], clf.covars_[order]):
-            #     # Fit a normal distribution to the data
-            #     mu, std = m[0], np.sqrt(c)[0, 0]
-            #     # print mu, std
-            #     pdf = w * norm.pdf(linspace, mu, std)
-            #     pdf = [v if v != 0 else np.exp(-20) for v in pdf]
-            #     pdfSet.append(pdf)
-            #     # if len(pdfs) == 46:
-            #     #     print pdf
-            #     #     print m, w, c, mu, std
-            #     if plot:
-            #         plt.plot(linspace, pdf, linewidth=2)
-            # pdfs.append(pdfSet)
-            #
-            # if plot:
-            #     plt.show()
-            #     # plot = False
+def trainEntropies():
+    allPDFs = []
+    for i in xrange(0, 10):
+        pdfs, ts = generate_GMM('/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i)
+        allPDFs.append(pdfs)
+    print allPDFs
+    avgPDF = np.mean(allPDFs, axis=0)
+    stdPDF = np.std(allPDFs, axis=0)
+    print avgPDF
+    print stdPDF
 
-    return mus, stds, distances, angles, pdfs, ts, rbfs
+def testEntropies():
+    # Test entropies
+    pdfs, ts = generate_GMM('/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_0_success.pkl')
+    for i in xrange(1, 10):
+        # Determine entropies using receptive fields
+        pdfs2, ts2 = generate_GMM('/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i)
+        print 'Entropies for two successful trials'
+        entropies = []
+        for index, (pdf1, pdf2) in enumerate(zip(pdfs, pdfs2)):
+            ent = round(entropy(pdf1, pdf2) * 10, 3)
+            entropies.append(ent)
+            print 'Time:', round(ts[index], 3), 'Entropy:', ent
+        print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 
-print '-- Set of times one --'
-mus1, stds1, distances1, angles1, successpdfs, ts1, rbfs1 = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl', n=1, plot=False)
-print '-- Set of times two --'
-mus2, stds2, distances2, angles2, successpdfs2, ts2, _ = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_1_success.pkl', n=1, testRBFs=rbfs1)
-print '-- Set of times three --'
-mus3, stds3, distances3, angles3, failurepdfs, ts3, _ = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_2_failure.pkl', n=1)
-print len(ts1), len(ts2), len(ts3)
+# testEntropies()
+trainEntropies()
 
-# Determine entropies using receptive fields
-print 'Entropies for two successful trials'
-entropies = []
-for index, (pdf1, pdf2) in enumerate(zip(successpdfs, successpdfs2)):
-    ent = round(entropy(pdf1, pdf2) * 10, 3)
-    entropies.append(ent)
-    print 'Time:', round(ts1[index], 3), 'Entropy:', ent
-print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
-
-print 'Entropies for one successful and one failure trial'
-entropies = []
-for index, (pdf1, pdf2) in enumerate(zip(successpdfs, failurepdfs)):
-    ent = round(entropy(pdf1, pdf2) * 10, 4)
-    entropies.append(ent)
-    print 'Time:', round(ts1[index], 3), 'Entropy:', ent
-print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
+# print '-- Set of times one --'
+# mus1, stds1, distances1, angles1, successpdfs, ts1, rbfs1 = generate_GMM('/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_0_success.pkl', n=1, plot=False)
+# print '-- Set of times two --'
+# mus2, stds2, distances2, angles2, successpdfs2, ts2, _ = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_1_success.pkl', n=1, testRBFs=rbfs1)
+# print '-- Set of times three --'
+# mus3, stds3, distances3, angles3, failurepdfs, ts3, _ = generate_GMM('/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_2_failure.pkl', n=1)
+# print len(ts1), len(ts2), len(ts3)
+#
+# # Determine entropies using receptive fields
+# print 'Entropies for two successful trials'
+# entropies = []
+# for index, (pdf1, pdf2) in enumerate(zip(successpdfs, successpdfs2)):
+#     ent = round(entropy(pdf1, pdf2) * 10, 3)
+#     entropies.append(ent)
+#     print 'Time:', round(ts1[index], 3), 'Entropy:', ent
+# print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
+#
+# print 'Entropies for one successful and one failure trial'
+# entropies = []
+# for index, (pdf1, pdf2) in enumerate(zip(successpdfs, failurepdfs)):
+#     ent = round(entropy(pdf1, pdf2) * 10, 4)
+#     entropies.append(ent)
+#     print 'Time:', round(ts1[index], 3), 'Entropy:', ent
+# print 'Average:', np.mean(entropies), 'Max:', np.max(entropies)
 
 # Determine entropies when using activation cells
 # print 'Entropies for two successful trials'
