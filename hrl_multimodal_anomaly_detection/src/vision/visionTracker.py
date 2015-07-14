@@ -53,8 +53,8 @@ class visionTracker:
 
         # self.tracker = wideStereoRGB(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
-        # self.tracker = kinectDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
-        self.tracker = pr2WideDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        self.tracker = kinectDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        # self.tracker = pr2WideDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         if shouldSpin:
             rospy.spin()
