@@ -16,7 +16,7 @@ from rgbPerception import rgbPerception
 from wideStereoDepth import wideStereoDepth
 
 from kinectDepth import kinectDepth
-from future.pr2WideDepth import pr2WideDepth
+# from future.pr2WideDepth import pr2WideDepth
 
 from cloudTrial import cloudTrial
 
