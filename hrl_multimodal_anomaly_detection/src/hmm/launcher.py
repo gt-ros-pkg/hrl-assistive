@@ -2,6 +2,8 @@
 
 import numpy as np
 import cPickle as pickle
+from scipy import interpolate
+import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from mvpa2.datasets.base import Dataset
 from learning_hmm_multi_3d import learning_hmm_multi_3d
@@ -11,9 +13,6 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 
 def launch(fileName):
-    dataPoints = []
-    distances = []
-    angles = []
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
         visual = data['visual_points']
@@ -25,6 +24,8 @@ def launch(fileName):
 
         # Use magnitude of forces
         forces = np.linalg.norm(force, axis=1).flatten()
+        distances = []
+        angles = []
 
         print forces.shape
 
@@ -46,24 +47,13 @@ def launch(fileName):
             angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
             angles.append(angle)
 
-        # We need to align the force and visual data. This does such
-        tempVisualTimes = []
-        tempDistances = []
-        tempAngles = []
-        visualIndex = 0
-        for forceTime in forceTimes:
-            if forceTime > visualTimes[visualIndex + 1] and visualIndex < len(visualTimes) - 2:
-                visualIndex += 1
-            tempVisualTimes.append(visualTimes[visualIndex])
-            tempDistances.append(distances[visualIndex])
-            tempAngles.append(angles[visualIndex])
-        distances = tempDistances
-        angles = tempAngles
+        # There will be much more force data than kinematics, so interpolate to fill in the gaps
+        distInterp = interpolate.splrep(visualTimes, distances, s=0)
+        angleInterp = interpolate.splrep(visualTimes, angles, s=0)
+        distances = interpolate.splev(forceTimes, distInterp, der=0)
+        angles = interpolate.splev(forceTimes, angleInterp, der=0)
 
-        # Create set of data points for the hidden Markov model
-        # dataPoints = np.array([[f, d, a] for f, d, a in zip(forces, distances, angles)])
-
-        return forces, distances, angles
+        return forces, distances, angles, forceTimes
 
 def create_mvpa_dataset(aXData1, aXData2, aXData3, chunks, labels):
     feat_list = []
@@ -78,17 +68,26 @@ def create_mvpa_dataset(aXData1, aXData2, aXData3, chunks, labels):
     return data
 
 def trainMultiHMM():
+    hmm = learning_hmm_multi_3d(nState=20, nEmissionDim=3)
+
     forcesList = []
     distancesList = []
     anglesList = []
-    for i in xrange(3):
+    timesList = []
+    minList = []
+    maxList = []
+    for i in [0, 1, 3, 5, 6, 7, 8, 9]:
         fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i
-        forces, distances, angles = launch(fileName)
-        scale = 0.6
-        # forces = np.array(forces) * scale
-        # distances = np.array(distances) * scale
-        # angles = np.array(angles) * scale
-        # # Scale features
+        forces, distances, angles, times = launch(fileName)
+        scale = 100
+        # forces, min_c1, max_c1 = hmm.scaling(forces, scale=scale)
+        # distances, min_c2, max_c2 = hmm.scaling(distances, scale=scale)
+        # angles, min_c3, max_c3 = hmm.scaling(angles, scale=scale)
+
+        min_c1, max_c1 = np.min(forces), np.max(forces)
+        min_c2, max_c2 = np.min(distances), np.max(distances)
+        min_c3, max_c3 = np.min(angles), np.max(angles)
+        # Scale features
         forces = preprocessing.scale(forces) * scale
         distances = preprocessing.scale(distances) * scale
         angles = preprocessing.scale(angles) * scale
@@ -97,9 +96,14 @@ def trainMultiHMM():
         # print 'Distances shape:', distances.shape
         # print 'Angles shape:', angles.shape
 
-        forcesList.append(forces.tolist())
-        distancesList.append(distances.tolist())
-        anglesList.append(angles.tolist())
+        forcesList.append(forces)
+        distancesList.append(distances)
+        anglesList.append(angles)
+        timesList.append(times)
+        minList.append([min_c1, min_c2, min_c3])
+        maxList.append([max_c1, max_c2, max_c3])
+        # print minList
+        # print maxList
 
         # print np.shape(forces), np.shape(distances), np.shape(angles)
 
@@ -110,6 +114,14 @@ def trainMultiHMM():
     forcesList = [x[:minsize] for x in forcesList]
     distancesList = [x[:minsize] for x in distancesList]
     anglesList = [x[:minsize] for x in anglesList]
+    timesList = [x[:minsize] for x in timesList]
+
+    # Plot modalities
+    # for modality in [forcesList, distancesList, anglesList]:
+    #     for index, (forces, times) in enumerate(zip(modality, timesList)):
+    #         plt.plot(times, forces, label='%d' % index)
+    #     plt.legend()
+    #     plt.show()
 
     # Setup training data
     chunks = [10]*len(forcesList)
@@ -125,14 +137,25 @@ def trainMultiHMM():
     print 'Distances Sample:', distancesSample[:, :5]
     print 'Angles Sample:', anglesSample[:, :5]
 
-    hmm = learning_hmm_multi_3d(nState=6, nEmissionDim=3)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, use_pkl=True)
 
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample)
-
-    # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0])
+    testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0])
 
     # print hmm.predict(testSet)
-    print hmm.anomaly_check(forcesList[0], distancesList[0], anglesList[0], 1)
-    # print hmm.score(test_seq)
+    print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
+    for i in xrange(len(forcesList)):
+        print 'Anomaly Error for training set %d' % i
+        print hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], -4)
+
+    for ths in -1.0*np.arange(3, 5, 0.5):
+        k = 4
+        # chunks = [10]*len(forcesList[k])
+        # labels = [True]*len(forcesList[k])
+        # dataSet = create_mvpa_dataset(forcesList[k], distancesList[k], anglesList[k], chunks, labels)
+        # forcesSample = dataSet.samples[:, 0]
+        # distancesSample = dataSet.samples[:, 1]
+        # anglesSample = dataSet.samples[:, 2]
+        hmm.likelihood_disp(forcesSample, distancesSample, anglesSample, ths, scale1=[minList[k][0], maxList[k][0], 10],
+                            scale2=[minList[k][1], maxList[k][1], 10], scale3=[minList[k][2], maxList[k][2], 10])
 
 trainMultiHMM()
