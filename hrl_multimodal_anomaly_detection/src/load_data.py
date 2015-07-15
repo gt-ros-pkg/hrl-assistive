@@ -96,7 +96,7 @@ class graphing():
         #self.plotlyTest()
 
         if self.FT_KINEMATICS:
-            self.ft_kinematics_PLOTLY_RAW()
+            self.ft_kinematics_MATPLOTLIB()
         # if self.AUDIO:
         #     self.audio()
         # if self.VISION:
@@ -203,15 +203,77 @@ class graphing():
                 yaxis = 'y7' 
             )
 
-            scoopingTimesTrace = Scatter(
-                x = scooping_steps_times,
-                y = 0,
-                xaxis = 'x1, x2, x3, x4, x5, x6, x7',
-                yaxis = 'y1, y2, y3, y4, y5, y6, y7'
 
+            scoopingTimes1 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(tf_l_ee_pos[:,0]), np.average(tf_l_ee_pos[:,0]), np.average(tf_l_ee_pos[:,0]), np.average(tf_l_ee_pos[:,0]), np.average(tf_l_ee_pos[:,0])],
+                xaxis = 'x1',
+                yaxis = 'y1',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
             )
 
-            data = Data([forceXTrace, forceYTrace, forceZTrace, tfXTrace, tfYTrace, tfZTrace, forceMagTrace])
+            scoopingTimes2 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(tf_l_ee_pos[:,1]), np.average(tf_l_ee_pos[:,1]), np.average(tf_l_ee_pos[:,1]), np.average(tf_l_ee_pos[:,1]), np.average(tf_l_ee_pos[:,1])],
+                xaxis = 'x2',
+                yaxis = 'y2',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
+            )
+
+            scoopingTimes3 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(tf_l_ee_pos[:,2]), np.average(tf_l_ee_pos[:,2]), np.average(tf_l_ee_pos[:,2]), np.average(tf_l_ee_pos[:,2]), np.average(tf_l_ee_pos[:,2])],
+                xaxis = 'x3',
+                yaxis = 'y3',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
+            )
+
+            scoopingTimes4 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(ft_force[:,0]), np.average(ft_force[:,0]), np.average(ft_force[:,0]), np.average(ft_force[:,0]), np.average(ft_force[:,0])],
+                xaxis = 'x4',
+                yaxis = 'y4',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
+            )
+
+            scoopingTimes5 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(ft_force[:,1]), np.average(ft_force[:,1]), np.average(ft_force[:,1]), np.average(ft_force[:,1]), np.average(ft_force[:,1])],
+                xaxis = 'x5',
+                yaxis = 'y5',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
+            )
+
+            scoopingTimes6 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(ft_force[:,2]), np.average(ft_force[:,2]), np.average(ft_force[:,2]), np.average(ft_force[:,2]), np.average(ft_force[:,2])],
+                xaxis = 'x6',
+                yaxis = 'y6',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
+            )
+
+            scoopingTimes7 = Scatter(
+                x = scooping_steps_times,
+                y = [np.average(ft_force_mag), np.average(ft_force_mag), np.average(ft_force_mag), np.average(ft_force_mag), np.average(ft_force_mag)],
+                xaxis = 'x7',
+                yaxis = 'y7',
+                mode = 'markers',
+                text = ['Step 1, Step 2, Step 3, Step 4, Step 5']
+            )
+
+            data = Data([forceXTrace, 
+                        forceYTrace, 
+                        forceZTrace, 
+                        tfXTrace, 
+                        tfYTrace, 
+                        tfZTrace, 
+                        forceMagTrace])
 
             layout = Layout(
                 title='Kinematics and Force When Scooping Yogurt',
@@ -394,7 +456,7 @@ class graphing():
         plot_url = pltly.plot(fig, filename='new_ft_tf_plotly_plot')
 
 
-    def ft_kinematics_MATPLOTLIB_TO_PLOTLY(self):
+    def ft_kinematics_MATPLOTLIB(self):
 
         # self.gs.title('test')
         forceAx1 = self.fig.add_subplot(self.gs[1,0])
@@ -416,9 +478,9 @@ class graphing():
         forceAx3.set_title('Z Force')
         tfAx3.set_title('Z Pos')
 
-        # forceMagAx4 = self.fig.add_subplot(self.gs[2,:])
-        # # forceMagAx4.set_xlabel('time (s) \n \n Trial Name: ' + self.trial_name + '\n Loaded ' + self.whichOpenString + ' iterations')
-        # forceMagAx4.set_title('Force Normalization (Magnitude)')
+        forceMagAx4 = self.fig.add_subplot(self.gs[2,:])
+        forceMagAx4.set_xlabel('time (s) \n \n Trial Name: ' + self.trial_name + '\n Loaded ' + self.whichOpenString + ' iterations')
+        forceMagAx4.set_title('Force Normalization (Magnitude)')
 
         for iterations in self.pklsList:
             ft_time = np.array(iterations.get('ft_time',None))
@@ -437,15 +499,15 @@ class graphing():
             scooping_steps_times = np.array(self.pklsList[0].get('scooping_steps_times'), None)
 
             forceAx1.plot(ft_time, ft_force[:,0], 'b-')
-            # tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
+            tfAx1.plot(kinematics_time, tf_l_ee_pos[:,0], 'r-')
 
             forceAx2.plot(ft_time, ft_force[:,1], 'b-')
-            # tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
+            tfAx2.plot(kinematics_time, tf_l_ee_pos[:,1], 'r-')
 
             forceAx3.plot(ft_time, ft_force[:,2], 'b-')
-            # tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
+            tfAx3.plot(kinematics_time, tf_l_ee_pos[:,2], 'r-')
 
-            # forceMagAx4.plot(ft_time, ft_force_mag, 'y-')
+            forceMagAx4.plot(ft_time, ft_force_mag, 'y-')
 
             for i in range(0, len(scooping_steps_times)):
                 forceAx1.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
@@ -454,23 +516,23 @@ class graphing():
                 tfAx2.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
                 forceAx3.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
                 tfAx3.axvline(scooping_steps_times[i], color='k', linestyle='dotted' )
-                # forceMagAx4.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
+                forceMagAx4.axvline(scooping_steps_times[i], color='k', linestyle='dotted')
 
 
-        # forceAx1.set_xlim([0,30])
-        # forceAx2.set_xlim([0,30])
-        # forceAx3.set_xlim([0,30])
-        # tfAx1.set_xlim([0,30])
-        # tfAx2.set_xlim([0,30])
-        # tfAx3.set_xlim([0,30])
-        # forceMagAx4.set_xlim([0,30])
+        forceAx1.set_xlim([0,30])
+        forceAx2.set_xlim([0,30])
+        forceAx3.set_xlim([0,30])
+        tfAx1.set_xlim([0,30])
+        tfAx2.set_xlim([0,30])
+        tfAx3.set_xlim([0,30])
+        forceMagAx4.set_xlim([0,30])
 
         #plt_fig = self.gs.gcf()
 
-        self.fig = plt.gcf()
-        pltly.iplot_mpl(self.fig, filename='hyder_ft-kinematics_test_one')
+        # self.fig = plt.gcf()
+        # pltly.iplot_mpl(self.fig, filename='hyder_ft-kinematics_test_one')
 
-        #plt.show()
+        plt.show()
 
         return True
         
