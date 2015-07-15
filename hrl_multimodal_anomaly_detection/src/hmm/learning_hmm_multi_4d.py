@@ -14,8 +14,8 @@ import ghmm
 from sklearn.metrics import r2_score
 from joblib import Parallel, delayed
 
-class learning_hmm_multi_3d:
-    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=3, check_method='progress'):
+class learning_hmm_multi_4d:
+    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress'):
         self.ml = None
 
         ## Tunable parameters
@@ -46,11 +46,12 @@ class learning_hmm_multi_3d:
 
         print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, xData2, xData3, A=None, B=None, pi=None, cov_mult=[100.0]*9, verbose=False, ml_pkl='ml_temp.pkl', use_pkl=False):
+    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[100.0]*16, verbose=False, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         X1 = np.array(xData1)
         X2 = np.array(xData2)
         X3 = np.array(xData3)
+        X4 = np.array(xData4)
 
         if A is None:        
             if verbose: print "Generating a new A matrix"
@@ -63,41 +64,39 @@ class learning_hmm_multi_3d:
             if verbose: print "Generating a new B matrix"
             # We should think about multivariate Gaussian pdf.  
 
-            mu1, mu2, mu3, cov = self.vectors_to_mean_cov(X1, X2, X3, self.nState)
-            cov[:, 0, 0] *= cov_mult[0] #1.5 # to avoid No convergence warning
-            cov[:, 1, 0] *= cov_mult[1] #5.5 # to avoid No convergence warning
-            cov[:, 2, 0] *= cov_mult[2]
-            cov[:, 0, 1] *= cov_mult[3]
-            cov[:, 1, 1] *= cov_mult[4]
-            cov[:, 2, 1] *= cov_mult[5]
-            cov[:, 0, 2] *= cov_mult[6]
-            cov[:, 1, 2] *= cov_mult[7]
-            cov[:, 2, 2] *= cov_mult[8]
+            mu1, mu2, mu3, mu4, cov = self.vectors_to_mean_cov(X1, X2, X3, X4, self.nState)
+            for i in xrange(self.nEmissionDim):
+                for j in xrange(self.nEmissionDim):
+                    cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
 
             print 'mu1:', mu1
             print 'mu2:', mu2
             print 'mu3:', mu3
+            print 'mu4:', mu4
             print 'cov', cov
 
             # Emission probability matrix
             B = [0.0] * self.nState
             for i in range(self.nState):
-                B[i] = [[mu1[i], mu2[i], mu3[i]], [cov[i,0,0], cov[i,0,1], cov[i,0,2],
-                                                   cov[i,1,0], cov[i,1,1], cov[i,1,2],
-                                                   cov[i,2,0], cov[i,2,1], cov[i,2,2]]]
+                B[i] = [[mu1[i], mu2[i], mu3[i], mu4[i]], [cov[i,0,0], cov[i,0,1], cov[i,0,2], cov[i,0,3],
+                                                           cov[i,1,0], cov[i,1,1], cov[i,1,2], cov[i,1,3],
+                                                           cov[i,2,0], cov[i,2,1], cov[i,2,2], cov[i,2,3],
+                                                           cov[i,3,0], cov[i,3,1], cov[i,3,2], cov[i,3,3]]]
         if pi is None:
             # pi - initial probabilities per state 
             ## pi = [1.0/float(self.nState)] * self.nState
             pi = [0.0] * self.nState
             pi[0] = 1.0
 
+        print 'Generating HMM'
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-        X_train = self.convert_sequence(X1, X2, X3) # Training input
+        print 'Creating Training Data'
+        X_train = self.convert_sequence(X1, X2, X3, X4) # Training input
         X_train = X_train.tolist()
         
         print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
-        final_seq = ghmm.SequenceSet(self.F, X_train)        
+        final_seq = ghmm.SequenceSet(self.F, X_train)
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
         print 'Baum Welch return:', ret
@@ -149,8 +148,8 @@ class learning_hmm_multi_3d:
         X = np.squeeze(X)
         X_test = X.tolist()
 
-        mu_l  = np.zeros(3)
-        cov_l = np.zeros(9)
+        mu_l = np.zeros(self.nEmissionDim)
+        cov_l = np.zeros(self.nEmissionDim**2)
 
         print self.F
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
@@ -173,35 +172,27 @@ class learning_hmm_multi_3d:
 
         for j in xrange(self.nState): # N+1
             total = np.sum(self.A[:,j]*alpha[n/self.nEmissionDim-1,:]) #* scaling_factor
-            [[mu1, mu2, mu3], [cov11, cov12, cov13, cov21, cov22, cov23, cov31, cov32, cov33]] = self.B[j]
+            [mus, covars] = self.B[j]
 
             ## print mu1, mu2, cov11, cov12, cov21, cov22, total
             pred_numerator += total
-            
-            mu_l[0] += mu1*total
-            mu_l[1] += mu2*total
-            mu_l[2] += mu3*total
-            cov_l[0] += cov11 * (total**2)
-            cov_l[1] += cov12 * (total**2)
-            cov_l[2] += cov13 * (total**2)
-            cov_l[3] += cov21 * (total**2)
-            cov_l[4] += cov22 * (total**2)
-            cov_l[5] += cov23 * (total**2)
-            cov_l[6] += cov31 * (total**2)
-            cov_l[7] += cov32 * (total**2)
-            cov_l[8] += cov33 * (total**2)
+
+            for i in xrange(mu_l.size):
+                mu_l[i] += mus[i]*total
+            for i in xrange(cov_l.size):
+                cov_l[i] += covars[i] * (total**2)
 
         return mu_l, cov_l
 
-    def predict2(self, X, x1, x2, x3):
+    def predict2(self, X, x1, x2, x3, x4):
         X = np.squeeze(X)
         X_test = X.tolist()        
         n = len(X_test)
 
-        mu_l  = np.zeros(3)
-        cov_l = np.zeros(9)
+        mu_l = np.zeros(self.nEmissionDim)
+        cov_l = np.zeros(self.nEmissionDim**2)
 
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test + [x1, x2, x3])
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test + [x1, x2, x3, x4])
 
         try:
             (alpha, scale) = self.ml.forward(final_ts_obj)
@@ -213,11 +204,13 @@ class learning_hmm_multi_3d:
 
         for j in xrange(self.nState):
             
-            [[mu1, mu2, mu3], [cov11, cov12, cov13, cov21, cov22, cov23, cov31, cov32, cov33]] = self.B[j]
+            [[mu1, mu2, mu3, mu4], [cov11, cov12, cov13, cov14, cov21, cov22, cov23, cov24,
+                                    cov31, cov32, cov33, cov34, cov41, cov42, cov43, cov44]] = self.B[j]
 
             mu_l[0] = x1
-            mu_l[1] += alpha[n/self.nEmissionDim,j]*(mu2 + cov21/cov11*(x1 - mu1) )
-            mu_l[2] += alpha[n/self.nEmissionDim,j]*(mu3 + cov31/cov21*(x2 - mu2)) # TODO Where does this come from?
+            mu_l[1] += alpha[n/self.nEmissionDim, j] * (mu2 + cov21/cov11*(x1 - mu1) )
+            mu_l[2] += alpha[n/self.nEmissionDim, j] * (mu3 + cov31/cov21*(x2 - mu2)) # TODO Where does this come from?
+            mu_l[3] += alpha[n/self.nEmissionDim, j] * (mu4 + cov41/cov31*(x3 - mu3)) # TODO Where does this come from?
             ## cov_l[0] += (cov11)*(total**2)
             ## cov_l[1] += (cov12)*(total**2)
             ## cov_l[2] += (cov21)*(total**2)
@@ -240,49 +233,6 @@ class learning_hmm_multi_3d:
 
         return p
         
-    # Returns the mean accuracy on the given test data and labels.
-    def score(self, X_test):
-        if self.ml is None:
-            print 'No ml!!'
-            return -5.0        
-        
-        # Get input
-        if type(X_test) == np.ndarray:
-            X = X_test.tolist()
-        else:
-            X = X_test
-
-        sample_weight = None # TODO: future input
-        
-        n = len(X)
-        nCurrentStep = [5,10,15,20,25]
-        nFutureStep = 1
-
-        total_score = np.zeros((len(nCurrentStep)))
-        for j, nStep in enumerate(nCurrentStep):
-
-            self.nCurrentStep = nStep
-            X_next = np.zeros(n)
-            X_pred = np.zeros(n)
-            mu_pred  = np.zeros(n)
-            var_pred = np.zeros(n)
-            
-            for i in xrange(n):
-                if len(X[i]) > nStep+nFutureStep: #Full data                
-                    X_past = X[i][:nStep]
-                    X_next[i] = X[i][nStep]
-                else:
-                    print "Error: input should be full length data!!"
-                    sys.exit()
-
-                mu, var = self.one_step_predict(X_past)
-                mu_pred[i] = mu[0]
-                var_pred[i] = var[0]
-
-            total_score[j] = r2_score(X_next, mu_pred, sample_weight=sample_weight)
-
-        return sum(total_score) / float(len(nCurrentStep))
-
     # Returns mu,sigma for n hidden-states from feature-vector
     @staticmethod
     def vectors_to_mean_sigma(vec, nState):
@@ -303,33 +253,35 @@ class learning_hmm_multi_3d:
         return mu, sig
         
     # Returns mu,sigma for n hidden-states from feature-vector
-    @staticmethod
-    def vectors_to_mean_cov(vec1, vec2, vec3, nState):
+    def vectors_to_mean_cov(self, vec1, vec2, vec3, vec4, nState):
         index = 0
         m, n = np.shape(vec1)
         #print m,n
         mu_1 = np.zeros(nState)
         mu_2 = np.zeros(nState)
         mu_3 = np.zeros(nState)
-        cov = np.zeros((nState, 3, 3))
+        mu_4 = np.zeros(nState)
+        cov = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
         DIVS = n/nState
-
 
         while index < nState:
             m_init = index*DIVS
             temp_vec1 = vec1[:, m_init:(m_init+DIVS)]
             temp_vec2 = vec2[:, m_init:(m_init+DIVS)]
             temp_vec3 = vec3[:, m_init:(m_init+DIVS)]
+            temp_vec4 = vec4[:, m_init:(m_init+DIVS)]
             temp_vec1 = np.reshape(temp_vec1, (1, DIVS*m))
             temp_vec2 = np.reshape(temp_vec2, (1, DIVS*m))
             temp_vec3 = np.reshape(temp_vec3, (1, DIVS*m))
+            temp_vec4 = np.reshape(temp_vec4, (1, DIVS*m))
             mu_1[index] = np.mean(temp_vec1)
             mu_2[index] = np.mean(temp_vec2)
             mu_3[index] = np.mean(temp_vec3)
-            cov[index,:,:] = np.cov(np.concatenate((temp_vec1, temp_vec2, temp_vec3), axis=0))
+            mu_4[index] = np.mean(temp_vec4)
+            cov[index, :, :] = np.cov(np.concatenate((temp_vec1, temp_vec2, temp_vec3, temp_vec4), axis=0))
             index = index+1
 
-        return mu_1, mu_2, mu_3, cov
+        return mu_1, mu_2, mu_3, mu_4, cov
 
     @staticmethod
     def init_trans_mat(nState):
@@ -364,16 +316,18 @@ class learning_hmm_multi_3d:
         print "Start to print out"
 
         self.fig = plt.figure(1)
-        gs = gridspec.GridSpec(3, 1)
+        gs = gridspec.GridSpec(4, 1)
         
         self.ax1 = self.fig.add_subplot(gs[0])        
         self.ax2 = self.fig.add_subplot(gs[1])        
         self.ax3 = self.fig.add_subplot(gs[2])
+        self.ax4 = self.fig.add_subplot(gs[3])
 
-    def data_plot(self, X_test1, X_test2, X_test3, color='r'):
+    def data_plot(self, X_test1, X_test2, X_test3, X_test4, color='r'):
         self.ax1.plot(np.hstack([X_test1[0]]), color)
         self.ax2.plot(np.hstack([X_test2[0]]), color)
         self.ax3.plot(np.hstack([X_test3[0]]), color)
+        self.ax4.plot(np.hstack([X_test4[0]]), color)
 
     @staticmethod
     def final_plot():
@@ -381,7 +335,7 @@ class learning_hmm_multi_3d:
         plt.show()
 
     @staticmethod
-    def convert_sequence(data1, data2, data3, emission=False):
+    def convert_sequence(data1, data2, data3, data4, emission=False):
         # change into array from other types
         if type(data1) is not np.ndarray:
             X1 = copy.copy(np.array(data1))
@@ -395,6 +349,10 @@ class learning_hmm_multi_3d:
             X3 = copy.copy(np.array(data3))
         else:
             X3 = copy.copy(data3)
+        if type(data4) is not np.ndarray:
+            X4 = copy.copy(np.array(data4))
+        else:
+            X4 = copy.copy(data4)
 
         # Change into 2dimensional array
         dim = np.shape(X1)
@@ -406,6 +364,9 @@ class learning_hmm_multi_3d:
         dim = np.shape(X3)
         if len(dim) == 1:
             X3 = np.reshape(X3, (1, len(X3)))
+        dim = np.shape(X4)
+        if len(dim) == 1:
+            X4 = np.reshape(X4, (1, len(X4)))
 
         n, m = np.shape(X1)
 
@@ -415,18 +376,18 @@ class learning_hmm_multi_3d:
                 
             if emission:
                 for j in xrange(m):
-                    Xs.append([X1[i, j], X2[i, j], X3[i, j]])
+                    Xs.append([X1[i, j], X2[i, j], X3[i, j], X4[i, j]])
                 X.append(Xs)
             else:
                 for j in xrange(m):
-                    Xs.append([X1[i, j], X2[i, j], X3[i, j]])
+                    Xs.append([X1[i, j], X2[i, j], X3[i, j], X4[i, j]])
                 X.append(np.array(Xs).flatten().tolist())
 
         return np.array(X)
         
-    def anomaly_check(self, X1, X2=None, X3=None, ths_mult=None):
+    def anomaly_check(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
         if self.nEmissionDim == 1: X_test = np.array([X1])
-        else: X_test = self.convert_sequence(X1, X2, X3, emission=False)
+        else: X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -472,8 +433,6 @@ class learning_hmm_multi_3d:
         else: return 0.0, err # normal    
 
 
-
-
     @staticmethod
     def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
         '''
@@ -493,13 +452,12 @@ class learning_hmm_multi_3d:
 
         return X_scaled, min_c, max_c
 
-    def likelihood_disp(self, X1, X2, X3, X1_true, X2_true, X3_true, ths_mult, scale1=None, scale2=None, scale3=None):
+    def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true, ths_mult, scale1=None, scale2=None, scale3=None, scale4=None):
         print np.shape(X1)
         n, m = np.shape(X1)
         print "Input sequence X1: ", n, m
-        # m = np.shape(X1)[0]
 
-        X_test = self.convert_sequence(X1, X2, X3, emission=False)
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
         x = np.arange(0., float(m))
         ll_likelihood = np.zeros(m)
@@ -560,14 +518,14 @@ class learning_hmm_multi_3d:
             block_x_interp.append(block_x[i]+0.5)
 
 
-        print 'Force True:', X1_true
         # y1 = (X1_true[0]/scale1[2])*(scale1[1]-scale1[0])+scale1[0]
         # y2 = (X2_true[0]/scale2[2])*(scale2[1]-scale2[0])+scale2[0]
         # y3 = (X3_true[0]/scale3[2])*(scale3[1]-scale3[0])+scale3[0]
-
+        # y4 = (X4_true[0]/scale4[2])*(scale4[1]-scale4[0])+scale4[0]
         y1 = X1_true[0]
         y2 = X2_true[0]
         y3 = X3_true[0]
+        y4 = X4_true[0]
 
         import matplotlib.collections as collections
 
@@ -578,11 +536,11 @@ class learning_hmm_multi_3d:
         fig = plt.figure()
         plt.rc('text', usetex=True)
 
-        ax1 = plt.subplot(411)
+        ax1 = plt.subplot(511)
         print np.shape(x), np.shape(y1)
         ax1.plot(x*(1./43.), y1)
         y_min = np.amin(y1)
-        y_max = np.amax(y1) #35.0
+        y_max = np.amax(y1)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
                                                                  ymin=0, ymax=y_max+4.0,
                                                                  where=np.array(block_flag_interp)>0,
@@ -605,11 +563,11 @@ class learning_hmm_multi_3d:
         ax1.set_ylabel("Force (N)", fontsize=18)
         ax1.set_xlim([0, x[-1]*(1./43.)])
         ## ax1.set_ylim([0, np.amax(y1)*1.1])
-        ax1.set_ylim([y_min, y_max])
+        ax1.set_ylim([y_min, y_max+4.0])
 
         # -----
 
-        ax2 = plt.subplot(412)
+        ax2 = plt.subplot(512)
         ax2.plot(x*(1./43.), y2)
         y_max = np.amax(y2)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
@@ -624,7 +582,7 @@ class learning_hmm_multi_3d:
 
         # -----
 
-        ax4 = plt.subplot(413)
+        ax4 = plt.subplot(513)
         ax4.plot(x*(1./43.), y3)
         y_max = np.amax(y3)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
@@ -633,11 +591,28 @@ class learning_hmm_multi_3d:
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax4.add_collection(collection)
-        ax4.set_ylabel("Angle (rad)", fontsize=18)
+        ax4.set_ylabel("Receptive Field 1", fontsize=18)
         ax4.set_xlim([0, x[-1]*(1./43.)])
         ax4.set_ylim([0, y_max])
 
-        ax3 = plt.subplot(414)
+        # -----
+
+        ax5 = plt.subplot(514)
+        ax5.plot(x*(1./43.), y4)
+        y_max = np.amax(y4)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
+                                                                 ymin=0, ymax=y_max,
+                                                                 where=np.array(block_flag_interp)>0,
+                                                                 facecolor='green',
+                                                                 edgecolor='none', alpha=0.3)
+        ax5.add_collection(collection)
+        ax5.set_ylabel("Receptive Field 2", fontsize=18)
+        ax5.set_xlim([0, x[-1]*(1./43.)])
+        ax5.set_ylim([0, y_max])
+
+        # -----
+
+        ax3 = plt.subplot(515)
         ax3.plot(x*(1./43.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
         ax3.plot(x*(1./43.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
         ax3.plot(x*(1./43.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
@@ -655,10 +630,6 @@ class learning_hmm_multi_3d:
 
         # fig.savefig('test.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
         # fig.savefig('test.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-
-
-
 
 
 ####################################################################

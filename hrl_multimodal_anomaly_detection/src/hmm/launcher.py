@@ -73,12 +73,18 @@ def trainMultiHMM():
     forcesList = []
     distancesList = []
     anglesList = []
+    forcesTrueList = []
+    distancesTrueList = []
+    anglesTrueList = []
     timesList = []
     minList = []
     maxList = []
     for i in [0, 1, 3, 5, 6, 7, 8, 9]:
         fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i
         forces, distances, angles, times = launch(fileName)
+        forcesTrueList.append(forces)
+        distancesTrueList.append(distances)
+        anglesTrueList.append(angles)
         scale = 100
         # forces, min_c1, max_c1 = hmm.scaling(forces, scale=scale)
         # distances, min_c2, max_c2 = hmm.scaling(distances, scale=scale)
@@ -95,6 +101,8 @@ def trainMultiHMM():
         # print 'Forces shape:', forces.shape
         # print 'Distances shape:', distances.shape
         # print 'Angles shape:', angles.shape
+
+        print any([f < 0 for f in forces])
 
         forcesList.append(forces)
         distancesList.append(distances)
@@ -127,11 +135,15 @@ def trainMultiHMM():
     chunks = [10]*len(forcesList)
     labels = [True]*len(forcesList)
     trainDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, chunks, labels)
+    trainTrueDataSet = create_mvpa_dataset(forcesTrueList, distancesTrueList, anglesTrueList, chunks, labels)
 
     print trainDataSet.samples.shape
     forcesSample = trainDataSet.samples[:,0,:]
     distancesSample = trainDataSet.samples[:,1,:]
     anglesSample = trainDataSet.samples[:,2,:]
+    forcesTrueSample = trainTrueDataSet.samples[:,0,:]
+    distancesTrueSample = trainTrueDataSet.samples[:,1,:]
+    anglesTrueSample = trainTrueDataSet.samples[:,2,:]
 
     print 'Forces Sample:', forcesSample[:, :5]
     print 'Distances Sample:', distancesSample[:, :5]
@@ -155,7 +167,7 @@ def trainMultiHMM():
         # forcesSample = dataSet.samples[:, 0]
         # distancesSample = dataSet.samples[:, 1]
         # anglesSample = dataSet.samples[:, 2]
-        hmm.likelihood_disp(forcesSample, distancesSample, anglesSample, ths, scale1=[minList[k][0], maxList[k][0], 10],
-                            scale2=[minList[k][1], maxList[k][1], 10], scale3=[minList[k][2], maxList[k][2], 10])
+        hmm.likelihood_disp(forcesSample, distancesSample, anglesSample, forcesTrueSample, distancesTrueSample, anglesTrueSample, ths,
+                            scale1=[minList[k][0], maxList[k][0], 1], scale2=[minList[k][1], maxList[k][1], 1], scale3=[minList[k][2], maxList[k][2], 1])
 
 trainMultiHMM()
