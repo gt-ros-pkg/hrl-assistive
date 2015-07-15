@@ -46,7 +46,7 @@ class learning_hmm_multi_4d:
 
         print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[100.0]*16, verbose=False, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
+    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[10.0]*16, verbose=False, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         X1 = np.array(xData1)
         X2 = np.array(xData2)
