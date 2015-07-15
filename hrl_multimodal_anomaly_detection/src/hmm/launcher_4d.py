@@ -162,35 +162,29 @@ def create_mvpa_dataset(aXData1, aXData2, aXData3, aXData4, chunks, labels):
 
     return data
 
-def trainMultiHMM():
-    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-
+def loadData(fileName, iterations):
     forcesList = []
     distancesList = []
-    # anglesList = []
     pdf1List = []
     pdf2List = []
+    timesList = []
 
     forcesTrueList = []
     distancesTrueList = []
-    # anglesTrueList = []
     pdf1TrueList = []
     pdf2TrueList = []
-
-    timesList = []
     minList = []
     maxList = []
-    for i in [0, 1, 3, 5, 6, 7, 8, 9]:
-        fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % i
+    for i in iterations:
+        fileName = fileName % i # Insert iteration value into filename
         forces, distances, angles, times = forceKinematics(fileName)
         pdf1, pdf2 = visualFeatures(fileName, times)
         forcesTrueList.append(forces)
         distancesTrueList.append(distances)
-        # anglesTrueList.append(angles)
         pdf1TrueList.append(pdf1)
         pdf2TrueList.append(pdf2)
 
-        scale = 100
+        scale = 1000
         # forces, min_c1, max_c1 = hmm.scaling(forces, scale=scale)
         # distances, min_c2, max_c2 = hmm.scaling(distances, scale=scale)
         # angles, min_c3, max_c3 = hmm.scaling(angles, scale=scale)
@@ -199,28 +193,73 @@ def trainMultiHMM():
         min_c2, max_c2 = np.min(distances), np.max(distances)
         min_c3, max_c3 = np.min(pdf1), np.max(pdf1)
         min_c4, max_c4 = np.min(pdf2), np.max(pdf2)
-        # min_c3, max_c3 = np.min(angles), np.max(angles)
+
         # Scale features
         forces = preprocessing.scale(forces) * scale
         distances = preprocessing.scale(distances) * scale
         pdf1 = preprocessing.scale(pdf1) * scale
         pdf2 = preprocessing.scale(pdf2) * scale
-        # angles = preprocessing.scale(angles) * scale
 
         # print 'Forces shape:', forces.shape
         # print 'Distances shape:', distances.shape
-        # print 'Angles shape:', angles.shape
 
         forcesList.append(forces)
         distancesList.append(distances)
         pdf1List.append(pdf1)
         pdf2List.append(pdf2)
-        # anglesList.append(angles)
         timesList.append(times)
         minList.append([min_c1, min_c2, min_c3, min_c4])
         maxList.append([max_c1, max_c2, max_c3, max_c4])
-        # print minList
-        # print maxList
+
+def trainMultiHMM():
+    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
+
+
+    testForcesList = []
+    testDistancesList = []
+    testPdf1List = []
+    testPdf2List = []
+    testTimesList = []
+
+    print 'Loading training data'
+    fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl'
+    loadData(fileName, [0, 1, 3, 5, 6, 7, 8, 9])
+
+    print 'Loading anomalous test data'
+    for i in xrange(6):
+        fileName = '/home/zerickson/Recordings/testDataAnomalyVer1_scooping_fvk_07-15-2015_12-14-48/iteration_%d_failure.pkl' % i
+        forces, distances, angles, times = forceKinematics(fileName)
+        pdf1, pdf2 = visualFeatures(fileName, times)
+        scale = 1000
+        forces = preprocessing.scale(forces) * scale
+        distances = preprocessing.scale(distances) * scale
+        pdf1 = preprocessing.scale(pdf1) * scale
+        pdf2 = preprocessing.scale(pdf2) * scale
+        testForcesList.append(forces)
+        testDistancesList.append(distances)
+        testPdf1List.append(pdf1)
+        testPdf2List.append(pdf2)
+        testTimesList.append(times)
+
+    print 'Loading nonanomalous test data'
+    for i in xrange(6):
+        fileName = '/home/zerickson/Recordings/testDataVer1_scooping_fvk_07-15-2015_13-15-52/iteration_%d_success.pkl' % i
+        if i == 4:
+            fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % 2
+        if i == 5:
+            fileName = '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl' % 4
+        forces, distances, angles, times = forceKinematics(fileName)
+        pdf1, pdf2 = visualFeatures(fileName, times)
+        scale = 1000
+        forces = preprocessing.scale(forces) * scale
+        distances = preprocessing.scale(distances) * scale
+        pdf1 = preprocessing.scale(pdf1) * scale
+        pdf2 = preprocessing.scale(pdf2) * scale
+        testForcesList.append(forces)
+        testDistancesList.append(distances)
+        testPdf1List.append(pdf1)
+        testPdf2List.append(pdf2)
+        testTimesList.append(times)
 
     # Each training iteration may have a different number of time steps (align by chopping)
     # Find the smallest iteration
@@ -235,10 +274,11 @@ def trainMultiHMM():
 
     # Plot modalities
     # for modality in [forcesList, distancesList, pdf1List, pdf2List]:
-    #     for index, (forces, times) in enumerate(zip(modality, timesList)):
-    #         plt.plot(times, forces, label='%d' % index)
-    #     plt.legend()
-    #     plt.show()
+    for modality in [testForcesList, testDistancesList, testPdf1List, testPdf2List]:
+        for index, (forces, times) in enumerate(zip(modality, testTimesList)):
+            plt.plot(times, forces, label='%d' % index)
+        plt.legend()
+        plt.show()
 
     # Setup training data
     chunks = [10]*len(forcesList)
@@ -261,7 +301,7 @@ def trainMultiHMM():
     print 'PDF1 Sample:', pdf1Sample[:, :5]
     print 'PDF2 Sample:', pdf2Sample[:, :5]
 
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, ml_pkl='ml_4d_1000.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], pdf1List[0], pdf2List[0])
 
@@ -269,19 +309,34 @@ def trainMultiHMM():
     print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
     for i in xrange(len(forcesList)):
         print 'Anomaly Error for training set %d' % i
-        print hmm.anomaly_check(forcesList[i], distancesList[i], pdf1List[i], pdf2List[i], -4)
+        print hmm.anomaly_check(forcesList[i], distancesList[i], pdf1List[i], pdf2List[i], -5)
 
-    for ths in -1.0*np.arange(3, 5, 0.5):
-        k = 0
-        # chunks = [10]*len(forcesList[k])
-        # labels = [True]*len(forcesList[k])
-        # dataSet = create_mvpa_dataset(forcesList[k], distancesList[k], anglesList[k], chunks, labels)
-        # forcesSample = dataSet.samples[:, 0]
-        # distancesSample = dataSet.samples[:, 1]
-        # anglesSample = dataSet.samples[:, 2]
-        hmm.likelihood_disp(forcesSample, distancesSample, pdf1Sample, pdf2Sample, forcesTrueSample, distancesTrueSample,
-                            pdf1TrueSample, pdf2TrueSample, ths, scale1=[minList[k][0], maxList[k][0], 1],
-                            scale2=[minList[k][1], maxList[k][1], 1], scale3=[minList[k][2], maxList[k][2], 1],
-                            scale4=[minList[k][3], maxList[k][3], 1])
+    print 'Beginning anomaly testing for anomaly test set'
+    for i in xrange(6):
+        print 'Anomaly Error for test set %d' % i
+        print hmm.anomaly_check(testForcesList[i], testDistancesList[i], testPdf1List[i], testPdf2List[i], -5)
+
+    print 'Beginning anomaly testing for nonanomalous test set'
+    for i in xrange(6):
+        i += 6
+        print 'Anomaly Error for test set %d' % i
+        print hmm.anomaly_check(testForcesList[i], testDistancesList[i], testPdf1List[i], testPdf2List[i], -5)
+
+    # for ths in -1.0*np.arange(3, 5, 0.5):
+    #     k = 0
+    #     # chunks = [10]*len(forcesList[k])
+    #     # labels = [True]*len(forcesList[k])
+    #     # dataSet = create_mvpa_dataset(forcesList[k], distancesList[k], anglesList[k], chunks, labels)
+    #     # forcesSample = dataSet.samples[:, 0]
+    #     # distancesSample = dataSet.samples[:, 1]
+    #     # anglesSample = dataSet.samples[:, 2]
+    #     hmm.likelihood_disp(forcesSample, distancesSample, pdf1Sample, pdf2Sample, forcesTrueSample, distancesTrueSample,
+    #                         pdf1TrueSample, pdf2TrueSample, ths, scale1=[minList[k][0], maxList[k][0], 1],
+    #                         scale2=[minList[k][1], maxList[k][1], 1], scale3=[minList[k][2], maxList[k][2], 1],
+    #                         scale4=[minList[k][3], maxList[k][3], 1])
+    hmm.likelihood_disp(forcesSample, distancesSample, pdf1Sample, pdf2Sample, forcesTrueSample, distancesTrueSample,
+                        pdf1TrueSample, pdf2TrueSample, -5.0, scale1=[minList[0][0], maxList[0][0], 1],
+                        scale2=[minList[0][1], maxList[0][1], 1], scale3=[minList[0][2], maxList[0][2], 1],
+                        scale4=[minList[0][3], maxList[0][3], 1])
 
 trainMultiHMM()

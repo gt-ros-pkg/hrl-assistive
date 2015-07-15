@@ -408,11 +408,11 @@ class learning_hmm_multi_4d:
         min_dist  = 100000000
         min_index = 0
         print 'Loglikelihood', logp
-        print 'Last posterior', post[n-1]
+        # print 'Last posterior', post[n-1]
         print 'Computing entropies'
         for j in xrange(self.nGaussian):
             dist = entropy(post[n-1], self.l_statePosterior[j])
-            print 'Index:', j, 'Entropy:', dist
+            # print 'Index:', j, 'Entropy:', dist
             if min_dist > dist:
                 min_index = j
                 min_dist  = dist
@@ -542,7 +542,7 @@ class learning_hmm_multi_4d:
         y_min = np.amin(y1)
         y_max = np.amax(y1)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max+4.0,
+                                                                 ymin=0, ymax=y_max+2.0,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
@@ -551,19 +551,19 @@ class learning_hmm_multi_4d:
         for i in xrange(len(block_state)):
             if i%2 is 0:
                 if i<10:
-                    ax1.text((text_x[i])*(1./43.), y_max-0.0, str(block_state[i]+1))
+                    ax1.text((text_x[i])*(1./43.), y_max+1.0, str(block_state[i]+1))
                 else:
-                    ax1.text((text_x[i]-1.0)*(1./43.), y_max-0.0, str(block_state[i]+1))
+                    ax1.text((text_x[i]-1.0)*(1./43.), y_max+1.0, str(block_state[i]+1))
             else:
                 if i<10:
-                    ax1.text((text_x[i])*(1./43.), y_max-4.0, str(block_state[i]+1))
+                    ax1.text((text_x[i])*(1./43.), y_max, str(block_state[i]+1))
                 else:
-                    ax1.text((text_x[i]-1.0)*(1./43.), y_max-4.0, str(block_state[i]+1))
+                    ax1.text((text_x[i]-1.0)*(1./43.), y_max, str(block_state[i]+1))
 
         ax1.set_ylabel("Force (N)", fontsize=18)
         ax1.set_xlim([0, x[-1]*(1./43.)])
         ## ax1.set_ylim([0, np.amax(y1)*1.1])
-        ax1.set_ylim([y_min, y_max+4.0])
+        ax1.set_ylim([y_min - 1, y_max + 2.0])
 
         # -----
 
