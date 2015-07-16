@@ -68,9 +68,9 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             train_aXData1 = dd['ft_force_mag_train_l']
             train_aXData2 = dd['audio_rms_train_l'] 
             train_chunks  = dd['train_chunks']
-            test_aXData1 = dd['ft_force_mag_test_l']
-            test_aXData2 = dd['audio_rms_test_l'] 
-            test_chunks  = dd['test_chunks']
+            test_aXData1  = dd['ft_force_mag_test_l']
+            test_aXData2  = dd['audio_rms_test_l'] 
+            test_chunks   = dd['test_chunks']
 
             # min max scaling for training data
             aXData1_scaled, min_c1, max_c1 = dm.scaling(train_aXData1, scale=10.0)
@@ -1786,6 +1786,9 @@ if __name__ == '__main__':
     p.add_option('--roc_offline_method_check', '--roffmthd', action='store_true', \
                  dest='bRocOfflineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
+    p.add_option('--roc_online_dim_check', '--rondim', action='store_true', \
+                 dest='bRocOnlineDimCheck',
+                 default=False, help='Plot online ROC by real anomaly with dimension check')    
     p.add_option('--online_method_check', '--omc', action='store_true', \
                  dest='bOnlineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
@@ -1978,7 +1981,35 @@ if __name__ == '__main__':
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
                         check_dims, an_type, force_an, sound_an, sim=True)
 
+                        
+    #---------------------------------------------------------------------------           
+    elif opt.bRocOnlineDimCheck:
+        
+        print "ROC Online Robot with real anomalies"
+        test_title      = 'online_dim_comp'
+        cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
+        nState          = nState_l[task]
+        threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
+        attr            = 'id'
+        onoff_type      = 'online'
+        check_methods   = ['progress']
+        check_dims      = [0,1,2]
+        disp            = 'None'
 
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task], cross_data_path, nDataSet=-1)
+
+        if opt.bAllPlot is not True:
+            fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                    task_names[task], nState, threshold_mult, \
+                    opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                    disp=disp, rm_run=opt.bRemoveRunning)
+        else:
+            fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
+                        check_dims)
+
+                        
     #---------------------------------------------------------------------------           
     elif opt.bRocOnlineMethodCheck:
         
