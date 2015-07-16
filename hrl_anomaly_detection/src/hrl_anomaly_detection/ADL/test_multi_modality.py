@@ -2379,12 +2379,12 @@ if __name__ == '__main__':
             cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
             false_data_flag = True
             true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-              = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], 
+              = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], 
                          audio_thres[task], cross_data_path)            
         else:
             false_data_flag = False       
             true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-              = loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], 
+              = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], 
                          audio_thres[task])
                 
         # Get train/test dataset
