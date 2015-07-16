@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import numpy as np
 import cPickle as pickle
 from scipy import interpolate
@@ -185,7 +186,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             pdf1TrueList.append(pdf1)
             pdf2TrueList.append(pdf2)
 
-            scale = 1000
+            scale = 1
             # forces, min_c1, max_c1 = hmm.scaling(forces, scale=scale)
             # distances, min_c2, max_c2 = hmm.scaling(distances, scale=scale)
             # angles, min_c3, max_c3 = hmm.scaling(angles, scale=scale)
@@ -249,27 +250,83 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, pdf1List, pdf2List, timesList, forcesTrueList, distancesTrueList, pdf1TrueList, pdf2TrueList, minList, maxList
 
 def trainMultiHMM():
-    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
+    fileName = os.path.join(os.path.dirname(__file__), 'iterativeData.pkl')
 
-    print 'Loading training data'
-    # fileNames = ['/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/testDataVer1_scooping_fvk_07-15-2015_13-15-52/iteration_%d_success.pkl']
-    # iterationSets = [[0, 1, 3, 5, 6, 7, 8, 9], [0, 1, 2]]
-    fileNames = ['/home/zerickson/Recordings/trainingDataVer2_scooping_fvk_07-15-2015_14-21-47/iteration_%d_success.pkl']
-    iterationSets = [xrange(30)]
-    forcesList, distancesList, pdf1List, pdf2List, timesList, forcesTrueList, distancesTrueList, \
-        pdf1TrueList, pdf2TrueList, minList, maxList = loadData(fileNames, iterationSets, isTrainingData=True)
+    if not os.path.isfile(fileName):
+        print 'Loading training data'
+        # fileNames = ['/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/testDataVer1_scooping_fvk_07-15-2015_13-15-52/iteration_%d_success.pkl']
+        # iterationSets = [[0, 1, 3, 5, 6, 7, 8, 9], [0, 1, 2]]
+        fileNames = ['/home/zerickson/Recordings/trainingDataVer2_scooping_fvk_07-15-2015_14-21-47/iteration_%d_success.pkl']
+        iterationSets = [xrange(30)]
+        forcesList, distancesList, pdf1List, pdf2List, timesList, forcesTrueList, distancesTrueList, \
+            pdf1TrueList, pdf2TrueList, minList, maxList = loadData(fileNames, iterationSets, isTrainingData=True)
 
-    print 'Loading test data'
-    # fileNames = ['/home/zerickson/Recordings/testDataAnomalyVer1_scooping_fvk_07-15-2015_12-14-48/iteration_%d_failure.pkl',
-    #              '/home/zerickson/Recordings/testDataVer1_scooping_fvk_07-15-2015_13-15-52/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl']
-    # iterationSets = [xrange(6), [3], [2, 4]]
-    fileNames = ['/home/zerickson/Recordings/trainingDataVer2_scooping_fvk_07-15-2015_14-21-47/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/testDataAnomalyVer1_scooping_fvk_07-15-2015_12-14-48/iteration_%d_failure.pkl']
-    iterationSets = [xrange(30, 40), xrange(6)]
-    testForcesList, testDistancesList, testPdf1List, testPdf2List, testTimesList, testForcesTrueList, testDistancesTrueList, \
-        testPdf1TrueList, testPdf2TrueList, testMinList, testMaxList = loadData(fileNames, iterationSets)
+        print 'Loading test data'
+        # fileNames = ['/home/zerickson/Recordings/testDataAnomalyVer1_scooping_fvk_07-15-2015_12-14-48/iteration_%d_failure.pkl',
+        #              '/home/zerickson/Recordings/testDataVer1_scooping_fvk_07-15-2015_13-15-52/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/trainingDataVer1_scooping_fvk_07-14-2015_11-06-33/iteration_%d_success.pkl']
+        # iterationSets = [xrange(6), [3], [2, 4]]
+        fileNames = ['/home/zerickson/Recordings/trainingDataVer2_scooping_fvk_07-15-2015_14-21-47/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/testDataAnomalyVer1_scooping_fvk_07-15-2015_12-14-48/iteration_%d_failure.pkl']
+        iterationSets = [xrange(30, 40), xrange(6)]
+        testForcesList, testDistancesList, testPdf1List, testPdf2List, testTimesList, testForcesTrueList, testDistancesTrueList, \
+            testPdf1TrueList, testPdf2TrueList, testMinList, testMaxList = loadData(fileNames, iterationSets)
+
+        with open(fileName, 'wb') as f:
+            pickle.dump((forcesList, distancesList, pdf1List, pdf2List, timesList, forcesTrueList, distancesTrueList, pdf1TrueList,
+                         pdf2TrueList, minList, maxList, testForcesList, testDistancesList, testPdf1List, testPdf2List, testTimesList,
+                         testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList,
+                         testMinList, testMaxList), f, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(fileName, 'rb') as f:
+            forcesList, distancesList, pdf1List, pdf2List, timesList, forcesTrueList, distancesTrueList, pdf1TrueList, \
+            pdf2TrueList, minList, maxList, testForcesList, testDistancesList, testPdf1List, testPdf2List, testTimesList, \
+            testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList, testMinList, testMaxList = pickle.load(f)
+
+    # Working - Scale: 1000, Cov: 10.0
+
+    for scale in [1, 10, 100, 1000, 10000]:
+        for covMult in [1, 10, 100, 1000, 10000]:
+            print '\n---------- Beginning a new sequence ------------'
+            print 'Scale:', scale
+            print 'Covariance Multiplier:', covMult
+            print ''
+
+            # Scale data appropriately
+            forcesListScaled = (np.array(forcesList) * scale).tolist()
+            distancesListScaled = (np.array(distancesList) * scale).tolist()
+            pdf1ListScaled = (np.array(pdf1List) * scale).tolist()
+            pdf2ListScaled = (np.array(pdf2List) * scale).tolist()
+            forcesTestListScaled = (np.array(testForcesList) * scale).tolist()
+            distancesTestListScaled = (np.array(testDistancesList) * scale).tolist()
+            pdf1TestListScaled = (np.array(testPdf1List) * scale).tolist()
+            pdf2TestListScaled = (np.array(testPdf2List) * scale).tolist()
+
+            # Setup training data
+            chunks = [10]*len(forcesListScaled)
+            labels = [True]*len(forcesListScaled)
+            trainDataSet = create_mvpa_dataset(forcesListScaled, distancesListScaled, pdf1ListScaled, pdf2ListScaled, chunks, labels)
+            forcesSample = trainDataSet.samples[:, 0, :]
+            distancesSample = trainDataSet.samples[:, 1, :]
+            pdf1Sample = trainDataSet.samples[:, 2, :]
+            pdf2Sample = trainDataSet.samples[:, 3, :]
+
+            # Train quadvariate hidden Markov model
+            hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
+            hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, cov_mult=[covMult]*16, ml_pkl='ml_4d_speedy.pkl', use_pkl=False)
+
+            print 'Beginning anomaly testing for training set'
+            for i in xrange(len(forcesListScaled)):
+                print 'Anomaly Error for training set %d' % i
+                print 'Error:', hmm.anomaly_check(forcesListScaled[i], distancesListScaled[i], pdf1ListScaled[i], pdf2ListScaled[i], -5)
+
+            print 'Beginning anomaly testing for nonanomalous test set'
+            for i in xrange(len(forcesTestListScaled)):
+                print 'Anomaly Error for test set %d' % i
+                print 'Error:', hmm.anomaly_check(forcesTestListScaled[i], distancesTestListScaled[i], pdf1TestListScaled[i], pdf2TestListScaled[i], -5)
+
+    exit()
 
     # Plot modalities
     for modality in [forcesTrueList, distancesTrueList, pdf1TrueList, pdf2TrueList]:
@@ -300,7 +357,8 @@ def trainMultiHMM():
     # print 'PDF1 Sample:', pdf1Sample[:, :5]
     # print 'PDF2 Sample:', pdf2Sample[:, :5]
 
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, ml_pkl='ml_4d.pkl', use_pkl=True)
+    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, ml_pkl='ml_4d_speedy.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], pdf1List[0], pdf2List[0])
 
