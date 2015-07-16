@@ -1115,7 +1115,7 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
         if rFold is None:
             # leave-one-out
             nDataSet = len(true_aXData1)            
-            n_false_data = K = 1 # the number of test data
+            n_false_data = 1 # the number of test data
         else:
             K = len(true_aXData1)/4 # the number of test data
             nDataSet = 10 #30
@@ -1184,6 +1184,11 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
 
         if nDataSet is None:
             nDataSet = 1
+            n_false_data = len(false_aXData1)
+        else:            
+            # leave-one-out
+            nDataSet = len(true_aXData1)            
+            n_false_data = 1 # if not 1, there will be error
 
         if cross_data_path is not None:
         
@@ -1198,9 +1203,13 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
 
                     labels        = [True]*len(true_aXData1)
                     true_dataSet  = create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
-                    test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', 
-                                                                random.sample(range(len(labels)), 
-                                                                              nTest))
+
+                    if nDataSet == len(true_aXData1):
+                        test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', 
+                                                                    random.sample(range(len(labels)), nTest))
+                    else:
+                        test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', i)
+                            
                     test_dataSet  = true_dataSet[test_ids]
                     train_ids     = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
                     train_ids     = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
@@ -1221,10 +1230,26 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
                     dd['audio_rms_test_l']     = test_aXData2 
                     dd['test_chunks']          = test_chunks
 
-                    dd['ft_force_mag_false_l'] = false_aXData1
-                    dd['audio_rms_false_l']    = false_aXData2
-                    dd['false_chunks']         = false_chunks                 
-                    dd['anomaly_start_idx']    = false_anomaly_start
+                    if n_false_data == len(false_aXData1):
+                        dd['ft_force_mag_false_l'] = false_aXData1
+                        dd['audio_rms_false_l']    = false_aXData2
+                        dd['false_chunks']         = false_chunks                 
+                        dd['anomaly_start_idx']    = false_anomaly_start
+                    else:
+                        labels        = [False]*len(false_aXData1)
+                        false_dataSet = create_mvpa_dataset(false_aXData1, false_aXData2, false_chunks, labels)
+                        test_ids      = Dataset.get_samples_by_attr(false_dataSet, 'id', 
+                                                                    random.sample(range(len(labels)), 
+                                                                                  n_false_data))
+
+                        test_dataSet  = false_dataSet[test_ids]
+                        test_aXData1  = np.array([test_dataSet.samples[0,0]])
+                        test_aXData2  = np.array([test_dataSet.samples[0,1]])
+                        test_chunks   = test_dataSet.sa.chunks
+                        dd['ft_force_mag_false_l'] = test_aXData1
+                        dd['audio_rms_false_l']    = test_aXData2
+                        dd['false_chunks']         = test_chunks                 
+                        dd['anomaly_start_idx']    = np.zeros(len(test_chunks))
 
                     ut.save_pickle(dd, pkl_file)
 
