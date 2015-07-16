@@ -48,7 +48,7 @@ class learning_hmm_multi_4d:
 
         # print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[10.0]*16, verbose=False, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
+    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[1.0]*16, verbose=False, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         X1 = np.array(xData1)
         X2 = np.array(xData2)
@@ -422,12 +422,14 @@ class learning_hmm_multi_4d:
         # print self.ll_mu[min_index]
         # print self.ll_std[min_index]
 
+        print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
+
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
             err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:
             err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-        if err < 0.0: return 1.0, 0.0 # anomaly
+        if err < 0.0: return 1.0, err # anomaly
         else: return 0.0, err # normal    
 
 
@@ -450,10 +452,11 @@ class learning_hmm_multi_4d:
 
         return X_scaled, min_c, max_c
 
-    def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true, ths_mult, scale1=None, scale2=None, scale3=None, scale4=None):
+    def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true, ths_mult, figureSaveName=None):
         print np.shape(X1)
         n, m = np.shape(X1)
         print "Input sequence X1: ", n, m
+        print 'Anomaly: ', self.anomaly_check(X1, X2, X3, X4, ths_mult)
 
         X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
@@ -463,9 +466,7 @@ class learning_hmm_multi_4d:
         ll_likelihood_mu  = np.zeros(m)
         ll_likelihood_std = np.zeros(m)
         ll_thres_mult = np.zeros(m)
-        for i in xrange(m):
-            if i == 0: continue
-
+        for i in xrange(1, m):
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
             logp = self.ml.loglikelihood(final_ts_obj)
             post = np.array(self.ml.posterior(final_ts_obj))
@@ -624,10 +625,12 @@ class learning_hmm_multi_4d:
         ax3.set_xlabel('Time (sec)', fontsize=18)
 
         plt.subplots_adjust(bottom=0.15)
-        plt.show()
 
-        # fig.savefig('test.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        # fig.savefig('test.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        if figureSaveName is None:
+            plt.show()
+        else:
+            # fig.savefig('test.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+            fig.savefig(figureSaveName, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     def learn_likelihoods_progress_par(self, i, n, m, A, B, pi, X_train, g_mu, g_sig):
         l_likelihood_mean = 0.0
