@@ -61,8 +61,7 @@ class armReachAction(mpcBaseAction):
 
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-        self.leftArmInitialJointAnglesScoopingOLD = [0, 1.0235755880202777, 0.10226744833266554, -1.9549568933614168, -3.1258149274104086, -1.1960677168318734, -1.6808367644408335]
-        self.leftArmInitialJointAnglesFeeding = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
+        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, 0, -1.57]
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
@@ -120,12 +119,12 @@ class armReachAction(mpcBaseAction):
 
         #Timeouts used in setOrientGoal() function for each motion
         self.timeoutsScooping = [6, 3, 3, 2, 2]
-        self.timeoutsFeeding = [7, 7, 7]
+        self.timeoutsFeeding = [3, 3, 3]
 
         #Paused used between each motion
         #... for automatic movement
         self.pausesScooping = [0, 0, 0, 0, 0]
-        self.pausesFeeding = [1, 1, 1]
+        self.pausesFeeding = [0, 1, 1]
 
         print "Calculated quaternions: \n"
         print "leftArmScoopingQuats -"
@@ -356,20 +355,15 @@ class armReachAction(mpcBaseAction):
 
         #self.chooseBowlPose()
 
-        #runScooping = True
-        #while runScooping:
-            # print "Initializing left arm for scooping... "
-            # self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
-
-            # print "Current joint angles: "
-            # print self.getJointAngles()
-            # print "Current end effector pose: "
-            # print self.getEndeffectorPose()
-
-            # raw_input("Press anything to continue... ")
+        scoopingPrints = ['#1 Moving over bowl...',
+                          '#2 Moving down into bowl...',
+                          '#3 Moving forward in bowl...', 
+                          '#4 Scooping in bowl...',
+                          '#5 Moving out of bowl...']
 
         for i in xrange(len(self.pausesScooping)):
             print "Scooping step #%d " % i
+            print scoopingPrints[i]
             self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[i][0],
                 self.bowl_pos[1] + self.leftArmScoopingPos[i][1],
                 self.bowl_pos[2] + self.leftArmScoopingPos[i][2])
@@ -383,16 +377,6 @@ class armReachAction(mpcBaseAction):
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             time.sleep(self.pausesScooping[i])
-            
-        # print "#1 Moving over bowl... "
-        #
-        # print "#2 Moving down into bowl... "
-        #
-        # print "#3 Moving forward in bowl... "
-        #
-        # print "#4 Scooping in bowl... "
-        #
-        # print "#5 Moving out of bowl... "
 
         print "Scooping action completed"
 

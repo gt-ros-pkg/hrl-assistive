@@ -43,7 +43,7 @@ class bowlPublisher:
 			self.bowl_pose_manual.pose.orientation.w) = (0, 0, 0, 1)
 		(self.head_pose_manual.pose.position.x,
 			self.head_pose_manual.pose.position.y,
-			self.head_pose_manual.pose.position.z) = (.5, .1, -.1)
+			self.head_pose_manual.pose.position.z) = (0.761, -0.451, 0.091)
 		(self.head_pose_manual.pose.orientation.x,
 			self.head_pose_manual.pose.orientation.y,
 			self.head_pose_manual.pose.orientation.z,
