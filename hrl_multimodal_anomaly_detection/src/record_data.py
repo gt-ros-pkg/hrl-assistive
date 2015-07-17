@@ -21,6 +21,7 @@ import rospy, optparse
 import tf
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
+from hrl_multimodal_anomaly_detection.srv import String_String
 
 def log_parse():
     parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
@@ -42,8 +43,11 @@ class ADL_log:
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
 
+        self.audio = rospy.ServiceProxy('/audio_server', String_String) if audio else None
+        self.audioTrialName = rospy.ServiceProxy('/audio_server_trial_name', String_String) if audio else None
+
         self.ft = tool_ft('/netft_data') if ft else None
-        self.audio = tool_audio() if audio else None
+        #self.audio = tool_audio() if audio else None
         self.vision = tool_vision(self.tf_listener) if vision else None
         self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
 
@@ -85,8 +89,9 @@ class ADL_log:
             self.ft.init_time = self.init_time
             self.ft.start()
         if self.audio is not None:
-            self.audio.init_time = self.init_time
-            self.audio.start()
+            #self.audio.init_time = self.init_time
+            #self.audio.start()
+            self.audio("start")
         if self.vision is not None:
             self.vision.init_time = self.init_time
             self.vision.start()
@@ -107,10 +112,15 @@ class ADL_log:
             data['ft_time']       = self.ft.time_data
 
         if self.audio is not None:
-            self.audio.cancel()
+            #self.audio.cancel()
+            
+            self.audio("cancel")
+            self.audio("close_log_file")
+
             # data['audio_data']  = self.audio.audio_data
             # data['audio_amp']   = self.audio.audio_amp
             # data['audio_freq']  = self.audio.audio_freq
+            
             data['audio_chunk'] = self.audio.CHUNK
             data['audio_sample_time'] = self.audio.UNIT_SAMPLE_TIME
             data['audio_time']  = self.audio.time_data
@@ -145,6 +155,11 @@ class ADL_log:
         if not os.path.exists(self.folderName):
             os.makedirs(self.folderName)
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
+        
+        #Send trial name to audio recording server!
+        if self.audio is not None:
+            self.audioTrialName(fileName)
+
         with open(fileName, 'wb') as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
         print 'Data saved to', fileName
