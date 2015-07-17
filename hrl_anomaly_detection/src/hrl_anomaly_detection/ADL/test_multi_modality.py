@@ -340,7 +340,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
-        #pp.show()
+        pp.show()
         
     return
 
@@ -1873,7 +1873,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 5, 5]
         f_thres     = [0.7, 1.0, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
+        cov_mult = [[20.0, 20.0, 20.0, 20.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 10, 20]
     elif class_num == 3:        
         class_name = 'complex'
