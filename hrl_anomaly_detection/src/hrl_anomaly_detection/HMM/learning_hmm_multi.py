@@ -122,7 +122,7 @@ class learning_hmm_multi(learning_base):
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
         print "baumwelch return : ", ret
-        if math.nan(ret) :
+        if math.isnan(ret) :
             print "Return ", ret
             return False
 
