@@ -173,14 +173,14 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     forcesList = []
     distancesList = []
     anglesList = []
-    pdf1List = []
+    # pdf1List = []
     pdf2List = []
     timesList = []
 
     forcesTrueList = []
     distancesTrueList = []
     anglesTrueList = []
-    pdf1TrueList = []
+    # pdf1TrueList = []
     pdf2TrueList = []
     minList = []
     maxList = []
@@ -192,7 +192,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances.tolist())
             anglesTrueList.append(angles.tolist())
-            pdf1TrueList.append(pdf1)
+            # pdf1TrueList.append(pdf1)
             pdf2TrueList.append(pdf2)
 
             scale = 1
@@ -210,7 +210,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = preprocessing.scale(forces) * scale
             distances = preprocessing.scale(distances) * scale
             angles = preprocessing.scale(angles) * scale
-            pdf1 = preprocessing.scale(pdf1) * scale
+            # pdf1 = preprocessing.scale(pdf1) * scale
             pdf2 = preprocessing.scale(pdf2) * scale
 
             # print 'Forces shape:', forces.shape
@@ -219,7 +219,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forcesList.append(forces.tolist())
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
-            pdf1List.append(pdf1.tolist())
+            # pdf1List.append(pdf1.tolist())
             pdf2List.append(pdf2.tolist())
             timesList.append(times)
             minList.append([min_c1, min_c2, min_c3, min_c4])
@@ -230,9 +230,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
         # Find the largest iteration
         maxsize = max([len(x) for x in forcesList])
         # Extrapolate each time step
-        forcesList, distancesList, anglesList, pdf1List, pdf2List, timesList, forcesTrueList, distancesTrueList, pdf1TrueList, \
-        pdf2TrueList, minList, maxList = extrapolateAllData([forcesList, distancesList, anglesList, pdf1List, pdf2List, timesList,
-                                                             forcesTrueList, distancesTrueList, pdf1TrueList, pdf2TrueList, minList, maxList], maxsize)
+        forcesList, distancesList, anglesList, pdf2List, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
+        pdf2TrueList, minList, maxList = extrapolateAllData([forcesList, distancesList, anglesList, pdf2List, timesList,
+                                                             forcesTrueList, distancesTrueList, anglesTrueList, pdf2TrueList, minList, maxList], maxsize)
 
     # Each training iteration may have a different number of time steps (align by chopping)
     # if isTrainingData:
@@ -251,10 +251,10 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     #     minList = [x[:minsize] for x in minList]
     #     maxList = [x[:minsize] for x in maxList]
 
-    return forcesList, distancesList, anglesList, pdf2List, timesList, forcesTrueList, distancesTrueList, pdf1TrueList, pdf2TrueList, minList, maxList
+    return forcesList, distancesList, anglesList, pdf2List, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdf2TrueList, minList, maxList
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'iterativeData.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'angleData.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -288,6 +288,8 @@ def trainMultiHMM():
             pdf2TrueList, minList, maxList, testForcesList, testDistancesList, testPdf1List, testPdf2List, testTimesList, \
             testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList, testMinList, testMaxList = pickle.load(f)
 
+    print np.shape(forcesTrueList), np.shape(pdf2TrueList), np.shape(timesList)
+
     # Plot modalities
     for modality in [forcesTrueList, distancesTrueList, pdf1TrueList, pdf2TrueList]:
     # for modality in [testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList]:
@@ -318,7 +320,7 @@ def trainMultiHMM():
     # print 'PDF2 Sample:', pdf2Sample[:, :5]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, ml_pkl='ml_4d_happy.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=pdf1Sample, xData4=pdf2Sample, ml_pkl='ml_4d_angle.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], pdf1List[0], pdf2List[0])
 
@@ -348,15 +350,15 @@ def trainMultiHMM():
     testForcesList, testDistancesList, testPdf1List, testPdf2List, \
         testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList = extrapolateAllData([testForcesList, testDistancesList, testPdf1List, testPdf2List, testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList], maxsize)
     testDataSet = create_mvpa_dataset(testForcesList, testDistancesList, testPdf1List, testPdf2List, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTestSample = testDataSet.samples[11:, 0, :]
-    distancesTestSample = testDataSet.samples[11:, 1, :]
-    pdf1TestSample = testDataSet.samples[11:, 2, :]
-    pdf2TestSample = testDataSet.samples[11:, 3, :]
+    forcesTestSample = testDataSet.samples[15:, 0, :]
+    distancesTestSample = testDataSet.samples[15:, 1, :]
+    pdf1TestSample = testDataSet.samples[15:, 2, :]
+    pdf2TestSample = testDataSet.samples[15:, 3, :]
     testTrueDataSet = create_mvpa_dataset(testForcesTrueList, testDistancesTrueList, testPdf1TrueList, testPdf2TrueList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTrueTestSample = testTrueDataSet.samples[11:, 0, :]
-    distancesTrueTestSample = testTrueDataSet.samples[11:, 1, :]
-    pdf1TrueTestSample = testTrueDataSet.samples[11:, 2, :]
-    pdf2TrueTestSample = testTrueDataSet.samples[11:, 3, :]
+    forcesTrueTestSample = testTrueDataSet.samples[15:, 0, :]
+    distancesTrueTestSample = testTrueDataSet.samples[15:, 1, :]
+    pdf1TrueTestSample = testTrueDataSet.samples[15:, 2, :]
+    pdf2TrueTestSample = testTrueDataSet.samples[15:, 3, :]
 
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_anomaly.png')
     hmm.likelihood_disp(forcesTestSample, distancesTestSample, pdf1TestSample, pdf2TestSample, forcesTrueTestSample, distancesTrueTestSample,

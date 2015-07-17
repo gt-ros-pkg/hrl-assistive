@@ -8,9 +8,9 @@ from hrl_multimodal_anomaly_detection.srv import String_String
 class dataRecord:
 
     AUDIO = False
-    FT = False
-    VISION = False
-    KINEMATICS = False
+    FT = True
+    VISION = True
+    KINEMATICS = True
 
 
     def __init__(self):
