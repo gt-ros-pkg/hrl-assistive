@@ -1786,6 +1786,9 @@ if __name__ == '__main__':
     p.add_option('--roc_offline_method_check', '--roffmthd', action='store_true', \
                  dest='bRocOfflineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
+    p.add_option('--roc_offline_dim_check', '--roffdim', action='store_true', \
+                 dest='bRocOfflineDimCheck',
+                 default=False, help='Plot offline ROC by real anomaly with dimension check')    
     p.add_option('--roc_online_dim_check', '--rondim', action='store_true', \
                  dest='bRocOnlineDimCheck',
                  default=False, help='Plot online ROC by real anomaly with dimension check')    
