@@ -61,9 +61,10 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         
     for method in check_methods:        
         for i in xrange(nDataSet):
-
+            
             pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
             dd = ut.load_pickle(pkl_file)
+            print pkl_file
 
             train_aXData1 = dd['ft_force_mag_train_l']
             train_aXData2 = dd['audio_rms_train_l'] 
@@ -1873,7 +1874,7 @@ if __name__ == '__main__':
         f_zero_size = [5, 5, 5]
         f_thres     = [0.7, 1.0, 1.35]
         audio_thres = [1.0, 1.0, 1.0]
-        cov_mult = [[10.0, 10.0, 10.0, 10.0],[20.0, 20.0, 20.0, 20.0],[10.0, 10.0, 10.0, 10.0]]
+        cov_mult = [[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0],[10.0, 10.0, 10.0, 10.0]]
         nState_l    = [20, 10, 20]
     elif class_num == 3:        
         class_name = 'complex'
