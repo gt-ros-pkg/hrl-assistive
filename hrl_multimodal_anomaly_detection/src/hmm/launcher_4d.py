@@ -95,7 +95,7 @@ def visualFeatures(fileName, forceTimes):
                 # Find points within a sphere of radius 9 cm around each point on the line
                 nearbyPoints = None
                 for linePoint in linePoints:
-                    pointsNear = np.linalg.norm(pointSet - linePoint, axis=1) < 0.06
+                    pointsNear = np.linalg.norm(pointSet - linePoint, axis=1) < 0.09
                     nearbyPoints = nearbyPoints + pointsNear if nearbyPoints is not None else pointsNear
                 # Points near spoon
                 points = pointSet[nearbyPoints]

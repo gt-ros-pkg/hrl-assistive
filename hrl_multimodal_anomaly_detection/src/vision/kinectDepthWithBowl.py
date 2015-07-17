@@ -55,6 +55,17 @@ class kinectDepthWithBowl:
         self.targetTrans = None
         self.targetRot = None
 
+        # Gripper
+        self.lGripperPosition = None
+        self.lGripperRotation = None
+        self.lGripperTransposeMatrix = None
+        self.lGripX = None
+        self.lGripY = None
+        self.micLocation = None
+        self.grips = []
+        # Spoon
+        self.spoon = None
+
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
         # self.imageSub = rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
@@ -79,7 +90,7 @@ class kinectDepthWithBowl:
 
         # print 'Read computation time:', time.time() - startTime
         # self.cloudTime = time.time()
-        return self.points3D, self.bowlPosition, self.bowlPositionKinect, [self.bowlX, self.bowlY], self.bowlToKinectMat, [self.targetTrans, self.targetRot]
+        return self.points3D, self.micLocation, self.spoon, self.bowlPosition, self.bowlPositionKinect, [self.bowlX, self.bowlY], self.bowlToKinectMat, [self.targetTrans, self.targetRot]
 
 
     def cancel(self):
@@ -94,6 +105,11 @@ class kinectDepthWithBowl:
         self.pointCloud = data
 
         self.transposeBowlToCamera()
+        self.transposeGripperToCamera()
+
+        # Determine location of spoon
+        spoon3D = [0.22, -0.050, 0]
+        self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
         lowX, highX, lowY, highY = self.boundingBox()
 
@@ -126,6 +142,32 @@ class kinectDepthWithBowl:
         pos = self.bowlPosition
         self.bowlPositionKinect = np.dot(self.bowlToKinectMat, np.array([pos[0], pos[1], pos[2], 1.0]))[:3]
         self.bowlX, self.bowlY = self.pinholeCamera.project3dToPixel(self.bowlPositionKinect)
+
+    def transposeGripperToCamera(self):
+        # Transpose gripper position to camera frame
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
+        try :
+            self.lGripperPosition, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            transMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
+        except tf.ExtrapolationException:
+            print 'Transpose of gripper failed!'
+            return
+
+        mic = [0.12, -0.02, 0]
+
+        # self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        # gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+        # self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+
+        if len(self.grips) >= 2:
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-2]
+            self.micLocation = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+        else:
+            self.micLocation = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+            gripX, gripY = self.pinholeCamera.project3dToPixel(self.micLocation)
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        self.grips.append((int(gripX), int(gripY), transMatrix))
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
