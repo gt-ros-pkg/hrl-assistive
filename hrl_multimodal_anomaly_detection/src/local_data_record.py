@@ -18,6 +18,8 @@ class dataRecord:
         rospy.wait_for_service("/arm_reach_enable")
         self.armReachAction = rospy.ServiceProxy("/arm_reach_enable", String_String)
         rospy.loginfo("arm reach server connected!!")
+        #This service takes requests in the form of string commands
+        #Refer to arm_reacher_feeding.py for list of commands
 
         subject = raw_input("Enter subject name: ")
         self.task = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
