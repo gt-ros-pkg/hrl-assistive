@@ -123,7 +123,8 @@ class kinectDepthWithBowl:
         except tf.ExtrapolationException:
             print 'Transpose of bowl failed!'
             return
-        self.bowlPositionKinect = np.dot(self.bowlToKinectMat, self.bowlPosition)[:3]
+        pos = self.bowlPosition
+        self.bowlPositionKinect = np.dot(self.bowlToKinectMat, np.array([pos[0], pos[1], pos[2], 1.0]))[:3]
         self.bowlX, self.bowlY = self.pinholeCamera.project3dToPixel(self.bowlPositionKinect)
 
     # Returns coordinates (lowX, highX, lowY, highY)
