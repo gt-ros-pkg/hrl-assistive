@@ -61,7 +61,7 @@ class armReachAction(mpcBaseAction):
 
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, 0, -1.57]
+        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, 0, -1.45, 0]
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
@@ -268,8 +268,9 @@ class armReachAction(mpcBaseAction):
     def headPoseManualCallback(self, data):
 
         self.head_frame_manual = data.header.frame_id
-        self.head_pos_manual = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
-        self.head_quat_manual = np.matrix([ [data.pose.orientation.x], [data.pose.orientation.y],
+        self.head_pos_manual = np.matrix([[data.pose.position.x], 
+		[data.pose.position.y], [data.pose.position.z]])
+        self.head_quat_manual = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
 
     def headPoseKinectCallback(self, data):
@@ -399,9 +400,9 @@ class armReachAction(mpcBaseAction):
             # raw_input("Press anything to continue... ")
 
         print "#1 Moving in front of mouth... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[0][0],
-            self.bowl_pos[1] + self.leftArmFeedingPos[0][1],
-            self.bowl_pos[2] + self.leftArmFeedingPos[0][2])
+        self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[0][0],
+            self.head_pos[1] + self.leftArmFeedingPos[0][1],
+            self.head_pos[2] + self.leftArmFeedingPos[0][2])
         self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
             self.leftArmFeedingQuats[0][1],
             self.leftArmFeedingQuats[0][2],
@@ -411,9 +412,9 @@ class armReachAction(mpcBaseAction):
         time.sleep(self.pausesFeeding[0])
 
         print "#2 Moving into mouth... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[1][0],
-            self.bowl_pos[1] + self.leftArmFeedingPos[1][1],
-            self.bowl_pos[2] + self.leftArmFeedingPos[1][2])
+        self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[1][0],
+            self.head_pos[1] + self.leftArmFeedingPos[1][1],
+            self.head_pos[2] + self.leftArmFeedingPos[1][2])
         self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[1][0],
             self.leftArmFeedingQuats[1][1],
             self.leftArmFeedingQuats[1][2],
@@ -423,9 +424,9 @@ class armReachAction(mpcBaseAction):
         time.sleep(self.pausesFeeding[1])
 
         print "#3 Moving away from mouth... "
-        self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmFeedingPos[2][0],
-            self.bowl_pos[1] + self.leftArmFeedingPos[2][1],
-            self.bowl_pos[2] + self.leftArmFeedingPos[2][2])
+        self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[2][0],
+            self.head_pos[1] + self.leftArmFeedingPos[2][1],
+            self.head_pos[2] + self.leftArmFeedingPos[2][2])
         self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[2][0],
             self.leftArmFeedingQuats[2][1],
             self.leftArmFeedingQuats[2][2],
