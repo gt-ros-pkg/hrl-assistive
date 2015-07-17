@@ -16,6 +16,7 @@ from rgbPerception import rgbPerception
 from wideStereoDepth import wideStereoDepth
 
 from kinectDepth import kinectDepth
+from kinectDepthWithBowl import kinectDepthWithBowl
 # from future.pr2WideDepth import pr2WideDepth
 
 from cloudTrial import cloudTrial
@@ -53,7 +54,8 @@ class visionTracker:
 
         # self.tracker = wideStereoRGB(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
-        self.tracker = kinectDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        # self.tracker = kinectDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        self.tracker = kinectDepthWithBowl(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
         # self.tracker = pr2WideDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         if shouldSpin:
