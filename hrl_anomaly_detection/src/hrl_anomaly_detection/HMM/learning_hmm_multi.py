@@ -122,6 +122,9 @@ class learning_hmm_multi(learning_base):
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
         print "baumwelch return : ", ret
+        if math.isnan(ret) :
+            print "Return ", ret
+            return False
 
         [self.A,self.B,self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
@@ -212,7 +215,7 @@ class learning_hmm_multi(learning_base):
             ## a = np.log(np.sum(alpha[:temp/2],axis=1)*scale[:temp/2])
             ## print np.sum(a)
 
-        return 
+        return True
 
 
     #----------------------------------------------------------------------        
