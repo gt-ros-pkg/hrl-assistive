@@ -106,25 +106,25 @@ def visualFeatures(fileName, forceTimes):
                     continue
 
             # Scale all points to prevent division by small numbers and singular matrices
-            spoon *= 20
-            mic *= 20
-            points *= 20
-            directionVector = spoon - mic
+            newSpoon = spoon * 20
+            newMic =  mic * 20
+            newPoints = points * 20
+            directionVector = newSpoon - newMic
 
             # Define receptive fields along spoon
             k = 9 # 9 receptive fields
-            mu = mic + [t*directionVector for t in np.linspace(0, 1, k)]
+            mu = newMic + [t*directionVector for t in np.linspace(0, 1, k)]
             # Use only the second and second to last receptive fields (near handle and spoon end)
             mu = mu[[1, -2]]
 
             pdfList = []
             for muSet in mu:
-                n, m = points.shape
+                n, m = newPoints.shape
                 sigma = np.zeros((m, m))
                 # Compute covariances
                 for h in xrange(m):
                     for j in xrange(m):
-                        sigma[h, j] = 1.0/n * np.dot((points[:, h] - muSet[h]).T, points[:, j] - muSet[j])
+                        sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
                         # Examples:
                         # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
                         # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
@@ -137,7 +137,7 @@ def visualFeatures(fileName, forceTimes):
                 pdfValue = 0
                 # print constant
                 # Evaluate the Probability Density Function for each point
-                for point in points:
+                for point in newPoints:
                     pointMu = point - muSet
                     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
                     # print 'Constant:', constant
