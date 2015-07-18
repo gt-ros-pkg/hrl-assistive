@@ -89,10 +89,11 @@ class learning_hmm_multi_4d:
             # pi - initial probabilities per state 
             ## pi = [1.0/float(self.nState)] * self.nState
             pi = [0.0] * self.nState
-            pi[0] = 0.4
-            pi[1] = 0.2
-            pi[2] = 0.2
-            pi[3] = 0.2
+            pi[0] = 1.0
+            # pi[0] = 0.4
+            # pi[1] = 0.2
+            # pi[2] = 0.2
+            # pi[3] = 0.2
 
         # print 'Generating HMM'
         # HMM model object
