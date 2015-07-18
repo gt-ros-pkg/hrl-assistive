@@ -122,7 +122,7 @@ class kinectDepthWithBowl:
 
         self.points3D = np.array([point for point in points3D])
 
-        self.publishImageFeatures()
+        # self.publishImageFeatures()
 
         self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
