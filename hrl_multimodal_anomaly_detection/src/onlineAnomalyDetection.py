@@ -220,13 +220,13 @@ class onlineAnomalyDetection(Thread):
             self.angles.append(angle)
             self.pdfs.append(pdfValue)
         else:
-            # print 'Current force:', self.forces[index], 'New force:', force
+            print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
-            # print 'Current distance:', self.distances[index], 'New distance:', distance
+            print 'Current distance:', self.distances[index], 'New distance:', distance
             self.distances[index] = distance
-            # print 'Current angle:', self.angles[index], 'New angle:', angle
+            print 'Current angle:', self.angles[index], 'New angle:', angle
             self.angles[index] = angle
-            # print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
+            print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
             self.pdfs[index] = pdfValue
 
     def cloudCallback(self, data):
