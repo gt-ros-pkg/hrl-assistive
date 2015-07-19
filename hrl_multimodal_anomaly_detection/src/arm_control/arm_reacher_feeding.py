@@ -42,6 +42,7 @@ class armReachAction(mpcBaseAction):
 
         self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
+        self.transformer = tf.TransformListener()
         rospy.Subscriber('InterruptAction', String, self.interrupt)
         self.interrupted = False
 
@@ -126,7 +127,7 @@ class armReachAction(mpcBaseAction):
 
         #Paused used between each motion
         #... for automatic movement
-        self.pausesScooping = [0, 0, 0, 0, 0]
+        self.pausesScooping = [6, 3, 3, 2, 2]
         self.pausesFeeding = [0, 1, 1]
 
         print "Calculated quaternions: \n"
@@ -380,7 +381,7 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[i][2],
                 self.leftArmScoopingQuats[i][3])
 
-            self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
+            self.setOrientGoal(self.posL, self.quatL, 0) # self.timeoutsScooping[i]
             scoopingTimes = self.scoopingStepsClient()
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
@@ -389,11 +390,17 @@ class armReachAction(mpcBaseAction):
                 time.sleep(0.1)
                 sleepCounter += 0.1
             if self.interrupted:
+                self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
+                try :
+                    gripperPos, gripperRot = self.transformer.lookupTransform(self.targetFrame, '/l_gripper_tool_frame', rospy.Time(0))
+                except tf.ExtrapolationException:
+                    print 'Transpose of gripper failed!'
+                    return
+                self.setOrientGoal(gripperPos, gripperRot, 0)
                 print 'Scooping action completed!!'
-                self.setStopRight()
                 return True
 
-        print "Scooping action completed"
+        print "Scooping action completed Gerr"
 
         return True
 
@@ -424,10 +431,9 @@ class armReachAction(mpcBaseAction):
                 feedingCounter += 0.1
             if self.interrupted:
                 print 'Feeding action completed!!'
-                self.setStopRight()
                 return True
 
-        print "Feeding action completed"
+        print "Feeding action completed Gerr"
 
         return True
 
