@@ -126,7 +126,7 @@ class onlineAnomalyDetection(Thread):
             return None
 
         # Find nearest time stamp from training data
-        timeStamp = rospy.get_time() - self.init_tim
+        timeStamp = rospy.get_time() - self.init_time
         index = np.abs(self.times - timeStamp).argmin()
 
         # Use magnitude of forces
