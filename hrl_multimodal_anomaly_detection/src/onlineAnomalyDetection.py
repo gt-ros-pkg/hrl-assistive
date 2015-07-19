@@ -200,10 +200,10 @@ class onlineAnomalyDetection(Thread):
             below = self.bowlPosition - [0.06, 0, 0]
 
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            pdfLeft = np.sum(np.exp(np.linalg.norm(points - left, axis=1) * -1.0))
-            pdfRight = np.sum(np.exp(np.linalg.norm(points - right, axis=1) * -1.0))
-            pdfAbove = np.sum(np.exp(np.linalg.norm(points - above, axis=1) * -1.0))
-            pdfBelow = np.sum(np.exp(np.linalg.norm(points - below, axis=1) * -1.0))
+            pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
+            pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
+            pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
+            pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
             pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
             # print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
