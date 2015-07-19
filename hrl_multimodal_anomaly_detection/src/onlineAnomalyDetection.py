@@ -284,7 +284,9 @@ class onlineAnomalyDetection(Thread):
 
         # Determine location of mic
         mic = [0.12, -0.02, 0]
+        print 'Mic before', mic
         self.mic = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        print 'Mic after', self.mic
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
         self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
