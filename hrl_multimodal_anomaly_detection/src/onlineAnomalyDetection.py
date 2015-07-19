@@ -190,9 +190,9 @@ class onlineAnomalyDetection(Thread):
         if len(points) > 0:
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution
             pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0)))
-            print 'Pdf before scale', pdfValue
+            # print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
-            print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
+            # print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
 
             # # Scale all points to prevent division by small numbers and singular matrices
             # newPoints = points * 20
@@ -220,13 +220,13 @@ class onlineAnomalyDetection(Thread):
             self.angles.append(angle)
             self.pdfs.append(pdfValue)
         else:
-            print 'Current force:', self.forces[index], 'New force:', force
+            # print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
-            print 'Current distance:', self.distances[index], 'New distance:', distance
+            # print 'Current distance:', self.distances[index], 'New distance:', distance
             self.distances[index] = distance
-            print 'Current angle:', self.angles[index], 'New angle:', angle
+            # print 'Current angle:', self.angles[index], 'New angle:', angle
             self.angles[index] = angle
-            print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
+            # print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
             self.pdfs[index] = pdfValue
 
     def cloudCallback(self, data):

@@ -42,7 +42,6 @@ class armReachAction(mpcBaseAction):
 
         self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
-        self.transformer = tf.TransformListener()
         rospy.Subscriber('InterruptAction', String, self.interrupt)
         self.interrupted = False
 
@@ -128,7 +127,7 @@ class armReachAction(mpcBaseAction):
         #Paused used between each motion
         #... for automatic movement
         self.pausesScooping = [6, 3, 3, 2, 2]
-        self.pausesFeeding = [0, 1, 1]
+        self.pausesFeeding = [3, 3, 3]
 
         print "Calculated quaternions: \n"
         print "leftArmScoopingQuats -"
@@ -390,13 +389,6 @@ class armReachAction(mpcBaseAction):
                 time.sleep(0.1)
                 sleepCounter += 0.1
             if self.interrupted:
-                self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
-                try :
-                    gripperPos, gripperRot = self.transformer.lookupTransform(self.targetFrame, '/l_gripper_tool_frame', rospy.Time(0))
-                except tf.ExtrapolationException:
-                    print 'Transpose of gripper failed!'
-                    return
-                # self.setOrientGoal(gripperPos, gripperRot, 0.01)
                 print 'Scooping action completed!!'
                 return True
 
@@ -423,7 +415,7 @@ class armReachAction(mpcBaseAction):
                 self.leftArmFeedingQuats[i][2],
                 self.leftArmFeedingQuats[i][3])
 
-            self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
+            self.setOrientGoal(self.posL, self.quatL, 0.01) # self.timeoutsFeeding[i]
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
             feedingCounter = 0.0
             if feedingCounter < self.pausesFeeding[i] and not self.interrupted:
