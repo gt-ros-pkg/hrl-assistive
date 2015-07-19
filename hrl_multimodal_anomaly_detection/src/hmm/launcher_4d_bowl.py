@@ -74,7 +74,7 @@ def visualFeatures(fileName, forceTimes):
             pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
             # Find points within a sphere of radius 6 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.10
+            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.08
 
             # Points near bowl
             points = pointSet[nearbyPoints]
@@ -85,7 +85,7 @@ def visualFeatures(fileName, forceTimes):
             # If no points found, try opening up to 8 cm
             if len(points) <= 0:
                 # Find points within a sphere of radius 8 cm around the center of bowl
-                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.12
+                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.10
                 # Points near bowl
                 points = pointSet[nearbyPoints]
                 if len(points) <= 0:
@@ -93,8 +93,18 @@ def visualFeatures(fileName, forceTimes):
                     pdf.append(0)
                     continue
 
+            left = bowlPosition + [0, 0.06, 0]
+            right = bowlPosition - [0, 0.06, 0]
+            above = bowlPosition + [0.06, 0, 0]
+            below = bowlPosition - [0.06, 0, 0]
+
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0)))
+            pdfLeft = np.sum(np.exp(np.linalg.norm(points - left, axis=1) * -1.0))
+            pdfRight = np.sum(np.exp(np.linalg.norm(points - right, axis=1) * -1.0))
+            pdfAbove = np.sum(np.exp(np.linalg.norm(points - above, axis=1) * -1.0))
+            pdfBelow = np.sum(np.exp(np.linalg.norm(points - below, axis=1) * -1.0))
+            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0)) / float(len(points)))
+            pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
             pdf.append(pdfValue)
 
             # Scale all points to prevent division by small numbers and singular matrices
@@ -241,7 +251,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataPdfExp1.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataNew.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -306,7 +316,7 @@ def trainMultiHMM():
     # print 'PDF Sample:', pdfSample[:, :5]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_pdfexp1.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_new.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
 

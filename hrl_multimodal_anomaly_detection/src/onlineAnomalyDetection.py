@@ -192,8 +192,19 @@ class onlineAnomalyDetection(Thread):
                 print 'No points within 10 cm of bowl location found'
 
         if len(points) > 0:
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution
-            pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0)))
+            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
+            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0)))
+            left = self.bowlPosition + [0, 0.06, 0]
+            right = self.bowlPosition - [0, 0.06, 0]
+            above = self.bowlPosition + [0.06, 0, 0]
+            below = self.bowlPosition - [0.06, 0, 0]
+
+            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
+            pdfLeft = np.sum(np.exp(np.linalg.norm(points - left, axis=1) * -1.0))
+            pdfRight = np.sum(np.exp(np.linalg.norm(points - right, axis=1) * -1.0))
+            pdfAbove = np.sum(np.exp(np.linalg.norm(points - above, axis=1) * -1.0))
+            pdfBelow = np.sum(np.exp(np.linalg.norm(points - below, axis=1) * -1.0))
+            pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
             print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
             print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
