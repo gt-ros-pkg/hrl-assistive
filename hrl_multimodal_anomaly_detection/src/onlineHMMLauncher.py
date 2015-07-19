@@ -231,7 +231,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
 
 def setupMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataPdf1.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataNew.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -262,7 +262,7 @@ def setupMultiHMM():
     pdfSample = trainDataSet.samples[:, 3, :]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_pdf1.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_new.pkl', use_pkl=True)
 
     print 'minValues', minVals
     print 'maxValues', maxVals
