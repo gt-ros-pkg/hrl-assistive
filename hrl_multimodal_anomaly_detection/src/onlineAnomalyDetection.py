@@ -101,9 +101,10 @@ class onlineAnomalyDetection(Thread):
         while not self.cancelled:
             if self.updateNumber > self.lastUpdateNumber:
                 self.lastUpdateNumber = self.updateNumber
-                # self.processData()
+                self.processData()
                 if not self.anomalyOccured:
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
+                    print 'Anomaly error:', error
                     if anomaly > 0:
                         self.anomalyOccured = True
                         self.soundHandle.play(2)

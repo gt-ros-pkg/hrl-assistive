@@ -416,7 +416,7 @@ class learning_hmm_multi_4d:
         min_index = 0
         for j in xrange(self.nGaussian):
             dist = entropy(post[n-1], self.l_statePosterior[j])
-            print 'Index:', j, 'Entropy:', dist
+            # print 'Index:', j, 'Entropy:', dist
             if min_dist > dist:
                 min_index = j
                 min_dist  = dist
@@ -426,7 +426,7 @@ class learning_hmm_multi_4d:
         # print self.ll_mu[min_index]
         # print self.ll_std[min_index]
 
-        print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
+        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
             err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
