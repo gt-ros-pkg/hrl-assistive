@@ -111,7 +111,7 @@ class onlineAnomalyDetection(Thread):
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
                     print 'Anomaly error:', error
                     if anomaly > 0:
-                        self.interruptPublisher.publish('Interrupt')
+                        # self.interruptPublisher.publish('Interrupt')
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
@@ -173,7 +173,7 @@ class onlineAnomalyDetection(Thread):
         pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
         # Find points within a sphere of radius 8 cm around the center of bowl
-        nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.08
+        nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.10
 
         # Points near bowl
         points = pointSet[nearbyPoints]
@@ -185,7 +185,7 @@ class onlineAnomalyDetection(Thread):
         # If no points found, try opening up to 10 cm
         if len(points) <= 0:
             # Find points within a sphere of radius 10 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.10
+            nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.12
             # Points near bowl
             points = pointSet[nearbyPoints]
             if len(points) <= 0:
