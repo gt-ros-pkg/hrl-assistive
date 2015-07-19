@@ -194,9 +194,9 @@ class onlineAnomalyDetection(Thread):
         if len(points) > 0:
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution
             pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0)))
-            # print 'Pdf before scale', pdfValue
+            print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
-            # print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
+            print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
 
             # # Scale all points to prevent division by small numbers and singular matrices
             # newPoints = points * 20
