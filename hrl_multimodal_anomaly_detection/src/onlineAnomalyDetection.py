@@ -120,7 +120,8 @@ class onlineAnomalyDetection(Thread):
         self.forceSub.unregister()
         rospy.sleep(1.0)
 
-    def scaling(self, x, minVal, maxVal, scale=1.0):
+    @staticmethod
+    def scaling(x, minVal, maxVal, scale=1.0):
         return (x - minVal) / (maxVal - minVal) * scale
 
     def processData(self):
@@ -137,7 +138,9 @@ class onlineAnomalyDetection(Thread):
 
         # Determine distance between mic and bowl
         distance = np.linalg.norm(self.mic - self.bowlPosition)
+        print 'Distance before scale', distance
         distance = self.scaling(distance, self.minVals[1], self.maxVals[1])
+        print 'Distance after scale', distance, 'minVal', self.minVals[1], 'maxVal', self.maxVals[1]
         # Find angle between gripper-bowl vector and gripper-spoon vector
         micSpoonVector = self.spoon - self.mic
         micBowlVector = self.bowlPosition - self.mic
