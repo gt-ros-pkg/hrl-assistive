@@ -396,6 +396,8 @@ class armReachAction(mpcBaseAction):
             scoopingTimes = self.scoopingStepsClient()
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
+            if self.interrupted:
+                break
 
         print "Scooping action completed"
 
@@ -422,6 +424,8 @@ class armReachAction(mpcBaseAction):
 
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
+            if self.interrupted:
+                break
 
         print "Feeding action completed Gerr"
 
