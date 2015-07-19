@@ -6,6 +6,7 @@ import time
 import rospy
 import numpy as np
 from threading import Thread
+import matplotlib.pyplot as plt
 import onlineHMMLauncher as onlineHMM
 
 try :
@@ -109,6 +110,11 @@ class onlineAnomalyDetection(Thread):
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
+                        for modality in [self.forces, self.distances, self.angles, self.pdfs]:
+                            for index, (modal, times) in enumerate(zip(modality, self.times)):
+                                plt.plot(times, modal, label='%d' % index)
+                            plt.legend()
+                            plt.show()
             rate.sleep()
 
     def cancel(self):
