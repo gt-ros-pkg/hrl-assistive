@@ -77,14 +77,9 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
-        self.forces = []
-        self.distances = []
-        self.angles = []
-        self.pdfs = []
-
         self.soundHandle = SoundClient()
 
-        self.hmm, self.minVals, self.maxVals = onlineHMM.setupMultiHMM()
+        self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times = onlineHMM.setupMultiHMM()
         self.anomalyOccured = False
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
@@ -130,18 +125,22 @@ class onlineAnomalyDetection(Thread):
         if self.bowlPosition is None:
             return None
 
+        # Find nearest time stamp from training data
+        timeStamp = rospy.get_time() - self.init_tim
+        index = np.abs(self.times - timeStamp).argmin()
+
         # Use magnitude of forces
         force = np.linalg.norm(self.force).flatten()
-        self.forces.append(self.scaling(force, self.minVals[0], self.maxVals[0]))
+        force = self.scaling(force, self.minVals[0], self.maxVals[0])
 
         # Determine distance between mic and bowl
         distance = np.linalg.norm(self.mic - self.bowlPosition)
-        self.distances.append(self.scaling(distance, self.minVals[1], self.maxVals[1]))
+        distance = self.scaling(distance, self.minVals[1], self.maxVals[1])
         # Find angle between gripper-bowl vector and gripper-spoon vector
         micSpoonVector = self.spoon - self.mic
         micBowlVector = self.bowlPosition - self.mic
         angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
-        self.angles.append(self.scaling(angle, self.minVals[2], self.maxVals[2]))
+        angle = self.scaling(angle, self.minVals[2], self.maxVals[2])
 
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
@@ -166,6 +165,7 @@ class onlineAnomalyDetection(Thread):
         if len(points) <= 0:
             print 'ARGH, no points within 8 cm of bowl location found'
 
+        pdfValue = 0
         # If no points found, try opening up to 10 cm
         if len(points) <= 0:
             # Find points within a sphere of radius 10 cm around the center of bowl
@@ -174,34 +174,42 @@ class onlineAnomalyDetection(Thread):
             points = pointSet[nearbyPoints]
             if len(points) <= 0:
                 print 'No points within 10 cm of bowl location found'
-                self.pdfs.append(0)
-                return
 
-        # Try an exponential dropoff instead of Trivariate Gaussian Distribution
-        # pdfValue = np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -10.0))
-        # pdf.append(pdfValue)
+        if len(points) > 0:
+            # Try an exponential dropoff instead of Trivariate Gaussian Distribution
+            pdfValue = np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -10.0))
+            pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
 
-        # Scale all points to prevent division by small numbers and singular matrices
-        newPoints = points * 20
-        # Define a receptive field within the bowl
-        mu = self.bowlPosition * 20
+            # # Scale all points to prevent division by small numbers and singular matrices
+            # newPoints = points * 20
+            # # Define a receptive field within the bowl
+            # mu = self.bowlPosition * 20
+            #
+            # # Trivariate Gaussian Distribution
+            # n, m = newPoints.shape
+            # sigma = np.zeros((m, m))
+            # # Compute covariances
+            # for h in xrange(m):
+            #     for j in xrange(m):
+            #         sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - mu[h]).T, newPoints[:, j] - mu[j])
+            # constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
+            # sigmaInv = np.linalg.inv(sigma)
+            # # Evaluate the Probability Density Function for each point
+            # for point in newPoints:
+            #     pointMu = point - mu
+            #     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
+            #     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
 
-        # Trivariate Gaussian Distribution
-        n, m = newPoints.shape
-        sigma = np.zeros((m, m))
-        # Compute covariances
-        for h in xrange(m):
-            for j in xrange(m):
-                sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - mu[h]).T, newPoints[:, j] - mu[j])
-        constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-        sigmaInv = np.linalg.inv(sigma)
-        pdfValue = 0
-        # Evaluate the Probability Density Function for each point
-        for point in newPoints:
-            pointMu = point - mu
-            # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-            pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-        self.pdfs.append(self.scaling(pdfValue, self.minVals[3], self.maxVals[3]))
+        if index >= len(self.forces):
+            self.forces.append(force)
+            self.distances.append(distance)
+            self.angles.append(angle)
+            self.pdfs.append(pdfValue)
+        else:
+            self.forces[index] = force
+            self.distances[index] = force
+            self.angles[index] = angle
+            self.pdfs[index] = pdfValue
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
