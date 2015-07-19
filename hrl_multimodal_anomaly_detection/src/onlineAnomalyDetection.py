@@ -35,6 +35,7 @@ class onlineAnomalyDetection(Thread):
 
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         self.interruptPublisher = rospy.Publisher('InterruptAction', String)
+        self.stopPublisher = rospy.Publisher('hrl_feeding_task/emergency_arm_stop', String)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.targetFrame = targetFrame
@@ -110,11 +111,12 @@ class onlineAnomalyDetection(Thread):
                     print 'Anomaly error:', error
                     if anomaly > 0:
                         self.interruptPublisher.publish('Interrupt')
+                        self.stopPublisher.publish('Stop')
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
-                        for modality in [[self.forces] + self.forcesList, [self.distances] + self.distancesList, [self.angles] + self.anglesList, [self.pdfs] + self.pdfList]:
-                            for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList)):
+                        for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
+                            for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
                                 plt.plot(times, modal, label='%d' % index)
                             plt.legend()
                             plt.show()
