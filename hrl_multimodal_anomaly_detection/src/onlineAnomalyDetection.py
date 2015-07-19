@@ -132,7 +132,7 @@ class onlineAnomalyDetection(Thread):
         index = np.abs(self.times - timeStamp).argmin()
 
         # Use magnitude of forces
-        force = np.linalg.norm(self.force).flatten()
+        force = np.linalg.norm(self.force)
         force = self.scaling(force, self.minVals[0], self.maxVals[0])
 
         # Determine distance between mic and bowl
@@ -210,8 +210,11 @@ class onlineAnomalyDetection(Thread):
         else:
             print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
+            print 'Current distance:', self.distances[index], 'New distance:', distance
             self.distances[index] = force
+            print 'Current angle:', self.angles[index], 'New angle:', angle
             self.angles[index] = angle
+            print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
             self.pdfs[index] = pdfValue
 
     def cloudCallback(self, data):
