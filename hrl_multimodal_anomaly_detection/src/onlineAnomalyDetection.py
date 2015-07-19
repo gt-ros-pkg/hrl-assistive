@@ -131,7 +131,7 @@ class onlineAnomalyDetection(Thread):
             return None
 
         # Use magnitude of forces
-        force = np.linalg.norm(self.force, axis=1).flatten()
+        force = np.linalg.norm(self.force).flatten()
         self.forces.append(self.scaling(force, self.minVals[0], self.maxVals[0]))
 
         # Determine distance between mic and bowl
