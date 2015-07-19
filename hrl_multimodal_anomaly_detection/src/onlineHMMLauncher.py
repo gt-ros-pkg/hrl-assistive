@@ -222,12 +222,12 @@ def setupMultiHMM():
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
-        fileNames = ['/home/zerickson/Recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl']
+        fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl']
         iterationSets = [xrange(6), xrange(6), xrange(6), xrange(3), xrange(3), xrange(3)]
         forcesList, distancesList, anglesList, pdfList, timesList = loadData(fileNames, iterationSets, isTrainingData=True)
 
