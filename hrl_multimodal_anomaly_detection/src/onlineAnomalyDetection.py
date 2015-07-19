@@ -138,9 +138,7 @@ class onlineAnomalyDetection(Thread):
 
         # Determine distance between mic and bowl
         distance = np.linalg.norm(self.mic - self.bowlPosition)
-        print 'Distance before scale', distance
         distance = self.scaling(distance, self.minVals[1], self.maxVals[1])
-        print 'Distance after scale', distance, 'minVal', self.minVals[1], 'maxVal', self.maxVals[1]
         # Find angle between gripper-bowl vector and gripper-spoon vector
         micSpoonVector = self.spoon - self.mic
         micBowlVector = self.bowlPosition - self.mic
@@ -183,7 +181,9 @@ class onlineAnomalyDetection(Thread):
         if len(points) > 0:
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution
             pdfValue = np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -10.0))
+            print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
+            print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
 
             # # Scale all points to prevent division by small numbers and singular matrices
             # newPoints = points * 20
