@@ -56,6 +56,7 @@ class armReachAction(mpcBaseAction):
 
         self.event = Event()
         self.interrupter = interrupter(self.event)
+        self.interrupter.start()
 
         rArmServersRunning = False
 
@@ -393,6 +394,7 @@ class armReachAction(mpcBaseAction):
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             val = self.event.wait(self.pausesScooping[i])
+            print 'Event return', val
             if not val:
                 return True
             # time.sleep(self.pausesScooping[i])
@@ -423,6 +425,7 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
             val = self.event.wait(self.pausesFeeding[i])
+            print 'Event return', val
             if not val:
                 return True
             # time.sleep(self.pausesFeeding[i])

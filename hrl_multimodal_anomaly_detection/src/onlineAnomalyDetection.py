@@ -35,7 +35,6 @@ class onlineAnomalyDetection(Thread):
 
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         self.interruptPublisher = rospy.Publisher('InterruptAction', String)
-        self.stopPublisher = rospy.Publisher('hrl_feeding_task/emergency_arm_stop', String)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.targetFrame = targetFrame
@@ -111,7 +110,6 @@ class onlineAnomalyDetection(Thread):
                     print 'Anomaly error:', error
                     if anomaly > 0:
                         self.interruptPublisher.publish('Interrupt')
-                        self.stopPublisher.publish('Stop')
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
@@ -191,7 +189,7 @@ class onlineAnomalyDetection(Thread):
 
         if len(points) > 0:
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution
-            pdfValue = np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -10.0))
+            pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0)))
             print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
             print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]

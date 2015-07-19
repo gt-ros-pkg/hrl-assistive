@@ -91,8 +91,8 @@ def visualFeatures(fileName, forceTimes):
                     pdf.append(0)
                     continue
 
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution
-            pdfValue = np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -10.0))
+            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
+            pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0)))
             pdf.append(pdfValue)
 
             # # Scale all points to prevent division by small numbers and singular matrices
@@ -220,7 +220,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
 
 def setupMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'onlineData.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataPdf1.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -251,7 +251,7 @@ def setupMultiHMM():
     pdfSample = trainDataSet.samples[:, 3, :]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_pdf1.pkl', use_pkl=True)
 
     print 'minValues', minVals
     print 'maxValues', maxVals
