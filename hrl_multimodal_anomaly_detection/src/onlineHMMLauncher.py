@@ -180,6 +180,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces, distances, angles, times = forceKinematics(name)
             pdf = visualFeatures(name, times)
 
+            print minVals is None
             if minVals is None:
                 minVals = []
                 maxVals = []
