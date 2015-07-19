@@ -396,7 +396,7 @@ class armReachAction(mpcBaseAction):
                 except tf.ExtrapolationException:
                     print 'Transpose of gripper failed!'
                     return
-                self.setOrientGoal(gripperPos, gripperRot, 0.01)
+                # self.setOrientGoal(gripperPos, gripperRot, 0.01)
                 print 'Scooping action completed!!'
                 return True
 
