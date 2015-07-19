@@ -270,7 +270,7 @@ class onlineAnomalyDetection(Thread):
         # Transpose gripper position to camera frame
         self.transformer.waitForTransform(self.targetFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
         try :
-            self.lGripperPosition, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            self.lGripperPosition, self.lGripperRotation = self.transformer.lookupTransform(self.targetFrame, '/l_gripper_tool_frame', rospy.Time(0))
             transMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
         except tf.ExtrapolationException:
             print 'Transpose of gripper failed!'
@@ -284,9 +284,9 @@ class onlineAnomalyDetection(Thread):
 
         # Determine location of mic
         mic = [0.12, -0.02, 0]
-        print 'Mic before', mic
+        # print 'Mic before', mic
         self.mic = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-        print 'Mic after', self.mic
+        # print 'Mic after', self.mic
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
         self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
