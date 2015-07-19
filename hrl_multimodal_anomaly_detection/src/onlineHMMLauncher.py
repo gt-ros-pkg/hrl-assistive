@@ -4,11 +4,9 @@ import os
 import numpy as np
 import cPickle as pickle
 from scipy import interpolate
-import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from mvpa2.datasets.base import Dataset
-from learning_hmm_multi_1d import learning_hmm_multi_1d
-from learning_hmm_multi_4d import learning_hmm_multi_4d
+from hmm.learning_hmm_multi_4d import learning_hmm_multi_4d
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
