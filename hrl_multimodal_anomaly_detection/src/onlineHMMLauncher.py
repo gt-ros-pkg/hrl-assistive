@@ -180,13 +180,10 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces, distances, angles, times = forceKinematics(name)
             pdf = visualFeatures(name, times)
 
-            print minVals is None
             if minVals is None:
                 minVals = []
                 maxVals = []
-                print 'Min and max values'
                 for modality in [forces, distances, angles, pdf]:
-                    print 'Min value', np.min(modality)
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
                 print 'minValues', minVals
@@ -220,7 +217,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
         # Extrapolate each time step
         forcesList, distancesList, anglesList, pdfList, timesList = extrapolateAllData([forcesList, distancesList, anglesList, pdfList, timesList], maxsize)
 
-    return forcesList, distancesList, anglesList, pdfList, timesList
+    return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
 
 def setupMultiHMM():
     fileName = os.path.join(os.path.dirname(__file__), 'onlineData.pkl')
@@ -234,13 +231,13 @@ def setupMultiHMM():
                      '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
                      '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl']
         iterationSets = [xrange(6), xrange(6), xrange(6), xrange(3), xrange(3), xrange(3)]
-        forcesList, distancesList, anglesList, pdfList, timesList = loadData(fileNames, iterationSets, isTrainingData=True)
+        forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals = loadData(fileNames, iterationSets, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
-            pickle.dump((forcesList, distancesList, anglesList, pdfList, timesList), f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump((forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals), f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(fileName, 'rb') as f:
-            forcesList, distancesList, anglesList, pdfList, timesList = pickle.load(f)
+            forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals = pickle.load(f)
 
     # Setup training data
     chunks = [10]*len(forcesList)

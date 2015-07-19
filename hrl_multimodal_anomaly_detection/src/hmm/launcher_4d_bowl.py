@@ -198,6 +198,8 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 for modality in [forces, distances, angles, pdf]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
+                print 'minValues', minVals
+                print 'maxValues', maxVals
 
             scale = 1
 
