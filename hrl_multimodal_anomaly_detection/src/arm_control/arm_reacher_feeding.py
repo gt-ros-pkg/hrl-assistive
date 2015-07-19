@@ -178,7 +178,9 @@ class armReachAction(mpcBaseAction):
         except tf.ExtrapolationException:
             print 'Transpose of gripper failed!'
             return
-        self.setOrientGoal(gripperPos, gripperRot, 0.05)
+        self.posL.x, self.posL.y, self.posL.z = gripperPos
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = gripperRot
+        self.setOrientGoal(self.posL, self.quatL, 0.05)
         sys.exit()
 
     def serverCallback(self, req):
