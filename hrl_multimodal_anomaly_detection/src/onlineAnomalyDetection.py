@@ -80,6 +80,7 @@ class onlineAnomalyDetection(Thread):
         self.soundHandle = SoundClient()
 
         self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times = onlineHMM.setupMultiHMM()
+        self.times = np.array(self.times)
         self.anomalyOccured = False
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
