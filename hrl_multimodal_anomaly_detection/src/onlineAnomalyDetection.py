@@ -199,6 +199,7 @@ class onlineAnomalyDetection(Thread):
             above = self.bowlPosition + [0.06, 0, 0]
             below = self.bowlPosition - [0.06, 0, 0]
 
+            print 'Number of points:', len(points)
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
             pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
             pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
