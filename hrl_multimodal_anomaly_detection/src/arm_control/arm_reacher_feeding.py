@@ -27,6 +27,7 @@ class interrupter(Thread):
         rospy.Subscriber('InterruptAction', String, self.interrupt)
 
     def interrupt(self, data):
+        print '\n\nAction Interrupted! Event Stop\n\n'
         self.event.set()
 
 class armReachAction(mpcBaseAction):
