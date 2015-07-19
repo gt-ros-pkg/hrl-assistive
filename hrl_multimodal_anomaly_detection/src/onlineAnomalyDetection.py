@@ -220,7 +220,7 @@ class onlineAnomalyDetection(Thread):
             print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
             print 'Current distance:', self.distances[index], 'New distance:', distance
-            self.distances[index] = force
+            self.distances[index] = distance
             print 'Current angle:', self.angles[index], 'New angle:', angle
             self.angles[index] = angle
             print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
