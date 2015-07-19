@@ -55,8 +55,6 @@ class armReachAction(mpcBaseAction):
                 '/setOrientGoalRightService', PosQuatTimeoutSrv)
             self.setStopRight = rospy.ServiceProxy(
                 '/setStopRightService', None_Bool)
-            self.setStopLeft = rospy.ServiceProxy(
-                '/setStopLeftService', None_Bool)
             self.setPostureGoalRight = rospy.ServiceProxy(
                 '/setPostureGoalRightService', AnglesTimeoutSrv)
             print "Connected to right arm server! "
@@ -391,8 +389,8 @@ class armReachAction(mpcBaseAction):
                 time.sleep(0.1)
                 sleepCounter += 0.1
             if self.interrupted:
-                print 'Scooping action completed'
-                self.setStopLeft()
+                print 'Scooping action completed!!'
+                self.setStopRight()
                 return True
 
         print "Scooping action completed"
@@ -425,8 +423,8 @@ class armReachAction(mpcBaseAction):
                 time.sleep(0.1)
                 feedingCounter += 0.1
             if self.interrupted:
-                print 'Feeding action completed'
-                self.setStopLeft()
+                print 'Feeding action completed!!'
+                self.setStopRight()
                 return True
 
         print "Feeding action completed"
