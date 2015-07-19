@@ -229,7 +229,7 @@ class onlineAnomalyDetection(Thread):
         # print 'Cloud computation time:', time.time() - startTime
         # self.cloudTime = time.time()
 
-    def force_raw_cb(self, msg):
+    def forceCallback(self, msg):
         self.force = np.array([msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z])
         self.torque = np.array([msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z])
         self.updateNumber += 1
