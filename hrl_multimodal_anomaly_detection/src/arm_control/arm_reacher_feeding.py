@@ -381,7 +381,7 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[i][2],
                 self.leftArmScoopingQuats[i][3])
 
-            self.setOrientGoal(self.posL, self.quatL, 0) # self.timeoutsScooping[i]
+            self.setOrientGoal(self.posL, self.quatL, 0.01) # self.timeoutsScooping[i]
             scoopingTimes = self.scoopingStepsClient()
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
@@ -396,7 +396,7 @@ class armReachAction(mpcBaseAction):
                 except tf.ExtrapolationException:
                     print 'Transpose of gripper failed!'
                     return
-                self.setOrientGoal(gripperPos, gripperRot, 0)
+                self.setOrientGoal(gripperPos, gripperRot, 0.01)
                 print 'Scooping action completed!!'
                 return True
 
