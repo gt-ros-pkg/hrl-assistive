@@ -101,7 +101,7 @@ class onlineAnomalyDetection(Thread):
         while not self.cancelled:
             if self.updateNumber > self.lastUpdateNumber:
                 self.lastUpdateNumber = self.updateNumber
-                self.processData()
+                # self.processData()
                 if not self.anomalyOccured:
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
                     if anomaly > 0:
@@ -207,6 +207,7 @@ class onlineAnomalyDetection(Thread):
             self.angles.append(angle)
             self.pdfs.append(pdfValue)
         else:
+            print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
             self.distances[index] = force
             self.angles[index] = angle
