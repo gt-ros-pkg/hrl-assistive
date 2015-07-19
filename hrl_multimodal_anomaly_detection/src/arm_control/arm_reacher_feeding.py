@@ -172,13 +172,13 @@ class armReachAction(mpcBaseAction):
     def interrupt(self, data):
         print '\n\nAction Interrupted! Event Stop\n\n'
         self.interrupted = True
-        self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
-        try :
-            gripperPos, gripperRot = self.transformer.lookupTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0))
-        except tf.ExtrapolationException:
-            print 'Transpose of gripper failed!'
-            return
-        self.setOrientGoal(gripperPos, gripperRot, '0.05')
+        # self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
+        # try :
+        #     gripperPos, gripperRot = self.transformer.lookupTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0))
+        # except tf.ExtrapolationException:
+        #     print 'Transpose of gripper failed!'
+        #     return
+        # self.setOrientGoal(gripperPos, gripperRot, '0.05')
         sys.exit()
 
     def serverCallback(self, req):
