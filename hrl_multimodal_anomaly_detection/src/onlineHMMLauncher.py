@@ -251,6 +251,9 @@ def setupMultiHMM():
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online.pkl', use_pkl=True)
 
+    print 'minValues', minVals
+    print 'maxValues', maxVals
+
     return hmm, minVals, maxVals
 
     # print '\nBeginning anomaly testing for nonanomalous training set\n'

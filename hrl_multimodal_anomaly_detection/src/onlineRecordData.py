@@ -11,6 +11,8 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy, optparse
 import tf
+from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
+from hrl_multimodal_anomaly_detection.srv import String_String
 
 def log_parse():
     parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
@@ -33,6 +35,9 @@ class ADL_log:
 
         self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener)
 
+        self.scooping_steps_times = []
+        self.scoopingStepsService = rospy.Service('/scooping_steps_service', None_Bool, self.scoopingStepsTimesCallback)
+
     def log_start(self):
         self.init_time = rospy.get_time()
         self.detector.init_time = self.init_time
@@ -45,6 +50,10 @@ class ADL_log:
         self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener)
 
         gc.collect()
+
+    def scoopingStepsTimesCallback(self, data):
+        self.scooping_steps_times.append(rospy.get_time() - self.init_time)
+        return None_BoolResponse(True)
 
 if __name__ == '__main__':
     log = ADL_log()
