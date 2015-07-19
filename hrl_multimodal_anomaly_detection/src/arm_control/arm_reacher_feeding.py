@@ -173,6 +173,7 @@ class armReachAction(mpcBaseAction):
 
     def serverCallback(self, req):
         req = req.data
+        self.interrupted = False
 
         if req == "leftArmInitScooping":
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
@@ -388,6 +389,8 @@ class armReachAction(mpcBaseAction):
             if sleepCounter < self.pausesScooping[i] and not self.interrupted:
                 time.sleep(0.1)
                 sleepCounter += 0.1
+                print sleepCounter
+            print 'Final sleep', sleepCounter
             if self.interrupted:
                 print 'Scooping action completed!!'
                 return True
