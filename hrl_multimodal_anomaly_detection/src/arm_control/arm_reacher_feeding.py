@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-# import time
+import time
 import rospy
 import numpy as np
-from threading import Thread, Event
 
 import roslib
 # roslib.load_manifest('sandbox_dpark_darpa_m3')
@@ -18,17 +17,6 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv, String_String
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
-
-class interrupter(Thread):
-    def __init__(self, event):
-        super(interrupter, self).__init__()
-        self.daemon = True
-        self.event = event
-        rospy.Subscriber('InterruptAction', String, self.interrupt)
-
-    def interrupt(self, data):
-        print '\n\nAction Interrupted! Event Stop\n\n'
-        self.event.set()
 
 class armReachAction(mpcBaseAction):
 
@@ -54,9 +42,8 @@ class armReachAction(mpcBaseAction):
 
         self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
-        self.event = Event()
-        self.interrupter = interrupter(self.event)
-        self.interrupter.start()
+        rospy.Subscriber('InterruptAction', String, self.interrupt)
+        self.interrupted = False
 
         rArmServersRunning = False
 
@@ -181,6 +168,10 @@ class armReachAction(mpcBaseAction):
                 break
 
         rospy.spin()
+
+    def interrupt(self, data):
+        print '\n\nAction Interrupted! Event Stop\n\n'
+        self.interrupted = True
 
     def serverCallback(self, req):
         req = req.data
@@ -395,13 +386,14 @@ class armReachAction(mpcBaseAction):
             scoopingTimes = self.scoopingStepsClient()
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
-            val = bool(self.event.wait(self.pausesScooping[i]))
-            print 'Event return', val
-            if val is False:
-                print "Scooping action completed"
+            sleepCounter = 0.0
+            if sleepCounter < self.pausesScooping[i] and not self.interrupted:
+                time.sleep(0.1)
+                sleepCounter += 0.1
+            if self.interrupted:
+                print 'Scooping action completed'
                 self.setStopLeft()
                 return True
-            # time.sleep(self.pausesScooping[i])
 
         print "Scooping action completed"
 
@@ -415,7 +407,7 @@ class armReachAction(mpcBaseAction):
                           '#2 Moving into mouth...',
                           '#3 Moving away from mouth...']
 
-        for i in xrange(len(self.pausesScooping)):
+        for i in xrange(len(self.pausesFeeding)):
             print 'Feeding step #%d ' % i
             print feedingPrints[i]
             self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[i][0],
@@ -428,13 +420,14 @@ class armReachAction(mpcBaseAction):
 
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
-            val = bool(self.event.wait(self.pausesFeeding[i]))
-            print 'Event return', val
-            if val is False:
-                print "Feeding action completed"
+            feedingCounter = 0.0
+            if feedingCounter < self.pausesFeeding[i] and not self.interrupted:
+                time.sleep(0.1)
+                feedingCounter += 0.1
+            if self.interrupted:
+                print 'Feeding action completed'
                 self.setStopLeft()
                 return True
-            # time.sleep(self.pausesFeeding[i])
 
         print "Feeding action completed"
 
