@@ -80,7 +80,7 @@ class onlineAnomalyDetection(Thread):
 
         self.soundHandle = SoundClient()
 
-        self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times = onlineHMM.setupMultiHMM()
+        self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM()
         self.times = np.array(self.times)
         self.anomalyOccured = False
 
@@ -110,8 +110,8 @@ class onlineAnomalyDetection(Thread):
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
-                        for modality in [self.forces, self.distances, self.angles, self.pdfs]:
-                            for index, (modal, times) in enumerate(zip(modality, self.times)):
+                        for modality in [[self.forces] + self.forcesList, [self.distances] + self.distancesList, [self.angles] + self.anglesList, [self.pdfs] + self.pdfList]:
+                            for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList)):
                                 plt.plot(times, modal, label='%d' % index)
                             plt.legend()
                             plt.show()
