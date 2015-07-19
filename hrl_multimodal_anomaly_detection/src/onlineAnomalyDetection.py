@@ -21,6 +21,8 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class onlineAnomalyDetection(Thread):
@@ -80,7 +82,10 @@ class onlineAnomalyDetection(Thread):
         self.angles = []
         self.pdfs = []
 
+        self.soundHandle = SoundClient()
+
         self.hmm, self.minVals, self.maxVals = onlineHMM.setupMultiHMM()
+        self.anomalyOccured = False
 
         self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
         print 'Connected to Kinect depth'
@@ -101,10 +106,12 @@ class onlineAnomalyDetection(Thread):
             if self.updateNumber > self.lastUpdateNumber:
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
-                # TODO Check for anomalies
-                (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
-                if anomaly > 0:
-                    print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time
+                if not self.anomalyOccured:
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
+                    if anomaly > 0:
+                        self.anomalyOccured = True
+                        self.soundHandle.play(2)
+                        print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time
             rate.sleep()
 
     def cancel(self):
