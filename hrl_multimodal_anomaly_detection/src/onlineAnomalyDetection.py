@@ -111,7 +111,7 @@ class onlineAnomalyDetection(Thread):
                     if anomaly > 0:
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
-                        print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time
+                        print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
             rate.sleep()
 
     def cancel(self):
