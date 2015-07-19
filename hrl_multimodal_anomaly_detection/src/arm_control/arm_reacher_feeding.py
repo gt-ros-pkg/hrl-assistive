@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import time
 import rospy
 import numpy as np
@@ -42,6 +43,7 @@ class armReachAction(mpcBaseAction):
 
         self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
+        self.transformer = tf.TransformListener()
         rospy.Subscriber('InterruptAction', String, self.interrupt)
         self.interrupted = False
 
@@ -126,8 +128,8 @@ class armReachAction(mpcBaseAction):
 
         #Paused used between each motion
         #... for automatic movement
-        self.pausesScooping = [6, 3, 3, 2, 2]
-        self.pausesFeeding = [3, 3, 3]
+        self.pausesScooping = [0, 0, 0, 0, 0]
+        self.pausesFeeding = [0, 1, 1]
 
         print "Calculated quaternions: \n"
         print "leftArmScoopingQuats -"
@@ -170,10 +172,17 @@ class armReachAction(mpcBaseAction):
     def interrupt(self, data):
         print '\n\nAction Interrupted! Event Stop\n\n'
         self.interrupted = True
+        self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
+        try :
+            gripperPos, gripperRot = self.transformer.lookupTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0))
+        except tf.ExtrapolationException:
+            print 'Transpose of gripper failed!'
+            return
+        self.setOrientGoal(gripperPos, gripperRot, '0.05')
+        sys.exit()
 
     def serverCallback(self, req):
         req = req.data
-        self.interrupted = False
 
         if req == "leftArmInitScooping":
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
@@ -381,19 +390,12 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[i][2],
                 self.leftArmScoopingQuats[i][3])
 
-            self.setOrientGoal(self.posL, self.quatL, 0.01) # self.timeoutsScooping[i]
+            self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
             scoopingTimes = self.scoopingStepsClient()
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
-            sleepCounter = 0.0
-            while sleepCounter < self.pausesScooping[i] and not self.interrupted:
-                time.sleep(0.1)
-                sleepCounter += 0.1
-            if self.interrupted:
-                print 'Scooping action completed!!'
-                return True
 
-        print "Scooping action completed Gerr"
+        print "Scooping action completed"
 
         return True
 
@@ -416,15 +418,8 @@ class armReachAction(mpcBaseAction):
                 self.leftArmFeedingQuats[i][2],
                 self.leftArmFeedingQuats[i][3])
 
-            self.setOrientGoal(self.posL, self.quatL, 0.01) # self.timeoutsFeeding[i]
+            self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
-            feedingCounter = 0.0
-            while feedingCounter < self.pausesFeeding[i] and not self.interrupted:
-                time.sleep(0.1)
-                feedingCounter += 0.1
-            if self.interrupted:
-                print 'Feeding action completed!!'
-                return True
 
         print "Feeding action completed Gerr"
 
