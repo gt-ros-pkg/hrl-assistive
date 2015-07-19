@@ -11,8 +11,8 @@ import onlineHMMLauncher as onlineHMM
 try :
     import sensor_msgs.point_cloud2 as pc2
 except:
-    import point_cloud2 as pc2
-from sensor_msgs.msg import PointCloud2, Image, CameraInfo
+    import vision.point_cloud2 as pc2
+from sensor_msgs.msg import PointCloud2, CameraInfo
 from geometry_msgs.msg import PoseStamped, WrenchStamped
 from roslib import message
 
