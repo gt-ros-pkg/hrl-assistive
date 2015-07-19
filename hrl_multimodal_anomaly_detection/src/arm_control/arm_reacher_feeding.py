@@ -185,6 +185,7 @@ class armReachAction(mpcBaseAction):
 
     def serverCallback(self, req):
         req = req.data
+        self.interrupted = False
 
         if req == "leftArmInitScooping":
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
