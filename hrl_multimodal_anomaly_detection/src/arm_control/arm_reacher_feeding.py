@@ -386,11 +386,9 @@ class armReachAction(mpcBaseAction):
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             sleepCounter = 0.0
-            if sleepCounter < self.pausesScooping[i] and not self.interrupted:
+            while sleepCounter < self.pausesScooping[i] and not self.interrupted:
                 time.sleep(0.1)
                 sleepCounter += 0.1
-                print sleepCounter
-            print 'Final sleep', sleepCounter
             if self.interrupted:
                 print 'Scooping action completed!!'
                 return True
@@ -421,7 +419,7 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, 0.01) # self.timeoutsFeeding[i]
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
             feedingCounter = 0.0
-            if feedingCounter < self.pausesFeeding[i] and not self.interrupted:
+            while feedingCounter < self.pausesFeeding[i] and not self.interrupted:
                 time.sleep(0.1)
                 feedingCounter += 0.1
             if self.interrupted:
