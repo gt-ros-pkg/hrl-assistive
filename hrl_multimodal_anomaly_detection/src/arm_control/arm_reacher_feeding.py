@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+# import time
+import rospy
+import numpy as np
+from threading import Thread, Event
+
 import roslib
 # roslib.load_manifest('sandbox_dpark_darpa_m3')
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
-import rospy
-import numpy as np
-import time
 import tf
 
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
@@ -17,6 +19,15 @@ from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeou
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
 
+class interrupter(Thread):
+    def __init__(self, event):
+        super(interrupter, self).__init__()
+        self.daemon = True
+        self.event = event
+        rospy.Subscriber('InterruptAction', String, self.interrupt)
+
+    def interrupt(self, data):
+        self.event.set()
 
 class armReachAction(mpcBaseAction):
 
@@ -41,6 +52,9 @@ class armReachAction(mpcBaseAction):
         self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
 
         self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
+
+        self.event = Event()
+        self.interrupter = interrupter(self.event)
 
         rArmServersRunning = False
 
@@ -377,7 +391,10 @@ class armReachAction(mpcBaseAction):
             scoopingTimes = self.scoopingStepsClient()
             print scoopingTimes
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
-            time.sleep(self.pausesScooping[i])
+            val = self.event.wait(self.pausesScooping[i])
+            if not val:
+                return True
+            # time.sleep(self.pausesScooping[i])
 
         print "Scooping action completed"
 
@@ -387,64 +404,29 @@ class armReachAction(mpcBaseAction):
 
         #self.chooseHeadPose()
 
-        # runFeeding = True
-        # while runFeeding:
-            # print "Initializing left arm for feeding... "
-            # self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+        feedingPrints = ['##1 Moving in front of mouth...',
+                          '#2 Moving into mouth...',
+                          '#3 Moving away from mouth...']
 
-            # print "Current joint angles: "
-            # print self.getJointAngles()
-            # print "Current end effector pose: "
-            # print self.getEndeffectorPose()
+        for i in xrange(len(self.pausesScooping)):
+            print 'Feeding step #%d ' % i
+            print feedingPrints[i]
+            self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[i][0],
+                self.head_pos[1] + self.leftArmFeedingPos[i][1],
+                self.head_pos[2] + self.leftArmFeedingPos[i][2])
+            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[i][0],
+                self.leftArmFeedingQuats[i][1],
+                self.leftArmFeedingQuats[i][2],
+                self.leftArmFeedingQuats[i][3])
 
-            # raw_input("Press anything to continue... ")
-
-        print "#1 Moving in front of mouth... "
-        self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[0][0],
-            self.head_pos[1] + self.leftArmFeedingPos[0][1],
-            self.head_pos[2] + self.leftArmFeedingPos[0][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
-            self.leftArmFeedingQuats[0][1],
-            self.leftArmFeedingQuats[0][2],
-            self.leftArmFeedingQuats[0][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[0])
-        print "Pausing for {} seconds ".format(self.pausesFeeding[0])
-        time.sleep(self.pausesFeeding[0])
-
-        print "#2 Moving into mouth... "
-        self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[1][0],
-            self.head_pos[1] + self.leftArmFeedingPos[1][1],
-            self.head_pos[2] + self.leftArmFeedingPos[1][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[1][0],
-            self.leftArmFeedingQuats[1][1],
-            self.leftArmFeedingQuats[1][2],
-            self.leftArmFeedingQuats[1][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[1])
-        print "Pausing for {} seconds ".format(self.pausesFeeding[1])
-        time.sleep(self.pausesFeeding[1])
-
-        print "#3 Moving away from mouth... "
-        self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[2][0],
-            self.head_pos[1] + self.leftArmFeedingPos[2][1],
-            self.head_pos[2] + self.leftArmFeedingPos[2][2])
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[2][0],
-            self.leftArmFeedingQuats[2][1],
-            self.leftArmFeedingQuats[2][2],
-            self.leftArmFeedingQuats[2][3])
-        self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[2])
-        print "Pausing for {} seconds ".format(self.pausesFeeding[2])
-        time.sleep(self.pausesFeeding[2])       
+            self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
+            print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
+            val = self.event.wait(self.pausesFeeding[i])
+            if not val:
+                return True
+            # time.sleep(self.pausesFeeding[i])
 
         print "Feeding action completed"
-
-            # runFeedingAns = raw_input("Run feeding again? [y/n] ")
-            # while runFeedingAns != 'y' and runFeedingAns != 'n':
-            #     print "Please enter 'y' or 'n' ! "
-            #     runFeedingAns = raw_input("Run feeding again? [y/n] ")
-            # if runFeedingAns == 'y':
-            #     runFeeding = True
-            # elif runFeedingAns == 'n':
-            #     runFeeding = False
 
         return True
 

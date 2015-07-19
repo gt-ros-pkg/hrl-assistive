@@ -15,6 +15,7 @@ except:
     import vision.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2, CameraInfo
 from geometry_msgs.msg import PoseStamped, WrenchStamped
+from std_msgs.msg import String
 from roslib import message
 
 import roslib
@@ -33,6 +34,7 @@ class onlineAnomalyDetection(Thread):
         self.cancelled = False
 
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
+        self.interruptPublisher = rospy.Publisher('InterruptAction', String)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.targetFrame = targetFrame
@@ -107,6 +109,7 @@ class onlineAnomalyDetection(Thread):
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
                     print 'Anomaly error:', error
                     if anomaly > 0:
+                        self.interruptPublisher.publish('Interrupt')
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
