@@ -14,8 +14,9 @@ try :
 except:
     import vision.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2, CameraInfo
-from geometry_msgs.msg import PoseStamped, WrenchStamped
+from geometry_msgs.msg import PoseStamped, WrenchStamped, Point
 from std_msgs.msg import String
+from visualization_msgs.msg import Marker
 from roslib import message
 
 import roslib
@@ -33,6 +34,7 @@ class onlineAnomalyDetection(Thread):
         self.daemon = True
         self.cancelled = False
 
+        self.publisher = rospy.Publisher('visualization_marker', Marker)
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         self.interruptPublisher = rospy.Publisher('InterruptAction', String)
         self.cloudTime = time.time()
@@ -127,6 +129,8 @@ class onlineAnomalyDetection(Thread):
         self.cameraSub.unregister()
         self.bowlSub.unregister()
         self.forceSub.unregister()
+        self.publisher.unregister()
+        self.publisher2D.unregister()
         rospy.sleep(1.0)
 
     @staticmethod
@@ -214,6 +218,13 @@ class onlineAnomalyDetection(Thread):
             #     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
             #     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
 
+        self.publishPoints('points', points, g=1.0)
+        self.publishPoints('nonpoints', pointSet[nearbyPoints == False], r=1.0)
+
+        self.publishPoints('bowl', [self.bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
+        self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
+        self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
+
         if index >= len(self.forces):
             self.forces.append(force)
             self.distances.append(distance)
@@ -249,7 +260,7 @@ class onlineAnomalyDetection(Thread):
 
         self.points3D = np.array([point for point in points3D])
 
-        self.publishImageFeatures()
+        # self.publishImageFeatures()
 
         # self.updateNumber += 1
         # print 'Cloud computation time:', time.time() - startTime
@@ -352,5 +363,24 @@ class onlineAnomalyDetection(Thread):
         imageFeatures.rectangles.append(rect)
 
         self.publisher2D.publish(imageFeatures)
+
+    def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
+        marker = Marker()
+        marker.header.frame_id = '/torso_lift_link'
+        marker.ns = name
+        marker.type = marker.POINTS
+        marker.action = marker.ADD
+        marker.scale.x = size
+        marker.scale.y = size
+        marker.color.a = a
+        marker.color.r = r
+        marker.color.g = g
+        marker.color.b = b
+        for point in points:
+            p = Point()
+            # print point
+            p.x, p.y, p.z = point
+            marker.points.append(p)
+        self.publisher.publish(marker)
 
 
