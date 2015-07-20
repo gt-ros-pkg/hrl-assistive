@@ -7,6 +7,7 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from mvpa2.datasets.base import Dataset
+from plotGenerator import plotGenerator
 from learning_hmm_multi_1d import learning_hmm_multi_1d
 from learning_hmm_multi_4d import learning_hmm_multi_4d
 
@@ -93,22 +94,23 @@ def visualFeatures(fileName, forceTimes):
                     pdf.append(0)
                     continue
 
-            left = bowlPosition + [0, 0.06, 0]
-            right = bowlPosition - [0, 0.06, 0]
-            above = bowlPosition + [0.06, 0, 0]
-            below = bowlPosition - [0.06, 0, 0]
+            # left = bowlPosition + [0, 0.06, 0]
+            # right = bowlPosition - [0, 0.06, 0]
+            # above = bowlPosition + [0.06, 0, 0]
+            # below = bowlPosition - [0.06, 0, 0]
 
+            # print 'Number of points:', len(points)
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
             # pdfLeft = np.sum(np.exp(np.linalg.norm(points - left, axis=1) * -1.0))
             # pdfRight = np.sum(np.exp(np.linalg.norm(points - right, axis=1) * -1.0))
             # pdfAbove = np.sum(np.exp(np.linalg.norm(points - above, axis=1) * -1.0))
             # pdfBelow = np.sum(np.exp(np.linalg.norm(points - below, axis=1) * -1.0))
-            pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
-            pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
-            pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
-            pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
-            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0)) / float(len(points)))
-            pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
+            # pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
+            # pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
+            # pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
+            # pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
+            pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0))) / float(len(points))
+            # pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
             pdf.append(pdfValue)
 
             # Scale all points to prevent division by small numbers and singular matrices
@@ -255,7 +257,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataNew.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataNew2.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -290,10 +292,17 @@ def trainMultiHMM():
 
     print np.shape(forcesTrueList), np.shape(pdfTrueList), np.shape(timesList)
 
+    plots = plotGenerator(forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList)
+    plots.plotOneTrueSet()
+
+
     # Plot modalities
     # for modality in [forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList]:
+    # for modality in [forcesTrueList[0], distancesTrueList[0], anglesTrueList[0], pdfTrueList[0]]:
     for modality in [forcesTrueList + testForcesTrueList[17:], distancesTrueList + testDistancesTrueList[17:], anglesTrueList + testAnglesTrueList[17:], pdfTrueList + testPdfTrueList[17:]]:
-        for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[17:])):
+        for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[17:])): # timesList + testTimesList[17:]
             plt.plot(times, modal, label='%d' % index)
         plt.legend()
         plt.show()
