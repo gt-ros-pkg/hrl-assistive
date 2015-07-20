@@ -42,13 +42,14 @@ class ADL_log:
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
+        self.isScooping = True if task == 's' else False
 
         self.audio = rospy.ServiceProxy('/audio_server', String_String) if audio else None
         self.audioTrialName = rospy.ServiceProxy('/audio_server_trial_name', String_String) if audio else None
 
         self.ft = tool_ft('/netft_data') if ft else None
         #self.audio = tool_audio() if audio else None
-        self.vision = tool_vision(self.tf_listener) if vision else None
+        self.vision = tool_vision(self.tf_listener, self.isScooping) if vision else None
         self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
 
         # File saving
@@ -172,7 +173,7 @@ class ADL_log:
         if self.audio is not None:
             self.audio = tool_audio()
         if self.vision is not None:
-            self.vision = tool_vision(self.tf_listener)
+            self.vision = tool_vision(self.tf_listener, self.isScooping)
         if self.kinematics is not None:
             self.kinematics = robot_kinematics(self.tf_listener)
 
