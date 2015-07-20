@@ -206,9 +206,9 @@ class onlineAnomalyDetection(Thread):
             # pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
             # pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
             # pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
-            # print 'Pdf before scale', pdfValue
+            print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
-            # print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
+            print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
 
             # # Scale all points to prevent division by small numbers and singular matrices
             # newPoints = points * 20

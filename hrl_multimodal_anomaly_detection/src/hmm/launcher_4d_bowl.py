@@ -232,7 +232,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = scaling(forces, minVals[0], maxVals[0], scale)
             distances = scaling(distances, minVals[1], maxVals[1], scale)
             angles = scaling(angles, minVals[2], maxVals[2], scale)
+            # print 'Pdf before scale', pdf[0]
             pdf = scaling(pdf, minVals[3], maxVals[3], scale)
+            # print 'Pdf after scale', pdf[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
 
             # print 'Forces shape:', forces.shape
             # print 'Distances shape:', distances.shape
