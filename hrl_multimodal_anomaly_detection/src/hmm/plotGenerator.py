@@ -48,3 +48,46 @@ class plotGenerator:
 
         plt.show()
 
+    def distributionOfSequences(self):
+        fig = plt.figure()
+        ax1 = plt.subplot(411)
+        ax1.set_ylabel('Force Magnitude (N)')
+        ax1.set_xticks(np.arange(0, 25, 5))
+        ax1.set_yticks(np.arange(8, 12, 1.0))
+        # ax1.set_yticks(np.arange(np.min(self.forcesTrue), np.max(self.forcesTrue), 1.0))
+        ax1.grid()
+        ax2 = plt.subplot(412)
+        ax2.set_ylabel('Kinematic Distance (m)')
+        ax2.set_xticks(np.arange(0, 25, 5))
+        ax2.set_yticks(np.arange(0, 1.0, 0.2))
+        ax2.set_ylim([0, 0.9])
+        # ax2.set_yticks(np.arange(np.min(self.distancesTrue), np.max(self.distancesTrue), 0.2))
+        ax2.grid()
+        ax3 = plt.subplot(413)
+        ax3.set_ylabel('Kinematic Angle (rad)')
+        ax3.set_xticks(np.arange(0, 25, 5))
+        ax3.set_yticks(np.arange(0, 1.4, 0.4))
+        ax3.set_ylim([0, 1.2])
+        # ax3.set_yticks(np.arange(np.min(self.anglesTrue), np.max(self.anglesTrue), 0.2))
+        ax3.grid()
+        ax4 = plt.subplot(414)
+        ax4.set_ylabel('Visual Magnitude (m)')
+        ax4.set_xlabel('Time (sec)')
+        ax4.set_xticks(np.arange(0, 25, 5))
+        # ax4.set_yticks(np.arange(2, 4, 0.5))
+        # ax4.set_yticks(np.arange(np.min(np.array(self.pdfsTrue) * 100), np.max(np.array(self.pdfsTrue) * 100), 0.1))
+        ax4.grid()
+
+        print 'Force min/max:', np.min(self.forcesTrue), np.max(self.forcesTrue)
+        print 'Distance min/max:', np.min(self.distancesTrue), np.max(self.distancesTrue)
+        print 'Angle min/max:', np.min(self.anglesTrue), np.max(self.anglesTrue)
+        print 'PDF min/max:', np.min(np.array(self.pdfsTrue) * 100), np.max(np.array(self.pdfsTrue) * 100)
+
+        for force, distance, angle, pdf, time in zip(self.forcesTrue, self.distancesTrue, self.anglesTrue, np.array(self.pdfsTrue) * 100, self.times):
+            ax1.plot(time, force)
+            ax2.plot(time, distance)
+            ax3.plot(time, angle)
+            ax4.plot(time, pdf)
+
+        plt.show()
+

@@ -92,10 +92,10 @@ def visualFeatures(fileName, forceTimes):
                     continue
 
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            left = bowlPosition + [0, 0.06, 0]
-            right = bowlPosition - [0, 0.06, 0]
-            above = bowlPosition + [0.06, 0, 0]
-            below = bowlPosition - [0.06, 0, 0]
+            # left = bowlPosition + [0, 0.06, 0]
+            # right = bowlPosition - [0, 0.06, 0]
+            # above = bowlPosition + [0.06, 0, 0]
+            # below = bowlPosition - [0.06, 0, 0]
 
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
             # pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
@@ -197,6 +197,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 for modality in [forces, distances, angles, pdf]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
+                pdfDiff = maxVals[3] - minVals[3]
+                minVals[3] -= pdfDiff / 2.0
+                maxVals[3] += pdfDiff / 2.0
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
