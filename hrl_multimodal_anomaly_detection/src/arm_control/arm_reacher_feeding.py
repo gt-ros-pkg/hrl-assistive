@@ -6,7 +6,7 @@ import rospy
 import numpy as np
 
 import roslib
-# roslib.load_manifest('sandbox_dpark_darpa_m3')
+roslib.load_manifest('sandbox_dpark_darpa_m3')
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 
@@ -36,7 +36,7 @@ class armReachAction(mpcBaseAction):
         rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
                          PoseStamped, self.bowlPoseKinectCallback)
 
-        rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
+        #rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
 
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
