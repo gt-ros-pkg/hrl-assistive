@@ -184,11 +184,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 minVals = []
                 maxVals = []
                 for modality in [forces, distances, angles, pdf]:
-                    minVals.append(np.min(modality))
-                    maxVals.append(np.max(modality))
-                pdfDiff = maxVals[3] - minVals[3]
-                minVals[3] -= pdfDiff / 1.5
-                maxVals[3] += pdfDiff / 1.5
+                    diff = np.max(modality) - np.min(modality)
+                    minVals.append(np.min(modality) - diff / 1.5)
+                    maxVals.append(np.max(modality) + diff / 1.5)
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
