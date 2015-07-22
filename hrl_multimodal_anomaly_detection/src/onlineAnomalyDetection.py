@@ -193,42 +193,34 @@ class onlineAnomalyDetection(Thread):
 
         if len(points) > 0:
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0))) / float(len(points))
-            # left = self.bowlPosition + [0, 0.06, 0]
-            # right = self.bowlPosition - [0, 0.06, 0]
-            # above = self.bowlPosition + [0.06, 0, 0]
-            # below = self.bowlPosition - [0.06, 0, 0]
+            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0))) / float(len(points))
+
+            # Scale all points to prevent division by small numbers and singular matrices
+            newPoints = points * 20
+            # Define a receptive field within the bowl
+            mu = self.bowlPosition * 20
+
+            # Trivariate Gaussian Distribution
+            n, m = newPoints.shape
+            sigma = np.zeros((m, m))
+            # Compute covariances
+            for h in xrange(m):
+                for j in xrange(m):
+                    sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - mu[h]).T, newPoints[:, j] - mu[j])
+            constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
+            sigmaInv = np.linalg.inv(sigma)
+            # Evaluate the Probability Density Function for each point
+            for point in newPoints:
+                pointMu = point - mu
+                # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
+                pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+
+            pdfValue = pdfValue / float(len(points))
 
             # print 'Number of points:', len(points)
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            # pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
-            # pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
-            # pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
-            # pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
-            # pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
             print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
             print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
-
-            # # Scale all points to prevent division by small numbers and singular matrices
-            # newPoints = points * 20
-            # # Define a receptive field within the bowl
-            # mu = self.bowlPosition * 20
-            #
-            # # Trivariate Gaussian Distribution
-            # n, m = newPoints.shape
-            # sigma = np.zeros((m, m))
-            # # Compute covariances
-            # for h in xrange(m):
-            #     for j in xrange(m):
-            #         sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - mu[h]).T, newPoints[:, j] - mu[j])
-            # constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-            # sigmaInv = np.linalg.inv(sigma)
-            # # Evaluate the Probability Density Function for each point
-            # for point in newPoints:
-            #     pointMu = point - mu
-            #     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-            #     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
 
         self.publishPoints('points', points, g=1.0)
         self.publishPoints('nonpoints', pointSet[nearbyPoints == False], r=1.0)
