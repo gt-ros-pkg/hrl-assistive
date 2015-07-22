@@ -115,11 +115,11 @@ class onlineAnomalyDetection(Thread):
                         self.anomalyOccured = True
                         # self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
-                        # for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
-                        #     for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
-                        #         plt.plot(times, modal, label='%d' % index)
-                        #     plt.legend()
-                        #     plt.show()
+                        for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
+                            for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
+                                plt.plot(times, modal, label='%d' % index)
+                            plt.legend()
+                            plt.show()
             rate.sleep()
 
     def cancel(self):
@@ -235,11 +235,11 @@ class onlineAnomalyDetection(Thread):
             self.angles.append(angle)
             self.pdfs.append(pdfValue)
         else:
-            # print 'Current force:', self.forces[index], 'New force:', force
+            print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
-            # print 'Current distance:', self.distances[index], 'New distance:', distance
+            print 'Current distance:', self.distances[index], 'New distance:', distance
             self.distances[index] = distance
-            # print 'Current angle:', self.angles[index], 'New angle:', angle
+            print 'Current angle:', self.angles[index], 'New angle:', angle
             self.angles[index] = angle
             print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
             self.pdfs[index] = pdfValue

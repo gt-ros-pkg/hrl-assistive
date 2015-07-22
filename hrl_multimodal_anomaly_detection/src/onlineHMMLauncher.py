@@ -187,8 +187,8 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
                 pdfDiff = maxVals[3] - minVals[3]
-                minVals[3] -= pdfDiff / 2.0
-                maxVals[3] += pdfDiff / 2.0
+                minVals[3] -= pdfDiff / 1.5
+                maxVals[3] += pdfDiff / 1.5
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
