@@ -202,7 +202,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = scaling(forces, minVals[0], maxVals[0], scale)
             distances = scaling(distances, minVals[1], maxVals[1], scale)
             angles = scaling(angles, minVals[2], maxVals[2], scale)
+            print 'Pdf before scale', pdf[0]
             pdf = scaling(pdf, minVals[3], maxVals[3], scale)
+            print 'Pdf after scale', pdf[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
 
             # print 'Forces shape:', forces.shape
             # print 'Distances shape:', distances.shape
@@ -223,7 +225,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
 
 def setupMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataNew.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataNewGauss.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -254,7 +256,7 @@ def setupMultiHMM():
     pdfSample = trainDataSet.samples[:, 3, :]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_new.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_newGauss.pkl', use_pkl=True)
 
     print 'minValues', minVals
     print 'maxValues', maxVals
