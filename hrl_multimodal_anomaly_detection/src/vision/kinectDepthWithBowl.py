@@ -22,13 +22,14 @@ from cv_bridge import CvBridge, CvBridgeError
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class kinectDepthWithBowl:
-    def __init__(self, targetFrame=None, visual=False, tfListener=None):
+    def __init__(self, targetFrame=None, visual=False, tfListener=None, isScooping=True):
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         self.cloudTime = time.time()
         self.pointCloud = None
         self.visual = visual
         self.targetFrame = targetFrame
         self.updateNumber = 0
+        self.isScooping = isScooping
 
         self.points3D = None
 
@@ -46,7 +47,7 @@ class kinectDepthWithBowl:
         self.cameraHeight = None
         self.pinholeCamera = None
 
-        self.bowlPosition = None
+        self.bowlHeadPosition = None
         self.bowlPositionKinect = None
         self.bowlToKinectMat = None
         self.bowlX = None
@@ -72,13 +73,16 @@ class kinectDepthWithBowl:
         # print 'Connected to Kinect image'
         self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         print 'Connected to Kinect camera info'
-        rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseManualCallback)
+        if self.isScooping:
+            self.bowlHeadSub = rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlHeadPoseManualCallback)
+        else:
+            self.bowlHeadSub = rospy.Subscriber('hrl_feeding_task/manual_head_location', PoseStamped, self.bowlHeadPoseManualCallback)
 
     def getAllRecentPoints(self):
         # print 'Time between read calls:', time.time() - self.cloudTime
         # startTime = time.time()
 
-        if self.bowlPosition is None:
+        if self.bowlHeadPosition is None:
             return None
 
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
@@ -90,12 +94,13 @@ class kinectDepthWithBowl:
 
         # print 'Read computation time:', time.time() - startTime
         # self.cloudTime = time.time()
-        return self.points3D, self.micLocation, self.spoon, self.bowlPosition, self.bowlPositionKinect, [self.bowlX, self.bowlY], self.bowlToKinectMat, [self.targetTrans, self.targetRot]
+        return self.points3D, self.micLocation, self.spoon, self.bowlHeadPosition, self.bowlPositionKinect, [self.bowlX, self.bowlY], self.bowlToKinectMat, [self.targetTrans, self.targetRot]
 
 
     def cancel(self):
         self.cloudSub.unregister()
         self.cameraSub.unregister()
+        self.bowlHeadSub.unregister()
         # self.imageSub.unregister()
 
     def cloudCallback(self, data):
@@ -128,8 +133,8 @@ class kinectDepthWithBowl:
         # print 'Cloud computation time:', time.time() - startTime
         # self.cloudTime = time.time()
 
-    def bowlPoseManualCallback(self, data):
-        self.bowlPosition = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+    def bowlHeadPoseManualCallback(self, data):
+        self.bowlHeadPosition = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
 
     def transposeBowlToCamera(self):
         self.transformer.waitForTransform(self.rgbCameraFrame, '/torso_lift_link', rospy.Time(0), rospy.Duration(5))
@@ -139,7 +144,7 @@ class kinectDepthWithBowl:
         except tf.ExtrapolationException:
             print 'Transpose of bowl failed!'
             return
-        pos = self.bowlPosition
+        pos = self.bowlHeadPosition
         self.bowlPositionKinect = np.dot(self.bowlToKinectMat, np.array([pos[0], pos[1], pos[2], 1.0]))[:3]
         self.bowlX, self.bowlY = self.pinholeCamera.project3dToPixel(self.bowlPositionKinect)
 
@@ -171,7 +176,10 @@ class kinectDepthWithBowl:
 
     # Returns coordinates (lowX, highX, lowY, highY)
     def boundingBox(self):
-        size = 150
+        if self.isScooping:
+            size = 150
+        else:
+            size = 200
         left = self.bowlX - size/2
         right = left + size
         top = self.bowlY - size/2

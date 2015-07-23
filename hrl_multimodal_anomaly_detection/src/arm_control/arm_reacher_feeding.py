@@ -6,7 +6,7 @@ import rospy
 import numpy as np
 
 import roslib
-# roslib.load_manifest('sandbox_dpark_darpa_m3')
+roslib.load_manifest('sandbox_dpark_darpa_m3')
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 
@@ -36,7 +36,7 @@ class armReachAction(mpcBaseAction):
         rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
                          PoseStamped, self.bowlPoseKinectCallback)
 
-        rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
+        #rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
 
         # service request
         self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
@@ -66,7 +66,7 @@ class armReachAction(mpcBaseAction):
 
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, 0, -1.45, 0]
+        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, -1.45, 0]
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
@@ -89,7 +89,7 @@ class armReachAction(mpcBaseAction):
                                             [0,		0,    .15]]) #Moving up out of bowl
 
         self.leftArmFeedingPos = np.array([[0,    .2,   0],
-                                           [0,   .01,   0],
+                                           [0,   -.015,   .02],
                                            [0,    .2,   0]])
 
         self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
@@ -98,9 +98,9 @@ class armReachAction(mpcBaseAction):
                                                [90,	  0,	-30], #Rotating spoon to scoop out of bowl
                                                [90,	  0,    -30]]) #Moving up out of bowl
 
-        self.leftArmFeedingEulers = np.array([[90, 0, -90],
-                                              [90, 0, -90],
-                                              [90, 0, -90]])
+        self.leftArmFeedingEulers = np.array([[90, 0, -75],
+                                              [90, 0, -75],
+                                              [90, 0, -75]])
 
         self.leftArmStopPos = np.array([[.7, .7, .5]])
         self.leftArmStopEulers = np.array([[90, 0, 0]])
@@ -129,7 +129,7 @@ class armReachAction(mpcBaseAction):
         #Paused used between each motion
         #... for automatic movement
         self.pausesScooping = [0, 0, 0, 0, 0]
-        self.pausesFeeding = [0, 1, 1]
+        self.pausesFeeding = [2, 3, 2]
 
         print "Calculated quaternions: \n"
         print "leftArmScoopingQuats -"
@@ -192,7 +192,13 @@ class armReachAction(mpcBaseAction):
             return "Initialized left arm for scooping!"
 
         elif req == "leftArmInitFeeding":
-            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 20)
+	    self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
+	    self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
+		self.leftArmFeedingQuats[0][1],
+		self.leftArmFeedingQuats[0][2],
+		self.leftArmFeedingQuats[0][3])
+	    self.setOrientGoal(self.posL, self.quatL, 15)
             return "Initialized left arm for feeding!"
 
         elif req == "rightArmInitScooping":
@@ -408,12 +414,12 @@ class armReachAction(mpcBaseAction):
 
         #self.chooseHeadPose()
 
-        feedingPrints = ['##1 Moving in front of mouth...',
+        feedingPrints = ['#1 Moving in front of mouth...',
                           '#2 Moving into mouth...',
                           '#3 Moving away from mouth...']
 
         for i in xrange(len(self.pausesFeeding)):
-            print 'Feeding step #%d ' % i
+	    print 'Feeding step #%d ' % i
             print feedingPrints[i]
             self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[i][0],
                 self.head_pos[1] + self.leftArmFeedingPos[i][1],
@@ -425,10 +431,11 @@ class armReachAction(mpcBaseAction):
 
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
-            if self.interrupted:
+            time.sleep(self.pausesFeeding[i])
+	    if self.interrupted:
                 break
 
-        print "Feeding action completed Gerr"
+        print "Feeding action completed"
 
         return True
 

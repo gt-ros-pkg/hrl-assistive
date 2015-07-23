@@ -92,49 +92,38 @@ def visualFeatures(fileName, forceTimes):
                     continue
 
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            left = bowlPosition + [0, 0.06, 0]
-            right = bowlPosition - [0, 0.06, 0]
-            above = bowlPosition + [0.06, 0, 0]
-            below = bowlPosition - [0.06, 0, 0]
+            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0))) / float(len(points))
+            # pdf.append(pdfValue)
 
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
-            pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
-            pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
-            pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
-            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0)) / float(len(points)))
-            pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
-            pdf.append(pdfValue)
+            # Scale all points to prevent division by small numbers and singular matrices
+            newPoints = points * 20
+            newBowlPosition = bowlPosition * 20
 
-            # # Scale all points to prevent division by small numbers and singular matrices
-            # newPoints = points * 20
-            # newBowlPosition = bowlPosition * 20
-            #
-            # # Define a receptive field within the bowl
-            # mu = [newBowlPosition]
-            #
-            # # Trivariate Gaussian Distribution
-            # pdfList = []
-            # for muSet in mu:
-            #     n, m = newPoints.shape
-            #     sigma = np.zeros((m, m))
-            #     # Compute covariances
-            #     for h in xrange(m):
-            #         for j in xrange(m):
-            #             sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
-            #             # Examples:
-            #             # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
-            #             # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
-            #     constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-            #     sigmaInv = np.linalg.inv(sigma)
-            #     pdfValue = 0
-            #     # Evaluate the Probability Density Function for each point
-            #     for point in newPoints:
-            #         pointMu = point - muSet
-            #         # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-            #         pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-            #     pdfList.append(pdfValue)
-            # pdf.append(pdfList[0])
+            # Define a receptive field within the bowl
+            mu = [newBowlPosition]
+
+            # Trivariate Gaussian Distribution
+            pdfList = []
+            for muSet in mu:
+                n, m = newPoints.shape
+                sigma = np.zeros((m, m))
+                # Compute covariances
+                for h in xrange(m):
+                    for j in xrange(m):
+                        sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
+                        # Examples:
+                        # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
+                        # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
+                constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
+                sigmaInv = np.linalg.inv(sigma)
+                pdfValue = 0
+                # Evaluate the Probability Density Function for each point
+                for point in newPoints:
+                    pointMu = point - muSet
+                    # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
+                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+                pdfList.append(pdfValue / float(len(points)))
+            pdf.append(pdfList[0])
 
         # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
         tempPdf = []
@@ -195,8 +184,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 minVals = []
                 maxVals = []
                 for modality in [forces, distances, angles, pdf]:
-                    minVals.append(np.min(modality))
-                    maxVals.append(np.max(modality))
+                    diff = np.max(modality) - np.min(modality)
+                    minVals.append(np.min(modality) - diff / 2.0)
+                    maxVals.append(np.max(modality) + diff / 2.0)
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
@@ -210,7 +200,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = scaling(forces, minVals[0], maxVals[0], scale)
             distances = scaling(distances, minVals[1], maxVals[1], scale)
             angles = scaling(angles, minVals[2], maxVals[2], scale)
+            print 'Pdf before scale', pdf[0]
             pdf = scaling(pdf, minVals[3], maxVals[3], scale)
+            print 'Pdf after scale', pdf[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
 
             # print 'Forces shape:', forces.shape
             # print 'Distances shape:', distances.shape
@@ -231,7 +223,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
 
 def setupMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataNew.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataNewGauss.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -262,7 +254,7 @@ def setupMultiHMM():
     pdfSample = trainDataSet.samples[:, 3, :]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_new.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_newGauss.pkl', use_pkl=True)
 
     print 'minValues', minVals
     print 'maxValues', maxVals

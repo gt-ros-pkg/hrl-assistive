@@ -545,7 +545,7 @@ class learning_hmm_multi_4d:
         y_min = np.amin(y1)
         y_max = np.amax(y1)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max+2.0,
+                                                                 ymin=0, ymax=y_max+1.5,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
@@ -559,14 +559,14 @@ class learning_hmm_multi_4d:
                     ax1.text((text_x[i]-1.0)*(1./43.), y_max+1.0, str(block_state[i]+1))
             else:
                 if i<10:
-                    ax1.text((text_x[i])*(1./43.), y_max, str(block_state[i]+1))
+                    ax1.text((text_x[i])*(1./43.), y_max+0.5, str(block_state[i]+1))
                 else:
-                    ax1.text((text_x[i]-1.0)*(1./43.), y_max, str(block_state[i]+1))
+                    ax1.text((text_x[i]-1.0)*(1./43.), y_max+0.5, str(block_state[i]+1))
 
         ax1.set_ylabel("Force (N)", fontsize=18)
         ax1.set_xlim([0, x[-1]*(1./43.)])
         ## ax1.set_ylim([0, np.amax(y1)*1.1])
-        ax1.set_ylim([y_min - 1, y_max + 2.0])
+        ax1.set_ylim([y_min - 0.5, y_max + 1.5])
 
         # -----
 
@@ -574,14 +574,14 @@ class learning_hmm_multi_4d:
         ax2.plot(x*(1./43.), y2)
         y_max = np.amax(y2)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max,
+                                                                 ymin=0, ymax=y_max + 0.1,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
         ax2.set_ylabel("Distance (m)", fontsize=18)
         ax2.set_xlim([0, x[-1]*(1./43.)])
-        ax2.set_ylim([0, y_max])
+        ax2.set_ylim([0, y_max + 0.1])
 
         # -----
 
@@ -589,29 +589,30 @@ class learning_hmm_multi_4d:
         ax4.plot(x*(1./43.), y3)
         y_max = np.amax(y3)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max,
+                                                                 ymin=0, ymax=y_max + 0.1,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax4.add_collection(collection)
         ax4.set_ylabel("Angle (rad)", fontsize=18)
         ax4.set_xlim([0, x[-1]*(1./43.)])
-        ax4.set_ylim([0, y_max])
+        ax4.set_ylim([0, y_max + 0.1])
 
         # -----
 
         ax5 = plt.subplot(514)
         ax5.plot(x*(1./43.), y4)
+        y_min = np.amin(y4)
         y_max = np.amax(y4)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max,
+                                                                 ymin=0, ymax=y_max + y_min/4.0,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax5.add_collection(collection)
         ax5.set_ylabel("Receptive Field 2", fontsize=18)
         ax5.set_xlim([0, x[-1]*(1./43.)])
-        ax5.set_ylim([0, y_max])
+        ax5.set_ylim([y_min - y_min/4.0, y_max + y_min/4.0])
 
         # -----
 

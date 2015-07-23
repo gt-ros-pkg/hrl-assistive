@@ -7,6 +7,7 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from mvpa2.datasets.base import Dataset
+from plotGenerator import plotGenerator
 from learning_hmm_multi_1d import learning_hmm_multi_1d
 from learning_hmm_multi_4d import learning_hmm_multi_4d
 
@@ -93,53 +94,54 @@ def visualFeatures(fileName, forceTimes):
                     pdf.append(0)
                     continue
 
-            left = bowlPosition + [0, 0.06, 0]
-            right = bowlPosition - [0, 0.06, 0]
-            above = bowlPosition + [0.06, 0, 0]
-            below = bowlPosition - [0.06, 0, 0]
+            # left = bowlPosition + [0, 0.06, 0]
+            # right = bowlPosition - [0, 0.06, 0]
+            # above = bowlPosition + [0.06, 0, 0]
+            # below = bowlPosition - [0.06, 0, 0]
 
+            # print 'Number of points:', len(points)
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
             # pdfLeft = np.sum(np.exp(np.linalg.norm(points - left, axis=1) * -1.0))
             # pdfRight = np.sum(np.exp(np.linalg.norm(points - right, axis=1) * -1.0))
             # pdfAbove = np.sum(np.exp(np.linalg.norm(points - above, axis=1) * -1.0))
             # pdfBelow = np.sum(np.exp(np.linalg.norm(points - below, axis=1) * -1.0))
-            pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
-            pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
-            pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
-            pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
-            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0)) / float(len(points)))
-            pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
-            pdf.append(pdfValue)
+            # pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
+            # pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
+            # pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
+            # pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
+            # pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
+            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0))) / float(len(points))
+            # pdf.append(pdfValue)
 
             # Scale all points to prevent division by small numbers and singular matrices
-            # newPoints = points * 20
-            # newBowlPosition = bowlPosition * 20
-            #
-            # # Define a receptive field within the bowl
-            # mu = [newBowlPosition]
-            #
-            # # Trivariate Gaussian Distribution
-            # pdfList = []
-            # for muSet in mu:
-            #     n, m = newPoints.shape
-            #     sigma = np.zeros((m, m))
-            #     # Compute covariances
-            #     for h in xrange(m):
-            #         for j in xrange(m):
-            #             sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
-            #             # Examples:
-            #             # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
-            #             # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
-            #     constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-            #     sigmaInv = np.linalg.inv(sigma)
-            #     pdfValue = 0
-            #     # Evaluate the Probability Density Function for each point
-            #     for point in newPoints:
-            #         pointMu = point - muSet
-            #         # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-            #         pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-            #     pdfList.append(pdfValue)
-            # pdf.append(pdfList[0])
+            newPoints = points * 20
+            newBowlPosition = bowlPosition * 20
+
+            # Define a receptive field within the bowl
+            mu = [newBowlPosition]
+
+            # Trivariate Gaussian Distribution
+            pdfList = []
+            for muSet in mu:
+                n, m = newPoints.shape
+                sigma = np.zeros((m, m))
+                # Compute covariances
+                for h in xrange(m):
+                    for j in xrange(m):
+                        sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
+                        # Examples:
+                        # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
+                        # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
+                constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
+                sigmaInv = np.linalg.inv(sigma)
+                pdfValue = 0
+                # Evaluate the Probability Density Function for each point
+                for point in newPoints:
+                    pointMu = point - muSet
+                    # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
+                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+                pdfList.append(pdfValue / float(len(points)))
+            pdf.append(pdfList[0])
 
         # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
         tempPdf = []
@@ -212,6 +214,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 for modality in [forces, distances, angles, pdf]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
+                pdfDiff = maxVals[3] - minVals[3]
+                minVals[3] -= pdfDiff / 2.0
+                maxVals[3] += pdfDiff / 2.0
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
@@ -230,7 +235,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = scaling(forces, minVals[0], maxVals[0], scale)
             distances = scaling(distances, minVals[1], maxVals[1], scale)
             angles = scaling(angles, minVals[2], maxVals[2], scale)
+            # print 'Pdf before scale', pdf[0]
             pdf = scaling(pdf, minVals[3], maxVals[3], scale)
+            # print 'Pdf after scale', pdf[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
 
             # print 'Forces shape:', forces.shape
             # print 'Distances shape:', distances.shape
@@ -255,7 +262,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataNew.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataNewGauss.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -290,10 +297,18 @@ def trainMultiHMM():
 
     print np.shape(forcesTrueList), np.shape(pdfTrueList), np.shape(timesList)
 
+    plots = plotGenerator(forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList)
+    plots.plotOneTrueSet()
+    plots.distributionOfSequences()
+
+
     # Plot modalities
     # for modality in [forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList]:
-    for modality in [forcesTrueList + testForcesTrueList[17:], distancesTrueList + testDistancesTrueList[17:], anglesTrueList + testAnglesTrueList[17:], pdfTrueList + testPdfTrueList[17:]]:
-        for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[17:])):
+    # for modality in [forcesTrueList[0], distancesTrueList[0], anglesTrueList[0], pdfTrueList[0]]:
+    for modality in [forcesTrueList + testForcesTrueList[0:2], distancesTrueList + testDistancesTrueList[0:2], anglesTrueList + testAnglesTrueList[0:2], pdfTrueList + testPdfTrueList[0:2]]:
+        for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[0:2])): # timesList + testTimesList[17:]
             plt.plot(times, modal, label='%d' % index)
         plt.legend()
         plt.show()
@@ -320,7 +335,7 @@ def trainMultiHMM():
     # print 'PDF Sample:', pdfSample[:, :5]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_new.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_newGauss.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
 
@@ -337,8 +352,8 @@ def trainMultiHMM():
         print hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testPdfList[i], -5)
 
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
-    hmm.likelihood_disp(forcesSample, distancesSample, anglesSample, pdfSample, forcesTrueSample, distancesTrueSample,
-                        anglesTrueSample, pdfTrueSample, -5.0, figureSaveName=None)
+    hmm.likelihood_disp(forcesSample[1:], distancesSample[1:], anglesSample[1:], pdfSample[1:], forcesTrueSample[1:], distancesTrueSample[1:],
+                        anglesTrueSample[1:], pdfTrueSample[1:], -5.0, figureSaveName=None)
 
     # Find the largest iteration
     maxsize = max([len(x) for x in testForcesList])
@@ -346,15 +361,15 @@ def trainMultiHMM():
     testForcesList, testDistancesList, testAnglesList, testPdfList, \
         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList = extrapolateAllData([testForcesList, testDistancesList, testAnglesList, testPdfList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList], maxsize)
     testDataSet = create_mvpa_dataset(testForcesList, testDistancesList, testAnglesList, testPdfList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTestSample = testDataSet.samples[15:, 0, :]
-    distancesTestSample = testDataSet.samples[15:, 1, :]
-    anglesTestSample = testDataSet.samples[15:, 2, :]
-    pdfTestSample = testDataSet.samples[15:, 3, :]
+    forcesTestSample = testDataSet.samples[13:, 0, :]
+    distancesTestSample = testDataSet.samples[13:, 1, :]
+    anglesTestSample = testDataSet.samples[13:, 2, :]
+    pdfTestSample = testDataSet.samples[13:, 3, :]
     testTrueDataSet = create_mvpa_dataset(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTrueTestSample = testTrueDataSet.samples[15:, 0, :]
-    distancesTrueTestSample = testTrueDataSet.samples[15:, 1, :]
-    anglesTrueTestSample = testTrueDataSet.samples[15:, 2, :]
-    pdfTrueTestSample = testTrueDataSet.samples[15:, 3, :]
+    forcesTrueTestSample = testTrueDataSet.samples[13:, 0, :]
+    distancesTrueTestSample = testTrueDataSet.samples[13:, 1, :]
+    anglesTrueTestSample = testTrueDataSet.samples[13:, 2, :]
+    pdfTrueTestSample = testTrueDataSet.samples[13:, 3, :]
 
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_anomaly.png')
     hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample, forcesTrueTestSample, distancesTrueTestSample,

@@ -28,7 +28,7 @@ import kinectLinearPath as linearPath
 
 
 class visionTracker:
-    def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, publish=False, visual=False, tfListener=None):
+    def __init__(self, useARTags=True, targetFrame='/camera_link', shouldSpin=False, publish=False, visual=False, tfListener=None, isScooping=True):
         self.publisher = rospy.Publisher('visualization_marker', Marker)
         self.lastPosition = None
         self.lastPosition2 = None
@@ -55,7 +55,7 @@ class visionTracker:
         # self.tracker = wideStereoRGB(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         # self.tracker = kinectDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
-        self.tracker = kinectDepthWithBowl(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
+        self.tracker = kinectDepthWithBowl(targetFrame=targetFrame, visual=visual, tfListener=tfListener, isScooping=isScooping)
         # self.tracker = pr2WideDepth(targetFrame=targetFrame, visual=visual, tfListener=tfListener)
 
         if shouldSpin:
