@@ -635,35 +635,30 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             if sim == True:
                 false_aXData1 = dd['ft_force_mag_sim_false_l']
                 false_aXData2 = dd['audio_rms_sim_false_l'] 
-                false_chunks  = dd['sim_false_chunks']
-                false_anomaly_start = dd['anomaly_start_idx']
-                false_peak    = dd.get('anomaly_peak',[])
-                false_width   = dd.get('anomaly_width',[])
-            
-                # generate simulated data!!
-                aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
-                aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
-                labels = [False]*len(false_aXData1)
-                false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
-                false_dataSet.sa['anomaly_idx']   = false_anomaly_start
-                false_dataSet.sa['anomaly_peak']  = false_peak
-                false_dataSet.sa['anomaly_width'] = false_width
+                false_chunks  = dd['sim_false_chunks']            
             else:
                 false_aXData1 = dd['ft_force_mag_false_l']
                 false_aXData2 = dd['audio_rms_false_l'] 
                 false_chunks  = dd['false_chunks']
-                false_anomaly_start = dd['anomaly_start_idx']                
 
-                ## print np.shape(false_aXData1), np.shape(false_aXData2)
+            ## print np.shape(false_aXData1), np.shape(false_aXData2)
                 ## print false_chunks
                 ## for k in xrange(len(false_aXData2)):
                 ##     print np.shape(false_aXData1[k]), np.shape(false_aXData2[k])
+                
+            false_anomaly_start = dd['anomaly_start_idx']                
+            false_peak    = dd.get('anomaly_peak',[])
+            false_width   = dd.get('anomaly_width',[])
 
-                aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
-                aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
-                labels = [False]*len(false_aXData1)
-                false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
-                false_dataSet.sa['anomaly_idx'] = false_anomaly_start
+            # generate simulated data!!
+            aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+            aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+            labels = [False]*len(false_aXData1)
+            false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
+            false_dataSet.sa['anomaly_idx']   = false_anomaly_start
+            false_dataSet.sa['anomaly_peak']  = false_peak
+            false_dataSet.sa['anomaly_width'] = false_width
+                
 
             for check_dim in check_dims:
             
@@ -756,31 +751,35 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                                             scale2=[min_c2, max_c2, scale])
 
                             
-                peak_l = []
-                width_l = []
+                tn_peak_l = []
+                tn_width_l = []
+                tn_chunk_l = []
                                             
                 if test:
                     tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, [], \
                                                                            false_dataSet, \
-                                                                           min_ths, \                                                                           
+                                                                           min_ths, \    
                                                                            check_dim=check_dim, \
-                                                                           peak_l=peak_l,
-                                                                           width_l=width_l)
+                                                                           peak_l=tn_peak_l, \
+                                                                           width_l=tn_width_l, \
+                                                                           chunk_l=tn_chunk_l)
                 elif onoff_type == 'online':
                     tp, fn, fp, tn, delay_l, false_detection_l = anomaly_check_online(lhm, [], \
                                                                                       false_dataSet, \
                                                                                       min_ths, \
-                                                                                      check_dim=check_dim,
-                                                                                      peak_l=peak_l,
-                                                                                      width_l=width_l)
+                                                                                      check_dim=check_dim, \
+                                                                                      peak_l=tn_peak_l, \
+                                                                                      width_l=tn_width_l, \
+                                                                                      chunk_l=tn_chunk_l)
                                                                                       
                 else:
                     tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, [], \
                                                                     false_dataSet, \
                                                                     min_ths, \
-                                                                    check_dim=check_dim,
-                                                                    peak_l=peak_l,
-                                                                    width_l=width_l)
+                                                                    check_dim=check_dim, \
+                                                                    peak_l=tn_peak_l, \
+                                                                    width_l=tn_width_l, \
+                                                                    chunk_l=tn_chunk_l)
 
 
                 d = {}
@@ -790,8 +789,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 d['fp']    = fp
                 d['ths']   = ths
                 d['delay_l'] = delay_l
-                d['peak_l']  = peak_l
-                d['width_l'] = width_l
+                d['peak_l']  = tn_peak_l
+                d['width_l'] = tn_width_l
+                d['chunk_l'] = tn_chunk_l
                 d['false_detection_l'] = false_detection_l
 
                 try:
@@ -820,6 +820,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             tn_l = np.zeros(nDataSet)
             fp_l = np.zeros(nDataSet)
             delay_l = []
+            peak_l = []
+            width_l = []
+            chunk_l = []
             fd_l = []
             fpr_l = np.zeros(nDataSet)
 
@@ -832,6 +835,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
                 tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
                 delay_l.append([d['delay_l']])
+                peak_l.append([d.get('peak_l',[])])
+                width_l.append([d.get('width_l',[])])
+                chunk_l.append([d.get('chunk_l',[])])                
                 fd_l.append([d['false_detection_l']])
                 ## print d['false_detection_l']
 
@@ -839,10 +845,8 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 if fp_l[i]+tn_l[i] != 0:
                     fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
-
             tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
             print method, tot_fpr 
-
             
         pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
         pp.ylim([0.0, 100])                   
@@ -1311,7 +1315,8 @@ def fig_roc_offline(cross_data_path, \
 
 
 
-def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2, peak_l=None, width_l=None):
+def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2, 
+                          peak_l=None, width_l=None, chunk_l=None):
 
     tp = 0.0
     fn = 0.0
@@ -1361,11 +1366,16 @@ def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2, pe
 
             if an == 1.0:   tn += 1.0
             elif an == 0.0: fp += 1.0
+
+            if peak_l is not None and width_l is not None:
+                print "Not implemented!!"
+                sys.exit()
                         
     return tp, fn, fp, tn, delay_l
 
 
-def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2, peak_l=None, width_l=None):
+def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2, 
+                         peak_l=None, width_l=None, chunk_l=None):
 
     tp = 0.0
     fn = 0.0
@@ -1434,6 +1444,8 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2, pea
                         if peak_l is not None and width_l is not None:
                             peak_l.append(false_dataSet.sa.anomaly_peak)
                             width_l.append(false_dataSet.sa.anomaly_width)
+                        if chunk_l is not None:
+                            chunk_l.append(false_dataSet.sa.chunks)
                         
                     elif an == 0.0:
                         fp += 1.0
