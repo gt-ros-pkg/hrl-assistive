@@ -309,8 +309,30 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
             ## if method == 'global': label = 'fixed threshold'
             ## if method == 'progress': label = 'progress based threshold'
-            label = method+"_"+str(check_dim)
+            ## label = method+"_"+str(check_dim)
 
+            if test_title.find('dim')>=0:
+                if check_dim == 0:
+                    label = 'Force only'
+                elif check_dim == 1:
+                    label = 'Sound only'
+                elif check_dim == 2:
+                    label = 'Force & sound'
+                else:
+                    label = method +"_"+str(check_dim)                
+            else:
+                if method == 'globalChange':
+                    label = 'Fixed threshold & \n change detection'
+                elif method == 'change':
+                    label = 'Change detection'
+                elif method == 'global':
+                    label = 'Fixed threshold \n detection'
+                elif method == 'progress':
+                    label = 'Dynamic threshold \n detection'
+                else:
+                    label = method +"_"+str(check_dim)
+            
+            
             if test:
                 pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
                 ##pp.plot(sorted_detect_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
@@ -331,8 +353,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
         if test == False:
-            ## pp.xlim([0.0, 40])
-            pp.ylim([0.0, 100])        
+            pp.xlim([-1, 101])
+            pp.ylim([-1, 101])        
             pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
             pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
 
@@ -341,7 +363,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        ## pp.show()
         
     return
 
@@ -559,7 +581,7 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
     fig.savefig('test.pdf')
     fig.savefig('test.png')
     os.system('cp test.p* ~/Dropbox/HRL/')
-    #pp.show()
+    pp.show()
  
        
 #---------------------------------------------------------------------------------------#        
@@ -937,7 +959,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
     ind = np.arange(nClass)*0.9
     width = 0.5
-    methods = ('Check \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
+    methods = ('Change \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
                'Dynamic threshold \n detection')
 
     print fdr_mu_class_l

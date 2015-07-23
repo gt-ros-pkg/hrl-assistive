@@ -1175,8 +1175,12 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
         false_aXData2 = d['audio_rms_false_l'] 
         false_chunks  = d['false_chunks']
         false_anomaly_start = np.zeros(len(false_chunks))
-        print false_chunks
 
+        # need a way to assign anomaly index by human
+        if False: #True:
+            false_anomaly_start = set_anomaly_start(true_aXData1,true_aXData2,
+                                                    false_aXData1,false_aXData2,false_chunks)
+        
         if rFold is not None:
             nTest = int(len(true_chunks)*(1.0-rFold))            
         else:
@@ -1259,3 +1263,61 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
       " Failure: ", len(false_aXData1)
         
     return true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet
+
+
+def set_anomaly_start(true_aXData1, true_aXData2, false_aXData1, false_aXData2, false_chunks):
+    
+    anomaly_start = np.zeros(len(false_chunks))
+    
+    for i in xrange(len(false_chunks)):
+        print "false_chunks: ", false_chunks[i]
+
+        data = false_aXData1[i]        
+        x   = np.arange(0., float(len(data)))
+        
+        fig = pp.figure()
+        plt.rc('text', usetex=True)
+
+        ax1 = pp.subplot(411)
+        for ii, d in enumerate(true_aXData1):
+            r = len(x) - len(d)
+            if r>0: data = np.hstack([d, np.zeros(r)])
+            else: data = d                
+            true_line, = pp.plot(x, data)
+                
+        ax2 = pp.subplot(412)
+        for ii, d in enumerate(true_aXData2):
+            r = len(x) - len(d)
+            if r>0: data = np.hstack([d, np.zeros(r)])
+            else: data = d
+            true_line, = pp.plot(x, data)
+
+
+        ax3 = pp.subplot(413)
+        data = false_aXData1[i]        
+
+        pp.plot(x, data, 'b', linewidth=1.5, label='Force')
+        #ax1.set_xlim([0, len(data)])
+        ax3.set_ylim([0, np.amax(data)*1.1])
+        pp.grid()
+        ax3.set_ylabel("Magnitude [N]", fontsize=18)
+
+
+        ax4 = pp.subplot(414)
+        data = false_aXData2[i]
+
+        pp.plot(x, data, 'b', linewidth=1.5, label='Sound')
+        #ax2.set_xlim([0, len(data)])
+        pp.grid()
+        ax4.set_ylabel("Energy", fontsize=18)
+        ax4.set_xlabel("Time [sec]", fontsize=18)
+
+        ax3.legend(prop={'size':18})
+        ax4.legend(prop={'size':18})
+
+        pp.show()
+
+        anomaly_start[i] = int(raw_input("Enter anomaly location: "))
+
+    return anomaly_start
+    
