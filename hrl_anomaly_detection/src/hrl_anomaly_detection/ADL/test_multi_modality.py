@@ -758,7 +758,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 if test:
                     tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, [], \
                                                                            false_dataSet, \
-                                                                           min_ths, \    
+                                                                           min_ths, \ 
                                                                            check_dim=check_dim, \
                                                                            peak_l=tn_peak_l, \
                                                                            width_l=tn_width_l, \
