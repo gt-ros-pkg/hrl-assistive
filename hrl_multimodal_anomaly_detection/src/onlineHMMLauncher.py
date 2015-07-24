@@ -121,7 +121,7 @@ def visualFeatures(fileName, forceTimes):
                 for point in newPoints:
                     pointMu = point - muSet
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+                    pdfValue += constant * np.exp(-1.0/1.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
                 pdfList.append(pdfValue / float(len(points)))
             pdf.append(pdfList[0])
 
@@ -189,9 +189,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 pdfDiff = maxVals[3] - minVals[3]
                 minVals[3] -= pdfDiff / 2.0
                 maxVals[3] += pdfDiff / 2.0
-                forceDiff = maxVals[0] - minVals[0]
-                minVals[0] -= forceDiff / 4.0
-                maxVals[0] += forceDiff / 4.0
+                # forceDiff = maxVals[0] - minVals[0]
+                # minVals[0] -= forceDiff / 4.0
+                # maxVals[0] += forceDiff / 4.0
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
