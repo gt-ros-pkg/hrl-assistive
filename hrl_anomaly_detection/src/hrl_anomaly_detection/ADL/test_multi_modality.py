@@ -809,7 +809,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
     else:
         return
         
-
+    
     if bPlot:
         
         fig = pp.figure()       
@@ -834,27 +834,43 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 d = ut.load_pickle(res_file)
                 fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
                 tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
-                delay_l.append([d['delay_l']])
-                peak_l.append([d.get('peak_l',[])])
-                width_l.append([d.get('width_l',[])])
-                chunk_l.append([d.get('chunk_l',[])])                
                 fd_l.append([d['false_detection_l']])
                 ## print d['false_detection_l']
 
+                if d['delay_l'] == []: continue
+                else:
+                    if delay_l == []: 
+                        delay_l = d['delay_l']
+                        peak_l  = d.get('peak_l',[])
+                        width_l = d.get('width_l',[])
+                        chunk_l = d.get('chunk_l',[])
+                    else:
+                        delay_l += d['delay_l']
+                        peak_l  += d.get('peak_l',[])
+                        width_l += d.get('width_l',[])
+                        chunk_l += d.get('chunk_l',[])
+                    
+                
             for i in xrange(nDataSet):
                 if fp_l[i]+tn_l[i] != 0:
                     fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
             tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
-            print method, tot_fpr 
-            
-        pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
-        pp.ylim([0.0, 100])                   
 
+            if test_title.find('param') < 0:            
+                pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
+                pp.ylim([0.0, 100])                                  
+            else:                
+
+                slope_arr = np.array(peak_l)/np.array(width_l)
+                pp.plot(delay_l, width_l , 'r.')
+        
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        #os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('cp test.p* ~/Dropbox/HRL/')
         ## pp.show()
+
+        
         
 
 
@@ -2182,7 +2198,7 @@ if __name__ == '__main__':
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['progress']
+        check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         an_type         = 'both'
         force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
