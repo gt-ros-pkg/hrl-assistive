@@ -825,6 +825,8 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
     new_X2 = []
     chunks = []
     an_start =[]
+    an_peak = []
+    an_width = []
     sampling_complete = False
                 
     for i in xrange(num):
@@ -903,7 +905,6 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     an_idx = loc = random.randint(1,length-1-width)
 
                     xnew    = range(width)
-                    impulse = np.zeros(width)
 
                     if an1 == 'inelastic_continue':                    
                         for i in xrange(width/2):
@@ -912,11 +913,9 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     else:
                         for i in xrange(width):
                             if i < width/2:
-                                impulse[i] = (i+1)*peak/(float(width)/2.0)
+                                x1_anomaly[loc+i] += (i+1)*peak/(float(width)/2.0)
                             else:
-                                impulse[i] = -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
-
-                            x1_anomaly[loc+i] += impulse[i] 
+                                x1_anomaly[loc+i] += -(i-(float(width)/2.0))*peak/(float(width)/2.0) + peak
 
                 elif an1 == 'elastic' or an1 == 'elastic_continue':
                     print "elastic collision with continuous force"
@@ -929,17 +928,14 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
 
                     an_idx  = loc = random.randint(1,length-1-width)
                     xnew    = range(width)
-                    impulse = np.zeros(width)
-                    impulse[width/2] = peak
 
                     if an1 == 'elastic_continue':                    
                         for i in xrange(width/2):
-                            x1_anomaly[loc+i] += peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
+                            x1_anomaly[loc+i] += peak * (1.0 - ( ((i+1)-(float(width)/2.0))/(float(width)/2.0) )**2)
                         x1_anomaly[loc+width/2:] += peak
                     else:                
                         for i in xrange(width):
-                            impulse[i] = peak * (1.0 - ( (i-(float(width)/2.0))/(float(width)/2.0) )**2)
-                            x1_anomaly[loc+i] += impulse[i] 
+                            x1_anomaly[loc+i] += peak * (1.0 - ( ((i+1)-(float(width)/2.0))/(float(width)/2.0) )**2)
                 else:
                     print "Not implemented type of force anomaly : ", an1
 
@@ -974,14 +970,6 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
                     if an_idx is None: an_idx = loc                    
                     if loc < an_idx: an_idx = loc
-                    ## if an_type == 'sound':
-                    ##     loc = random.randint(1+(width)/2,len(x1_anomaly)-1-(width)/2)                         
-                    ## else:
-                    ##     if an_idx is None:
-                    ##         print "Error: no start index"
-                    ##         break
-                    ##     else:
-                    ##         loc = an_idx
 
                     if loc+width > length-1:
                         continue            
@@ -1015,17 +1003,6 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     loc   = random.randint(1,len(x1_anomaly)-width-1)                        
                     if an_idx is None: an_idx = loc                                        
                     if loc < an_idx: an_idx = loc
-                    ## if an_type == 'sound':                        
-                    ##     try:
-                    ##         loc   = random.randint(1,len(x1_anomaly)-width-1)                        
-                    ##     except:
-                    ##         continue
-                    ## else:
-                    ##     if an_idx is None:
-                    ##         print "Error: no start index"
-                    ##         break
-                    ##     else:
-                    ##         loc = an_idx
 
                     if loc+width > length-1:
                         continue                                
@@ -1062,9 +1039,13 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
             new_X2.append(x2_anomaly)
             chunks.append(an1+"_"+an2)
             an_start.append(an_idx)
+
+            an_peak.append(peak)
+            an_width.append(width)
+            
             sampling_complete = True
         
-    return new_X1, new_X2, chunks, an_start
+    return new_X1, new_X2, chunks, an_start, an_peak, an_width
 
 
 def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data, an_type, force_an, sound_an):
@@ -1073,16 +1054,18 @@ def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data, an_type, forc
     _, min_c2, max_c2 = scaling(true_aXData2, scale=10.0)    
     
     # generate simulated data!!
-    aXData1, aXData2, chunks, an_start = simulated_anomaly(true_aXData1, true_aXData2, n_false_data, \
-                                                           min_c1, max_c1, min_c2, max_c2, an_type,
-                                                           force_an, sound_an)
+    aXData1, aXData2, chunks, an_start, an_peak, an_width = simulated_anomaly(true_aXData1, true_aXData2, 
+                                                                              n_false_data, \
+                                                                              min_c1, max_c1, min_c2, max_c2, 
+                                                                              an_type, force_an, sound_an)
 
     d = {}
     d['ft_force_mag_sim_false_l'] = aXData1
     d['audio_rms_sim_false_l'] = aXData2
     d['sim_false_chunks'] = chunks
     d['anomaly_start_idx'] = an_start
-
+    d['anomaly_peak'] = an_peak
+    d['anomaly_width'] = an_width
     return d
 
 
@@ -1117,9 +1100,9 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
             nDataSet = len(true_aXData1)            
             n_false_data = 1 # the number of test data
         else:
-            K = len(true_aXData1)/4 # the number of test data
-            nDataSet = 10 #30
-            n_false_data = K
+            nTest = int(len(true_chunks)*(1.0-rFold))            
+            n_false_data = 1 # if not 1, there will be error
+            nDataSet = len(true_aXData1)            
 
         if os.path.isdir(cross_data_path) == False:
             os.system('mkdir -p '+cross_data_path)
@@ -1132,7 +1115,13 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
 
                 labels        = [True]*len(true_aXData1)
                 true_dataSet  = create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
-                test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', i)
+
+                if rFold is None:
+                    test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', i)
+                else:
+                    test_ids      = Dataset.get_samples_by_attr(true_dataSet, 'id', 
+                                                                random.sample(range(len(labels)), nTest))
+                    
                 test_dataSet  = true_dataSet[test_ids]
                 train_ids     = [val for val in true_dataSet.sa.id if val not in test_dataSet.sa.id] 
                 train_ids     = Dataset.get_samples_by_attr(true_dataSet, 'id', train_ids)
@@ -1175,12 +1164,17 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
         false_aXData2 = d['audio_rms_false_l'] 
         false_chunks  = d['false_chunks']
         false_anomaly_start = np.zeros(len(false_chunks))
-        print false_chunks
 
-        if rFold is not None:
-            nTest = int(len(true_chunks)*(1.0-rFold))            
-        else:
+        # need a way to assign anomaly index by human
+        if False: #True:
+            false_anomaly_start = set_anomaly_start(true_aXData1,true_aXData2,
+                                                    false_aXData1,false_aXData2,false_chunks)
+
+        # For non-roc test, nTest is used to count threshold-test set     
+        if rFold is None:
             nTest = len(false_chunks)            
+        else:
+            nTest = int(len(true_chunks)*(1.0-rFold))            
 
         if nDataSet is None:
             nDataSet = 1
@@ -1259,3 +1253,61 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
       " Failure: ", len(false_aXData1)
         
     return true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet
+
+
+def set_anomaly_start(true_aXData1, true_aXData2, false_aXData1, false_aXData2, false_chunks):
+    
+    anomaly_start = np.zeros(len(false_chunks))
+    
+    for i in xrange(len(false_chunks)):
+        print "false_chunks: ", false_chunks[i]
+
+        data = false_aXData1[i]        
+        x   = np.arange(0., float(len(data)))
+        
+        fig = pp.figure()
+        plt.rc('text', usetex=True)
+
+        ax1 = pp.subplot(411)
+        for ii, d in enumerate(true_aXData1):
+            r = len(x) - len(d)
+            if r>0: data = np.hstack([d, np.zeros(r)])
+            else: data = d                
+            true_line, = pp.plot(x, data)
+                
+        ax2 = pp.subplot(412)
+        for ii, d in enumerate(true_aXData2):
+            r = len(x) - len(d)
+            if r>0: data = np.hstack([d, np.zeros(r)])
+            else: data = d
+            true_line, = pp.plot(x, data)
+
+
+        ax3 = pp.subplot(413)
+        data = false_aXData1[i]        
+
+        pp.plot(x, data, 'b', linewidth=1.5, label='Force')
+        #ax1.set_xlim([0, len(data)])
+        ax3.set_ylim([0, np.amax(data)*1.1])
+        pp.grid()
+        ax3.set_ylabel("Magnitude [N]", fontsize=18)
+
+
+        ax4 = pp.subplot(414)
+        data = false_aXData2[i]
+
+        pp.plot(x, data, 'b', linewidth=1.5, label='Sound')
+        #ax2.set_xlim([0, len(data)])
+        pp.grid()
+        ax4.set_ylabel("Energy", fontsize=18)
+        ax4.set_xlabel("Time [sec]", fontsize=18)
+
+        ax3.legend(prop={'size':18})
+        ax4.legend(prop={'size':18})
+
+        pp.show()
+
+        anomaly_start[i] = int(raw_input("Enter anomaly location: "))
+
+    return anomaly_start
+    

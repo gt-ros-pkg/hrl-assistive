@@ -309,8 +309,30 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
             ## pp.plot(sorted_fn_l, sorted_delay_l, '-'+shape+color, label=method, mec=color, ms=8, mew=2)
             ## if method == 'global': label = 'fixed threshold'
             ## if method == 'progress': label = 'progress based threshold'
-            label = method+"_"+str(check_dim)
+            ## label = method+"_"+str(check_dim)
 
+            if test_title.find('dim')>=0:
+                if check_dim == 0:
+                    label = 'Force only'
+                elif check_dim == 1:
+                    label = 'Sound only'
+                elif check_dim == 2:
+                    label = 'Force & sound'
+                else:
+                    label = method +"_"+str(check_dim)                
+            else:
+                if method == 'globalChange':
+                    label = 'Fixed threshold & \n change detection'
+                elif method == 'change':
+                    label = 'Change detection'
+                elif method == 'global':
+                    label = 'Fixed threshold \n detection'
+                elif method == 'progress':
+                    label = 'Dynamic threshold \n detection'
+                else:
+                    label = method +"_"+str(check_dim)
+            
+            
             if test:
                 pp.plot(sorted_npv_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
                 ##pp.plot(sorted_detect_l, sorted_delay_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
@@ -331,8 +353,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         ## pp.plot(new_fp_l, sigma(new_fp_l, *param))
 
         if test == False:
-            ## pp.xlim([0.0, 40])
-            pp.ylim([0.0, 100])        
+            pp.xlim([-1, 101])
+            pp.ylim([-1, 101])        
             pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
             pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
 
@@ -341,7 +363,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        ## pp.show()
         
     return
 
@@ -559,7 +581,7 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
     fig.savefig('test.pdf')
     fig.savefig('test.png')
     os.system('cp test.p* ~/Dropbox/HRL/')
-    #pp.show()
+    pp.show()
  
        
 #---------------------------------------------------------------------------------------#        
@@ -613,31 +635,30 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             if sim == True:
                 false_aXData1 = dd['ft_force_mag_sim_false_l']
                 false_aXData2 = dd['audio_rms_sim_false_l'] 
-                false_chunks  = dd['sim_false_chunks']
-                false_anomaly_start = dd['anomaly_start_idx']
-            
-                # generate simulated data!!
-                aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
-                aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
-                labels = [False]*len(false_aXData1)
-                false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
-                false_dataSet.sa['anomaly_idx'] = false_anomaly_start
+                false_chunks  = dd['sim_false_chunks']            
             else:
                 false_aXData1 = dd['ft_force_mag_false_l']
                 false_aXData2 = dd['audio_rms_false_l'] 
                 false_chunks  = dd['false_chunks']
-                false_anomaly_start = dd['anomaly_start_idx']                
 
-                ## print np.shape(false_aXData1), np.shape(false_aXData2)
+            ## print np.shape(false_aXData1), np.shape(false_aXData2)
                 ## print false_chunks
                 ## for k in xrange(len(false_aXData2)):
                 ##     print np.shape(false_aXData1[k]), np.shape(false_aXData2[k])
+                
+            false_anomaly_start = dd['anomaly_start_idx']                
+            false_peak    = dd.get('anomaly_peak',[])
+            false_width   = dd.get('anomaly_width',[])
 
-                aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
-                aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
-                labels = [False]*len(false_aXData1)
-                false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
-                false_dataSet.sa['anomaly_idx'] = false_anomaly_start
+            # generate simulated data!!
+            aXData1_scaled, _, _ = dm.scaling(false_aXData1, min_c1, max_c1, scale=10.0)
+            aXData2_scaled, _, _ = dm.scaling(false_aXData2, min_c2, max_c2, scale=10.0)    
+            labels = [False]*len(false_aXData1)
+            false_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, false_chunks, labels)
+            false_dataSet.sa['anomaly_idx']   = false_anomaly_start
+            false_dataSet.sa['anomaly_peak']  = false_peak
+            false_dataSet.sa['anomaly_width'] = false_width
+                
 
             for check_dim in check_dims:
             
@@ -730,22 +751,36 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                                             scale2=[min_c2, max_c2, scale])
 
                             
-
+                tn_peak_l = []
+                tn_width_l = []
+                tn_chunk_l = []
+                                            
                 if test:
                     tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, [], \
                                                                            false_dataSet, \
-                                                                           min_ths, \
-                                                                           check_dim=check_dim)
+                                                                           min_ths,\
+                                                                           check_dim=check_dim, \
+                                                                           peak_l=tn_peak_l, \
+                                                                           width_l=tn_width_l, \
+                                                                           chunk_l=tn_chunk_l)
                 elif onoff_type == 'online':
                     tp, fn, fp, tn, delay_l, false_detection_l = anomaly_check_online(lhm, [], \
                                                                                       false_dataSet, \
                                                                                       min_ths, \
-                                                                                      check_dim=check_dim)
+                                                                                      check_dim=check_dim, \
+                                                                                      peak_l=tn_peak_l, \
+                                                                                      width_l=tn_width_l, \
+                                                                                      chunk_l=tn_chunk_l)
+                                                                                      
                 else:
                     tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, [], \
                                                                     false_dataSet, \
                                                                     min_ths, \
-                                                                    check_dim=check_dim)
+                                                                    check_dim=check_dim, \
+                                                                    peak_l=tn_peak_l, \
+                                                                    width_l=tn_width_l, \
+                                                                    chunk_l=tn_chunk_l)
+
 
                 d = {}
                 d['fn']    = fn
@@ -754,6 +789,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 d['fp']    = fp
                 d['ths']   = ths
                 d['delay_l'] = delay_l
+                d['peak_l']  = tn_peak_l
+                d['width_l'] = tn_width_l
+                d['chunk_l'] = tn_chunk_l
                 d['false_detection_l'] = false_detection_l
 
                 try:
@@ -771,7 +809,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
     else:
         return
         
-
+    
     if bPlot:
         
         fig = pp.figure()       
@@ -782,6 +820,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             tn_l = np.zeros(nDataSet)
             fp_l = np.zeros(nDataSet)
             delay_l = []
+            peak_l = []
+            width_l = []
+            chunk_l = []
             fd_l = []
             fpr_l = np.zeros(nDataSet)
 
@@ -793,26 +834,43 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 d = ut.load_pickle(res_file)
                 fn_l[i] = d['fn']; tp_l[i] = d['tp'] 
                 tn_l[i] = d['tn']; fp_l[i] = d['fp'] 
-                delay_l.append([d['delay_l']])
                 fd_l.append([d['false_detection_l']])
                 ## print d['false_detection_l']
 
+                if d['delay_l'] == []: continue
+                else:
+                    if delay_l == []: 
+                        delay_l = d['delay_l']
+                        peak_l  = d.get('peak_l',[])
+                        width_l = d.get('width_l',[])
+                        chunk_l = d.get('chunk_l',[])
+                    else:
+                        delay_l += d['delay_l']
+                        peak_l  += d.get('peak_l',[])
+                        width_l += d.get('width_l',[])
+                        chunk_l += d.get('chunk_l',[])
+                    
+                
             for i in xrange(nDataSet):
                 if fp_l[i]+tn_l[i] != 0:
                     fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
 
-
             tot_fpr = np.sum(fp_l)/(np.sum(fp_l)+np.sum(tn_l))*100.0
-            print method, tot_fpr 
 
-            
-        pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
-        pp.ylim([0.0, 100])                   
+            if test_title.find('param') < 0:            
+                pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
+                pp.ylim([0.0, 100])                                  
+            else:                
 
+                slope_arr = np.array(peak_l)/np.array(width_l)
+                pp.plot(delay_l, width_l , 'r.')
+        
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        #os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('cp test.p* ~/Dropbox/HRL/')
         ## pp.show()
+
+        
         
 
 
@@ -937,7 +995,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
     ind = np.arange(nClass)*0.9
     width = 0.5
-    methods = ('Check \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
+    methods = ('Change \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
                'Dynamic threshold \n detection')
 
     print fdr_mu_class_l
@@ -1273,7 +1331,8 @@ def fig_roc_offline(cross_data_path, \
 
 
 
-def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
+def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2, 
+                          peak_l=None, width_l=None, chunk_l=None):
 
     tp = 0.0
     fn = 0.0
@@ -1323,11 +1382,16 @@ def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
 
             if an == 1.0:   tn += 1.0
             elif an == 0.0: fp += 1.0
+
+            if peak_l is not None and width_l is not None:
+                print "Not implemented!!"
+                sys.exit()
                         
     return tp, fn, fp, tn, delay_l
 
 
-def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
+def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2, 
+                         peak_l=None, width_l=None, chunk_l=None):
 
     tp = 0.0
     fn = 0.0
@@ -1369,8 +1433,8 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
             x_test2 = false_dataSet.samples[:,1]
         else:
             x_test1 = false_dataSet.samples[:,check_dim]
-        anomaly_idx = false_dataSet.sa.anomaly_idx
-
+        anomaly_idx  = false_dataSet.sa.anomaly_idx
+            
         false_detection_l = np.zeros(len(x_test1))
 
         n = len(x_test1)
@@ -1392,6 +1456,13 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
                     if an == 1.0:
                         tn += 1.0
                         delay_l.append(delay)
+
+                        if peak_l is not None and width_l is not None:
+                            peak_l.append(false_dataSet.sa.anomaly_peak)
+                            width_l.append(false_dataSet.sa.anomaly_width)
+                        if chunk_l is not None:
+                            chunk_l.append(false_dataSet.sa.chunks)
+                        
                     elif an == 0.0:
                         fp += 1.0
                 else:
@@ -1406,7 +1477,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
     return tp, fn, fp, tn, delay_l, false_detection_l
 
 
-def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2):
+def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2, peak_l=None, width_l=None):
 
     tp = 0.0
     fn = 0.0
@@ -1801,9 +1872,11 @@ if __name__ == '__main__':
     p.add_option('--online_method_check', '--omc', action='store_true', \
                  dest='bOnlineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
-    p.add_option('--test', action='store_true', \
-                 dest='bTest',
+
+    p.add_option('--online_simulated_method_param_check', '--ronsimmthdp', action='store_true', \
+                 dest='bOnlineSimMethodParamCheck',
                  default=False, help='Plot online ROC by simulated anomaly')    
+    
     p.add_option('--all_plot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data')
     p.add_option('--one_plot', '--one', action='store_true', dest='bOnePlot',
@@ -1906,24 +1979,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    if opt.bTest: 
-        
-        print "ROC Offline Robot with simulated anomalies"
-        cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task])
-        nState          = nState_l[task]
-        threshold_mult  = -1.0*np.logspace(0.1, 1.5, 30, endpoint=True) 
-        attr            = 'id'
-        onoff_type      = 'online'
-        check_methods   = ['global', 'progress']
-        check_dims      = [2]
-        test_title      = 'online_method_test'
-
-        fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
-                task_names[task], nState, threshold_mult, \
-                opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, test=True,
-                sim=True)
-                    
-    elif opt.bRocOnlineSimDimCheck: 
+    if opt.bRocOnlineSimDimCheck: 
         
         print "ROC Offline Robot with simulated anomalies"
         test_title      = 'online_dim_comp'
@@ -2116,7 +2172,7 @@ if __name__ == '__main__':
         check_dims      = [2]
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
-        nDataSet        = 10
+        nDataSet        = -1 #number of all true data
 
         true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
           = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
@@ -2131,6 +2187,41 @@ if __name__ == '__main__':
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
                          check_dims, nDataSet)
 
+
+    #---------------------------------------------------------------------------
+    elif opt.bOnlineSimMethodParamCheck:
+        
+        print "ROC Online Robot with simulated anomalies"
+        test_title      = 'online_method_param_check'
+        cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
+        nState          = nState_l[task]
+        threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
+        attr            = 'id'
+        onoff_type      = 'online'
+        check_methods   = ['change', 'global', 'globalChange', 'progress']
+        check_dims      = [2]
+        an_type         = 'both'
+        force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        sound_an        = ['normal', 'rndsharp', 'rnddull'] 
+        disp            = 'None'
+        rFold           = 0.75 # ratio of training dataset in true dataset
+        nDataSet        = -1
+
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task], cross_data_path, an_type, force_an, sound_an, 
+                        rFold=rFold, nDataSet=nDataSet)
+
+        if opt.bAllPlot is not True:
+            fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
+                     task_names[task], nState, \
+                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                     disp=disp, rm_run=opt.bRemoveRunning, sim=True)
+        else:
+            fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
+                         check_dims, nDataSet, sim=True)
+
+                        
     #---------------------------------------------------------------------------
     elif opt.bOnePlot:
 
