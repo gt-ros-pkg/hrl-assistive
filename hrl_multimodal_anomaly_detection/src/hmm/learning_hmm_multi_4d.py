@@ -528,7 +528,7 @@ class learning_hmm_multi_4d:
         y1 = X1_true[0]
         y2 = X2_true[0]
         y3 = X3_true[0]
-        y4 = X4_true[0]
+        y4 = X4_true[0] * 100
 
         import matplotlib.collections as collections
 
@@ -539,94 +539,95 @@ class learning_hmm_multi_4d:
         fig = plt.figure()
         plt.rc('text', usetex=True)
 
-        ax1 = plt.subplot(511)
+        ax1 = plt.subplot(512)
         print np.shape(x), np.shape(y1)
-        ax1.plot(x*(1./43.), y1)
+        ax1.plot(x*(1./10.), y1)
         y_min = np.amin(y1)
         y_max = np.amax(y1)
-        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max+1.5,
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=0, ymax=y_max+0.5,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax1.add_collection(collection)
-        # Text for progress
-        for i in xrange(len(block_state)):
-            if i%2 is 0:
-                if i<10:
-                    ax1.text((text_x[i])*(1./43.), y_max+1.0, str(block_state[i]+1))
-                else:
-                    ax1.text((text_x[i]-1.0)*(1./43.), y_max+1.0, str(block_state[i]+1))
-            else:
-                if i<10:
-                    ax1.text((text_x[i])*(1./43.), y_max+0.5, str(block_state[i]+1))
-                else:
-                    ax1.text((text_x[i]-1.0)*(1./43.), y_max+0.5, str(block_state[i]+1))
-
-        ax1.set_ylabel("Force (N)", fontsize=18)
-        ax1.set_xlim([0, x[-1]*(1./43.)])
+        ax1.set_ylabel("Force (N)", fontsize=16)
+        ax1.set_xlim([0, x[-1]*(1./10.)])
         ## ax1.set_ylim([0, np.amax(y1)*1.1])
-        ax1.set_ylim([y_min - 0.5, y_max + 1.5])
+        ax1.set_ylim([y_min - 0.25, y_max + 0.5])
 
         # -----
 
-        ax2 = plt.subplot(512)
-        ax2.plot(x*(1./43.), y2)
+        ax2 = plt.subplot(511)
+        ax2.plot(x*(1./10.), y2)
         y_max = np.amax(y2)
-        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max + 0.1,
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=0, ymax=y_max + 0.25,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax2.add_collection(collection)
-        ax2.set_ylabel("Distance (m)", fontsize=18)
-        ax2.set_xlim([0, x[-1]*(1./43.)])
-        ax2.set_ylim([0, y_max + 0.1])
+
+        # Text for progress
+        for i in xrange(len(block_state)):
+            if i%2 is 0:
+                if i<10:
+                    ax2.text((text_x[i])*(1./10.), y_max+0.15, str(block_state[i]+1))
+                else:
+                    ax2.text((text_x[i]-1.0)*(1./10.), y_max+0.15, str(block_state[i]+1))
+            else:
+                if i<10:
+                    ax2.text((text_x[i])*(1./10.), y_max+0.06, str(block_state[i]+1))
+                else:
+                    ax2.text((text_x[i]-1.0)*(1./10.), y_max+0.06, str(block_state[i]+1))
+
+        ax2.set_ylabel("Distance (m)", fontsize=16)
+        ax2.set_xlim([0, x[-1]*(1./10.)])
+        ax2.set_ylim([0, y_max + 0.25])
 
         # -----
 
-        ax4 = plt.subplot(513)
-        ax4.plot(x*(1./43.), y3)
+        ax4 = plt.subplot(514)
+        ax4.plot(x*(1./10.), y3)
         y_max = np.amax(y3)
-        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
                                                                  ymin=0, ymax=y_max + 0.1,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax4.add_collection(collection)
-        ax4.set_ylabel("Angle (rad)", fontsize=18)
-        ax4.set_xlim([0, x[-1]*(1./43.)])
+        ax4.set_ylabel("Angle (rad)", fontsize=16)
+        ax4.set_xlim([0, x[-1]*(1./10.)])
         ax4.set_ylim([0, y_max + 0.1])
 
         # -----
 
-        ax5 = plt.subplot(514)
-        ax5.plot(x*(1./43.), y4)
+        ax5 = plt.subplot(513)
+        ax5.plot(x*(1./10.), y4)
         y_min = np.amin(y4)
         y_max = np.amax(y4)
-        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./43.),
-                                                                 ymin=0, ymax=y_max + y_min/4.0,
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=y_min - y_min/15.0, ymax=y_max + y_min/15.0,
                                                                  where=np.array(block_flag_interp)>0,
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax5.add_collection(collection)
-        ax5.set_ylabel("Receptive Field 2", fontsize=18)
-        ax5.set_xlim([0, x[-1]*(1./43.)])
-        ax5.set_ylim([y_min - y_min/4.0, y_max + y_min/4.0])
+        ax5.set_ylabel("Visual (m)", fontsize=16)
+        ax5.set_xlim([0, x[-1]*(1./10.)])
+        ax5.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
 
         # -----
 
         ax3 = plt.subplot(515)
-        ax3.plot(x*(1./43.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
-        ax3.plot(x*(1./43.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
-        ax3.plot(x*(1./43.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
+        ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
+        ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
+        ax3.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
         ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
-        ax3.set_ylabel('Log-likelihood',fontsize=18)
-        ax3.set_xlim([0, x[-1]*(1./43.)])
+        ax3.set_ylabel('Log-likelihood',fontsize=16)
+        ax3.set_xlim([0, x[-1]*(1./10.)])
 
         ## ax3.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
-        lgd = ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.3), prop={'size':14})
-        ax3.set_xlabel('Time (sec)', fontsize=18)
+        lgd = ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.5), prop={'size':14})
+        ax3.set_xlabel('Time (sec)', fontsize=16)
 
         plt.subplots_adjust(bottom=0.15)
 

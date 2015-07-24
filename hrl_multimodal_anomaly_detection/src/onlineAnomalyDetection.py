@@ -111,15 +111,15 @@ class onlineAnomalyDetection(Thread):
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
                     print 'Anomaly error:', error
                     if anomaly > 0:
-                        self.interruptPublisher.publish('Interrupt')
+                        # self.interruptPublisher.publish('Interrupt')
                         self.anomalyOccured = True
                         # self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
-                        for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
-                            for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
-                                plt.plot(times, modal, label='%d' % index)
-                            plt.legend()
-                            plt.show()
+                        # for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
+                        #     for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
+                        #         plt.plot(times, modal, label='%d' % index)
+                        #     plt.legend()
+                        #     plt.show()
             rate.sleep()
 
     def cancel(self):
