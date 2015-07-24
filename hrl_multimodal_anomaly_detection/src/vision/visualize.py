@@ -132,7 +132,7 @@ def displayImage(image, gripper, spoon):
 
 dbscan = DBSCAN(eps=0.12, min_samples=10)
 # fileName = '/home/zerickson/Recordings/pinkSpoon_scooping_fvk_07-10-2015_18-30-38/iteration_0_success.pkl'
-fileName = '/home/zerickson/Recordings/bowlStage3Anomalous_scooping_fvk_07-17-2015_17-24-41/iteration_2_failure.pkl'
+fileName = '/home/zerickson/Recordings/bowl2Stage1Train_scooping_fvk_07-24-2015_08-24-58/iteration_4_success.pkl'
 
 def readDepth():
     with open(fileName, 'rb') as f:
@@ -169,7 +169,7 @@ def readDepth():
             pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
             # Find points within a sphere of radius 6 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.08
+            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.11
 
             # # Determine a line between the gripper and spoon
             # directionVector = spoon - mic
@@ -192,11 +192,11 @@ def readDepth():
             publishPoints('points', clusterPoints, g=1.0)
             publishPoints('nonpoints', nonClusterPoints, r=1.0)
 
-            publishPoints('bowl', [bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
-            publishPoints('gripper', [mic], size=0.05, g=1.0, b=1.0)
-            publishPoints('spoon', [spoon], size=0.05, b=1.0)
+            # publishPoints('bowl', [bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
+            # publishPoints('gripper', [mic], size=0.05, g=1.0, b=1.0)
+            # publishPoints('spoon', [spoon], size=0.05, b=1.0)
 
-            time.sleep(0.2)
+            time.sleep(5)
             # time.sleep(0.15) if timeStamp < 19 else time.sleep(0.4)
 
 def readVisual():

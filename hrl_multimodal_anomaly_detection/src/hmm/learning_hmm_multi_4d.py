@@ -151,6 +151,126 @@ class learning_hmm_multi_4d:
             with open(ml_pkl, 'wb') as f:
                 pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+    def get_sensitivity_gain(self, X1, X2, X3, X4):
+
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+
+        try:
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            logp         = self.ml.loglikelihood(final_ts_obj)
+        except:
+            print "Too different input profile that cannot be expressed by emission matrix"
+            return [], 0.0 # error
+
+        if self.check_method == 'progress':
+            try:
+                post = np.array(self.ml.posterior(final_ts_obj))
+            except:
+                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                return [], 0.0 # anomaly
+
+            n = len(np.squeeze(X1))
+
+            # Find the best posterior distribution
+            min_dist  = 100000000
+            min_index = 0
+            for j in xrange(self.nGaussian):
+                dist = entropy(post[n-1], self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist
+
+            ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
+            return ths, min_index
+
+        elif self.check_method == 'global':
+            ths = (logp - self.l_mu) / self.l_std
+            return ths, 0
+
+    def path_disp(self, X1, X2, X3, X4):
+        X1 = np.array(X1)
+        X2 = np.array(X2)
+        X3 = np.array(X3)
+        X4 = np.array(X4)
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+        n, m = np.shape(X1)
+        print n, m
+        x = np.arange(0., float(m))*(1./43.)
+        path_mat  = np.zeros((self.nState, m))
+        zbest_mat = np.zeros((self.nState, m))
+
+        path_l = []
+        for i in xrange(n):
+            x_test1 = X1[i:i+1,:]
+            x_test2 = X2[i:i+1,:]
+            x_test3 = X3[i:i+1,:]
+            x_test4 = X4[i:i+1,:]
+
+            if self.nEmissionDim == 1:
+                X_test = x_test1
+            else:
+                X_test = self.convert_sequence(x_test1, x_test2, x_test3, x_test4, emission=False)
+
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            path,_    = self.ml.viterbi(final_ts_obj)
+            post = self.ml.posterior(final_ts_obj)
+
+            use_last = False
+            for j in xrange(m):
+                ## sum_post = np.sum(post[j*2+1])
+                ## if sum_post <= 0.1 or sum_post > 1.1 or sum_post == float('Inf') or use_last == True:
+                ##     use_last = True
+                ## else:
+                add_post = np.array(post[j])/float(n)
+                path_mat[:, j] += add_post
+
+            path_l.append(path)
+            for j in xrange(m):
+                zbest_mat[path[j], j] += 1.0
+
+        path_mat /= np.sum(path_mat, axis=0)
+
+        # maxim = np.max(path_mat)
+        # path_mat = maxim - path_mat
+
+        zbest_mat /= np.sum(zbest_mat, axis=0)
+
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        matplotlib.rcParams['ps.fonttype'] = 42
+
+        fig = plt.figure()
+        plt.rc('text', usetex=True)
+
+        ax1 = plt.subplot(111)
+        im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper',
+                         extent=[0, float(m)*(1.0/10.), 20, 1], aspect=0.85)
+
+        ## divider = make_axes_locatable(ax1)
+        ## cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ax1.set_xlabel("Time (sec)", fontsize=18)
+        ax1.set_ylabel("Hidden State Index", fontsize=18)
+        ax = plt.gca()
+        ax.set_ylim(ax.get_ylim()[::-1])
+
+        ## for p in path_l:
+        ##     ax1.plot(x, p, '*')
+
+        ## ax2 = plt.subplot(212)
+        ## im2 = ax2.imshow(zbest_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper',
+        ##                  extent=[0,float(m)*(1.0/43.),20,1], aspect=0.1)
+        ## plt.colorbar(im2, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ## ax2.set_xlabel("Time [sec]", fontsize=18)
+        ## ax2.set_ylabel("Hidden State", fontsize=18)
+
+
+        ## ax3 = plt.subplot(313)
+        # fig.savefig('test.pdf')
+        # fig.savefig('test.png')
+        plt.grid()
+        plt.show()
+
     def predict(self, X):
         X = np.squeeze(X)
         X_test = X.tolist()

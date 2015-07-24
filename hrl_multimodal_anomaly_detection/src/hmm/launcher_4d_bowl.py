@@ -75,7 +75,7 @@ def visualFeatures(fileName, forceTimes):
             pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
             # Find points within a sphere of radius 6 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.08
+            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.11
 
             # Points near bowl
             points = pointSet[nearbyPoints]
@@ -86,7 +86,7 @@ def visualFeatures(fileName, forceTimes):
             # If no points found, try opening up to 8 cm
             if len(points) <= 0:
                 # Find points within a sphere of radius 8 cm around the center of bowl
-                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.10
+                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.13
                 # Points near bowl
                 points = pointSet[nearbyPoints]
                 if len(points) <= 0:
@@ -139,7 +139,7 @@ def visualFeatures(fileName, forceTimes):
                 for point in newPoints:
                     pointMu = point - muSet
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                    pdfValue += constant * np.exp(-1.0/1.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu)) # Normally: np.exp(-1.0/2.0
+                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu)) # Normally: np.exp(-1.0/2.0
                 pdfList.append(pdfValue / float(len(points)))
             pdf.append(pdfList[0])
 
@@ -208,15 +208,20 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             anglesTrueList.append(angles.tolist())
             pdfTrueList.append(pdf)
 
+            # pdf = np.array(pdf) * 10
+            # forces *= 10
+            # distances *= 10
+            # angles /= 10
+
             if minVals is None:
                 minVals = []
                 maxVals = []
                 for modality in [forces, distances, angles, pdf]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
-                pdfDiff = maxVals[3] - minVals[3]
-                minVals[3] -= pdfDiff / 2.0
-                maxVals[3] += pdfDiff / 2.0
+                # pdfDiff = maxVals[3] - minVals[3]
+                # minVals[3] -= pdfDiff / 2.0
+                # maxVals[3] += pdfDiff / 2.0
                 # forceDiff = maxVals[0] - minVals[0]
                 # minVals[0] -= forceDiff / 4.0
                 # maxVals[0] += forceDiff / 4.0
@@ -265,25 +270,36 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowlDataNewState15.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl2Data3.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
-        fileNames = ['/home/zerickson/Recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl']
-        iterationSets = [xrange(6), xrange(6), xrange(6)]
+        # fileNames = ['/home/zerickson/Recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl']
+        fileNames = ['/home/zerickson/Recordings/bowl2Stage1Train_scooping_fvk_07-24-2015_08-24-58/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage2Train_scooping_fvk_07-24-2015_08-39-29/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage3Train_scooping_fvk_07-24-2015_08-55-44/iteration_%d_success.pkl']
+        iterationSets = [xrange(6), xrange(1, 5), xrange(6)]
         forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, \
             anglesTrueList, pdfTrueList, minList, maxList = loadData(fileNames, iterationSets, isTrainingData=True)
 
         print 'Loading test data'
-        fileNames = ['/home/zerickson/Recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage1Anomalous_scooping_fvk_07-17-2015_16-16-57/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage2Anomalous_scooping_fvk_07-17-2015_16-59-49/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowlStage3Anomalous_scooping_fvk_07-17-2015_17-24-41/iteration_%d_failure.pkl']
-        iterationSets = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(5)]
+        # fileNames = ['/home/zerickson/Recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/bowlStage1Anomalous_scooping_fvk_07-17-2015_16-16-57/iteration_%d_failure.pkl',
+        #              '/home/zerickson/Recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/bowlStage2Anomalous_scooping_fvk_07-17-2015_16-59-49/iteration_%d_failure.pkl',
+        #              '/home/zerickson/Recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl',
+        #              '/home/zerickson/Recordings/bowlStage3Anomalous_scooping_fvk_07-17-2015_17-24-41/iteration_%d_failure.pkl',
+        #              '/home/zerickson/Recordings/trial_scooping_fvk_07-24-2015_07-47-05/iteration_%d_success.pkl']
+        fileNames = ['/home/zerickson/Recordings/bowl2Stage1Test_scooping_fvk_07-24-2015_08-30-59/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage2Test_scooping_fvk_07-24-2015_08-46-01/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage3Test_scooping_fvk_07-24-2015_09-04-36/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/trial_scooping_fvk_07-24-2015_07-47-05/iteration_%d_success.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage1Anomalous_scooping_fvk_07-24-2015_08-34-36/iteration_%d_failure.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage2Anomalous_scooping_fvk_07-24-2015_08-51-03/iteration_%d_failure.pkl',
+                     '/home/zerickson/Recordings/bowl2Stage3Anomalous_scooping_fvk_07-24-2015_09-08-15/iteration_%d_failure.pkl']
+        iterationSets = [xrange(3), xrange(3), xrange(3), xrange(5), xrange(3), xrange(3), xrange(3)]
         testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, testForcesTrueList, testDistancesTrueList, \
             testAnglesTrueList, testPdfTrueList, testMinList, testMaxList = loadData(fileNames, iterationSets)
 
@@ -308,10 +324,10 @@ def trainMultiHMM():
 
 
     # Plot modalities
-    for modality in [forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList]:
-    # for modality in [forcesTrueList[0], distancesTrueList[0], anglesTrueList[0], pdfTrueList[0]]:
-    # for modality in [forcesTrueList + testForcesTrueList[0:2], distancesTrueList + testDistancesTrueList[0:2], anglesTrueList + testAnglesTrueList[0:2], pdfTrueList + testPdfTrueList[0:2]]:
-        for index, (modal, times) in enumerate(zip(modality, timesList)): # timesList + testTimesList[0:2]
+    # for modality in [forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList]:
+    # for modality in [forcesTrueList[:3] + testForcesTrueList[20:], distancesTrueList[:3] + testDistancesTrueList[20:], anglesTrueList[:3] + testAnglesTrueList[20:], pdfTrueList[:3] + testPdfTrueList[20:]]:
+    for modality in [forcesTrueList + testForcesTrueList[0:2], distancesTrueList + testDistancesTrueList[0:2], anglesTrueList + testAnglesTrueList[0:2], pdfTrueList + testPdfTrueList[0:2]]:
+        for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[0:2])): # timesList + testTimesList[0:2]
             plt.plot(times, modal, label='%d' % index)
         plt.legend()
         plt.show()
@@ -338,7 +354,7 @@ def trainMultiHMM():
     # print 'PDF Sample:', pdfSample[:, :5]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_newState15.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl2_3.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
 
@@ -354,6 +370,8 @@ def trainMultiHMM():
         print 'Anomaly Error for test set %d' % i
         print hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testPdfList[i], -5)
 
+    hmm.path_disp(forcesList, distancesList, anglesList, pdfList)
+
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
     hmm.likelihood_disp(forcesSample[1:], distancesSample[1:], anglesSample[1:], pdfSample[1:], forcesTrueSample[1:], distancesTrueSample[1:],
                         anglesTrueSample[1:], pdfTrueSample[1:], -5.0, figureSaveName=None)
@@ -364,15 +382,15 @@ def trainMultiHMM():
     testForcesList, testDistancesList, testAnglesList, testPdfList, \
         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList = extrapolateAllData([testForcesList, testDistancesList, testAnglesList, testPdfList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList], maxsize)
     testDataSet = create_mvpa_dataset(testForcesList, testDistancesList, testAnglesList, testPdfList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTestSample = testDataSet.samples[19:, 0, :]
-    distancesTestSample = testDataSet.samples[19:, 1, :]
-    anglesTestSample = testDataSet.samples[19:, 2, :]
-    pdfTestSample = testDataSet.samples[19:, 3, :]
+    forcesTestSample = testDataSet.samples[17:, 0, :]
+    distancesTestSample = testDataSet.samples[17:, 1, :]
+    anglesTestSample = testDataSet.samples[17:, 2, :]
+    pdfTestSample = testDataSet.samples[17:, 3, :]
     testTrueDataSet = create_mvpa_dataset(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTrueTestSample = testTrueDataSet.samples[19:, 0, :]
-    distancesTrueTestSample = testTrueDataSet.samples[19:, 1, :]
-    anglesTrueTestSample = testTrueDataSet.samples[19:, 2, :]
-    pdfTrueTestSample = testTrueDataSet.samples[19:, 3, :]
+    forcesTrueTestSample = testTrueDataSet.samples[17:, 0, :]
+    distancesTrueTestSample = testTrueDataSet.samples[17:, 1, :]
+    anglesTrueTestSample = testTrueDataSet.samples[17:, 2, :]
+    pdfTrueTestSample = testTrueDataSet.samples[17:, 3, :]
 
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_anomaly.png')
     hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample, forcesTrueTestSample, distancesTrueTestSample,
