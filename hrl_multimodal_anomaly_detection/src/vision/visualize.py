@@ -33,7 +33,7 @@ rospy.init_node('visualization')
 publisher = rospy.Publisher('visualization_marker', Marker)
 publisher2D = rospy.Publisher('image_features', ImageFeatures)
 
-def publishPoints(name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
+def publishPoints(name, points, size=0.0025, r=0.0, g=0.0, b=0.0, a=1.0):
     marker = Marker()
     marker.header.frame_id = '/torso_lift_link'
     marker.ns = name
@@ -190,7 +190,7 @@ def readDepth():
                 print 'Ahh no cluster points!'
 
             publishPoints('points', clusterPoints, g=1.0)
-            publishPoints('nonpoints', nonClusterPoints, r=1.0)
+            publishPoints('nonpoints', nonClusterPoints, b=1.0)
 
             # publishPoints('bowl', [bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
             # publishPoints('gripper', [mic], size=0.05, g=1.0, b=1.0)

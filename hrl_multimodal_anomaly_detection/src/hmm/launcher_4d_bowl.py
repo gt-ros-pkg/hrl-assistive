@@ -270,7 +270,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl2Data3.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl2Data2.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -354,7 +354,7 @@ def trainMultiHMM():
     # print 'PDF Sample:', pdfSample[:, :5]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl2_3.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl2.pkl', use_pkl=True)
 
     testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
 
