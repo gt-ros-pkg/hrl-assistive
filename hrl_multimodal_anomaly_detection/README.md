@@ -68,10 +68,14 @@ Record proper bowl position manually:
 Change arm gains and start mpc (**new** terminal window, ssh'd into **robot**):
     
     1) ssh dpark@pr2c1
-    2) roscd hrl_multimodal_anomaly_detection/launch/arm_control
+    2) roscd hrl_feeding_task/launch/
     3) ./change_gains_pr2.sh
     4) PRESS START ON RUNSTOP
     5) roslaunch hrl_multimodal_anomaly_detection start_pr2_mpc_all.launch
+
+To start netft topic:
+
+    1) rosrun netft_rdt_driver netft_node 10.68.0.120 --rate 10
 
 
 *OPTIONAL*: Launch Kinect files for bowl and head registration (**new** terminal window, ssh'd into **robot**):
