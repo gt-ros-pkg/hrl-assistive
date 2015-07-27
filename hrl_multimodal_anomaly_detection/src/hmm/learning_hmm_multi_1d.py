@@ -354,7 +354,7 @@ class learning_hmm_multi_1d:
         # print self.ll_mu[min_index]
         # print self.ll_std[min_index]
 
-        print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
+        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
             err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])

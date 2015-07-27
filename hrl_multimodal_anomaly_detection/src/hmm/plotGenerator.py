@@ -40,7 +40,7 @@ class plotGenerator:
 
         ax4 = plt.subplot(413)
         ax4.plot(self.times[k], np.array(self.pdfsTrue[k]) * 100, label='Vision')
-        ax4.set_ylabel('Magnitude (m)', fontsize=16)
+        ax4.set_ylabel('Distribution (cm)', fontsize=16)
         # ax4.set_yticks(np.arange(34, 37.5, 1))
         ax4.set_yticks(np.arange(4.6, 5.4, 0.2))
         ax4.legend()
@@ -72,7 +72,7 @@ class plotGenerator:
         # ax3.set_yticks(np.arange(np.min(self.anglesTrue), np.max(self.anglesTrue), 0.2))
         ax3.grid()
         ax4 = plt.subplot(413)
-        ax4.set_ylabel('Visual\nMagnitude (m)', fontsize=16)
+        ax4.set_ylabel('Visual\nDistribution (cm)', fontsize=16)
         ax4.set_xticks(np.arange(0, 25, 5))
         # ax4.set_yticks(np.arange(2, 4, 0.5))
         # ax4.set_yticks(np.arange(np.min(np.array(self.pdfsTrue) * 100), np.max(np.array(self.pdfsTrue) * 100), 0.1))

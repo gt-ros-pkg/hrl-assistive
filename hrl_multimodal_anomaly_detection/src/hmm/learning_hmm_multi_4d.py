@@ -672,10 +672,10 @@ class learning_hmm_multi_4d:
         y3 = X3_true[0]
         y4 = X4_true[0] * 100
 
-        zy1 = X1_true[0]
-        zy2 = X2_true[0]
-        zy3 = X3_true[0]
-        zy4 = X4_true[0] * 100
+        zy1 = np.mean(Z1_true, axis=0)
+        zy2 = np.mean(Z2_true, axis=0)
+        zy3 = np.mean(Z3_true, axis=0)
+        zy4 = np.mean(Z4_true * 100, axis=0)
 
         ## matplotlib.rcParams['figure.figsize'] = 8,7
         matplotlib.rcParams['pdf.fonttype'] = 42
@@ -685,9 +685,10 @@ class learning_hmm_multi_4d:
         plt.rc('text', usetex=True)
 
         ax1 = plt.subplot(512)
-        print np.shape(x), np.shape(y1)
+        # print np.shape(x), np.shape(y1)
         ax1.plot(x*(1./10.), y1)
-        ax1.plot(z*(1./10.), zy1)
+        # print np.shape(z), np.shape(zy1)
+        ax1.plot(z*(1./10.), zy1, 'r')
         y_min = np.amin(y1)
         y_max = np.amax(y1)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
@@ -705,7 +706,7 @@ class learning_hmm_multi_4d:
 
         ax2 = plt.subplot(511)
         ax2.plot(x*(1./10.), y2)
-        ax2.plot(z*(1./10.), zy2)
+        ax2.plot(z*(1./10.), zy2, 'r')
         y_max = np.amax(y2)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
                                                                  ymin=0, ymax=y_max + 0.25,
@@ -735,7 +736,7 @@ class learning_hmm_multi_4d:
 
         ax4 = plt.subplot(514)
         ax4.plot(x*(1./10.), y3)
-        ax4.plot(z*(1./10.), zy3)
+        ax4.plot(z*(1./10.), zy3, 'r')
         y_max = np.amax(y3)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
                                                                  ymin=0, ymax=y_max + 0.1,
@@ -751,7 +752,7 @@ class learning_hmm_multi_4d:
 
         ax5 = plt.subplot(513)
         ax5.plot(x*(1./10.), y4)
-        ax5.plot(z*(1./10.), zy4)
+        ax5.plot(z*(1./10.), zy4, 'r')
         y_min = np.amin(y4)
         y_max = np.amax(y4)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
@@ -760,7 +761,7 @@ class learning_hmm_multi_4d:
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax5.add_collection(collection)
-        ax5.set_ylabel("Visual (m)", fontsize=16)
+        ax5.set_ylabel("Visual (cm)", fontsize=16)
         ax5.set_xlim([0, x[-1]*(1./10.)])
         ax5.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
 
