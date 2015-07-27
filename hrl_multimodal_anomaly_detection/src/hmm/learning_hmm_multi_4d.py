@@ -9,6 +9,7 @@ from scipy.stats import norm, entropy
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+import matplotlib.collections as collections
 
 import ghmm
 from sklearn.metrics import r2_score
@@ -120,36 +121,46 @@ class learning_hmm_multi_4d:
         n, m = np.shape(X1)
         self.nGaussian = self.nState
 
-        # Get average loglikelihood threshold wrt progress
-        self.std_coff  = 1.0
-        g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
-        g_sig = float(m) / float(self.nGaussian) * self.std_coff
+        if self.check_method == 'global':
+            # Get average loglikelihood threshold over whole time
 
-        # print 'g_mu_list:', g_mu_list
-        # print 'g_sig:', g_sig
+            l_logp = []
+            for j in xrange(n):
+                for k in xrange(1,m):
+                    final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
+                    logp         = self.ml.loglikelihoods(final_ts_obj)[0]
 
-        ######################################################################################
-        if os.path.isfile(ml_pkl) and use_pkl:
-            with open(ml_pkl, 'rb') as f:
-                d = pickle.load(f)
-                self.l_statePosterior = d['state_post'] # time x state division
-                self.ll_mu            = d['ll_mu']
-                self.ll_std           = d['ll_std']
+                    l_logp.append(logp)
+
+            self.l_mu = np.mean(l_logp)
+            self.l_std = np.std(l_logp)
         else:
-            print 'Begining parallel job'
-            r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
-                                                                   self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
-                                                                   for i in xrange(self.nGaussian))
-            # r = [self.learn_likelihoods_progress_par(i, n, m, A, B, pi, X_train, g_mu_list[i], g_sig) for i in xrange(self.nGaussian)]
-            print 'Completed parallel job'
-            l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+            # Get average loglikelihood threshold wrt progress
+            self.std_coff  = 1.0
+            g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
+            g_sig = float(m) / float(self.nGaussian) * self.std_coff
 
-            d = dict()
-            d['state_post'] = self.l_statePosterior
-            d['ll_mu'] = self.ll_mu
-            d['ll_std'] = self.ll_std
-            with open(ml_pkl, 'wb') as f:
-                pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+            if os.path.isfile(ml_pkl) and use_pkl:
+                with open(ml_pkl, 'rb') as f:
+                    d = pickle.load(f)
+                    self.l_statePosterior = d['state_post'] # time x state division
+                    self.ll_mu            = d['ll_mu']
+                    self.ll_std           = d['ll_std']
+            else:
+                print 'Begining parallel job'
+                r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
+                                                                       self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
+                                                                       for i in xrange(self.nGaussian))
+                # r = [self.learn_likelihoods_progress_par(i, n, m, A, B, pi, X_train, g_mu_list[i], g_sig) for i in xrange(self.nGaussian)]
+                print 'Completed parallel job'
+                l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+
+                d = dict()
+                d['state_post'] = self.l_statePosterior
+                d['ll_mu'] = self.ll_mu
+                d['ll_std'] = self.ll_std
+                with open(ml_pkl, 'wb') as f:
+                    pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def get_sensitivity_gain(self, X1, X2, X3, X4):
 
@@ -523,38 +534,45 @@ class learning_hmm_multi_4d:
             print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
-        try:
-            post = np.array(self.ml.posterior(final_ts_obj))
-        except:
-            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            return 1.0, 0.0 # anomaly
-
-        n = len(np.squeeze(X1))
-
-        # Find the best posterior distribution
-        min_dist  = 100000000
-        min_index = 0
-        for j in xrange(self.nGaussian):
-            dist = entropy(post[n-1], self.l_statePosterior[j])
-            # print 'Index:', j, 'Entropy:', dist
-            if min_dist > dist:
-                min_index = j
-                min_dist  = dist
-
-        # print 'Computing anomaly'
-        # print logp
-        # print self.ll_mu[min_index]
-        # print self.ll_std[min_index]
-
-        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
-
-        if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
-            err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
+        if self.check_method == 'global' or self.check_method == 'globalChange':
+            if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
+                err = logp - (self.l_mu + ths_mult[1]*self.l_std)
+            else:
+                err = logp - (self.l_mu + ths_mult*self.l_std)
         else:
-            err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
+            try:
+                post = np.array(self.ml.posterior(final_ts_obj))
+            except:
+                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                return 1.0, 0.0 # anomaly
 
-        if err < 0.0: return 1.0, err # anomaly
-        else: return 0.0, err # normal    
+            n = len(np.squeeze(X1))
+
+            # Find the best posterior distribution
+            min_dist  = 100000000
+            min_index = 0
+            for j in xrange(self.nGaussian):
+                dist = entropy(post[n-1], self.l_statePosterior[j])
+                # print 'Index:', j, 'Entropy:', dist
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist
+
+            # print 'Computing anomaly'
+            # print logp
+            # print self.ll_mu[min_index]
+            # print self.ll_std[min_index]
+
+            # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
+
+            if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
+                err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
+            else:
+                err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
+
+        return err < 0.0, err
+        # if err < 0.0: return 1.0, err # anomaly
+        # else: return 0.0, err # normal
 
 
     @staticmethod
@@ -576,15 +594,19 @@ class learning_hmm_multi_4d:
 
         return X_scaled, min_c, max_c
 
-    def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true, ths_mult, figureSaveName=None):
+    def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true,
+                        Z1, Z2, Z3, Z4, Z1_true, Z2_true, Z3_true, Z4_true, ths_mult, figureSaveName=None):
         print np.shape(X1)
         n, m = np.shape(X1)
+        n2, m2 = np.shape(Z1)
         print "Input sequence X1: ", n, m
         print 'Anomaly: ', self.anomaly_check(X1, X2, X3, X4, ths_mult)
 
         X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+        Z_test = self.convert_sequence(Z1, Z2, Z3, Z4, emission=False)
 
         x = np.arange(0., float(m))
+        z = np.arange(0., float(m2))
         ll_likelihood = np.zeros(m)
         ll_state_idx  = np.zeros(m)
         ll_likelihood_mu  = np.zeros(m)
@@ -650,7 +672,10 @@ class learning_hmm_multi_4d:
         y3 = X3_true[0]
         y4 = X4_true[0] * 100
 
-        import matplotlib.collections as collections
+        zy1 = X1_true[0]
+        zy2 = X2_true[0]
+        zy3 = X3_true[0]
+        zy4 = X4_true[0] * 100
 
         ## matplotlib.rcParams['figure.figsize'] = 8,7
         matplotlib.rcParams['pdf.fonttype'] = 42
@@ -662,6 +687,7 @@ class learning_hmm_multi_4d:
         ax1 = plt.subplot(512)
         print np.shape(x), np.shape(y1)
         ax1.plot(x*(1./10.), y1)
+        ax1.plot(z*(1./10.), zy1)
         y_min = np.amin(y1)
         y_max = np.amax(y1)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
@@ -679,6 +705,7 @@ class learning_hmm_multi_4d:
 
         ax2 = plt.subplot(511)
         ax2.plot(x*(1./10.), y2)
+        ax2.plot(z*(1./10.), zy2)
         y_max = np.amax(y2)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
                                                                  ymin=0, ymax=y_max + 0.25,
@@ -708,6 +735,7 @@ class learning_hmm_multi_4d:
 
         ax4 = plt.subplot(514)
         ax4.plot(x*(1./10.), y3)
+        ax4.plot(z*(1./10.), zy3)
         y_max = np.amax(y3)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
                                                                  ymin=0, ymax=y_max + 0.1,
@@ -723,6 +751,7 @@ class learning_hmm_multi_4d:
 
         ax5 = plt.subplot(513)
         ax5.plot(x*(1./10.), y4)
+        ax5.plot(z*(1./10.), zy4)
         y_min = np.amin(y4)
         y_max = np.amax(y4)
         collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),

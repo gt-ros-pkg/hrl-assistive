@@ -269,6 +269,44 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
 
     return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
 
+def createSampleSet(forcesList, distancesList, anglesList, pdfList, init=0):
+    testDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, pdfList, [10]*len(forcesList), [True]*len(forcesList))
+    return [testDataSet.samples[init:, i, :] for i in xrange(4)]
+
+def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfList=None, testForcesList=None,
+                     testDistancesList=None, testAnglesList=None, testPdfList=None, c=-5, verbose=False):
+    truePos = 0
+    trueNeg = 0
+    falsePos = 0
+    falseNeg = 0
+
+    if verbose: print '\nBeginning anomaly testing for nonanomalous training set\n'
+    for i in xrange(len(forcesList)):
+        if verbose: print 'Anomaly Error for training set %d' % i
+        if distancesList is not None:
+            anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], pdfList[i], c)
+        else:
+            anomaly, error = hmm.anomaly_check(forcesList[i], c)
+        if not anomaly:
+            trueNeg += 1
+        else:
+            falsePos += 1
+
+    if verbose: print '\nBeginning anomaly testing for test set\n'
+    for i in xrange(len(testForcesList)):
+        if verbose: print 'Anomaly Error for test set %d' % i
+        if distancesList is not None:
+            anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testPdfList[i], c)
+        else:
+            anomaly, error = hmm.anomaly_check(testForcesList[i], c)
+        if anomaly:
+            truePos += 1
+        else:
+            falseNeg += 1
+
+    print 'True Positive:', truePos, 'True Negative:', trueNeg, 'False Positive:', falsePos, 'False Negative', falseNeg
+
+
 def trainMultiHMM():
     fileName = os.path.join(os.path.dirname(__file__), 'data/bowl2Data2.pkl')
 
@@ -301,7 +339,7 @@ def trainMultiHMM():
                      '/home/zerickson/Recordings/bowl2Stage3Anomalous_scooping_fvk_07-24-2015_09-08-15/iteration_%d_failure.pkl']
         iterationSets = [xrange(3), xrange(3), xrange(3), xrange(5), xrange(3), xrange(3), xrange(3)]
         testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, testForcesTrueList, testDistancesTrueList, \
-            testAnglesTrueList, testPdfTrueList, testMinList, testMaxList = loadData(fileNames, iterationSets)
+            testAnglesTrueList, testPdfTrueList, testMinList, testMaxList = loadData(fileNames, iterationSets, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
             pickle.dump((forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
@@ -326,75 +364,53 @@ def trainMultiHMM():
     # Plot modalities
     # for modality in [forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList]:
     # for modality in [forcesTrueList[:3] + testForcesTrueList[20:], distancesTrueList[:3] + testDistancesTrueList[20:], anglesTrueList[:3] + testAnglesTrueList[20:], pdfTrueList[:3] + testPdfTrueList[20:]]:
-    for modality in [forcesTrueList + testForcesTrueList[0:2], distancesTrueList + testDistancesTrueList[0:2], anglesTrueList + testAnglesTrueList[0:2], pdfTrueList + testPdfTrueList[0:2]]:
-        for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[0:2])): # timesList + testTimesList[0:2]
-            plt.plot(times, modal, label='%d' % index)
-        plt.legend()
-        plt.show()
+    # for modality in [forcesTrueList + testForcesTrueList[0:2], distancesTrueList + testDistancesTrueList[0:2], anglesTrueList + testAnglesTrueList[0:2], pdfTrueList + testPdfTrueList[0:2]]:
+    #     for index, (modal, times) in enumerate(zip(modality, timesList + testTimesList[0:2])): # timesList + testTimesList[0:2]
+    #         plt.plot(times, modal, label='%d' % index)
+    #     plt.legend()
+    #     plt.show()
 
     # Setup training data
-    chunks = [10]*len(forcesList)
-    labels = [True]*len(forcesList)
-    trainDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, pdfList, chunks, labels)
-    trainTrueDataSet = create_mvpa_dataset(forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, chunks, labels)
-
-    print trainDataSet.samples.shape
-    forcesSample = trainDataSet.samples[:, 0, :]
-    distancesSample = trainDataSet.samples[:, 1, :]
-    anglesSample = trainDataSet.samples[:, 2, :]
-    pdfSample = trainDataSet.samples[:, 3, :]
-    forcesTrueSample = trainTrueDataSet.samples[:, 0, :]
-    distancesTrueSample = trainTrueDataSet.samples[:, 1, :]
-    anglesTrueSample = trainTrueDataSet.samples[:, 2, :]
-    pdfTrueSample = trainTrueDataSet.samples[:, 3, :]
-
-    # print 'Forces Sample:', forcesSample[:, :5]
-    # print 'Distances Sample:', distancesSample[:, :5]
-    # print 'Angles Sample:', anglesSample[:, :5]
-    # print 'PDF Sample:', pdfSample[:, :5]
+    forcesSample, distancesSample, anglesSample, pdfSample = createSampleSet(forcesList, distancesList, anglesList, pdfList)
+    forcesTrueSample, distancesTrueSample, anglesTrueSample, pdfTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList)
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl2.pkl', use_pkl=True)
 
-    testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
+    # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
+    # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
 
-    # print hmm.predict(testSet)
-    print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
-    print '\nBeginning anomaly testing for nonanomalous training set\n'
-    for i in xrange(len(forcesList)):
-        print 'Anomaly Error for training set %d' % i
-        print hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], pdfList[i], -5)
-
-    print '\nBeginning anomaly testing for test set\n'
-    for i in xrange(len(testForcesList)):
-        print 'Anomaly Error for test set %d' % i
-        print hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testPdfList[i], -5)
+    tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList)
 
     hmm.path_disp(forcesList, distancesList, anglesList, pdfList)
 
-    figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
-    hmm.likelihood_disp(forcesSample[1:], distancesSample[1:], anglesSample[1:], pdfSample[1:], forcesTrueSample[1:], distancesTrueSample[1:],
-                        anglesTrueSample[1:], pdfTrueSample[1:], -5.0, figureSaveName=None)
+    # figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
+    # hmm.likelihood_disp(forcesSample[1:], distancesSample[1:], anglesSample[1:], pdfSample[1:], forcesTrueSample[1:], distancesTrueSample[1:], anglesTrueSample[1:], pdfTrueSample[1:],
+    #                     -5.0, figureSaveName=None)
 
-    # Find the largest iteration
-    maxsize = max([len(x) for x in testForcesList])
-    # Extrapolate each time step
-    testForcesList, testDistancesList, testAnglesList, testPdfList, \
-        testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList = extrapolateAllData([testForcesList, testDistancesList, testAnglesList, testPdfList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList], maxsize)
-    testDataSet = create_mvpa_dataset(testForcesList, testDistancesList, testAnglesList, testPdfList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTestSample = testDataSet.samples[17:, 0, :]
-    distancesTestSample = testDataSet.samples[17:, 1, :]
-    anglesTestSample = testDataSet.samples[17:, 2, :]
-    pdfTestSample = testDataSet.samples[17:, 3, :]
-    testTrueDataSet = create_mvpa_dataset(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList, [10]*len(testForcesList), [True]*len(testForcesList))
-    forcesTrueTestSample = testTrueDataSet.samples[17:, 0, :]
-    distancesTrueTestSample = testTrueDataSet.samples[17:, 1, :]
-    anglesTrueTestSample = testTrueDataSet.samples[17:, 2, :]
-    pdfTrueTestSample = testTrueDataSet.samples[17:, 3, :]
+    # # Find the largest iteration
+    # maxsize = max([len(x) for x in testForcesList])
+    # # Extrapolate each time step
+    # testForcesList, testDistancesList, testAnglesList, testPdfList, \
+    #     testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList = extrapolateAllData([testForcesList, testDistancesList, testAnglesList, testPdfList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList], maxsize)
+
+    forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample = createSampleSet(testForcesList, testDistancesList, testAnglesList, testPdfList, init=17)
+    forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, pdfTrueTestSample = createSampleSet(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList, init=17)
 
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_anomaly.png')
-    hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample, forcesTrueTestSample, distancesTrueTestSample,
-                        anglesTrueTestSample, pdfTrueTestSample, -5.0, figureSaveName=None)
+    hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample, forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, pdfTrueTestSample,
+                        forcesSample[1:], distancesSample[1:], anglesSample[1:], pdfSample[1:], forcesTrueSample[1:], distancesTrueSample[1:], anglesTrueSample[1:], pdfTrueSample[1:], -5.0, figureSaveName=None)
+
+    # -- Global threshold approach --
+    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl2.pkl', use_pkl=True)
+
+    tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, c=-5, verbose=True)
+
+    print '\n---------- Global Threshold ------------\n'
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, c=(-1*c))
 
     # -- 1 dimensional force hidden Markov model --
     print '\n\nBeginning testing for 1 dimensional force hidden Markov model\n\n'
@@ -402,19 +418,7 @@ def trainMultiHMM():
     hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
     hmm1d.fit(xData1=forcesSample, ml_pkl='modals/ml_1d_bowl.pkl', use_pkl=True)
 
-    testSet = hmm1d.convert_sequence(forcesList[0])
-
-    # print hmm.predict(testSet)
-    print 'Log likelihood of testset:', hmm1d.loglikelihood(testSet)
-    print '\nBeginning anomaly testing for nonanomalous training set\n'
-    for i in xrange(len(forcesList)):
-        print 'Anomaly Error for training set %d' % i
-        print hmm1d.anomaly_check(forcesList[i], -5)
-
-    print '\nBeginning anomaly testing for nonanomalous test set\n'
-    for i in xrange(len(testForcesList)):
-        print 'Anomaly Error for test set %d' % i
-        print hmm1d.anomaly_check(testForcesList[i], -5)
+    tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, c=-5, verbose=True)
 
     figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
     hmm1d.likelihood_disp(forcesSample, forcesTrueSample, -5.0, figureSaveName=None)
