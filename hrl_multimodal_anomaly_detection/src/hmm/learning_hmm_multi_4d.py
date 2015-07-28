@@ -91,8 +91,8 @@ class learning_hmm_multi_4d:
             ## pi = [1.0/float(self.nState)] * self.nState
             pi = [0.0] * self.nState
             pi[0] = 1.0
-            # pi[0] = 0.4
-            # pi[1] = 0.2
+            # pi[0] = 0.3
+            # pi[1] = 0.3
             # pi[2] = 0.2
             # pi[3] = 0.2
 
@@ -670,12 +670,12 @@ class learning_hmm_multi_4d:
         y1 = X1_true[0]
         y2 = X2_true[0]
         y3 = X3_true[0]
-        y4 = X4_true[0] * 100
+        y4 = X4_true[0]
 
         zy1 = np.mean(Z1_true, axis=0)
         zy2 = np.mean(Z2_true, axis=0)
         zy3 = np.mean(Z3_true, axis=0)
-        zy4 = np.mean(Z4_true * 100, axis=0)
+        zy4 = np.mean(Z4_true, axis=0)
 
         ## matplotlib.rcParams['figure.figsize'] = 8,7
         matplotlib.rcParams['pdf.fonttype'] = 42
@@ -761,15 +761,15 @@ class learning_hmm_multi_4d:
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax5.add_collection(collection)
-        ax5.set_ylabel("Visual (cm)", fontsize=16)
+        ax5.set_ylabel("Visual (m)", fontsize=16)
         ax5.set_xlim([0, x[-1]*(1./10.)])
         ax5.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
 
         # -----
 
         ax3 = plt.subplot(515)
-        ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
-        ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
+        ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
+        ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
         ax3.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
         ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
         ax3.set_ylabel('Log-likelihood',fontsize=16)

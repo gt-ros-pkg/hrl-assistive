@@ -213,9 +213,9 @@ class onlineAnomalyDetection(Thread):
             for point in newPoints:
                 pointMu = point - mu
                 # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                pdfValue += constant * np.exp(-1.0/1.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+                pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
 
-            pdfValue = pdfValue / float(len(points))
+            # pdfValue = pdfValue / float(len(points))
 
             # print 'Number of points:', len(points)
             print 'Pdf before scale', pdfValue

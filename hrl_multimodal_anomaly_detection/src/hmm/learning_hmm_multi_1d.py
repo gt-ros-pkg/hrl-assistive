@@ -361,8 +361,7 @@ class learning_hmm_multi_1d:
         else:
             err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-        if err < 0.0: return 1.0, err # anomaly
-        else: return 0.0, err # normal    
+        return err < 0.0, err
 
 
     @staticmethod

@@ -14,7 +14,7 @@ import ghmm
 from sklearn.metrics import r2_score
 from joblib import Parallel, delayed
 
-class learning_hmm_multi:
+class learning_hmm_multi_2d:
     def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=2, check_method='progress'):
         self.ml = None
 
@@ -46,9 +46,10 @@ class learning_hmm_multi:
 
         print 'HMM initialized for', self.check_method
 
-    def fit(self, aXData1, aXData2=None, A=None, B=None, pi=None, cov_mult=(1.0, 1.0, 1.0, 1.0), verbose=False, ml_pkl='ml_temp.pkl', use_pkl=False):
-        X1 = np.array(aXData1)
-        X2 = np.array(aXData2)
+    def fit(self, xData1, xData2=None, A=None, B=None, pi=None, cov_mult=(1.0, 1.0, 1.0, 1.0), verbose=False, ml_pkl='ml_temp.pkl', use_pkl=False):
+        ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
+        X1 = np.array(xData1)
+        X2 = np.array(xData2)
             
         if A is None:        
             if verbose: print "Generating a new A matrix"
@@ -477,8 +478,7 @@ class learning_hmm_multi:
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
                     
-        if err < 0.0: return 1.0, 0.0 # anomaly
-        else: return 0.0, err # normal    
+        return err < 0.0, err
 
 ####################################################################
 # functions for paralell computation
