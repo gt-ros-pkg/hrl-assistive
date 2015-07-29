@@ -85,7 +85,7 @@ class onlineAnomalyDetection(Thread):
         self.soundHandle = SoundClient()
 
         self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM()
-        self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
+        # self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
         self.times = np.array(self.times)
         self.anomalyOccured = False
 
@@ -109,7 +109,7 @@ class onlineAnomalyDetection(Thread):
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured:
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -2)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, 0)
                     print 'Anomaly error:', error
                     if anomaly > 0:
                         self.interruptPublisher.publish('Interrupt')
@@ -229,6 +229,18 @@ class onlineAnomalyDetection(Thread):
         # self.publishPoints('bowl', [self.bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
         # self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
         # self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
+
+        if index < len(self.forces):
+            distanceDiff = np.abs(self.distances[index] - distance)
+            if distance < self.distances[index]:
+                distance -= distanceDiff
+            else:
+                distance += distanceDiff
+            angleDiff = np.abs(self.angles[index] - angle)
+            if angle < self.angles[index]:
+                angle -= angleDiff
+            else:
+                angle += angleDiff
 
         if index >= len(self.forces):
             self.forces.append(force)
