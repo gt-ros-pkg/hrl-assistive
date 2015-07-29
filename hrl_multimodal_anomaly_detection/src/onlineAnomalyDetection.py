@@ -109,7 +109,7 @@ class onlineAnomalyDetection(Thread):
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured:
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -1)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -3)
                     print 'Anomaly error:', error
                     if anomaly > 0:
                         self.interruptPublisher.publish('Interrupt')
