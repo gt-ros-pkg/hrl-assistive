@@ -231,6 +231,12 @@ class onlineAnomalyDetection(Thread):
         # self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
 
         if index < len(self.forces):
+            forceDiff = np.abs(self.forces[index] - force)
+            if forceDiff > 0.5:
+                if force < self.forces[index]:
+                    force -= forceDiff
+                else:
+                    force += forceDiff
             distanceDiff = np.abs(self.distances[index] - distance)
             if distanceDiff > 0.5:
                 if distance < self.distances[index]:
