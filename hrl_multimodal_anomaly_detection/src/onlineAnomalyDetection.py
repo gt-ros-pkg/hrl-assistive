@@ -85,6 +85,7 @@ class onlineAnomalyDetection(Thread):
         self.soundHandle = SoundClient()
 
         self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM()
+        self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
         self.times = np.array(self.times)
         self.anomalyOccured = False
 
@@ -108,7 +109,7 @@ class onlineAnomalyDetection(Thread):
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured:
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, 0.5)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -1)
                     print 'Anomaly error:', error
                     if anomaly > 0:
                         self.interruptPublisher.publish('Interrupt')
