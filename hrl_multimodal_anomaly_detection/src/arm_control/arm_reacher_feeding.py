@@ -124,7 +124,7 @@ class armReachAction(mpcBaseAction):
 
         #Timeouts used in setOrientGoal() function for each motion
         self.timeoutsScooping = [6, 3, 3, 2, 2]
-        self.timeoutsFeeding = [3, 3, 3]
+        self.timeoutsFeeding = [3, 1.5, 3]
 
         #Paused used between each motion
         #... for automatic movement
