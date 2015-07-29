@@ -123,6 +123,7 @@ def visualFeatures(fileName, forceTimes):
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
                     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
                 # pdfList.append(pdfValue / float(len(points)))
+                pdfList.append(pdfValue)
             pdf.append(pdfList[0])
 
         # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
