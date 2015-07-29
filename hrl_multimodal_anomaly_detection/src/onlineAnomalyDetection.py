@@ -29,10 +29,12 @@ from sound_play.libsoundplay import SoundClient
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class onlineAnomalyDetection(Thread):
-    def __init__(self, targetFrame=None, tfListener=None):
+    def __init__(self, targetFrame=None, tfListener=None, isScooping=True):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False
+
+        self.isScooping = isScooping
 
         self.publisher = rospy.Publisher('visualization_marker', Marker)
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
@@ -112,7 +114,10 @@ class onlineAnomalyDetection(Thread):
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -1)
                     print 'Anomaly error:', error
                     if anomaly > 0:
-                        self.interruptPublisher.publish('Interrupt')
+                        if self.isScooping:
+                            self.interruptPublisher.publish('Interrupt')
+                        else:
+                            self.interruptPublisher.publish('InterruptHead')
                         self.anomalyOccured = True
                         # self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)

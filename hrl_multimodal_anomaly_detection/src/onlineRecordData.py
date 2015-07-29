@@ -28,12 +28,12 @@ def log_parse():
 
 
 class ADL_log:
-    def __init__(self):
+    def __init__(self, isScooping=True):
         self.init_time = 0
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
 
-        self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener)
+        self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=isScooping)
 
         self.scooping_steps_times = []
         self.scoopingStepsService = rospy.Service('/scooping_steps_service', None_Bool, self.scoopingStepsTimesCallback)
