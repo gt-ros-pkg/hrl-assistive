@@ -141,8 +141,8 @@ def visualFeatures(fileName, forceTimes):
                     pointMu = point - muSet
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
                     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu)) # Normally: np.exp(-1.0/2.0
-                # pdfList.append(pdfValue / float(len(points)))
-                pdfList.append(pdfValue)
+                pdfList.append(pdfValue / float(len(points)))
+                # pdfList.append(pdfValue)
             pdf.append(pdfList[0])
 
         # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
@@ -282,22 +282,22 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfLi
     falsePos = 0
     falseNeg = 0
 
-    if verbose: print '\nBeginning anomaly testing for nonanomalous training set\n'
-    for i in xrange(len(forcesList)):
-        if verbose: print 'Anomaly Error for training set %d' % i
-        if distancesList is None:
-            anomaly, error = hmm.anomaly_check(forcesList[i], c)
-        elif anglesList is None:
-            anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], c)
-        else:
-            anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], pdfList[i], c)
-
-        if verbose: print anomaly, error
-
-        if not anomaly:
-            trueNeg += 1
-        else:
-            falsePos += 1
+    # if verbose: print '\nBeginning anomaly testing for nonanomalous training set\n'
+    # for i in xrange(len(forcesList)):
+    #     if verbose: print 'Anomaly Error for training set %d' % i
+    #     if distancesList is None:
+    #         anomaly, error = hmm.anomaly_check(forcesList[i], c)
+    #     elif anglesList is None:
+    #         anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], c)
+    #     else:
+    #         anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], pdfList[i], c)
+    #
+    #     if verbose: print anomaly, error
+    #
+    #     if not anomaly:
+    #         trueNeg += 1
+    #     else:
+    #         falsePos += 1
 
     if verbose: print '\nBeginning anomaly testing for test set\n'
     for i in xrange(len(testForcesList)):
@@ -325,9 +325,11 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfLi
 
     print 'True Positive:', truePos, 'True Negative:', trueNeg, 'False Positive:', falsePos, 'False Negative', falseNeg
 
+    return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
+
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl3Data.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl3DataAvgViz.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -377,7 +379,7 @@ def trainMultiHMM():
                      '/home/zerickson/Recordings/bowl3Stage5Anomalous_scooping_fvk_07-27-2015_15-27-51/iteration_%d_failure.pkl',
                      '/home/zerickson/Recordings/bowl3Stage6Anomalous_scooping_fvk_07-27-2015_15-49-27/iteration_%d_failure.pkl']
         iterationSets = [xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), [3],
-                         xrange(4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
+                         xrange(2, 4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
         testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, testForcesTrueList, testDistancesTrueList, \
             testAnglesTrueList, testPdfTrueList, testMinList, testMaxList = loadData(fileNames, iterationSets, isTrainingData=True)
 
@@ -416,7 +418,7 @@ def trainMultiHMM():
     forcesTrueSample, distancesTrueSample, anglesTrueSample, pdfTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList)
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl3.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl3_avgviz.pkl', use_pkl=True)
 
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
@@ -428,9 +430,9 @@ def trainMultiHMM():
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=14, c=-6, verbose=True)
     tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=-2, verbose=True)
 
-    # for c in np.arange(0, 10, 0.5):
-    #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=(-1*c))
+    for c in np.arange(0, 10, 0.5):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=(-1*c))
 
     # hmm.path_disp(forcesList, distancesList, anglesList, pdfList)
 
@@ -448,7 +450,7 @@ def trainMultiHMM():
     # -- Global threshold approach --
     print '\n---------- Global Threshold ------------\n'
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_global.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_global_avgviz.pkl', use_pkl=True)
 
     # print 'c=2'
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=-2, verbose=True)
@@ -464,43 +466,98 @@ def trainMultiHMM():
     hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
     hmm1d.fit(xData1=forcesSample, ml_pkl='modals/ml_1d_force.pkl', use_pkl=True)
 
-    # for c in xrange(10):
-    #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=(-1*c))
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=(-1*c))
 
     # c=3 is the best fit
-    tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=-3, verbose=True)
+    accuracyForces = tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=-3)
 
     # figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
     # hmm1d.likelihood_disp(forcesSample, forcesTrueSample, -3.0, figureSaveName=None)
 
 
-    # -- 2 dimensional distance/angle kinematics hidden Markov model --
-    print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model\n\n'
+    # -- 1 dimensional distance hidden Markov model --
+    print '\n\nBeginning testing for 1 dimensional distance hidden Markov model\n\n'
 
-    hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2)
-    hmm2d.fit(xData1=distancesSample, xData2=anglesSample, ml_pkl='modals/ml_2d_kinematics.pkl', use_pkl=True)
+    hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
+    hmm1d.fit(xData1=distancesSample, ml_pkl='modals/ml_1d_distance.pkl', use_pkl=True)
 
-    # for c in xrange(10):
-    #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=(-1*c))
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm1d, distancesList, testForcesList=testDistancesList, numOfSuccess=16, c=(-1*c))
+    # c=1 is the best fit
+    accuracyDistances = tableOfConfusion(hmm1d, distancesList, testForcesList=testDistancesList, numOfSuccess=16, c=-1)
+
+
+    # -- 1 dimensional angle hidden Markov model --
+    print '\n\nBeginning testing for 1 dimensional angle hidden Markov model\n\n'
+
+    hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
+    hmm1d.fit(xData1=anglesSample, ml_pkl='modals/ml_1d_angle.pkl', use_pkl=True)
+
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm1d, anglesList, testForcesList=testAnglesList, numOfSuccess=16, c=(-1*c))
     # c=0 is the best fit
-    tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=0)
-
+    accuracyAngles = tableOfConfusion(hmm1d, anglesList, testForcesList=testAnglesList, numOfSuccess=16, c=0)
 
 
     # -- 1 dimensional visual hidden Markov model --
     print '\n\nBeginning testing for 1 dimensional visual hidden Markov model\n\n'
 
     hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=pdfSample, ml_pkl='modals/ml_1d_visual.pkl', use_pkl=True)
+    hmm1d.fit(xData1=pdfSample, ml_pkl='modals/ml_1d_visual_avgviz.pkl', use_pkl=True)
 
-    # for c in xrange(10):
-    #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm1d, pdfList, testForcesList=testPdfList, numOfSuccess=16, c=(-1*c))
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm1d, pdfList, testForcesList=testPdfList, numOfSuccess=16, c=(-1*c))
     # c=2 is the best fit
-    tableOfConfusion(hmm1d, pdfList, testForcesList=testPdfList, numOfSuccess=16, c=-2)
+    accuracyVision = tableOfConfusion(hmm1d, pdfList, testForcesList=testPdfList, numOfSuccess=16, c=-2)
 
+
+    # -- 2 dimensional distance/angle kinematics hidden Markov model --
+    print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model\n\n'
+
+    hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2)
+    hmm2d.fit(xData1=forcesSample, xData2=distancesSample, ml_pkl='modals/ml_2d_kinematics_fd.pkl', use_pkl=True)
+
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm2d, forcesList, distancesList, testForcesList=testForcesList, testDistancesList=testDistancesList, numOfSuccess=16, c=(-1*c))
+    # c=1 is the best fit
+    accuracyKinematics = tableOfConfusion(hmm2d, forcesList, distancesList, testForcesList=testForcesList, testDistancesList=testDistancesList, numOfSuccess=16, c=-1)
+
+    # -- 2 dimensional distance/angle kinematics hidden Markov model --
+    print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model with global threshold\n\n'
+
+    hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2, check_method='global')
+    hmm2d.fit(xData1=distancesSample, xData2=anglesSample, ml_pkl='modals/ml_2d_kinematics.pkl', use_pkl=True)
+
+    for c in xrange(10):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=(-1*c))
+    # c=0 is the best fit
+    tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=0)
+
+
+    fig = plt.figure()
+    indices = np.arange(5)
+    width = 0.5
+    bars = plt.bar(indices + width/4.0, [accuracyForces, accuracyDistances, accuracyAngles, accuracyVision, accuracyKinematics], width, alpha=0.5, color='g')
+    plt.ylabel('Accuracy (%)', fontsize=16)
+    plt.xticks(indices + width*3/4.0, ('Force', 'Distance', 'Angle', 'Vision', 'Distance\n& Angle'), fontsize=16)
+    plt.ylim([0, 100])
+
+    def autolabel(rects):
+        # attach some text labels
+        for rect in rects:
+            height = rect.get_height()
+            plt.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
+                    ha='center', va='bottom')
+    autolabel(bars)
+
+    plt.show()
 
 trainMultiHMM()
 

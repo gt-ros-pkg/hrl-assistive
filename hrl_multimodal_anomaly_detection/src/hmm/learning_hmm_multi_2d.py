@@ -138,10 +138,11 @@ class learning_hmm_multi_2d:
 
             ######################################################################################
             if os.path.isfile(ml_pkl) and use_pkl:
-                d = pickle.load(ml_pkl)
-                self.l_statePosterior = d['state_post'] # time x state division
-                self.ll_mu            = d['ll_mu']
-                self.ll_std           = d['ll_std']            
+                with open(ml_pkl, 'rb') as f:
+                    d = pickle.load(f)
+                    self.l_statePosterior = d['state_post'] # time x state division
+                    self.ll_mu            = d['ll_mu']
+                    self.ll_std           = d['ll_std']
             else:        
                 n_jobs = -1
                 r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
