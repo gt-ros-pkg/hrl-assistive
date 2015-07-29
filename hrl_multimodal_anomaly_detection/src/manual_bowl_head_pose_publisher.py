@@ -50,10 +50,10 @@ class bowlPublisher:
 
         (self.head_pose_manual.pose.position.x,
             self.head_pose_manual.pose.position.y,
-            self.head_pose_manual.pose.position.z) = (0.797, -0.365, 0.06)
+            self.head_pose_manual.pose.position.z) = (0.797, -0.365, 0.02)
             # Mannequin: 0.742, -0.450, -0.049
             # Hyder: 0.797, -0.365, 0.097
-            # Zackory: 0.797, -0.365, 0.06
+            # Zackory: 0.797, -0.365, 0.02
 
         (self.head_pose_manual.pose.orientation.x,
             self.head_pose_manual.pose.orientation.y,

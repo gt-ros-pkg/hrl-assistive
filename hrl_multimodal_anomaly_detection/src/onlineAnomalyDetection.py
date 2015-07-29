@@ -230,6 +230,7 @@ class onlineAnomalyDetection(Thread):
         # self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
         # self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
 
+        # Magnify relative errors for online detection
         if index < len(self.forces):
             forceDiff = np.abs(self.forces[index] - force)
             if forceDiff > 0.5:
