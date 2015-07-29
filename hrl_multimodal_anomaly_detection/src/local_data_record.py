@@ -3,8 +3,8 @@
 import sys
 import time
 import rospy
-from record_data import ADL_log
-# from onlineRecordData import ADL_log
+# from record_data import ADL_log
+from onlineRecordData import ADL_log
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 from hrl_multimodal_anomaly_detection.srv import String_String
@@ -34,8 +34,8 @@ class dataRecord:
             print "Exiting program!"
             sys.exit()
 
-        # self.log = ADL_log()
-        self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=self.task)
+        self.log = ADL_log()
+        # self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=self.task)
 
         #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
         # repeatAns = raw_input("Change trial name before starting? [y/n]")

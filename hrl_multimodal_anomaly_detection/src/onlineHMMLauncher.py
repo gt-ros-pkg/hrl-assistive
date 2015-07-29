@@ -72,7 +72,7 @@ def visualFeatures(fileName, forceTimes):
             pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
             # Find points within a sphere of radius 8 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.08
+            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.11
 
             # Points near bowl
             points = pointSet[nearbyPoints]
@@ -83,7 +83,7 @@ def visualFeatures(fileName, forceTimes):
             # If no points found, try opening up to 10 cm
             if len(points) <= 0:
                 # Find points within a sphere of radius 10 cm around the center of bowl
-                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.10
+                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.13
                 # Points near bowl
                 points = pointSet[nearbyPoints]
                 if len(points) <= 0:
@@ -121,8 +121,8 @@ def visualFeatures(fileName, forceTimes):
                 for point in newPoints:
                     pointMu = point - muSet
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                    pdfValue += constant * np.exp(-1.0/1.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-                pdfList.append(pdfValue / float(len(points)))
+                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+                # pdfList.append(pdfValue / float(len(points)))
             pdf.append(pdfList[0])
 
         # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
@@ -186,9 +186,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 for modality in [forces, distances, angles, pdf]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
-                pdfDiff = maxVals[3] - minVals[3]
-                minVals[3] -= pdfDiff / 2.0
-                maxVals[3] += pdfDiff / 2.0
+                # pdfDiff = maxVals[3] - minVals[3]
+                # minVals[3] -= pdfDiff / 2.0
+                # maxVals[3] += pdfDiff / 2.0
                 # forceDiff = maxVals[0] - minVals[0]
                 # minVals[0] -= forceDiff / 4.0
                 # maxVals[0] += forceDiff / 4.0
@@ -228,17 +228,24 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
 
 def setupMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'onlineDataNewGauss.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'onlineData.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
-        fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl']
-        iterationSets = [xrange(6), xrange(6), xrange(6), xrange(3), xrange(3), xrange(3)]
+        # fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
+        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
+        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl',
+        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
+        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
+        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl']
+        # iterationSets = [xrange(6), xrange(6), xrange(6), xrange(3), xrange(3), xrange(3)]
+        fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
+        iterationSets = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
         forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals = loadData(fileNames, iterationSets, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
@@ -259,7 +266,7 @@ def setupMultiHMM():
     pdfSample = trainDataSet.samples[:, 3, :]
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online_newGauss.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='../ml_4d_online.pkl', use_pkl=True)
 
     print 'minValues', minVals
     print 'maxValues', maxVals

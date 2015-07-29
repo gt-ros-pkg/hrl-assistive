@@ -111,7 +111,7 @@ class onlineAnomalyDetection(Thread):
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, -5)
                     print 'Anomaly error:', error
                     if anomaly > 0:
-                        # self.interruptPublisher.publish('Interrupt')
+                        self.interruptPublisher.publish('Interrupt')
                         self.anomalyOccured = True
                         # self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
@@ -173,23 +173,23 @@ class onlineAnomalyDetection(Thread):
         pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
 
         # Find points within a sphere of radius 8 cm around the center of bowl
-        nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.08
+        nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.11
 
         # Points near bowl
         points = pointSet[nearbyPoints]
 
         if len(points) <= 0:
-            print 'ARGH, no points within 8 cm of bowl location found'
+            print 'ARGH, no points within 11 cm of bowl location found'
 
         pdfValue = 0
         # If no points found, try opening up to 10 cm
         if len(points) <= 0:
             # Find points within a sphere of radius 10 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.10
+            nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.13
             # Points near bowl
             points = pointSet[nearbyPoints]
             if len(points) <= 0:
-                print 'No points within 10 cm of bowl location found'
+                print 'No points within 13 cm of bowl location found'
 
         if len(points) > 0:
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
@@ -218,16 +218,16 @@ class onlineAnomalyDetection(Thread):
             # pdfValue = pdfValue / float(len(points))
 
             # print 'Number of points:', len(points)
-            print 'Pdf before scale', pdfValue
+            # print 'Pdf before scale', pdfValue
             pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
-            print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
+            # print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
 
-        self.publishPoints('points', points, g=1.0)
-        self.publishPoints('nonpoints', pointSet[nearbyPoints == False], r=1.0)
-
-        self.publishPoints('bowl', [self.bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
-        self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
-        self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
+        # self.publishPoints('points', points, g=1.0)
+        # self.publishPoints('nonpoints', pointSet[nearbyPoints == False], r=1.0)
+        #
+        # self.publishPoints('bowl', [self.bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
+        # self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
+        # self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
 
         if index >= len(self.forces):
             self.forces.append(force)

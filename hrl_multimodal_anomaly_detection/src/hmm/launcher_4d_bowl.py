@@ -141,8 +141,8 @@ def visualFeatures(fileName, forceTimes):
                     pointMu = point - muSet
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
                     pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu)) # Normally: np.exp(-1.0/2.0
-                pdfList.append(pdfValue / float(len(points)))
-                # pdfList.append(pdfValue)
+                # pdfList.append(pdfValue / float(len(points)))
+                pdfList.append(pdfValue)
             pdf.append(pdfList[0])
 
         # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
@@ -329,7 +329,7 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfLi
 
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl3DataAvgViz.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl3Data.pkl')
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
@@ -418,7 +418,7 @@ def trainMultiHMM():
     forcesTrueSample, distancesTrueSample, anglesTrueSample, pdfTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList)
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl3_avgviz.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl3.pkl', use_pkl=True)
 
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
@@ -430,9 +430,9 @@ def trainMultiHMM():
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=14, c=-6, verbose=True)
     tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=-2, verbose=True)
 
-    for c in np.arange(0, 10, 0.5):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=(-1*c))
+    # for c in np.arange(0, 10, 0.5):
+    #     print 'Table of Confusion for c=', c
+    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=(-1*c))
 
     # hmm.path_disp(forcesList, distancesList, anglesList, pdfList)
 
@@ -450,7 +450,7 @@ def trainMultiHMM():
     # -- Global threshold approach --
     print '\n---------- Global Threshold ------------\n'
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_global_avgviz.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_global.pkl', use_pkl=True)
 
     # print 'c=2'
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=-2, verbose=True)
@@ -507,7 +507,7 @@ def trainMultiHMM():
     print '\n\nBeginning testing for 1 dimensional visual hidden Markov model\n\n'
 
     hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=pdfSample, ml_pkl='modals/ml_1d_visual_avgviz.pkl', use_pkl=True)
+    hmm1d.fit(xData1=pdfSample, ml_pkl='modals/ml_1d_visual.pkl', use_pkl=True)
 
     for c in xrange(10):
         print 'Table of Confusion for c=', c
