@@ -243,6 +243,12 @@ class onlineAnomalyDetection(Thread):
                     angle -= angleDiff
                 else:
                     angle += angleDiff
+            visionDiff = np.abs(self.pdfs[index] - pdfValue)
+            if visionDiff > 0.25:
+                if pdfValue < self.pdfs[index]:
+                    pdfValue -= visionDiff
+                else:
+                    pdfValue += visionDiff
 
         if index >= len(self.forces):
             self.forces.append(force)
