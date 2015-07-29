@@ -272,7 +272,7 @@ def setupMultiHMM():
     print 'minValues', minVals
     print 'maxValues', maxVals
 
-    return hmm, minVals, maxVals, forcesList[0], distancesList[0], anglesList[0], pdfList[0], timesList[0], forcesList, distancesList, anglesList, pdfList, timesList
+    return hmm, minVals, maxVals, np.mean(forcesList, axis=0), np.mean(distancesList, axis=0), np.mean(anglesList, axis=0), np.mean(pdfList, axis=0), timesList[0], forcesList, distancesList, anglesList, pdfList, timesList
 
     # print '\nBeginning anomaly testing for nonanomalous training set\n'
     # for i in xrange(len(forcesList)):
