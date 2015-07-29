@@ -232,13 +232,13 @@ class onlineAnomalyDetection(Thread):
 
         if index < len(self.forces):
             distanceDiff = np.abs(self.distances[index] - distance)
-            if distanceDiff > 0.4:
+            if distanceDiff > 0.6:
                 if distance < self.distances[index]:
                     distance -= distanceDiff
                 else:
                     distance += distanceDiff
             angleDiff = np.abs(self.angles[index] - angle)
-            if angleDiff > 0.4:
+            if angleDiff > 0.6:
                 if angle < self.angles[index]:
                     angle -= angleDiff
                 else:
