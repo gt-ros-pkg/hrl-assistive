@@ -2199,7 +2199,7 @@ if __name__ == '__main__':
     elif opt.bOnlineSimMethodParamCheck:
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_param_check'
+        test_title      = 'online_method_param_check_force'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
@@ -2208,8 +2208,10 @@ if __name__ == '__main__':
         check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         an_type         = 'both'
-        force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        sound_an        = ['normal', 'rndsharp', 'rnddull'] 
+        force_an        = ['inelastic']
+        sound_an        = ['normal'] 
+        ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
         nDataSet        = -1
