@@ -180,11 +180,13 @@ class armReachAction(mpcBaseAction):
             print 'Transpose of gripper failed!'
             return
         self.posL.x, self.posL.y, self.posL.z = gripperPos
+        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = gripperRot
         # Move spoon backwards if feeding
         if data.data == 'InterruptHead':
-            self.posL.y += 0.15
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = gripperRot
-        self.setOrientGoal(self.posL, self.quatL, 0.05)
+            self.posL.y += 0.3
+            self.setOrientGoal(self.posL, self.quatL, 1.0)
+        else:
+            self.setOrientGoal(self.posL, self.quatL, 0.05)
         sys.exit()
 
     def serverCallback(self, req):
@@ -197,12 +199,23 @@ class armReachAction(mpcBaseAction):
 
         elif req == "leftArmInitFeeding":
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 20)
-	    self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
-	    self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
-		self.leftArmFeedingQuats[0][1],
-		self.leftArmFeedingQuats[0][2],
-		self.leftArmFeedingQuats[0][3])
-	    self.setOrientGoal(self.posL, self.quatL, 15)
+            self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
+            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
+            self.leftArmFeedingQuats[0][1],
+            self.leftArmFeedingQuats[0][2],
+            self.leftArmFeedingQuats[0][3])
+            self.setOrientGoal(self.posL, self.quatL, 15)
+            return "Initialized left arm for feeding!"
+
+        elif req == "leftArmInitFeeding2":
+            self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[0][0],
+                self.head_pos[1] + self.leftArmFeedingPos[0][1],
+                self.head_pos[2] + self.leftArmFeedingPos[0][2])
+            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
+            self.leftArmFeedingQuats[0][1],
+            self.leftArmFeedingQuats[0][2],
+            self.leftArmFeedingQuats[0][3])
+            self.setOrientGoal(self.posL, self.quatL, 3)
             return "Initialized left arm for feeding!"
 
         elif req == "rightArmInitScooping":
@@ -299,7 +312,7 @@ class armReachAction(mpcBaseAction):
 
         self.head_frame_manual = data.header.frame_id
         self.head_pos_manual = np.matrix([[data.pose.position.x], 
-		[data.pose.position.y], [data.pose.position.z]])
+        [data.pose.position.y], [data.pose.position.z]])
         self.head_quat_manual = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
 
@@ -423,7 +436,7 @@ class armReachAction(mpcBaseAction):
                           '#3 Moving away from mouth...']
 
         for i in xrange(len(self.pausesFeeding)):
-	    print 'Feeding step #%d ' % i
+            print 'Feeding step #%d ' % i
             print feedingPrints[i]
             self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[i][0],
                 self.head_pos[1] + self.leftArmFeedingPos[i][1],
@@ -436,7 +449,7 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
             time.sleep(self.pausesFeeding[i])
-	    if self.interrupted:
+            if self.interrupted:
                 break
 
         print "Feeding action completed"
