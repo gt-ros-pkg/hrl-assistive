@@ -265,15 +265,19 @@ class onlineAnomalyDetection(Thread):
                 else:
                     angle += scalar*angleDiff
             visionDiff = np.abs(self.pdfs[index] - pdfValue)
-            visionThreshold = 0.35 if self.isScooping else 1000
+            visionThreshold = 0.35 if self.isScooping else 0.5
             if visionDiff > visionThreshold or noPoints:
                 if pdfValue < self.pdfs[index]:
-                    pdfValue -= visionDiff
-                else:
+                    pdfValue -= scalar*visionDiff
+                elif self.isScooping:
                     pdfValue += visionDiff
 
             # Account for variability with a individuals head placement
             if not self.isScooping and visionDiff < 0.8 and not noPoints:
+                pdfValue = self.pdfs[index]
+
+            # Check if pdfValue is NaN
+            if pdfValue != pdfValue:
                 pdfValue = self.pdfs[index]
 
         if index >= len(self.forces):
