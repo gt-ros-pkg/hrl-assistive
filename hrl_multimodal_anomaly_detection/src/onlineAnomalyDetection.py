@@ -188,7 +188,9 @@ class onlineAnomalyDetection(Thread):
         # Points near bowl
         points = pointSet[nearbyPoints]
 
+        noPoints = False
         if len(points) <= 0:
+            noPoints = True
             print 'ARGH, no points within 11 cm of bowl location found'
 
         pdfValue = 0
@@ -242,6 +244,8 @@ class onlineAnomalyDetection(Thread):
         # Magnify relative errors for online detection
         if index < len(self.forces):
             scalar = 1.0 if self.isScooping else 3.0
+            if noPoints:
+                scalar = 20.0
             forceDiff = np.abs(self.forces[index] - force)
             if forceDiff > 0.5:
                 if force < self.forces[index]:
@@ -262,14 +266,14 @@ class onlineAnomalyDetection(Thread):
                     angle += scalar*angleDiff
             visionDiff = np.abs(self.pdfs[index] - pdfValue)
             visionThreshold = 0.35 if self.isScooping else 1000
-            if visionDiff > visionThreshold:
+            if visionDiff > visionThreshold or noPoints:
                 if pdfValue < self.pdfs[index]:
                     pdfValue -= visionDiff
                 else:
                     pdfValue += visionDiff
 
             # Account for variability with a individuals head placement
-            if not self.isScooping and visionDiff < 0.8:
+            if not self.isScooping and visionDiff < 0.8 and not noPoints:
                 pdfValue = self.pdfs[index]
 
         if index >= len(self.forces):
