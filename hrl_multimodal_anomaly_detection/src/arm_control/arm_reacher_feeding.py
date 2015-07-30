@@ -198,13 +198,13 @@ class armReachAction(mpcBaseAction):
             return "Initialized left arm for scooping!"
 
         elif req == "leftArmInitFeeding":
-            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 20)
+            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
             self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
             self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
             self.leftArmFeedingQuats[0][1],
             self.leftArmFeedingQuats[0][2],
             self.leftArmFeedingQuats[0][3])
-            self.setOrientGoal(self.posL, self.quatL, 15)
+            self.setOrientGoal(self.posL, self.quatL, 10)
             return "Initialized left arm for feeding!"
 
         elif req == "leftArmInitFeeding2":
