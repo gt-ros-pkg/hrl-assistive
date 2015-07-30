@@ -826,12 +826,12 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             tp_l = np.zeros(nDataSet)
             tn_l = np.zeros(nDataSet)
             fp_l = np.zeros(nDataSet)
+            fd_l = []
+            fpr_l = np.zeros(nDataSet)
             delay_l = []
             peak_l = []
             width_l = []
             chunk_l = []
-            fd_l = []
-            fpr_l = np.zeros(nDataSet)
 
             for i in xrange(nDataSet):
                 # save file name
@@ -867,10 +867,12 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
             if test_title.find('param') < 0:            
                 pp.bar(range(nDataSet+1), np.hstack([fpr_l,np.array([tot_fpr])]))            
                 pp.ylim([0.0, 100])                                  
-            else:                
-
+            else:                                
                 slope_arr = np.array(peak_l)/np.array(width_l)
-                pp.plot(delay_l, width_l , 'r.')
+                ## pp.plot(np.array(delay_l)/freq, np.array(width_l)/freq , 'r.')
+                pp.plot(np.array(delay_l)/freq, slope_arr/freq , 'r.')
+                pp.xlabel('Delay', fontsize=16)
+                pp.ylabel('Width', fontsize=16)
         
         fig.savefig('test.pdf')
         fig.savefig('test.png')
@@ -905,6 +907,10 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         tn_l = np.zeros(len(all_task_names))
         fp_l = np.zeros(len(all_task_names))
         fdr_l = np.zeros(len(all_task_names)) # false detection rate
+        delay_l = []
+        peak_l = []
+        width_l = []
+        chunk_l = []
 
         ## tot_fd_sum = 0
         ## tot_fd_cnt = 0
@@ -961,6 +967,20 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     fd_sum += np.sum(d['false_detection_l'])
                     fd_cnt += len(d['false_detection_l'])
 
+
+                    if d['delay_l'] == []: continue
+                    else:
+                        if delay_l == []: 
+                            delay_l = d['delay_l']
+                            peak_l  = d.get('peak_l',[])
+                            width_l = d.get('width_l',[])
+                            chunk_l = d.get('chunk_l',[])
+                        else:
+                            delay_l += d['delay_l']
+                            peak_l  += d.get('peak_l',[])
+                            width_l += d.get('width_l',[])
+                            chunk_l += d.get('chunk_l',[])
+                    
                     ## print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
                     ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))
@@ -984,6 +1004,12 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['fdr_l'] = fdr_l
             data['tot_fdr_mu'] = tot_fdr_mu = np.mean(fdr_l*100)
             data['tot_fdr_std'] = tot_fdr_std = np.std(fdr_l*100)
+
+            data['delay_l'] = delay_l
+            data['peak_l']  = peak_l
+            data['width_l'] = width_l
+            data['chunk_l'] = chunk_l
+            
             ut.save_pickle(data, save_pkl_file)
         else:
             data = ut.load_pickle(save_pkl_file)
@@ -994,6 +1020,11 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             fdr_l = data['fdr_l'] 
             tot_fdr_mu  = data['tot_fdr_mu']
             tot_fdr_std = data['tot_fdr_std']
+
+            delay_l = data['delay_l']
+            peak_l  = data['peak_l']
+            width_l = data['width_l']
+            chunk_l = data['chunk_l']
 
         fdr_mu_class_l.append(tot_fdr_mu)
         fdr_std_class_l.append(tot_fdr_std)
@@ -1006,12 +1037,24 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                'Dynamic threshold \n detection')
 
     print fdr_mu_class_l
-    pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
     
-    pp.ylabel('Anomaly Detection Rate (Percentage)', fontsize=16)    
-    ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
-    pp.xticks(ind + width*3.0/4, methods )
-    pp.ylim([0.0, 100])                   
+    if test_title.find('param') < 0:            
+        pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
+    
+        pp.ylabel('Anomaly Detection Rate (Percentage)', fontsize=16)    
+        ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+        pp.xticks(ind + width*3.0/4, methods )
+        pp.ylim([0.0, 100])                           
+    else:
+        slope_arr = np.array(peak_l)/(np.array(width_l)/freq)
+        pp.plot(np.array(delay_l)/freq, peak_l , 'r.')
+        ## pp.plot(np.array(delay_l)/freq, np.array(width_l)/freq , 'r.')
+        ## pp.plot(np.array(delay_l)/freq, slope_arr, 'r.')
+        pp.xlabel('Delay', fontsize=16)
+        pp.ylabel('Peak', fontsize=16)
+        ## pp.ylabel('Width', fontsize=16)
+        ## pp.ylabel('Slope', fontsize=16)
+        
 
     fig.savefig('test.pdf')
     fig.savefig('test.png')
@@ -2208,7 +2251,7 @@ if __name__ == '__main__':
         check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         an_type         = 'both'
-        force_an        = ['inelastic']
+        force_an        = ['elastic']
         sound_an        = ['normal'] 
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
