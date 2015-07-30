@@ -36,6 +36,8 @@ class onlineAnomalyDetection(Thread):
 
         self.isScooping = isScooping
 
+        print 'is scooping:', self.isScooping
+
         self.publisher = rospy.Publisher('visualization_marker', Marker)
         self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         self.interruptPublisher = rospy.Publisher('InterruptAction', String)

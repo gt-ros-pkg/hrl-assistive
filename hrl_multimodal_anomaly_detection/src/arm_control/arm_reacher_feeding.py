@@ -171,7 +171,7 @@ class armReachAction(mpcBaseAction):
 
     def interrupt(self, data):
         print '\n\nAction Interrupted! Event Stop\n\n'
-        print 'Interrupt Data:', data
+        print 'Interrupt Data:', data.data
         self.interrupted = True
         self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
         try :
@@ -181,7 +181,7 @@ class armReachAction(mpcBaseAction):
             return
         self.posL.x, self.posL.y, self.posL.z = gripperPos
         # Move spoon backwards if feeding
-        if data == 'InterruptHead':
+        if data.data == 'InterruptHead':
             self.posL.y += 0.15
         self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = gripperRot
         self.setOrientGoal(self.posL, self.quatL, 0.05)
