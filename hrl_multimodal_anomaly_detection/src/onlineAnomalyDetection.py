@@ -260,7 +260,8 @@ class onlineAnomalyDetection(Thread):
                 else:
                     angle += angleDiff
             visionDiff = np.abs(self.pdfs[index] - pdfValue)
-            if visionDiff > 0.35:
+            visionThreshold = 0.35 if self.isScooping else 0.6
+            if visionDiff > visionThreshold:
                 if pdfValue < self.pdfs[index]:
                     pdfValue -= visionDiff
                 else:
