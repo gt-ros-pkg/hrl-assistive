@@ -241,24 +241,25 @@ class onlineAnomalyDetection(Thread):
 
         # Magnify relative errors for online detection
         if index < len(self.forces):
+            scalar = 1.0 if self.isScooping else 3.0
             forceDiff = np.abs(self.forces[index] - force)
             if forceDiff > 0.5:
                 if force < self.forces[index]:
-                    force -= forceDiff
+                    force -= scalar*forceDiff
                 else:
-                    force += forceDiff
+                    force += scalar*forceDiff
             distanceDiff = np.abs(self.distances[index] - distance)
             if distanceDiff > 0.5:
                 if distance < self.distances[index]:
-                    distance -= distanceDiff
+                    distance -= scalar*distanceDiff
                 else:
-                    distance += distanceDiff
+                    distance += scalar*distanceDiff
             angleDiff = np.abs(self.angles[index] - angle)
             if angleDiff > 0.5:
                 if angle < self.angles[index]:
-                    angle -= angleDiff
+                    angle -= scalar*angleDiff
                 else:
-                    angle += angleDiff
+                    angle += scalar*angleDiff
             visionDiff = np.abs(self.pdfs[index] - pdfValue)
             visionThreshold = 0.35 if self.isScooping else 1000
             if visionDiff > visionThreshold:
@@ -266,6 +267,10 @@ class onlineAnomalyDetection(Thread):
                     pdfValue -= visionDiff
                 else:
                     pdfValue += visionDiff
+
+            # Account for variability with a individuals head placement
+            if not self.isScooping and visionDiff < 0.8:
+                pdfValue = self.pdfs[index]
 
         if index >= len(self.forces):
             self.forces.append(force)
