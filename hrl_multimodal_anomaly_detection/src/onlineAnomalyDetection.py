@@ -89,7 +89,8 @@ class onlineAnomalyDetection(Thread):
         self.soundHandle = SoundClient()
 
         self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM(isScooping=self.isScooping)
-        # self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
+        if not self.isScooping:
+            self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
         self.times = np.array(self.times)
         self.anomalyOccured = False
 

@@ -32,6 +32,7 @@ class ADL_log:
         self.init_time = 0
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
+        self.isScooping = isScooping
 
         self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=isScooping)
 
@@ -47,7 +48,7 @@ class ADL_log:
         self.detector.cancel()
 
         # Reinitialize all sensors
-        self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener)
+        self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=self.isScooping)
 
         gc.collect()
 
