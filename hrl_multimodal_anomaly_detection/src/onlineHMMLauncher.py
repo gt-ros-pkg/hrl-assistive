@@ -253,7 +253,7 @@ def setupMultiHMM(isScooping=True):
             iterationSets = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
         else:
             fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/recordFeeding1_feeding_fvk_07-29-2015_16-08-29/iteration_%d_success.pkl']
-            iterationSets = [xrange(18)]
+            iterationSets = [xrange(10)]
         forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals = loadData(fileNames, iterationSets, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
