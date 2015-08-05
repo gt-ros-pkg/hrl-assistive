@@ -589,7 +589,8 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
 def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
              prefix, nState=20, \
              opr='robot', attr='id', bPlot=False, \
-             cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None, rm_run=False, sim=False):
+             cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None, rm_run=False, sim=False, 
+             detect_break=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -763,22 +764,15 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 tn_width_l = []
                 tn_chunk_l = []
                                             
-                if test:
-                    tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, [], \
-                                                                           false_dataSet, \
-                                                                           min_ths,\
-                                                                           check_dim=check_dim, \
-                                                                           peak_l=tn_peak_l, \
-                                                                           width_l=tn_width_l, \
-                                                                           chunk_l=tn_chunk_l)
-                elif onoff_type == 'online':
+                if onoff_type == 'online':
                     tp, fn, fp, tn, delay_l, false_detection_l = anomaly_check_online(lhm, [], \
                                                                                       false_dataSet, \
                                                                                       min_ths, \
                                                                                       check_dim=check_dim, \
                                                                                       peak_l=tn_peak_l, \
                                                                                       width_l=tn_width_l, \
-                                                                                      chunk_l=tn_chunk_l)
+                                                                                      chunk_l=tn_chunk_l, \
+                                                                                      detect_break=detect_break)
                                                                                       
                 else:
                     tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, [], \
@@ -899,7 +893,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     width_class_l = []
     chunk_class_l = []
 
-    delay_time_class_l = []
+    peak_range_class_l = []
     slope_avg_class_l = []
     slope_std_class_l = []
 
@@ -908,6 +902,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
     width_avg_class_l = []
     width_std_class_l = []
+
+    tp_ll = []
+    fp_ll = []
         
     for n in range(nClass):
 
@@ -996,6 +993,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                             peak_l  += d.get('peak_l',[])
                             width_l += d.get('width_l',[])
                             chunk_l += d.get('chunk_l',[])
+
+                        tp_ll.append(d['tp'])
+                        fp_ll.append(d['fp'])
                     
                     ## print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
@@ -1012,21 +1012,25 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
             print method, " : ", fdr_l
 
-            ## delay_time =  np.arange(0.0, np.amax(delay_l)+0.00001, 1.0) /freq
-            delay_time =  np.arange(0.0, np.amax(delay_l)+1.00001, 2.0) /freq
-            delay_cnt_l = np.zeros(len(delay_time))
-            slope_avg_l = np.zeros(len(delay_time))
-            slope_std_l = np.zeros(len(delay_time))
 
-            peak_avg_l = np.zeros(len(delay_time))
-            peak_std_l = np.zeros(len(delay_time))
-            width_avg_l = np.zeros(len(delay_time))
-            width_std_l = np.zeros(len(delay_time))
+            print len(tp_ll), len(peak_l)
+            sys.exit()
+            
+            ## delay_time =  np.arange(0.0, np.amax(peak_l)+1.00001, 2.0) /freq
+            peak_range  =  np.arange(0.0, np.amax(peak_l)+0.5, 1.0) 
+            peak_cnt_l  = np.zeros(len(peak_range))
+            slope_avg_l = np.zeros(len(peak_range))
+            slope_std_l = np.zeros(len(peak_range))
+
+            peak_avg_l = np.zeros(len(peak_range))
+            peak_std_l = np.zeros(len(peak_range))
+            width_avg_l = np.zeros(len(peak_range))
+            width_std_l = np.zeros(len(peak_range))
             
             slope_raw_l = []
             peak_raw_l = []
             width_raw_l = []
-            for i in xrange(len(delay_time)):
+            for i in xrange(len(peak_range)):
                 slope_raw_l.append([])
                 peak_raw_l.append([])
                 width_raw_l.append([])
@@ -1073,7 +1077,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['width_l'] = width_l
             data['chunk_l'] = chunk_l
 
-            data['delay_time'] = delay_time
+            data['peak_range'] = peak_range
             data['slope_avg'] = slope_avg_l
             data['slope_std'] = slope_std_l
             data['peak_avg'] = peak_avg_l
@@ -1098,7 +1102,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             chunk_l = data['chunk_l']
 
 
-            delay_time = data['delay_time']
+            peak_range = data['peak_range']
             slope_avg_l = data['slope_avg'] 
             slope_std_l = data['slope_std'] 
 
@@ -1116,7 +1120,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         width_class_l.append(width_l)
         chunk_class_l.append(chunk_l)
 
-        delay_time_class_l.append(delay_time)
+        peak_range_class_l.append(peak_range)
         slope_avg_class_l.append(slope_avg_l)
         slope_std_class_l.append(slope_std_l)
 
@@ -1149,16 +1153,16 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         pp.ylim([0.0, 100])                           
     else:
         
-        for i, delay_time_l in enumerate(delay_time_class_l):
+        for i, peak_range_l in enumerate(peak_range_class_l):
             color = colors.next()
             shape = shapes.next()
         
-            pp.errorbar(delay_time_l, slope_avg_class_l[i], yerr=slope_std_class_l[i],label=methods[i])
-            ## pp.errorbar(delay_time_l, peak_avg_class_l[i], yerr=peak_std_class_l[i],label=methods[i])
-            ## pp.errorbar(delay_time_l, width_avg_class_l[i], yerr=width_std_class_l[i],label=methods[i])
+            ## pp.errorbar(peak_range_l, slope_avg_class_l[i], yerr=slope_std_class_l[i],label=methods[i])
+            pp.errorbar(peak_range_l, peak_avg_class_l[i], yerr=peak_std_class_l[i],label=methods[i])
+            ## pp.errorbar(peak_range_l, width_avg_class_l[i], yerr=width_std_class_l[i],label=methods[i])
             
-            ## pp.plot(delay_time_l, slope_avg_class_l[i]+slope_std_class_l[i], color+'--')
-            ## pp.plot(delay_time_l, slope_avg_class_l[i]-slope_std_class_l[i], color+'--')
+            ## pp.plot(peak_range_l, slope_avg_class_l[i]+slope_std_class_l[i], color+'--')
+            ## pp.plot(peak_range_l, slope_avg_class_l[i]-slope_std_class_l[i], color+'--')
             
         pp.xlabel('Delay [sec]', fontsize=16)
         ## pp.ylabel('Peak', fontsize=16)
@@ -1553,7 +1557,7 @@ def anomaly_check_offline(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
 
 
 def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2, 
-                         peak_l=None, width_l=None, chunk_l=None):
+                         peak_l=None, width_l=None, chunk_l=None, detect_break=False):
 
     tp = 0.0
     fn = 0.0
@@ -1624,7 +1628,9 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                             width_l.append(false_dataSet.sa.anomaly_width)
                         if chunk_l is not None:
                             chunk_l.append(false_dataSet.sa.chunks)
-                        
+
+                        if detect_break: break
+                            
                     elif an == 0.0:
                         fp += 1.0
                 else:
@@ -2354,13 +2360,12 @@ if __name__ == '__main__':
     elif opt.bOnlineSimMethodParamCheck:
 
         # force2 = elastic
-        # force3 = elastic_continue
+        # force  = elastic_continue
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_param_check_force3'
+        test_title      = 'online_method_param_check_force'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
-        threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['change', 'global', 'globalChange', 'progress']
@@ -2383,7 +2388,7 @@ if __name__ == '__main__':
             fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
                      opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
-                     disp=disp, rm_run=opt.bRemoveRunning, sim=True)
+                     disp=disp, rm_run=opt.bRemoveRunning, sim=True, detect_break=True)
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
                          check_dims, nDataSet, sim=True, renew=True)
