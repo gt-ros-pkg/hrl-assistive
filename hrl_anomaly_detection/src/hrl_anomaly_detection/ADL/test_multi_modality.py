@@ -31,6 +31,7 @@ from itertools import product
 
 import data_manager as dm
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
+import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
@@ -893,6 +894,21 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     fdr_mu_class_l = []
     fdr_std_class_l = []
 
+    delay_class_l = []
+    peak_class_l = []
+    width_class_l = []
+    chunk_class_l = []
+
+    delay_time_class_l = []
+    slope_avg_class_l = []
+    slope_std_class_l = []
+
+    peak_avg_class_l = []
+    peak_std_class_l = []
+
+    width_avg_class_l = []
+    width_std_class_l = []
+        
     for n in range(nClass):
 
         if len(check_methods) >= len(check_dims): 
@@ -920,7 +936,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         else:
             save_pkl_file = os.path.join(cross_root_path,test_title+'_real_'+method+'_'+str(check_dim)+'.pkl')
 
-        if os.path.isfile(save_pkl_file) == False:        
+        if os.path.isfile(save_pkl_file) == False or renew==True:        
             # Collect data
             for task_num, task_name in enumerate(all_task_names):
 
@@ -996,6 +1012,53 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
             print method, " : ", fdr_l
 
+            ## delay_time =  np.arange(0.0, np.amax(delay_l)+0.00001, 1.0) /freq
+            delay_time =  np.arange(0.0, np.amax(delay_l)+1.00001, 2.0) /freq
+            delay_cnt_l = np.zeros(len(delay_time))
+            slope_avg_l = np.zeros(len(delay_time))
+            slope_std_l = np.zeros(len(delay_time))
+
+            peak_avg_l = np.zeros(len(delay_time))
+            peak_std_l = np.zeros(len(delay_time))
+            width_avg_l = np.zeros(len(delay_time))
+            width_std_l = np.zeros(len(delay_time))
+            
+            slope_raw_l = []
+            peak_raw_l = []
+            width_raw_l = []
+            for i in xrange(len(delay_time)):
+                slope_raw_l.append([])
+                peak_raw_l.append([])
+                width_raw_l.append([])
+
+            for i,d in enumerate(delay_l): 
+                ## slope_raw_l[d].append(peak_l[i]/width_l[i]/freq) 
+                slope_raw_l[d/2].append(peak_l[i]/width_l[i]/freq) 
+                peak_raw_l[d/2].append(peak_l[i])
+                width_raw_l[d/2].append(width_l[i]/freq)
+                            
+            for i in xrange(len(slope_raw_l)):                
+
+                if len(slope_raw_l[i]) > 0:
+                    slope_avg_l[i] = np.mean(slope_raw_l[i])
+                    slope_std_l[i] = np.std(slope_raw_l[i])
+
+                    peak_avg_l[i] = np.mean(peak_raw_l[i])
+                    peak_std_l[i] = np.std(peak_raw_l[i])
+
+                    width_avg_l[i] = np.mean(width_raw_l[i])
+                    width_std_l[i] = np.std(width_raw_l[i])
+                    
+                else:
+                    slope_avg_l[i] = 0.0
+                    slope_std_l[i] = 0.0
+
+                    peak_avg_l[i] = 0.0
+                    peak_std_l[i] = 0.0
+
+                    width_avg_l[i] = 0.0
+                    width_std_l[i] = 0.0
+                    
             data = {}
             data['fn_l'] = fn_l
             data['tp_l'] = tp_l
@@ -1009,6 +1072,14 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['peak_l']  = peak_l
             data['width_l'] = width_l
             data['chunk_l'] = chunk_l
+
+            data['delay_time'] = delay_time
+            data['slope_avg'] = slope_avg_l
+            data['slope_std'] = slope_std_l
+            data['peak_avg'] = peak_avg_l
+            data['peak_std'] = peak_std_l
+            data['width_avg'] = width_avg_l
+            data['width_std'] = width_std_l
             
             ut.save_pickle(data, save_pkl_file)
         else:
@@ -1026,8 +1097,39 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             width_l = data['width_l']
             chunk_l = data['chunk_l']
 
+
+            delay_time = data['delay_time']
+            slope_avg_l = data['slope_avg'] 
+            slope_std_l = data['slope_std'] 
+
+            peak_avg_l = data['peak_avg'] 
+            peak_std_l = data['peak_std'] 
+            width_avg_l = data['width_avg'] 
+            width_std_l = data['width_std'] 
+            
+            
         fdr_mu_class_l.append(tot_fdr_mu)
         fdr_std_class_l.append(tot_fdr_std)
+        
+        delay_class_l.append(delay_l)
+        peak_class_l.append(peak_l)
+        width_class_l.append(width_l)
+        chunk_class_l.append(chunk_l)
+
+        delay_time_class_l.append(delay_time)
+        slope_avg_class_l.append(slope_avg_l)
+        slope_std_class_l.append(slope_std_l)
+
+        peak_avg_class_l.append(peak_avg_l)
+        peak_std_class_l.append(peak_std_l)
+
+        width_avg_class_l.append(width_avg_l)
+        width_std_class_l.append(width_std_l)
+
+        
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
         
     fig = pp.figure()
 
@@ -1046,14 +1148,24 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         pp.xticks(ind + width*3.0/4, methods )
         pp.ylim([0.0, 100])                           
     else:
-        slope_arr = np.array(peak_l)/(np.array(width_l)/freq)
-        pp.plot(np.array(delay_l)/freq, peak_l , 'r.')
-        ## pp.plot(np.array(delay_l)/freq, np.array(width_l)/freq , 'r.')
-        ## pp.plot(np.array(delay_l)/freq, slope_arr, 'r.')
-        pp.xlabel('Delay', fontsize=16)
-        pp.ylabel('Peak', fontsize=16)
+        
+        for i, delay_time_l in enumerate(delay_time_class_l):
+            color = colors.next()
+            shape = shapes.next()
+        
+            pp.errorbar(delay_time_l, slope_avg_class_l[i], yerr=slope_std_class_l[i],label=methods[i])
+            ## pp.errorbar(delay_time_l, peak_avg_class_l[i], yerr=peak_std_class_l[i],label=methods[i])
+            ## pp.errorbar(delay_time_l, width_avg_class_l[i], yerr=width_std_class_l[i],label=methods[i])
+            
+            ## pp.plot(delay_time_l, slope_avg_class_l[i]+slope_std_class_l[i], color+'--')
+            ## pp.plot(delay_time_l, slope_avg_class_l[i]-slope_std_class_l[i], color+'--')
+            
+        pp.xlabel('Delay [sec]', fontsize=16)
+        ## pp.ylabel('Peak', fontsize=16)
         ## pp.ylabel('Width', fontsize=16)
-        ## pp.ylabel('Slope', fontsize=16)
+        pp.ylabel('Slope', fontsize=16)
+        pp.legend(loc='upper center',prop={'size':8}, fancybox=True, shadow=True, ncol=4)       
+
         
 
     fig.savefig('test.pdf')
@@ -1923,7 +2035,7 @@ if __name__ == '__main__':
                  dest='bOnlineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
 
-    p.add_option('--online_simulated_method_param_check', '--ronsimmthdp', action='store_true', \
+    p.add_option('--online_simulated_method_param_check', '--ronsimmthdp', '--test', action='store_true', \
                  dest='bOnlineSimMethodParamCheck',
                  default=False, help='Plot online ROC by simulated anomaly')    
     
@@ -2240,9 +2352,12 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
     elif opt.bOnlineSimMethodParamCheck:
+
+        # force2 = elastic
+        # force3 = elastic_continue
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_param_check_force2'
+        test_title      = 'online_method_param_check_force'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
@@ -2251,7 +2366,7 @@ if __name__ == '__main__':
         check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         an_type         = 'both'
-        force_an        = ['elastic']
+        force_an        = ['elastic_continue']
         sound_an        = ['normal'] 
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
@@ -2271,7 +2386,7 @@ if __name__ == '__main__':
                      disp=disp, rm_run=opt.bRemoveRunning, sim=True)
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
-                         check_dims, nDataSet, sim=True)
+                         check_dims, nDataSet, sim=True, renew=True)
 
                         
     #---------------------------------------------------------------------------
