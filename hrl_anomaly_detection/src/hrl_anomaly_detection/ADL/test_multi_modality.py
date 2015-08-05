@@ -2357,7 +2357,7 @@ if __name__ == '__main__':
         # force3 = elastic_continue
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_param_check_force'
+        test_title      = 'online_method_param_check_force3'
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
