@@ -95,22 +95,7 @@ def visualFeatures(fileName, forceTimes):
                     pdf.append(0)
                     continue
 
-            # left = bowlPosition + [0, 0.06, 0]
-            # right = bowlPosition - [0, 0.06, 0]
-            # above = bowlPosition + [0.06, 0, 0]
-            # below = bowlPosition - [0.06, 0, 0]
-
-            # print 'Number of points:', len(points)
             # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            # pdfLeft = np.sum(np.exp(np.linalg.norm(points - left, axis=1) * -1.0))
-            # pdfRight = np.sum(np.exp(np.linalg.norm(points - right, axis=1) * -1.0))
-            # pdfAbove = np.sum(np.exp(np.linalg.norm(points - above, axis=1) * -1.0))
-            # pdfBelow = np.sum(np.exp(np.linalg.norm(points - below, axis=1) * -1.0))
-            # pdfLeft = np.sum(np.linalg.norm(points - left, axis=1))
-            # pdfRight = np.sum(np.linalg.norm(points - right, axis=1))
-            # pdfAbove = np.sum(np.linalg.norm(points - above, axis=1))
-            # pdfBelow = np.sum(np.linalg.norm(points - below, axis=1))
-            # pdfValue = np.power(pdfLeft + pdfRight + pdfAbove + pdfBelow, 1.0/4.0)
             # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0))) / float(len(points))
             # pdf.append(pdfValue)
 
@@ -140,12 +125,13 @@ def visualFeatures(fileName, forceTimes):
                 for point in newPoints:
                     pointMu = point - muSet
                     # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu)) # Normally: np.exp(-1.0/2.0
+                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
                 # pdfList.append(pdfValue / float(len(points)))
                 pdfList.append(pdfValue)
             pdf.append(pdfList[0])
 
-        # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
+        # There will be much more force data than vision,
+        # so perform constant (horizontal line) interpolation to fill in the gaps
         tempPdf = []
         visualIndex = 0
         for forceTime in forceTimes:
@@ -198,8 +184,6 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     distancesTrueList = []
     anglesTrueList = []
     pdfTrueList = []
-    minList = []
-    maxList = []
     for fileName, iterations in zip(fileNames, iterationSets):
         for i in iterations:
             name = fileName % i # Insert iteration value into filename
@@ -221,21 +205,10 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 for modality in [forces, distances, angles, pdf]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
-                # pdfDiff = maxVals[3] - minVals[3]
-                # minVals[3] -= pdfDiff / 2.0
-                # maxVals[3] += pdfDiff / 2.0
-                # forceDiff = maxVals[0] - minVals[0]
-                # minVals[0] -= forceDiff / 4.0
-                # maxVals[0] += forceDiff / 4.0
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
             scale = 1
-
-            min_c1, max_c1 = np.min(forces), np.max(forces)
-            min_c2, max_c2 = np.min(distances), np.max(distances)
-            min_c3, max_c3 = np.min(angles), np.max(angles)
-            min_c4, max_c4 = np.min(pdf), np.max(pdf)
 
             # Scale features
             # forces = preprocessing.scale(forces) * scale
@@ -257,8 +230,6 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             anglesList.append(angles.tolist())
             pdfList.append(pdf.tolist())
             timesList.append(times)
-            minList.append([min_c1, min_c2, min_c3, min_c4])
-            maxList.append([max_c1, max_c2, max_c3, max_c4])
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
@@ -266,10 +237,10 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
         maxsize = max([len(x) for x in forcesList])
         # Extrapolate each time step
         forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-        pdfTrueList, minList, maxList = extrapolateAllData([forcesList, distancesList, anglesList, pdfList, timesList,
-                                                             forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList], maxsize)
+        pdfTrueList = extrapolateAllData([forcesList, distancesList, anglesList, pdfList, timesList,
+                                                             forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList], maxsize)
 
-    return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList, minList, maxList
+    return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList
 
 def createSampleSet(forcesList, distancesList, anglesList, pdfList, init=0):
     testDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, pdfList, [10]*len(forcesList), [True]*len(forcesList))
@@ -327,72 +298,68 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfLi
 
     return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
 
+def dataFiles():
+    # fileNamesTrain = ['/home/zerickson/Recordings/bowl2Stage1Train_scooping_fvk_07-24-2015_08-24-58/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage2Train_scooping_fvk_07-24-2015_08-39-29/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage3Train_scooping_fvk_07-24-2015_08-55-44/iteration_%d_success.pkl']
+    fileNamesTrain = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
+    # iterationSetsTrain = [xrange(6), xrange(1, 5), xrange(6)]
+    iterationSetsTrain = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
+
+    # fileNamesTest = ['/home/zerickson/Recordings/bowl2Stage1Test_scooping_fvk_07-24-2015_08-30-59/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage2Test_scooping_fvk_07-24-2015_08-46-01/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage3Test_scooping_fvk_07-24-2015_09-04-36/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/trial_scooping_fvk_07-24-2015_07-47-05/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage1Anomalous_scooping_fvk_07-24-2015_08-34-36/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage2Anomalous_scooping_fvk_07-24-2015_08-51-03/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl2Stage3Anomalous_scooping_fvk_07-24-2015_09-08-15/iteration_%d_failure.pkl']
+    # iterationSetsTest = [xrange(3), xrange(3), xrange(3), xrange(5), xrange(3), xrange(3), xrange(3)]
+    fileNamesTest = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage1Anomalous_scooping_fvk_07-27-2015_14-17-52/iteration_%d_failure.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage2Anomalous_scooping_fvk_07-27-2015_14-31-42/iteration_%d_failure.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage3Anomalous_scooping_fvk_07-27-2015_14-47-24/iteration_%d_failure.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage4Anomalous_scooping_fvk_07-27-2015_15-09-00/iteration_%d_failure.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage5Anomalous_scooping_fvk_07-27-2015_15-27-51/iteration_%d_failure.pkl',
+                 '/home/zerickson/Recordings/bowl3Stage6Anomalous_scooping_fvk_07-27-2015_15-49-27/iteration_%d_failure.pkl']
+    iterationSetsTest = [xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), [3],
+                     xrange(2, 4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
+
+    return fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest
+
 
 def trainMultiHMM():
     fileName = os.path.join(os.path.dirname(__file__), 'data/bowl3Data.pkl')
 
     if not os.path.isfile(fileName):
+        fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles()
+
         print 'Loading training data'
-        # fileNames = ['/home/zerickson/Recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl']
-        # fileNames = ['/home/zerickson/Recordings/bowl2Stage1Train_scooping_fvk_07-24-2015_08-24-58/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage2Train_scooping_fvk_07-24-2015_08-39-29/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage3Train_scooping_fvk_07-24-2015_08-55-44/iteration_%d_success.pkl']
-        fileNames = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
-        # iterationSets = [xrange(6), xrange(1, 5), xrange(6)]
-        iterationSets = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
         forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, \
-            anglesTrueList, pdfTrueList, minList, maxList = loadData(fileNames, iterationSets, isTrainingData=True)
+            anglesTrueList, pdfTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True)
 
         print 'Loading test data'
-        # fileNames = ['/home/zerickson/Recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowlStage1Anomalous_scooping_fvk_07-17-2015_16-16-57/iteration_%d_failure.pkl',
-        #              '/home/zerickson/Recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowlStage2Anomalous_scooping_fvk_07-17-2015_16-59-49/iteration_%d_failure.pkl',
-        #              '/home/zerickson/Recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowlStage3Anomalous_scooping_fvk_07-17-2015_17-24-41/iteration_%d_failure.pkl',
-        #              '/home/zerickson/Recordings/trial_scooping_fvk_07-24-2015_07-47-05/iteration_%d_success.pkl']
-        # fileNames = ['/home/zerickson/Recordings/bowl2Stage1Test_scooping_fvk_07-24-2015_08-30-59/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage2Test_scooping_fvk_07-24-2015_08-46-01/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage3Test_scooping_fvk_07-24-2015_09-04-36/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/trial_scooping_fvk_07-24-2015_07-47-05/iteration_%d_success.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage1Anomalous_scooping_fvk_07-24-2015_08-34-36/iteration_%d_failure.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage2Anomalous_scooping_fvk_07-24-2015_08-51-03/iteration_%d_failure.pkl',
-        #              '/home/zerickson/Recordings/bowl2Stage3Anomalous_scooping_fvk_07-24-2015_09-08-15/iteration_%d_failure.pkl']
-        # iterationSets = [xrange(3), xrange(3), xrange(3), xrange(5), xrange(3), xrange(3), xrange(3)]
-        fileNames = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage1Anomalous_scooping_fvk_07-27-2015_14-17-52/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage2Anomalous_scooping_fvk_07-27-2015_14-31-42/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage3Anomalous_scooping_fvk_07-27-2015_14-47-24/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage4Anomalous_scooping_fvk_07-27-2015_15-09-00/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage5Anomalous_scooping_fvk_07-27-2015_15-27-51/iteration_%d_failure.pkl',
-                     '/home/zerickson/Recordings/bowl3Stage6Anomalous_scooping_fvk_07-27-2015_15-49-27/iteration_%d_failure.pkl']
-        iterationSets = [xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), [3],
-                         xrange(2, 4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
         testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, testForcesTrueList, testDistancesTrueList, \
-            testAnglesTrueList, testPdfTrueList, testMinList, testMaxList = loadData(fileNames, iterationSets, isTrainingData=True)
+            testAnglesTrueList, testPdfTrueList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
             pickle.dump((forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
-                         pdfTrueList, minList, maxList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
-                         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList,
-                         testMinList, testMaxList), f, protocol=pickle.HIGHEST_PROTOCOL)
+                         pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
+                         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList), f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(fileName, 'rb') as f:
             forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-            pdfTrueList, minList, maxList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, \
-            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList, testMinList, testMaxList = pickle.load(f)
+            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, \
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList = pickle.load(f)
 
     print np.shape(forcesTrueList), np.shape(pdfTrueList), np.shape(timesList)
 
@@ -402,21 +369,14 @@ def trainMultiHMM():
     # plots.plotOneTrueSet()
     # plots.distributionOfSequences()
 
-
     # Plot modalities
-    # for modality in [forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList]:
-    # for modality in [forcesTrueList[:3] + testForcesTrueList[20:], distancesTrueList[:3] + testDistancesTrueList[20:], anglesTrueList[:3] + testAnglesTrueList[20:], pdfTrueList[:3] + testPdfTrueList[20:]]:
-    # for modality in [testForcesTrueList[:36], testDistancesTrueList[:36], testAnglesTrueList[:36], testPdfTrueList[:36]]:
-    # for modality in [forcesTrueList[5:6] + testForcesTrueList[6:7], distancesTrueList[5:6] + testDistancesTrueList[6:7], anglesTrueList[5:6] + testAnglesTrueList[6:7], pdfTrueList[5:6] + testPdfTrueList[6:7]]:
-    #     for index, (modal, times) in enumerate(zip(modality, timesList[5:6] + testTimesList[6:7])): # timesList + testTimesList[0:2]
-    #         plt.plot(times, modal, label='%d' % index)
-    #     plt.legend()
-    #     plt.show()
+    # plots.quickPlotModalities()
 
     # Setup training data
     forcesSample, distancesSample, anglesSample, pdfSample = createSampleSet(forcesList, distancesList, anglesList, pdfList)
     forcesTrueSample, distancesTrueSample, anglesTrueSample, pdfTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList)
 
+    # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl3.pkl', use_pkl=True)
 

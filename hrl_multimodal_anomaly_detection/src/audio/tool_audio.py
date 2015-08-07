@@ -44,9 +44,10 @@ class tool_audio(Thread):
 
 
         self.p = pyaudio.PyAudio()
-        print 'Audio device:', self.find_input_device()
+        deviceIndex = self.find_input_device()
+        print 'Audio device:', deviceIndex
 
-        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
+        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
         rospy.logout('Done subscribing audio')
         print 'Done subscribing audio'
 
@@ -79,7 +80,6 @@ class tool_audio(Thread):
             # rate.sleep()
 
     def log(self):
-
         data = self.stream.read(self.CHUNK)
         self.time_data.append(rospy.get_time() - self.init_time)
         self.audio_data_raw.append(data)
@@ -135,15 +135,97 @@ class tool_audio(Thread):
 
         print 'Closing... audio wav recording has been saved...'
 
+    def reset(self):
+        pass
+
+    @staticmethod
+    def butter_bandpass(lowcut, highcut, fs, order=5):
+        """
+        fs: sampling frequency
+        """
+        nyq = 0.5 * fs
+        low = lowcut / nyq
+        high = highcut / nyq
+        b, a = signal.butter(order, [low, high], btype='band')
+        return b, a
 
 
-    def skip(self, seconds):
-        samples = int(seconds * self.RATE)
-        count = 0
-        while count < samples:
-            self.stream.read(self.CHUNK)
-            count += self.CHUNK
-            rospy.sleep(0.01)
+    # def reset(self):
+    #
+    #     self.skip(1.0)
+    #     rospy.sleep(1.0)
+    #
+    #     # Get noise frequency
+    #     # frames=None
+    #
+    #     ## for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
+    #     data=self.stream.read(self.CHUNK)
+    #     audio_data=np.fromstring(data, self.DTYPE)
+    #
+    #     # if frames is None: frames = audio_data
+    #     # else: frames = np.hstack([frames, audio_data])
+    #     self.noise_amp_thres = self.get_rms(data)
+    #
+    #     ## self.noise_bias = np.mean(audio_data)
+    #     ## audio_data -= self.noise_bias
+    #
+    #     F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
+    #     f  = np.fft.fftfreq(len(F), self.UNIT_SAMPLE_TIME)
+    #     n=len(f)
+    #
+    #     import heapq
+    #     values = heapq.nlargest(self.noise_amp_num, F[:n/2]) #amplitude
+    #
+    #     self.noise_freq_l = []
+    #     for value in values:
+    #         self.noise_freq_l.append([f[j] for j, k in enumerate(F[:n/2]) if k.real == value.real])
+    #     self.noise_freq_l = np.array(self.noise_freq_l)
+    #
+    #     print "Amplitude threshold: ", self.noise_amp_thres
+    #     print "Noise bias: ", self.noise_bias
+    #
+    #     ## self.skip(1.0)
+    #     self.stream.stop_stream()
+    #
+    #
+    # def skip(self, seconds):
+    #     samples = int(seconds * self.RATE)
+    #     count = 0
+    #     while count < samples:
+    #         self.stream.read(self.CHUNK)
+    #         count += self.CHUNK
+    #         rospy.sleep(0.01)
+    #
+    # def get_rms(self, block):
+    #     # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
+    #
+    #     # RMS amplitude is defined as the square root of the
+    #     # mean over time of the square of the amplitude.
+    #     # so we need to convert this string of bytes into
+    #     # a string of 16-bit samples...
+    #
+    #     # we will get one short out for each
+    #     # two chars in the string.
+    #     count = len(block)/2
+    #     format = "%dh" % count
+    #     shorts = struct.unpack( format, block )
+    #
+    #     # iterate over the block.
+    #     sum_squares = 0.0
+    #     for sample in shorts:
+    #     # sample is a signed short in +/- 32768.
+    #     # normalize it to 1.0
+    #         n = sample / self.MAX_INT
+    #         sum_squares += n*n
+    #
+    #     return math.sqrt( sum_squares / count )
+    #
+    # @staticmethod
+    # def filter_rule(x, freq, noise_freq, noise_band):
+    #     if np.abs(freq) > noise_freq+noise_band or np.abs(freq) < noise_freq-noise_band:
+    #         return x
+    #     else:
+    #         return 0
 
     ## def save_audio(self):
 
@@ -172,105 +254,4 @@ class tool_audio(Thread):
         ## pp.stem(noise_freq_l, values, 'k-*', bottom=0)
         ## pp.show()
 
-
-    def reset(self):
-
-        self.skip(1.0)
-        rospy.sleep(1.0)
-
-        # Get noise frequency
-        # frames=None
-
-        ## for i in range(0, int(self.RATE/self.CHUNK * RECORD_SECONDS)):
-        data=self.stream.read(self.CHUNK)
-        audio_data=np.fromstring(data, self.DTYPE)
-
-        # if frames is None: frames = audio_data
-        # else: frames = np.hstack([frames, audio_data])
-        self.noise_amp_thres = self.get_rms(data)
-
-        ## self.noise_bias = np.mean(audio_data)
-        ## audio_data -= self.noise_bias
-
-        F = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
-        f  = np.fft.fftfreq(len(F), self.UNIT_SAMPLE_TIME)
-        n=len(f)
-
-        import heapq
-        values = heapq.nlargest(self.noise_amp_num, F[:n/2]) #amplitude
-
-        self.noise_freq_l = []
-        for value in values:
-            self.noise_freq_l.append([f[j] for j, k in enumerate(F[:n/2]) if k.real == value.real])
-        self.noise_freq_l = np.array(self.noise_freq_l)
-
-        print "Amplitude threshold: ", self.noise_amp_thres
-        print "Noise bias: ", self.noise_bias
-
-        ## self.skip(1.0)
-        self.stream.stop_stream()
-
-        ## #temp
-        ## ## F1 = F[:n/2]
-        ## for noise_freq in self.noise_freq_l:
-        ##     F = np.array([self.filter_rule(x,f[j], noise_freq, self.noise_band) for j, x in enumerate(F)])
-        ## ## new_F = np.hstack([F1, F1[::-1]])
-        ## new_F = F
-
-        ## temp_audio_data = np.fft.ifft(new_F) * float(self.MAX_INT)
-        ## print len(temp_audio_data), self.noise_freq_l
-
-        ## pp.figure()
-        ## pp.subplot(211)
-        ## pp.plot(audio_data,'r-')
-        ## pp.plot(temp_audio_data,'b-')
-
-        ## pp.subplot(212)
-        ## pp.plot(f[:n/4],np.abs(F[:n/4]),'b')
-        ## pp.stem(self.noise_freq_l, values, 'r-*', bottom=0)
-        ## pp.show()
-        ## ## raw_input("Enter anything to start: ")
-
-    @staticmethod
-    def filter_rule(x, freq, noise_freq, noise_band):
-        if np.abs(freq) > noise_freq+noise_band or np.abs(freq) < noise_freq-noise_band:
-            return x
-        else:
-            return 0
-
-    @staticmethod
-    def butter_bandpass(lowcut, highcut, fs, order=5):
-        """
-        fs: sampling frequency
-        """
-        nyq = 0.5 * fs
-        low = lowcut / nyq
-        high = highcut / nyq
-        b, a = signal.butter(order, [low, high], btype='band')
-        return b, a
-
-
-    def get_rms(self, block):
-        # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
-
-        # RMS amplitude is defined as the square root of the
-        # mean over time of the square of the amplitude.
-        # so we need to convert this string of bytes into
-        # a string of 16-bit samples...
-
-        # we will get one short out for each
-        # two chars in the string.
-        count = len(block)/2
-        format = "%dh" % count
-        shorts = struct.unpack( format, block )
-
-        # iterate over the block.
-        sum_squares = 0.0
-        for sample in shorts:
-        # sample is a signed short in +/- 32768.
-        # normalize it to 1.0
-            n = sample / self.MAX_INT
-            sum_squares += n*n
-
-        return math.sqrt( sum_squares / count )
 

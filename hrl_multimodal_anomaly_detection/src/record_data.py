@@ -8,7 +8,7 @@ import time
 from pylab import *
 import cPickle as pickle
 
-from audio.tool_audio import tool_audio
+from audio.tool_audio_slim import tool_audio_slim
 from vision.tool_vision import tool_vision
 from kinematics.robot_kinematics import robot_kinematics
 from forces.tool_ft import tool_ft
@@ -44,11 +44,11 @@ class ADL_log:
         rospy.logout('ADLs_log node subscribing..')
         self.isScooping = True if task == 's' else False
 
-        self.audio = rospy.ServiceProxy('/audio_server', String_String) if audio else None
-        self.audioTrialName = rospy.ServiceProxy('/audio_server_trial_name', String_String) if audio else None
+        # self.audio = rospy.ServiceProxy('/audio_server', String_String) if audio else None
+        # self.audioTrialName = rospy.ServiceProxy('/audio_server_trial_name', String_String) if audio else None
 
         self.ft = tool_ft('/netft_data') if ft else None
-        #self.audio = tool_audio() if audio else None
+        self.audio = tool_audio_slim() if audio else None
         self.vision = tool_vision(self.tf_listener, self.isScooping) if vision else None
         self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
 
@@ -90,9 +90,9 @@ class ADL_log:
             self.ft.init_time = self.init_time
             self.ft.start()
         if self.audio is not None:
-            #self.audio.init_time = self.init_time
-            #self.audio.start()
-            self.audio("start")
+            self.audio.init_time = self.init_time
+            self.audio.start()
+            # self.audio("start")
         if self.vision is not None:
             self.vision.init_time = self.init_time
             self.vision.start()
@@ -113,10 +113,10 @@ class ADL_log:
             data['ft_time']       = self.ft.time_data
 
         if self.audio is not None:
-            #self.audio.cancel()
+            self.audio.cancel()
             
-            self.audio("cancel")
-            self.audio("close_log_file")
+            # self.audio("cancel")
+            # self.audio("close_log_file")
 
             # data['audio_data']  = self.audio.audio_data
             # data['audio_amp']   = self.audio.audio_amp
@@ -158,8 +158,8 @@ class ADL_log:
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
         
         #Send trial name to audio recording server!
-        if self.audio is not None:
-            self.audioTrialName(fileName)
+        # if self.audio is not None:
+        #     self.audioTrialName(fileName)
 
         with open(fileName, 'wb') as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -171,7 +171,7 @@ class ADL_log:
         if self.ft is not None:
             self.ft = tool_ft('/netft_data')
         if self.audio is not None:
-            self.audio = tool_audio()
+            self.audio = tool_audio_slim()
         if self.vision is not None:
             self.vision = tool_vision(self.tf_listener, self.isScooping)
         if self.kinematics is not None:
