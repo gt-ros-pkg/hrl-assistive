@@ -5,7 +5,6 @@ import time
 import rospy
 from record_data import ADL_log
 import onlineRecordData
-# from onlineRecordData import ADL_log
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 from hrl_multimodal_anomaly_detection.srv import String_String

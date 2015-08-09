@@ -93,3 +93,39 @@ Launch combined FT node, bowl publisher and data recording (**new** terminal win
     1) roslaunch hrl_multimodal_anomaly_detection record_feeding_full.py
         
 
+---
+
+Both data recording and online anomaly detection can be done through `record_feeding_full.py`.
+
+After recording a set of feeding/scooping observation sequences, we can begin to setup training for an HMM.
+To begin, we must edit the data file locations within `dataFiles()` in `hmm/launcher_4d.py`.
+For instance, we need to change the following lines:
+```
+    fileNamesTrain = ['/path_to_training_data/iteration_%d_success.pkl']
+    iterationSetsTrain = [xrange(6)]
+    fileNamesTest = ['/path_to_test_data/iteration_%d_success.pkl', '/path_to_test_data_2/iteration_%d_failure.pkl']
+    iterationSetsTest = [xrange(4), xrange(3)]
+```
+
+Here fileNames are a list of file locations that contain `%d` to represent the iteration number of each subsequent observation.
+The specific number of iterations to load can be specified as a list of integer lists, iterationSets.
+For example, `iterationSetsTest = [xrange(4), xrange(3)]` can be used to load 4 successful data observations from one file location, and 3 failure data observations from another file location specified in `fileNamesTest`.
+
+Once the training and test data locations have been specified, we can train a new HMM by using:
+```
+    rosrun hrl_multimodal_anomaly_detection launcher_4d.py
+```
+
+If an HMM has already been trained, you can train a new HMM by deleting previously trained models in `hmm/models` or by changing the HMM model location in the `trainMultiHMM()` function of `launcher_4d.py`:
+```
+    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ***Change This --> ml_pkl='modals/ml_4d_bowl3.pkl'***, use_pkl=True)
+```
+
+Online anomaly detection can be updated using similar methods.
+First we must retrain the online HMM model. This can be done by changing the training data locations within `setupMultiHMM()` of `onlineHMMLauncher.py`; similar to path locations described above.
+
+Online anomaly detection can then be performed using the command:
+```
+    roslaunch hrl_multimodal_anomaly_detection record_feeding_full.py
+```
