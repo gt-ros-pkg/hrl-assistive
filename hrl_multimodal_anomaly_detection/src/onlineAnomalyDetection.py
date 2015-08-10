@@ -2,8 +2,11 @@
 
 __author__ = 'zerickson'
 
+import math
 import time
 import rospy
+import struct
+import pyaudio
 import numpy as np
 from threading import Thread
 import matplotlib.pyplot as plt
@@ -29,7 +32,14 @@ from sound_play.libsoundplay import SoundClient
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class onlineAnomalyDetection(Thread):
-    def __init__(self, targetFrame=None, tfListener=None, isScooping=True):
+    MAX_INT = 32768.0
+    CHUNK   = 1024 # frame per buffer
+    RATE    = 44100 # sampling rate
+    UNIT_SAMPLE_TIME = 1.0 / float(RATE)
+    CHANNEL = 2 # number of channels
+    FORMAT  = pyaudio.paInt16
+
+    def __init__(self, targetFrame=None, tfListener=None, isScooping=True, useAudio=False):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False
@@ -88,16 +98,27 @@ class onlineAnomalyDetection(Thread):
 
         self.soundHandle = SoundClient()
 
+        # Setup HMM to perform online anomaly detection
         self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM(isScooping=self.isScooping)
         if not self.isScooping:
             self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
         self.times = np.array(self.times)
         self.anomalyOccured = False
 
-        self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-        print 'Connected to Kinect depth'
-        self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-        print 'Connected to Kinect camera info'
+        if not useAudio:
+            self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
+            print 'Connected to Kinect depth'
+            self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+            print 'Connected to Kinect camera info'
+            self.p = None
+            self.stream = None
+        else:
+            self.cloudSub = None
+            self.cameraSub = None
+            self.p = pyaudio.PyAudio()
+            deviceIndex = self.find_input_device()
+            print 'Audio device:', deviceIndex
+            self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
         self.bowlSub = rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseManualCallback)
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
         print 'Connected to FT sensor'
@@ -114,7 +135,9 @@ class onlineAnomalyDetection(Thread):
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured:
+                    # Best c value gains determined from cross validation set
                     c = -1 if self.isScooping else -9
+                    # Perform anomaly detection
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, c)
                     print 'Anomaly error:', error
                     if anomaly > 0:
@@ -130,13 +153,15 @@ class onlineAnomalyDetection(Thread):
                         #         plt.plot(times, modal, label='%d' % index)
                         #     plt.legend()
                         #     plt.show()
-            rate.sleep()
+            if self.cloudSub is not None:
+                rate.sleep()
 
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
-        self.cloudSub.unregister()
-        self.cameraSub.unregister()
+        if self.cloudSub is not None:
+            self.cloudSub.unregister()
+            self.cameraSub.unregister()
         self.bowlSub.unregister()
         self.forceSub.unregister()
         self.publisher.unregister()
@@ -168,6 +193,79 @@ class onlineAnomalyDetection(Thread):
         angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
         angle = self.scaling(angle, self.minVals[2], self.maxVals[2])
 
+        # Process either visual or audio data depending on which we're using
+        if self.cloudSub is not None:
+            pdfValue = self.processVisual()
+        else:
+            pdfValue = self.processAudio()
+
+        # Magnify relative errors for online detection
+        # Since we are overwriting a sample from the training set, we need to magnify errors
+        # for them to be recognized as an anomaly
+        if index < len(self.forces):
+            scalar = 1.0 if self.isScooping else 3.0
+            forceDiff = np.abs(self.forces[index] - force)
+            if forceDiff > 0.5:
+                if force < self.forces[index]:
+                    force -= scalar*forceDiff
+                else:
+                    force += scalar*forceDiff
+            distanceDiff = np.abs(self.distances[index] - distance)
+            if distanceDiff > 0.5:
+                if distance < self.distances[index]:
+                    distance -= scalar*distanceDiff
+                else:
+                    distance += scalar*distanceDiff
+            angleDiff = np.abs(self.angles[index] - angle)
+            if angleDiff > 0.5:
+                if angle < self.angles[index]:
+                    angle -= scalar*angleDiff
+                else:
+                    angle += scalar*angleDiff
+            pdfDiff = np.abs(self.pdfs[index] - pdfValue)
+            if self.cloudSub is not None:
+                visionThreshold = 0.35 if self.isScooping else 1.5
+                if pdfDiff > visionThreshold:
+                    if pdfValue < self.pdfs[index]:
+                        pdfValue -= scalar*pdfDiff
+                    elif self.isScooping:
+                        pdfValue += pdfDiff
+                # Account for variability with a individuals head placement
+                if not self.isScooping and pdfDiff < 1.5:
+                    pdfValue = self.pdfs[index]
+            else:
+                if pdfDiff > 0.5:
+                    if pdfValue < self.pdfs[index]:
+                        pdfValue -= scalar*pdfDiff
+                    else:
+                        pdfValue += scalar*pdfDiff
+
+            # Check if pdfValue is NaN
+            if pdfValue != pdfValue:
+                pdfValue = self.pdfs[index]
+
+        if index >= len(self.forces):
+            self.forces.append(force)
+            self.distances.append(distance)
+            self.angles.append(angle)
+            self.pdfs.append(pdfValue)
+        else:
+            print 'Current force:', self.forces[index], 'New force:', force
+            self.forces[index] = force
+            print 'Current distance:', self.distances[index], 'New distance:', distance
+            self.distances[index] = distance
+            print 'Current angle:', self.angles[index], 'New angle:', angle
+            self.angles[index] = angle
+            print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
+            self.pdfs[index] = pdfValue
+
+    def processAudio(self):
+        data = self.stream.read(self.CHUNK)
+        pdfValue = self.get_rms(data)
+        pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
+        return pdfValue
+
+    def processVisual(self):
         self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
         try:
             targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
@@ -239,57 +337,7 @@ class onlineAnomalyDetection(Thread):
         # self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
         # self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
 
-        # Magnify relative errors for online detection
-        if index < len(self.forces):
-            scalar = 1.0 if self.isScooping else 3.0
-            forceDiff = np.abs(self.forces[index] - force)
-            if forceDiff > 0.5:
-                if force < self.forces[index]:
-                    force -= scalar*forceDiff
-                else:
-                    force += scalar*forceDiff
-            distanceDiff = np.abs(self.distances[index] - distance)
-            if distanceDiff > 0.5:
-                if distance < self.distances[index]:
-                    distance -= scalar*distanceDiff
-                else:
-                    distance += scalar*distanceDiff
-            angleDiff = np.abs(self.angles[index] - angle)
-            if angleDiff > 0.5:
-                if angle < self.angles[index]:
-                    angle -= scalar*angleDiff
-                else:
-                    angle += scalar*angleDiff
-            visionDiff = np.abs(self.pdfs[index] - pdfValue)
-            visionThreshold = 0.35 if self.isScooping else 1.5
-            if visionDiff > visionThreshold:
-                if pdfValue < self.pdfs[index]:
-                    pdfValue -= scalar*visionDiff
-                elif self.isScooping:
-                    pdfValue += visionDiff
-
-            # Account for variability with a individuals head placement
-            if not self.isScooping and visionDiff < 1.5:
-                pdfValue = self.pdfs[index]
-
-            # Check if pdfValue is NaN
-            if pdfValue != pdfValue:
-                pdfValue = self.pdfs[index]
-
-        if index >= len(self.forces):
-            self.forces.append(force)
-            self.distances.append(distance)
-            self.angles.append(angle)
-            self.pdfs.append(pdfValue)
-        else:
-            print 'Current force:', self.forces[index], 'New force:', force
-            self.forces[index] = force
-            print 'Current distance:', self.distances[index], 'New distance:', distance
-            self.distances[index] = distance
-            print 'Current angle:', self.angles[index], 'New angle:', angle
-            self.angles[index] = angle
-            print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
-            self.pdfs[index] = pdfValue
+        return pdfValue
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
@@ -394,6 +442,28 @@ class onlineAnomalyDetection(Thread):
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
             self.rgbCameraFrame = data.header.frame_id
+
+    def get_rms(self, block):
+        # RMS amplitude is defined as the square root of the
+        # mean over time of the square of the amplitude.
+        # so we need to convert this string of bytes into
+        # a string of 16-bit samples...
+
+        # we will get one short out for each
+        # two chars in the string.
+        count = len(block)/2
+        structFormat = '%dh' % count
+        shorts = struct.unpack(structFormat, block)
+
+        # iterate over the block.
+        sum_squares = 0.0
+        for sample in shorts:
+            # sample is a signed short in +/- 32768.
+            # normalize it to 1.0
+            n = sample / self.MAX_INT
+            sum_squares += n*n
+
+        return math.sqrt(sum_squares / count)
 
     def publishImageFeatures(self):
         imageFeatures = ImageFeatures()

@@ -236,13 +236,6 @@ def setupMultiHMM(isScooping=True):
 
     if not os.path.isfile(fileName):
         print 'Loading training data'
-        # fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Train_scooping_fvk_07-17-2015_16-03-36/iteration_%d_success.pkl',
-        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Train_scooping_fvk_07-17-2015_16-45-28/iteration_%d_success.pkl',
-        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Train_scooping_fvk_07-17-2015_17-13-56/iteration_%d_success.pkl',
-        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage1Test_scooping_fvk_07-17-2015_16-32-06/iteration_%d_success.pkl',
-        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage2Test_scooping_fvk_07-17-2015_16-53-13/iteration_%d_success.pkl',
-        #              '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowlStage3Test_scooping_fvk_07-17-2015_17-21-10/iteration_%d_success.pkl']
-        # iterationSets = [xrange(6), xrange(6), xrange(6), xrange(3), xrange(3), xrange(3)]
         if isScooping:
             fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
                          '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
