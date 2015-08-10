@@ -903,6 +903,10 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     width_avg_class_l = []
     width_std_class_l = []
 
+    slope_discrete_class_l = []
+    fd_avg_class_l = []
+    fd_std_class_l = []
+    
     for n in range(nClass):
 
         if len(check_methods) >= len(check_dims): 
@@ -917,6 +921,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         tn_l = np.zeros(len(all_task_names))
         fp_l = np.zeros(len(all_task_names))
         fdr_l = np.zeros(len(all_task_names)) # false detection rate
+        fd_l = []
         delay_l = []
         peak_l = []
         width_l = []
@@ -977,7 +982,6 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     fd_sum += np.sum(d['false_detection_l'])
                     fd_cnt += len(d['false_detection_l'])
 
-
                     if d['delay_l'] == []: continue
                     else:
                         if delay_l == []: 
@@ -985,13 +989,14 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                             peak_l  = d.get('peak_l',[])
                             width_l = d.get('width_l',[])
                             chunk_l = d.get('chunk_l',[])
+                            fd_l    = d['false_detection_l'].tolist()
                         else:
                             delay_l += d['delay_l']
                             peak_l  += d.get('peak_l',[])
                             width_l += d.get('width_l',[])
                             chunk_l += d.get('chunk_l',[])
+                            fd_l    += d['false_detection_l'].tolist()                            
 
-                    
                     ## print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
                     ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))
@@ -1042,8 +1047,27 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
                     width_avg_l[i] = np.mean(width_raw_l[i])
                     width_std_l[i] = np.std(width_raw_l[i])
-                    
-                    
+
+
+            # delay distribution per slope (0~1.0)
+            slope_a = np.array(peak_l)/np.array(width_l)/freq
+            slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 1.0) +0.5
+            fd_raw_l = []
+            fd_avg_l = np.zeros(len(slope_discrete))
+            fd_std_l = np.zeros(len(slope_discrete))
+
+            for i in xrange(len(slope_discrete)):
+                fd_raw_l.append([])
+
+            for i, s in enumerate(slope_a):
+                idx = (np.abs(slope_discrete-s)).argmin()
+                fd_raw_l[idx].append(fd_l[i])
+
+            for i in xrange(len(fd_raw_l)):
+                if len(fd_raw_l[i]) > 0:
+                    fd_avg_l[i] = np.mean(fd_raw_l[idx])
+                    fd_std_l[i] = np.std(fd_raw_l[idx])
+
             data = {}
             data['fn_l'] = fn_l
             data['tp_l'] = tp_l
@@ -1065,6 +1089,10 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['peak_std'] = peak_std_l
             data['width_avg'] = width_avg_l
             data['width_std'] = width_std_l
+
+            data['slope_discrete'] = slope_discrete
+            data['fd_avg'] = fd_avg_l
+            data['fd_std'] = fd_std_l
             
             ut.save_pickle(data, save_pkl_file)
         else:
@@ -1091,6 +1119,10 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             peak_std_l = data['peak_std'] 
             width_avg_l = data['width_avg'] 
             width_std_l = data['width_std'] 
+
+            slope_discrete = data['slope_discrete']
+            fd_avg_l = data['fd_avg']
+            fd_std_l = data['fd_std']
             
             
         fdr_mu_class_l.append(tot_fdr_mu)
@@ -1111,6 +1143,11 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         width_avg_class_l.append(width_avg_l)
         width_std_class_l.append(width_std_l)
 
+        slope_discrete_class_l.append(slope_discrete)
+        fd_avg_class_l.append(fd_avg_l)
+        fd_std_class_l.append(fd_std_l)
+        
+        
         
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -1132,6 +1169,38 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
         pp.xticks(ind + width*3.0/4, methods )
         pp.ylim([0.0, 100])                           
+        
+    elif True:
+        for i, method in enumerate(methods):
+            pp.plot(fd_avg_class_l[i], slope_discrete_class_l[i], label=method)
+            
+        pp.ylabel('Delay Distribution [sec]', fontsize=16)    
+        ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+        pp.xticks(ind + width*3.0/4, methods )
+        ## pp.ylim([0.0, 100])                           
+
+        
+        ## ax1 =pp.subplot(411)
+        ## pp.errorbar(delay_time_class_l[0], slope_avg_class_l[0], yerr=slope_std_class_l[0],label=methods[0])
+        ## pp.xlim([0.0, 3.0])
+        ## pp.ylim([-0.01, 0.1])
+
+        ## ax2 =pp.subplot(412)
+        ## pp.errorbar(delay_time_class_l[1], slope_avg_class_l[1], yerr=slope_std_class_l[1],label=methods[1])
+        ## pp.xlim([0.0, 3.0])
+        ## pp.ylim([-0.01, 0.1])
+
+        ## ax3 =pp.subplot(413)
+        ## pp.errorbar(delay_time_class_l[2], slope_avg_class_l[2], yerr=slope_std_class_l[2],label=methods[2])
+        ## pp.xlim([0.0, 3.0])
+        ## pp.ylim([-0.01, 0.1])
+
+        ## ax4 =pp.subplot(414)
+        ## pp.errorbar(delay_time_class_l[3], slope_avg_class_l[3], yerr=slope_std_class_l[3],label=methods[3])
+        ## pp.xlim([0.0, 3.0])
+        ## pp.ylim([-0.01, 0.1])
+        
+        
     else:
         
         for i, delay_time_l in enumerate(delay_time_class_l):
@@ -1160,6 +1229,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         ## pp.ylabel('Width', fontsize=16)
         pp.ylabel('Slope (=Peak/Width)', fontsize=16)
         pp.legend(loc='upper right',prop={'size':8}, fancybox=True, shadow=True, ncol=4)       
+        ## pp.xlim([-0.05, 0.5])
 
         
 
@@ -1620,6 +1690,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                         if chunk_l is not None:
                             chunk_l.append(false_dataSet.sa.chunks)
 
+                        false_detection_l[i] = True                            
                         if detect_break: break
                             
                     elif an == 0.0:
@@ -1631,7 +1702,6 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                         tp += 1.0    
                     ## err_l.append(err)
 
-                if an == 1.0: false_detection_l[i] = True
 
     return tp, fn, fp, tn, delay_l, false_detection_l
 
@@ -2355,22 +2425,26 @@ if __name__ == '__main__':
         # sound  = 1dim + all
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_param_check_sound'
+        ## test_title      = 'online_method_param_check_sound'        
+        ## check_dims      = [1]
+        ## force_an        = ['normal']        
+        ## sound_an        = ['rndsharp', 'rnddull'] 
+
+        test_title      = 'online_method_param_check_force2'        
+        check_dims      = [0]            
+        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        sound_an        = ['normal'] 
+            
+        ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
+
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
         attr            = 'id'
         onoff_type      = 'online'
         check_methods   = ['change', 'global', 'globalChange', 'progress']
-        check_dims      = [1]
         an_type         = 'both'
-
-        force_an        = ['normal']        
-        sound_an        = ['rndsharp', 'rnddull'] 
-            
-        ## force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        ## sound_an        = ['normal'] 
-        ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
+        
         disp            = 'None'
         rFold           = 0.75 # ratio of training dataset in true dataset
         nDataSet        = -1
