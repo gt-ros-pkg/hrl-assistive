@@ -907,7 +907,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     delay_avg_class_l = []
     delay_std_class_l = []
 
-    slope_fdr_class_l = []
+    slope_fdr_avg_class_l = []
+    slope_fdr_std_class_l = []
         
     for n in range(nClass):
 
@@ -986,7 +987,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     fd_cnt += len(d['false_detection_l'])
 
                     if delay_l == []: 
-                        if d.get('delay_l',[]) == []: 
+                        if d.get('delay_l',[]) == [[]]: 
                             delay_l = [-1]
                         else:
                             delay_l = d.get('delay_l',[])
@@ -995,7 +996,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                         chunk_l = d.get('chunk_l',[])
                         fd_l    = d['false_detection_l'].tolist()
                     else:
-                        if d.get('delay_l',[]) == []: 
+                        if d.get('delay_l',[]) == [[]]: 
                             delay_l += [-1]
                         else:
                             delay_l += d.get('delay_l',[])                        
@@ -1007,13 +1008,6 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     ## print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
                     ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))                    
-                    
-                    if len(delay_l) != len(peak_l): 
-                        print pkl_file
-                        print d['false_detection_l']
-                        print d.get('delay_l',[]), d.get('peak_l',[]), d.get('width_l',[])
-                        print len(delay_l), len(peak_l)
-                        sys.exit()
 
                 if float(fd_cnt) == 0.0:
                     print cross_test_path
@@ -1025,7 +1019,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 ## tot_fd_cnt += float(fd_cnt)
 
             print method, " : ", fdr_l
-
+            
             delay_time =  np.arange(0.0, np.amax(delay_l)+1.00001, 2.0) /freq
             peak_cnt_l  = np.zeros(len(delay_time))
             slope_avg_l = np.zeros(len(delay_time))
@@ -1067,13 +1061,14 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
             # delay distribution per slope (0~1.0)
             slope_a = np.array(peak_l)/(np.array(width_l)/freq)
-            slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.
+            slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 100.0) +50.
             delay_raw_l = []
             delay_avg_l = np.zeros(len(slope_discrete))
             delay_std_l = np.zeros(len(slope_discrete))
 
             slope_fd_raw_l=[]
-            slope_fdr_l = np.zeros(len(slope_discrete))
+            slope_fdr_avg_l = np.zeros(len(slope_discrete))
+            slope_fdr_std_l = np.zeros(len(slope_discrete))
 
             ## print len(slope_discrete), np.amax(slope_a)
             
@@ -1083,22 +1078,20 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
             ## print len(delay_raw_l), len(slope_fd_raw_l)
 
-            print len(delay_l), len(fd_l), len(slope_a)
-
             for i, s in enumerate(slope_a):
                 idx = (np.abs(slope_discrete-s)).argmin()
                 delay_raw_l[idx].append(delay_l[i])
                 slope_fd_raw_l[idx].append(fd_l[i])
                 
-            print len(delay_raw_l[i]), len(slope_fd_raw_l[i])
-                
 
             for i in xrange(len(delay_raw_l)):
                 if len(delay_raw_l[i]) > 0:
-                    delay_avg_l[i] = np.mean(delay_raw_l[i])
-                    delay_std_l[i] = np.std(delay_raw_l[i])                    
+                    delay_raws = filter(lambda x: x != -1, delay_raw_l[i])
+                    delay_avg_l[i] = np.mean(delay_raws)
+                    delay_std_l[i] = np.std(delay_raws)                    
                 if len(slope_fd_raw_l[i])>0:
-                    slope_fdr_l[i] = np.mean(slope_fd_raw_l[i])
+                    slope_fdr_avg_l[i] = np.mean(slope_fd_raw_l[i])
+                    slope_fdr_std_l[i] = np.std(slope_fd_raw_l[i])
                     
             data = {}
             data['fn_l'] = fn_l
@@ -1126,7 +1119,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['delay_avg'] = delay_avg_l
             data['delay_std'] = delay_std_l
 
-            data['slope_fdr'] = slope_fdr_l
+            data['slope_fdr_avg'] = slope_fdr_avg_l
+            data['slope_fdr_std'] = slope_fdr_std_l
             
             ut.save_pickle(data, save_pkl_file)
         else:
@@ -1158,7 +1152,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             delay_avg_l = data['delay_avg']
             delay_std_l = data['delay_std']
             
-            slope_fdr_l = data['slope_fdr']
+            slope_fdr_avg_l = data['slope_fdr_avg']
+            slope_fdr_std_l = data['slope_fdr_std']
             
             
         fdr_mu_class_l.append(tot_fdr_mu)
@@ -1183,7 +1178,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         delay_avg_class_l.append(delay_avg_l)
         delay_std_class_l.append(delay_std_l)
 
-        slope_fdr_class_l.append(slope_fdr_l)
+        slope_fdr_avg_class_l.append(slope_fdr_avg_l)
+        slope_fdr_std_class_l.append(slope_fdr_std_l)
 
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -1208,14 +1204,20 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         
     elif True:
 
-        pp.plot(slope_discrete_class_l[0], slope_fdr_class_l[0], 'r*')
+        ind = np.arange(len(slope_discrete_class_l[0]))
+        width = 0.2
+        
+        rects1 = pp.bar(ind, slope_fdr_avg_class_l[0], width, color='r', yerr=slope_fdr_std_class_l[0])
+        rects2 = pp.bar(ind+width, slope_fdr_avg_class_l[1], width, color='g', yerr=slope_fdr_std_class_l[1])
+        rects3 = pp.bar(ind+2.*width, slope_fdr_avg_class_l[2], width, color='b', yerr=slope_fdr_std_class_l[2])
+        rects4 = pp.bar(ind+3.*width, slope_fdr_avg_class_l[3], width, color='k', yerr=slope_fdr_std_class_l[3])
         
         ## pp.bar(ind + width/4.0, delay_avg_class_l, width, color='y', yerr=delay_std_class_l)
         
         ## for i, method in enumerate(methods):
         ##     pp.plot(delay_avg_class_l[i], slope_discrete_class_l[i], label=method)
             
-        pp.ylabel('Delay Distribution [sec]', fontsize=16)    
+        pp.ylabel('Detection Rate', fontsize=16)    
         ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
         ## pp.xticks(ind + width*3.0/4, methods )
         ## pp.ylim([0.0, 100])                           
@@ -2469,7 +2471,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.bOnlineSimMethodParamCheck:
 
-        # force  = elastic_continue
+        # inelastic  = inelastic
         # force2 = 1dim + all
         # sound  = 1dim + all
         
@@ -2479,9 +2481,14 @@ if __name__ == '__main__':
         ## force_an        = ['normal']        
         ## sound_an        = ['rndsharp', 'rnddull'] 
 
-        test_title      = 'online_method_param_check_force2'        
+        ## test_title      = 'online_method_param_check_force2'        
+        ## check_dims      = [0]            
+        ## force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        ## sound_an        = ['normal'] 
+
+        test_title      = 'online_method_param_check_inelastic'        
         check_dims      = [0]            
-        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        force_an        = ['inelastic']
         sound_an        = ['normal'] 
             
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
