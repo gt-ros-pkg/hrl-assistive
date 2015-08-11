@@ -1061,7 +1061,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
             # delay distribution per slope (0~1.0)
             slope_a = np.array(peak_l)/(np.array(width_l)/freq)
-            slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 100.0) +50.
+            slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 25.0) +12.5
             delay_raw_l = []
             delay_avg_l = np.zeros(len(slope_discrete))
             delay_std_l = np.zeros(len(slope_discrete))
@@ -1185,8 +1185,6 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
     shapes = itertools.cycle(['x','v', 'o', '+'])
         
-    fig = pp.figure()
-
     ind = np.arange(nClass)*0.9
     width = 0.5
     methods = ('Change \n detection', 'Fixed threshold \n detection', 'Fixed threshold \n & change detection', \
@@ -1194,7 +1192,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
     print fdr_mu_class_l
     
-    if test_title.find('param') < 0:            
+    if test_title.find('param') < 0 or True:            
+        fig = pp.figure()
+
         pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
     
         pp.ylabel('Anomaly Detection Rate (Percentage)', fontsize=16)    
@@ -1206,18 +1206,28 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
         ind = np.arange(len(slope_discrete_class_l[0]))
         width = 0.2
-        
+
+        fig = pp.figure()
+        ax1 =pp.subplot(211)        
         rects1 = pp.bar(ind, slope_fdr_avg_class_l[0], width, color='r', yerr=slope_fdr_std_class_l[0])
         rects2 = pp.bar(ind+width, slope_fdr_avg_class_l[1], width, color='g', yerr=slope_fdr_std_class_l[1])
         rects3 = pp.bar(ind+2.*width, slope_fdr_avg_class_l[2], width, color='b', yerr=slope_fdr_std_class_l[2])
         rects4 = pp.bar(ind+3.*width, slope_fdr_avg_class_l[3], width, color='k', yerr=slope_fdr_std_class_l[3])
+        pp.ylabel('Detection Rate', fontsize=16)    
+        
+        ax2 =pp.subplot(212)
+        rects1 = pp.bar(ind, delay_avg_class_l[0], width, color='r', yerr=delay_std_class_l[0])
+        rects2 = pp.bar(ind+width, delay_avg_class_l[1], width, color='g', yerr=delay_std_class_l[1])
+        rects3 = pp.bar(ind+2.*width, delay_avg_class_l[2], width, color='b', yerr=delay_std_class_l[2])
+        rects4 = pp.bar(ind+3.*width, delay_avg_class_l[3], width, color='k', yerr=delay_std_class_l[3])
+        pp.ylabel('Delay Time', fontsize=16)    
+
         
         ## pp.bar(ind + width/4.0, delay_avg_class_l, width, color='y', yerr=delay_std_class_l)
         
         ## for i, method in enumerate(methods):
         ##     pp.plot(delay_avg_class_l[i], slope_discrete_class_l[i], label=method)
             
-        pp.ylabel('Detection Rate', fontsize=16)    
         ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
         ## pp.xticks(ind + width*3.0/4, methods )
         ## pp.ylim([0.0, 100])                           
@@ -1245,6 +1255,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         
         
     else:
+        fig = pp.figure()
         
         for i, delay_time_l in enumerate(delay_time_class_l):
 
@@ -1737,7 +1748,6 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                         tn += 1.0
                         
                         delay_l[-1] = delay
-                        false_detection_l[i] = True                                                
                         if detect_break: break
                             
                     elif an == 0.0:
@@ -1749,6 +1759,8 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                         tp += 1.0    
                     ## err_l.append(err)
 
+                false_detection_l[i] = True                                                
+                    
                 # If this is not simulated anomaly
                 if peak_l is None and an == 1.0:
                     false_detection_l[i] = True                                                
@@ -2481,15 +2493,15 @@ if __name__ == '__main__':
         ## force_an        = ['normal']        
         ## sound_an        = ['rndsharp', 'rnddull'] 
 
-        ## test_title      = 'online_method_param_check_force2'        
-        ## check_dims      = [0]            
-        ## force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        ## sound_an        = ['normal'] 
-
-        test_title      = 'online_method_param_check_inelastic'        
+        test_title      = 'online_method_param_check_force2'        
         check_dims      = [0]            
-        force_an        = ['inelastic']
+        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
+
+        ## test_title      = 'online_method_param_check_inelastic'        
+        ## check_dims      = [0]            
+        ## force_an        = ['inelastic']
+        ## sound_an        = ['normal'] 
             
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
