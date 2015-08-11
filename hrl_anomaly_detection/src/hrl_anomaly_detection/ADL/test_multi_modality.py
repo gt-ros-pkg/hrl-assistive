@@ -1707,8 +1707,10 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
         n = len(x_test1)
         false_detection_l = np.zeros(n)
         
+        
         for i in range(n):
             m = len(x_test1[i])
+            delay_l.append([])
 
             # simulated anomaly info
             if peak_l is not None and width_l is not None:
@@ -1732,7 +1734,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                     if an == 1.0:
                         tn += 1.0
                         
-                        delay_l.append(delay)
+                        delay_l[-1] = delay
                         false_detection_l[i] = True                                                
                         if detect_break: break
                             
