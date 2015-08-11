@@ -925,7 +925,7 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                 elif an1 == 'elastic' or an1 == 'elastic_continue':
                     print "elastic collision with continuous force"
 
-                    peak  = max_c1 * random.uniform(0.01, 0.3)
+                    peak  = max_c1 * random.uniform(0.01, 0.2)
                     if len(x1_anomaly) <= 25: 
                         width = random.randint(5,10)
                     else:

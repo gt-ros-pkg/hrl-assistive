@@ -1063,7 +1063,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
                 # delay distribution per slope (0~1.0)
                 slope_a = np.array(peak_l)/(np.array(width_l)/freq)
-                slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 25.0) +12.5
+                slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.0
                 delay_raw_l = []
                 delay_avg_l = np.zeros(len(slope_discrete))
                 delay_std_l = np.zeros(len(slope_discrete))
@@ -2096,7 +2096,8 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
     # False data
     if false_data1 is not None:
         for i, d in enumerate(false_data1):
-            pp.plot(x. d, color='k', linewidth=1.0)
+            x = np.array(range(len(d))) 
+            pp.plot(x, d, color='k', linewidth=1.0)
                 
     ## # False data
     ## for i, d in enumerate(data1):
@@ -2124,6 +2125,7 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
     # for false data
     if false_data2 is not None:
         for i, d in enumerate(false_data2):
+            x = np.array(range(len(d)))            
             pp.plot(x, d, color='k', linewidth=1.0)
             
     ax2.set_ylabel("Sound Energy", fontsize=18)
@@ -2500,10 +2502,10 @@ if __name__ == '__main__':
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
 
-        ## test_title      = 'online_method_param_check_inelastic'        
-        ## check_dims      = [0]            
-        ## force_an        = ['inelastic']
-        ## sound_an        = ['normal'] 
+        test_title      = 'online_method_param_check_force'        
+        check_dims      = [0]            
+        force_an        = ['inelastic', 'elastic']
+        sound_an        = ['normal'] 
             
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
