@@ -984,35 +984,37 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
                     fd_sum += np.sum(d['false_detection_l'])
                     fd_cnt += len(d['false_detection_l'])
-                    
-                    if d['delay_l'] == []: 
-                        print "no delay: ", d['peak_l']
-                        continue
-                    else:
-                        if delay_l == []: 
-                            delay_l = d['delay_l']
-                            peak_l  = d.get('peak_l',[])
-                            width_l = d.get('width_l',[])
-                            chunk_l = d.get('chunk_l',[])
-                            fd_l    = d['false_detection_l'].tolist()
+
+                    if delay_l == []: 
+                        if d.get('delay_l',[]) == []: 
+                            delay_l = [-1]
                         else:
-                            delay_l += d['delay_l']
-                            peak_l  += d.get('peak_l',[])
-                            width_l += d.get('width_l',[])
-                            chunk_l += d.get('chunk_l',[])
-                            fd_l    += d['false_detection_l'].tolist()                            
+                            delay_l = d.get('delay_l',[])
+                        peak_l  = d.get('peak_l',[])
+                        width_l = d.get('width_l',[])
+                        chunk_l = d.get('chunk_l',[])
+                        fd_l    = d['false_detection_l'].tolist()
+                    else:
+                        if d.get('delay_l',[]) == []: 
+                            delay_l += [-1]
+                        else:
+                            delay_l += d.get('delay_l',[])                        
+                        peak_l  += d.get('peak_l',[])
+                        width_l += d.get('width_l',[])
+                        chunk_l += d.get('chunk_l',[])
+                        fd_l    += d['false_detection_l'].tolist()                            
 
                     ## print task_num, d['false_detection_l']
                     ## fdr_l[task_num] = d['false_detection_l']
                     ## print c_method, ": ", float(np.sum(d['false_detection_l'])) / float(len(d['false_detection_l']))                    
-                    if np.sum(d['false_detection_l']) - len(d['false_detection_l']) != 0:
-                        print np.sum(d['false_detection_l']) , len(d['false_detection_l'])
+                    
+                    if len(delay_l) != len(peak_l): 
+                        print pkl_file
+                        print d['false_detection_l']
+                        print d.get('delay_l',[]), d.get('peak_l',[]), d.get('width_l',[])
+                        print len(delay_l), len(peak_l)
                         sys.exit()
 
-                    print fd_sum, fd_cnt
-                
-                sys.exit()
-                    
                 if float(fd_cnt) == 0.0:
                     print cross_test_path
                     print c_method, task_num
@@ -1042,6 +1044,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 peak_raw_l.append([])
                 width_raw_l.append([])
 
+            ## print len(delay_l), len(peak_l)
+                
             for i,d in enumerate(delay_l): 
                 ## slope_raw_l[d].append(peak_l[i]/width_l[i]/freq) 
                 slope_raw_l[d/2].append(peak_l[i]/(width_l[i]/freq)) 
@@ -1077,10 +1081,16 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 delay_raw_l.append([])
                 slope_fd_raw_l.append([])
 
+            ## print len(delay_raw_l), len(slope_fd_raw_l)
+
+            print len(delay_l), len(fd_l), len(slope_a)
+
             for i, s in enumerate(slope_a):
                 idx = (np.abs(slope_discrete-s)).argmin()
                 delay_raw_l[idx].append(delay_l[i])
                 slope_fd_raw_l[idx].append(fd_l[i])
+                
+            print len(delay_raw_l[i]), len(slope_fd_raw_l[i])
                 
 
             for i in xrange(len(delay_raw_l)):
@@ -1694,9 +1704,9 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
             x_test1 = false_dataSet.samples[:,check_dim]
         anomaly_idx  = false_dataSet.sa.anomaly_idx
             
-        false_detection_l = np.zeros(len(x_test1))
-
         n = len(x_test1)
+        false_detection_l = np.zeros(n)
+        
         for i in range(n):
             m = len(x_test1[i])
 
@@ -1735,6 +1745,10 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                         tp += 1.0    
                     ## err_l.append(err)
 
+                # If this is not simulated anomaly
+                if peak_l is None and an == 1.0:
+                    false_detection_l[i] = True                                                
+            
 
     return tp, fn, fp, tn, delay_l, false_detection_l
 
