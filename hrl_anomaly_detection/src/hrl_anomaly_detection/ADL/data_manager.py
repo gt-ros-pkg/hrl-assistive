@@ -903,8 +903,10 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     print "Random impulse force which is inelastic collision force: ", an1
                     #http://www.vernier.com/innovate/impulse-comparison-for-elastic-and-inelastic-collisions/
                     peak   = max_c1 * random.uniform(0.01, 0.3)
-                    ## peak   = max_c1 * random.uniform(0.1, 0.5)
-                    width  = random.randint(3,6)                    
+                    width  = random.randint(3,10)                    
+
+                    ## peak   = max_c1 * random.uniform(0.1, 0.5)                    
+                    ## width  = random.randint(3,6)                    
                     an_idx = loc = random.randint(1,length-1-width)
 
                     xnew    = range(width)
@@ -924,11 +926,16 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     print "elastic collision with continuous force"
 
                     peak  = max_c1 * random.uniform(0.01, 0.3)
-                    ## peak  = max_c1 * random.uniform(0.1, 0.5)
                     if len(x1_anomaly) <= 25: 
                         width = random.randint(5,10)
                     else:
                         width = random.randint(5,20)
+                        
+                    ## peak  = max_c1 * random.uniform(0.1, 0.5)
+                    ## if len(x1_anomaly) <= 25: 
+                    ##     width = random.randint(5,10)
+                    ## else:
+                    ##     width = random.randint(5,20)
 
                     an_idx  = loc = random.randint(1,length-1-width)
                     xnew    = range(width)

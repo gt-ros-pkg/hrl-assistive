@@ -1196,7 +1196,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
     print fdr_mu_class_l
     
-    if test_title.find('param') < 0 or True:            
+    if test_title.find('param') < 0 :            
         fig = pp.figure()
 
         pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
