@@ -1295,7 +1295,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     fig.savefig('test.pdf')
     fig.savefig('test.png')
     os.system('cp test.p* ~/Dropbox/HRL/')
-    pp.show()
+    ## pp.show()
 
 
 #---------------------------------------------------------------------------------------#        
@@ -2502,9 +2502,9 @@ if __name__ == '__main__':
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
 
-        test_title      = 'online_method_param_check_force'        
-        check_dims      = [0]            
-        force_an        = ['inelastic', 'elastic']
+        test_title      = 'online_method_param_check_force3'        
+        check_dims      = [2]            
+        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
             
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
