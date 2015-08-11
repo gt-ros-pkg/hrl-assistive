@@ -1019,79 +1019,81 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 ## tot_fd_cnt += float(fd_cnt)
 
             print method, " : ", fdr_l
+
+            if peak_l != []:
             
-            delay_time =  np.arange(0.0, np.amax(delay_l)+1.00001, 2.0) /freq
-            peak_cnt_l  = np.zeros(len(delay_time))
-            slope_avg_l = np.zeros(len(delay_time))
-            slope_std_l = np.zeros(len(delay_time))
+                delay_time =  np.arange(0.0, np.amax(delay_l)+1.00001, 2.0) /freq
+                peak_cnt_l  = np.zeros(len(delay_time))
+                slope_avg_l = np.zeros(len(delay_time))
+                slope_std_l = np.zeros(len(delay_time))
 
-            peak_avg_l = np.zeros(len(delay_time))
-            peak_std_l = np.zeros(len(delay_time))
-            width_avg_l = np.zeros(len(delay_time))
-            width_std_l = np.zeros(len(delay_time))
-            
-            slope_raw_l = []
-            peak_raw_l = []
-            width_raw_l = []
-            for i in xrange(len(delay_time)):
-                slope_raw_l.append([])
-                peak_raw_l.append([])
-                width_raw_l.append([])
+                peak_avg_l = np.zeros(len(delay_time))
+                peak_std_l = np.zeros(len(delay_time))
+                width_avg_l = np.zeros(len(delay_time))
+                width_std_l = np.zeros(len(delay_time))
 
-            ## print len(delay_l), len(peak_l)
-                
-            for i,d in enumerate(delay_l): 
-                ## slope_raw_l[d].append(peak_l[i]/width_l[i]/freq) 
-                slope_raw_l[d/2].append(peak_l[i]/(width_l[i]/freq)) 
-                peak_raw_l[d/2].append(peak_l[i])
-                width_raw_l[d/2].append(width_l[i]/freq)
-                            
-            for i in xrange(len(slope_raw_l)):                
+                slope_raw_l = []
+                peak_raw_l = []
+                width_raw_l = []
+                for i in xrange(len(delay_time)):
+                    slope_raw_l.append([])
+                    peak_raw_l.append([])
+                    width_raw_l.append([])
 
-                if len(slope_raw_l[i]) > 0:
-                    slope_avg_l[i] = np.mean(slope_raw_l[i])
-                    slope_std_l[i] = np.std(slope_raw_l[i])
+                ## print len(delay_l), len(peak_l)
 
-                    peak_avg_l[i] = np.mean(peak_raw_l[i])
-                    peak_std_l[i] = np.std(peak_raw_l[i])
+                for i,d in enumerate(delay_l): 
+                    ## slope_raw_l[d].append(peak_l[i]/width_l[i]/freq) 
+                    slope_raw_l[d/2].append(peak_l[i]/(width_l[i]/freq)) 
+                    peak_raw_l[d/2].append(peak_l[i])
+                    width_raw_l[d/2].append(width_l[i]/freq)
 
-                    width_avg_l[i] = np.mean(width_raw_l[i])
-                    width_std_l[i] = np.std(width_raw_l[i])
+                for i in xrange(len(slope_raw_l)):                
+
+                    if len(slope_raw_l[i]) > 0:
+                        slope_avg_l[i] = np.mean(slope_raw_l[i])
+                        slope_std_l[i] = np.std(slope_raw_l[i])
+
+                        peak_avg_l[i] = np.mean(peak_raw_l[i])
+                        peak_std_l[i] = np.std(peak_raw_l[i])
+
+                        width_avg_l[i] = np.mean(width_raw_l[i])
+                        width_std_l[i] = np.std(width_raw_l[i])
 
 
-            # delay distribution per slope (0~1.0)
-            slope_a = np.array(peak_l)/(np.array(width_l)/freq)
-            slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 25.0) +12.5
-            delay_raw_l = []
-            delay_avg_l = np.zeros(len(slope_discrete))
-            delay_std_l = np.zeros(len(slope_discrete))
+                # delay distribution per slope (0~1.0)
+                slope_a = np.array(peak_l)/(np.array(width_l)/freq)
+                slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 25.0) +12.5
+                delay_raw_l = []
+                delay_avg_l = np.zeros(len(slope_discrete))
+                delay_std_l = np.zeros(len(slope_discrete))
 
-            slope_fd_raw_l=[]
-            slope_fdr_avg_l = np.zeros(len(slope_discrete))
-            slope_fdr_std_l = np.zeros(len(slope_discrete))
+                slope_fd_raw_l=[]
+                slope_fdr_avg_l = np.zeros(len(slope_discrete))
+                slope_fdr_std_l = np.zeros(len(slope_discrete))
 
-            ## print len(slope_discrete), np.amax(slope_a)
-            
-            for i in xrange(len(slope_discrete)):
-                delay_raw_l.append([])
-                slope_fd_raw_l.append([])
+                ## print len(slope_discrete), np.amax(slope_a)
 
-            ## print len(delay_raw_l), len(slope_fd_raw_l)
+                for i in xrange(len(slope_discrete)):
+                    delay_raw_l.append([])
+                    slope_fd_raw_l.append([])
 
-            for i, s in enumerate(slope_a):
-                idx = (np.abs(slope_discrete-s)).argmin()
-                delay_raw_l[idx].append(delay_l[i])
-                slope_fd_raw_l[idx].append(fd_l[i])
-                
+                ## print len(delay_raw_l), len(slope_fd_raw_l)
 
-            for i in xrange(len(delay_raw_l)):
-                if len(delay_raw_l[i]) > 0:
-                    delay_raws = filter(lambda x: x != -1, delay_raw_l[i])
-                    delay_avg_l[i] = np.mean(delay_raws)
-                    delay_std_l[i] = np.std(delay_raws)                    
-                if len(slope_fd_raw_l[i])>0:
-                    slope_fdr_avg_l[i] = np.mean(slope_fd_raw_l[i])
-                    slope_fdr_std_l[i] = np.std(slope_fd_raw_l[i])
+                for i, s in enumerate(slope_a):
+                    idx = (np.abs(slope_discrete-s)).argmin()
+                    delay_raw_l[idx].append(delay_l[i])
+                    slope_fd_raw_l[idx].append(fd_l[i])
+
+
+                for i in xrange(len(delay_raw_l)):
+                    if len(delay_raw_l[i]) > 0:
+                        delay_raws = filter(lambda x: x != -1, delay_raw_l[i])
+                        delay_avg_l[i] = np.mean(delay_raws)
+                        delay_std_l[i] = np.std(delay_raws)                    
+                    if len(slope_fd_raw_l[i])>0:
+                        slope_fdr_avg_l[i] = np.mean(slope_fd_raw_l[i])
+                        slope_fdr_std_l[i] = np.std(slope_fd_raw_l[i])
                     
             data = {}
             data['fn_l'] = fn_l
@@ -1102,27 +1104,29 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             data['tot_fdr_mu'] = tot_fdr_mu = np.mean(fdr_l*100)
             data['tot_fdr_std'] = tot_fdr_std = np.std(fdr_l*100)
 
-            data['delay_l'] = delay_l
-            data['peak_l']  = peak_l
-            data['width_l'] = width_l
-            data['chunk_l'] = chunk_l
+            if peak_l != []:            
+                data['delay_l'] = delay_l
+                data['peak_l']  = peak_l
+                data['width_l'] = width_l
+                data['chunk_l'] = chunk_l
 
-            data['delay_time'] = delay_time
-            data['slope_avg'] = slope_avg_l
-            data['slope_std'] = slope_std_l
-            data['peak_avg'] = peak_avg_l
-            data['peak_std'] = peak_std_l
-            data['width_avg'] = width_avg_l
-            data['width_std'] = width_std_l
+                data['delay_time'] = delay_time
+                data['slope_avg'] = slope_avg_l
+                data['slope_std'] = slope_std_l
+                data['peak_avg'] = peak_avg_l
+                data['peak_std'] = peak_std_l
+                data['width_avg'] = width_avg_l
+                data['width_std'] = width_std_l
 
-            data['slope_discrete'] = slope_discrete
-            data['delay_avg'] = delay_avg_l
-            data['delay_std'] = delay_std_l
+                data['slope_discrete'] = slope_discrete
+                data['delay_avg'] = delay_avg_l
+                data['delay_std'] = delay_std_l
 
-            data['slope_fdr_avg'] = slope_fdr_avg_l
-            data['slope_fdr_std'] = slope_fdr_std_l
-            
+                data['slope_fdr_avg'] = slope_fdr_avg_l
+                data['slope_fdr_std'] = slope_fdr_std_l
+
             ut.save_pickle(data, save_pkl_file)
+            
         else:
             data = ut.load_pickle(save_pkl_file)
             fn_l = data['fn_l']
@@ -1133,53 +1137,53 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             tot_fdr_mu  = data['tot_fdr_mu']
             tot_fdr_std = data['tot_fdr_std']
 
-            delay_l = data['delay_l']
-            peak_l  = data['peak_l']
-            width_l = data['width_l']
-            chunk_l = data['chunk_l']
+            delay_l = data.get('delay_l',[])
+            peak_l  = data.get('peak_l',[])
+            width_l = data.get('width_l',[])
+            chunk_l = data.get('chunk_l',[])
 
+            delay_time = data.get('delay_time',[])
+            slope_avg_l = data.get('slope_avg',[]) 
+            slope_std_l = data.get('slope_std',[]) 
 
-            delay_time = data['delay_time']
-            slope_avg_l = data['slope_avg'] 
-            slope_std_l = data['slope_std'] 
+            peak_avg_l = data.get('peak_avg',[]) 
+            peak_std_l = data.get('peak_std',[]) 
+            width_avg_l = data.get('width_avg',[]) 
+            width_std_l = data.get('width_std',[]) 
 
-            peak_avg_l = data['peak_avg'] 
-            peak_std_l = data['peak_std'] 
-            width_avg_l = data['width_avg'] 
-            width_std_l = data['width_std'] 
-
-            slope_discrete = data['slope_discrete']
-            delay_avg_l = data['delay_avg']
-            delay_std_l = data['delay_std']
+            slope_discrete = data.get('slope_discrete',[])
+            delay_avg_l = data.get('delay_avg',[])
+            delay_std_l = data.get('delay_std',[])
             
-            slope_fdr_avg_l = data['slope_fdr_avg']
-            slope_fdr_std_l = data['slope_fdr_std']
+            slope_fdr_avg_l = data.get('slope_fdr_avg',[])
+            slope_fdr_std_l = data.get('slope_fdr_std',[])
             
             
         fdr_mu_class_l.append(tot_fdr_mu)
         fdr_std_class_l.append(tot_fdr_std)
-        
-        delay_class_l.append(delay_l)
-        peak_class_l.append(peak_l)
-        width_class_l.append(width_l)
-        chunk_class_l.append(chunk_l)
 
-        delay_time_class_l.append(delay_time)
-        slope_avg_class_l.append(slope_avg_l)
-        slope_std_class_l.append(slope_std_l)
+        if peak_l != []:
+            delay_class_l.append(delay_l)
+            peak_class_l.append(peak_l)
+            width_class_l.append(width_l)
+            chunk_class_l.append(chunk_l)
 
-        peak_avg_class_l.append(peak_avg_l)
-        peak_std_class_l.append(peak_std_l)
+            delay_time_class_l.append(delay_time)
+            slope_avg_class_l.append(slope_avg_l)
+            slope_std_class_l.append(slope_std_l)
 
-        width_avg_class_l.append(width_avg_l)
-        width_std_class_l.append(width_std_l)
+            peak_avg_class_l.append(peak_avg_l)
+            peak_std_class_l.append(peak_std_l)
 
-        slope_discrete_class_l.append(slope_discrete)
-        delay_avg_class_l.append(delay_avg_l)
-        delay_std_class_l.append(delay_std_l)
+            width_avg_class_l.append(width_avg_l)
+            width_std_class_l.append(width_std_l)
 
-        slope_fdr_avg_class_l.append(slope_fdr_avg_l)
-        slope_fdr_std_class_l.append(slope_fdr_std_l)
+            slope_discrete_class_l.append(slope_discrete)
+            delay_avg_class_l.append(delay_avg_l)
+            delay_std_class_l.append(delay_std_l)
+
+            slope_fdr_avg_class_l.append(slope_fdr_avg_l)
+            slope_fdr_std_class_l.append(slope_fdr_std_l)
 
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k'])
@@ -1748,6 +1752,7 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                         tn += 1.0
                         
                         delay_l[-1] = delay
+                        false_detection_l[i] = True                                                
                         if detect_break: break
                             
                     elif an == 0.0:
@@ -1758,8 +1763,6 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
                     elif an == 0.0:
                         tp += 1.0    
                     ## err_l.append(err)
-
-                false_detection_l[i] = True                                                
                     
                 # If this is not simulated anomaly
                 if peak_l is None and an == 1.0:
@@ -2473,19 +2476,18 @@ if __name__ == '__main__':
         if opt.bAllPlot is not True:
             fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
-                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=opt.bRenew, \
                      disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
-                         check_dims, nDataSet)
+                         check_dims, nDataSet, renew=opt.bRenew)
 
 
     #---------------------------------------------------------------------------
     elif opt.bOnlineSimMethodParamCheck:
 
-        # inelastic  = inelastic
-        # force2 = 1dim + all
-        # sound  = 1dim + all
+        # force = 1dim + all
+        # sound = 1dim + all
         
         print "ROC Online Robot with simulated anomalies"
         ## test_title      = 'online_method_param_check_sound'        
@@ -2493,7 +2495,7 @@ if __name__ == '__main__':
         ## force_an        = ['normal']        
         ## sound_an        = ['rndsharp', 'rnddull'] 
 
-        test_title      = 'online_method_param_check_force2'        
+        test_title      = 'online_method_param_check_force'        
         check_dims      = [0]            
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
@@ -2525,7 +2527,7 @@ if __name__ == '__main__':
         if opt.bAllPlot is not True:
             fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                      task_names[task], nState, \
-                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=opt.bRenew, \
                      disp=disp, rm_run=opt.bRemoveRunning, sim=True, detect_break=True)
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
