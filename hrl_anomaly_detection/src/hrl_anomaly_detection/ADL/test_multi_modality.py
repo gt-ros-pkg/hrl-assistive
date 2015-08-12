@@ -35,6 +35,13 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 from hrl_anomaly_detection.HMM.learning_hmm_multi import learning_hmm_multi
 
 
+tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),    
+             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),    
+             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),    
+             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),    
+             (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+tableau20 = np.array(tableau20)/255.0
+
 
 def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
             prefix, nState=20, \
@@ -1089,11 +1096,11 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 for i in xrange(len(delay_raw_l)):
                     if len(delay_raw_l[i]) > 0:
                         delay_raws = filter(lambda x: x != -1, delay_raw_l[i])
-                        delay_avg_l[i] = np.mean(delay_raws)
-                        delay_std_l[i] = np.std(delay_raws)                    
+                        delay_avg_l[i] = np.mean(np.array(delay_raws)/freq)
+                        delay_std_l[i] = np.std(np.array(delay_raws)/freq)                    
                     if len(slope_fd_raw_l[i])>0:
-                        slope_fdr_avg_l[i] = np.mean(slope_fd_raw_l[i])
-                        slope_fdr_std_l[i] = np.std(slope_fd_raw_l[i])
+                        slope_fdr_avg_l[i] = np.mean(np.array(slope_fd_raw_l[i])*100.0)
+                        slope_fdr_std_l[i] = np.std(np.array(slope_fd_raw_l[i])*100.0)
                     
             data = {}
             data['fn_l'] = fn_l
@@ -1206,27 +1213,47 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         pp.xticks(ind + width*3.0/4, methods )
         pp.ylim([0.0, 100])                           
         
-    elif False:
+    elif True:
 
-        ind = np.arange(len(slope_discrete_class_l[0]))
         width = 0.2
+        ind = np.arange(len(slope_discrete_class_l[0]))+width/2.0
 
         fig = pp.figure()
         ax1 =pp.subplot(211)        
-        rects1 = pp.bar(ind, slope_fdr_avg_class_l[0], width, color='r', yerr=slope_fdr_std_class_l[0])
-        rects2 = pp.bar(ind+width, slope_fdr_avg_class_l[1], width, color='g', yerr=slope_fdr_std_class_l[1])
-        rects3 = pp.bar(ind+2.*width, slope_fdr_avg_class_l[2], width, color='b', yerr=slope_fdr_std_class_l[2])
-        rects4 = pp.bar(ind+3.*width, slope_fdr_avg_class_l[3], width, color='k', yerr=slope_fdr_std_class_l[3])
-        pp.ylabel('Detection Rate', fontsize=16)    
+        rects1 = pp.bar(ind, slope_fdr_avg_class_l[0], width, color=tableau20[0], 
+                        yerr=slope_fdr_std_class_l[0])
+        rects2 = pp.bar(ind+width, slope_fdr_avg_class_l[1], width, color=tableau20[2], 
+                        yerr=slope_fdr_std_class_l[1])
+        rects3 = pp.bar(ind+2.*width, slope_fdr_avg_class_l[2], width, color=tableau20[4], 
+                        yerr=slope_fdr_std_class_l[2])
+        rects4 = pp.bar(ind+3.*width, slope_fdr_avg_class_l[3], width, color=tableau20[6], 
+                        yerr=slope_fdr_std_class_l[3])
+        pp.ylim([0.0, 100.0])
+        pp.ylabel('Detection Rate [%]', fontsize=16)    
+        xlabel_l = []
+        for i, s in enumerate(slope_discrete):
+            xlabel_l.append(str(s-slope_discrete[0])+' ~ '+str(s+slope_discrete[0]))
+        pp.xticks(ind+width*2.0,xlabel_l)
         
         ax2 =pp.subplot(212)
-        rects1 = pp.bar(ind, delay_avg_class_l[0], width, color='r', yerr=delay_std_class_l[0])
-        rects2 = pp.bar(ind+width, delay_avg_class_l[1], width, color='g', yerr=delay_std_class_l[1])
-        rects3 = pp.bar(ind+2.*width, delay_avg_class_l[2], width, color='b', yerr=delay_std_class_l[2])
-        rects4 = pp.bar(ind+3.*width, delay_avg_class_l[3], width, color='k', yerr=delay_std_class_l[3])
-        pp.ylabel('Delay Time', fontsize=16)    
+        rects1 = pp.bar(ind, delay_avg_class_l[0], width, color=tableau20[0], 
+                        yerr=delay_std_class_l[0], label=methods[0])
+        rects2 = pp.bar(ind+width, delay_avg_class_l[1], width, color=tableau20[2], 
+                        yerr=delay_std_class_l[1], label=methods[1])
+        rects3 = pp.bar(ind+2.*width, delay_avg_class_l[2], width, color=tableau20[4], 
+                        yerr=delay_std_class_l[2], label=methods[2])
+        rects4 = pp.bar(ind+3.*width, delay_avg_class_l[3], width, color=tableau20[6], 
+                        yerr=delay_std_class_l[3], label=methods[3])
+        pp.ylabel('Delay Time [sec]', fontsize=16)    
+        pp.ylim([0.0, 0.9])
 
-        
+        xlabel_l = []
+        for i, s in enumerate(slope_discrete):
+            xlabel_l.append(str(s-slope_discrete[0])+' ~ '+str(s+slope_discrete[0]))
+        pp.xticks(ind+width*2.0,xlabel_l)
+        pp.xlabel('Peak[N]/Width[sec]', fontsize=16) 
+        pp.legend(loc='upper right',prop={'size':8}, fancybox=True, shadow=True, ncol=2)       
+       
     else:
         fig = pp.figure()
         
@@ -1235,17 +1262,17 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
             color = colors.next()
             shape = shapes.next()
         
-            ## pp.plot(np.array(delay_class_l[i])/freq, \
-            ##         np.array(peak_class_l[i])/(np.array(width_class_l[i])/freq), color+shape,label=methods[i])
-
             pp.plot(np.array(delay_class_l[i])/freq, \
-                    np.array(peak_class_l[i]), color+shape,label=methods[i])
+                    np.array(peak_class_l[i])/(np.array(width_class_l[i])/freq), color+shape,label=methods[i])
+
+            ## pp.plot(np.array(delay_class_l[i])/freq, \
+            ##         np.array(peak_class_l[i]), color+shape,label=methods[i])
                     
             
         pp.xlabel('Detection Time [sec]', fontsize=16)
-        pp.ylabel('Peak [N]', fontsize=16)
+        ## pp.ylabel('Peak [N]', fontsize=16)
         ## pp.ylabel('Width', fontsize=16)
-        ## pp.ylabel('Slope (=Peak/Width)', fontsize=16)
+        pp.ylabel('Peak/Width', fontsize=16)
         pp.legend(loc='upper right',prop={'size':8}, fancybox=True, shadow=True, ncol=4)       
         pp.xlim([-0.05, 3.0])
 
@@ -2449,26 +2476,19 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.bOnlineSimMethodParamCheck:
 
-        # force  = 1dim + all
-        # sound  = 1dim + all
-        # force2 = 2dim + all
-        # force3 = 2dim + all
+        # force  = 2dim + all
+        # sound  = 2dim + all
         
         print "ROC Online Robot with simulated anomalies"
-        ## test_title      = 'online_method_param_check_sound'        
-        ## check_dims      = [1]
-        ## force_an        = ['normal']        
-        ## sound_an        = ['rndsharp', 'rnddull'] 
+        test_title      = 'online_method_param_check_sound'        
+        check_dims      = [2]
+        force_an        = ['normal']        
+        sound_an        = ['rndsharp', 'rnddull'] 
 
-        test_title      = 'online_method_param_check_force2'        
-        check_dims      = [0]            
-        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        sound_an        = ['normal'] 
-
-        test_title      = 'online_method_param_check_force'        
-        check_dims      = [2]            
-        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        sound_an        = ['normal'] 
+        ## test_title      = 'online_method_param_check_force'        
+        ## check_dims      = [2]            
+        ## force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        ## sound_an        = ['normal'] 
             
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
@@ -2498,7 +2518,7 @@ if __name__ == '__main__':
                      disp=disp, rm_run=opt.bRemoveRunning, sim=True, detect_break=True)
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
-                         check_dims, nDataSet, sim=True, renew=True)
+                         check_dims, nDataSet, sim=True, renew=False)
 
                         
     #---------------------------------------------------------------------------

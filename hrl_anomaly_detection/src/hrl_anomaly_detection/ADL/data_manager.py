@@ -1004,12 +1004,14 @@ def simulated_anomaly(true_aXData1, true_aXData2, num, min_c1, max_c1, min_c2, m
                     # sampling shape
                     peak  = max_c2 * random.uniform(0.1, 0.5)
                     if len(x1_anomaly) <= 25: 
-                        width = random.randint(10,20)
+                        width = random.randint(10,15)
                         block_size = 4
                     else: 
                         width = random.randint(5,20)
                         block_size = 10
 
+                    print len(x1_anomaly), len(x1_anomaly)-width-1
+                    
                     # sampling location
                     loc   = random.randint(1,len(x1_anomaly)-width-1)                        
                     if an_idx is None: an_idx = loc                                        
