@@ -1070,7 +1070,13 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
                 # delay distribution per slope (0~1.0)
                 slope_a = np.array(peak_l)/(np.array(width_l)/freq)
-                slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.0
+                if test_title.find('force') >= 0:
+                    print "Force check"
+                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.0
+                else:
+                    print "Sound check"
+                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.001, 0.05) +0.025
+                    
                 delay_raw_l = []
                 delay_avg_l = np.zeros(len(slope_discrete))
                 delay_std_l = np.zeros(len(slope_discrete))
@@ -1213,7 +1219,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         pp.xticks(ind + width*3.0/4, methods )
         pp.ylim([0.0, 100])                           
         
-    elif True:
+    elif False:
 
         width = 0.2
         ind = np.arange(len(slope_discrete_class_l[0]))+width/2.0
@@ -1245,13 +1251,20 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         rects4 = pp.bar(ind+3.*width, delay_avg_class_l[3], width, color=tableau20[6], 
                         yerr=delay_std_class_l[3], label=methods[3])
         pp.ylabel('Delay Time [sec]', fontsize=16)    
-        pp.ylim([0.0, 0.9])
+        if test_title.find('force') >= 0:
+            pp.ylim([0.0, 0.9])
+        else:
+            pp.ylim([0.0, 0.8])
 
         xlabel_l = []
         for i, s in enumerate(slope_discrete):
             xlabel_l.append(str(s-slope_discrete[0])+' ~ '+str(s+slope_discrete[0]))
         pp.xticks(ind+width*2.0,xlabel_l)
-        pp.xlabel('Peak[N]/Width[sec]', fontsize=16) 
+        if test_title.find('force') >= 0:
+            pp.xlabel('Peak[N]/Width[sec]', fontsize=16) 
+        else:
+            pp.xlabel('Peak[RMS]/Width[sec]', fontsize=16) 
+                
         pp.legend(loc='upper right',prop={'size':8}, fancybox=True, shadow=True, ncol=2)       
        
     else:
@@ -2518,7 +2531,7 @@ if __name__ == '__main__':
                      disp=disp, rm_run=opt.bRemoveRunning, sim=True, detect_break=True)
         else:
             fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_methods, \
-                         check_dims, nDataSet, sim=True, renew=False)
+                         check_dims, nDataSet, sim=True, renew=True)
 
                         
     #---------------------------------------------------------------------------
