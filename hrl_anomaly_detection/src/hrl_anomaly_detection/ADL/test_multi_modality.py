@@ -2463,7 +2463,7 @@ if __name__ == '__main__':
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
 
-        test_title      = 'online_method_param_check_force3'        
+        test_title      = 'online_method_param_check_force'        
         check_dims      = [2]            
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
