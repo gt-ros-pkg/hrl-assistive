@@ -2150,6 +2150,8 @@ if __name__ == '__main__':
                  default=0, help='Store a class number')
     p.add_option('--task', '--t', action='store', type='int', dest='nTask',
                  default=0, help='Store a task number')
+    p.add_option('--data_gen', '--gen', action='store_true', dest='bDataGen',
+                 default=False, help='Only data generation')
     
 
     p.add_option('--abnormal', '--an', action='store_true', dest='bAbnormal',
@@ -2486,6 +2488,8 @@ if __name__ == '__main__':
           = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
                         audio_thres[task], cross_data_path, an_type, force_an, sound_an, 
                         rFold=rFold, nDataSet=nDataSet)
+        if opt.bDataGen: 
+            sys.exit()
 
         if opt.bAllPlot is not True:
             fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
