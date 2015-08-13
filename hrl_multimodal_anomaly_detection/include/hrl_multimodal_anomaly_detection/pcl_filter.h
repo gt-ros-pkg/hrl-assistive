@@ -9,7 +9,7 @@
 // ROS
 #include <ros/ros.h>
 #include <ros/package.h> // for getting file path for loading images
-#include <sensor_msgs/PointCloud.h>
+/* #include <sensor_msgs/PointCloud.h> */
 #include <sensor_msgs/PointCloud2.h>
 
 // PCL
@@ -40,8 +40,8 @@ private:
     double z_min_, z_max_;
     
     // 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr filtered_cloud_ptr_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered_cloud_ptr_;
 
 
     // ROS Publisher and subscribers
