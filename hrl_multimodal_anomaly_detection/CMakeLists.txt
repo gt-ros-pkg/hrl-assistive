@@ -28,6 +28,9 @@ rosbuild_gensrv()
 
 rosbuild_add_executable(CupFinder src/CupFinder.cpp)
 
+rosbuild_add_executable(PCLFilter src/pcl_filter.cpp)
+rosbuild_add_library(PCLFilter ${PCL_LIBRARIES})
+
 #rosbuild_add_executable(example examples/example.cpp)
 #rosbuild_add_executable(pkl_converter src/pkl_converter.cpp)
 #rosbuild_add_compile_flags(pkl_converter -fno-strict-aliasing -DLINUX_ -DOC_NEW_STYLE_INCLUDES -Wno-deprecated -pthread -D_REENTRANT)

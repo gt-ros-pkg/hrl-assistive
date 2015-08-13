@@ -27,8 +27,8 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
-from sound_play.msg import SoundRequest
-from sound_play.libsoundplay import SoundClient
+## from sound_play.msg import SoundRequest
+## from sound_play.libsoundplay import SoundClient
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class onlineAnomalyDetection(Thread):
@@ -96,7 +96,7 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
-        self.soundHandle = SoundClient()
+        ## self.soundHandle = SoundClient()
 
         # Setup HMM to perform online anomaly detection
         self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM(isScooping=self.isScooping)
