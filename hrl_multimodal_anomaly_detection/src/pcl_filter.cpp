@@ -37,8 +37,6 @@ void PCLfilter::initComms()
     ROS_INFO("Initializing pusb and subs");
 
     // ROS Publisher and subscribers
-    ros::Subscriber raw_pcl_sub_;
-
     filtered_pcl_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_feeding_task/camera/depth_registered_points", 1, true);
 
     pcl_sub_ = nh_.subscribe("/head_mount_kinect/depth_registered/points", 1, &PCLfilter::depthPointsCallback, this);
@@ -50,31 +48,35 @@ void PCLfilter::depthPointsCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     if ((msg->width * msg->height) == 0)
         return; //return if the cloud is not dense!
 
-    pcl::PointCloud<pcl::PointXYZRGB> cloud;
-    pcl::fromROSMsg (*msg, cloud);
+    // pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    pcl::fromROSMsg (*msg, *cloud_ptr_);
 
     //// filtering
     // Create the filtering object
-    // pcl::PassThrough<pcl::PointXYZRGB> pass;
-    // pass.setInputCloud (cloud_ptr_);
-    // pass.setFilterFieldName ("x");
-    // pass.setFilterLimits (x_min_, x_max_);
-    // pass.filter (*filtered_cloud_ptr_);
+    pcl::PassThrough<pcl::PointXYZRGB> pass;
+    pass.setInputCloud (cloud_ptr_);
+    pass.setFilterFieldName ("x");
+    pass.setFilterLimits (x_min_, x_max_);
+    pass.filter (*filtered_cloud_ptr_);
 
-    // pass.setInputCloud (filtered_cloud_ptr_);
-    // pass.setFilterFieldName ("y");
-    // pass.setFilterLimits (y_min_, y_max_);
-    // pass.filter (*filtered_cloud_ptr_);
+    pass.setInputCloud (filtered_cloud_ptr_);
+    pass.setFilterFieldName ("y");
+    pass.setFilterLimits (y_min_, y_max_);
+    pass.filter (*filtered_cloud_ptr_);
 
-    // pass.setInputCloud (filtered_cloud_ptr_);
-    // pass.setFilterFieldName ("z");
-    // pass.setFilterLimits (z_min_, z_max_);
-    // pass.filter (*filtered_cloud_ptr_);
+    pass.setInputCloud (filtered_cloud_ptr_);
+    pass.setFilterFieldName ("z");
+    pass.setFilterLimits (z_min_, z_max_);
+    pass.filter (*filtered_cloud_ptr_);
 
     // pub
+    ros::Time rostime = ros::Time::now();
     sensor_msgs::PointCloud2 output_msg;
-    // pcl::toROSMsg(*filtered_cloud_ptr_, output_msg);
-    pcl::toROSMsg(cloud, output_msg);
+    pcl::toROSMsg(*filtered_cloud_ptr_, output_msg);
+    // pcl::toROSMsg(cloud, output_msg);
+    output_msg.header = msg->header;
+    output_msg.header.stamp = rostime;
+    
     filtered_pcl_pub_.publish(output_msg);    
 }
 
