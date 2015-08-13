@@ -1,0 +1,11 @@
+hrl_feeding_task:
+  pcl:
+    # pcl filtering 
+    max: [1.0,  1.0, 2.0]
+    min: [-1.0, -1.0, 0.0]                        
+
+  head:
+    mouth_pos_offset: [0.0, 0.0, 0.0]
+    mouth_orient_offset: [0.0, 0.0, 0.0]
+
+
