@@ -8,7 +8,10 @@
 	<arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" />		
 	<arg name="output_frame" default="/torso_lift_link" />        
 
+        <arg name="med_filt_size" default="10" />
+        <arg name="bundle_files" default="$(find hrl_multimodal_anomaly_detection)/bundles/head.xml" />
+
         <node name="hrl_multimodal_anomaly_detection" type="PCLFilter" respawn="true" output="screen" />
 
-	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg med_filt_size) $(arg bundle_files)" />
 </launch>
