@@ -16,9 +16,17 @@ PCLfilter::~PCLfilter()
 
 void PCLfilter::getParams()
 {
-    x_min_ = 0.0; x_max_ = 1.0;
-    y_min_ = 0.0; y_max_ = 1.0;
-    z_min_ = 0.0; z_max_ = 1.0;
+    XmlRpc::XmlRpcValue range_min;
+    while (nh_.getParam("/hrl_feeding_task/pcl/min", range_min) == false)
+        sleep(0.1);
+
+    XmlRpc::XmlRpcValue range_max;
+    while (nh_.getParam("/hrl_feeding_task/pcl/max", range_max) == false)
+        sleep(0.1);
+
+    x_min_ = range_min[0]; x_max_ = range_max[0];
+    y_min_ = range_min[1]; y_max_ = range_max[1];
+    z_min_ = range_min[2]; z_max_ = range_max[2];
 }
 
 void PCLfilter::initComms()
