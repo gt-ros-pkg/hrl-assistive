@@ -1074,8 +1074,8 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                     print "Force check"
                     slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.0
                 else:
-                    print "Sound check"
-                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.001, 0.05) +0.025
+                    print "Sound check with max : ", np.amax(slope_a)
+                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.001, 0.07) +0.035
                     
                 delay_raw_l = []
                 delay_avg_l = np.zeros(len(slope_discrete))
@@ -1219,21 +1219,17 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         pp.xticks(ind + width*3.0/4, methods )
         pp.ylim([0.0, 100])                           
         
-    elif False:
+    elif True:
 
         width = 0.2
         ind = np.arange(len(slope_discrete_class_l[0]))+width/2.0
 
         fig = pp.figure()
         ax1 =pp.subplot(211)        
-        rects1 = pp.bar(ind, slope_fdr_avg_class_l[0], width, color=tableau20[0], 
-                        yerr=slope_fdr_std_class_l[0])
-        rects2 = pp.bar(ind+width, slope_fdr_avg_class_l[1], width, color=tableau20[2], 
-                        yerr=slope_fdr_std_class_l[1])
-        rects3 = pp.bar(ind+2.*width, slope_fdr_avg_class_l[2], width, color=tableau20[4], 
-                        yerr=slope_fdr_std_class_l[2])
-        rects4 = pp.bar(ind+3.*width, slope_fdr_avg_class_l[3], width, color=tableau20[6], 
-                        yerr=slope_fdr_std_class_l[3])
+        rects1 = pp.bar(ind, slope_fdr_avg_class_l[0], width, color=tableau20[0])
+        rects2 = pp.bar(ind+width, slope_fdr_avg_class_l[1], width, color=tableau20[2])
+        rects3 = pp.bar(ind+2.*width, slope_fdr_avg_class_l[2], width, color=tableau20[4])
+        rects4 = pp.bar(ind+3.*width, slope_fdr_avg_class_l[3], width, color=tableau20[6])
         pp.ylim([0.0, 100.0])
         pp.ylabel('Detection Rate [%]', fontsize=16)    
         xlabel_l = []
@@ -2490,6 +2486,7 @@ if __name__ == '__main__':
     elif opt.bOnlineSimMethodParamCheck:
 
         # force  = 2dim + all
+        # force2 = 2dim + all with large distribution of sim anomaly
         # sound  = 2dim + all
         
         print "ROC Online Robot with simulated anomalies"
@@ -2499,9 +2496,10 @@ if __name__ == '__main__':
         sound_an        = ['rndsharp', 'rnddull'] 
 
         ## test_title      = 'online_method_param_check_force'        
-        ## check_dims      = [2]            
-        ## force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        ## sound_an        = ['normal'] 
+        test_title      = 'online_method_param_check_force2'        
+        check_dims      = [2]            
+        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        sound_an        = ['normal'] 
             
         ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
