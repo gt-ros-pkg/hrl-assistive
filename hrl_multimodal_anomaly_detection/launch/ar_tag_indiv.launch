@@ -1,6 +1,6 @@
 <launch>
 	<arg name="marker_size" default="3.3" />
-	<arg name="max_new_marker_error" default="0.04" />
+	<arg name="max_new_marker_error" default="0.05" />
 	<arg name="max_track_error" default="0.2" />
 
 	<!--arg name="cam_image_topic" default="/hrl_feeding_task/camera/depth_registered_points" /-->
