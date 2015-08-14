@@ -675,9 +675,7 @@ if __name__ == '__main__':
     
     rate = rospy.Rate(1000) # 25Hz, nominally.    
     while not rospy.is_shutdown():
-        ## log.log_state()
         rate.sleep()
-        ## rospy.sleep(1/1000.)
 
     log.close_log_file(trial_name)
     

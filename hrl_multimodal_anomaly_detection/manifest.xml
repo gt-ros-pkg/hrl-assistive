@@ -21,12 +21,15 @@
 
     <depend package="sensor_msgs"/>
     <depend package="visualization_msgs"/>
-    <!-- <depend package="ar_track_alvar"/> -->
+    <depend package="ar_track_alvar"/>
     <depend package="image_geometry"/>
     <depend package="cv_bridge"/>
     <!--depend package="sound_play"/-->
 
     <depend package="hrl_lib"/>
+    <depend package="kdl"/>
+    <depend package="pykdl_utils"/>
+    <depend package="tf_conversions"/>
 
     <depend package="sandbox_dpark_darpa_m3"/>
 
