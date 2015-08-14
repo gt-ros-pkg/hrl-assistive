@@ -27,6 +27,9 @@
     <!--depend package="sound_play"/-->
 
     <depend package="hrl_lib"/>
+    <depend package="kdl"/>
+    <depend package="pykdl_utils"/>
+    <depend package="tf_conversions"/>
 
     <depend package="sandbox_dpark_darpa_m3"/>
 
