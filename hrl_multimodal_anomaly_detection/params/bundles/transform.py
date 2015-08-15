@@ -37,6 +37,9 @@ class arTagBundle:
         self.bundle_dict[str(self.main_tag_id)] = PyKDL.Frame.Identity()
         ## self.bundle_dict[str(self.main_tag_id)] = [self.corner1, self.corner2, self.corner3, self.corner4]
 
+        self.z_neg90_frame = PyKDL.Frame.Identity()
+        self.z_neg90_frame.M = PyKDL.Rotation.Quaternion(0.0, 0.0, -np.sqrt(0.5), np.sqrt(0.5))
+
         self.bundle_result = {}
 
         self.draw_blocks    = ds.SceneDraw("ar_track_alvar/bundle_viz", "/torso_lift_link")
@@ -75,14 +78,14 @@ class arTagBundle:
                 corner2 = f * self.corner2
                 corner3 = f * self.corner3
                 corner4 = f * self.corner4
-                print "-----------------------"
-                print i, " : "
-                ## print self.main_tag_frame
-                print corner1
-                print corner2
-                print corner3
-                print corner4
-                print "-----------------------"
+                ## print "-----------------------"
+                ## print tag_id, " : "
+                ## ## print self.main_tag_frame
+                ## print corner1
+                ## print corner2
+                ## print corner3
+                ## print corner4
+                ## print "-----------------------"
                 
                 self.draw_blocks.pub_body([pos_x, pos_y, pos_z],
                                             [quat_x, quat_y, quat_z, quat_w],
@@ -102,7 +105,9 @@ class arTagBundle:
         
             if markers[i].id == self.main_tag_id:
                 main_tag_flag = True
-                self.main_tag_frame = posemath.fromMsg(markers[i].pose.pose)
+                self.main_tag_frame = posemath.fromMsg(markers[i].pose.pose)*self.z_neg90_frame 
+                
+                if self.main_tag_frame.p.Norm() > 2.0: return
                 
         if main_tag_flag == False: return
 
@@ -112,12 +117,10 @@ class arTagBundle:
         
             if markers[i].id != self.main_tag_id:                
                 tag_id    = markers[i].id
-                tag_frame = posemath.fromMsg(markers[i].pose.pose)
+                tag_frame = posemath.fromMsg(markers[i].pose.pose)*self.z_neg90_frame
 
                 # position filtering
                 if (self.main_tag_frame.p - tag_frame.p).Norm() > self.pos_thres : return
-                
-                print tag_id
                 
                 frame_diff = self.main_tag_frame.Inverse()*tag_frame
                 self.updateFrames(tag_id, frame_diff)
@@ -149,7 +152,6 @@ class arTagBundle:
                     quat = qt.slerp(pre_quat, cur_quat, 0.5)
                     self.bundle_dict[key].M = PyKDL.Rotation.Quaternion(quat.x, quat.y, quat.z, quat.w)
 
-
             # New tag
             if tag_flag == False:
                 self.bundle_list.append(tag_id)            
@@ -165,7 +167,7 @@ class arTagBundle:
             if i > self.max_idx: continue
 
             frame = self.bundle_dict[str(i)]
-        
+
             corner1 = frame * self.corner1
             corner2 = frame * self.corner2
             corner3 = frame * self.corner3
@@ -223,7 +225,7 @@ if __name__ == '__main__':
 
     total_tags = 3
     main_tag_id = 9
-    tag_side_length = 0.033
+    tag_side_length = 0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18
     
