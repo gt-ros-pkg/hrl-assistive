@@ -46,8 +46,8 @@ class tool_kinematics(Thread):
             rate.sleep()
 
     def log(self):
-        # if not self.updated:
-        #     return
+        if self.objectCenter is None:
+            return
         self.time_data.append(rospy.get_time() - self.init_time)
         self.transposeGripper()
         self.kinematics_data.append([self.mic, self.spoon, self.objectCenter])
