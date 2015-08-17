@@ -22,7 +22,7 @@ class tool_kinematics(Thread):
         self.spoon = None
         self.grips = []
 
-        self.updated = False
+        # self.updated = False
         self.time_data = []
         self.kinematics_data = []
 
@@ -31,7 +31,7 @@ class tool_kinematics(Thread):
 
     def objectCenterCallback(self, msg):
         self.objectCenter = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
-        self.updated = True
+        # self.updated = True
 
     def reset(self):
         pass
@@ -46,8 +46,8 @@ class tool_kinematics(Thread):
             rate.sleep()
 
     def log(self):
-        if not self.updated:
-            return
+        # if not self.updated:
+        #     return
         self.time_data.append(rospy.get_time() - self.init_time)
         self.transposeGripper()
         self.kinematics_data.append([self.mic, self.spoon, self.objectCenter])
