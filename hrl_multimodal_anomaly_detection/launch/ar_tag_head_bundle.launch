@@ -1,21 +1,16 @@
 <launch>
-  <arg name="marker_size" default="3.3" />
-  <arg name="max_new_marker_error" default="0.04" />
-  <arg name="max_track_error" default="0.2" />
+  <arg name="marker_size" default="5.3" />
+  <arg name="max_new_marker_error" default="0.05" />
+  <arg name="max_track_error" default="0.1" />
   
-  <arg name="cam_image_topic" default="/hrl_feeding_task/camera/depth_registered_points" />
-  <!--arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" /-->
+  <arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" />
   <arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" />		
   <arg name="output_frame" default="/torso_lift_link" />        
   
   <arg name="med_filt_size" default="10" />
-  <arg name="bundle_files" default="$(find hrl_multimodal_anomaly_detection)/bundles/head.xml" />
-  
-  <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/anomaly_detection.yaml" />
-
-  <!-- camera pcl filter -->
-  <node name="pcl_filter" pkg="hrl_multimodal_anomaly_detection" type="PCLFilter" respawn="true" output="screen" />
+  <arg name="bundle_files" default="$(find hrl_multimodal_anomaly_detection)/params/bundles/head.xml" />
 
   <!-- AR tag detection -->  
-  <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg med_filt_size) $(arg bundle_files)" />
+<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundles" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg med_filt_size) $(arg bundle_files)" />
+
 </launch>
