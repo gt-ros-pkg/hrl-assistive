@@ -58,6 +58,7 @@ def get_rms(block):
 
 deviceIndex = find_input_device()
 print 'Audio device:', deviceIndex
+print 'Sample rate:', p.get_device_info_by_index(0)['defaultSampleRate']
 
 stream = p.open(format=FORMAT, channels=CHANNEL, rate=RATE, input=True, frames_per_buffer=CHUNK, input_device_index=deviceIndex)
 # stream.start_stream()
