@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import math
+import struct
 import numpy as np
 import cPickle as pickle
 from scipy import interpolate
@@ -12,15 +14,13 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 
-def forceKinematics(fileName):
+def forceKinematics(fileName, audioTimes):
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
-        visual = data['visual_points']
-        visualTimes = data['visual_time']
+        kinematics = data['kinematics_data']
+        kinematicsTimes = data['kinematics_time']
         force = data['ft_force_raw']
         forceTimes = data['ft_time']
-        bowl = data['bowl_position']
-        bowl = np.array([x[0, 0] for x in bowl])
 
         # Use magnitude of forces
         forces = np.linalg.norm(force, axis=1).flatten()
@@ -30,118 +30,70 @@ def forceKinematics(fileName):
         print forces.shape
 
         # Compute kinematic distances and angles
-        for pointSet, mic, spoon, bowlPosition, bowlPositionKinect, (bowlX, bowlY), bowlToKinectMat, (targetTrans, targetRot) in visual:
-            # print 'Time:', timeStamp
-            # Transform mic and spoon into torso_lift_link
-            targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
-            mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-            spoon = np.dot(targetMatrix, np.array([spoon[0], spoon[1], spoon[2], 1.0]))[:3]
+        for mic, spoon, objectCenter, in kinematics:
+            # TODO Make sure objectCenter is transformed to torso_lift_link frame
 
-            # pointSet = np.c_[pointSet, np.ones(len(pointSet))]
-            # pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
-
-            distances.append(np.linalg.norm(mic - bowl))
-            # Find angle between gripper-bowl vector and gripper-spoon vector
+            # Determine distance between mic and center of object
+            distances.append(np.linalg.norm(mic - objectCenter))
+            # Find angle between gripper-object vector and gripper-spoon vector
             micSpoonVector = spoon - mic
-            micBowlVector = bowl - mic
-            angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
+            micObjectVector = objectCenter - mic
+            angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
             angles.append(angle)
 
-        # There will be much more force data than kinematics, so interpolate to fill in the gaps
-        distInterp = interpolate.splrep(visualTimes, distances, s=0)
-        angleInterp = interpolate.splrep(visualTimes, angles, s=0)
-        distances = interpolate.splev(forceTimes, distInterp, der=0)
-        angles = interpolate.splev(forceTimes, angleInterp, der=0)
+        # There will be much more audio data than force and kinematics, so interpolate to fill in the gaps
+        distInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
+        angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
+        forceInterp = interpolate.splrep(forceTimes, forces, s=0)
+        distances = interpolate.splev(audioTimes, distInterp, der=0)
+        angles = interpolate.splev(audioTimes, angleInterp, der=0)
+        forces = interpolate.splev(audioTimes, forceInterp, der=0)
 
-        return forces, distances, angles, forceTimes
+        return forces, distances, angles
 
-def visualFeatures(fileName, forceTimes):
+def get_rms(block):
+    # RMS amplitude is defined as the square root of the
+    # mean over time of the square of the amplitude.
+    # so we need to convert this string of bytes into
+    # a string of 16-bit samples...
+
+    # we will get one short out for each
+    # two chars in the string.
+    count = len(block)/2
+    structFormat = '%dh' % count
+    shorts = struct.unpack(structFormat, block)
+
+    # iterate over the block.
+    sum_squares = 0.0
+    for sample in shorts:
+        # sample is a signed short in +/- 32768.
+        # normalize it to 1.0
+        n = sample / 32768.0
+        sum_squares += n*n
+
+    return math.sqrt(sum_squares / count)
+
+def audioFeatures(fileName):
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
-        visual = data['visual_points']
-        visualTimes = data['visual_time']
-        pdf = []
-        for pointSet, mic, spoon, bowlPosition, bowlPositionKinect, (bowlX, bowlY), bowlToKinectMat, (targetTrans, targetRot) in visual:
-            # Transformation matrix into torso_lift_link
-            targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+        audios = data['audio_data_raw']
+        audioTimes = data['audio_time']
+        magnitudes = []
+        for audio in audios:
+            magnitudes.append(get_rms(audio))
 
-            pointSet = np.c_[pointSet, np.ones(len(pointSet))]
-            pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
+        # TODO There may be a lot more audio data than other modalities, so interpote other modalities accordingly
 
-            # Check for invalid points
-            pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
+        # Constant (horizontal linear) interpolation
+        # tempPdf = []
+        # visualIndex = 0
+        # for forceTime in forceTimes:
+        #     if forceTime > visualTimes[visualIndex + 1] and visualIndex < len(visualTimes) - 2:
+        #         visualIndex += 1
+        #     tempPdf.append(pdf[visualIndex])
+        # pdf = tempPdf
 
-            # Find points within a sphere of radius 8 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.11
-
-            # Points near bowl
-            points = pointSet[nearbyPoints]
-
-            if len(points) <= 0:
-                print 'ARGH, it happened on file', fileName
-
-            # If no points found, try opening up to 10 cm
-            if len(points) <= 0:
-                # Find points within a sphere of radius 10 cm around the center of bowl
-                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.13
-                # Points near bowl
-                points = pointSet[nearbyPoints]
-                if len(points) <= 0:
-                    print 'No points near bowl in dataset:', fileName
-                    pdf.append(0)
-                    continue
-
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0))) / float(len(points))
-            # pdf.append(pdfValue)
-
-            # Scale all points to prevent division by small numbers and singular matrices
-            newPoints = points * 20
-            newBowlPosition = bowlPosition * 20
-
-            # Define a receptive field within the bowl
-            mu = [newBowlPosition]
-
-            # Trivariate Gaussian Distribution
-            pdfList = []
-            for muSet in mu:
-                n, m = newPoints.shape
-                sigma = np.zeros((m, m))
-                # Compute covariances
-                for h in xrange(m):
-                    for j in xrange(m):
-                        sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
-                        # Examples:
-                        # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
-                        # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
-                constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-                sigmaInv = np.linalg.inv(sigma)
-                pdfValue = 0
-                # Evaluate the Probability Density Function for each point
-                for point in newPoints:
-                    pointMu = point - muSet
-                    # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-                # pdfList.append(pdfValue / float(len(points)))
-                pdfList.append(pdfValue)
-            pdf.append(pdfList[0])
-
-        # There will be much more force data than vision, so perform constant interpolation to fill in the gaps
-        tempPdf = []
-        visualIndex = 0
-        for forceTime in forceTimes:
-            if forceTime > visualTimes[visualIndex + 1] and visualIndex < len(visualTimes) - 2:
-                visualIndex += 1
-            tempPdf.append(pdf[visualIndex])
-        pdf = tempPdf
-
-        # There will be much more force data than vision, so interpolate to fill in the gaps
-        # pdf1Interp = interpolate.splrep(visualTimes, pdf1, s=0)
-        # pdf2Interp = interpolate.splrep(visualTimes, pdf2, s=0)
-        # pdf1 = interpolate.splev(forceTimes, pdf1Interp, der=0)
-        # pdf2 = interpolate.splev(forceTimes, pdf2Interp, der=0)
-
-        return pdf
+        return magnitudes, audioTimes
 
 def create_mvpa_dataset(aXData1, aXData2, aXData3, aXData4, chunks, labels):
     feat_list = []
@@ -172,24 +124,24 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     forcesList = []
     distancesList = []
     anglesList = []
-    pdfList = []
+    audioList = []
     timesList = []
 
     for fileName, iterations in zip(fileNames, iterationSets):
         for i in iterations:
             name = fileName % i # Insert iteration value into filename
-            forces, distances, angles, times = forceKinematics(name)
-            pdf = visualFeatures(name, times)
+            audio, times = audioFeatures(name)
+            forces, distances, angles = forceKinematics(name, times)
 
             if minVals is None:
                 minVals = []
                 maxVals = []
-                for modality in [forces, distances, angles, pdf]:
+                for modality in [forces, distances, angles, audio]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
-                # pdfDiff = maxVals[3] - minVals[3]
-                # minVals[3] -= pdfDiff / 2.0
-                # maxVals[3] += pdfDiff / 2.0
+                # audioDiff = maxVals[3] - minVals[3]
+                # minVals[3] -= audioDiff / 2.0
+                # maxVals[3] += audioDiff / 2.0
                 # forceDiff = maxVals[0] - minVals[0]
                 # minVals[0] -= forceDiff / 4.0
                 # maxVals[0] += forceDiff / 4.0
@@ -202,21 +154,18 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             # forces = preprocessing.scale(forces) * scale
             # distances = preprocessing.scale(distances) * scale
             # angles = preprocessing.scale(angles) * scale
-            # pdf = preprocessing.scale(pdf) * scale
+            # audio = preprocessing.scale(audio) * scale
             forces = scaling(forces, minVals[0], maxVals[0], scale)
             distances = scaling(distances, minVals[1], maxVals[1], scale)
             angles = scaling(angles, minVals[2], maxVals[2], scale)
-            print 'Pdf before scale', pdf[0]
-            pdf = scaling(pdf, minVals[3], maxVals[3], scale)
-            print 'Pdf after scale', pdf[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
-
-            # print 'Forces shape:', forces.shape
-            # print 'Distances shape:', distances.shape
+            print 'Audio before scale', audio[0]
+            audio = scaling(audio, minVals[3], maxVals[3], scale)
+            print 'Audio after scale', audio[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
 
             forcesList.append(forces.tolist())
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
-            pdfList.append(pdf.tolist())
+            audioList.append(audio.tolist())
             timesList.append(times)
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
@@ -224,9 +173,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
         # Find the largest iteration
         maxsize = max([len(x) for x in forcesList])
         # Extrapolate each time step
-        forcesList, distancesList, anglesList, pdfList, timesList = extrapolateAllData([forcesList, distancesList, anglesList, pdfList, timesList], maxsize)
+        forcesList, distancesList, anglesList, audioList, timesList = extrapolateAllData([forcesList, distancesList, anglesList, audioList, timesList], maxsize)
 
-    return forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals
+    return forcesList, distancesList, anglesList, audioList, timesList, minVals, maxVals
 
 def setupMultiHMM(isScooping=True):
     if isScooping:
@@ -247,34 +196,34 @@ def setupMultiHMM(isScooping=True):
         else:
             fileNames = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/recordings/recordFeeding1_feeding_fvk_07-29-2015_16-08-29/iteration_%d_success.pkl']
             iterationSets = [xrange(10)]
-        forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals = loadData(fileNames, iterationSets, isTrainingData=True)
+        forcesList, distancesList, anglesList, audioList, timesList, minVals, maxVals = loadData(fileNames, iterationSets, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
-            pickle.dump((forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals), f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, minVals, maxVals), f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(fileName, 'rb') as f:
-            forcesList, distancesList, anglesList, pdfList, timesList, minVals, maxVals = pickle.load(f)
+            forcesList, distancesList, anglesList, audioList, timesList, minVals, maxVals = pickle.load(f)
 
     # Setup training data
     chunks = [10]*len(forcesList)
     labels = [True]*len(forcesList)
-    trainDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, pdfList, chunks, labels)
+    trainDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, audioList, chunks, labels)
 
     print trainDataSet.samples.shape
     forcesSample = trainDataSet.samples[:, 0, :]
     distancesSample = trainDataSet.samples[:, 1, :]
     anglesSample = trainDataSet.samples[:, 2, :]
-    pdfSample = trainDataSet.samples[:, 3, :]
+    audioSample = trainDataSet.samples[:, 3, :]
 
     ml_pkl = '../ml_4d_online.pkl' if isScooping else '../ml_4d_online_feeding.pkl'
 
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl=ml_pkl, use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl=ml_pkl, use_pkl=True)
 
     print 'minValues', minVals
     print 'maxValues', maxVals
 
-    return hmm, minVals, maxVals, np.mean(forcesList, axis=0), np.mean(distancesList, axis=0), np.mean(anglesList, axis=0), np.mean(pdfList, axis=0), timesList[0], forcesList, distancesList, anglesList, pdfList, timesList
+    return hmm, minVals, maxVals, np.mean(forcesList, axis=0), np.mean(distancesList, axis=0), np.mean(anglesList, axis=0), np.mean(audioList, axis=0), timesList[0], forcesList, distancesList, anglesList, audioList, timesList
 
     # print '\nBeginning anomaly testing for nonanomalous training set\n'
     # for i in xrange(len(forcesList)):

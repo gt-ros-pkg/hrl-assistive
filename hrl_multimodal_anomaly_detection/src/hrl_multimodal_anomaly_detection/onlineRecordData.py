@@ -36,9 +36,6 @@ class ADL_log:
 
         self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=isScooping, useAudio=useAudio)
 
-        self.scooping_steps_times = []
-        self.scoopingStepsService = rospy.Service('/scooping_steps_service', None_Bool, self.scoopingStepsTimesCallback)
-
     def log_start(self):
         self.init_time = rospy.get_time()
         self.detector.init_time = self.init_time
@@ -51,10 +48,6 @@ class ADL_log:
         self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=self.isScooping)
 
         gc.collect()
-
-    def scoopingStepsTimesCallback(self, data):
-        self.scooping_steps_times.append(rospy.get_time() - self.init_time)
-        return None_BoolResponse(True)
 
 if __name__ == '__main__':
     log = ADL_log()

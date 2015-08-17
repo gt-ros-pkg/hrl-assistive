@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import math
+import struct
 import numpy as np
 import cPickle as pickle
 from scipy import interpolate
@@ -16,15 +18,13 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 
-def forceKinematics(fileName):
+def forceKinematics(fileName, audioTimes):
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
-        visual = data['visual_points']
-        visualTimes = data['visual_time']
+        kinematics = data['kinematics_data']
+        kinematicsTimes = data['kinematics_time']
         force = data['ft_force_raw']
         forceTimes = data['ft_time']
-        bowl = data['bowl_position']
-        bowl = np.array([x[0, 0] for x in bowl])
 
         # Use magnitude of forces
         forces = np.linalg.norm(force, axis=1).flatten()
@@ -34,119 +34,70 @@ def forceKinematics(fileName):
         print forces.shape
 
         # Compute kinematic distances and angles
-        for pointSet, mic, spoon, bowlPosition, bowlPositionKinect, (bowlX, bowlY), bowlToKinectMat, (targetTrans, targetRot) in visual:
-            # print 'Time:', timeStamp
-            # Transform mic and spoon into torso_lift_link
-            targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
-            mic = np.dot(targetMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
-            spoon = np.dot(targetMatrix, np.array([spoon[0], spoon[1], spoon[2], 1.0]))[:3]
+        for mic, spoon, objectCenter in kinematics:
+            # TODO Make sure objectCenter is transformed to torso_lift_link frame
 
-            # pointSet = np.c_[pointSet, np.ones(len(pointSet))]
-            # pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
-
-            distances.append(np.linalg.norm(mic - bowl))
-            # Find angle between gripper-bowl vector and gripper-spoon vector
+            # Determine distance between mic and center of object
+            distances.append(np.linalg.norm(mic - objectCenter))
+            # Find angle between gripper-object vector and gripper-spoon vector
             micSpoonVector = spoon - mic
-            micBowlVector = bowl - mic
-            angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
+            micObjectVector = objectCenter - mic
+            angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
             angles.append(angle)
 
-        # There will be much more force data than kinematics, so interpolate to fill in the gaps
-        distInterp = interpolate.splrep(visualTimes, distances, s=0)
-        angleInterp = interpolate.splrep(visualTimes, angles, s=0)
-        distances = interpolate.splev(forceTimes, distInterp, der=0)
-        angles = interpolate.splev(forceTimes, angleInterp, der=0)
+        # There will be much more audio data than force and kinematics, so interpolate to fill in the gaps
+        distInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
+        angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
+        forceInterp = interpolate.splrep(forceTimes, forces, s=0)
+        distances = interpolate.splev(audioTimes, distInterp, der=0)
+        angles = interpolate.splev(audioTimes, angleInterp, der=0)
+        forces = interpolate.splev(audioTimes, forceInterp, der=0)
 
-        return forces, distances, angles, forceTimes
+        return forces, distances, angles
 
-def visualFeatures(fileName, forceTimes):
+def get_rms(block):
+    # RMS amplitude is defined as the square root of the
+    # mean over time of the square of the amplitude.
+    # so we need to convert this string of bytes into
+    # a string of 16-bit samples...
+
+    # we will get one short out for each
+    # two chars in the string.
+    count = len(block)/2
+    structFormat = '%dh' % count
+    shorts = struct.unpack(structFormat, block)
+
+    # iterate over the block.
+    sum_squares = 0.0
+    for sample in shorts:
+        # sample is a signed short in +/- 32768.
+        # normalize it to 1.0
+        n = sample / 32768.0
+        sum_squares += n*n
+
+    return math.sqrt(sum_squares / count)
+
+def audioFeatures(fileName):
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
-        visual = data['visual_points']
-        visualTimes = data['visual_time']
-        pdf = []
-        for pointSet, mic, spoon, bowlPosition, bowlPositionKinect, (bowlX, bowlY), bowlToKinectMat, (targetTrans, targetRot) in visual:
-            # Transformation matrix into torso_lift_link
-            targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
+        audios = data['audio_data_raw']
+        audioTimes = data['audio_time']
+        magnitudes = []
+        for audio in audios:
+            magnitudes.append(get_rms(audio))
 
-            pointSet = np.c_[pointSet, np.ones(len(pointSet))]
-            pointSet = np.dot(targetMatrix, pointSet.T).T[:, :3]
+        # TODO There may be a lot more audio data than other modalities, so interpote other modalities accordingly
 
-            # Check for invalid points
-            pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
+        # Constant (horizontal linear) interpolation
+        # tempPdf = []
+        # visualIndex = 0
+        # for forceTime in forceTimes:
+        #     if forceTime > visualTimes[visualIndex + 1] and visualIndex < len(visualTimes) - 2:
+        #         visualIndex += 1
+        #     tempPdf.append(pdf[visualIndex])
+        # pdf = tempPdf
 
-            # Find points within a sphere of radius 6 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.11
-
-            # Points near bowl
-            points = pointSet[nearbyPoints]
-
-            if len(points) <= 0:
-                print 'ARGH, it happened on file', fileName
-
-            # If no points found, try opening up to 8 cm
-            if len(points) <= 0:
-                # Find points within a sphere of radius 8 cm around the center of bowl
-                nearbyPoints = np.linalg.norm(pointSet - bowlPosition, axis=1) < 0.13
-                # Points near bowl
-                points = pointSet[nearbyPoints]
-                if len(points) <= 0:
-                    print 'No points near bowl in dataset:', fileName
-                    pdf.append(0)
-                    continue
-
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - bowlPosition, axis=1) * -1.0))) / float(len(points))
-            # pdf.append(pdfValue)
-
-            # Scale all points to prevent division by small numbers and singular matrices
-            newPoints = points * 20
-            newBowlPosition = bowlPosition * 20
-
-            # Define a receptive field within the bowl
-            mu = [newBowlPosition]
-
-            # Trivariate Gaussian Distribution
-            pdfList = []
-            for muSet in mu:
-                n, m = newPoints.shape
-                sigma = np.zeros((m, m))
-                # Compute covariances
-                for h in xrange(m):
-                    for j in xrange(m):
-                        sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - muSet[h]).T, newPoints[:, j] - muSet[j])
-                        # Examples:
-                        # sigma[0, 0] = 1/n * np.dot((xs - mux).T, xs - mux) # cov(X, X)
-                        # sigma[0, 1] = 1/n * np.dot((xs - mux).T, ys - muy) # cov(X, Y)
-                constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-                sigmaInv = np.linalg.inv(sigma)
-                pdfValue = 0
-                # Evaluate the Probability Density Function for each point
-                for point in newPoints:
-                    pointMu = point - muSet
-                    # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                    pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-                # pdfList.append(pdfValue / float(len(points)))
-                pdfList.append(pdfValue)
-            pdf.append(pdfList[0])
-
-        # There will be much more force data than vision,
-        # so perform constant (horizontal line) interpolation to fill in the gaps
-        tempPdf = []
-        visualIndex = 0
-        for forceTime in forceTimes:
-            if forceTime > visualTimes[visualIndex + 1] and visualIndex < len(visualTimes) - 2:
-                visualIndex += 1
-            tempPdf.append(pdf[visualIndex])
-        pdf = tempPdf
-
-        # There will be much more force data than vision, so interpolate to fill in the gaps
-        # pdf1Interp = interpolate.splrep(visualTimes, pdf1, s=0)
-        # pdf2Interp = interpolate.splrep(visualTimes, pdf2, s=0)
-        # pdf1 = interpolate.splev(forceTimes, pdf1Interp, der=0)
-        # pdf2 = interpolate.splev(forceTimes, pdf2Interp, der=0)
-
-        return pdf
+        return magnitudes, audioTimes
 
 def create_mvpa_dataset(aXData1, aXData2, aXData3, aXData4, chunks, labels):
     feat_list = []
@@ -177,32 +128,27 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     forcesList = []
     distancesList = []
     anglesList = []
-    pdfList = []
+    audioList = []
     timesList = []
 
     forcesTrueList = []
     distancesTrueList = []
     anglesTrueList = []
-    pdfTrueList = []
+    audioTrueList = []
     for fileName, iterations in zip(fileNames, iterationSets):
         for i in iterations:
             name = fileName % i # Insert iteration value into filename
-            forces, distances, angles, times = forceKinematics(name)
-            pdf = visualFeatures(name, times)
+            audio, times = audioFeatures(name)
+            forces, distances, angles = forceKinematics(name, times)
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances.tolist())
             anglesTrueList.append(angles.tolist())
-            pdfTrueList.append(pdf)
-
-            # pdf = np.array(pdf) * 10
-            # forces *= 10
-            # distances *= 10
-            # angles /= 10
+            audioTrueList.append(audio)
 
             if minVals is None:
                 minVals = []
                 maxVals = []
-                for modality in [forces, distances, angles, pdf]:
+                for modality in [forces, distances, angles, audio]:
                     minVals.append(np.min(modality))
                     maxVals.append(np.max(modality))
                 print 'minValues', minVals
@@ -214,21 +160,18 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             # forces = preprocessing.scale(forces) * scale
             # distances = preprocessing.scale(distances) * scale
             # angles = preprocessing.scale(angles) * scale
-            # pdf = preprocessing.scale(pdf) * scale
+            # audio = preprocessing.scale(audio) * scale
             forces = scaling(forces, minVals[0], maxVals[0], scale)
             distances = scaling(distances, minVals[1], maxVals[1], scale)
             angles = scaling(angles, minVals[2], maxVals[2], scale)
-            # print 'Pdf before scale', pdf[0]
-            pdf = scaling(pdf, minVals[3], maxVals[3], scale)
-            # print 'Pdf after scale', pdf[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
-
-            # print 'Forces shape:', forces.shape
-            # print 'Distances shape:', distances.shape
+            # print 'Audio before scale', audio[0]
+            audio = scaling(audio, minVals[3], maxVals[3], scale)
+            # print 'Audio after scale', audio[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
 
             forcesList.append(forces.tolist())
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
-            pdfList.append(pdf.tolist())
+            audioList.append(audio.tolist())
             timesList.append(times)
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
@@ -237,17 +180,17 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
         maxsize = max([len(x) for x in forcesList])
         # Extrapolate each time step
         forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-        pdfTrueList = extrapolateAllData([forcesList, distancesList, anglesList, pdfList, timesList,
-                                                             forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList], maxsize)
+        audioTrueList = extrapolateAllData([forcesList, distancesList, anglesList, audioList, timesList,
+                                                             forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], maxsize)
 
-    return forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList
+    return forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList
 
 def createSampleSet(forcesList, distancesList, anglesList, pdfList, init=0):
     testDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, pdfList, [10]*len(forcesList), [True]*len(forcesList))
     return [testDataSet.samples[init:, i, :] for i in xrange(4)]
 
-def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfList=None, testForcesList=None,
-                     testDistancesList=None, testAnglesList=None, testPdfList=None, numOfSuccess=5, c=-5, verbose=False):
+def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audioList=None, testForcesList=None,
+                     testDistancesList=None, testAnglesList=None, testAudioList=None, numOfSuccess=5, c=-5, verbose=False):
     truePos = 0
     trueNeg = 0
     falsePos = 0
@@ -261,7 +204,7 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfLi
     #     elif anglesList is None:
     #         anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], c)
     #     else:
-    #         anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], pdfList[i], c)
+    #         anomaly, error = hmm.anomaly_check(forcesList[i], distancesList[i], anglesList[i], audioList[i], c)
     #
     #     if verbose: print anomaly, error
     #
@@ -278,7 +221,7 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, pdfLi
         elif anglesList is None:
             anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], c)
         else:
-            anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testPdfList[i], c)
+            anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testAudioList[i], c)
 
         if verbose: print anomaly, error
 
@@ -326,34 +269,34 @@ def dataFiles():
 
 
 def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/bowl3Data.pkl')
+    fileName = os.path.join(os.path.dirname(__file__), 'data/Data.pkl')
 
     if not os.path.isfile(fileName):
         fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles()
 
         print 'Loading training data'
-        forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, \
-            anglesTrueList, pdfTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True)
+        forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
+            anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True)
 
         print 'Loading test data'
-        testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, testForcesTrueList, testDistancesTrueList, \
-            testAnglesTrueList, testPdfTrueList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True)
+        testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, testDistancesTrueList, \
+            testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True)
 
         with open(fileName, 'wb') as f:
-            pickle.dump((forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
-                         pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
-                         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList), f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+                         audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
+                         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList), f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(fileName, 'rb') as f:
-            forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, \
-            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList = pickle.load(f)
+            forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
+            audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, \
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList = pickle.load(f)
 
-    print np.shape(forcesTrueList), np.shape(pdfTrueList), np.shape(timesList)
+    print np.shape(forcesTrueList), np.shape(audioTrueList), np.shape(timesList)
 
-    plots = plotGenerator(forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
-            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
-            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList)
+    plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+            audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
     # plots.plotOneTrueSet()
     # plots.distributionOfSequences()
 
@@ -361,51 +304,47 @@ def trainMultiHMM():
     # plots.quickPlotModalities()
 
     # Setup training data
-    forcesSample, distancesSample, anglesSample, pdfSample = createSampleSet(forcesList, distancesList, anglesList, pdfList)
-    forcesTrueSample, distancesTrueSample, anglesTrueSample, pdfTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, pdfTrueList)
+    forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)
+    forcesTrueSample, distancesTrueSample, anglesTrueSample, audioTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList)
 
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl3.pkl', use_pkl=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d.pkl', use_pkl=True)
 
-    # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], pdfList[0])
+    # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
 
-    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=14, verbose=True)
+    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=14, verbose=True)
 
     print 'c=2 is the best so far'
-    # np.tile(np.append(pdfList[0], pdfList[0][-1]), (len(testForcesList), 1))
-    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=14, c=-6, verbose=True)
-    tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=-2, verbose=True)
+    # np.tile(np.append(audioList[0], audioList[0][-1]), (len(testForcesList), 1))
+    tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=-2, verbose=True)
 
     # for c in np.arange(0, 10, 0.5):
     #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=(-1*c))
+    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=(-1*c))
 
-    # hmm.path_disp(forcesList, distancesList, anglesList, pdfList)
+    # hmm.path_disp(forcesList, distancesList, anglesList, audioList)
 
     # figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
-    # hmm.likelihood_disp(forcesSample[1:], distancesSample[1:], anglesSample[1:], pdfSample[1:], forcesTrueSample[1:], distancesTrueSample[1:], anglesTrueSample[1:], pdfTrueSample[1:],
+    # hmm.likelihood_disp(forcesSample[1:], distancesSample[1:], anglesSample[1:], audioSample[1:], forcesTrueSample[1:], distancesTrueSample[1:], anglesTrueSample[1:], audioTrueSample[1:],
     #                     -5.0, figureSaveName=None)
 
     # for i in [4, 18, 19, 20]:
-    #     forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample = createSampleSet(testForcesList, testDistancesList, testAnglesList, testPdfList, init=i)
-    #     forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, pdfTrueTestSample = createSampleSet(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList, init=i)
+    #     forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList, testDistancesList, testAnglesList, testAudioList, init=i)
+    #     forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, audioTrueTestSample = createSampleSet(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, init=i)
     #
-    #     hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, pdfTestSample, forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, pdfTrueTestSample,
-    #                         forcesSample, distancesSample, anglesSample, pdfSample, forcesTrueSample, distancesTrueSample, anglesTrueSample, pdfTrueSample, -3.0, figureSaveName=None)
+    #     hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, audioTrueTestSample,
+    #                         forcesSample, distancesSample, anglesSample, audioSample, forcesTrueSample, distancesTrueSample, anglesTrueSample, audioTrueSample, -3.0, figureSaveName=None)
 
     # -- Global threshold approach --
     print '\n---------- Global Threshold ------------\n'
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=pdfSample, ml_pkl='modals/ml_4d_bowl_global.pkl', use_pkl=True)
-
-    # print 'c=2'
-    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=-2, verbose=True)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True)
 
     for c in xrange(10):
         print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm, forcesList, distancesList, anglesList, pdfList, testForcesList, testDistancesList, testAnglesList, testPdfList, numOfSuccess=16, c=(-1*c))
+        tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=(-1*c))
 
 
     # -- 1 dimensional force hidden Markov model --
@@ -452,16 +391,16 @@ def trainMultiHMM():
 
 
     # -- 1 dimensional visual hidden Markov model --
-    print '\n\nBeginning testing for 1 dimensional visual hidden Markov model\n\n'
+    print '\n\nBeginning testing for 1 dimensional audio hidden Markov model\n\n'
 
     hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=pdfSample, ml_pkl='modals/ml_1d_visual.pkl', use_pkl=True)
+    hmm1d.fit(xData1=audioSample, ml_pkl='modals/ml_1d_audio.pkl', use_pkl=True)
 
     for c in xrange(10):
         print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm1d, pdfList, testForcesList=testPdfList, numOfSuccess=16, c=(-1*c))
+        tableOfConfusion(hmm1d, audioList, testForcesList=testAudioList, numOfSuccess=16, c=(-1*c))
     # c=2 is the best fit
-    accuracyVision = tableOfConfusion(hmm1d, pdfList, testForcesList=testPdfList, numOfSuccess=16, c=-2)
+    accuracyVision = tableOfConfusion(hmm1d, audioList, testForcesList=testAudioList, numOfSuccess=16, c=-2)
 
 
     # -- 2 dimensional distance/angle kinematics hidden Markov model --

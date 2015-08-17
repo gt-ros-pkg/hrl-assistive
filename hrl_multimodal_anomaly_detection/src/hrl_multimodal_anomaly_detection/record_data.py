@@ -10,7 +10,7 @@ import cPickle as pickle
 
 from audio.tool_audio_slim import tool_audio_slim
 from vision.tool_vision import tool_vision
-from kinematics.robot_kinematics import robot_kinematics
+from kinematics.tool_kinematics import tool_kinematics
 from forces.tool_ft import tool_ft
 
 # ROS
@@ -37,7 +37,7 @@ def log_parse():
 
 
 class ADL_log:
-    def __init__(self, ft=True, audio=False, vision=False, kinematics=False, subject=None, task=None):
+    def __init__(self, ft=True, audio=False, kinematics=False, subject=None, task=None):
         self.init_time = 0
         self.tool_tracker_name, self.ft_sensor_topic_name = log_parse()
         self.tf_listener = tf.TransformListener()
@@ -49,8 +49,7 @@ class ADL_log:
 
         self.ft = tool_ft('/netft_data') if ft else None
         self.audio = tool_audio_slim() if audio else None
-        self.vision = tool_vision(self.tf_listener, self.isScooping) if vision else None
-        self.kinematics = robot_kinematics(self.tf_listener) if kinematics else None
+        self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=(task == 's')) if kinematics else None
 
         # File saving
         self.iteration = 0
@@ -63,26 +62,12 @@ class ADL_log:
         sensors = ''
         if self.ft is not None: sensors += 'f'
         if self.audio is not None: sensors += 'a'
-        if self.vision is not None: sensors += 'v'
         if self.kinematics is not None: sensors += 'k'
         self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + sensors + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
 
-        # With respect to torso_lift_link
-        self.bowlPos = None
-        self.headPos = None
-
         self.scooping_steps_times = []
 
-        rospy.Subscriber('hrl_feeding_task/manual_bowl_location',
-                         PoseStamped, self.bowlPoseManualCallback)
-        rospy.Subscriber('hrl_feeding_task/manual_head_location',
-                         PoseStamped, self.headPoseManualCallback)
-
         self.scoopingStepsService = rospy.Service('/scooping_steps_service', None_Bool, self.scoopingStepsTimesCallback)
-
-        # raw_input('press Enter to reset')
-        # if ft: self.ft.reset()
-        # if audio: self.audio.reset()
 
     def log_start(self):
         self.init_time = rospy.get_time()
@@ -93,9 +78,6 @@ class ADL_log:
             self.audio.init_time = self.init_time
             self.audio.start()
             # self.audio("start")
-        if self.vision is not None:
-            self.vision.init_time = self.init_time
-            self.vision.start()
         if self.kinematics is not None:
             self.kinematics.init_time = self.init_time
             self.kinematics.start()
@@ -115,34 +97,16 @@ class ADL_log:
         if self.audio is not None:
             self.audio.cancel()
             
-            # self.audio("cancel")
-            # self.audio("close_log_file")
-
-            # data['audio_data']  = self.audio.audio_data
-            # data['audio_amp']   = self.audio.audio_amp
-            # data['audio_freq']  = self.audio.audio_freq
-            
             data['audio_chunk'] = self.audio.CHUNK
             data['audio_sample_time'] = self.audio.UNIT_SAMPLE_TIME
             data['audio_time']  = self.audio.time_data
             data['audio_data_raw'] = self.audio.audio_data_raw
 
-        if self.vision is not None:
-            self.vision.cancel()
-            data['visual_points'] = self.vision.visual_points
-            data['visual_time'] = self.vision.time_data
-
+        # TODO use visual_ar that contains: mic, spoon, objectCenter, (targetTrans, targetRot)
         if self.kinematics:
             self.kinematics.cancel()
             data['kinematics_time']  = self.kinematics.time_data
-            data['kinematics_joint'] = self.kinematics.joint_data
-            data['l_end_effector_pos'] = self.kinematics.l_end_effector_pos
-            data['l_end_effector_quat'] = self.kinematics.l_end_effector_quat
-            data['r_end_effector_pos'] = self.kinematics.r_end_effector_pos
-            data['r_end_effector_quat'] = self.kinematics.r_end_effector_quat
-
-        data['bowl_position'] = self.bowlPos
-        data['head_position'] = self.headPos
+            data['kinematics_data'] = self.kinematics.kinematics_data
 
         data['scooping_steps_times'] = self.scooping_steps_times
         self.scooping_steps_times = []
@@ -172,18 +136,10 @@ class ADL_log:
             self.ft = tool_ft('/netft_data')
         if self.audio is not None:
             self.audio = tool_audio_slim()
-        if self.vision is not None:
-            self.vision = tool_vision(self.tf_listener, self.isScooping)
         if self.kinematics is not None:
-            self.kinematics = robot_kinematics(self.tf_listener)
+            self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=(task == 's'))
 
         gc.collect()
-
-    def bowlPoseManualCallback(self, data):
-        self.bowlPos = np.matrix([[data.pose.position.x], [data.pose.position.y], [data.pose.position.z]])
-
-    def headPoseManualCallback(self, data):
-        self.headPos = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
 
     def scoopingStepsTimesCallback(self, data):
         self.scooping_steps_times.append(rospy.get_time() - self.init_time)
@@ -196,7 +152,7 @@ if __name__ == '__main__':
     manip = True
 
     ## log = ADL_log(audio=True, ft=True, manip=manip, test_mode=False)
-    log = ADL_log(ft=True, audio=True, vision=True, kinematics=True, subject=subject, task=task)
+    log = ADL_log(ft=True, audio=True, kinematics=True, subject=subject, task=task)
 
     log.log_start()
 

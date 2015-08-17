@@ -39,8 +39,8 @@ class plotGenerator:
         ax3.grid()
 
         ax4 = plt.subplot(413)
-        ax4.plot(self.times[k], np.array(self.pdfsTrue[k]), label='Vision')
-        ax4.set_ylabel('Distribution', fontsize=16)
+        ax4.plot(self.times[k], np.array(self.pdfsTrue[k]), label='Audio')
+        ax4.set_ylabel('Magnitude (dec)', fontsize=16)
         ax4.set_yticks(np.arange(70, 150, 20))
         # ax4.set_yticks(np.arange(4.6, 5.4, 0.2))
         ax4.legend()
@@ -72,7 +72,7 @@ class plotGenerator:
         # ax3.set_yticks(np.arange(np.min(self.anglesTrue), np.max(self.anglesTrue), 0.2))
         # ax3.grid()
         ax4 = plt.subplot(413)
-        ax4.set_ylabel('Visual\nDistribution', fontsize=16)
+        ax4.set_ylabel('Audio\nMagnitude (dec)', fontsize=16)
         ax4.set_xticks(np.arange(0, 25, 5))
         # ax4.set_yticks(np.arange(2, 4, 0.5))
         # ax4.set_yticks(np.arange(np.min(np.array(self.pdfsTrue) * 100), np.max(np.array(self.pdfsTrue) * 100), 0.1))
@@ -81,7 +81,7 @@ class plotGenerator:
         print 'Force min/max:', np.min(self.forcesTrue), np.max(self.forcesTrue)
         print 'Distance min/max:', np.min(self.distancesTrue), np.max(self.distancesTrue)
         print 'Angle min/max:', np.min(self.anglesTrue), np.max(self.anglesTrue)
-        print 'PDF min/max:', np.min(np.array(self.pdfsTrue)), np.max(np.array(self.pdfsTrue))
+        print 'Audio min/max:', np.min(np.array(self.pdfsTrue)), np.max(np.array(self.pdfsTrue))
 
         for force, distance, angle, pdf, time in zip(self.forcesTrue, self.distancesTrue, self.anglesTrue, np.array(self.pdfsTrue), self.times):
             ax1.plot(time, force)

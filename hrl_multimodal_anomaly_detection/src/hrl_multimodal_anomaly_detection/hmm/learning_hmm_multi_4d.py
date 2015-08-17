@@ -761,7 +761,7 @@ class learning_hmm_multi_4d:
                                                                  facecolor='green',
                                                                  edgecolor='none', alpha=0.3)
         ax5.add_collection(collection)
-        ax5.set_ylabel("Visual (m)", fontsize=16)
+        ax5.set_ylabel("Audio (dec)", fontsize=16)
         ax5.set_xlim([0, x[-1]*(1./10.)])
         ax5.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
 

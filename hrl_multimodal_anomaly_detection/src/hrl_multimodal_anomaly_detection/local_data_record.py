@@ -10,15 +10,11 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 from hrl_multimodal_anomaly_detection.srv import String_String
 
 class dataRecord:
-
     AUDIO = True
     FT = True
-    VISION = False
     KINEMATICS = True
 
-
     def __init__(self):
-
         rospy.wait_for_service("/arm_reach_enable")
         self.armReachAction = rospy.ServiceProxy("/arm_reach_enable", String_String)
         rospy.loginfo("arm reach server connected!!")
@@ -38,16 +34,9 @@ class dataRecord:
         if isOnline:
             self.log = onlineRecordData.ADL_log(isScooping=(self.task == 's'), useAudio=self.AUDIO)
         else:
-            self.log = ADL_log(ft=self.FT, audio=self.AUDIO, vision=self.VISION, kinematics=self.KINEMATICS, subject=subject, task=self.task)
-
-        #This should only run when MANIP = False, since log file isn't closed by ADL_log itself...
-        # repeatAns = raw_input("Change trial name before starting? [y/n]")
-        # while repeatAns != 'n':
-        #     self.trial_name = raw_input("Enter trial name: ")
-        #     repeatAns = raw_input("Change trial name before starting? [y/n]")
+            self.log = ADL_log(ft=self.FT, audio=self.AUDIO, kinematics=self.KINEMATICS, subject=subject, task=self.task)
 
     def run(self):
-
         if self.task == 's':
             print "Running scooping! "
             self.scooping()
@@ -56,10 +45,6 @@ class dataRecord:
             self.feeding()
 
     def scooping(self):
-
-        # *CHOOSE BOWL POSITION!!
-        #bowlPosType = self.armReachAction("getBowlPosType")
-
         print self.armReachAction("chooseManualBowlPos")
 
         runScooping = True
@@ -95,7 +80,6 @@ class dataRecord:
 
 
     def feeding(self):
-
         # *CHOOSE HEAD POSITION!!
         #headPosType = self.armReachAction("getHeadPosType")
 

@@ -16,7 +16,6 @@ try :
     import sensor_msgs.point_cloud2 as pc2
 except:
     import vision.point_cloud2 as pc2
-from sensor_msgs.msg import PointCloud2, CameraInfo
 from geometry_msgs.msg import PoseStamped, WrenchStamped, Point
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker
@@ -27,8 +26,6 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
-## from sound_play.msg import SoundRequest
-## from sound_play.libsoundplay import SoundClient
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class onlineAnomalyDetection(Thread):
@@ -49,10 +46,7 @@ class onlineAnomalyDetection(Thread):
         print 'is scooping:', self.isScooping
 
         self.publisher = rospy.Publisher('visualization_marker', Marker)
-        self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
         self.interruptPublisher = rospy.Publisher('InterruptAction', String)
-        self.cloudTime = time.time()
-        self.pointCloud = None
         self.targetFrame = targetFrame
 
         # Data logging
@@ -60,28 +54,10 @@ class onlineAnomalyDetection(Thread):
         self.lastUpdateNumber = 0
         self.init_time = rospy.get_time()
 
-        self.points3D = None
-
         if tfListener is None:
             self.transformer = tf.TransformListener()
         else:
             self.transformer = tfListener
-
-        self.bridge = CvBridge()
-        self.imageData = None
-        self.targetMatrix = None
-
-        # RGB Camera
-        self.rgbCameraFrame = None
-        self.cameraWidth = None
-        self.cameraHeight = None
-        self.pinholeCamera = None
-
-        self.bowlPosition = None
-        self.bowlPositionKinect = None
-        self.bowlToKinectMat = None
-        self.bowlX = None
-        self.bowlY = None
 
         # Gripper
         self.lGripperPosition = None
@@ -99,29 +75,23 @@ class onlineAnomalyDetection(Thread):
         ## self.soundHandle = SoundClient()
 
         # Setup HMM to perform online anomaly detection
-        self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesList, self.distancesList, self.anglesList, self.pdfList, self.timesList = onlineHMM.setupMultiHMM(isScooping=self.isScooping)
-        if not self.isScooping:
-            self.forces, self.distances, self.angles, self.pdfs = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.pdfList[1]
+        self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.audios, self.times, self.forcesList, self.distancesList, self.anglesList, self.audioList, self.timesList = onlineHMM.setupMultiHMM(isScooping=self.isScooping)
+        # if not self.isScooping:
+        #     self.forces, self.distances, self.angles, self.audios = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.audioList[1]
         self.times = np.array(self.times)
         self.anomalyOccured = False
 
-        if not useAudio:
-            self.cloudSub = rospy.Subscriber('/head_mount_kinect/depth_registered/points', PointCloud2, self.cloudCallback)
-            print 'Connected to Kinect depth'
-            self.cameraSub = rospy.Subscriber('/head_mount_kinect/depth_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
-            print 'Connected to Kinect camera info'
-            self.p = None
-            self.stream = None
-        else:
-            self.cloudSub = None
-            self.cameraSub = None
-            self.p = pyaudio.PyAudio()
-            deviceIndex = self.find_input_device()
-            print 'Audio device:', deviceIndex
-            self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
-        self.bowlSub = rospy.Subscriber('hrl_feeding_task/manual_bowl_location', PoseStamped, self.bowlPoseManualCallback)
+        self.p = pyaudio.PyAudio()
+        deviceIndex = self.find_input_device()
+        print 'Audio device:', deviceIndex
+        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
+
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
         print 'Connected to FT sensor'
+
+        self.objectCenter = None
+        self.objectCenterSub = rospy.Subscriber('/ar_track_alvar/bowl_cen_pose' if isScooping else '/ar_track_alvar/mouth_pose', PoseStamped, self.objectCenterCallback)
+        print 'Connected to center of object publisher'
 
     def reset(self):
         pass
@@ -129,16 +99,16 @@ class onlineAnomalyDetection(Thread):
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
-        rate = rospy.Rate(1000) # 25Hz, nominally.
+        # rate = rospy.Rate(1000) # 25Hz, nominally.
         while not self.cancelled:
-            if self.updateNumber > self.lastUpdateNumber:
+            if self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured:
                     # Best c value gains determined from cross validation set
                     c = -1 if self.isScooping else -9
                     # Perform anomaly detection
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.pdfs, c)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, c)
                     print 'Anomaly error:', error
                     if anomaly > 0:
                         if self.isScooping:
@@ -146,26 +116,20 @@ class onlineAnomalyDetection(Thread):
                         else:
                             self.interruptPublisher.publish('InterruptHead')
                         self.anomalyOccured = True
-                        # self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
                         # for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
                         #     for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
                         #         plt.plot(times, modal, label='%d' % index)
                         #     plt.legend()
                         #     plt.show()
-            if self.cloudSub is not None:
-                rate.sleep()
+            # rate.sleep()
 
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
-        if self.cloudSub is not None:
-            self.cloudSub.unregister()
-            self.cameraSub.unregister()
-        self.bowlSub.unregister()
         self.forceSub.unregister()
+        self.objectCenterSub.unregister()
         self.publisher.unregister()
-        self.publisher2D.unregister()
         rospy.sleep(1.0)
 
     @staticmethod
@@ -173,31 +137,27 @@ class onlineAnomalyDetection(Thread):
         return (x - minVal) / (maxVal - minVal) * scale
 
     def processData(self):
-        if self.bowlPosition is None:
-            return None
-
         # Find nearest time stamp from training data
         timeStamp = rospy.get_time() - self.init_time
         index = np.abs(self.times - timeStamp).argmin()
+
+        self.transposeGripper()
 
         # Use magnitude of forces
         force = np.linalg.norm(self.force)
         force = self.scaling(force, self.minVals[0], self.maxVals[0])
 
-        # Determine distance between mic and bowl
-        distance = np.linalg.norm(self.mic - self.bowlPosition)
+        # Determine distance between mic and center of object
+        distance = np.linalg.norm(self.mic - self.objectCenter)
         distance = self.scaling(distance, self.minVals[1], self.maxVals[1])
-        # Find angle between gripper-bowl vector and gripper-spoon vector
+        # Find angle between gripper-object vector and gripper-spoon vector
         micSpoonVector = self.spoon - self.mic
-        micBowlVector = self.bowlPosition - self.mic
-        angle = np.arccos(np.dot(micSpoonVector, micBowlVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micBowlVector)))
+        micObjectVector = self.objectCenter - self.mic
+        angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
         angle = self.scaling(angle, self.minVals[2], self.maxVals[2])
 
         # Process either visual or audio data depending on which we're using
-        if self.cloudSub is not None:
-            pdfValue = self.processVisual()
-        else:
-            pdfValue = self.processAudio()
+        audio = self.processAudio()
 
         # Magnify relative errors for online detection
         # Since we are overwriting a sample from the training set, we need to magnify errors
@@ -222,33 +182,18 @@ class onlineAnomalyDetection(Thread):
                     angle -= scalar*angleDiff
                 else:
                     angle += scalar*angleDiff
-            pdfDiff = np.abs(self.pdfs[index] - pdfValue)
-            if self.cloudSub is not None:
-                visionThreshold = 0.35 if self.isScooping else 1.5
-                if pdfDiff > visionThreshold:
-                    if pdfValue < self.pdfs[index]:
-                        pdfValue -= scalar*pdfDiff
-                    elif self.isScooping:
-                        pdfValue += pdfDiff
-                # Account for variability with a individuals head placement
-                if not self.isScooping and pdfDiff < 1.5:
-                    pdfValue = self.pdfs[index]
-            else:
-                if pdfDiff > 0.5:
-                    if pdfValue < self.pdfs[index]:
-                        pdfValue -= scalar*pdfDiff
-                    else:
-                        pdfValue += scalar*pdfDiff
-
-            # Check if pdfValue is NaN
-            if pdfValue != pdfValue:
-                pdfValue = self.pdfs[index]
+            audioDiff = np.abs(self.audios[index] - audio)
+            if audioDiff > 0.5:
+                if audio < self.audios[index]:
+                    audio -= scalar*audioDiff
+                else:
+                    audio += scalar*audioDiff
 
         if index >= len(self.forces):
             self.forces.append(force)
             self.distances.append(distance)
             self.angles.append(angle)
-            self.pdfs.append(pdfValue)
+            self.audios.append(audio)
         else:
             print 'Current force:', self.forces[index], 'New force:', force
             self.forces[index] = force
@@ -256,136 +201,24 @@ class onlineAnomalyDetection(Thread):
             self.distances[index] = distance
             print 'Current angle:', self.angles[index], 'New angle:', angle
             self.angles[index] = angle
-            print 'Current pdf:', self.pdfs[index], 'New pdf:', pdfValue
-            self.pdfs[index] = pdfValue
+            print 'Current audio:', self.audios[index], 'New audio:', audio
+            self.audios[index] = audio
 
     def processAudio(self):
         data = self.stream.read(self.CHUNK)
-        pdfValue = self.get_rms(data)
-        pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
-        return pdfValue
-
-    def processVisual(self):
-        self.transformer.waitForTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0), rospy.Duration(5))
-        try:
-            targetTrans, targetRot = self.transformer.lookupTransform(self.targetFrame, self.rgbCameraFrame, rospy.Time(0))
-            self.targetMatrix = np.dot(tf.transformations.translation_matrix(targetTrans), tf.transformations.quaternion_matrix(targetRot))
-        except tf.ExtrapolationException:
-            print 'TF Target Error!'
-            pass
-
-        pointSet = np.c_[self.points3D, np.ones(len(self.points3D))]
-        pointSet = np.dot(self.targetMatrix, pointSet.T).T[:, :3]
-
-        # Check for invalid points
-        pointSet = pointSet[np.linalg.norm(pointSet, axis=1) < 5]
-
-        # Find points within a sphere of radius 8 cm around the center of bowl
-        nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.11
-
-        # Points near bowl
-        points = pointSet[nearbyPoints]
-
-        if len(points) <= 0:
-            print 'ARGH, no points within 11 cm of bowl location found'
-
-        pdfValue = 0
-        # If no points found, try opening up to 10 cm
-        if len(points) <= 0:
-            # Find points within a sphere of radius 10 cm around the center of bowl
-            nearbyPoints = np.linalg.norm(pointSet - self.bowlPosition, axis=1) < 0.13
-            # Points near bowl
-            points = pointSet[nearbyPoints]
-            if len(points) <= 0:
-                print 'No points within 13 cm of bowl location found'
-
-        if len(points) > 0:
-            # Try an exponential dropoff instead of Trivariate Gaussian Distribution, take sqrt to prevent overflow
-            # pdfValue = np.sqrt(np.sum(np.exp(np.linalg.norm(points - self.bowlPosition, axis=1) * -1.0))) / float(len(points))
-
-            # Scale all points to prevent division by small numbers and singular matrices
-            newPoints = points * 20
-            # Define a receptive field within the bowl
-            mu = self.bowlPosition * 20
-
-            # Trivariate Gaussian Distribution
-            n, m = newPoints.shape
-            sigma = np.zeros((m, m))
-            # Compute covariances
-            for h in xrange(m):
-                for j in xrange(m):
-                    sigma[h, j] = 1.0/n * np.dot((newPoints[:, h] - mu[h]).T, newPoints[:, j] - mu[j])
-            constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
-            sigmaInv = np.linalg.inv(sigma)
-            # Evaluate the Probability Density Function for each point
-            for point in newPoints:
-                pointMu = point - mu
-                # scalar = np.exp(np.abs(np.linalg.norm(point - newBowlPosition))*-2.0)
-                pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
-
-            # pdfValue = pdfValue / float(len(points))
-
-            # print 'Number of points:', len(points)
-            # print 'Pdf before scale', pdfValue
-            pdfValue = self.scaling(pdfValue, self.minVals[3], self.maxVals[3])
-            # print 'Pdf after scale', pdfValue, 'minVal', self.minVals[3], 'maxVal', self.maxVals[3]
-
-        # self.publishPoints('points', points, g=1.0)
-        # self.publishPoints('nonpoints', pointSet[nearbyPoints == False], r=1.0)
-        #
-        # self.publishPoints('bowl', [self.bowlPosition], size=0.05, r=1.0, g=1.0, b=1.0)
-        # self.publishPoints('gripper', [self.mic], size=0.05, g=1.0, b=1.0)
-        # self.publishPoints('spoon', [self.spoon], size=0.05, b=1.0)
-
-        return pdfValue
-
-    def cloudCallback(self, data):
-        # print 'Time between cloud calls:', time.time() - self.cloudTime
-        # startTime = time.time()
-
-        self.pointCloud = data
-
-        self.transposeBowlToCamera()
-        self.transposeGripperToCamera()
-
-        lowX, highX, lowY, highY = self.boundingBox()
-
-        points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
-        try:
-            points3D = pc2.read_points(self.pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
-        except:
-            print 'Unable to unpack from PointCloud2!', self.cameraWidth, self.cameraHeight, self.pointCloud.width, self.pointCloud.height
-            return
-
-        self.points3D = np.array([point for point in points3D])
-
-        # self.publishImageFeatures()
-
-        # self.updateNumber += 1
-        # print 'Cloud computation time:', time.time() - startTime
-        # self.cloudTime = time.time()
+        audio = self.get_rms(data)
+        audio = self.scaling(audio, self.minVals[3], self.maxVals[3])
+        return audio
 
     def forceCallback(self, msg):
         self.force = np.array([msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z])
         self.torque = np.array([msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z])
         self.updateNumber += 1
 
-    def bowlPoseManualCallback(self, data):
-        self.bowlPosition = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+    def objectCenterCallback(self, msg):
+        self.objectCenter = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
 
-    def transposeBowlToCamera(self):
-        self.transformer.waitForTransform(self.rgbCameraFrame, '/torso_lift_link', rospy.Time(0), rospy.Duration(5))
-        try :
-            position, rotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/torso_lift_link', rospy.Time(0))
-            self.bowlToKinectMat = np.dot(tf.transformations.translation_matrix(position), tf.transformations.quaternion_matrix(rotation))
-        except tf.ExtrapolationException:
-            print 'Transpose of bowl failed!'
-            return
-        pos = self.bowlPosition
-        self.bowlPositionKinect = np.dot(self.bowlToKinectMat, np.array([pos[0], pos[1], pos[2], 1.0]))[:3]
-        self.bowlX, self.bowlY = self.pinholeCamera.project3dToPixel(self.bowlPositionKinect)
-
-    def transposeGripperToCamera(self):
+    def transposeGripper(self):
         # Transpose gripper position to camera frame
         self.transformer.waitForTransform(self.targetFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
         try :
@@ -395,6 +228,7 @@ class onlineAnomalyDetection(Thread):
             print 'Transpose of gripper failed!'
             return
 
+        # Use a buffer of gripper positions
         if len(self.grips) >= 2:
             self.lGripperTransposeMatrix = self.grips[-2]
         else:
@@ -409,39 +243,6 @@ class onlineAnomalyDetection(Thread):
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
         self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
-
-
-    # Returns coordinates (lowX, highX, lowY, highY)
-    def boundingBox(self):
-        size = 150
-        left = self.bowlX - size/2
-        right = left + size
-        top = self.bowlY - size/2
-        bottom = top + size
-
-        # Check if box extrudes past image bounds
-        if left < 0:
-            left = 0
-            right = left + size
-        if right > self.cameraWidth - 1:
-            right = self.cameraWidth - 1
-            left = right - size
-        if top < 0:
-            top = 0
-            bottom = top + size
-        if bottom > self.cameraHeight - 1:
-            bottom = self.cameraHeight - 1
-            top = bottom - size
-
-        return int(left), int(right), int(top), int(bottom)
-
-    def cameraRGBInfoCallback(self, data):
-        if self.cameraWidth is None:
-            self.cameraWidth = data.width
-            self.cameraHeight = data.height
-            self.pinholeCamera = image_geometry.PinholeCameraModel()
-            self.pinholeCamera.fromCameraInfo(data)
-            self.rgbCameraFrame = data.header.frame_id
 
     def get_rms(self, block):
         # RMS amplitude is defined as the square root of the
@@ -464,26 +265,6 @@ class onlineAnomalyDetection(Thread):
             sum_squares += n*n
 
         return math.sqrt(sum_squares / count)
-
-    def publishImageFeatures(self):
-        imageFeatures = ImageFeatures()
-
-        if self.bowlX is not None:
-            circle = Circle()
-            circle.x, circle.y = int(self.bowlX), int(self.bowlY)
-            circle.radius = 10
-            circle.r = 255
-            circle.g = 128
-            imageFeatures.circles.append(circle)
-
-        rect = Rectangle()
-        rect.lowX, rect.highX, rect.lowY, rect.highY = self.boundingBox()
-        rect.r = 75
-        rect.g = 150
-        rect.thickness = 5
-        imageFeatures.rectangles.append(rect)
-
-        self.publisher2D.publish(imageFeatures)
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
