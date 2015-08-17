@@ -30,7 +30,7 @@ from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeature
 
 class onlineAnomalyDetection(Thread):
     MAX_INT = 32768.0
-    CHUNK   = 1024 # frame per buffer
+    CHUNK   = 4096 # frame per buffer
     RATE    = 44100 # sampling rate
     UNIT_SAMPLE_TIME = 1.0 / float(RATE)
     CHANNEL = 2 # number of channels

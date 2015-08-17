@@ -7,6 +7,7 @@ import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 
+# CHUNK = 4096 for PR2
 CHUNK   = 1024 # frame per buffer
 RATE    = 44100 # sampling rate
 UNIT_SAMPLE_TIME = 1.0 / float(RATE)
