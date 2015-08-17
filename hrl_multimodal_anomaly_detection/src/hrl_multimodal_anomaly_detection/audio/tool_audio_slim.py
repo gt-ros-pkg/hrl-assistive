@@ -25,7 +25,7 @@ class tool_audio_slim(Thread):
         self.p = pyaudio.PyAudio()
         deviceIndex = self.find_input_device()
         print 'Audio device:', deviceIndex
-        print 'Sample rate:', p.get_device_info_by_index(0)['defaultSampleRate']
+        print 'Sample rate:', self.p.get_device_info_by_index(0)['defaultSampleRate']
 
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
         # rospy.logout('Done subscribing audio')
