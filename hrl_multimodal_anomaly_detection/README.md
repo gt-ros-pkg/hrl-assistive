@@ -90,7 +90,7 @@ Launch arm feeding server (**new** terminal window, ssh'd into **robot**):
     
 Launch combined FT node, bowl publisher and data recording (**new** terminal window, running on **laptop**):
     
-    1) roslaunch hrl_multimodal_anomaly_detection record_feeding_full.py
+    1) roslaunch hrl_multimodal_anomaly_detection record_feeding_full.launch
         
 
 ---
