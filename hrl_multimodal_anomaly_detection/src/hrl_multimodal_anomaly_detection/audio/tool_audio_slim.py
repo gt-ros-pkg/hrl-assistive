@@ -65,7 +65,7 @@ class tool_audio_slim(Thread):
             self.time_data.append(rospy.get_time() - self.init_time)
             self.audio_data_raw.append(data)
         except:
-            print 'Audio read failure do to input overflow'
+            print 'Audio read failure due to input overflow'
 
     def cancel(self):
         """End this timer thread"""

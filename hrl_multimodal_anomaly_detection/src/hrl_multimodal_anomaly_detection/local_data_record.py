@@ -60,8 +60,8 @@ class dataRecord:
             print 'Initializing scooping'
             print self.armReachAction('initArmScooping')
 
+            time.sleep(2)
             self.log.log_start()
-            # time.sleep(2)
 
             print "Running scooping!"
             print self.armReachAction("runScooping")
