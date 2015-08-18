@@ -31,6 +31,12 @@ def forceKinematics(fileName, audioTimes):
         print 'forces shape:', forces.shape
         print forces[:10]
         print forces[-10:]
+        print np.shape(kinematicsTimes)
+        print kinematicsTimes[-10:]
+        print np.shape(forceTimes)
+        print forceTimes[-10:]
+        print np.shape(audioTimes)
+        print audioTimes[-10:]
         distances = []
         angles = []
 
@@ -313,7 +319,7 @@ def trainMultiHMM():
     # plots.distributionOfSequences()
 
     # Plot modalities
-    # plots.quickPlotModalities()
+    plots.quickPlotModalities()
 
     # Setup training data
     forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)
