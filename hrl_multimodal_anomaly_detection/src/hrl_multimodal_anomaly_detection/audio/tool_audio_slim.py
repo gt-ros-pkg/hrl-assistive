@@ -7,7 +7,7 @@ from threading import Thread
 class tool_audio_slim(Thread):
     MAX_INT = 32768.0
     CHUNK   = 1024 # frame per buffer
-    RATE    = 44100 # sampling rate
+    RATE    = 48000 # sampling rate
     UNIT_SAMPLE_TIME = 1.0 / float(RATE)
     CHANNEL = 2 # number of channels
     FORMAT  = pyaudio.paInt16
