@@ -1,30 +1,16 @@
 <launch>
   
   <arg name="arm1" default="l"/>
+  <!--remap from="/ar_track_alvar/bowl_cen_pose" to="hrl_feeding_task/bowl_location"/-->  
+  <!--remap from="/ar_track_alvar/mouth_pose" to="hrl_feeding_task/head_location"/-->  
 
-  <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
-    <param name="tip_name" value="l_gripper_spoon_frame" />
-    <param name="root_name" value="torso_lift_link" />
-  </node>
-
-  <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/mpc_params_pr2.yaml" />
-  <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/pr2_config_params_l.yaml" />
   <node name="arm_reacher_feeding" pkg="hrl_multimodal_anomaly_detection" type="arm_reacher_feeding.py" args="-a $(arg arm1)" output="screen"/>
+
   
-  
-  <group ns="right" >
+  <!--group ns="right" >
     <arg name="arm2" default="r"/>
-
-    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
-      <param name="tip_name" value="r_gripper_tool_frame" />
-      <param name="root_name" value="torso_lift_link" />
-    </node>
-
-    <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/mpc_params_pr2.yaml" />
-    <rosparam command="load" file="$(find hrl_multimodal_anomaly_detection)/params/pr2_config_params_r.yaml" />
     <node name="arm_helper_right" pkg="hrl_feeding_task" type="arm_reacher_helper_right.py" args="-a $(arg arm2)" output="screen"/>
-  
-  </group>
+  </group-->
 
 </launch>
 

@@ -262,10 +262,10 @@ def dataFiles():
     #              '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
     # iterationSetsTrain = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
 
-    fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/next_scooping_fak_08-18-2015_09-00-55/iteration_%d_success.pkl']
+    fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/try3_scooping_fak_08-18-2015_09-35-47/iteration_%d_success.pkl']
     iterationSetsTrain = [xrange(1)]
 
-    fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/next_scooping_fak_08-18-2015_09-00-55/iteration_%d_success.pkl']
+    fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/try3_scooping_fak_08-18-2015_09-35-47/iteration_%d_success.pkl']
     iterationSetsTest = [xrange(1)]
 
     # fileNamesTest = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',

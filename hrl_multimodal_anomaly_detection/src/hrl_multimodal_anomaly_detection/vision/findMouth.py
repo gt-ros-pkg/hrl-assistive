@@ -4,7 +4,7 @@ import rospy
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import numpy as np
-import threading, copy
+import os, threading, copy
 
 import PyKDL
 
@@ -215,7 +215,14 @@ class arTagDetector:
             pos2 = np.array([[f.p[0] + z_axis[0], f.p[1] + z_axis[1], f.p[2] + z_axis[2]]]).T
             self.draw_mouth_arrow.pub_arrow(pos1, pos2, [0.0, 1.0, 0.0, 0.7], str(0.0))
 
-    def setCalibration(self):
+
+    def getCalibration(self, filename='mouth_frame.pkl'):
+        if os.path.isfile(filename) == False: return False
+
+        d = ut.load_pickle(filename)        
+        print d.keys()
+        self.mouth_frame_off = d['frame']
+        
         self.head_calib = True
         print "------------------------------------"
         print "Calibration complete! - mouth offset"
@@ -223,7 +230,22 @@ class arTagDetector:
         print "P: ", self.mouth_frame_off.p
         print "M: ", self.mouth_frame_off.M
         print "------------------------------------"
-       
+        return True
+
+        
+    def setCalibration(self, filename='mouth_frame.pkl'):
+        self.head_calib = True
+        print "------------------------------------"
+        print "Calibration complete! - mouth offset"
+        print "------------------------------------"
+        print "P: ", self.mouth_frame_off.p
+        print "M: ", self.mouth_frame_off.M
+        print "------------------------------------"
+
+        d = {}
+        d['frame'] = self.mouth_frame_off        
+        ut.save_pickle(d,filename)        
+        
 
     def pubMouthPose(self):
 
@@ -247,19 +269,30 @@ class arTagDetector:
 if __name__ == '__main__':
     rospy.init_node('ar_tag_mouth_estimation')
 
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--renew', action='store_true', dest='bRenew',
+                 default=False, help='Renew frame pickle files.')
+    opt, args = p.parse_args()
+    
     total_tags = 1
     tag_id = 9
     tag_side_length = 0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18
+
+    save_file = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/params/ar_tag/mouth_offsetframe.pkl' 
     
     atd = arTagDetector(tag_id, tag_side_length, pos_thres)
+
+    if opt.bRenew == False:
+        if atd.getCalibration(save_file) == False: opt.bRenew=True
     
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
         ## ret = input("Is head tag fine? ")
-        if atd.head_calib == False:
+        if atd.head_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is head tag fine? (y: yes, n: no)')
             if ret == 'y': atd.setCalibration()
             

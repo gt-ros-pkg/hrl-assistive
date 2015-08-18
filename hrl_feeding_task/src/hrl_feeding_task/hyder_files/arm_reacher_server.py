@@ -25,7 +25,7 @@ import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm): #removed arm= 'l' so I can use right arm as well as an option
-
+    
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Subscribers to publishers of bowl location data
@@ -85,7 +85,7 @@ class armReachAction(mpcBaseAction):
 
         self.stopPos = np.array([[.7, .7, .5]])
         self.stopEulers = np.array([[90, 0, 30]])
-
+    
         self.rightArmPosOffsets = np.array([[.02,  .05, -.01],
 					    [.02,  .1, .3],
 					    [0,	   0,   0]]) #Set of pos offsets for the right arm end effector
@@ -96,7 +96,7 @@ class armReachAction(mpcBaseAction):
     	self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
 
     	self.timeouts = [20, 7, 4, 4, 4, 10, 7]
-	    self.timeoutsR = [10, 10, 10]
+        self.timeoutsR = [10, 10, 10]
     	self.kinectReachTimeout = 15
 
     	self.bowlQuatOffsets = self.euler2quatArray(self.bowlEulers) #converts the array of eulers to an array of quats
@@ -108,18 +108,18 @@ class armReachAction(mpcBaseAction):
     	print self.bowlQuatOffsets
 
         try:
-                print "--------------------------------"
-                raw_input("Register bowl &  head position! Then press Enter \m")
-                #self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
-                (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
-                print "Recived head position: \n"
-                print self.headPos
-                print self.headQuat
-                print "--------------------------------"
-                raw_input("Press Enter to confirm.")
-                print "--------------------------------"
+            print "--------------------------------"
+            raw_input("Register bowl &  head position! Then press Enter \m")
+            #self.tf_lstnr.waitForTransform('/torso_lift_link', 'head_frame', rospy.Time.now(), rospy.Duration(10))
+            (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 'head_frame', rospy.Time(0))
+            print "Recived head position: \n"
+            print self.headPos
+            print self.headQuat
+            print "--------------------------------"
+            raw_input("Press Enter to confirm.")
+            print "--------------------------------"
         except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print "Oops, can't get head_frame tf info!, trying again :)"
+            print "Oops, can't get head_frame tf info!, trying again :)"
 
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():

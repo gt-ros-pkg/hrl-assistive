@@ -20,72 +20,94 @@ import hrl_lib.quaternion as quatMath
 from std_msgs.msg import String
 
 class armReachAction(mpcBaseAction):
-
-
     def __init__(self, d_robot, controller, arm):
-
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
+        #Variables...! #
+        self.interrupted = False
+        self.iteration = 0 ##?????????????????????????????
+
+        self.posL = Point()
+        self.quatL = Quaternion()
+        self.posR = Point()
+        self.quatR = Quaternion()
+        
+        #Declares bowl positions options ## looks redundant variables
+        self.bowl_pos_manual = None
+        self.bowl_pos_kinect = None
+        self.head_pos_manual = None
+        self.head_pos_kinect = None
+        
+        self.initCommsForArmReach()                            
+        self.initParamsForArmReach()
+
+        rate = rospy.Rate(100) # 25Hz, nominally.
+        while not rospy.is_shutdown():
+            if self.getJointAngles() != []:
+                print "--------------------------------"
+                print "Current left arm joint angles"
+                print self.getJointAngles()
+                print "Current left arm pose"
+                print self.getEndeffectorPose()
+                print "--------------------------------"
+                break
+            rate.sleep()
+            
+        rospy.loginfo("Arm Reach Action is initialized.")
+                            
+    def initCommsForArmReach(self):
         #Subscribers to publishers of bowl location data
         #MAY NEED TO REMAP ROOT TOPIC NAME GROUP!
-        rospy.Subscriber('hrl_feeding_task/manual_bowl_location',
+        rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
                          PoseStamped, self.bowlPoseManualCallback)
-        rospy.Subscriber('hrl_feeding_task/manual_head_location',
+        rospy.Subscriber('/ar_track_alvar/mouth_pose',
                          PoseStamped, self.headPoseManualCallback)
+        ## rospy.Subscriber('hrl_feeding_task/bowl_location',
+        ##                  PoseStamped, self.bowlPoseManualCallback)
+        ## rospy.Subscriber('hrl_feeding_task/head_location',
+        ##                  PoseStamped, self.headPoseManualCallback)
 
-        rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
-                         PoseStamped, self.bowlPoseKinectCallback)
+        ## rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
+        ##                  PoseStamped, self.bowlPoseKinectCallback)
 
         #rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
+        ## rospy.Subscriber('InterruptAction', String, self.interrupt)
 
-        # service request
-        self.reach_service = rospy.Service('/arm_reach_enable', String_String, self.serverCallback)
-
+        # service
+        self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
         self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
-
-        self.transformer = tf.TransformListener()
-        rospy.Subscriber('InterruptAction', String, self.interrupt)
-        self.interrupted = False
-
-        rArmServersRunning = False
 
         # Service Proxies for controlling right arm
         # Mimicks a built-in function with "Right" appended
         # To make use in code easier and more intuitive
-        try:
-            self.setOrientGoalRight = rospy.ServiceProxy(
-                '/setOrientGoalRightService', PosQuatTimeoutSrv)
-            self.setStopRight = rospy.ServiceProxy(
-                '/setStopRightService', None_Bool)
-            self.setPostureGoalRight = rospy.ServiceProxy(
-                '/setPostureGoalRightService', AnglesTimeoutSrv)
-            print "Connected to right arm server! "
-            rArmServersRunning = True
-        except:
-            print "Oops, can't connect to right arm server!"
-
+        ## try:
+        ##     self.setOrientGoalRight = rospy.ServiceProxy(
+        ##         '/setOrientGoalRightService', PosQuatTimeoutSrv)
+        ##     self.setStopRight = rospy.ServiceProxy(
+        ##         '/setStopRightService', None_Bool)
+        ##     self.setPostureGoalRight = rospy.ServiceProxy(
+        ##         '/setPostureGoalRightService', AnglesTimeoutSrv)
+        ##     print "Connected to right arm server!"
+        ## except:
+        ##     print "Oops, can't connect to right arm server!"        
+            
+        rospy.loginfo("ROS-based communications are set up .")
+                                    
+    def initParamsForArmReach(self):
+        
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
         self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, -1.45, 0]
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
-
-        #Variables...! #
-        armReachAction.iteration = 0
-
-        self.posL = Point()
-        self.quatL = Quaternion()
-        self.posR = Point()
-        self.quatR = Quaternion()
-
-
+        
         #Array of offsets from bowl/head positions
         #Used to perform motions relative to bowl/head positions
         self.leftArmScoopingPos = np.array([[-.015,	0,	  .15],
-                                            [-.015,	0,	-.065], #Moving down into bowl
+                                            [-.015,	0,	-.055], #Moving down into bowl
                                             [.01,	0,	-.045], #Moving forward in bowl
-                                            [0,		0,	  .05], #While rotating spoon to scoop out
+                                            [0,		0,	  .10], #While rotating spoon to scoop out
                                             [0,		0,    .15]]) #Moving up out of bowl
 
         self.leftArmFeedingPos = np.array([[0,    .2,   0],
@@ -106,21 +128,9 @@ class armReachAction(mpcBaseAction):
         self.leftArmStopEulers = np.array([[90, 0, 0]])
 
         #converts the array of eulers to an array of quats
-
         self.leftArmScoopingQuats = self.euler2quatArray(self.leftArmScoopingEulers)
         self.leftArmFeedingQuats = self.euler2quatArray(self.leftArmFeedingEulers)
         self.leftArmStopQuats = self.euler2quatArray(self.leftArmStopEulers)
-
-        #Declares bowl positions options
-        self.bowl_pos_manual = None
-        self.bowl_pos_kinect = None
-        self.head_pos_manual = None
-        self.head_pos_kinect = None
-
-        #How much to offset Kinect provided bowl position
-        self.kinectBowlFoundPosOffsets = [-.08, -.04, 0]
-        #^ MAY BE REDUNDANT SINCE WE CAN ADD/SUBTRACT
-        # ... THESE FROM ARRAY OF OFFSETS FOR SCOOPING!!!
 
         #Timeouts used in setOrientGoal() function for each motion
         self.timeoutsScooping = [6, 3, 3, 2, 2]
@@ -139,56 +149,9 @@ class armReachAction(mpcBaseAction):
         print "leftArmStopQuats -"
         print self.leftArmStopQuats
 
-        try:
-                print "--------------------------------"
-                #raw_input("Register bowl &  head position! Then press Enter \m")
-                #self.tf_lstnr.waitForTransform('/torso_lift_link', 
-                      #'head_frame', rospy.Time.now(), rospy.Duration(10))
-                (self.headPos, self.headQuat) = self.tf_lstnr.lookupTransform('/torso_lift_link', 
-                                                                              'head_frame', 
-                                                                              rospy.Time(0))
-                print "Recived Kinect provided head position: \n"
-                print self.headPos
-                print self.headQuat
-                print "--------------------------------"
-                #raw_input("Press Enter to confirm.")
-                #print "--------------------------------"
-        except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print "Oops, can't get head_frame tf info from Kinect! \n Will try to use manual!"
-
-        rate = rospy.Rate(100) # 25Hz, nominally.
-        while not rospy.is_shutdown():
-            if self.getJointAngles() != []:
-                print "--------------------------------"
-                print "Current left arm joint angles"
-                print self.getJointAngles()
-                print "Current left arm pose"
-                print self.getEndeffectorPose()
-                print "--------------------------------"
-                break
-
-        rospy.spin()
-
-    def interrupt(self, data):
-        print '\n\nAction Interrupted! Event Stop\n\n'
-        print 'Interrupt Data:', data.data
-        self.interrupted = True
-        self.transformer.waitForTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
-        try :
-            gripperPos, gripperRot = self.transformer.lookupTransform('/torso_lift_link', '/l_gripper_tool_frame', rospy.Time(0))
-        except tf.ExtrapolationException:
-            print 'Transpose of gripper failed!'
-            return
-        self.posL.x, self.posL.y, self.posL.z = gripperPos
-        self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = gripperRot
-        # Move spoon backwards if feeding
-        if data.data == 'InterruptHead':
-            self.posL.y += 0.3
-            self.setOrientGoal(self.posL, self.quatL, 1.0)
-        else:
-            self.setOrientGoal(self.posL, self.quatL, 0.05)
-        sys.exit()
-
+        rospy.loginfo("Parameters are loaded.")
+                
+        
     def serverCallback(self, req):
         req = req.data
         self.interrupted = False
@@ -290,7 +253,6 @@ class armReachAction(mpcBaseAction):
             return "Request not understood by server!!!"
 
     def bowlPoseManualCallback(self, data):
-
         self.bowl_frame_manual = data.header.frame_id
         self.bowl_pos_manual = np.matrix([[data.pose.position.x],
             [data.pose.position.y], [data.pose.position.z]])
@@ -322,78 +284,6 @@ class armReachAction(mpcBaseAction):
         self.head_pos_kinect = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
         self.head_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
-
-    # def chooseBowlPose(self):
-
-    #     if self.bowl_pos_kinect is None and self.bowl_pos_manual is not None:
-    #         print "No Kinect provided bowl information, using manually provided bowl information"
-    #         print 'Manually Provided Bowl Pos: '
-    #         print self.bowl_pos_manual
-    #         print 'Manually Provided Bowl Quaternions: '
-    #         print self.bowl_quat_manual
-            
-            
-    #     elif self.bowl_pos_manual is None and self.bowl_pos_kinect is not None:
-    #         print "No manually provided bowl information, using Kinect provided bowl information"
-    #         print 'Kinect Provided Bowl Pos: '
-    #         print self.bowl_pos_kinect
-    #         print 'Kinect Provided Bowl Quaternions: '
-    #         print self.bowl_quat_kinect
-            
-    #     elif self.bowl_pos_manual is not None and self.bowl_pos_kinect is not None:
-    #         which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
-    #         while which_bowl != 'k' and which_bowl != 'm':
-    #             which_bowl = raw_input("Use Kinect or manually provided bowl position? [k/m] ")
-    #         if which_bowl == 'k':
-                
-    #             print 'Kinect Provided Bowl Pos: '
-    #             print self.bowl_pos_kinect
-    #             print 'Kinect Provided Bowl Quaternions: '
-    #             print self.bowl_quat_kinect
-                
-    #             self.bowl_frame = self.bowl_frame_kinect
-    #             self.bowl_pos = self.bowl_pos_kinect
-    #             self.bowl_quat = self.bowl_quat_kinect
-    #         elif which_bowl == 'm':
-                
-    #             print 'Manually Provided Bowl Pos: '
-    #             print self.bowl_pos_manual
-    #             print 'Manually Provided Bowl Quaternions: '
-    #             print self.bowl_quat_manua
-                
-    #             self.bowl_frame = self.bowl_frame_manual
-    #             self.bowl_pos = self.bowl_pos_manual
-    #             self.bowl_frame = self.bowl_quat_manual
-    #     else:
-    #         print "No bowl information available, publish info before running client/run again!! "
-            
-    #         return False
-    #         #sys.exit()
-
-    # def chooseHeadPose(self):
-
-    #     if self.head_pos_kinect is None and self.head_pos_manual is not None:
-    #         print "No Kinect provided head information, using manually provided head information"
-            
-    #     elif self.head_pos_manual is None and self.head_pos_kinect is not None:
-    #         print "No manually provided head information, using Kinect provided head information"
-            
-    #     elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
-    #         which_head = raw_input("Use Kinect or manually provided head position? [k/m] ")
-    #         while which_head != 'k' and which_head != 'm':
-    #             which_head = raw_input("Use Kinect or manually provided head position? [k/m] ")
-    #         if which_head == 'k':
-    #             self.head_frame = self.head_frame_kinect
-    #             self.head_pos = self.head_pos_kinect
-    #             self.head_quat = self.head_quat_kinect
-    #         elif which_bowl == 'm':
-    #             self.head_frame = self.head_frame_manual
-    #             self.head_pos = self.head_pos_manual
-    #             self.head_frame = self.head_quat_manual
-    #     else:
-    #         print "No head information available, publish info before running client/run again!! "
-    #         #sys.exit()
-
 
     def scooping(self):
 
@@ -493,52 +383,6 @@ class armReachAction(mpcBaseAction):
 
         return quatArray
 
-    # def initJoints(self):
-
-    #     initLeft = raw_input("Initialize left arm joint angles? [y/n]")
-    #     if initLeft == 'y':
-    #         initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
-    #         while initKind != 'f' and initKind != 's':
-    #             print "Please enter 'f' or 's' !"
-    #             initKind = raw_input("Iniitialize for feeding or scooping? [f/s]")
-    #         if initKind == 'f':
-    #             print "Initializing left arm for feeding"
-    #             self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
-    #         elif initKind == 's':
-    #             print "Initializing left arm for scooping"
-    #             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
-    #     initRight = raw_input("Initialize right arm joint angles? [y/n]")
-    #     if initRight == 'y':
-    #         initKind = raw_input("Initialize for feeding or scooping? [f/s]")
-    #         while initKind != 'f' and initKind != 's':
-    #             print "Please enter 'f' or 's' !"
-    #             initKind = raw_input("Initialize for scooping or feeding? [f/s]")
-    #         if initKind == 'f':
-    #             print "Initializing right arm for feeding"
-    #             self.setPostureGoalRight(self.rightArmInitialJointAnglesFeeding)
-    #         elif initKind == 's':
-    #             print "Initializing right arm for scooping"
-    #             self.setPostureGoalRight(self.rightArmInitialJointAnglesScooping)
-    #     print "initialization completed"
-
-    # def run(self):
-
-    #     whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-    #     while whichTask != 's' and whichTask != 'f' and whichTask != 'x':
-    #         print "Please enter 's' or 'f' or 'x' ! "
-    #         whichTask = raw_input("Run scooping, feeding, or exit? [s/f/x] ")
-    #     if whichTask == 's':
-    #         print "Running scooping! "
-    #         self.scooping()
-    #     elif whichTask == 'f':
-    #         print "Running feeding! "
-    #         self.feeding()
-    #     elif whichTask == 'x':
-    #         print "Exiting program! "
-    #         sys.exit()
-
-    #         return True
-
 if __name__ == '__main__':
 
     import optparse
@@ -550,15 +394,7 @@ if __name__ == '__main__':
     d_robot    = 'pr2'
     controller = 'static'
     #controller = 'actionlib'
-    #arm        = 'l'
-
-    #try:
-        #arm = opt.arm1 
-        #added/changed due to new launch file controlling both arms (arm1, arm2)
-    #except:
-        #arm = opt.arm
-
-    arm = 'l'
+    arm        = 'l'
 
     rospy.init_node('arm_reacher_feeding')
     ara = armReachAction(d_robot, controller, arm)

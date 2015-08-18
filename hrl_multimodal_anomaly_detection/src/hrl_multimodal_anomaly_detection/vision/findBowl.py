@@ -4,7 +4,7 @@ import rospy
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import numpy as np
-import threading, copy
+import os, threading, copy
 
 import PyKDL
 
@@ -229,7 +229,12 @@ class arTagDetector:
             pos2 = np.array([[f.p[0] + z_axis[0], f.p[1] + z_axis[1], f.p[2] + z_axis[2]]]).T
             self.draw_bowl_cen_arrow.pub_arrow(pos1, pos2, [0.0, 1.0, 0.0, 0.7], str(0.0))
 
-    def setCalibration(self):
+    def getCalibration(self, filename='bowl_frame.pkl'):
+        if os.path.isfile(filename) == False: return False
+        
+        d = ut.load_pickle(filename)        
+        self.bowl_cen_frame_off = d['frame']
+        
         self.bowl_calib = True
         print "------------------------------------"
         print "Calibration complete! - bowl_cen offset"
@@ -237,8 +242,20 @@ class arTagDetector:
         print "P: ", self.bowl_cen_frame_off.p
         print "M: ", self.bowl_cen_frame_off.M
         print "------------------------------------"
+        return True
+            
+    def setCalibration(self, filename='bowl_frame.pkl'):
+        self.bowl_calib = True
+        print "------------------------------------"
+        print "Calibration complete! - bowl_cen offset"
+        print "------------------------------------"
+        print "P: ", self.bowl_cen_frame_off.p
+        print "M: ", self.bowl_cen_frame_off.M
+        print "------------------------------------"
+        d = {}
+        d['frame'] = self.bowl_cen_frame_off        
+        ut.save_pickle(d,filename)        
        
-
     def pubBowlcenPose(self):
 
         f = self.bowl_frame * self.bowl_cen_frame_off
@@ -261,21 +278,33 @@ class arTagDetector:
 if __name__ == '__main__':
     rospy.init_node('ar_tag_bowl_cen_estimation')
 
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--renew', action='store_true', dest='bRenew',
+                 default=False, help='Renew frame pickle files.')
+    opt, args = p.parse_args()
+
+    
     total_tags = 1
     tag_id = 10
     tag_side_length = 0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18
-    
+
+    save_file = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/params/ar_tag/bowl_offsetframe.pkl' 
+        
     atd = arTagDetector(tag_id, tag_side_length, pos_thres)
-    
+
+    if opt.bRenew == False:
+        if atd.getCalibration(save_file) == False: opt.bRenew=True
+            
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
         ## ret = input("Is bowl tag fine? ")
-        if atd.bowl_calib == False:
+        if atd.bowl_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is bowl tag fine? (y: yes, n: no)')
-            if ret == 'y': atd.setCalibration()
+            if ret == 'y': atd.setCalibration(save_file)
             
         
         rate.sleep()
