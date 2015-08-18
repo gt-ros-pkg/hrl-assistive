@@ -28,6 +28,15 @@ def forceKinematics(fileName, audioTimes):
 
         # Use magnitude of forces
         forces = np.linalg.norm(force, axis=1).flatten()
+        print 'forces shape:', forces.shape
+        print forces[:10]
+        print forces[-10:]
+        print np.shape(kinematicsTimes)
+        print kinematicsTimes[-10:]
+        print np.shape(forceTimes)
+        print forceTimes[-10:]
+        print np.shape(audioTimes)
+        print audioTimes[-10:]
         distances = []
         angles = []
 
@@ -45,15 +54,7 @@ def forceKinematics(fileName, audioTimes):
             angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
             angles.append(angle)
 
-        # There will be much more audio data than force and kinematics, so interpolate to fill in the gaps
-        distInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
-        angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
-        forceInterp = interpolate.splrep(forceTimes, forces, s=0)
-        distances = interpolate.splev(audioTimes, distInterp, der=0)
-        angles = interpolate.splev(audioTimes, angleInterp, der=0)
-        forces = interpolate.splev(audioTimes, forceInterp, der=0)
-
-        return forces, distances, angles
+        return forces, distances, angles, kinematicsTimes, forceTimes
 
 def get_rms(block):
     # RMS amplitude is defined as the square root of the
@@ -138,12 +139,20 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     for fileName, iterations in zip(fileNames, iterationSets):
         for i in iterations:
             name = fileName % i # Insert iteration value into filename
-            audio, times = audioFeatures(name)
-            forces, distances, angles = forceKinematics(name, times)
+            audio, audioTimes = audioFeatures(name)
+            forces, distances, angles, kinematicsTimes, forceTimes = forceKinematics(name, audioTimes)
+
+            # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
+            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
+            forceInterp = interpolate.splrep(forceTimes, forces, s=0)
+            audioInterp = interpolate.splrep(audioTimes, audio, s=0)
+            forces = interpolate.splev(kinematicsTimes, forceInterp, der=0)
+            audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
+
             forcesTrueList.append(forces.tolist())
-            distancesTrueList.append(distances.tolist())
-            anglesTrueList.append(angles.tolist())
-            audioTrueList.append(audio)
+            distancesTrueList.append(distances)
+            anglesTrueList.append(angles)
+            audioTrueList.append(audio.tolist())
 
             if minVals is None:
                 minVals = []
@@ -172,7 +181,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
             audioList.append(audio.tolist())
-            timesList.append(times)
+            timesList.append(kinematicsTimes)
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
@@ -242,28 +251,34 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
     return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
 
 def dataFiles():
-    fileNamesTrain = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
-    iterationSetsTrain = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
+    # fileNamesTrain = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
+    # iterationSetsTrain = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
 
-    fileNamesTest = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage1Anomalous_scooping_fvk_07-27-2015_14-17-52/iteration_%d_failure.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage2Anomalous_scooping_fvk_07-27-2015_14-31-42/iteration_%d_failure.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage3Anomalous_scooping_fvk_07-27-2015_14-47-24/iteration_%d_failure.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage4Anomalous_scooping_fvk_07-27-2015_15-09-00/iteration_%d_failure.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage5Anomalous_scooping_fvk_07-27-2015_15-27-51/iteration_%d_failure.pkl',
-                 '/home/zerickson/Recordings/bowl3Stage6Anomalous_scooping_fvk_07-27-2015_15-49-27/iteration_%d_failure.pkl']
-    iterationSetsTest = [xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), [3],
-                     xrange(2, 4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
+    fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/try3_scooping_fak_08-18-2015_09-35-47/iteration_%d_success.pkl']
+    iterationSetsTrain = [xrange(1)]
+
+    fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/try3_scooping_fak_08-18-2015_09-35-47/iteration_%d_success.pkl']
+    iterationSetsTest = [xrange(1)]
+
+    # fileNamesTest = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage1Anomalous_scooping_fvk_07-27-2015_14-17-52/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage2Anomalous_scooping_fvk_07-27-2015_14-31-42/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage3Anomalous_scooping_fvk_07-27-2015_14-47-24/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage4Anomalous_scooping_fvk_07-27-2015_15-09-00/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage5Anomalous_scooping_fvk_07-27-2015_15-27-51/iteration_%d_failure.pkl',
+    #              '/home/zerickson/Recordings/bowl3Stage6Anomalous_scooping_fvk_07-27-2015_15-49-27/iteration_%d_failure.pkl']
+    # iterationSetsTest = [xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), [3],
+    #                  xrange(2, 4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
 
     return fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest
 
@@ -301,7 +316,7 @@ def trainMultiHMM():
     # plots.distributionOfSequences()
 
     # Plot modalities
-    # plots.quickPlotModalities()
+    plots.quickPlotModalities()
 
     # Setup training data
     forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)

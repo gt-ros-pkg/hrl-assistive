@@ -14,8 +14,8 @@ class SwhRecorder:
     
     def __init__(self):
         """minimal garb is executed when class is loaded."""
-        self.RATE=48100
-        self.BUFFERSIZE=2**12 #1024 is a good buffer size
+        self.RATE=44100
+        self.BUFFERSIZE=2**10 #1024 is a good buffer size
         self.secToRecord=.1
         self.threadsDieNow=False
         self.newAudio=False

@@ -7,8 +7,8 @@ import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 
-# CHUNK = 4096 for PR2
-CHUNK   = 1024 # frame per buffer
+CHUNK = 4096 #for PR2
+#CHUNK   = 1024 # frame per buffer
 RATE    = 44100 # sampling rate
 UNIT_SAMPLE_TIME = 1.0 / float(RATE)
 CHANNEL = 2 # number of channels
@@ -23,7 +23,7 @@ def find_input_device():
         devinfo = p.get_device_info_by_index(i)
         print 'Device %d: %s'%(i, devinfo['name'])
 
-        for keyword in ['mic', 'input']:
+        for keyword in ['mic', 'input', 'icicle']:
             if keyword in devinfo['name'].lower():
                 print 'Found an input: device %d - %s' % (i, devinfo['name'])
                 device_index = i

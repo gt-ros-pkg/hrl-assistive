@@ -49,7 +49,7 @@ class ADL_log:
 
         self.ft = tool_ft('/netft_data') if ft else None
         self.audio = tool_audio_slim() if audio else None
-        self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=(task == 's')) if kinematics else None
+        self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=self.isScooping) if kinematics else None
 
         # File saving
         self.iteration = 0
@@ -86,6 +86,13 @@ class ADL_log:
         data = dict()
         data['init_time'] = self.init_time
 
+        if self.kinematics:
+            self.kinematics.cancel()
+            data['kinematics_time']  = self.kinematics.time_data
+            data['kinematics_data'] = self.kinematics.kinematics_data
+
+        time.sleep(0.01)
+
         if self.ft is not None:
             self.ft.cancel()
             ## data['force'] = self.ft.force_data
@@ -102,19 +109,13 @@ class ADL_log:
             data['audio_time']  = self.audio.time_data
             data['audio_data_raw'] = self.audio.audio_data_raw
 
-        # TODO use visual_ar that contains: mic, spoon, objectCenter, (targetTrans, targetRot)
-        if self.kinematics:
-            self.kinematics.cancel()
-            data['kinematics_time']  = self.kinematics.time_data
-            data['kinematics_data'] = self.kinematics.kinematics_data
-
         data['scooping_steps_times'] = self.scooping_steps_times
         self.scooping_steps_times = []
 
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1': status = 'success'
         elif flag == '2': status = 'failure'
-        elif flag == '3': sys.exit()
+        elif flag == '3': sys.exit(0)
         else: status = flag
 
         if not os.path.exists(self.folderName):
@@ -137,7 +138,7 @@ class ADL_log:
         if self.audio is not None:
             self.audio = tool_audio_slim()
         if self.kinematics is not None:
-            self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=(task == 's'))
+            self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=self.isScooping)
 
         gc.collect()
 

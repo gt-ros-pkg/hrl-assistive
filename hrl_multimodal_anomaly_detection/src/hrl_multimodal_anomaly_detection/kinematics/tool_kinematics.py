@@ -40,7 +40,7 @@ class tool_kinematics(Thread):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
 
-        rate = rospy.Rate(1000) # 25Hz, nominally.
+        rate = rospy.Rate(100) # 25Hz, nominally.
         while not self.cancelled:
             self.log()
             rate.sleep()
@@ -82,4 +82,4 @@ class tool_kinematics(Thread):
         """End this timer thread"""
         self.cancelled = True
         self.objectCenterSub.unregister()
-        rospy.sleep(1.0)
+        # rospy.sleep(1.0)
