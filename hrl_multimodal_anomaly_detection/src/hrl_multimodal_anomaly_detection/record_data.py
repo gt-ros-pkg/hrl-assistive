@@ -86,6 +86,13 @@ class ADL_log:
         data = dict()
         data['init_time'] = self.init_time
 
+        if self.kinematics:
+            self.kinematics.cancel()
+            data['kinematics_time']  = self.kinematics.time_data
+            data['kinematics_data'] = self.kinematics.kinematics_data
+
+        time.sleep(0.01)
+
         if self.ft is not None:
             self.ft.cancel()
             ## data['force'] = self.ft.force_data
@@ -101,12 +108,6 @@ class ADL_log:
             data['audio_sample_time'] = self.audio.UNIT_SAMPLE_TIME
             data['audio_time']  = self.audio.time_data
             data['audio_data_raw'] = self.audio.audio_data_raw
-
-        time.sleep(0.01)
-        if self.kinematics:
-            self.kinematics.cancel()
-            data['kinematics_time']  = self.kinematics.time_data
-            data['kinematics_data'] = self.kinematics.kinematics_data
 
         data['scooping_steps_times'] = self.scooping_steps_times
         self.scooping_steps_times = []
