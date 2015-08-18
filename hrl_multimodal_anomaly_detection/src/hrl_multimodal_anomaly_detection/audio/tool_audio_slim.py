@@ -72,7 +72,7 @@ class tool_audio_slim(Thread):
         self.cancelled = True
         self.stream.stop_stream()
         self.stream.close()
-        rospy.sleep(0.25)
+        rospy.sleep(1.0)
 
     def reset(self):
         pass
