@@ -49,7 +49,7 @@ class ADL_log:
 
         self.ft = tool_ft('/netft_data') if ft else None
         self.audio = tool_audio_slim() if audio else None
-        self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=(task == 's')) if kinematics else None
+        self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=self.isScooping) if kinematics else None
 
         # File saving
         self.iteration = 0
@@ -137,7 +137,7 @@ class ADL_log:
         if self.audio is not None:
             self.audio = tool_audio_slim()
         if self.kinematics is not None:
-            self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=(task == 's'))
+            self.kinematics = tool_kinematics(self.tf_listener, targetFrame='/torso_lift_link', isScooping=self.isScooping)
 
         gc.collect()
 
