@@ -256,7 +256,7 @@ class armReachAction(mpcBaseAction):
             return "Finished feeding!"
 
         else:
-            return "Request not understood by server!!!"
+            return '\'' + req + "' Request not understood by server!!!"
 
     def bowlPoseManualCallback(self, data):
         self.bowl_frame_manual = data.header.frame_id
