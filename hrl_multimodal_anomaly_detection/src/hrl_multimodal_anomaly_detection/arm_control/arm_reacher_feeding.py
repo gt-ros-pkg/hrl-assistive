@@ -242,8 +242,12 @@ class armReachAction(mpcBaseAction):
                 return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
 
         elif req == "runScooping":
-            self.scooping()
+            self.scooping(xrange(1, 5))
             return "Finished scooping!"
+
+        elif req == 'initArmScooping':
+            self.scooping([0])
+            return 'Initialized'
 
         elif req == "runFeeding":
             self.feeding()
@@ -285,7 +289,7 @@ class armReachAction(mpcBaseAction):
         self.head_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
             [data.pose.orientation.z], [data.pose.orientation.w]])
 
-    def scooping(self):
+    def scooping(self, iterations):
 
         #self.chooseBowlPose()
 
@@ -295,7 +299,7 @@ class armReachAction(mpcBaseAction):
                           '#4 Scooping in bowl...',
                           '#5 Moving out of bowl...']
 
-        for i in xrange(len(self.pausesScooping)):
+        for i in xrange(iterations):
             print "Scooping step #%d " % i
             print scoopingPrints[i]
             self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[i][0],
