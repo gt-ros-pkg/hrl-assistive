@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import sys
-import time
+import sys, time, copy
 import rospy
 import numpy as np
 
@@ -18,6 +17,7 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv, String_String
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
+import PyKDL
 
 class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm):
@@ -35,8 +35,8 @@ class armReachAction(mpcBaseAction):
         #Declares bowl positions options ## looks redundant variables
         self.bowl_pos_manual = None
         self.bowl_pos_kinect = None
-        self.head_pos_manual = None
-        self.head_pos_kinect = None
+        self.mouth_pos_manual = None
+        self.mouth_pos_kinect = None
         
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
@@ -61,11 +61,11 @@ class armReachAction(mpcBaseAction):
         rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
                          PoseStamped, self.bowlPoseManualCallback)
         rospy.Subscriber('/ar_track_alvar/mouth_pose',
-                         PoseStamped, self.headPoseManualCallback)
+                         PoseStamped, self.mouthPoseManualCallback)
         ## rospy.Subscriber('hrl_feeding_task/bowl_location',
         ##                  PoseStamped, self.bowlPoseManualCallback)
-        ## rospy.Subscriber('hrl_feeding_task/head_location',
-        ##                  PoseStamped, self.headPoseManualCallback)
+        ## rospy.Subscriber('hrl_feeding_task/mouth_location',
+        ##                  PoseStamped, self.mouthPoseManualCallback)
 
         ## rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
         ##                  PoseStamped, self.bowlPoseKinectCallback)
@@ -102,17 +102,21 @@ class armReachAction(mpcBaseAction):
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
         
-        #Array of offsets from bowl/head positions
-        #Used to perform motions relative to bowl/head positions
+        #Array of offsets from bowl/mouth positions
+        #Used to perform motions relative to bowl/mouth positions > It should use relative frame
         self.leftArmScoopingPos = np.array([[-.015,	0,	  .15],
                                             [-.015,	0,	-.055], #Moving down into bowl
-                                            [.01,	0,	-.045], #Moving forward in bowl
+                                            [.01,	0,	-.035], #Moving forward in bowl
                                             [0,		0,	  .10], #While rotating spoon to scoop out
                                             [0,		0,    .15]]) #Moving up out of bowl
 
-        self.leftArmFeedingPos = np.array([[0,    .2,   0],
-                                           [0,   -.015,   .02],
-                                           [0,    .2,   0]])
+        # It uses the l_gripper_spoon_frame aligned with mouth
+        self.leftArmFeedingPos = np.array([[-0.2, 0, 0],
+                                           [0.0, 0, 0],
+                                           [-0.2, 0, 0]])
+        ## self.leftArmFeedingPos = np.array([[0,    .2,   0],
+        ##                                    [0,   -.015,   .02],
+        ##                                    [0,    .2,   0]])
 
         self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
                                                [90,	-50,	-30], #Moving down into bowl
@@ -125,7 +129,7 @@ class armReachAction(mpcBaseAction):
                                               [90, 0, -75]])
 
         self.leftArmStopPos = np.array([[.7, .7, .5]])
-        self.leftArmStopEulers = np.array([[90, 0, 0]])
+        self.leftArmStopEulers = np.array([[90.0, 0, 0]])
 
         #converts the array of eulers to an array of quats
         self.leftArmScoopingQuats = self.euler2quatArray(self.leftArmScoopingEulers)
@@ -134,12 +138,12 @@ class armReachAction(mpcBaseAction):
 
         #Timeouts used in setOrientGoal() function for each motion
         self.timeoutsScooping = [6, 3, 3, 2, 2]
-        self.timeoutsFeeding = [3, 1.5, 3]
+        self.timeoutsFeeding = [3, 3, 3]
 
         #Paused used between each motion
         #... for automatic movement
         self.pausesScooping = [0, 0, 0, 0, 0]
-        self.pausesFeeding = [2, 0, 2]
+        self.pausesFeeding = [2., 5., 2.]
 
         print "Calculated quaternions: \n"
         print "leftArmScoopingQuats -"
@@ -164,21 +168,19 @@ class armReachAction(mpcBaseAction):
             self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
             self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
             self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
-            self.leftArmFeedingQuats[0][1],
-            self.leftArmFeedingQuats[0][2],
-            self.leftArmFeedingQuats[0][3])
+                                                                      self.leftArmFeedingQuats[0][1],
+                                                                      self.leftArmFeedingQuats[0][2],
+                                                                      self.leftArmFeedingQuats[0][3])
             self.setOrientGoal(self.posL, self.quatL, 10)
             return "Initialized left arm for feeding!"
 
         elif req == "leftArmInitFeeding2":
-            self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[0][0],
-                self.head_pos[1] + self.leftArmFeedingPos[0][1],
-                self.head_pos[2] + self.leftArmFeedingPos[0][2])
-            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
-            self.leftArmFeedingQuats[0][1],
-            self.leftArmFeedingQuats[0][2],
-            self.leftArmFeedingQuats[0][3])
-            self.setOrientGoal(self.posL, self.quatL, 3)
+        ##     self.posL.x, self.posL.y, self.posL.z = (self.mouth_pos[0], self.mouth_pos[1], self.mouth_pos[2])
+        ##     self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
+        ##                                                               self.leftArmFeedingQuats[0][1],
+        ##                                                               self.leftArmFeedingQuats[0][2],
+        ##                                                               self.leftArmFeedingQuats[0][3])
+        ##     self.setOrientGoal(self.posL, self.quatL, 3)
             return "Initialized left arm for feeding!"
 
         elif req == "rightArmInitScooping":
@@ -198,11 +200,11 @@ class armReachAction(mpcBaseAction):
                 return "both"
 
         elif req == "getHeadPosType":
-            if self.head_pos_kinect is None and self.head_pos_manual is not None:
+            if self.mouth_pos_kinect is None and self.mouth_pos_manual is not None:
                 return "manual"
-            elif self.head_pos_manual is None and self.head_pos_kinect is not None:
+            elif self.mouth_pos_manual is None and self.mouth_pos_kinect is not None:
                 return "kinect"
-            elif self.head_pos_manual is not None and self.head_pos_kinect is not None:
+            elif self.mouth_pos_manual is not None and self.mouth_pos_kinect is not None:
                 return "both"
 
         elif req == "chooseManualBowlPos":
@@ -224,19 +226,19 @@ class armReachAction(mpcBaseAction):
                 return "No kinect bowl position available! \n Code won't work! \n Provide bowl position and try again!"
 
         elif req == "chooseManualHeadPos":
-            if self.head_pos_manual is not None:
-                self.head_frame = self.head_frame_manual
-                self.head_pos = self.head_pos_manual
-                self.head_quat = self.head_quat_manual
+            if self.mouth_pos_manual is not None:
+                self.mouth_frame = self.mouth_frame_manual
+                self.mouth_pos = self.mouth_pos_manual
+                self.mouth_quat = self.mouth_quat_manual
                 return "Chose manual head position"
             else:
                 return "No manual head position available! \n Code won't work! \n Provide head position and try again!"
 
         elif req == "chooseKinectHeadPos":
-            if self.head_pos_kinect is not None:
-                self.head_frame = self.head_frame_kinect
-                self.head_pos = self.head_pos_kinect
-                self.head_quat = self.head_quat_kinect
+            if self.mouth_pos_kinect is not None:
+                self.mouth_frame = self.mouth_frame_kinect
+                self.mouth_pos = self.mouth_pos_kinect
+                self.mouth_quat = self.mouth_quat_kinect
                 return "Chose kinect head position"
             else:
                 return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
@@ -258,36 +260,34 @@ class armReachAction(mpcBaseAction):
 
     def bowlPoseManualCallback(self, data):
         self.bowl_frame_manual = data.header.frame_id
-        self.bowl_pos_manual = np.matrix([[data.pose.position.x],
-            [data.pose.position.y], [data.pose.position.z]])
-        self.bowl_quat_manual = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
-            [data.pose.orientation.z], [data.pose.orientation.w]])
+        self.bowl_pos_manual = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+        self.bowl_quat_manual = np.array([data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, 
+                                          data.pose.orientation.w])
 
     def bowlPoseKinectCallback(self, data):
 
         #Takes in a PointStamped() type message, contains Header() and Pose(),
         #from Kinect bowl location publisher
         self.bowl_frame_kinect = data.header.frame_id
-        self.bowl_pos_kinect = np.matrix([[data.pose.position.x + self.kinectBowlFoundPosOffsets[0]],
-            [data.pose.position.y + self.kinectBowlFoundPosOffsets[1]],
-            [data.pose.position.z + self.kinectBowlFoundPosOffsets[2]]])
-        self.bowl_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
-            [data.pose.orientation.z], [data.pose.orientation.w]])
+        self.bowl_pos_kinect = np.array([data.pose.position.x + self.kinectBowlFoundPosOffsets[0],
+                                         data.pose.position.y + self.kinectBowlFoundPosOffsets[1],
+                                         data.pose.position.z + self.kinectBowlFoundPosOffsets[2]])
+        self.bowl_quat_kinect = np.array([data.pose.orientation.x, data.pose.orientation.y,
+                                          data.pose.orientation.z, data.pose.orientation.w])
+        
+    def mouthPoseManualCallback(self, data):
 
-    def headPoseManualCallback(self, data):
+        self.mouth_frame_manual = data.header.frame_id
+        self.mouth_pos_manual = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+        self.mouth_quat_manual = np.array([data.pose.orientation.x, data.pose.orientation.y,
+                                           data.pose.orientation.z, data.pose.orientation.w])
 
-        self.head_frame_manual = data.header.frame_id
-        self.head_pos_manual = np.matrix([[data.pose.position.x], 
-        [data.pose.position.y], [data.pose.position.z]])
-        self.head_quat_manual = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
-            [data.pose.orientation.z], [data.pose.orientation.w]])
+    def mouthPoseKinectCallback(self, data):
 
-    def headPoseKinectCallback(self, data):
-
-        self.head_frame_kinect = data.header.frame_id
-        self.head_pos_kinect = np.matrix([data.pose.position.x, data.pose.position.y, data.pose.position.z])
-        self.head_quat_kinect = np.matrix([[data.pose.orientation.x], [data.pose.orientation.y],
-            [data.pose.orientation.z], [data.pose.orientation.w]])
+        self.mouth_frame_kinect = data.header.frame_id
+        self.mouth_pos_kinect = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+        self.mouth_quat_kinect = np.array([data.pose.orientation.x, data.pose.orientation.y,
+                                           data.pose.orientation.z, data.pose.orientation.w])
 
     def scooping(self, iterations):
 
@@ -329,16 +329,31 @@ class armReachAction(mpcBaseAction):
                           '#2 Moving into mouth...',
                           '#3 Moving away from mouth...']
 
+        mouth_pos = copy.deepcopy(self.mouth_pos_manual)
+        mouth_quat = copy.deepcopy(self.mouth_quat_manual)
+
         for i in xrange(len(self.pausesFeeding)):
             print 'Feeding step #%d ' % i
             print feedingPrints[i]
-            self.posL.x, self.posL.y, self.posL.z = (self.head_pos[0] + self.leftArmFeedingPos[i][0],
-                self.head_pos[1] + self.leftArmFeedingPos[i][1],
-                self.head_pos[2] + self.leftArmFeedingPos[i][2])
-            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[i][0],
-                self.leftArmFeedingQuats[i][1],
-                self.leftArmFeedingQuats[i][2],
-                self.leftArmFeedingQuats[i][3])
+
+            mouth_rot = PyKDL.Rotation.Quaternion(mouth_quat[0], mouth_quat[1], mouth_quat[2], mouth_quat[3])
+
+            spoon_x = -mouth_rot.UnitZ()
+            spoon_y = PyKDL.Vector(0, 0, 1.0)
+            spoon_z = spoon_x * spoon_y
+            spoon_y = spoon_z * spoon_x
+            spoon_rot = PyKDL.Rotation(spoon_x, spoon_y, spoon_z)
+
+            spoon_offset = PyKDL.Vector(self.leftArmFeedingPos[i][0], self.leftArmFeedingPos[i][1], self.leftArmFeedingPos[i][2])
+            spoon_offset = spoon_rot * spoon_offset
+
+            self.posL.x, self.posL.y, self.posL.z = (mouth_pos[0] + spoon_offset[0],
+                                                     mouth_pos[1] + spoon_offset[1],
+                                                     mouth_pos[2] + spoon_offset[2])
+            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (spoon_rot.GetQuaternion()[0],
+                                                                      spoon_rot.GetQuaternion()[1],
+                                                                      spoon_rot.GetQuaternion()[2],
+                                                                      spoon_rot.GetQuaternion()[3])
 
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
