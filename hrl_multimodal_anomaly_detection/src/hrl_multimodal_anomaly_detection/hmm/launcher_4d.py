@@ -89,15 +89,6 @@ def audioFeatures(fileName):
 
         # TODO There may be a lot more audio data than other modalities, so interpote other modalities accordingly
 
-        # Constant (horizontal linear) interpolation
-        # tempPdf = []
-        # visualIndex = 0
-        # for forceTime in forceTimes:
-        #     if forceTime > visualTimes[visualIndex + 1] and visualIndex < len(visualTimes) - 2:
-        #         visualIndex += 1
-        #     tempPdf.append(pdf[visualIndex])
-        # pdf = tempPdf
-
         return magnitudes, audioTimes
 
 def create_mvpa_dataset(aXData1, aXData2, aXData3, aXData4, chunks, labels):
@@ -145,9 +136,18 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
             print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
             forceInterp = interpolate.splrep(forceTimes, forces, s=0)
-            audioInterp = interpolate.splrep(audioTimes, audio, s=0)
+            # audioInterp = interpolate.splrep(audioTimes, audio, s=0)
             forces = interpolate.splev(kinematicsTimes, forceInterp, der=0)
-            audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
+            # audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
+
+            # Constant (horizontal linear) interpolation for audio data
+            tempAudio = []
+            audioIndex = 0
+            for t in kinematicsTimes:
+                if t > audioTimes[audioIndex + 1] and audioIndex < len(audioTimes) - 2:
+                    audioIndex += 1
+                tempAudio.append(audio[audioIndex])
+            audio = tempAudio
 
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances)
