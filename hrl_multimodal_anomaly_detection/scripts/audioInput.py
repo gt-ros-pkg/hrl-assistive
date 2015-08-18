@@ -7,6 +7,7 @@ import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 
+# CHUNK = 4096 for PR2
 CHUNK   = 1024 # frame per buffer
 RATE    = 44100 # sampling rate
 UNIT_SAMPLE_TIME = 1.0 / float(RATE)
@@ -58,6 +59,7 @@ def get_rms(block):
 
 deviceIndex = find_input_device()
 print 'Audio device:', deviceIndex
+print 'Sample rate:', p.get_device_info_by_index(0)['defaultSampleRate']
 
 stream = p.open(format=FORMAT, channels=CHANNEL, rate=RATE, input=True, frames_per_buffer=CHUNK, input_device_index=deviceIndex)
 # stream.start_stream()

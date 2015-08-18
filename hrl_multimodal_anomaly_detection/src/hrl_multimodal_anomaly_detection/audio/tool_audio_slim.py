@@ -6,7 +6,7 @@ from threading import Thread
 
 class tool_audio_slim(Thread):
     MAX_INT = 32768.0
-    CHUNK   = 1024 #frame per buffer
+    CHUNK   = 4096 #frame per buffer
     RATE    = 44100 #sampling rate
     UNIT_SAMPLE_TIME = 1.0 / float(RATE)
     CHANNEL = 2 #number of channels
@@ -25,10 +25,11 @@ class tool_audio_slim(Thread):
         self.p = pyaudio.PyAudio()
         deviceIndex = self.find_input_device()
         print 'Audio device:', deviceIndex
+        print 'Sample rate:', self.p.get_device_info_by_index(0)['defaultSampleRate']
 
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
-        rospy.logout('Done subscribing audio')
-        print 'Done subscribing audio'
+        # rospy.logout('Done subscribing audio')
+        # print 'Done subscribing audio'
 
     def find_input_device(self):
         device_index = None

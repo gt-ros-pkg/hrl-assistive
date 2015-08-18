@@ -30,7 +30,7 @@ class dataRecord:
             print "Exiting program!"
             sys.exit()
 
-        isOnline = raw_input("Perform online anomaly detection? [y] ('n' for data recording): ")
+        isOnline = raw_input("Perform online anomaly detection? [y] ('n' for data recording): ") == 'y'
         if isOnline:
             self.log = onlineRecordData.ADL_log(isScooping=(self.task == 's'), useAudio=self.AUDIO)
         else:
