@@ -121,14 +121,22 @@ class ADL_log:
         if not os.path.exists(self.folderName):
             os.makedirs(self.folderName)
         fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
-        
+
+        print 'Saving to', fileName
+
         #Send trial name to audio recording server!
         # if self.audio is not None:
         #     self.audioTrialName(fileName)
 
-        with open(fileName, 'wb') as f:
-            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-        print 'Data saved to', fileName
+        try:
+            with open(fileName, 'wb') as f:
+                pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+            print 'Data saved to', fileName
+        except:
+            print 'Saving data failed, trying again'
+            with open(fileName, 'wb') as f:
+                pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+            print 'Data saved to', fileName
 
         self.iteration += 1
 
