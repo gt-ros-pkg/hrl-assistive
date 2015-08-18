@@ -7,9 +7,9 @@ import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 
-CHUNK = 4096 #for PR2
+CHUNK = 1024 #for PR2
 #CHUNK   = 1024 # frame per buffer
-RATE    = 44100 # sampling rate
+RATE    = 48000 # sampling rate
 UNIT_SAMPLE_TIME = 1.0 / float(RATE)
 CHANNEL = 2 # number of channels
 FORMAT  = pyaudio.paInt16
@@ -58,8 +58,10 @@ def get_rms(block):
 
 
 deviceIndex = find_input_device()
+devInfo = p.get_device_info_by_index(deviceIndex)
 print 'Audio device:', deviceIndex
-print 'Sample rate:', p.get_device_info_by_index(0)['defaultSampleRate']
+print 'Sample rate:', devInfo['defaultSampleRate']
+print 'Max input channels:',  devInfo['maxInputChannels']
 
 stream = p.open(format=FORMAT, channels=CHANNEL, rate=RATE, input=True, frames_per_buffer=CHUNK, input_device_index=deviceIndex)
 # stream.start_stream()
@@ -68,10 +70,13 @@ start = time.time()
 times = []
 audioAmp = []
 def log():
-    data = stream.read(CHUNK)
-    times.append(time.time() - start)
-    amplitude = get_rms(data)
-    audioAmp.append(amplitude)
+    try:
+        data = stream.read(CHUNK)
+        times.append(time.time() - start)
+        amplitude = get_rms(data)
+        audioAmp.append(amplitude)
+    except:
+        print 'Audio read error'
 
 while time.time() - start < 5:
     log()
