@@ -102,7 +102,7 @@ class ADL_log:
             data['audio_time']  = self.audio.time_data
             data['audio_data_raw'] = self.audio.audio_data_raw
 
-        # TODO use visual_ar that contains: mic, spoon, objectCenter, (targetTrans, targetRot)
+        time.sleep(0.01)
         if self.kinematics:
             self.kinematics.cancel()
             data['kinematics_time']  = self.kinematics.time_data

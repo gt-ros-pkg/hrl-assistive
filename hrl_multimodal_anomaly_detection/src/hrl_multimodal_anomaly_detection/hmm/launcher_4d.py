@@ -54,18 +54,7 @@ def forceKinematics(fileName, audioTimes):
             angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
             angles.append(angle)
 
-        # There will be much more audio data than force and kinematics, so interpolate to fill in the gaps
-        distInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
-        angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
-        forceInterp = interpolate.splrep(forceTimes, forces, s=0)
-        distances = interpolate.splev(audioTimes, distInterp, der=0)
-        angles = interpolate.splev(audioTimes, angleInterp, der=0)
-        forces = interpolate.splev(audioTimes, forceInterp, der=0)
-        print 'forces shape:', forces.shape
-        print forces[:10]
-        print forces[-10:]
-
-        return forces, distances, angles
+        return forces, distances, angles, kinematicsTimes, forceTimes
 
 def get_rms(block):
     # RMS amplitude is defined as the square root of the
@@ -150,12 +139,20 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
     for fileName, iterations in zip(fileNames, iterationSets):
         for i in iterations:
             name = fileName % i # Insert iteration value into filename
-            audio, times = audioFeatures(name)
-            forces, distances, angles = forceKinematics(name, times)
+            audio, audioTimes = audioFeatures(name)
+            forces, distances, angles, kinematicsTimes, forceTimes = forceKinematics(name, audioTimes)
+
+            # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
+            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
+            forceInterp = interpolate.splrep(forceTimes, forces, s=0)
+            audioInterp = interpolate.splrep(audioTimes, audio, s=0)
+            forces = interpolate.splev(kinematicsTimes, forceInterp, der=0)
+            audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
+
             forcesTrueList.append(forces.tolist())
-            distancesTrueList.append(distances.tolist())
-            anglesTrueList.append(angles.tolist())
-            audioTrueList.append(audio)
+            distancesTrueList.append(distances)
+            anglesTrueList.append(angles)
+            audioTrueList.append(audio.tolist())
 
             if minVals is None:
                 minVals = []
@@ -184,7 +181,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
             audioList.append(audio.tolist())
-            timesList.append(times)
+            timesList.append(kinematicsTimes)
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
