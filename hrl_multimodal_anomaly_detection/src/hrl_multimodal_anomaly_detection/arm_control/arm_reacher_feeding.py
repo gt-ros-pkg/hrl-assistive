@@ -299,7 +299,7 @@ class armReachAction(mpcBaseAction):
                           '#4 Scooping in bowl...',
                           '#5 Moving out of bowl...']
 
-        for i in xrange(iterations):
+        for i in iterations:
             print "Scooping step #%d " % i
             print scoopingPrints[i]
             self.posL.x, self.posL.y, self.posL.z = (self.bowl_pos[0] + self.leftArmScoopingPos[i][0],
