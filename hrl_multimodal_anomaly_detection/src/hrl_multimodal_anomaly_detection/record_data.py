@@ -114,7 +114,7 @@ class ADL_log:
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1': status = 'success'
         elif flag == '2': status = 'failure'
-        elif flag == '3': sys.exit()
+        elif flag == '3': sys.exit(0)
         else: status = flag
 
         if not os.path.exists(self.folderName):

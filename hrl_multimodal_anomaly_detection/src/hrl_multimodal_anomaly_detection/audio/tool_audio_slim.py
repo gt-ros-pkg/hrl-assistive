@@ -6,10 +6,10 @@ from threading import Thread
 
 class tool_audio_slim(Thread):
     MAX_INT = 32768.0
-    CHUNK   = 4096 #frame per buffer
-    RATE    = 44100 #sampling rate
+    CHUNK   = 4096 # frame per buffer
+    RATE    = 44100 # sampling rate
     UNIT_SAMPLE_TIME = 1.0 / float(RATE)
-    CHANNEL = 2 #number of channels
+    CHANNEL = 2 # number of channels
     FORMAT  = pyaudio.paInt16
 
     def __init__(self):
@@ -37,7 +37,7 @@ class tool_audio_slim(Thread):
             devinfo = self.p.get_device_info_by_index(i)
             print('Device %d: %s'%(i, devinfo['name']))
 
-            for keyword in ['mic', 'input']:
+            for keyword in ['mic', 'input', 'icicle']:
                 if keyword in devinfo['name'].lower():
                     print('Found an input: device %d - %s'%(i, devinfo['name']))
                     device_index = i
@@ -60,9 +60,12 @@ class tool_audio_slim(Thread):
             # rate.sleep()
 
     def log(self):
-        data = self.stream.read(self.CHUNK)
-        self.time_data.append(rospy.get_time() - self.init_time)
-        self.audio_data_raw.append(data)
+        try:
+            data = self.stream.read(self.CHUNK)
+            self.time_data.append(rospy.get_time() - self.init_time)
+            self.audio_data_raw.append(data)
+        except:
+            print 'Audio read failure do to input overflow'
 
     def cancel(self):
         """End this timer thread"""
