@@ -1072,7 +1072,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 slope_a = np.array(peak_l)/(np.array(width_l)/freq)
                 if test_title.find('force') >= 0:
                     print "Force check"
-                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.0
+                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 100.0) +50.0
                 else:
                     print "Sound check with max : ", np.amax(slope_a)
                     slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.001, 0.07) +0.035
@@ -2487,6 +2487,7 @@ if __name__ == '__main__':
 
         # force  = 2dim + all
         # force2 = 2dim + all with large distribution of sim anomaly
+        # force3 = 2dim + all with large distribution of sim anomaly
         # sound  = 2dim + all
         
         print "ROC Online Robot with simulated anomalies"
