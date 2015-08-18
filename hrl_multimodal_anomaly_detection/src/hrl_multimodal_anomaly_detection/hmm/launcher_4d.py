@@ -140,6 +140,8 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = interpolate.splev(kinematicsTimes, forceInterp, der=0)
             # audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
 
+            print 'Audio'
+            print audio[:10], audio[-10:]
             # Constant (horizontal linear) interpolation for audio data
             tempAudio = []
             audioIndex = 0
@@ -148,11 +150,13 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                     audioIndex += 1
                 tempAudio.append(audio[audioIndex])
             audio = tempAudio
+            print 'Audio New'
+            print audio[:10], audio[-10:]
 
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances)
             anglesTrueList.append(angles)
-            audioTrueList.append(audio.tolist())
+            audioTrueList.append(audio)
 
             if minVals is None:
                 minVals = []
