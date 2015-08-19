@@ -76,7 +76,7 @@ class tool_ft(Thread):
         """End this timer thread"""
         self.cancelled = True
         self.force_raw_sub.unregister()
-        rospy.sleep(0.25)
+        rospy.sleep(0.5)
 
 
     ## def static_bias(self):

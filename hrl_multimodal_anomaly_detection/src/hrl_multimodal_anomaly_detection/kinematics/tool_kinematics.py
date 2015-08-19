@@ -82,4 +82,4 @@ class tool_kinematics(Thread):
         """End this timer thread"""
         self.cancelled = True
         self.objectCenterSub.unregister()
-        rospy.sleep(0.25)
+        rospy.sleep(0.5)

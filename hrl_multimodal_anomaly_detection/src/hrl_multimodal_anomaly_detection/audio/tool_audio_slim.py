@@ -70,9 +70,9 @@ class tool_audio_slim(Thread):
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
+        rospy.sleep(0.5)
         self.stream.stop_stream()
         self.stream.close()
-        rospy.sleep(0.25)
 
     def reset(self):
         pass
