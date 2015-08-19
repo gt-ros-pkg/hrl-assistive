@@ -28,19 +28,19 @@ def forceKinematics(fileName, audioTimes):
 
         # Use magnitude of forces
         forces = np.linalg.norm(force, axis=1).flatten()
-        print 'forces shape:', forces.shape
-        print forces[:10]
-        print forces[-10:]
-        print np.shape(kinematicsTimes)
-        print kinematicsTimes[-10:]
-        print np.shape(forceTimes)
-        print forceTimes[-10:]
-        print np.shape(audioTimes)
-        print audioTimes[-10:]
+        # print 'forces shape:', forces.shape
+        # print forces[:10]
+        # print forces[-10:]
+        # print np.shape(kinematicsTimes)
+        # print kinematicsTimes[-10:]
+        # print np.shape(forceTimes)
+        # print forceTimes[-10:]
+        # print np.shape(audioTimes)
+        # print audioTimes[-10:]
         distances = []
         angles = []
 
-        print forces.shape
+        # print forces.shape
 
         # Compute kinematic distances and angles
         for mic, spoon, objectCenter in kinematics:
@@ -140,8 +140,8 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forces = interpolate.splev(kinematicsTimes, forceInterp, der=0)
             # audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
 
-            print 'Audio'
-            print audio[:10], audio[-10:]
+            # print 'Audio'
+            # print audio[:10], audio[-10:]
             # Constant (horizontal linear) interpolation for audio data
             tempAudio = []
             audioIndex = 0
@@ -150,8 +150,8 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                     audioIndex += 1
                 tempAudio.append(audio[audioIndex])
             audio = tempAudio
-            print 'Audio New'
-            print audio[:10], audio[-10:]
+            # print 'Audio New'
+            # print audio[:10], audio[-10:]
 
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances)
@@ -187,14 +187,18 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             audioList.append(audio.tolist())
             timesList.append(kinematicsTimes)
 
+    print 'Load shapes pre extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
+
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
         # Find the largest iteration
         maxsize = max([len(x) for x in forcesList])
         # Extrapolate each time step
-        forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
+        forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
         audioTrueList = extrapolateAllData([forcesList, distancesList, anglesList, audioList, timesList,
                                                              forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], maxsize)
+
+    print 'Load shapes post extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
 
     return forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList
 
@@ -313,6 +317,7 @@ def trainMultiHMM():
             audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, \
             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList = pickle.load(f)
 
+    print np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
     print np.shape(forcesTrueList), np.shape(audioTrueList), np.shape(timesList)
 
     plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
@@ -322,7 +327,7 @@ def trainMultiHMM():
     # plots.distributionOfSequences()
 
     # Plot modalities
-    plots.quickPlotModalities()
+    # plots.quickPlotModalities()
 
     # Setup training data
     forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)
