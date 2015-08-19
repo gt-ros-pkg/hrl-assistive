@@ -47,8 +47,6 @@ class dataRecord:
     def scooping(self):
         runScooping = True
         while runScooping:
-            print self.armReachAction("chooseManualBowlPos")
-
             print "Initializing left arm for scooping"
             print self.armReachAction("leftArmInitScooping")
 
@@ -56,6 +54,7 @@ class dataRecord:
             #print self.armReachAction("rightArmInitScooping")
 
             # time.sleep(1)
+            print self.armReachAction("chooseManualBowlPos")
 
             print 'Initializing scooping'
             print self.armReachAction('initArmScooping')
