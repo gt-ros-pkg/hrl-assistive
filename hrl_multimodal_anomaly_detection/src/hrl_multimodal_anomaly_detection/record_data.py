@@ -128,15 +128,9 @@ class ADL_log:
         # if self.audio is not None:
         #     self.audioTrialName(fileName)
 
-        try:
-            with open(fileName, 'wb') as f:
-                pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-            print 'Data saved to', fileName
-        except:
-            print 'Saving data failed, trying again'
-            with open(fileName, 'wb') as f:
-                pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-            print 'Data saved to', fileName
+        with open(fileName, 'wb') as f:
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print 'Data saved to', fileName
 
         self.iteration += 1
 

@@ -97,16 +97,16 @@ class dataRecord:
         runFeeding = True
         while runFeeding:
 
-            print "Reinitializing left arm for feeding"
-            print self.armReachAction("leftArmInitFeeding2")
+            print 'Initializing feeding'
+            print self.armReachAction('initArmFeeding')
 
-            self.log.log_start()
             time.sleep(2)
+            self.log.log_start()
 
             print "Running feeding!"
             print self.armReachAction("runFeeding")
 
-            time.sleep(2)
+            time.sleep(1)
 
             self.log.close_log_file()
 

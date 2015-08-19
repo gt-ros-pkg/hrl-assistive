@@ -174,15 +174,6 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, 10)
             return "Initialized left arm for feeding!"
 
-        elif req == "leftArmInitFeeding2":
-        ##     self.posL.x, self.posL.y, self.posL.z = (self.mouth_pos[0], self.mouth_pos[1], self.mouth_pos[2])
-        ##     self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
-        ##                                                               self.leftArmFeedingQuats[0][1],
-        ##                                                               self.leftArmFeedingQuats[0][2],
-        ##                                                               self.leftArmFeedingQuats[0][3])
-        ##     self.setOrientGoal(self.posL, self.quatL, 3)
-            return "Initialized left arm for feeding!"
-
         elif req == "rightArmInitScooping":
             self.setPostureGoal(self.rightArmInitialJointAnglesScooping, 10)
             return "Initialized right arm for scooping!"
@@ -243,16 +234,20 @@ class armReachAction(mpcBaseAction):
             else:
                 return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
 
+        elif req == 'initArmScooping':
+            self.scooping([0])
+            return 'Initialized'
+
         elif req == "runScooping":
             self.scooping(xrange(1, 5))
             return "Finished scooping!"
 
         elif req == 'initArmScooping':
-            self.scooping([0])
+            self.feeding([0])
             return 'Initialized'
 
         elif req == "runFeeding":
-            self.feeding()
+            self.feeding(xrange(1, 3))
             return "Finished feeding!"
 
         else:
@@ -321,7 +316,7 @@ class armReachAction(mpcBaseAction):
 
         return True
 
-    def feeding(self):
+    def feeding(self, iterations):
 
         #self.chooseHeadPose()
 
@@ -332,7 +327,7 @@ class armReachAction(mpcBaseAction):
         mouth_pos = copy.deepcopy(self.mouth_pos_manual)
         mouth_quat = copy.deepcopy(self.mouth_quat_manual)
 
-        for i in xrange(len(self.pausesFeeding)):
+        for i in iterations:
             print 'Feeding step #%d ' % i
             print feedingPrints[i]
 
