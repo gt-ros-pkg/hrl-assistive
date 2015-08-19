@@ -255,6 +255,14 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
     return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
 
 def dataFiles():
+    fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl']
+    iterationSetsTrain = [xrange(10)]
+
+    fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining_scooping_fak_08-19-2015_10-17-52/iteration_%d_success.pkl',
+                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTest_scooping_fak_08-19-2015_10-46-26/iteration_%d_failure.pkl']
+    iterationSetsTest = [xrange(10, 15), xrange(5), xrange(4)]
+
     # fileNamesTrain = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
     #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
     #              '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
@@ -262,12 +270,6 @@ def dataFiles():
     #              '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
     #              '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
     # iterationSetsTrain = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
-
-    fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/kine2_scooping_fak_08-18-2015_11-11-31/iteration_%d_success.pkl']
-    iterationSetsTrain = [xrange(1)]
-
-    fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/kine2_scooping_fak_08-18-2015_11-11-31/iteration_%d_success.pkl']
-    iterationSetsTest = [xrange(1)]
 
     # fileNamesTest = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
     #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
@@ -335,13 +337,13 @@ def trainMultiHMM():
 
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=14, verbose=True)
 
-    print 'c=2 is the best so far'
+    # print 'c=2 is the best so far'
     # np.tile(np.append(audioList[0], audioList[0][-1]), (len(testForcesList), 1))
-    tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=-2, verbose=True)
+    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=-2, verbose=True)
 
-    # for c in np.arange(0, 10, 0.5):
-    #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=(-1*c))
+    for c in np.arange(0, 10, 0.5):
+        print 'Table of Confusion for c=', c
+        tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10, c=(-1*c))
 
     # hmm.path_disp(forcesList, distancesList, anglesList, audioList)
 
