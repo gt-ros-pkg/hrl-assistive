@@ -856,18 +856,18 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 if d['delay_l'] == []: continue
                 else:
                     if delay_l == []: 
-                        if d.get('delay_l',[]) == [[]]: 
+                        if d.get('delay_l',[]) == [[]] or d.get('delay_l',[]) == []: 
                             delay_l = [-1]
                         else:
-                            delay_l = d.get('delay_l',[])
+                            delay_l = d.get('delay_l',[-1])
                         peak_l  = d.get('peak_l',[])
                         width_l = d.get('width_l',[])
                         chunk_l = d.get('chunk_l',[])
                     else:
-                        if d.get('delay_l',[]) == [[]]: 
+                        if d.get('delay_l',[]) == [[]] or  d.get('delay_l',[]) == []: 
                             delay_l += [-1]
                         else:
-                            delay_l += d.get('delay_l',[])                        
+                            delay_l += d.get('delay_l',[-1])                        
                         peak_l  += d.get('peak_l',[])
                         width_l += d.get('width_l',[])
                         chunk_l += d.get('chunk_l',[])
@@ -891,7 +891,12 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 ## sys.exit()
                 
                 slope_a = np.array(peak_l)/(np.array(width_l)/freq)
-                slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 50.0) +25.0
+                if test_title.find('force') >= 0:
+                    print "Force check"
+                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.5, 150.0) +75.0
+                else:
+                    print "Sound check with max : ", np.amax(slope_a)
+                    slope_discrete =  np.arange(0.0, np.amax(slope_a)+0.001, 0.07) +0.035
 
                 delay_raw_l = []
                 delay_avg_l = np.zeros(len(slope_discrete))
@@ -913,8 +918,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 for i in xrange(len(delay_raw_l)):
                     if len(delay_raw_l[i]) > 0:
                         delay_raws = filter(lambda x: x != -1, delay_raw_l[i])
-                        delay_avg_l[i] = np.mean(np.array(delay_raws)/freq)
-                        delay_std_l[i] = np.std(np.array(delay_raws)/freq)                    
+                        if len(delay_raws) > 0:                         
+                            delay_avg_l[i] = np.mean(np.array(delay_raws)/freq)
+                            delay_std_l[i] = np.std(np.array(delay_raws)/freq)                    
                     if len(slope_fd_raw_l[i])>0:
                         slope_fdr_avg_l[i] = np.mean(np.array(slope_fd_raw_l[i])*100.0)
                         slope_fdr_std_l[i] = np.std(np.array(slope_fd_raw_l[i])*100.0)
@@ -925,7 +931,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
 
                 slope_fdr_avg_class_l.append(slope_fdr_avg_l)
                 slope_fdr_std_class_l.append(slope_fdr_std_l)
-                
+
                 width = 0.2
                 ind = np.arange(len(slope_discrete_class_l[0]))+width/2.0
                         
@@ -971,7 +977,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        ## pp.show()
 
         
         
@@ -1089,7 +1095,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                         if d.get('delay_l',[]) == [[]]: 
                             delay_l = [-1]
                         else:
-                            delay_l = d.get('delay_l',[])
+                            delay_l = d.get('delay_l',[-1])
                         peak_l  = d.get('peak_l',[])
                         width_l = d.get('width_l',[])
                         chunk_l = d.get('chunk_l',[])
@@ -1098,7 +1104,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                         if d.get('delay_l',[]) == [[]]: 
                             delay_l += [-1]
                         else:
-                            delay_l += d.get('delay_l',[])                        
+                            delay_l += d.get('delay_l',[-1])                        
                         peak_l  += d.get('peak_l',[])
                         width_l += d.get('width_l',[])
                         chunk_l += d.get('chunk_l',[])
@@ -1194,8 +1200,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
                 for i in xrange(len(delay_raw_l)):
                     if len(delay_raw_l[i]) > 0:
                         delay_raws = filter(lambda x: x != -1, delay_raw_l[i])
-                        delay_avg_l[i] = np.mean(np.array(delay_raws)/freq)
-                        delay_std_l[i] = np.std(np.array(delay_raws)/freq)                    
+                        if len(delay_raws) > 0:
+                            delay_avg_l[i] = np.mean(np.array(delay_raws)/freq)
+                            delay_std_l[i] = np.std(np.array(delay_raws)/freq)                    
                     if len(slope_fd_raw_l[i])>0:
                         slope_fdr_avg_l[i] = np.mean(np.array(slope_fd_raw_l[i])*100.0)
                         slope_fdr_std_l[i] = np.std(np.array(slope_fd_raw_l[i])*100.0)
@@ -1311,7 +1318,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
         pp.xticks(ind + width*3.0/4, methods )
         pp.ylim([0.0, 100])                           
         
-    elif False:
+    elif True:
 
         width = 0.2
         ind = np.arange(len(slope_discrete_class_l[0]))+width/2.0
