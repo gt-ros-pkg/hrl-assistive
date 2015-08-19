@@ -143,7 +143,7 @@ class armReachAction(mpcBaseAction):
         #Paused used between each motion
         #... for automatic movement
         self.pausesScooping = [0, 0, 0, 0, 0]
-        self.pausesFeeding = [2., 5., 2.]
+        self.pausesFeeding = [0., 0.0, 0.5]
 
         print "Calculated quaternions: \n"
         print "leftArmScoopingQuats -"
@@ -242,7 +242,7 @@ class armReachAction(mpcBaseAction):
             self.scooping(xrange(1, 5))
             return "Finished scooping!"
 
-        elif req == 'initArmScooping':
+        elif req == 'initArmFeeding':
             self.feeding([0])
             return 'Initialized'
 
