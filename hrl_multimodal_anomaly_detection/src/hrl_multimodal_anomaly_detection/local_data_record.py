@@ -45,10 +45,10 @@ class dataRecord:
             self.feeding()
 
     def scooping(self):
-        print self.armReachAction("chooseManualBowlPos")
-
         runScooping = True
         while runScooping:
+            print self.armReachAction("chooseManualBowlPos")
+
             print "Initializing left arm for scooping"
             print self.armReachAction("leftArmInitScooping")
 
@@ -86,8 +86,6 @@ class dataRecord:
         # *CHOOSE HEAD POSITION!!
         #headPosType = self.armReachAction("getHeadPosType")
 
-        print self.armReachAction("chooseManualHeadPos")
-
         print "Initializing left arm for feeding"
         print self.armReachAction("leftArmInitFeeding")
 
@@ -96,6 +94,7 @@ class dataRecord:
 
         runFeeding = True
         while runFeeding:
+            print self.armReachAction("chooseManualHeadPos")
 
             print 'Initializing feeding'
             print self.armReachAction('initArmFeeding')
