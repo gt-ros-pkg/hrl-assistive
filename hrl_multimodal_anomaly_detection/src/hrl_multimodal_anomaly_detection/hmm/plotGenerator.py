@@ -95,10 +95,10 @@ class plotGenerator:
             ax4.plot(time, audio)
             # Plot successful test data as same color
             if useTest:
-                ax1.plot(time[:numSuccess], force[:numSuccess], c='b')
-                ax2.plot(time[:numSuccess], distance[:numSuccess], c='b')
-                ax3.plot(time[:numSuccess], angle[:numSuccess], c='b')
-                ax4.plot(time[:numSuccess], audio[:numSuccess], c='b')
+                ax1.plot(time[:numSuccess], force[:numSuccess], c=['b']*numSuccess)
+                ax2.plot(time[:numSuccess], distance[:numSuccess], c=['b']*numSuccess)
+                ax3.plot(time[:numSuccess], angle[:numSuccess], c=['b']*numSuccess)
+                ax4.plot(time[:numSuccess], audio[:numSuccess], c=['b']*numSuccess)
 
         plt.show()
 
