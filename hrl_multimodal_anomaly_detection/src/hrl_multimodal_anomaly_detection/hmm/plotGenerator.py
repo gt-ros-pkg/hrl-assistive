@@ -48,7 +48,7 @@ class plotGenerator:
 
         plt.show()
 
-    def distributionOfSequences(self, useTest=False):
+    def distributionOfSequences(self, useTest=False, numSuccess=0):
         fig = plt.figure()
         ax1 = plt.subplot(412)
         ax1.set_ylabel('Force\nMagnitude (N)', fontsize=16)
@@ -81,7 +81,7 @@ class plotGenerator:
         if not useTest:
             forces, distances, angles, audios, times = self.forcesTrue, self.distancesTrue, self.anglesTrue, self.audioTrue, self.times
         else:
-            forces, distances, angles, audios, times = self.testForcesTrue, self.testDistancesTrue, self.testAnglesTrue, self.testAudioTrue, self.testTimes
+            forces, distances, angles, audios, times = self.testForcesTrue[numSuccess:], self.testDistancesTrue[numSuccess:], self.testAnglesTrue[numSuccess:], self.testAudioTrue[numSuccess:], self.testTimes[numSuccess:]
 
         print 'Force min/max:', np.min(forces), np.max(forces)
         print 'Distance min/max:', np.min(distances), np.max(distances)
@@ -93,6 +93,12 @@ class plotGenerator:
             ax2.plot(time, distance)
             ax3.plot(time, angle)
             ax4.plot(time, audio)
+            # Plot successful test data as same color
+            if useTest:
+                ax1.plot(time[:numSuccess], force[:numSuccess], c='b')
+                ax2.plot(time[:numSuccess], distance[:numSuccess], c='b')
+                ax3.plot(time[:numSuccess], angle[:numSuccess], c='b')
+                ax4.plot(time[:numSuccess], audio[:numSuccess], c='b')
 
         plt.show()
 
