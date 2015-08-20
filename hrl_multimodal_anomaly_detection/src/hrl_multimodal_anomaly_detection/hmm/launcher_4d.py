@@ -248,11 +248,13 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
                 trueNeg += 1
             else:
                 falsePos += 1
+                print 'Test', i, '|', anomaly, error
         else:
             if anomaly:
                 truePos += 1
             else:
                 falseNeg += 1
+                print 'Test', i, '|', anomaly, error
 
     print 'True Positive:', truePos, 'True Negative:', trueNeg, 'False Positive:', falsePos, 'False Negative', falseNeg
 
@@ -337,7 +339,7 @@ def trainMultiHMM():
 
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d.pkl', use_pkl=True, cov_mult=[100.0]*16)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d.pkl', use_pkl=True, cov_mult=[10.0]*16)
 
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
@@ -368,7 +370,7 @@ def trainMultiHMM():
     # -- Global threshold approach --
     print '\n---------- Global Threshold ------------\n'
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True, cov_mult=[100.0]*16)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True, cov_mult=[10.0]*16)
 
     for c in xrange(10):
         print 'Table of Confusion for c=', c
