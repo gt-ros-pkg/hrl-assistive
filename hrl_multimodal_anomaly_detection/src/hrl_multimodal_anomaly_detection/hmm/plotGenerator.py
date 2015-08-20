@@ -3,15 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class plotGenerator:
-    def __init__(self, forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
-            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList,
-            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList):
+    def __init__(self, forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+            audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList):
 
-        self.forces, self.distances, self.angles, self.pdfs, self.times, self.forcesTrue, self.distancesTrue, self.anglesTrue, \
-            self.pdfsTrue, self.testForces, self.testDistances, self.testAngles, self.testPdfs, self.testTimes, \
-            self.testForcesTrue, self.testDistancesTrue, self.testAnglesTrue, self.testPdfsTrue = forcesList, distancesList, anglesList, pdfList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-            pdfTrueList, testForcesList, testDistancesList, testAnglesList, testPdfList, testTimesList, \
-            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testPdfTrueList
+        self.forces, self.distances, self.angles, self.audio, self.times, self.forcesTrue, self.distancesTrue, self.anglesTrue, \
+            self.audioTrue, self.testForces, self.testDistances, self.testAngles, self.testAudio, self.testTimes, \
+            self.testForcesTrue, self.testDistancesTrue, self.testAnglesTrue, self.testAudioTrue = [np.array(x) for x in [forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+            audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
+            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList]]
 
     def plotOneTrueSet(self, k=0):
         fig = plt.figure()
@@ -39,7 +39,7 @@ class plotGenerator:
         ax3.grid()
 
         ax4 = plt.subplot(413)
-        ax4.plot(self.times[k], np.array(self.pdfsTrue[k]), label='Audio')
+        ax4.plot(self.times[k], self.audioTrue[k], label='Audio')
         ax4.set_ylabel('Magnitude (dec)', fontsize=16)
         ax4.set_yticks(np.arange(70, 150, 20))
         # ax4.set_yticks(np.arange(4.6, 5.4, 0.2))
@@ -48,7 +48,7 @@ class plotGenerator:
 
         plt.show()
 
-    def distributionOfSequences(self):
+    def distributionOfSequences(self, useTest=False):
         fig = plt.figure()
         ax1 = plt.subplot(412)
         ax1.set_ylabel('Force\nMagnitude (N)', fontsize=16)
@@ -78,23 +78,28 @@ class plotGenerator:
         # ax4.set_yticks(np.arange(np.min(np.array(self.pdfsTrue) * 100), np.max(np.array(self.pdfsTrue) * 100), 0.1))
         # ax4.grid()
 
-        print 'Force min/max:', np.min(self.forcesTrue), np.max(self.forcesTrue)
-        print 'Distance min/max:', np.min(self.distancesTrue), np.max(self.distancesTrue)
-        print 'Angle min/max:', np.min(self.anglesTrue), np.max(self.anglesTrue)
-        print 'Audio min/max:', np.min(np.array(self.pdfsTrue)), np.max(np.array(self.pdfsTrue))
+        if not useTest:
+            forces, distances, angles, audios, times = self.forcesTrue, self.distancesTrue, self.anglesTrue, self.audioTrue, self.times
+        else:
+            forces, distances, angles, audios, times = self.testForcesTrue, self.testDistancesTrue, self.testAnglesTrue, self.testAudioTrue, self.testTimes
 
-        for force, distance, angle, pdf, time in zip(self.forcesTrue, self.distancesTrue, self.anglesTrue, np.array(self.pdfsTrue), self.times):
+        print 'Force min/max:', np.min(forces), np.max(forces)
+        print 'Distance min/max:', np.min(distances), np.max(distances)
+        print 'Angle min/max:', np.min(angles), np.max(angles)
+        print 'Audio min/max:', np.min(audios), np.max(audios)
+
+        for force, distance, angle, audio, time in zip(forces, distances, angles, audios, times):
             ax1.plot(time, force)
             ax2.plot(time, distance)
             ax3.plot(time, angle)
-            ax4.plot(time, pdf)
+            ax4.plot(time, audio)
 
         plt.show()
 
     def quickPlotModalities(self):
         # Quickly plot modality data without any axes labels
         # for modality in [self.forcesTrue[5:6] + self.testForcesTrue[6:7], self.distancesTrue[5:6] + self.testDistancesTrue[6:7], self.anglesTrue[5:6] + self.testAnglesTrue[6:7], self.pdfsTrue[5:6] + self.testPdfsTrue[6:7]]:
-        for modality in [self.forcesTrue, self.distancesTrue, self.anglesTrue, self.pdfsTrue]:
+        for modality in [self.forcesTrue, self.distancesTrue, self.anglesTrue, self.audioTrue]:
             for index, (modal, times) in enumerate(zip(modality, self.times)): # self.times[5:6] + self.testTimes[6:7]
                 plt.plot(times, modal, label='%d' % index)
             plt.legend()
