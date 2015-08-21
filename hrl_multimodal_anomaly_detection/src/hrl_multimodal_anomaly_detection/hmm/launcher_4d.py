@@ -260,14 +260,22 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
 
     return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
 
-def dataFiles():
-    fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl']
-    iterationSetsTrain = [xrange(10)]
+def dataFiles(isTrain=False):
+    if isTrain:
+        fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl']
+        iterationSetsTrain = [xrange(10)]
 
-    fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining_scooping_fak_08-19-2015_10-17-52/iteration_%d_success.pkl',
-                     '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTest_scooping_fak_08-19-2015_10-46-26/iteration_%d_failure.pkl']
-    iterationSetsTest = [xrange(10, 15), xrange(5), xrange(4)]
+        fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl',
+                         '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining_scooping_fak_08-19-2015_10-17-52/iteration_%d_success.pkl',
+                         '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTest_scooping_fak_08-19-2015_10-46-26/iteration_%d_failure.pkl']
+        iterationSetsTest = [xrange(10, 15), xrange(5), xrange(4)]
+    else:
+        fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/feedingTraining/iteration_%d_success.pkl']
+        iterationSetsTrain = [xrange(10)]
+
+        fileNamesTest = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/feedingTest/iteration_%d_success.pkl',
+                         '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/feedingTest/iteration_%d_failure.pkl']
+        iterationSetsTest = [xrange(13), xrange(13)]
 
     # fileNamesTrain = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
     #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
@@ -295,11 +303,11 @@ def dataFiles():
     return fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest
 
 
-def trainMultiHMM():
-    fileName = os.path.join(os.path.dirname(__file__), 'data/Data.pkl')
+def trainMultiHMM(isTrain=True):
+    fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isTrain else 'Test'))
 
     if not os.path.isfile(fileName):
-        fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles()
+        fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles(isTrain=isTrain)
 
         print 'Loading training data'
         forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
@@ -339,7 +347,7 @@ def trainMultiHMM():
 
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d.pkl', use_pkl=True, cov_mult=[10.0]*16)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d%s.pkl' % ('' if isTrain else '_Test'), use_pkl=True, cov_mult=[10.0]*16)
 
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
@@ -476,5 +484,6 @@ def trainMultiHMM():
 
     plt.show()
 
-trainMultiHMM()
+# trainMultiHMM(isTrain=True)
+trainMultiHMM(isTrain=False)
 
