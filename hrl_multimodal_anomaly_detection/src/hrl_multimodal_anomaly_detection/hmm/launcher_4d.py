@@ -336,7 +336,7 @@ def trainMultiHMM(isTrain=True):
     # plots.plotOneTrueSet()
 
     plots.distributionOfSequences(useTest=False)
-    plots.distributionOfSequences(useTest=True, numSuccess=10)
+    plots.distributionOfSequences(useTest=True, numSuccess=10 if isTrain else 13)
 
     # Plot modalities
     # plots.quickPlotModalities()
@@ -360,7 +360,7 @@ def trainMultiHMM(isTrain=True):
 
     for c in np.arange(0, 10, 0.5):
         print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10, c=(-1*c))
+        tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isTrain else 13, c=(-1*c))
 
     # hmm.path_disp(forcesList, distancesList, anglesList, audioList)
 
