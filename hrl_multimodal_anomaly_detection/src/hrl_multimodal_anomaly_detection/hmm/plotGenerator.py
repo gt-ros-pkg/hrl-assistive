@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 class plotGenerator:
     def __init__(self, forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
@@ -95,10 +96,11 @@ class plotGenerator:
             ax4.plot(time, audio)
             # Plot successful test data as same color
             if useTest:
-                ax1.plot(time[:numSuccess], force[:numSuccess], c=['b']*numSuccess)
-                ax2.plot(time[:numSuccess], distance[:numSuccess], c=['b']*numSuccess)
-                ax3.plot(time[:numSuccess], angle[:numSuccess], c=['b']*numSuccess)
-                ax4.plot(time[:numSuccess], audio[:numSuccess], c=['b']*numSuccess)
+                mpl.rcParams['lines.color'] = 'k'
+                ax1.plot(time[:numSuccess], force[:numSuccess])
+                ax2.plot(time[:numSuccess], distance[:numSuccess])
+                ax3.plot(time[:numSuccess], angle[:numSuccess])
+                ax4.plot(time[:numSuccess], audio[:numSuccess])
 
         plt.show()
 

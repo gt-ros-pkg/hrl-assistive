@@ -328,7 +328,7 @@ def trainMultiHMM():
     # plots.plotOneTrueSet()
 
     plots.distributionOfSequences(useTest=False)
-    plots.distributionOfSequences(useTest=True)
+    plots.distributionOfSequences(useTest=True, numSuccess=10)
 
     # Plot modalities
     # plots.quickPlotModalities()
