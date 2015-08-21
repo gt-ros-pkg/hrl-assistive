@@ -88,17 +88,19 @@ class plotGenerator:
         print 'Angle min/max:', np.min(angles), np.max(angles)
         print 'Audio min/max:', np.min(audios), np.max(audios)
 
+        # Plot successful test data as same color
+        if useTest:
+            for force, distance, angle, audio, time in zip(self.testForcesTrue[:numSuccess], self.testDistancesTrue[:numSuccess], self.testAnglesTrue[:numSuccess], self.testAudioTrue[:numSuccess], self.testTimes[:numSuccess]):
+                ax1.plot(time, force, c='k')
+                ax2.plot(time, distance, c='k')
+                ax3.plot(time, angle, c='k')
+                ax4.plot(time, audio, c='k')
+
         for force, distance, angle, audio, time in zip(forces, distances, angles, audios, times):
             ax1.plot(time, force)
             ax2.plot(time, distance)
             ax3.plot(time, angle)
             ax4.plot(time, audio)
-            # Plot successful test data as same color
-            if useTest:
-                ax1.plot(self.testTimes[:numSuccess], self.testForcesTrue[:numSuccess], c='k')
-                ax2.plot(self.testTimes[:numSuccess], self.testDistancesTrue[:numSuccess], c='k')
-                ax3.plot(self.testTimes[:numSuccess], self.testAnglesTrue[:numSuccess], c='k')
-                ax4.plot(self.testTimes[:numSuccess], self.testAudioTrue[:numSuccess], c='k')
 
         plt.show()
 
