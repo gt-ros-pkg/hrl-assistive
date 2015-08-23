@@ -168,7 +168,7 @@ class learning_hmm_multi_4d:
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-            logp         = self.ml.loglikelihood(final_ts_obj)
+            logp = self.ml.loglikelihood(final_ts_obj)
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
             return [], 0.0 # error

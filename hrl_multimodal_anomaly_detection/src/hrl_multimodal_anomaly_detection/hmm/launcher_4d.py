@@ -260,8 +260,26 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
 
     return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
 
-def dataFiles(isTrain=False):
-    if isTrain:
+def tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample):
+    minThresholds = np.zeros(hmm.nGaussian)+10000
+
+    n = len(forcesTestSample)
+    for i in range(n):
+        m = len(forcesTestSample[i])
+
+        for j in range(2, m):
+            threshold, index = hmm.get_sensitivity_gain(forcesTestSample[i][:j], distancesTestSample[i][:j], anglesTestSample[i][:j], audioTestSample[i][:j])
+            if not threshold:
+                continue
+
+            if minThresholds[index] > threshold:
+                minThresholds[index] = threshold
+                print 'Minimum threshold: ', minThresholds[index], index
+
+    return minThresholds
+
+def dataFiles(isScooping=False):
+    if isScooping:
         fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl']
         iterationSetsTrain = [xrange(10)]
 
@@ -277,37 +295,14 @@ def dataFiles(isTrain=False):
                          '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/feedingTest/iteration_%d_failure.pkl']
         iterationSetsTest = [xrange(13), xrange(13)]
 
-    # fileNamesTrain = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl']
-    # iterationSetsTrain = [xrange(3), xrange(3), xrange(3), xrange(3), xrange(3), xrange(3)]
-
-    # fileNamesTest = ['/home/zerickson/Recordings/bowl3Stage1Test_scooping_fvk_07-27-2015_14-10-47/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage2Test_scooping_fvk_07-27-2015_14-25-13/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage3Test_scooping_fvk_07-27-2015_14-39-53/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage4Test_scooping_fvk_07-27-2015_15-01-32/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage5Test_scooping_fvk_07-27-2015_15-18-58/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage6Test_scooping_fvk_07-27-2015_15-40-37/iteration_%d_success.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage1Anomalous_scooping_fvk_07-27-2015_14-17-52/iteration_%d_failure.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage2Anomalous_scooping_fvk_07-27-2015_14-31-42/iteration_%d_failure.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage3Anomalous_scooping_fvk_07-27-2015_14-47-24/iteration_%d_failure.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage4Anomalous_scooping_fvk_07-27-2015_15-09-00/iteration_%d_failure.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage5Anomalous_scooping_fvk_07-27-2015_15-27-51/iteration_%d_failure.pkl',
-    #              '/home/zerickson/Recordings/bowl3Stage6Anomalous_scooping_fvk_07-27-2015_15-49-27/iteration_%d_failure.pkl']
-    # iterationSetsTest = [xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), xrange(3, 6), [3],
-    #                  xrange(2, 4), xrange(4), xrange(4), xrange(1, 4), xrange(4), [0, 1, 3]]
-
     return fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest
 
 
-def trainMultiHMM(isTrain=True):
-    fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isTrain else 'Test'))
+def trainMultiHMM(isScooping=True):
+    fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isScooping else 'Scooping'))
 
     if not os.path.isfile(fileName):
-        fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles(isTrain=isTrain)
+        fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles(isScooping=isScooping)
 
         print 'Loading training data'
         forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
@@ -336,7 +331,7 @@ def trainMultiHMM(isTrain=True):
     # plots.plotOneTrueSet()
 
     plots.distributionOfSequences(useTest=False)
-    plots.distributionOfSequences(useTest=True, numSuccess=10 if isTrain else 13)
+    plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
 
     # Plot modalities
     # plots.quickPlotModalities()
@@ -344,10 +339,11 @@ def trainMultiHMM(isTrain=True):
     # Setup training data
     forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)
     forcesTrueSample, distancesTrueSample, anglesTrueSample, audioTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList)
+    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList, testDistancesList, testAnglesList, testAudioList)
 
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d%s.pkl' % ('' if isTrain else '_Test'), use_pkl=True, cov_mult=[10.0]*16)
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Scooping'), use_pkl=True, cov_mult=[10.0]*16)
 
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
@@ -358,9 +354,17 @@ def trainMultiHMM(isTrain=True):
     # np.tile(np.append(audioList[0], audioList[0][-1]), (len(testForcesList), 1))
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=-2, verbose=True)
 
-    for c in np.arange(0, 10, 0.5):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isTrain else 13, c=(-1*c))
+    minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
+    print 'Min threshold size:', np.shape(minThresholds)
+    if len(minThresholds) < 50:
+        print minThresholds
+
+    tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
+
+    # c = 14 or c 18
+    # for c in np.arange(0, 10, 0.5):
+    #     print 'Table of Confusion for c=', c
+    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=(-1*c))
 
     # hmm.path_disp(forcesList, distancesList, anglesList, audioList)
 
@@ -377,12 +381,12 @@ def trainMultiHMM(isTrain=True):
 
     # -- Global threshold approach --
     print '\n---------- Global Threshold ------------\n'
-    hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True, cov_mult=[10.0]*16)
+    hmmGlobal = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
+    hmmGlobal.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True, cov_mult=[10.0]*16)
 
     for c in xrange(10):
         print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=(-1*c))
+        tableOfConfusion(hmmGlobal, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=(-1*c))
 
 
     # -- 1 dimensional force hidden Markov model --
