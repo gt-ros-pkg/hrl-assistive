@@ -115,7 +115,7 @@ def scaling(X, minVal, maxVal, scale=1.0):
     X = np.array(X)
     return (X - minVal) / (maxVal - minVal) * scale
 
-def loadData(fileNames, iterationSets, isTrainingData=False):
+def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100):
     global minVals, maxVals
     forcesList = []
     distancesList = []
@@ -136,23 +136,18 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
             print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
 
-            # Audio has the longest time duration, so decrease its' data to match force and kinematics
-            maxTime = max(kinematicsTimes)
-            audioTimes = [t for t in audioTimes if t < maxTime]
-            audio = audio[:len(audioTimes)]
-
-            print 'Shapes after removin trailing data'
-            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
-
+            newTimes = np.linspace(0.01, max(kinematicsTimes), downSampleSize)
             forceInterp = interpolate.splrep(forceTimes, forces, s=0)
-            forces = interpolate.splev(audioTimes, forceInterp, der=0)
-
-            # Downsample kinematics to match audio size
-            # distances = [distance for index, distance in enumerate(distances) if index % 2 == 0 and index]
+            forces = interpolate.splev(newTimes, forceInterp, der=0)
             distanceInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
-            distances = interpolate.splev(audioTimes, distanceInterp, der=0)
+            distances = interpolate.splev(newTimes, distanceInterp, der=0)
             angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
-            angles = interpolate.splev(audioTimes, angleInterp, der=0)
+            angles = interpolate.splev(newTimes, angleInterp, der=0)
+            audioInterp = interpolate.splrep(audioTimes, audio, s=0)
+            audio = interpolate.splev(newTimes, audioInterp, der=0)
+
+            print 'Shapes after downsampling'
+            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
 
             # Constant (horizontal linear) interpolation for audio data
             # tempAudio = []
@@ -166,7 +161,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances.tolist())
             anglesTrueList.append(angles.tolist())
-            audioTrueList.append(audio)
+            audioTrueList.append(audio.tolist())
 
             if minVals is None:
                 minVals = []
@@ -361,12 +356,12 @@ def trainMultiHMM(isScooping=True):
 
         print 'Loading training data'
         forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
-            anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True)
+            anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=100)
 
         print 'Loading test data'
         testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, \
           testDistancesTrueList, testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest,
-                                                                                  isTrainingData=True)
+                                                                                  isTrainingData=True, downSampleSize=100)
 
         with open(fileName, 'wb') as f:
             pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,
@@ -420,12 +415,9 @@ def trainMultiHMM(isScooping=True):
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList,
     # testAudioList, numOfSuccess=16, c=-2, verbose=True)
 
-    ## minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
-    ## print 'Min threshold size:', np.shape(minThresholds)
-    ## if len(minThresholds) < 50:
-    ##     print minThresholds
-    ## else:
-    ##     print minThresholds[:25]
+    minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
+    print 'Min threshold size:', np.shape(minThresholds)
+    print minThresholds
 
     # Daehyung: Why do you execute offline check? If you use full-length of data, there will be almost no difference between 
     #           fixed threshold, dynamic threshold with single coefficient, and dynamtic threshold with multiple coefficients, 
@@ -435,10 +427,10 @@ def trainMultiHMM(isScooping=True):
     ## tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
     # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
-    minThresholds = [-175.53843194,  -34.63042465,  -29.88693869,  -59.27020473,  -23.05816363,
-                     -19.1734794,   -17.8245569,    -6.69286737,  -16.49275797, -235.88100668,
-                     -266.9441535,   -18.21076457,  -50.7652509,   -16.41021634,  -16.23706356,
-                     -15.89644485,  -16.75900115,  -18.26326553,  -22.02678227,  -26.02066474]
+    # minThresholds = [-175.53843194,  -34.63042465,  -29.88693869,  -59.27020473,  -23.05816363,
+    #                  -19.1734794,   -17.8245569,    -6.69286737,  -16.49275797, -235.88100668,
+    #                  -266.9441535,   -18.21076457,  -50.7652509,   -16.41021634,  -16.23706356,
+    #                  -15.89644485,  -16.75900115,  -18.26326553,  -22.02678227,  -26.02066474]
     tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
     sys.exit()
