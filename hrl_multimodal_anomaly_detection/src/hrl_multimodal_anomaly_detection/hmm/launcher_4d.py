@@ -135,10 +135,27 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
 
             # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
             print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
+
+            # Remove trailing data from kinematics and force (to allow for interpolation)
+            maxTime = max(audioTimes)
+            forceTimes = [t for t in forceTimes if t < maxTime]
+            forces = forces[:len(forceTimes)]
+            kinematicsTimes = [t for t in kinematicsTimes if t < maxTime]
+            distances = distances[:len(kinematicsTimes)]
+            angles = angles[:len(kinematicsTimes)]
+
+            print 'Shapes after removin trailing data'
+            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
+
             forceInterp = interpolate.splrep(forceTimes, forces, s=0)
-            # audioInterp = interpolate.splrep(audioTimes, audio, s=0)
             forces = interpolate.splev(audioTimes, forceInterp, der=0)
-            # audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
+
+            # Downsample kinematics to match audio size
+            # distances = [distance for index, distance in enumerate(distances) if index % 2 == 0 and index]
+            distanceInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
+            distances = interpolate.splev(audioTimes, distanceInterp, der=0)
+            angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
+            angles = interpolate.splev(audioTimes, angleInterp, der=0)
 
             # Constant (horizontal linear) interpolation for audio data
             # tempAudio = []
@@ -148,13 +165,6 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             #         audioIndex += 1
             #     tempAudio.append(audio[audioIndex])
             # audio = tempAudio
-
-            # Downsample kinematics to match audio size
-            # distances = [distance for index, distance in enumerate(distances) if index % 2 == 0 and index]
-            distanceInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
-            distances = interpolate.splev(audioTimes, distanceInterp, der=0)
-            angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
-            angles = interpolate.splev(audioTimes, angleInterp, der=0)
 
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances.tolist())
