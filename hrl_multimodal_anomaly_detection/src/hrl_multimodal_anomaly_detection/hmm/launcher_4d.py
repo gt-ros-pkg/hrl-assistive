@@ -309,12 +309,12 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
                     trueNeg += 1
                     break
             else:
-                if not anomaly:
+                if anomaly:
+                    truePos += 1
+                    break
+                elif not anomaly and j == len(testForcesList[i]) - 1:
                     falseNeg += 1
                     print 'Test', i, '|', anomaly, error
-                    break
-                elif anomaly and j == len(testForcesList[i]) - 1:
-                    truePos += 1
                     break
 
                 # if anomaly:
