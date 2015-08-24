@@ -82,7 +82,7 @@ var RFH = {
     this.ros.on('connection', function(e) {
         log("Connected to " + RFH.ROBOT + ".");
         extendROSJS(RFH.ros);
-        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
+//        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
         RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
                                                      div: 'battery-status'});
     // Setup a client to listen to TFs.
@@ -96,7 +96,7 @@ var RFH = {
                                                      cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
                                                      });
         initMjpegCanvas('video-main');
-//        initMarkerDisplay('markers');
+        initMarkerDisplay('markers');
         RFH.initTaskMenu('main-menu');
 //        initClickableActions();
 //        initPr2(); 

@@ -26,73 +26,110 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table" // "wall", "free"
     self.active = false;
     self.SVGCanvas = Snap('#arm-svg');
-    self.rotPaths = {'xp': {'path': self.SVGCanvas.path('M0,0'),
-                            'baseline': self.SVGCanvas.path('M0,0'),
-                            'points':[[0.0, -0.1, 0.12],
-                                      [0.04, -0.14, 0.18],
-                                      [0.02, -0.18, 0.08]]},
-                     'xn': {'path': self.SVGCanvas.path('M0,0'),
-                            'baseline': self.SVGCanvas.path('M0,0'),
-                            'points':[[0.0, 0.1, 0.12],
-                                      [0.04, 0.14, 0.18],
-                                      [0.02, 0.18, 0.08]]},
-                     'zn': {'path': self.SVGCanvas.path('M0,0'),
-                            'baseline': self.SVGCanvas.path('M0,0'),
-                            'points':[[-0.04, -0.18, 0.05],
-                                      [-0.04, -0.18, -0.05],
-                                      [0.04, -0.23, 0]]},
-                     'zp': {'path': self.SVGCanvas.path('M0,0'),
-                            'baseline': self.SVGCanvas.path('M0,0'),
-                            'points':[[-0.04, 0.18, 0.05],
-                                      [-0.04, 0.18, -0.05],
-                                      [0.04, 0.23, 0]]},
-                     'yn': {'path': self.SVGCanvas.path('M0,0'),
-                            'baseline': self.SVGCanvas.path('M0,0'),
-                            'points':[[-0.04, 0.05, -0.18],
-                                      [-0.04, -0.05, -0.18],
-                                      [0.04, 0, -0.23]]},
-                     'yp': {'path': self.SVGCanvas.path('M0,0'),
-                            'baseline': self.SVGCanvas.path('M0,0'),
-                            'points':[[-0.04, 0.05, 0.18],
-                                      [-0.04, -0.05, 0.18],
-                                      [0.04, 0, 0.23]]}
-                    }
+    self.raycaster = new THREE.Raycaster();
+    var canvasClickCB = function (event) {
+        var mouse = new THREE.Vector2();
+        var pt = RFH.positionInElement(event);
+        var canvas = RFH.viewer.renderer.getContext().canvas; 
+        mouse.x = 2 * (pt[0] - canvas.width / 2) / canvas.width;
+        mouse.y = -2 * (pt[1] - canvas.height / 2) / canvas.height;
 
-    for (var dir in self.rotPaths) {
-        var click;
-        var rot = 1; // Used as a fraction of selected step size...
-        switch (dir) {
-            case 'xp':
-                click = function (event) {self.eeDeltaCmd({'roll':-rot})};
-                break;
-            case 'xn':
-                click = function (event) {self.eeDeltaCmd({'roll':rot})};
-                break;
-            case 'yn':
-                click = function (event) {self.eeDeltaCmd({'pitch':rot})};
-                break;
-            case 'yp':
-                click = function (event) {self.eeDeltaCmd({'pitch':-rot})};
-                break;
-            case 'zn':
-                click = function (event) {self.eeDeltaCmd({'yaw':rot})};
-                break;
-            case 'zp':
-                click = function (event) {self.eeDeltaCmd({'yaw':-rot})};
-                break;
+        self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
+        var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
+        if (objs.length > 0) {
+            var clickedObj = objs[0];
+            clickedObj.object.material.color.setRGB(Math.random(), Math.random(), Math.random());
         }
-        self.rotPaths[dir]['path'].attr({'class':self.side+'-arm-rot-icon',
-                                 'id':dir});
-        self.rotPaths[dir]['path'].click(click);
-        self.rotPaths[dir]['baseline'].click(click);
-        self.rotPaths[dir]['baseline'].attr({'class':self.side+'-arm-rot-icon-baseline',
-                                             'id':dir+'-base'});
-    }
+    };
+    $('#clickable-canvas').on('click.rfh', canvasClickCB);
 
-//        var geometry = new THREE.SphereGeometry(0.01,8,8);
-//        var material = new THREE.MeshBasicMaterial( { color: 0x0000ee, wireframe: true } );
-//        self.mesh = new THREE.Mesh( geometry, material );
-//        RFH.viewer.scene.add( self.mesh );
+    self.rotArrowLoader = new THREE.ColladaLoader();
+    var arrowOnLoad = function (collada) {
+        var arrowGeom = collada.scene.children[0].children[0].geometry.clone();
+        var baseMaterial = new THREE.MeshLambertMaterial();
+        //var arrowMesh = collada.scene.children[0].children[0];
+        baseMaterial.transparent = true;
+        baseMaterial.opacity = 0.87;
+        self.rotArrows = {};
+        var scaleX = 0.00075;
+        var scaleY = 0.00075;
+        var scaleZ = 0.00075;
+
+        //Create arrow meshes for each directional control
+        var mesh, edges, pos, rot, mat, cb;
+        // X-Positive Rotation
+        baseMaterial.color.setRGB(255,0,0);
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        pos = new THREE.Vector3(-0.1, -0.13, 0.13);
+        rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'r':Math.PI/8})};
+        self.rotArrows['xp'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        // X-Negative Rotation
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        pos = new THREE.Vector3(-0.1, 0.13, 0.13);
+        rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'r':-Math.PI/8})};
+        self.rotArrows['xn'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        // Y-Positive Rotation
+        baseMaterial.color.setRGB(0,255,0);
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        pos = new THREE.Vector3(-0.13, 0.025, 0.13);
+        rot = new THREE.Euler(Math.PI,0,0)
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'p':Math.PI/8})};
+        self.rotArrows['yp'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        // Y-Negative Rotation
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        pos = new THREE.Vector3(-0.13, -0.025, -0.13);
+        rot = new THREE.Euler(0, 0, 0);
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'p':Math.PI/8})};
+        self.rotArrows['yn'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        // Z-Positive Rotation
+        baseMaterial.color.setRGB(0,0,255);
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        pos = new THREE.Vector3(-0.13, -0.13, 0.025);
+        rot = new THREE.Euler(-Math.PI/2, 0, 0);
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'y':Math.PI/8})};
+        self.rotArrows['zp'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        // Z-Negative Rotation
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        pos = new THREE.Vector3(-0.13, 0.13, -0.025);
+        rot = new THREE.Euler(Math.PI/2, 0, 0);
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'y':-Math.PI/8})};
+        self.rotArrows['zn'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+
+        for (var dir in self.rotArrows) {
+            RFH.viewer.scene.add(self.rotArrows[dir]['mesh']);
+            RFH.viewer.scene.add(self.rotArrows[dir]['edges']);
+        }
+    }
+    var arrowOnProgress = function (data) {
+        console.log("Loading Rotation Arrow Collada Mesh: ", data.loaded/data.total);
+    }
+    self.rotArrowLoader.load('./data/Curved_Arrow_Square.dae', arrowOnLoad, arrowOnProgress)
 
     self.updateRotImage = function () {
         if (self.eeTF === null) { return };
@@ -105,45 +142,21 @@ RFH.CartesianEEControl = function (options) {
                                             self.eeTF.translation.y,
                                             self.eeTF.translation.z));
 
-        var w = $(self.SVGCanvas.node).width();
-        var h = $(self.SVGCanvas.node).height();
-        for (var dir in self.rotPaths) {
-            var handPts = self.rotPaths[dir]['points'];
-            var pts = [];
-            for (var idx in handPts) {
-                var v = new THREE.Vector3(handPts[idx][0], handPts[idx][1], handPts[idx][2]);
-                v.applyMatrix4(tfMat);
-                pts.push([v.x,v.y,v.z]);
-            }
-            try {
-                var imgPts = self.camera.projectPoints(pts, 'base_link');
-            } catch (err) {
-                if (err !== 'Camera data not available') {
-                    console.error(err);
-                }
-                return;
-            }
-            self.rotPaths[dir]['baseline'].attr({'d':'M'+imgPts[0][0]*w+','+imgPts[0][1]*h+'L'+imgPts[1][0]*w+','+imgPts[1][1]*h});
+        var w = $('#mjpeg').width();
+        var h = $('#mjpeg').height();
+        RFH.viewer.renderer.setSize(w, h);
 
-            var pathStr = "M"+imgPts[0][0]*w+','+imgPts[0][1]*h;
-            for (var i=1; i < imgPts.length; i += 1) {
-                var ps = 'L'+imgPts[i][0]*w+','+imgPts[i][1]*h;
-                pathStr += ps; 
-            }
-            pathStr += "Z";
-            self.rotPaths[dir]['path'].attr({'d':pathStr})
+        var arrowInWorldFrame = new THREE.Matrix4();
+        var arrowPos = new THREE.Vector3();
+        var arrowQuat = new THREE.Quaternion();
+        var arrowScale = new THREE.Vector3();
+        for (var dir in self.rotArrows) {
+            arrowInWorldFrame.multiplyMatrices(tfMat, self.rotArrows[dir]['transform']);
+            arrowInWorldFrame.decompose(arrowPos, arrowQuat, arrowScale);
+            self.rotArrows[dir]['mesh'].position.set(arrowPos.x, arrowPos.y, arrowPos.z);
+            self.rotArrows[dir]['mesh'].quaternion.set(arrowQuat.x, arrowQuat.y, arrowQuat.z, arrowQuat.w);
         }
-
-        ////////Test THREE.js after this point/////////////////////////
-//        var handOrigin = new THREE.Vector3(0,0,0);
-//        handOrigin.applyMatrix4(tfMat);
-//        RFH.viewer.renderer.setSize(w, h);
-//        self.mesh.position.x = handOrigin.x;
-//        self.mesh.position.y = handOrigin.y;
-//        self.mesh.position.z = handOrigin.z;
-//        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
-//        var imgPt = self.camera.projectPoint(handOrigin.x, handOrigin.y, handOrigin.z, 'base_link')
-//        self.SVGCanvas.circle(imgPt[0]*w, imgPt[1]*h, 5).attr({'fill':'green','stroke':'none'})
+        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
     }
 
 //    self.rotCtrls = new RFH.EERotation({div: self.side+'-rot-ctrls',

@@ -2740,11 +2740,12 @@ ROS3D.Viewer = function(options) {
 
   // create the canvas to render to
   this.renderer = new THREE.WebGLRenderer({
+    alpha : true, 
     antialias : this.antialias
   });
-  this.renderer.setClearColor(background.replace('#', '0x'), 0.0);
-  this.renderer.sortObjects = false;
   this.renderer.setSize(width, height);
+//  this.renderer.setClearColor(0x000000, 0);
+  this.renderer.sortObjects = false;
   this.renderer.shadowMapEnabled = false;
   this.renderer.autoClear = false;
 
@@ -2754,12 +2755,11 @@ ROS3D.Viewer = function(options) {
   // create the global camera
   //this.camera = new THREE.PerspectiveCamera(40, width / height, 0.01, 1000);
   this.camera = new THREE.PerspectiveCamera(53.8, 1.5632, 0.02, 30); //Kinect2 params
-  this.camera.position.x = cameraPosition.x;
-  this.camera.position.y = cameraPosition.y;
-  this.camera.position.z = cameraPosition.z;
-  //[PG] - Add camera up to match ros displays
-  this.camera.up = new THREE.Vector3(0, 0, 1);
+ // this.camera.position.x = cameraPosition.x;
+ // this.camera.position.y = cameraPosition.y;
+ // this.camera.position.z = cameraPosition.z;
   // add controls to the camera [PG] - Remove, unnecessary
+  this.camera.up = new THREE.Vector3(0, 0, 1);
 //  this.cameraControls = new ROS3D.OrbitControls({
 //    scene : this.scene,
 //    camera : this.camera

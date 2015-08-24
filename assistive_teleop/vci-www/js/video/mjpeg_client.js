@@ -8,7 +8,8 @@ RFH.MjpegClient = function (options) {
     self.imageId = options.imageId || self.divId + '-image';
     self.server = "http://"+options.host+":"+options.port;
     self.activeParams = {'quality': options.quality || 65,
-                         'topic': options.imageTopic}
+                         'topic': options.imageTopic,
+                         'type': options.type || 'mjpeg'}
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
                                                infoTopic: options.infoTopic,
@@ -44,6 +45,7 @@ RFH.MjpegClient = function (options) {
             srcStr += param + '=' + self.activeParams[param] + '&'
         }
         $("#"+self.imageId).attr("src", srcStr);
+        console.log("Video Request: ", srcStr);
         $("#"+self.divId).width(self.activeParams['width'])
                          .height(self.activeParams['height']);
     };
@@ -187,7 +189,7 @@ RFH.ROSCameraModel = function (options) {
                                                 self.transform.translation.y,
                                                 self.transform.translation.z));
             tfMat.getInverse(tfMat);
-            ptsFlat = tfMat.multiplyVector3Array(ptsFlat);
+            ptsFlat = tfMat.applyToVector3Array(ptsFlat);
         }
         for (var i=0; i < ptsFlat.length/3; i++ ) {
             pts[i] = ptsFlat.slice(3*i,3*i+3).concat(1);
@@ -238,17 +240,12 @@ var initMjpegCanvas = function (divId) {
     "use strict";
     $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     //imageTopic: '/head_mount_kinect/rgb/image_color',
-                                     //infoTopic: '/head_mount_kinect/rgb/camera_info',
                                      imageTopic: '/head_mount_kinect/rgb/image',
                                      infoTopic: '/head_mount_kinect/rgb/camera_info',
-                                     //imageTopic: '/head_wfov_camera/image_rect_color',
-                                     //infoTopic: '/head_wfov_camera/camera_info',
                                      containerId: 'video-main',
                                      divId: 'mjpeg',
                                      host: RFH.ROBOT,
                                      port: 8080,
-                                     quality: 85,
                                      tfClient:RFH.tfClient});
     RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
     RFH.mjpeg.cameraModel.updateCameraInfo();
