@@ -358,6 +358,8 @@ def trainMultiHMM(isScooping=True):
     print 'Min threshold size:', np.shape(minThresholds)
     if len(minThresholds) < 50:
         print minThresholds
+    else:
+        print minThresholds[:25]
 
     tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
