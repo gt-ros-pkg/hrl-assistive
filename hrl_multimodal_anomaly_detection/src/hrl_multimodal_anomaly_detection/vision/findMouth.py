@@ -29,7 +29,7 @@ class arTagDetector:
 
         self.head_tag_id   = head_tag_id
         self.head_calib    = False
-        self.head_z_offset = 0.15
+        self.head_z_offset = 0.12 #0.15
         self.head_tag_flag = False
 
         self.mouth_frame_off = None
@@ -294,7 +294,7 @@ if __name__ == '__main__':
         ## ret = input("Is head tag fine? ")
         if atd.head_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is head tag fine? (y: yes, n: no)')
-            if ret == 'y': atd.setCalibration()
+            if ret == 'y': atd.setCalibration(save_file)
             
         
         rate.sleep()

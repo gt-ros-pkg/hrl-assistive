@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+import os, sys
 import math
 import struct
 import numpy as np
@@ -238,7 +238,8 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
         elif anglesList is None:
             anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], c)
         else:
-            anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], testAudioList[i], c)
+            anomaly, error = hmm.anomaly_check(testForcesList[i], testDistancesList[i], testAnglesList[i], 
+                                               testAudioList[i], c)
 
         if verbose: print anomaly, error
 
@@ -260,6 +261,49 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
 
     return (truePos + trueNeg) / float(len(testForcesList)) * 100.0
 
+
+def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None, audioList=None, testForcesList=None,
+                           testDistancesList=None, testAnglesList=None, testAudioList=None, numOfSuccess=5, c=-5, verbose=False):
+    truePos = 0
+    falsePos = 0
+
+    # positive is anomaly
+    # negative is non-anomaly
+    if verbose: print '\nBeginning anomaly testing for test set\n'
+    for i in xrange(len(testForcesList)):
+        if verbose: print 'Anomaly Error for test set %d' % i
+
+        for j in range(2, len(testForcesList[i])):
+                
+            if distancesList is None:
+                anomaly, error = hmm.anomaly_check(testForcesList[i][:j], c)
+            elif anglesList is None:
+                anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], c)
+            else:
+                anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], testAnglesList[i][:j], 
+                                                   testAudioList[i][:j], c)
+
+            if verbose: print anomaly, error
+
+            if i < numOfSuccess:
+                # This is a successful nonanomalous attempt
+                if anomaly:
+                    falsePos += 1
+                    print 'Test', i, '|', anomaly, error
+                    break                    
+            else:
+                if anomaly:
+                    truePos += 1
+                    break
+
+
+    trueNegativeRate = float(numOfSuccess - falsePos) / float(numOfSuccess) * 100.0
+    truePositiveRate = float(truePos) / float(len(testForcesList) - numOfSuccess) * 100.0
+    print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+
+    return 
+
+    
 def tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample):
     minThresholds = np.zeros(hmm.nGaussian)+10000
 
@@ -268,13 +312,14 @@ def tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSa
         m = len(forcesTestSample[i])
 
         for j in range(2, m):
-            threshold, index = hmm.get_sensitivity_gain(forcesTestSample[i][:j], distancesTestSample[i][:j], anglesTestSample[i][:j], audioTestSample[i][:j])
+            threshold, index = hmm.get_sensitivity_gain(forcesTestSample[i][:j], distancesTestSample[i][:j], 
+                                                        anglesTestSample[i][:j], audioTestSample[i][:j])
             if not threshold:
                 continue
 
             if minThresholds[index] > threshold:
                 minThresholds[index] = threshold
-                print 'Minimum threshold: ', minThresholds[index], index
+                print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
 
     return minThresholds
 
@@ -309,60 +354,85 @@ def trainMultiHMM(isScooping=True):
             anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True)
 
         print 'Loading test data'
-        testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, testDistancesTrueList, \
-            testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True)
+        testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, \
+          testDistancesTrueList, testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest, \
+                                                                                  isTrainingData=True)
 
         with open(fileName, 'wb') as f:
-            pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
-                         audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
-                         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList), f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
+                         anglesTrueList, audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, \
+                         testTimesList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList), \
+                         f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(fileName, 'rb') as f:
             forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
             audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, \
             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList = pickle.load(f)
 
+    # Daehyung: data is too long (too high frequency or too lengthy movement) => GHMM may be broken (underflow)
+    #           it's better to downsample or cut the begining and end of data or make it quick movement
     print np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
     print np.shape(forcesTrueList), np.shape(audioTrueList), np.shape(timesList)
 
-    plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList,
+    plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, 
+                          anglesTrueList,
             audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
-    # plots.plotOneTrueSet()
-
-    plots.distributionOfSequences(useTest=False)
-    plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
-
+    ## plots.plotOneTrueSet()
+    
+    ## plots.distributionOfSequences(useTest=False)
+    ## plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
+    
     # Plot modalities
     # plots.quickPlotModalities()
-
+    
     # Setup training data
     forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)
-    forcesTrueSample, distancesTrueSample, anglesTrueSample, audioTrueSample = createSampleSet(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList)
-    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList, testDistancesList, testAnglesList, testAudioList)
+    forcesTrueSample, distancesTrueSample, anglesTrueSample, audioTrueSample = createSampleSet(forcesTrueList, distancesTrueList,
+                                                                                               anglesTrueList, audioTrueList)
+    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList, testDistancesList,
+                                                                                               testAnglesList, testAudioList)
 
+    # Daehyung: quite high covariance. It may converge to local minima. I don't know whether the fitting result is reliable or not. 
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Scooping'), use_pkl=True, cov_mult=[10.0]*16)
-
+    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, 
+            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Scooping'), use_pkl=True, cov_mult=[10.0]*16)
+    
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
 
-    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=14, verbose=True)
+    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList,
+    # testAudioList, numOfSuccess=14, verbose=True)
 
     # print 'c=2 is the best so far'
     # np.tile(np.append(audioList[0], audioList[0][-1]), (len(testForcesList), 1))
-    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=16, c=-2, verbose=True)
+    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList,
+    # testAudioList, numOfSuccess=16, c=-2, verbose=True)
 
-    minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
-    print 'Min threshold size:', np.shape(minThresholds)
-    if len(minThresholds) < 50:
-        print minThresholds
-    else:
-        print minThresholds[:25]
+    ## minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
+    ## print 'Min threshold size:', np.shape(minThresholds)
+    ## if len(minThresholds) < 50:
+    ##     print minThresholds
+    ## else:
+    ##     print minThresholds[:25]
 
-    tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
+    # Daehyung: Why do you execute offline check? If you use full-length of data, there will be almost no difference between 
+    #           fixed threshold, dynamic threshold with single coefficient, and dynamtic threshold with multiple coefficients, 
+    #           since only last threshold will be used for the anomaly detection (expecially, the number of coefficients will not,
+    #           almost affect the results). Subtle anomaly cannot be detected by offline method since the slightly dropped likelihood
+    #           will be recovered at the end of data. I recommend to draw the change of likelihood for both normal and abnormal data.     
+    ## tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
+    # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
+    minThresholds = [-175.53843194,  -34.63042465,  -29.88693869,  -59.27020473,  -23.05816363, \
+                     -19.1734794,   -17.8245569,    -6.69286737,  -16.49275797, -235.88100668, \                       
+                     -266.9441535,   -18.21076457,  -50.7652509,   -16.41021634,  -16.23706356, \
+                     -15.89644485,  -16.75900115,  -18.26326553,  -22.02678227,  -26.02066474]
+    tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
+
+    sys.exit()
+    
     # c = 14 or c 18
     # for c in np.arange(0, 10, 0.5):
     #     print 'Table of Confusion for c=', c
@@ -381,114 +451,114 @@ def trainMultiHMM(isScooping=True):
     #     hmm.likelihood_disp(forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, forcesTrueTestSample, distancesTrueTestSample, anglesTrueTestSample, audioTrueTestSample,
     #                         forcesSample, distancesSample, anglesSample, audioSample, forcesTrueSample, distancesTrueSample, anglesTrueSample, audioTrueSample, -3.0, figureSaveName=None)
 
-    # -- Global threshold approach --
-    print '\n---------- Global Threshold ------------\n'
-    hmmGlobal = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
-    hmmGlobal.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True, cov_mult=[10.0]*16)
+    ## # -- Global threshold approach --
+    ## print '\n---------- Global Threshold ------------\n'
+    ## hmmGlobal = learning_hmm_multi_4d(nState=20, nEmissionDim=4, check_method='global')
+    ## hmmGlobal.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, ml_pkl='modals/ml_4d_global.pkl', use_pkl=True, cov_mult=[10.0]*16)
 
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmmGlobal, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=(-1*c))
-
-
-    # -- 1 dimensional force hidden Markov model --
-    print '\n\nBeginning testing for 1 dimensional force hidden Markov model\n\n'
-
-    hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=forcesSample, ml_pkl='modals/ml_1d_force.pkl', use_pkl=True)
-
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=(-1*c))
-
-    # c=3 is the best fit
-    accuracyForces = tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=-3)
-
-    # figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
-    # hmm1d.likelihood_disp(forcesSample, forcesTrueSample, -3.0, figureSaveName=None)
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmmGlobal, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=(-1*c))
 
 
-    # -- 1 dimensional distance hidden Markov model --
-    print '\n\nBeginning testing for 1 dimensional distance hidden Markov model\n\n'
+    ## # -- 1 dimensional force hidden Markov model --
+    ## print '\n\nBeginning testing for 1 dimensional force hidden Markov model\n\n'
 
-    hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=distancesSample, ml_pkl='modals/ml_1d_distance.pkl', use_pkl=True)
+    ## hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
+    ## hmm1d.fit(xData1=forcesSample, ml_pkl='modals/ml_1d_force.pkl', use_pkl=True)
 
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm1d, distancesList, testForcesList=testDistancesList, numOfSuccess=16, c=(-1*c))
-    # c=1 is the best fit
-    accuracyDistances = tableOfConfusion(hmm1d, distancesList, testForcesList=testDistancesList, numOfSuccess=16, c=-1)
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=(-1*c))
 
+    ## # c=3 is the best fit
+    ## accuracyForces = tableOfConfusion(hmm1d, forcesList, testForcesList=testForcesList, numOfSuccess=16, c=-3)
 
-    # -- 1 dimensional angle hidden Markov model --
-    print '\n\nBeginning testing for 1 dimensional angle hidden Markov model\n\n'
-
-    hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=anglesSample, ml_pkl='modals/ml_1d_angle.pkl', use_pkl=True)
-
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm1d, anglesList, testForcesList=testAnglesList, numOfSuccess=16, c=(-1*c))
-    # c=0 is the best fit
-    accuracyAngles = tableOfConfusion(hmm1d, anglesList, testForcesList=testAnglesList, numOfSuccess=16, c=0)
+    ## # figName = os.path.join(os.path.dirname(__file__), 'plots/likelihood_success.png')
+    ## # hmm1d.likelihood_disp(forcesSample, forcesTrueSample, -3.0, figureSaveName=None)
 
 
-    # -- 1 dimensional visual hidden Markov model --
-    print '\n\nBeginning testing for 1 dimensional audio hidden Markov model\n\n'
+    ## # -- 1 dimensional distance hidden Markov model --
+    ## print '\n\nBeginning testing for 1 dimensional distance hidden Markov model\n\n'
 
-    hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
-    hmm1d.fit(xData1=audioSample, ml_pkl='modals/ml_1d_audio.pkl', use_pkl=True)
+    ## hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
+    ## hmm1d.fit(xData1=distancesSample, ml_pkl='modals/ml_1d_distance.pkl', use_pkl=True)
 
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm1d, audioList, testForcesList=testAudioList, numOfSuccess=16, c=(-1*c))
-    # c=2 is the best fit
-    accuracyVision = tableOfConfusion(hmm1d, audioList, testForcesList=testAudioList, numOfSuccess=16, c=-2)
-
-
-    # -- 2 dimensional distance/angle kinematics hidden Markov model --
-    print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model\n\n'
-
-    hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2)
-    hmm2d.fit(xData1=forcesSample, xData2=distancesSample, ml_pkl='modals/ml_2d_kinematics_fd.pkl', use_pkl=True)
-
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm2d, forcesList, distancesList, testForcesList=testForcesList, testDistancesList=testDistancesList, numOfSuccess=16, c=(-1*c))
-    # c=1 is the best fit
-    accuracyKinematics = tableOfConfusion(hmm2d, forcesList, distancesList, testForcesList=testForcesList, testDistancesList=testDistancesList, numOfSuccess=16, c=-1)
-
-    # -- 2 dimensional distance/angle kinematics hidden Markov model --
-    print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model with global threshold\n\n'
-
-    hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2, check_method='global')
-    hmm2d.fit(xData1=distancesSample, xData2=anglesSample, ml_pkl='modals/ml_2d_kinematics.pkl', use_pkl=True)
-
-    for c in xrange(10):
-        print 'Table of Confusion for c=', c
-        tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=(-1*c))
-    # c=0 is the best fit
-    tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=0)
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmm1d, distancesList, testForcesList=testDistancesList, numOfSuccess=16, c=(-1*c))
+    ## # c=1 is the best fit
+    ## accuracyDistances = tableOfConfusion(hmm1d, distancesList, testForcesList=testDistancesList, numOfSuccess=16, c=-1)
 
 
-    fig = plt.figure()
-    indices = np.arange(5)
-    width = 0.5
-    bars = plt.bar(indices + width/4.0, [accuracyForces, accuracyDistances, accuracyAngles, accuracyVision, accuracyKinematics], width, alpha=0.5, color='g')
-    plt.ylabel('Accuracy (%)', fontsize=16)
-    plt.xticks(indices + width*3/4.0, ('Force', 'Distance', 'Angle', 'Vision', 'Distance\n& Angle'), fontsize=16)
-    plt.ylim([0, 100])
+    ## # -- 1 dimensional angle hidden Markov model --
+    ## print '\n\nBeginning testing for 1 dimensional angle hidden Markov model\n\n'
 
-    def autolabel(rects):
-        # attach some text labels
-        for rect in rects:
-            height = rect.get_height()
-            plt.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
-                    ha='center', va='bottom')
-    autolabel(bars)
+    ## hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
+    ## hmm1d.fit(xData1=anglesSample, ml_pkl='modals/ml_1d_angle.pkl', use_pkl=True)
 
-    plt.show()
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmm1d, anglesList, testForcesList=testAnglesList, numOfSuccess=16, c=(-1*c))
+    ## # c=0 is the best fit
+    ## accuracyAngles = tableOfConfusion(hmm1d, anglesList, testForcesList=testAnglesList, numOfSuccess=16, c=0)
+
+
+    ## # -- 1 dimensional visual hidden Markov model --
+    ## print '\n\nBeginning testing for 1 dimensional audio hidden Markov model\n\n'
+
+    ## hmm1d = learning_hmm_multi_1d(nState=20, nEmissionDim=1)
+    ## hmm1d.fit(xData1=audioSample, ml_pkl='modals/ml_1d_audio.pkl', use_pkl=True)
+
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmm1d, audioList, testForcesList=testAudioList, numOfSuccess=16, c=(-1*c))
+    ## # c=2 is the best fit
+    ## accuracyVision = tableOfConfusion(hmm1d, audioList, testForcesList=testAudioList, numOfSuccess=16, c=-2)
+
+
+    ## # -- 2 dimensional distance/angle kinematics hidden Markov model --
+    ## print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model\n\n'
+
+    ## hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2)
+    ## hmm2d.fit(xData1=forcesSample, xData2=distancesSample, ml_pkl='modals/ml_2d_kinematics_fd.pkl', use_pkl=True)
+
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmm2d, forcesList, distancesList, testForcesList=testForcesList, testDistancesList=testDistancesList, numOfSuccess=16, c=(-1*c))
+    ## # c=1 is the best fit
+    ## accuracyKinematics = tableOfConfusion(hmm2d, forcesList, distancesList, testForcesList=testForcesList, testDistancesList=testDistancesList, numOfSuccess=16, c=-1)
+
+    ## # -- 2 dimensional distance/angle kinematics hidden Markov model --
+    ## print '\n\nBeginning testing for 2 dimensional kinematics hidden Markov model with global threshold\n\n'
+
+    ## hmm2d = learning_hmm_multi_2d(nState=20, nEmissionDim=2, check_method='global')
+    ## hmm2d.fit(xData1=distancesSample, xData2=anglesSample, ml_pkl='modals/ml_2d_kinematics.pkl', use_pkl=True)
+
+    ## for c in xrange(10):
+    ##     print 'Table of Confusion for c=', c
+    ##     tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=(-1*c))
+    ## # c=0 is the best fit
+    ## tableOfConfusion(hmm2d, distancesList, anglesList, testForcesList=testDistancesList, testDistancesList=testAnglesList, numOfSuccess=16, c=0)
+
+
+    ## fig = plt.figure()
+    ## indices = np.arange(5)
+    ## width = 0.5
+    ## bars = plt.bar(indices + width/4.0, [accuracyForces, accuracyDistances, accuracyAngles, accuracyVision, accuracyKinematics], width, alpha=0.5, color='g')
+    ## plt.ylabel('Accuracy (%)', fontsize=16)
+    ## plt.xticks(indices + width*3/4.0, ('Force', 'Distance', 'Angle', 'Vision', 'Distance\n& Angle'), fontsize=16)
+    ## plt.ylim([0, 100])
+
+    ## def autolabel(rects):
+    ##     # attach some text labels
+    ##     for rect in rects:
+    ##         height = rect.get_height()
+    ##         plt.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
+    ##                 ha='center', va='bottom')
+    ## autolabel(bars)
+
+    ## plt.show()
 
 # trainMultiHMM(isScooping=True)
 trainMultiHMM(isScooping=False)

@@ -97,7 +97,7 @@ class armReachAction(mpcBaseAction):
         
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, -1.45, 0]
+        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, -1.45, 0] # not used
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
@@ -111,9 +111,9 @@ class armReachAction(mpcBaseAction):
                                             [0,		0,    .15]]) #Moving up out of bowl
 
         # It uses the l_gripper_spoon_frame aligned with mouth
-        self.leftArmFeedingPos = np.array([[-0.2, 0, 0],
-                                           [0.0, 0, 0],
-                                           [-0.2, 0, 0]])
+        self.leftArmFeedingPos = np.array([[-0.2, 0, 0.0],
+                                           [0.05, 0, 0.0],
+                                           [-0.2, 0, 0.0]])
         ## self.leftArmFeedingPos = np.array([[0,    .2,   0],
         ##                                    [0,   -.015,   .02],
         ##                                    [0,    .2,   0]])
