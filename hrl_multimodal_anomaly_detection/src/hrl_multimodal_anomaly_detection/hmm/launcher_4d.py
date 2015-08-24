@@ -490,6 +490,6 @@ def trainMultiHMM(isScooping=True):
 
     plt.show()
 
-# trainMultiHMM(isTrain=True)
-trainMultiHMM(isTrain=False)
+# trainMultiHMM(isScooping=True)
+trainMultiHMM(isScooping=False)
 
