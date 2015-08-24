@@ -136,17 +136,10 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
             print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
 
-            # Remove trailing data from kinematics and force (to allow for interpolation)
-            maxTime = max(audioTimes)
-            print 'Max time:', maxTime
-            print 'Length:', len(forceTimes)
-            forceTimes = [t for t in forceTimes if t < maxTime]
-            print 'New length:', len(forceTimes)
-            print 'Max force time:', forceTimes[-1]
-            forces = forces[:len(forceTimes)]
-            kinematicsTimes = [t for t in kinematicsTimes if t < maxTime]
-            distances = distances[:len(kinematicsTimes)]
-            angles = angles[:len(kinematicsTimes)]
+            # Audio has the longest time duration, so decrease its' data to match force and kinematics
+            maxTime = max(kinematicsTimes)
+            audioTimes = [t for t in audioTimes if t < maxTime]
+            audio = audio[:len(audioTimes)]
 
             print 'Shapes after removin trailing data'
             print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
