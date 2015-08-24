@@ -143,8 +143,12 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             distances = interpolate.splev(newTimes, distanceInterp, der=0)
             angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
             angles = interpolate.splev(newTimes, angleInterp, der=0)
-            audioInterp = interpolate.splrep(audioTimes, audio, s=0)
-            audio = interpolate.splev(newTimes, audioInterp, der=0)
+            # audioInterp = interpolate.splrep(audioTimes, audio, s=0)
+            # audio = interpolate.splev(newTimes, audioInterp, der=0)
+
+            # Downsample audio (nicely), by finding the closest time sample in audio for each new time stamp
+            audioTimes = np.array(audioTimes)
+            audio = [audio[np.abs(audioTimes - t).argmin()] for t in newTimes]
 
             # print 'Shapes after downsampling'
             # print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
@@ -161,7 +165,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             forcesTrueList.append(forces.tolist())
             distancesTrueList.append(distances.tolist())
             anglesTrueList.append(angles.tolist())
-            audioTrueList.append(audio.tolist())
+            audioTrueList.append(audio)
 
             if minVals is None:
                 minVals = []
