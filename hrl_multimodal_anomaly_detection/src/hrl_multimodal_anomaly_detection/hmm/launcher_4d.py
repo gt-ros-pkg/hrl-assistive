@@ -138,7 +138,11 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
 
             # Remove trailing data from kinematics and force (to allow for interpolation)
             maxTime = max(audioTimes)
+            print 'Max time:', maxTime
+            print 'Length:', len(forceTimes)
             forceTimes = [t for t in forceTimes if t < maxTime]
+            print 'New length:', len(forceTimes)
+            print 'Max force time:', forceTimes[-1]
             forces = forces[:len(forceTimes)]
             kinematicsTimes = [t for t in kinematicsTimes if t < maxTime]
             distances = distances[:len(kinematicsTimes)]
