@@ -190,7 +190,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
             audioList.append(audio.tolist())
-            timesList.append(audioTimes)
+            timesList.append(newTimes.tolist())
 
     print 'Load shapes pre extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
 
