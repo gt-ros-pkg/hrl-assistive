@@ -305,7 +305,7 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
 
     
 def tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample):
-    minThresholds = np.zeros(hmm.nGaussian)+10000
+    minThresholds = np.zeros(hmm.nGaussian) + 10000
 
     n = len(forcesTestSample)
     for i in range(n):
@@ -355,13 +355,13 @@ def trainMultiHMM(isScooping=True):
 
         print 'Loading test data'
         testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, \
-          testDistancesTrueList, testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest, \
+          testDistancesTrueList, testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest,
                                                                                   isTrainingData=True)
 
         with open(fileName, 'wb') as f:
-            pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
-                         anglesTrueList, audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, \
-                         testTimesList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList), \
+            pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,
+                         anglesTrueList, audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList,
+                         testTimesList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList),
                          f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         with open(fileName, 'rb') as f:
@@ -425,9 +425,9 @@ def trainMultiHMM(isScooping=True):
     ## tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
     # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
-    minThresholds = [-175.53843194,  -34.63042465,  -29.88693869,  -59.27020473,  -23.05816363, \
-                     -19.1734794,   -17.8245569,    -6.69286737,  -16.49275797, -235.88100668, \                       
-                     -266.9441535,   -18.21076457,  -50.7652509,   -16.41021634,  -16.23706356, \
+    minThresholds = [-175.53843194,  -34.63042465,  -29.88693869,  -59.27020473,  -23.05816363,
+                     -19.1734794,   -17.8245569,    -6.69286737,  -16.49275797, -235.88100668,
+                     -266.9441535,   -18.21076457,  -50.7652509,   -16.41021634,  -16.23706356,
                      -15.89644485,  -16.75900115,  -18.26326553,  -22.02678227,  -26.02066474]
     tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
