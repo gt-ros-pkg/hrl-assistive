@@ -137,25 +137,28 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
             forceInterp = interpolate.splrep(forceTimes, forces, s=0)
             # audioInterp = interpolate.splrep(audioTimes, audio, s=0)
-            forces = interpolate.splev(kinematicsTimes, forceInterp, der=0)
+            forces = interpolate.splev(audioTimes, forceInterp, der=0)
             # audio = interpolate.splev(kinematicsTimes, audioInterp, der=0)
 
-            # print 'Audio'
-            # print audio[:10], audio[-10:]
             # Constant (horizontal linear) interpolation for audio data
-            tempAudio = []
-            audioIndex = 0
-            for t in kinematicsTimes:
-                if t > audioTimes[audioIndex + 1] and audioIndex < len(audioTimes) - 2:
-                    audioIndex += 1
-                tempAudio.append(audio[audioIndex])
-            audio = tempAudio
-            # print 'Audio New'
-            # print audio[:10], audio[-10:]
+            # tempAudio = []
+            # audioIndex = 0
+            # for t in kinematicsTimes:
+            #     if t > audioTimes[audioIndex + 1] and audioIndex < len(audioTimes) - 2:
+            #         audioIndex += 1
+            #     tempAudio.append(audio[audioIndex])
+            # audio = tempAudio
+
+            # Downsample kinematics to match audio size
+            # distances = [distance for index, distance in enumerate(distances) if index % 2 == 0 and index]
+            distanceInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
+            distances = interpolate.splev(audioTimes, distanceInterp, der=0)
+            angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
+            angles = interpolate.splev(audioTimes, angleInterp, der=0)
 
             forcesTrueList.append(forces.tolist())
-            distancesTrueList.append(distances)
-            anglesTrueList.append(angles)
+            distancesTrueList.append(distances.tolist())
+            anglesTrueList.append(angles.tolist())
             audioTrueList.append(audio)
 
             if minVals is None:
@@ -167,7 +170,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
                 print 'minValues', minVals
                 print 'maxValues', maxVals
 
-            scale = 1
+            scale = 10
 
             # Scale features
             # forces = preprocessing.scale(forces) * scale
@@ -185,7 +188,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False):
             distancesList.append(distances.tolist())
             anglesList.append(angles.tolist())
             audioList.append(audio.tolist())
-            timesList.append(kinematicsTimes)
+            timesList.append(audioTimes)
 
     print 'Load shapes pre extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
 
@@ -344,7 +347,7 @@ def dataFiles(isScooping=False):
 
 
 def trainMultiHMM(isScooping=True):
-    fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isScooping else 'Scooping'))
+    fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isScooping else 'Feeding'))
 
     if not os.path.isfile(fileName):
         fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles(isScooping=isScooping)
@@ -380,8 +383,8 @@ def trainMultiHMM(isScooping=True):
             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
     ## plots.plotOneTrueSet()
     
-    ## plots.distributionOfSequences(useTest=False)
-    ## plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
+    plots.distributionOfSequences(useTest=False)
+    plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
     
     # Plot modalities
     # plots.quickPlotModalities()
@@ -397,7 +400,7 @@ def trainMultiHMM(isScooping=True):
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, 
-            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Scooping'), use_pkl=True, cov_mult=[10.0]*16)
+            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=True, cov_mult=[10.0]*16)
     
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
