@@ -134,7 +134,7 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             forces, distances, angles, kinematicsTimes, forceTimes = forceKinematics(name, audioTimes)
 
             # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
-            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
+            # print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
 
             newTimes = np.linspace(0.01, max(kinematicsTimes), downSampleSize)
             forceInterp = interpolate.splrep(forceTimes, forces, s=0)
@@ -146,8 +146,8 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             audioInterp = interpolate.splrep(audioTimes, audio, s=0)
             audio = interpolate.splev(newTimes, audioInterp, der=0)
 
-            print 'Shapes after downsampling'
-            print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
+            # print 'Shapes after downsampling'
+            # print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', np.shape(angles), 'Audio shape:', np.shape(audio)
 
             # Constant (horizontal linear) interpolation for audio data
             # tempAudio = []
@@ -191,6 +191,9 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             anglesList.append(angles.tolist())
             audioList.append(audio.tolist())
             timesList.append(newTimes.tolist())
+
+            print 'Forces: Min', np.min(forces), ', Max', np.max(forces), 'Distances: Min', np.min(distances), ', Max', np.max(distances), \
+                'Angles: Min', np.min(angles), ', Max', np.max(angles), 'Audio: Min', np.min(audio), ', Max', np.max(audio)
 
     print 'Load shapes pre extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
 
@@ -356,12 +359,12 @@ def trainMultiHMM(isScooping=True):
 
         print 'Loading training data'
         forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
-            anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=100)
+            anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=200)
 
         print 'Loading test data'
         testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, \
           testDistancesTrueList, testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest,
-                                                                                  isTrainingData=True, downSampleSize=100)
+                                                                                  isTrainingData=True, downSampleSize=200)
 
         with open(fileName, 'wb') as f:
             pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,
@@ -398,7 +401,8 @@ def trainMultiHMM(isScooping=True):
     forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList, testDistancesList,
                                                                                                testAnglesList, testAudioList)
 
-    # Daehyung: quite high covariance. It may converge to local minima. I don't know whether the fitting result is reliable or not. 
+    # Daehyung: Quite high covariance. It may converge to local minima. I don't know whether the fitting result is reliable or not.
+    #           If there is any error message in training, we have to fix. If we ignore, the result will be incorrect.
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, 
@@ -406,9 +410,6 @@ def trainMultiHMM(isScooping=True):
     
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
-
-    # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList,
-    # testAudioList, numOfSuccess=14, verbose=True)
 
     # print 'c=2 is the best so far'
     # np.tile(np.append(audioList[0], audioList[0][-1]), (len(testForcesList), 1))
@@ -427,10 +428,6 @@ def trainMultiHMM(isScooping=True):
     ## tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
     # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
-    # minThresholds = [-175.53843194,  -34.63042465,  -29.88693869,  -59.27020473,  -23.05816363,
-    #                  -19.1734794,   -17.8245569,    -6.69286737,  -16.49275797, -235.88100668,
-    #                  -266.9441535,   -18.21076457,  -50.7652509,   -16.41021634,  -16.23706356,
-    #                  -15.89644485,  -16.75900115,  -18.26326553,  -22.02678227,  -26.02066474]
     tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=minThresholds)
 
     sys.exit()
