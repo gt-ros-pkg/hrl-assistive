@@ -277,7 +277,9 @@ def tableOfConfusion(hmm, forcesList, distancesList=None, anglesList=None, audio
 def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None, audioList=None, testForcesList=None,
                            testDistancesList=None, testAnglesList=None, testAudioList=None, numOfSuccess=5, c=-5, verbose=False):
     truePos = 0
+    trueNeg = 0
     falsePos = 0
+    falseNeg = 0
 
     # positive is anomaly
     # negative is non-anomaly
@@ -302,15 +304,28 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
                 if anomaly:
                     falsePos += 1
                     print 'Test', i, '|', anomaly, error
-                    break                    
+                    break
+                elif not anomaly and j == len(testForcesList[i]) - 1:
+                    trueNeg += 1
+                    break
             else:
-                if anomaly:
+                if not anomaly:
+                    falseNeg += 1
+                    print 'Test', i, '|', anomaly, error
+                    break
+                elif anomaly and j == len(testForcesList[i]) - 1:
                     truePos += 1
                     break
 
+                # if anomaly:
+                #     truePos += 1
+                #     break
 
-    trueNegativeRate = float(numOfSuccess - falsePos) / float(numOfSuccess) * 100.0
-    truePositiveRate = float(truePos) / float(len(testForcesList) - numOfSuccess) * 100.0
+    # trueNegativeRate = float(numOfSuccess - falsePos) / float(numOfSuccess) * 100.0
+    # truePositiveRate = float(truePos) / float(len(testForcesList) - numOfSuccess) * 100.0
+
+    truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
+    trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
     print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
 
     return 
