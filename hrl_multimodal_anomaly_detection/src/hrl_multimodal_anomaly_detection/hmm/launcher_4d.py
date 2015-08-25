@@ -329,7 +329,7 @@ def scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList):
     distancesList = []
     anglesList = []
     audioList = []
-    scale = 1
+    scale = 10
 
     # Scale features
     for forces, distances, angles, audio in zip(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList):
@@ -415,8 +415,10 @@ def trainMultiHMM(isScooping=True):
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=20, nEmissionDim=4)
     hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, 
-            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=True, cov_mult=[10.0]*16)
+            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=True, cov_mult=[1.0]*16)
     
+    # 20 States, 1 cov_mult, scale 10
+
     # testSet = hmm.convert_sequence(forcesList[0], distancesList[0], anglesList[0], audioList[0])
     # print 'Log likelihood of testset:', hmm.loglikelihood(testSet)
 
@@ -425,7 +427,8 @@ def trainMultiHMM(isScooping=True):
     # tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList,
     # testAudioList, numOfSuccess=16, c=-2, verbose=True)
 
-    minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
+    # minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample)
+    minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample)
     print 'Min threshold size:', np.shape(minThresholds)
     print minThresholds
 
