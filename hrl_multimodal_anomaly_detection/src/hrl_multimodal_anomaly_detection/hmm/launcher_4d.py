@@ -109,18 +109,11 @@ def extrapolateData(data, maxsize):
 def extrapolateAllData(allData, maxsize):
     return [extrapolateData(data, maxsize) for data in allData]
 
-minVals = None
-maxVals = None
 def scaling(X, minVal, maxVal, scale=1.0):
     X = np.array(X)
     return (X - minVal) / (maxVal - minVal) * scale
 
 def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100):
-    global minVals, maxVals
-    forcesList = []
-    distancesList = []
-    anglesList = []
-    audioList = []
     timesList = []
 
     forcesTrueList = []
@@ -166,53 +159,21 @@ def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100)
             distancesTrueList.append(distances.tolist())
             anglesTrueList.append(angles.tolist())
             audioTrueList.append(audio)
-
-            if minVals is None:
-                minVals = []
-                maxVals = []
-                for modality in [forces, distances, angles, audio]:
-                    minVals.append(np.min(modality))
-                    maxVals.append(np.max(modality))
-                print 'minValues', minVals
-                print 'maxValues', maxVals
-
-            scale = 10
-
-            # Scale features
-            # forces = preprocessing.scale(forces) * scale
-            # distances = preprocessing.scale(distances) * scale
-            # angles = preprocessing.scale(angles) * scale
-            # audio = preprocessing.scale(audio) * scale
-            forces = scaling(forces, minVals[0], maxVals[0], scale)
-            distances = scaling(distances, minVals[1], maxVals[1], scale)
-            angles = scaling(angles, minVals[2], maxVals[2], scale)
-            # print 'Audio before scale', audio[0]
-            audio = scaling(audio, minVals[3], maxVals[3], scale)
-            # print 'Audio after scale', audio[0], 'minVal', minVals[3], 'maxVal', maxVals[3]
-
-            forcesList.append(forces.tolist())
-            distancesList.append(distances.tolist())
-            anglesList.append(angles.tolist())
-            audioList.append(audio.tolist())
             timesList.append(newTimes.tolist())
 
-            print 'Forces: Min', np.min(forces), ', Max', np.max(forces), 'Distances: Min', np.min(distances), ', Max', np.max(distances), \
-                'Angles: Min', np.min(angles), ', Max', np.max(angles), 'Audio: Min', np.min(audio), ', Max', np.max(audio)
-
-    print 'Load shapes pre extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
+    print 'Load shapes pre extrapolation:', np.shape(forcesTrueList), np.shape(distancesTrueList), np.shape(anglesTrueList), np.shape(audioTrueList)
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
         # Find the largest iteration
-        maxsize = max([len(x) for x in forcesList])
+        maxsize = max([len(x) for x in forcesTrueList])
         # Extrapolate each time step
-        forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-        audioTrueList = extrapolateAllData([forcesList, distancesList, anglesList, audioList, timesList,
-                                                             forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], maxsize)
+        forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList = extrapolateAllData([forcesTrueList, distancesTrueList,
+                                                                                            anglesTrueList, audioTrueList, timesList], maxsize)
 
-    print 'Load shapes post extrapolation:', np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
+    print 'Load shapes post extrapolation:', np.shape(forcesTrueList), np.shape(distancesTrueList), np.shape(anglesTrueList), np.shape(audioTrueList)
 
-    return forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList
+    return forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList
 
 def createSampleSet(forcesList, distancesList, anglesList, pdfList, init=0):
     testDataSet = create_mvpa_dataset(forcesList, distancesList, anglesList, pdfList, [10]*len(forcesList), [True]*len(forcesList))
@@ -350,6 +311,38 @@ def tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSa
 
     return minThresholds
 
+minVals = None
+maxVals = None
+def scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList):
+    # Determine max and min values
+    global minVals, maxVals
+    if minVals is None:
+        minVals = []
+        maxVals = []
+        for modality in [forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList]:
+            minVals.append(np.min(modality))
+            maxVals.append(np.max(modality))
+        print 'minValues', minVals
+        print 'maxValues', maxVals
+
+    forcesList = []
+    distancesList = []
+    anglesList = []
+    audioList = []
+    scale = 10
+
+    # Scale features
+    for forces, distances, angles, audio in zip([forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList]):
+        forcesList.append(scaling(forces, minVals[0], maxVals[0], scale).tolist())
+        distancesList.append(scaling(distances, minVals[1], maxVals[1], scale).tolist())
+        anglesList.append(scaling(angles, minVals[2], maxVals[2], scale).tolist())
+        audioList.append(scaling(audio, minVals[3], maxVals[3], scale).tolist())
+
+    print 'Forces: Min', np.min(forcesList), ', Max', np.max(forcesList), 'Distances: Min', np.min(distancesList), ', Max', np.max(distancesList), \
+        'Angles: Min', np.min(anglesList), ', Max', np.max(anglesList), 'Audio: Min', np.min(audioList), ', Max', np.max(audioList)
+
+    return forcesList, distancesList, anglesList, audioList
+
 def dataFiles(isScooping=False):
     if isScooping:
         fileNamesTrain = ['/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/scoopingTraining2_scooping_fak_08-19-2015_10-25-58/iteration_%d_success.pkl']
@@ -369,7 +362,6 @@ def dataFiles(isScooping=False):
 
     return fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest
 
-
 def trainMultiHMM(isScooping=True):
     fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isScooping else 'Feeding'))
 
@@ -377,13 +369,13 @@ def trainMultiHMM(isScooping=True):
         fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest = dataFiles(isScooping=isScooping)
 
         print 'Loading training data'
-        forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, \
-            anglesTrueList, audioTrueList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=200)
+        forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=200)
 
         print 'Loading test data'
-        testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, testForcesTrueList, \
-          testDistancesTrueList, testAnglesTrueList, testAudioTrueList = loadData(fileNamesTest, iterationSetsTest,
-                                                                                  isTrainingData=True, downSampleSize=200)
+        testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, testTimesList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=200)
+
+        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList)
+        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
 
         with open(fileName, 'wb') as f:
             pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,
@@ -396,8 +388,6 @@ def trainMultiHMM(isScooping=True):
             audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, \
             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList = pickle.load(f)
 
-    # Daehyung: data is too long (too high frequency or too lengthy movement) => GHMM may be broken (underflow)
-    #           it's better to downsample or cut the begining and end of data or make it quick movement
     print np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList)
     print np.shape(forcesTrueList), np.shape(audioTrueList), np.shape(timesList)
 
