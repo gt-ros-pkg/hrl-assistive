@@ -329,10 +329,10 @@ def scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList):
     distancesList = []
     anglesList = []
     audioList = []
-    scale = 10
+    scale = 1
 
     # Scale features
-    for forces, distances, angles, audio in zip([forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList]):
+    for forces, distances, angles, audio in zip(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList):
         forcesList.append(scaling(forces, minVals[0], maxVals[0], scale).tolist())
         distancesList.append(scaling(distances, minVals[1], maxVals[1], scale).tolist())
         anglesList.append(scaling(angles, minVals[2], maxVals[2], scale).tolist())
@@ -397,8 +397,8 @@ def trainMultiHMM(isScooping=True):
             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
     ## plots.plotOneTrueSet()
     
-    plots.distributionOfSequences(useTest=False)
-    plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
+    #plots.distributionOfSequences(useTest=False)
+    #plots.distributionOfSequences(useTest=True, numSuccess=10 if isScooping else 13)
     
     # Plot modalities
     # plots.quickPlotModalities()
@@ -442,9 +442,9 @@ def trainMultiHMM(isScooping=True):
     sys.exit()
     
     # c = 14 or c 18
-    # for c in np.arange(0, 10, 0.5):
-    #     print 'Table of Confusion for c=', c
-    #     tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=(-1*c))
+    #for c in np.arange(0, 20, 0.5):
+    #    print 'Table of Confusion for c=', c
+    #    tableOfConfusion(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=10 if isScooping else 13, c=(-1*c))
 
     # hmm.path_disp(forcesList, distancesList, anglesList, audioList)
 
