@@ -87,10 +87,11 @@ var RFH = {
                                                      div: 'battery-status'});
     // Setup a client to listen to TFs.
         RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
-                                            angularThres : 0.0025,
-                                            transThres : 0.0025,
+                                            angularThres : 0.005,
+                                            transThres : 0.001,
                                             rate : 20.0,
                                             fixedFrame : '/base_link' });
+        RFH.tfClient.actionClient.cancel();
         RFH.pr2 = new PR2(RFH.ros);
         RFH.pixel23DClient = new RFH.Pixel23DClient({ros: RFH.ros,
                                                      cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'

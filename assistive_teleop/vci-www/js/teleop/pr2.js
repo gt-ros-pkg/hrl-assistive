@@ -310,7 +310,7 @@ var PR2 = function (ros) {
     self.l_gripper = new PR2Gripper('left', self.ros);
     self.base = new PR2Base(self.ros);
     self.head = new PR2Head(self.ros);
-    self.r_arm_cart = new PR2ArmJTTask({side:'right',
+    self.r_arm_cart = new PR2ArmMPC({side:'right',
                                         ros: self.ros,
                                         ee_frame:'r_gripper_tool_frame'});
     self.l_arm_cart = new PR2ArmMPC({side:'left',

@@ -25,7 +25,6 @@ RFH.CartesianEEControl = function (options) {
     self.dt = 500; //hold-repeat time in ms
     self.mode = "table" // "wall", "free"
     self.active = false;
-    self.SVGCanvas = Snap('#arm-svg');
     self.raycaster = new THREE.Raycaster();
     var canvasClickCB = function (event) {
         var mouse = new THREE.Vector2();
@@ -36,92 +35,106 @@ RFH.CartesianEEControl = function (options) {
 
         self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
         var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
-        if (objs.length > 0) {
-            var clickedObj = objs[0];
-            clickedObj.object.material.color.setRGB(Math.random(), Math.random(), Math.random());
+        if (objs.length > 0 && objs[0].object.userData.side === self.side) {
+            self.rotArrows[objs[0].object.userData.direction]['cb']();
         }
     };
-    $('#clickable-canvas').on('click.rfh', canvasClickCB);
+    $('#markers').on('click.rfh', canvasClickCB);
 
     self.rotArrowLoader = new THREE.ColladaLoader();
     var arrowOnLoad = function (collada) {
         var arrowGeom = collada.scene.children[0].children[0].geometry.clone();
         var baseMaterial = new THREE.MeshLambertMaterial();
-        //var arrowMesh = collada.scene.children[0].children[0];
         baseMaterial.transparent = true;
         baseMaterial.opacity = 0.87;
         self.rotArrows = {};
         var scaleX = 0.00075;
         var scaleY = 0.00075;
         var scaleZ = 0.00075;
+        var edgeColor = new THREE.Color(0.1,0.1,0.1);
+        var edgeMinAngle = 45;
 
         //Create arrow meshes for each directional control
         var mesh, edges, pos, rot, mat, cb;
         // X-Positive Rotation
         baseMaterial.color.setRGB(255,0,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'xp';
+        mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.1, -0.13, 0.13);
         rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
         cb = function (event) {self.eeDeltaCmd({'r':Math.PI/8})};
-        self.rotArrows['xp'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // X-Negative Rotation
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'xn';
+        mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.1, 0.13, 0.13);
         rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
         cb = function (event) {self.eeDeltaCmd({'r':-Math.PI/8})};
-        self.rotArrows['xn'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Y-Positive Rotation
         baseMaterial.color.setRGB(0,255,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'yp';
+        mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.13, 0.025, 0.13);
         rot = new THREE.Euler(Math.PI,0,0)
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
         cb = function (event) {self.eeDeltaCmd({'p':Math.PI/8})};
-        self.rotArrows['yp'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Y-Negative Rotation
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'yn';
+        mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.13, -0.025, -0.13);
         rot = new THREE.Euler(0, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
         cb = function (event) {self.eeDeltaCmd({'p':Math.PI/8})};
-        self.rotArrows['yn'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Z-Positive Rotation
         baseMaterial.color.setRGB(0,0,255);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'zp';
+        mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.13, -0.13, 0.025);
         rot = new THREE.Euler(-Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
         cb = function (event) {self.eeDeltaCmd({'y':Math.PI/8})};
-        self.rotArrows['zp'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Z-Negative Rotation
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'zn';
+        mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, 0x111111, 4);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.13, 0.13, -0.025);
         rot = new THREE.Euler(Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
         cb = function (event) {self.eeDeltaCmd({'y':-Math.PI/8})};
-        self.rotArrows['zn'] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
 
         for (var dir in self.rotArrows) {
+            self.rotArrows[dir]['mesh'].visible = false;
+            self.rotArrows[dir]['edges'].visible = false;
             RFH.viewer.scene.add(self.rotArrows[dir]['mesh']);
             RFH.viewer.scene.add(self.rotArrows[dir]['edges']);
         }
@@ -130,6 +143,14 @@ RFH.CartesianEEControl = function (options) {
         console.log("Loading Rotation Arrow Collada Mesh: ", data.loaded/data.total);
     }
     self.rotArrowLoader.load('./data/Curved_Arrow_Square.dae', arrowOnLoad, arrowOnProgress)
+
+    self.resizeRenderer = function (event) {
+        var w = $('#'+self.div).width();
+        var h = $('#'+self.div).height();
+        RFH.viewer.renderer.setSize(w, h);
+        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
+    }
+    $(window).on('resize.rfh', self.resizeRenderer);
 
     self.updateRotImage = function () {
         if (self.eeTF === null) { return };
@@ -141,10 +162,6 @@ RFH.CartesianEEControl = function (options) {
         tfMat.setPosition(new THREE.Vector3(self.eeTF.translation.x,
                                             self.eeTF.translation.y,
                                             self.eeTF.translation.z));
-
-        var w = $('#mjpeg').width();
-        var h = $('#mjpeg').height();
-        RFH.viewer.renderer.setSize(w, h);
 
         var arrowInWorldFrame = new THREE.Matrix4();
         var arrowPos = new THREE.Vector3();
@@ -158,12 +175,6 @@ RFH.CartesianEEControl = function (options) {
         }
         RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
     }
-
-//    self.rotCtrls = new RFH.EERotation({div: self.side+'-rot-ctrls',
-//                                        arm: self.arm,
-//                                        tfClient: self.tfClient,
-//                                        eeFrame: self.side+'_gripper_tool_frame'});
-//    $('#'+self.rotCtrls.div).hide();
 
     self.updateCtrlRingViz = function () {
         // Check that we have values for both camera and ee frames
@@ -225,7 +236,7 @@ RFH.CartesianEEControl = function (options) {
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
     $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button').button();
-    $('#speedOptions-buttons, #posrot-set, #ee-mode-set').buttonset();
+    $('#speedOptions-buttons, #'+self.side+'-posrot-set, #ee-mode-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer').hide();
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
 
@@ -636,11 +647,22 @@ RFH.CartesianEEControl = function (options) {
     self.setRotationCtrls = function (e) {
         $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').show();
         $('#armCtrlContainer').hide();
+        $('#markers').show();
+        for (var dir in self.rotArrows) {
+            self.rotArrows[dir]['mesh'].visible = true;
+            self.rotArrows[dir]['edges'].visible = true;
+        }
+        self.resizeRenderer();
     };
 
     self.setPositionCtrls = function (e) {
         $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').hide();
+        $('#markers').hide();
         $('#armCtrlContainer').show();
+        for (var dir in self.rotArrows) {
+            self.rotArrows[dir]['mesh'].visible = false;
+            self.rotArrows[dir]['edges'].visible = false;
+        }
     };
     $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
     $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
@@ -652,8 +674,8 @@ RFH.CartesianEEControl = function (options) {
         self.updateCtrlRingViz();
     };
 
-    $('#posrot-pos').on('click.rfh', self.setPositionCtrls);
-    $('#posrot-rot').on('click.rfh', self.setRotationCtrls);
+    $('#'+self.side+'-posrot-pos').on('click.rfh', self.setPositionCtrls);
+    $('#'+self.side+'-posrot-rot').on('click.rfh', self.setRotationCtrls);
 
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
@@ -663,12 +685,11 @@ RFH.CartesianEEControl = function (options) {
         $("#select-focus-toggle-label").show();
         $('#speedOptions').show();
         $("#"+self.gripperDisplayDiv).show();
-        $('#posrot-set').show();
+        $('#'+self.side+'-posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
-//        $('#posrot-pos').click();
-//        $('#'+self.rotCtrls.div).show();
+        $('#'+self.side+'-posrot-pos').click();
         self.setPositionCtrls();
         self.updateCtrlRingViz();
         self.active = true;
@@ -680,20 +701,22 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('mousedown.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
+        $('#markers').hide();
 //        if ($('#select-focus-toggle').prop('checked')) {
 //            $('#select-focus-toggle').click();
 //        }
 //        $("#select-focus-toggle-label").off('click.rfh').hide();
         $('#speedOptions').hide();
         $("#"+self.gripperDisplayDiv).hide();
-//        $('#posrot-pos, #posrot-rot').off('click.rfh').hide();
-//        $('#posrot-set').hide();
         if ($('#touchspot-toggle').prop('checked')) {
             $('#touchspot-toggle').click();
         }
         $('#touchspot-toggle-label').off('click.rfh').hide();
-//        $('#'+self.rotCtrls.div).hide();
         self.active = false;
+        for (var dir in self.rotArrows) {
+            self.rotArrows[dir]['mesh'].visible = false;
+            self.rotArrows[dir]['edges'].visible = false;
+        }
     };
 }
 

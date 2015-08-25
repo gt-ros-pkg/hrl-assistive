@@ -74,9 +74,8 @@
         <h3>Controls</h3>
         <!-- Driving Controls -->
         <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
-        <!-- EE Cart Controls -->
-        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
-        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>
+
+        <!-- Shared Arm Controls -->
         <div id="ee-mode-set" class="arm-ctrl" style="display:none">
             <input class="menu-item" id="ee-mode-table" type="radio" name="ee-mode-radio" checked="checked">
             <label for="ee-mode-table">Table</label>
@@ -85,27 +84,13 @@
             <input class="menu-item" id="ee-mode-free" type="radio" name="ee-mode-radio">
             <label for="ee-mode-free">Free</label>-->
         </div>
-        <div id="posrot-set" class="arm-ctrl" style="display:none">
-            <input class="menu-item" id="posrot-pos" type="radio" name="posrot-radio" checked="checked">
-            <label for="posrot-pos">Position</label>
-            <input class="menu-item" id="posrot-rot" type="radio" name="posrot-radio">
-            <label for="posrot-rot">Rotation</label>
-        </div>
-        <div id="r-rot-ctrls" class="r-arm-ctrl">
-            <div class="wrist-rot-slider"></div>
-            <div class="wrist-lon-slider"></div>
-            <div class="wrist-lat-slider"></div>
-        </div>
-        <div id="l-rot-ctrls" class="l-arm-ctrl">
-            <div class="wrist-rot-slider"></div>
-            <div class="wrist-lon-slider"></div>
-            <div class="wrist-lat-slider"></div>
-        </div>
+        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
+        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>
 <!--        <input type="checkbox" id="select-focus-toggle"/>
         <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
         <button id="wristCW" style="display:none">CW</button>
         <button id="wristCCW" style="display:none">CCW</button>-->
-        <div id="speedOptions" class="r-arm-ctrl">
+        <div id="speedOptions" class="arm-ctrl">
             <h4>Step Size</h4>
             <div id="speedOptions-buttons">
               <form id="speedOptions-form">
@@ -119,6 +104,22 @@
                 <label for="large">L</label>
               </form>
             </div>
+        </div>
+
+        <!-- Right Arm Controls -->
+        <div id="r-posrot-set" class="r-arm-ctrl" style="display:none">
+            <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
+            <label for="r-posrot-pos">Position</label>
+            <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
+            <label for="r-posrot-rot">Rotation</label>
+        </div>
+
+        <!-- Left Arm Controls -->
+        <div id="l-posrot-set" class="l-arm-ctrl" style="display:none">
+            <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
+            <label for="l-posrot-pos">Position</label>
+            <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
+            <label for="l-posrot-rot">Rotation</label>
         </div>
      </div>
  </div>
@@ -138,8 +139,8 @@
          <!-- divs for driving controls -->
          <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
          </svg>
-         <svg id="arm-svg" class="arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
-         </svg>
+         <!--<svg id="arm-svg" class="arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+         </svg>-->
          <div class="drive-ctrl drive-look left"></div>
          <div class="drive-ctrl drive-look right"></div>
          <div class="drive-ctrl turn-signal left"></div>
