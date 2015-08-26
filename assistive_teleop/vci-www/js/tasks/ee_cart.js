@@ -26,7 +26,8 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table" // "wall", "free"
     self.active = false;
     self.raycaster = new THREE.Raycaster();
-    var canvasClickCB = function (event) {
+
+    self.canvasClickCB = function (event) {
         var mouse = new THREE.Vector2();
         var pt = RFH.positionInElement(event);
         var canvas = RFH.viewer.renderer.getContext().canvas; 
@@ -39,7 +40,8 @@ RFH.CartesianEEControl = function (options) {
             self.rotArrows[objs[0].object.userData.direction]['cb']();
         }
     };
-    $('#markers').on('click.rfh', canvasClickCB);
+
+    $('#markers').on('click.rfh', self.canvasClickCB);
 
     self.rotArrowLoader = new THREE.ColladaLoader();
     var arrowOnLoad = function (collada) {
@@ -59,18 +61,6 @@ RFH.CartesianEEControl = function (options) {
         // X-Positive Rotation
         baseMaterial.color.setRGB(255,0,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'xp';
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.1, -0.13, 0.13);
-        rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'r':Math.PI/8})};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // X-Negative Rotation
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xn';
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
@@ -79,22 +69,22 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'r':-Math.PI/8})};
+        cb = function (event) {self.eeDeltaCmd({'roll':1})};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Y-Positive Rotation
-        baseMaterial.color.setRGB(0,255,0);
+        // X-Negative Rotation
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'yp';
+        mesh.userData.direction = 'xp';
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.13, 0.025, 0.13);
-        rot = new THREE.Euler(Math.PI,0,0)
+        pos = new THREE.Vector3(-0.1, -0.13, 0.13);
+        rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'p':Math.PI/8})};
+        cb = function (event) {self.eeDeltaCmd({'roll':-1})};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Y-Negative Rotation
+        // Y-Positive Rotation
+        baseMaterial.color.setRGB(0,255,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yn';
         mesh.userData.side = self.side;
@@ -104,7 +94,19 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(0, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'p':Math.PI/8})};
+        cb = function (event) {self.eeDeltaCmd({'pitch':1})};
+        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
+        // Y-Negative Rotation
+        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
+        mesh.userData.direction = 'yp';
+        mesh.userData.side = self.side;
+        mesh.scale.set(scaleX, scaleY, scaleZ);
+        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        pos = new THREE.Vector3(-0.13, 0.025, 0.13);
+        rot = new THREE.Euler(Math.PI,0,0)
+        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
+        mat.setPosition(pos);
+        cb = function (event) {self.eeDeltaCmd({'pitch':-1})};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Z-Positive Rotation
         baseMaterial.color.setRGB(0,0,255);
@@ -117,7 +119,7 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(-Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'y':Math.PI/8})};
+        cb = function (event) {self.eeDeltaCmd({'yaw':1})};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Z-Negative Rotation
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
@@ -129,7 +131,7 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'y':-Math.PI/8})};
+        cb = function (event) {self.eeDeltaCmd({'yaw':-1})};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
 
         for (var dir in self.rotArrows) {
@@ -663,11 +665,11 @@ RFH.CartesianEEControl = function (options) {
             self.rotArrows[dir]['mesh'].visible = false;
             self.rotArrows[dir]['edges'].visible = false;
         }
+        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
+        $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
+        $('#away-button').on('mousedown.rfh', self.awayCB);
+        $('#toward-button').on('mousedown.rfh', self.towardCB);
     };
-    $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
-    $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
-    $('#away-button').on('mousedown.rfh', self.awayCB);
-    $('#toward-button').on('mousedown.rfh', self.towardCB);
 
     self.setEEMode = function (e) {
         self.mode = e.target.id.split("-")[2]; // Will break with different naming convention

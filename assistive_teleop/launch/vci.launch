@@ -40,17 +40,20 @@
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
  
-  <!-- Arms: Haptic MPC 
+  <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
-    <arg name="arm" value="left"/>
+    <arg name="arm" value="l"/>
+    <arg name="skin" value="fabric"/>
+    <arg name="namespace" value="left_arm"/>
     <arg name="rviz_teleop" value="false"/>
   </include>
 
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
-    <arg name="arm" value="right"/>
+    <arg name="arm" value="r"/>
+    <arg name="skin" value="none"/>
+    <arg name="namespace" value="right_arm"/>
     <arg name="rviz_teleop" value="false"/>
   </include>
-    -->
 
   <!-- Throttling nodes for robot state 
 

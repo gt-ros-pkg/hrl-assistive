@@ -256,51 +256,6 @@ var PR2ArmMPC = function (options) {
     }
 }
 
-var PR2ArmJTTask = function (options) {
-    'use strict';
-    var self = this;
-    self.ros = options.ros;
-    self.side = options.side;
-    self.ee_frame = options.ee_frame;
-    self.stateTopic = options.stateTopic || options.side[0]+'_cart/state/x';
-    self.goalTopic = options.goalTopic || options.side[0]+'_cart/command_pose';
-    self.state = null;
-    self.ros.getMsgDetails('geometry_msgs/PoseStamped');
-
-    self.setState = function (msg) {
-        self.state = msg;
-    };
-    self.stateCBList = [self.setState];
-    self.stateCB = function (msg) {
-        for (var i=0; i<self.stateCBList.length; i += 1) {
-            self.stateCBList[i](msg);
-        }
-    };
-    self.stateSubscriber = new ROSLIB.Topic({
-        ros: self.ros,
-        name: self.stateTopic,
-        messageType: 'geometry_msgs/PoseStamped'
-    });
-    self.stateSubscriber.subscribe(self.stateCB);
-
-    self.goalPosePublisher = new ROSLIB.Topic({
-        ros: self.ros,
-        name: self.goalTopic,
-        messageType: 'geometry_msgs/PoseStamped'
-    });
-    self.goalPosePublisher.advertise();
-
-    self.sendGoal = function (options) {
-        var position =  options.position || self.state.pose.position;
-        var orientation =  options.orientation || self.state.pose.orientation;
-        var frame_id =  options.frame_id || self.state.header.frame_id;
-        var msg = self.ros.composeMsg('geometry_msgs/PoseStamped');
-        msg.header.frame_id = frame_id;
-        msg.pose.position = position;
-        msg.pose.orientation = orientation;
-        self.goalPosePublisher.publish(msg);
-    }
-}
 var PR2 = function (ros) {
     'use strict';
     var self = this;
@@ -311,9 +266,13 @@ var PR2 = function (ros) {
     self.base = new PR2Base(self.ros);
     self.head = new PR2Head(self.ros);
     self.r_arm_cart = new PR2ArmMPC({side:'right',
-                                        ros: self.ros,
-                                        ee_frame:'r_gripper_tool_frame'});
+                                     ros: self.ros,
+                                     stateTopic: 'right_arm/haptic_mpc/gripper_pose',
+                                     goalTopic: 'right_arm/haptic_mpc/goal_pose',
+                                     ee_frame:'r_gripper_tool_frame'});
     self.l_arm_cart = new PR2ArmMPC({side:'left',
                                      ros: self.ros,
+                                     stateTopic: 'left_arm/haptic_mpc/gripper_pose',
+                                     goalTopic: 'left_arm/haptic_mpc/goal_pose',
                                      ee_frame:'l_gripper_tool_frame'});
 }
