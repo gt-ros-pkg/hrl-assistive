@@ -8,8 +8,9 @@ import cPickle as pickle
 from scipy import interpolate
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
-from mvpa2.datasets.base import Dataset
+from contextlib import contextmanager
 from plotGenerator import plotGenerator
+from mvpa2.datasets.base import Dataset
 from learning_hmm_multi_1d import learning_hmm_multi_1d
 from learning_hmm_multi_2d import learning_hmm_multi_2d
 from learning_hmm_multi_4d import learning_hmm_multi_4d
@@ -17,6 +18,19 @@ from learning_hmm_multi_4d import learning_hmm_multi_4d
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
+
+@contextmanager
+def suppress_output():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
 def forceKinematics(fileName):
     with open(fileName, 'rb') as f:
@@ -234,22 +248,14 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
         if verbose: print 'Anomaly Error for test set %d' % i
 
         for j in range(2, len(testForcesList[i])):
-                
-            if not verbose:
-                sys.stdout = os.devnull
-                sys.stderr = os.devnull
-
-            if distancesList is None:
-                anomaly, error = hmm.anomaly_check(testForcesList[i][:j], c)
-            elif anglesList is None:
-                anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], c)
-            else:
-                anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], testAnglesList[i][:j], 
-                                                   testAudioList[i][:j], c)
-
-            if not verbose:
-                sys.stdout = sys.__stdout__
-                sys.stderr = sys.__stderr__
+            with suppress_output():
+                if distancesList is None:
+                    anomaly, error = hmm.anomaly_check(testForcesList[i][:j], c)
+                elif anglesList is None:
+                    anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], c)
+                else:
+                    anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], testAnglesList[i][:j],
+                                                       testAudioList[i][:j], c)
 
             if verbose: print anomaly, error
 
@@ -390,14 +396,9 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     
     # 20 States, 1 cov_mult, scale 10
 
-    if not verbose:
-        sys.stdout = os.devnull
-        sys.stderr = os.devnull
-    minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, verbose=verbose)
+    with suppress_output():
+        minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, verbose=verbose)
     # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample, verbose=verbose)
-    if not verbose:
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
     if verbose:
         print 'Min threshold size:', np.shape(minThresholds)
         print minThresholds
