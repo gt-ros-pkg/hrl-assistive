@@ -374,15 +374,19 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     #           If there is any error message in training, we have to fix. If we ignore, the result will be incorrect.
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4)
-    hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample, 
+    ret = hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample,
             ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=use_pkl, cov_mult=[cov_mult]*16)
+
+    if ret is None:
+        return
     
     # 20 States, 1 cov_mult, scale 10
 
     minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, verbose=verbose)
     # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample, verbose=verbose)
-    print 'Min threshold size:', np.shape(minThresholds)
-    print minThresholds
+    if verbose:
+        print 'Min threshold size:', np.shape(minThresholds)
+        print minThresholds
 
     # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
     tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=numSuccess, c=minThresholds)

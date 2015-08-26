@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import multiprocessing
 import launcher_4d as launcher
 
 def dataFiles(isScooping=False):
@@ -23,7 +24,7 @@ def dataFiles(isScooping=False):
 
     return fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, numSuccess
 
-def batchTrain():
+def batchTrain(parallel=True):
     for isScooping in [False, True]:
         for downSampleSize in [100, 200, 300]:
             for scale in [1, 5, 10]:
@@ -31,8 +32,13 @@ def batchTrain():
                     for covMult in [1.0, 3.0, 5.0, 10.0]:
                         fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, numSuccess = dataFiles(isScooping=isScooping)
 
-                        launcher.trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest,
-                                      downSampleSize=downSampleSize, scale=scale, nState=nState, cov_mult=covMult, numSuccess=10,
-                                      verbose=False, isScooping=isScooping, use_pkl=False, usePlots=False)
+                        if parallel:
+                            p = multiprocessing.Process(target=launcher.trainMultiHMM, args=(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest,
+                                          downSampleSize, scale, nState, covMult, 10, False, isScooping, False, False))
+                            p.start()
+                        else:
+                            launcher.trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest,
+                                          downSampleSize=downSampleSize, scale=scale, nState=nState, cov_mult=covMult, numSuccess=10,
+                                          verbose=False, isScooping=isScooping, use_pkl=False, usePlots=False)
 
-batchTrain()
+batchTrain(parallel=False)

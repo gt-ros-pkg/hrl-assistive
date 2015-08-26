@@ -18,7 +18,7 @@ from joblib import Parallel, delayed
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_4d:
-    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress'):
+    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress', verbose=False):
         self.ml = None
 
         ## Tunable parameters
@@ -27,6 +27,7 @@ class learning_hmm_multi_4d:
         self.nFutureStep = nFutureStep
         self.nCurrentStep = nCurrentStep
         self.nEmissionDim = nEmissionDim
+        self.verbose = verbose
         
         ## Un-tunable parameters
         self.trans_type = 'left_right' # 'left_right' 'full'
@@ -49,7 +50,7 @@ class learning_hmm_multi_4d:
 
         # print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[1.0]*16, verbose=False, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
+    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[1.0]*16, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         X1 = np.array(xData1)
         X2 = np.array(xData2)
@@ -57,14 +58,14 @@ class learning_hmm_multi_4d:
         X4 = np.array(xData4)
 
         if A is None:        
-            if verbose: print "Generating a new A matrix"
+            if self.verbose: print "Generating a new A matrix"
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
 
             # print 'A', A
 
         if B is None:
-            if verbose: print "Generating a new B matrix"
+            if self.verbose: print "Generating a new B matrix"
             # We should think about multivariate Gaussian pdf.  
 
             mu1, mu2, mu3, mu4, cov = self.vectors_to_mean_cov(X1, X2, X3, X4, self.nState)
@@ -72,7 +73,7 @@ class learning_hmm_multi_4d:
                 for j in xrange(self.nEmissionDim):
                     cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
 
-            if verbose:
+            if self.verbose:
                 print 'mu1:', mu1
                 print 'mu2:', mu2
                 print 'mu3:', mu3
@@ -103,11 +104,14 @@ class learning_hmm_multi_4d:
         X_train = self.convert_sequence(X1, X2, X3, X4) # Training input
         X_train = X_train.tolist()
         
-        print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
+        if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
         final_seq = ghmm.SequenceSet(self.F, X_train)
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
         print 'Baum Welch return:', ret
+
+        if np.isnan(ret):
+            return None
 
         [self.A, self.B, self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
@@ -147,12 +151,12 @@ class learning_hmm_multi_4d:
                     self.ll_mu            = d['ll_mu']
                     self.ll_std           = d['ll_std']
             else:
-                print 'Begining parallel job'
+                if self.verbose: print 'Begining parallel job'
                 r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
                                                                        self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
                                                                        for i in xrange(self.nGaussian))
                 # r = [self.learn_likelihoods_progress_par(i, n, m, A, B, pi, X_train, g_mu_list[i], g_sig) for i in xrange(self.nGaussian)]
-                print 'Completed parallel job'
+                if self.verbose: print 'Completed parallel job'
                 l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
                 d = dict()
@@ -170,14 +174,14 @@ class learning_hmm_multi_4d:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
             logp = self.ml.loglikelihood(final_ts_obj)
         except:
-            print "Too different input profile that cannot be expressed by emission matrix"
+            if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
             return [], 0.0 # error
 
         if self.check_method == 'progress':
             try:
                 post = np.array(self.ml.posterior(final_ts_obj))
             except:
-                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return [], 0.0 # anomaly
 
             n = len(np.squeeze(X1))
@@ -206,7 +210,7 @@ class learning_hmm_multi_4d:
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
         n, m = np.shape(X1)
-        print n, m
+        if self.verbose: print n, m
         x = np.arange(0., float(m))*(1./43.)
         path_mat  = np.zeros((self.nState, m))
         zbest_mat = np.zeros((self.nState, m))
@@ -289,7 +293,7 @@ class learning_hmm_multi_4d:
         mu_l = np.zeros(self.nEmissionDim)
         cov_l = np.zeros(self.nEmissionDim**2)
 
-        print self.F
+        if self.verbose: print self.F
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
 
         try:
@@ -298,7 +302,7 @@ class learning_hmm_multi_4d:
             (alpha, scale) = self.ml.forward(final_ts_obj)
             alpha = np.array(alpha)
         except:
-            print "No alpha is available !!"
+            if self.verbose: print "No alpha is available !!"
             
         f = lambda x: round(x, 12)
         for i in range(len(alpha)):
@@ -335,7 +339,7 @@ class learning_hmm_multi_4d:
         try:
             (alpha, scale) = self.ml.forward(final_ts_obj)
         except:
-            print "No alpha is available !!"
+            if self.verbose: print "No alpha is available !!"
             sys.exit()
 
         alpha = np.array(alpha)
@@ -366,7 +370,7 @@ class learning_hmm_multi_4d:
         try:    
             p = self.ml.loglikelihood(final_ts_obj)
         except:
-            print 'Likelihood error!!!!'
+            if self.verbose: print 'Likelihood error!!!!'
             sys.exit()
 
         return p
@@ -531,7 +535,7 @@ class learning_hmm_multi_4d:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
             logp = self.ml.loglikelihood(final_ts_obj)
         except:
-            print "Too different input profile that cannot be expressed by emission matrix"
+            if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
         if self.check_method == 'global' or self.check_method == 'globalChange':
@@ -543,7 +547,7 @@ class learning_hmm_multi_4d:
             try:
                 post = np.array(self.ml.posterior(final_ts_obj))
             except:
-                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return 1.0, 0.0 # anomaly
 
             n = len(np.squeeze(X1))
@@ -599,8 +603,8 @@ class learning_hmm_multi_4d:
         print np.shape(X1)
         n, m = np.shape(X1)
         n2, m2 = np.shape(Z1)
-        print "Input sequence X1: ", n, m
-        print 'Anomaly: ', self.anomaly_check(X1, X2, X3, X4, ths_mult)
+        if self.verbose: print "Input sequence X1: ", n, m
+        if self.verbose: print 'Anomaly: ', self.anomaly_check(X1, X2, X3, X4, ths_mult)
 
         X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
         Z_test = self.convert_sequence(Z1, Z2, Z3, Z4, emission=False)
