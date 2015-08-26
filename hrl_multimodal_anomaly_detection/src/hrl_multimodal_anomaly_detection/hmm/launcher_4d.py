@@ -235,7 +235,9 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
 
         for j in range(2, len(testForcesList[i])):
                 
-            if not verbose: sys.stdout = os.devnull
+            if not verbose:
+                sys.stdout = os.devnull
+                sys.stderr = os.devnull
 
             if distancesList is None:
                 anomaly, error = hmm.anomaly_check(testForcesList[i][:j], c)
@@ -245,7 +247,9 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
                 anomaly, error = hmm.anomaly_check(testForcesList[i][:j], testDistancesList[i][:j], testAnglesList[i][:j], 
                                                    testAudioList[i][:j], c)
 
-            if not verbose: sys.stdout = sys.__stdout__
+            if not verbose:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
 
             if verbose: print anomaly, error
 
@@ -386,10 +390,14 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     
     # 20 States, 1 cov_mult, scale 10
 
-    if not verbose: sys.stdout = os.devnull
+    if not verbose:
+        sys.stdout = os.devnull
+        sys.stderr = os.devnull
     minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, verbose=verbose)
-    if not verbose: sys.stdout = sys.__stdout__
     # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample, verbose=verbose)
+    if not verbose:
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
     if verbose:
         print 'Min threshold size:', np.shape(minThresholds)
         print minThresholds
