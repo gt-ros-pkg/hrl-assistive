@@ -20,6 +20,41 @@ from joblib import Parallel, delayed # note
 
 import tf
 
+def extrapolateData(data, maxsize):
+    return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
+
+def extrapolateAllData(allData, maxsize):
+    return [extrapolateData(data, maxsize) for data in allData]
+
+def get_rms(block):
+    # RMS amplitude is defined as the square root of the
+    # mean over time of the square of the amplitude.
+    # so we need to convert this string of bytes into
+    # a string of 16-bit samples...
+
+    # we will get one short out for each
+    # two chars in the string.
+    count = len(block)/2
+    structFormat = '%dh' % count
+    shorts = struct.unpack(structFormat, block)
+
+    # iterate over the block.
+    sum_squares = 0.0
+    for sample in shorts:
+        # sample is a signed short in +/- 32768.
+        # normalize it to 1.0
+        n = sample / 32768.0
+        sum_squares += n*n
+
+    return math.sqrt(sum_squares / count)
+
+def scaling(X, minVal, maxVal, scale=1.0):
+    X = np.array(X)
+    return (X - minVal) / (maxVal - minVal) * scale
+
+
+
+
 
 
 def displayExpLikelihoods(hmm, trainData, normalTestData, abnormalTestData, ths_mult, save_pdf=False):

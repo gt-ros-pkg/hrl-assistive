@@ -14,6 +14,7 @@ from mvpa2.datasets.base import Dataset
 from learning_hmm_multi_1d import learning_hmm_multi_1d
 from learning_hmm_multi_2d import learning_hmm_multi_2d
 from learning_hmm_multi_4d import learning_hmm_multi_4d
+import util
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
@@ -57,28 +58,6 @@ def forceKinematics(fileName):
 
         return forces, distances, angles, kinematicsTimes, forceTimes
 
-def get_rms(block):
-    # RMS amplitude is defined as the square root of the
-    # mean over time of the square of the amplitude.
-    # so we need to convert this string of bytes into
-    # a string of 16-bit samples...
-
-    # we will get one short out for each
-    # two chars in the string.
-    count = len(block)/2
-    structFormat = '%dh' % count
-    shorts = struct.unpack(structFormat, block)
-
-    # iterate over the block.
-    sum_squares = 0.0
-    for sample in shorts:
-        # sample is a signed short in +/- 32768.
-        # normalize it to 1.0
-        n = sample / 32768.0
-        sum_squares += n*n
-
-    return math.sqrt(sum_squares / count)
-
 def audioFeatures(fileName):
     with open(fileName, 'rb') as f:
         data = pickle.load(f)
@@ -101,16 +80,6 @@ def create_mvpa_dataset(aXData1, aXData2, aXData3, aXData4, chunks, labels):
     data.sa['targets'] = labels
 
     return data
-
-def extrapolateData(data, maxsize):
-    return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
-
-def extrapolateAllData(allData, maxsize):
-    return [extrapolateData(data, maxsize) for data in allData]
-
-def scaling(X, minVal, maxVal, scale=1.0):
-    X = np.array(X)
-    return (X - minVal) / (maxVal - minVal) * scale
 
 def loadData(fileNames, iterationSets, isTrainingData=False, downSampleSize=100, verbose=False):
     timesList = []
@@ -330,46 +299,66 @@ def scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, 
     audioList = []
 
     # Scale features
-    for forces, distances, angles, audio in zip(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList):
+    for forces, distances, angles, audio in zip(forcesTrueList, distancesTrueList, anglesTrueList, \
+                                                audioTrueList):
         forcesList.append(scaling(forces, minVals[0], maxVals[0], scale).tolist())
         distancesList.append(scaling(distances, minVals[1], maxVals[1], scale).tolist())
         anglesList.append(scaling(angles, minVals[2], maxVals[2], scale).tolist())
         audioList.append(scaling(audio, minVals[3], maxVals[3], scale).tolist())
 
-    if verbose: print 'Forces: Min', np.min(forcesList), ', Max', np.max(forcesList), 'Distances: Min', np.min(distancesList), ', Max', np.max(distancesList), \
-        'Angles: Min', np.min(anglesList), ', Max', np.max(anglesList), 'Audio: Min', np.min(audioList), ', Max', np.max(audioList)
+    if verbose: 
+        print 'Forces: Min', np.min(forcesList), ', Max', np.max(forcesList), \
+          'Distances: Min', np.min(distancesList), ', Max', np.max(distancesList), \
+        'Angles: Min', np.min(anglesList), ', Max', np.max(anglesList), \
+        'Audio: Min', np.min(audioList), ', Max', np.max(audioList)
 
     return forcesList, distancesList, anglesList, audioList
 
-def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, downSampleSize=200, scale=10, nState=20, cov_mult=1.0, numSuccess=10, verbose=False, isScooping=True, use_pkl=False, usePlots=False):
+def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, downSampleSize=200, \
+                  scale=10, nState=20, cov_mult=1.0, numSuccess=10, verbose=False, isScooping=True, \
+                  use_pkl=False, usePlots=False):
     fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isScooping else 'Feeding'))
 
     if use_pkl and os.path.isfile(fileName):
         with open(fileName, 'rb') as f:
-            forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList, anglesTrueList, \
-            audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList, \
-            testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList = pickle.load(f)
+            forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,\ 
+            anglesTrueList, audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList,\
+            testTimesList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList\
+            = pickle.load(f)
     else:
         if verbose: print 'Loading training data'
-        forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=downSampleSize)
+        forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList\
+          = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=downSampleSize)
 
         if verbose: print 'Loading test data'
-        testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, testTimesList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=downSampleSize, verbose=verbose)
+        testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, testTimesList \
+        = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=downSampleSize, \
+                   verbose=verbose)
 
-        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, scale=scale, verbose=verbose)
-        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, scale=scale, verbose=verbose)
+        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList, \
+                                                                     anglesTrueList, audioTrueList, \
+                                                                     scale=scale, verbose=verbose)
+        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList, \
+                                                                                     testDistancesTrueList, \
+                                                                                     testAnglesTrueList, \
+                                                                                     testAudioTrueList, \
+                                                                                     scale=scale, \
+                                                                                     verbose=verbose)
 
         if use_pkl:
             with open(fileName, 'wb') as f:
-                pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,
-                             anglesTrueList, audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList,
-                             testTimesList, testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList),
+                pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, \
+                             distancesTrueList, anglesTrueList, audioTrueList, testForcesList, \
+                             testDistancesList, testAnglesList, testAudioList, testTimesList, \
+                             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList),\
                              f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    if verbose: print np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList), np.shape(timesList)
+    if verbose: print np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList),\
+      np.shape(timesList)
 
     if usePlots:
-        plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, distancesTrueList,
+        plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList,\
+                              distancesTrueList,
                               anglesTrueList,
                 audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
                 testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
@@ -380,16 +369,22 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
         # plots.quickPlotModalities()
     
     # Setup training data
-    forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, anglesList, audioList)
-    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList, testDistancesList,
-                                                                                               testAnglesList, testAudioList)
+    forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, \
+                                                                               anglesList, audioList)
+    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList,\
+                                                                                               testDistancesList,\
+                                                                                               testAnglesList, \
+                                                                                               testAudioList)
 
-    # Daehyung: Quite high covariance. It may converge to local minima. I don't know whether the fitting result is reliable or not.
-    #           If there is any error message in training, we have to fix. If we ignore, the result will be incorrect.
+    # Daehyung: Quite high covariance. It may converge to local minima. I don't know whether the fitting 
+    #           result is reliable or not.
+    #           If there is any error message in training, we have to fix. If we ignore, the result will 
+    #           be incorrect.
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
     ret = hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample,
-            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=use_pkl, cov_mult=[cov_mult]*16)
+            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=use_pkl, \
+            cov_mult=[cov_mult]*16)
 
     if ret == 'Failure':
         return
@@ -397,14 +392,45 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     # 20 States, 1 cov_mult, scale 10
 
     with suppress_output():
-        minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample, verbose=verbose)
-    # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample, verbose=verbose)
+        minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, \
+                                            audioTestSample, verbose=verbose)
+    # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample, \
+    # verbose=verbose)
     if verbose:
         print 'Min threshold size:', np.shape(minThresholds)
         print minThresholds
 
     # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
-    tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, testDistancesList, testAnglesList, testAudioList, numOfSuccess=numSuccess, c=minThresholds, verbose=verbose)
+    tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, \
+                           testDistancesList, testAnglesList, testAudioList, numOfSuccess=numSuccess, \
+                           c=minThresholds, verbose=verbose)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # Daehyung: Why do you execute offline check? If you use full-length of data, there will be almost no difference between
     #           fixed threshold, dynamic threshold with single coefficient, and dynamtic threshold with multiple coefficients, 
