@@ -30,6 +30,7 @@ def batchTrain(parallel=True):
             for scale in [1, 5, 10]:
                 for nState in [20, 30]:
                     for covMult in [1.0, 3.0, 5.0, 10.0]:
+                        print 'Beginning iteration | isScooping: %s, downSampleSize: %d, scale: %d, nState: %d, covMult: %d' % (isScooping, downSampleSize, scale, nState, covMult)
                         fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, numSuccess = dataFiles(isScooping=isScooping)
 
                         if parallel:
@@ -40,5 +41,6 @@ def batchTrain(parallel=True):
                             launcher.trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest,
                                           downSampleSize=downSampleSize, scale=scale, nState=nState, cov_mult=covMult, numSuccess=10,
                                           verbose=False, isScooping=isScooping, use_pkl=False, usePlots=False)
+                        print 'End of iteration'
 
 batchTrain(parallel=False)
