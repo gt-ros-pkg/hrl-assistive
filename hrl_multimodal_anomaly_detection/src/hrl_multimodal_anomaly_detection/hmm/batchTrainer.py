@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import multiprocessing
 import launcher_4d as launcher
 
@@ -43,4 +44,12 @@ def batchTrain(parallel=True):
                                           verbose=False, isScooping=isScooping, use_pkl=False, usePlots=False)
                         print 'End of iteration'
 
+
+orig_stdout = sys.stdout
+f = file('out.txt', 'w')
+sys.stdout = f
+
 batchTrain(parallel=False)
+
+sys.stdout = orig_stdout
+f.close()
