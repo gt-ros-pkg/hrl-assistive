@@ -579,6 +579,49 @@ class learning_hmm_multi_4d:
         # else: return 0.0, err # normal
 
 
+    def expLikelihoods(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
+        if self.nEmissionDim == 1: X_test = np.array([X1])
+        else: X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+
+        try:
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            logp = self.ml.loglikelihood(final_ts_obj)
+        except:
+            print "Too different input profile that cannot be expressed by emission matrix"
+            return -1, 0.0 # error
+
+        try:
+            post = np.array(self.ml.posterior(final_ts_obj))
+        except:
+            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+            return 1.0, 0.0 # anomaly
+
+        n = len(np.squeeze(X1))
+
+        # Find the best posterior distribution
+        min_dist  = 100000000
+        min_index = 0
+        for j in xrange(self.nGaussian):
+            dist = entropy(post[n-1], self.l_statePosterior[j])
+            # print 'Index:', j, 'Entropy:', dist
+            if min_dist > dist:
+                min_index = j
+                min_dist  = dist
+
+        # print 'Computing anomaly'
+        # print logp
+        # print self.ll_mu[min_index]
+        # print self.ll_std[min_index]
+
+        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
+
+        if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
+            return (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
+        else:
+            return (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
+
+
+        
     @staticmethod
     def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
         '''

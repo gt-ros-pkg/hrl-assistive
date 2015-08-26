@@ -263,7 +263,7 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
                 # This is a successful nonanomalous attempt
                 if anomaly:
                     falsePos += 1
-                    print 'Test', i, '|', anomaly, error
+                    print 'Success Test', i,',',j, ' in ',len(testForcesList[i]), ' |', anomaly, error
                     break
                 elif not anomaly and j == len(testForcesList[i]) - 1:
                     trueNeg += 1
@@ -274,7 +274,7 @@ def tableOfConfusionOnline(hmm, forcesList, distancesList=None, anglesList=None,
                     break
                 elif not anomaly and j == len(testForcesList[i]) - 1:
                     falseNeg += 1
-                    print 'Test', i, '|', anomaly, error
+                    print 'Failure Test', i,',',j, ' in ',len(testForcesList[i]), ' |', anomaly, error
                     break
 
                 # if anomaly:
