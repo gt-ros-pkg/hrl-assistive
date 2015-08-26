@@ -97,26 +97,26 @@ class armReachAction(mpcBaseAction):
         
         #Stored initialization joint angles
         self.leftArmInitialJointAnglesScooping = [1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]
-        self.leftArmInitialJointAnglesFeeding = [0, 0, 1.57, 0, -4.71, -1.45, 0] # not used
+        self.leftArmInitialJointAnglesFeeding = [0.397, 0.272, 1.088, -2.11, -3.78, -0.658, -2.288] # not used
         self.rightArmInitialJointAnglesScooping = [0, 0, 0, 0, 0, 0, 0]
         self.rightArmInitialJointAnglesFeeding = [0, 0, 0, 0, 0, 0, 0]
         #^^ THESE NEED TO BE UPDATED!!!
         
         #Array of offsets from bowl/mouth positions
         #Used to perform motions relative to bowl/mouth positions > It should use relative frame
-        self.leftArmScoopingPos = np.array([[-.015,	0,	  .15],
-                                            [-.015,	0,	-.055], #Moving down into bowl
-                                            [.01,	0,	-.035], #Moving forward in bowl
+        self.leftArmScoopingPos = np.array([[-.005,	0,	  .15],
+                                            [-.005,	0,	-.055], #Moving down into bowl
+                                            [.02,	0,	-.035], #Moving forward in bowl
                                             [0,		0,	  .10], #While rotating spoon to scoop out
                                             [0,		0,    .15]]) #Moving up out of bowl
 
         # It uses the l_gripper_spoon_frame aligned with mouth
-        self.leftArmFeedingPos = np.array([[-0.2, 0, 0.0],
+        self.leftArmFeedingPos = np.array([[-0.15, 0, 0.0],
                                            [0.05, 0, 0.0],
-                                           [-0.2, 0, 0.0]])
-        ## self.leftArmFeedingPos = np.array([[0,    .2,   0],
-        ##                                    [0,   -.015,   .02],
-        ##                                    [0,    .2,   0]])
+                                           [-0.15, 0, 0.0]])
+        ## self.leftArmFeedingPos = np.array([[-0.2, 0, 0.0],
+        ##                                    [0.05, 0, 0.0],
+        ##                                    [-0.2, 0, 0.0]])
 
         self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
                                                [90,	-50,	-30], #Moving down into bowl
@@ -165,13 +165,13 @@ class armReachAction(mpcBaseAction):
             return "Initialized left arm for scooping!"
 
         elif req == "leftArmInitFeeding":
-            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
-            self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
-            self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
-                                                                      self.leftArmFeedingQuats[0][1],
-                                                                      self.leftArmFeedingQuats[0][2],
-                                                                      self.leftArmFeedingQuats[0][3])
-            self.setOrientGoal(self.posL, self.quatL, 10)
+            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
+            ## self.posL.x, self.posL.y, self.posL.z = 0.5, -0.1, 0
+            ## self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (self.leftArmFeedingQuats[0][0],
+            ##                                                           self.leftArmFeedingQuats[0][1],
+            ##                                                           self.leftArmFeedingQuats[0][2],
+            ##                                                           self.leftArmFeedingQuats[0][3])
+            ## self.setOrientGoal(self.posL, self.quatL, 10)
             return "Initialized left arm for feeding!"
 
         elif req == "rightArmInitScooping":
@@ -205,7 +205,8 @@ class armReachAction(mpcBaseAction):
                 self.bowl_quat = self.bowl_quat_manual
                 return "Chose manual bowl position"
             else:
-                return "No manual bowl position available! \n Code won't work! \n Provide bowl position and try again!"
+                return "No manual bowl position available! \n Code won't work! \n \
+                Provide bowl position and try again!"
 
         elif req == "chooseKinectBowlPos":
             if self.bowl_pos_kinect is not None:
@@ -214,7 +215,8 @@ class armReachAction(mpcBaseAction):
                 self.bowl_quat = self.bowl_quat_kinect
                 return "Chose kinect bowl position"
             else:
-                return "No kinect bowl position available! \n Code won't work! \n Provide bowl position and try again!"
+                return "No kinect bowl position available! \n Code won't work! \n \
+                Provide bowl position and try again!"
 
         elif req == "chooseManualHeadPos":
             if self.mouth_pos_manual is not None:
@@ -223,7 +225,8 @@ class armReachAction(mpcBaseAction):
                 self.mouth_quat = self.mouth_quat_manual
                 return "Chose manual head position"
             else:
-                return "No manual head position available! \n Code won't work! \n Provide head position and try again!"
+                return "No manual head position available! \n Code won't work! \n \
+                Provide head position and try again!"
 
         elif req == "chooseKinectHeadPos":
             if self.mouth_pos_kinect is not None:
@@ -232,7 +235,8 @@ class armReachAction(mpcBaseAction):
                 self.mouth_quat = self.mouth_quat_kinect
                 return "Chose kinect head position"
             else:
-                return "No kinect head position available! \n Code won't work! \n Provide head position and try again!"
+                return "No kinect head position available! \n Code won't work! \n \
+                Provide head position and try again!"
 
         elif req == 'initArmScooping':
             self.scooping([0])
@@ -256,8 +260,8 @@ class armReachAction(mpcBaseAction):
     def bowlPoseManualCallback(self, data):
         self.bowl_frame_manual = data.header.frame_id
         self.bowl_pos_manual = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
-        self.bowl_quat_manual = np.array([data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, 
-                                          data.pose.orientation.w])
+        self.bowl_quat_manual = np.array([data.pose.orientation.x, data.pose.orientation.y, 
+                                          data.pose.orientation.z, data.pose.orientation.w])
 
     def bowlPoseKinectCallback(self, data):
 
@@ -306,8 +310,13 @@ class armReachAction(mpcBaseAction):
                 self.leftArmScoopingQuats[i][3])
 
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsScooping[i])
-            scoopingTimes = self.scoopingStepsClient()
-            print scoopingTimes
+
+            # Daehyung: It should be removed from this server. This program should not depend on any data 
+            #           recording program. This program can publish data, but it should not request answer 
+            #           other program except arm_reacher_client.
+            ## scoopingTimes = self.scoopingStepsClient()
+            ## print scoopingTimes
+            
             print "Pausing for {} seconds ".format(self.pausesScooping[i])
             if self.interrupted:
                 break
