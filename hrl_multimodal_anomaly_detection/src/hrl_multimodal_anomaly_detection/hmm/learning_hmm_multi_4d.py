@@ -111,7 +111,7 @@ class learning_hmm_multi_4d:
         print 'Baum Welch return:', ret
 
         if np.isnan(ret):
-            return None
+            return 'Failure'
 
         [self.A, self.B, self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)

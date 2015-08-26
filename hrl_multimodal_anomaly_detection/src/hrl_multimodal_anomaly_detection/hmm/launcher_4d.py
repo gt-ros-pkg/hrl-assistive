@@ -340,10 +340,10 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
         forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList = loadData(fileNamesTrain, iterationSetsTrain, isTrainingData=True, downSampleSize=downSampleSize)
 
         if verbose: print 'Loading test data'
-        testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, testTimesList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=downSampleSize)
+        testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, testTimesList = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=downSampleSize, verbose=verbose)
 
-        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, scale=scale)
-        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, scale=scale)
+        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, scale=scale, verbose=verbose)
+        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, scale=scale, verbose=verbose)
 
         if use_pkl:
             with open(fileName, 'wb') as f:
@@ -373,11 +373,11 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     # Daehyung: Quite high covariance. It may converge to local minima. I don't know whether the fitting result is reliable or not.
     #           If there is any error message in training, we have to fix. If we ignore, the result will be incorrect.
     # Create and train multivariate HMM
-    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4)
+    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
     ret = hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample,
             ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=use_pkl, cov_mult=[cov_mult]*16)
 
-    if ret is None:
+    if ret == 'Failure':
         return
     
     # 20 States, 1 cov_mult, scale 10
