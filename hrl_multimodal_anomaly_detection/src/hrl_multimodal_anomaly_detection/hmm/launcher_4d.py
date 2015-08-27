@@ -14,11 +14,14 @@ from mvpa2.datasets.base import Dataset
 from learning_hmm_multi_1d import learning_hmm_multi_1d
 from learning_hmm_multi_2d import learning_hmm_multi_2d
 from learning_hmm_multi_4d import learning_hmm_multi_4d
-import util
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
+
+# Most of previous utility functions are copied into this file
+from util import *
+
 
 @contextmanager
 def suppress_output():
@@ -32,42 +35,6 @@ def suppress_output():
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
-
-def forceKinematics(fileName):
-    with open(fileName, 'rb') as f:
-        data = pickle.load(f)
-        kinematics = data['kinematics_data']
-        kinematicsTimes = data['kinematics_time']
-        force = data['ft_force_raw']
-        forceTimes = data['ft_time']
-
-        # Use magnitude of forces
-        forces = np.linalg.norm(force, axis=1).flatten()
-        distances = []
-        angles = []
-
-        # Compute kinematic distances and angles
-        for mic, spoon, objectCenter in kinematics:
-            # Determine distance between mic and center of object
-            distances.append(np.linalg.norm(mic - objectCenter))
-            # Find angle between gripper-object vector and gripper-spoon vector
-            micSpoonVector = spoon - mic
-            micObjectVector = objectCenter - mic
-            angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
-            angles.append(angle)
-
-        return forces, distances, angles, kinematicsTimes, forceTimes
-
-def audioFeatures(fileName):
-    with open(fileName, 'rb') as f:
-        data = pickle.load(f)
-        audios = data['audio_data_raw']
-        audioTimes = data['audio_time']
-        magnitudes = []
-        for audio in audios:
-            magnitudes.append(get_rms(audio))
-
-        return magnitudes, audioTimes
 
 def create_mvpa_dataset(aXData1, aXData2, aXData3, aXData4, chunks, labels):
     feat_list = []
@@ -367,7 +334,8 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
         plots.distributionOfSequences(useTest=True, numSuccess=numSuccess)
         # plots.plotOneTrueSet()
         # plots.quickPlotModalities()
-    
+
+    # Daehyung: why do you use mvpa library? If you don't utilize their dataset structure, there is no need use it
     # Setup training data
     forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, \
                                                                                anglesList, audioList)

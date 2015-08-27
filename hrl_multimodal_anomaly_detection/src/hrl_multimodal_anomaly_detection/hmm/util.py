@@ -52,6 +52,107 @@ def scaling(X, minVal, maxVal, scale=1.0):
     X = np.array(X)
     return (X - minVal) / (maxVal - minVal) * scale
 
+def forceKinematics(fileName):
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f)
+        kinematics = data['kinematics_data']
+        kinematicsTimes = data['kinematics_time']
+        force = data['ft_force_raw']
+        forceTimes = data['ft_time']
+
+        # Use magnitude of forces
+        forces = np.linalg.norm(force, axis=1).flatten()
+        distances = []
+        angles = []
+
+        # Compute kinematic distances and angles
+        for mic, spoon, objectCenter in kinematics:
+            # Determine distance between mic and center of object
+            distances.append(np.linalg.norm(mic - objectCenter))
+            # Find angle between gripper-object vector and gripper-spoon vector
+            micSpoonVector = spoon - mic
+            micObjectVector = objectCenter - mic
+            angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
+            angles.append(angle)
+
+        return forces, distances, angles, kinematicsTimes, forceTimes
+
+def audioFeatures(fileName):
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f)
+        audios = data['audio_data_raw']
+        audioTimes = data['audio_time']
+        magnitudes = []
+        for audio in audios:
+            magnitudes.append(get_rms(audio))
+
+        return magnitudes, audioTimes
+
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False):
+    timesList = []
+
+    forcesTrueList = []
+    distancesTrueList = []
+    anglesTrueList = []
+    audioTrueList = []
+    for idx, fileName in enumerate(fileNames):
+        audio, audioTimes = audioFeatures(fileName)
+        forces, distances, angles, kinematicsTimes, forceTimes = forceKinematics(fileName)
+
+        # There will be much more kinematics data than force or audio, so interpolate to fill in the gaps
+        # print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', 
+        # np.shape(angles), 'Audio shape:', np.shape(audio)
+
+        newTimes = np.linspace(0.01, max(kinematicsTimes), downSampleSize)
+        forceInterp = interpolate.splrep(forceTimes, forces, s=0)
+        forces = interpolate.splev(newTimes, forceInterp, der=0)
+        distanceInterp = interpolate.splrep(kinematicsTimes, distances, s=0)
+        distances = interpolate.splev(newTimes, distanceInterp, der=0)
+        angleInterp = interpolate.splrep(kinematicsTimes, angles, s=0)
+        angles = interpolate.splev(newTimes, angleInterp, der=0)
+        # audioInterp = interpolate.splrep(audioTimes, audio, s=0)
+        # audio = interpolate.splev(newTimes, audioInterp, der=0)
+
+        # Downsample audio (nicely), by finding the closest time sample in audio for each new time stamp
+        audioTimes = np.array(audioTimes)
+        audio = [audio[np.abs(audioTimes - t).argmin()] for t in newTimes]
+
+        # print 'Shapes after downsampling'
+        # print 'Force shape:', np.shape(forces), 'Distance shape:', np.shape(distances), 'Angles shape:', 
+        # np.shape(angles), 'Audio shape:', np.shape(audio)
+
+        # Constant (horizontal linear) interpolation for audio data
+        # tempAudio = []
+        # audioIndex = 0
+        # for t in kinematicsTimes:
+        #     if t > audioTimes[audioIndex + 1] and audioIndex < len(audioTimes) - 2:
+        #         audioIndex += 1
+        #     tempAudio.append(audio[audioIndex])
+        # audio = tempAudio
+
+        forcesTrueList.append(forces.tolist())
+        distancesTrueList.append(distances.tolist())
+        anglesTrueList.append(angles.tolist())
+        audioTrueList.append(audio)
+        timesList.append(newTimes.tolist())
+
+    if verbose: print 'Load shapes pre extrapolation:', np.shape(forcesTrueList), np.shape(distancesTrueList), \
+        np.shape(anglesTrueList), np.shape(audioTrueList)
+
+    # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
+    if isTrainingData:
+        # Find the largest iteration
+        maxsize = max([len(x) for x in forcesTrueList])
+        # Extrapolate each time step
+        forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList\
+          = extrapolateAllData([forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, timesList],\
+                               maxsize)
+
+    if verbose: print 'Load shapes post extrapolation:', np.shape(forcesTrueList), np.shape(distancesTrueList),\
+      np.shape(anglesTrueList), np.shape(audioTrueList)
+
+    return [forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], timesList
+
 
 
 
