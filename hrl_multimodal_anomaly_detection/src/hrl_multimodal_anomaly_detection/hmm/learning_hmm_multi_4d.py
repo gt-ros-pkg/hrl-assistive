@@ -79,7 +79,7 @@ class learning_hmm_multi_4d:
                 print 'mu3:', mu3
                 print 'mu4:', mu4
                 print 'cov', cov
-
+                
             # Emission probability matrix
             B = [0.0] * self.nState
             for i in range(self.nState):

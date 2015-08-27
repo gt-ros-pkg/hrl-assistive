@@ -92,7 +92,7 @@ def getData(subject_names, task_name, root_path, target_path, nSet=1, folding_ra
         abnormalTestData, abnormalTestTimeList = loadData([success_list[x] for x in failure_test_idx], 
                                                           isTrainingData=False, downSampleSize=downSampleSize)
 
-        
+        # scaling data
         trainData_scaled, minVals, maxVals = scaleData(trainData, scale=scale, verbose=verbose)
         thresTestData_scaled,_ ,_ = scaleData(thresTestData, scale=scale, minVals=minVals, maxVals=maxVals, 
                                             verbose=verbose)
@@ -251,7 +251,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=1.0, renew=Fa
         use_pkl    = False
 
         # Create and train multivariate HMM
-        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=verbose)
+        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=False)
         ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
                       use_pkl=use_pkl, cov_mult=[cov_mult]*16)
     
@@ -270,6 +270,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--plot', '--p', action='store_true', dest='bPlot',
+                 default=False, help='Plot distribution of data.')
     opt, args = p.parse_args()
 
     subject_names = ['s1']
@@ -281,4 +283,14 @@ if __name__ == '__main__':
     getData(subject_names, task_name, data_root_path, data_target_path, nSet=1, 
             downSampleSize=100, renew=opt.bRenew)
 
-    evaluation(task_name, data_target_path, renew = opt.bRenew, verbose=True)
+    if opt.bPlot:
+        plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList,\
+                              distancesTrueList,
+                              anglesTrueList,
+                audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
+                testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList)
+        # Plot modalities
+        plots.distributionOfSequences(useTest=False)
+
+    else:            
+        evaluation(task_name, data_target_path, renew = opt.bRenew, verbose=True)
