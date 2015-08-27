@@ -37,10 +37,11 @@ def getData(successPath, failurePath, folding_ratio=(0.5, 0.2, 0.3), downSampleS
     success_list = glob.glob(successPath)
     failure_list = glob.glob(failurePath)
 
-    print "--------------------------------------------"
-    print "# of Success files: ", len(success_list)
-    print "# of Failure files: ", len(failure_list)
-    print "--------------------------------------------"
+    if verbose:
+        print "--------------------------------------------"
+        print "# of Success files: ", len(success_list)
+        print "# of Failure files: ", len(failure_list)
+        print "--------------------------------------------"
 
     # random training, threshold-test, test set selection
     nTrain   = int(len(success_list) * folding_ratio[0])
@@ -165,8 +166,8 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
               isScooping=True, use_pkl=False, usePlots=False):
     task = ('pr2_scooping' if isScooping else 's*_feeding')
-    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success' % task
-    failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure' % task
+    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
+    failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
 
     trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue, trainTimeList, \
     thresTestTimeList, normalTestTimeList, abnormalTestTimeList = getData(successPath, failurePath,
@@ -208,7 +209,8 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
     d['thresTestTimeList'] = thresTestTimeList
     d['normalTestTimeList'] = normalTestTimeList
     d['abnormalTestTimeList'] = abnormalTestTimeList
-    fileName = 'dataFiles/%s_%d_%d_%d_%d.pkl' % (task, downSampleSize, scale, nState, int(cov_mult))
+    taskName = 'scooping' if isScooping else 'feeding'
+    fileName = 'batchDataFiles/%s_%d_%d_%d_%d.pkl' % (taskName, downSampleSize, scale, nState, int(cov_mult))
     with open(fileName, 'wb') as f:
         pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -240,8 +242,8 @@ def plotData(isScooping=False):
 
     dataList, timeList = loadData(successList, isTrainingData=True, downSampleSize=200, verbose=False)
 
-    for line, num in zip(dataList[0], iterations):
-        plt.plot(timeList, line, label='%s' % num)
+    for line, times, num in zip(dataList[0], timeList, iterations):
+        plt.plot(times, line, label='%s' % num)
     plt.legend()
     plt.show()
 
