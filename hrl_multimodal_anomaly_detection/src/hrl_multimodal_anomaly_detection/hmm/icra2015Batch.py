@@ -213,12 +213,12 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
     d['thresTestTimeList'] = thresTestTimeList
     d['normalTestTimeList'] = normalTestTimeList
     d['abnormalTestTimeList'] = abnormalTestTimeList
-    fileName = 'dataFiles/%s_%d_%d_%d_%d' % (task, downSampleSize, scale, nState, int(cov_mult))
+    fileName = 'dataFiles/%s_%d_%d_%d_%d.pkl' % (task, downSampleSize, scale, nState, int(cov_mult))
     with open(fileName, 'wb') as f:
         pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def batchTrain(parallel=True, isScooping=False):
+def batchTrain(parallel=True):
     for isScooping in [False, True]:
         for downSampleSize in [100, 200, 300]:
             for scale in [1, 5, 10]:
@@ -238,12 +238,14 @@ def plotData(isScooping=False):
     task = ('scooping' if isScooping else 'feeding')
     successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%sSuccess' % task
     successList = []
+    iterations = []
     for fileName in os.listdir(successPath):
         successList.append(os.path.join(successPath, fileName))
+        iterations.append(fileName.split('_')[1])
     dataList, timeList = loadData(successList, isTrainingData=True, downSampleSize=200, verbose=False)
 
-    for index, line in enumerate(dataList[0]):
-        plt.plot(timeList, line, label='%d' % index)
+    for line, num in zip(dataList[0], iterations):
+        plt.plot(timeList, line, label='%s' % num)
     plt.legend()
     plt.show()
 
@@ -253,7 +255,7 @@ orig_stdout = sys.stdout
 f = file('out.txt', 'w')
 sys.stdout = f
 
-batchTrain(parallel=False, isScooping=False)
+batchTrain(parallel=False)
 
 sys.stdout = orig_stdout
 f.close()
