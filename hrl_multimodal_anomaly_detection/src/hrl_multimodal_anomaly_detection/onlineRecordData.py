@@ -28,13 +28,13 @@ def log_parse():
 
 
 class ADL_log:
-    def __init__(self, isScooping=True, useAudio=False):
+    def __init__(self, isScooping=True):
         self.init_time = 0
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
         self.isScooping = isScooping
 
-        self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=isScooping, useAudio=useAudio)
+        self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=isScooping)
 
     def log_start(self):
         self.init_time = rospy.get_time()

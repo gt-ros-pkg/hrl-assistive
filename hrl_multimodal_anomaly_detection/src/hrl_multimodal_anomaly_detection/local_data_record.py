@@ -32,7 +32,7 @@ class dataRecord:
 
         isOnline = raw_input("Perform online anomaly detection? [y] ('n' for data recording): ") == 'y'
         if isOnline:
-            self.log = onlineRecordData.ADL_log(isScooping=(self.task == 's'), useAudio=self.AUDIO)
+            self.log = onlineRecordData.ADL_log(isScooping=(self.task == 's'))
         else:
             self.log = ADL_log(ft=self.FT, audio=self.AUDIO, kinematics=self.KINEMATICS, subject=subject, task=self.task)
 

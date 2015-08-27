@@ -3,7 +3,6 @@
 import glob
 import random
 import multiprocessing
-from plotGenerator import plotGenerator
 from learning_hmm_multi_4d import learning_hmm_multi_4d
 
 from util import *
@@ -164,7 +163,7 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
-              isScooping=True, use_pkl=False, usePlots=False):
+              isScooping=True, use_pkl=False, findThresholds=True):
     task = ('pr2_scooping' if isScooping else 's*_feeding')
     successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
     failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
@@ -179,40 +178,44 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
     normalTestData, _ , _ = scaleData(normalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
     abnormalTestData, _ , _ = scaleData(abnormalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
 
-    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=False)
+    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
                   use_pkl=use_pkl, cov_mult=[cov_mult]*16)
 
     if ret == 'Failure':
         return
 
-    with suppress_output():
-        minThresholds = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+    if not findThresholds:
+        return hmm, minVals, maxVals
 
-    if verbose:
-        print 'Min threshold size:', np.shape(minThresholds)
-        print minThresholds
+    else:
+        with suppress_output():
+            minThresholds = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
 
-    tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
+        if verbose:
+            print 'Min threshold size:', np.shape(minThresholds)
+            print minThresholds
 
-    # Save data into file for later use (since it was randomly sampled)
-    d = dict()
-    d['trainData'] = trainData
-    d['thresTestData'] = thresTestData
-    d['normalTestData'] = normalTestData
-    d['abnormalTestData'] = abnormalTestData
-    d['trainDataTrue'] = trainDataTrue
-    d['thresTestDataTrue'] = thresTestDataTrue
-    d['normalTestDataTrue'] = normalTestDataTrue
-    d['abnormalTestDataTrue'] = abnormalTestDataTrue
-    d['trainTimeList'] = trainTimeList
-    d['thresTestTimeList'] = thresTestTimeList
-    d['normalTestTimeList'] = normalTestTimeList
-    d['abnormalTestTimeList'] = abnormalTestTimeList
-    taskName = 'scooping' if isScooping else 'feeding'
-    fileName = 'batchDataFiles/%s_%d_%d_%d_%d.pkl' % (taskName, downSampleSize, scale, nState, int(cov_mult))
-    with open(fileName, 'wb') as f:
-        pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+        tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
+
+        # Save data into file for later use (since it was randomly sampled)
+        d = dict()
+        d['trainData'] = trainData
+        d['thresTestData'] = thresTestData
+        d['normalTestData'] = normalTestData
+        d['abnormalTestData'] = abnormalTestData
+        d['trainDataTrue'] = trainDataTrue
+        d['thresTestDataTrue'] = thresTestDataTrue
+        d['normalTestDataTrue'] = normalTestDataTrue
+        d['abnormalTestDataTrue'] = abnormalTestDataTrue
+        d['trainTimeList'] = trainTimeList
+        d['thresTestTimeList'] = thresTestTimeList
+        d['normalTestTimeList'] = normalTestTimeList
+        d['abnormalTestTimeList'] = abnormalTestTimeList
+        taskName = 'scooping' if isScooping else 'feeding'
+        fileName = 'batchDataFiles/%s_%d_%d_%d_%d.pkl' % (taskName, downSampleSize, scale, nState, int(cov_mult))
+        with open(fileName, 'wb') as f:
+            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def batchTrain(parallel=True):
@@ -247,13 +250,15 @@ def plotData(isScooping=False):
     plt.legend()
     plt.show()
 
-plotData(isScooping=False)
 
-orig_stdout = sys.stdout
-f = file('out.txt', 'w')
-sys.stdout = f
+if __name__ == '__main__':
+    plotData(isScooping=False)
 
-batchTrain(parallel=False)
+    orig_stdout = sys.stdout
+    f = file('out.txt', 'w')
+    sys.stdout = f
 
-sys.stdout = orig_stdout
-f.close()
+    batchTrain(parallel=False)
+
+    sys.stdout = orig_stdout
+    f.close()
