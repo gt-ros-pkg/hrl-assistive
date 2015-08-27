@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import glob
 import random
 import multiprocessing
 from plotGenerator import plotGenerator
@@ -33,14 +34,8 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
 
 
 def getData(successPath, failurePath, folding_ratio=(0.5, 0.2, 0.3), downSampleSize=200, verbose=False):
-    success_list = []
-    failure_list = []
-
-    for fileName in os.listdir(successPath):
-        success_list.append(os.path.join(successPath, fileName))
-
-    for fileName in os.listdir(failurePath):
-        failure_list.append(os.path.join(failurePath, fileName))
+    success_list = glob.glob(successPath)
+    failure_list = glob.glob(failurePath)
 
     print "--------------------------------------------"
     print "# of Success files: ", len(success_list)
@@ -169,9 +164,9 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
               isScooping=True, use_pkl=False, usePlots=False):
-    task = ('scooping' if isScooping else 'feeding')
-    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%sSuccess' % task
-    failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%sFailure' % task
+    task = ('pr2_scooping' if isScooping else 's*_feeding')
+    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success' % task
+    failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure' % task
 
     trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue, trainTimeList, \
     thresTestTimeList, normalTestTimeList, abnormalTestTimeList = getData(successPath, failurePath,
@@ -235,13 +230,14 @@ def batchTrain(parallel=True):
 
 
 def plotData(isScooping=False):
-    task = ('scooping' if isScooping else 'feeding')
-    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%sSuccess' % task
-    successList = []
-    iterations = []
-    for fileName in os.listdir(successPath):
-        successList.append(os.path.join(successPath, fileName))
-        iterations.append(fileName.split('_')[1])
+    if isScooping:
+        fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/pr2_scooping_success/*'
+    else:
+        fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/s*_feeding_success/*'
+
+    successList = glob.glob(fileName)
+    iterations = [os.path.basename(f).split('_')[1] for f in glob.glob(fileName)]
+
     dataList, timeList = loadData(successList, isTrainingData=True, downSampleSize=200, verbose=False)
 
     for line, num in zip(dataList[0], iterations):
