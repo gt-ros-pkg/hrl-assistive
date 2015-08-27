@@ -234,11 +234,26 @@ def batchTrain(parallel=True, isScooping=False):
                         print 'End of iteration'
 
 
+def plotData(isScooping=False):
+    task = ('scooping' if isScooping else 'feeding')
+    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%sSuccess' % task
+    successList = []
+    for fileName in os.listdir(successPath):
+        successList.append(os.path.join(successPath, fileName))
+    dataList, timeList = loadData(successList, isTrainingData=True, downSampleSize=200, verbose=False)
+
+    for index, line in enumerate(dataList[0]):
+        plt.plot(timeList, line, label='%d' % index)
+    plt.legend()
+    plt.show()
+
+plotData(isScooping=False)
+
 orig_stdout = sys.stdout
 f = file('out.txt', 'w')
 sys.stdout = f
 
-batchTrain(parallel=False)
+batchTrain(parallel=False, isScooping=False)
 
 sys.stdout = orig_stdout
 f.close()
