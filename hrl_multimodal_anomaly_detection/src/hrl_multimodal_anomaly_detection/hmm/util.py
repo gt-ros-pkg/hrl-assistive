@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
-
 import os, sys
 import math
 import struct
@@ -10,15 +7,7 @@ import numpy as np
 import cPickle as pickle
 from scipy import interpolate
 import matplotlib.pyplot as plt
-from sklearn import preprocessing
-from mvpa2.datasets.base import Dataset
-from plotGenerator import plotGenerator
-from learning_hmm_multi_1d import learning_hmm_multi_1d
-from learning_hmm_multi_2d import learning_hmm_multi_2d
-from learning_hmm_multi_4d import learning_hmm_multi_4d
-from joblib import Parallel, delayed # note
-
-import tf
+from contextlib import contextmanager
 
 def extrapolateData(data, maxsize):
     return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
@@ -152,6 +141,19 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
       np.shape(anglesTrueList), np.shape(audioTrueList)
 
     return [forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], timesList
+
+@contextmanager
+def suppress_output():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
 
 

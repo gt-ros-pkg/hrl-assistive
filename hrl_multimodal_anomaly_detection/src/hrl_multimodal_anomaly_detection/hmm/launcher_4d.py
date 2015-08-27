@@ -266,7 +266,7 @@ def scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, 
     audioList = []
 
     # Scale features
-    for forces, distances, angles, audio in zip(forcesTrueList, distancesTrueList, anglesTrueList, \
+    for forces, distances, angles, audio in zip(forcesTrueList, distancesTrueList, anglesTrueList,
                                                 audioTrueList):
         forcesList.append(scaling(forces, minVals[0], maxVals[0], scale).tolist())
         distancesList.append(scaling(distances, minVals[1], maxVals[1], scale).tolist())
@@ -281,8 +281,8 @@ def scaleData(forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList, 
 
     return forcesList, distancesList, anglesList, audioList
 
-def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, downSampleSize=200, \
-                  scale=10, nState=20, cov_mult=1.0, numSuccess=10, verbose=False, isScooping=True, \
+def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSetsTest, downSampleSize=200,
+                  scale=10, nState=20, cov_mult=1.0, numSuccess=10, verbose=False, isScooping=True,
                   use_pkl=False, usePlots=False):
     fileName = os.path.join(os.path.dirname(__file__), 'data/Data%s.pkl' % ('' if isScooping else 'Feeding'))
 
@@ -299,32 +299,32 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
 
         if verbose: print 'Loading test data'
         testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList, testTimesList \
-        = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=downSampleSize, \
+        = loadData(fileNamesTest, iterationSetsTest, isTrainingData=True, downSampleSize=downSampleSize,
                    verbose=verbose)
 
-        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList, \
-                                                                     anglesTrueList, audioTrueList, \
+        forcesList, distancesList, anglesList, audioList = scaleData(forcesTrueList, distancesTrueList,
+                                                                     anglesTrueList, audioTrueList,
                                                                      scale=scale, verbose=verbose)
-        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList, \
-                                                                                     testDistancesTrueList, \
-                                                                                     testAnglesTrueList, \
-                                                                                     testAudioTrueList, \
-                                                                                     scale=scale, \
+        testForcesList, testDistancesList, testAnglesList, testAudioList = scaleData(testForcesTrueList,
+                                                                                     testDistancesTrueList,
+                                                                                     testAnglesTrueList,
+                                                                                     testAudioTrueList,
+                                                                                     scale=scale,
                                                                                      verbose=verbose)
 
         if use_pkl:
             with open(fileName, 'wb') as f:
-                pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList, \
-                             distancesTrueList, anglesTrueList, audioTrueList, testForcesList, \
-                             testDistancesList, testAnglesList, testAudioList, testTimesList, \
-                             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList),\
+                pickle.dump((forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList,
+                             distancesTrueList, anglesTrueList, audioTrueList, testForcesList,
+                             testDistancesList, testAnglesList, testAudioList, testTimesList,
+                             testForcesTrueList, testDistancesTrueList, testAnglesTrueList, testAudioTrueList),
                              f, protocol=pickle.HIGHEST_PROTOCOL)
 
     if verbose: print np.shape(forcesList), np.shape(distancesList), np.shape(anglesList), np.shape(audioList),\
       np.shape(timesList)
 
     if usePlots:
-        plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList,\
+        plots = plotGenerator(forcesList, distancesList, anglesList, audioList, timesList, forcesTrueList,
                               distancesTrueList,
                               anglesTrueList,
                 audioTrueList, testForcesList, testDistancesList, testAnglesList, testAudioList, testTimesList,
@@ -337,11 +337,11 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
 
     # Daehyung: why do you use mvpa library? If you don't utilize their dataset structure, there is no need use it
     # Setup training data
-    forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList, \
+    forcesSample, distancesSample, anglesSample, audioSample = createSampleSet(forcesList, distancesList,
                                                                                anglesList, audioList)
-    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList,\
-                                                                                               testDistancesList,\
-                                                                                               testAnglesList, \
+    forcesTestSample, distancesTestSample, anglesTestSample, audioTestSample = createSampleSet(testForcesList,
+                                                                                               testDistancesList,
+                                                                                               testAnglesList,
                                                                                                testAudioList)
 
     # Daehyung: Quite high covariance. It may converge to local minima. I don't know whether the fitting 
@@ -351,7 +351,7 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
     ret = hmm.fit(xData1=forcesSample, xData2=distancesSample, xData3=anglesSample, xData4=audioSample,
-            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=use_pkl, \
+            ml_pkl='modals/ml_4d%s.pkl' % ('' if isScooping else '_Feeding'), use_pkl=use_pkl,
             cov_mult=[cov_mult]*16)
 
     if ret == 'Failure':
@@ -360,17 +360,17 @@ def trainMultiHMM(fileNamesTrain, iterationSetsTrain, fileNamesTest, iterationSe
     # 20 States, 1 cov_mult, scale 10
 
     with suppress_output():
-        minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample, \
+        minThresholds = tuneSensitivityGain(hmm, forcesTestSample, distancesTestSample, anglesTestSample,
                                             audioTestSample, verbose=verbose)
-    # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample, \
+    # minThresholds = tuneSensitivityGain(hmm, forcesSample, distancesSample, anglesSample, audioSample,
     # verbose=verbose)
     if verbose:
         print 'Min threshold size:', np.shape(minThresholds)
         print minThresholds
 
     # Daehyung: here is online check method. It takes too long time. Probably, we need parallelization.
-    tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList, \
-                           testDistancesList, testAnglesList, testAudioList, numOfSuccess=numSuccess, \
+    tableOfConfusionOnline(hmm, forcesList, distancesList, anglesList, audioList, testForcesList,
+                           testDistancesList, testAnglesList, testAudioList, numOfSuccess=numSuccess,
                            c=minThresholds, verbose=verbose)
 
 
