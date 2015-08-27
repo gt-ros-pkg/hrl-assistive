@@ -616,6 +616,8 @@ class learning_hmm_multi_4d:
         # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
+            print min_index, self.ll_mu[min_index], self.ll_std[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
+
             return (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:
             return (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
