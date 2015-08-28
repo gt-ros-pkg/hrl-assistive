@@ -85,14 +85,14 @@ class dataRecord:
         # *CHOOSE HEAD POSITION!!
         #headPosType = self.armReachAction("getHeadPosType")
 
-        print "Initializing left arm for feeding"
-        print self.armReachAction("leftArmInitFeeding")
-
         #print "Initializing right arm for feeding"
         #print self.armReachAction("rightArmInitFeeding")
 
         runFeeding = True
         while runFeeding:
+            print "Initializing left arm for feeding"
+            print self.armReachAction("leftArmInitFeeding")
+            
             print self.armReachAction("chooseManualHeadPos")
 
             print 'Initializing feeding'
