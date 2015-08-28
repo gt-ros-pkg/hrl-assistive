@@ -164,7 +164,17 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
               isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
-              ml_pkl='ml_temp_4d.pkl', saveData=False):
+              ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None):
+
+    if savedDataFile is not None:
+        with open(ml_pkl, 'rb') as f:
+            d = pickle.load(f)
+            trainData = d['trainData']
+            hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
+            hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
+                          ml_pkl=ml_pkl, use_pkl=use_pkl, cov_mult=[cov_mult]*16)
+            return hmm, d['minVals'], d['maxVals'], d['minThresholds']
+
     task = 'pr2_scooping' if isScooping else 's*_feeding'
     successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
     failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
@@ -231,6 +241,9 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
 
             # Save data into file for later use (since it was randomly sampled)
             d = dict()
+            d['minVals'] = minVals
+            d['maxVals'] = maxVals
+            d['minThresholds'] = minThresholds
             d['trainData'] = trainData
             d['thresTestData'] = thresTestData
             d['normalTestData'] = normalTestData
@@ -261,7 +274,7 @@ def batchTrain(parallel=True):
                             p.start()
                         else:
                             iteration(downSampleSize=downSampleSize, scale=scale, nState=nState, cov_mult=covMult,
-                                      verbose=False, isScooping=isScooping, use_pkl=False, usePlots=False)
+                                      verbose=False, isScooping=isScooping, use_pkl=False, saveData=True)
                         print 'End of iteration'
 
 
@@ -284,6 +297,11 @@ def plotData(isScooping=False):
 
 if __name__ == '__main__':
     plotData(isScooping=False)
+
+    iteration(downSampleSize=100, scale=1.0, nState=10, cov_mult=1.0, train_cutting_ratio=[0.0, 1.0],
+                                      verbose=False, isScooping=True, use_pkl=False, saveData=True)
+
+    sys.exit()
 
     orig_stdout = sys.stdout
     f = file('out.txt', 'w')

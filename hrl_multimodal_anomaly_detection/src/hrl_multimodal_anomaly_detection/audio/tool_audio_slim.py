@@ -69,19 +69,25 @@ class tool_audio_slim(Thread):
         except:
             print 'Audio read failure due to input overflow'
 
+    def begin(self):
+        self.stream.start_stream()
+
     def readData(self):
         try:
             self.audio = self.stream.read(self.CHUNK)
         except:
-            print 'Audio read failure due to input overflow'
+            # print 'Audio read failure due to input overflow'
+            pass
         return self.audio
 
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
-        rospy.sleep(0.5)
         self.stream.stop_stream()
         self.stream.close()
+        rospy.sleep(0.5)
 
     def reset(self):
+        self.stream.stop_stream()
+        rospy.sleep(0.5)
         pass

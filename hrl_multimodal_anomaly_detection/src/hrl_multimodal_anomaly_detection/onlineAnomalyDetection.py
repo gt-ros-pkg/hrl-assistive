@@ -90,6 +90,8 @@ class onlineAnomalyDetection(Thread):
                               isScooping=self.isScooping, use_pkl=False,
                               train_cutting_ratio=self.cutting_ratio,
                               findThresholds=True, ml_pkl=self.ml_thres_pkl)
+
+        print 'Threshold:', self.minThresholds
         
         self.forces = []
         self.distances = []
@@ -106,18 +108,36 @@ class onlineAnomalyDetection(Thread):
         print 'Connected to center of object publisher'
 
     def reset(self):
+        self.cancelled = False
+        self.forces = []
+        self.distances = []
+        self.angles = []
+        self.audios = []
+        self.times = []
+        self.anomalyOccured = False
+        self.updateNumber = 0
+        self.lastUpdateNumber = 0
+        self.init_time = rospy.get_time()
+        self.lGripperPosition = None
+        self.lGripperRotation = None
+        self.mic = None
+        self.grips = []
+        self.spoon = None
+        self.force = None
+        self.torque = None
+        self.objectCenter = None
         pass
 
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
         # rate = rospy.Rate(1000) # 25Hz, nominally.
-        self.audioTool.start()
+        self.audioTool.begin()
         while not self.cancelled:
             if self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
-                if not self.anomalyOccured:
+                if not self.anomalyOccured and len(self.forces) > 15:
                     # Perform anomaly detection
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds)
                     print 'Anomaly error:', error
@@ -138,11 +158,10 @@ class onlineAnomalyDetection(Thread):
     def cancel(self):
         """End this timer thread"""
         self.cancelled = True
-        self.forceSub.unregister()
-        self.objectCenterSub.unregister()
-        self.publisher.unregister()
-        self.stream.stop_stream()
-        self.stream.close()
+        self.audioTool.reset()
+        # self.forceSub.unregister()
+        # self.objectCenterSub.unregister()
+        # self.publisher.unregister()
         rospy.sleep(1.0)
                 
     def processData(self):
@@ -164,8 +183,11 @@ class onlineAnomalyDetection(Thread):
 
         # Process either visual or audio data depending on which we're using
         audio = self.audioTool.readData()
+        if audio is None:
+            print 'Audio is None'
+            return
         audio = get_rms(audio)
-        print 'Audio:', audio
+        # print 'Audio:', audio
 
         # Scale data
         force = self.scaling(force, minVal=self.minVals[0], maxVal=self.maxVals[0], scale=self.scale)
