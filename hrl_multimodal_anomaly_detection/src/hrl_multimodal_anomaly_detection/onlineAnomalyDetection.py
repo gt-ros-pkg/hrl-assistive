@@ -8,7 +8,7 @@ import pyaudio
 from threading import Thread
 import matplotlib.pyplot as plt
 import hmm.icra2015Batch as onlineHMM
-from util import *
+from hmm.util import *
 
 try :
     import sensor_msgs.point_cloud2 as pc2

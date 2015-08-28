@@ -75,7 +75,7 @@ def getData(successPath, failurePath, folding_ratio=(0.5, 0.2, 0.3), downSampleS
     normalTestData, normalTestTimeList = loadData([success_list[x] for x in success_test_idx],
                                                   isTrainingData=False, downSampleSize=downSampleSize,
                                                   verbose=verbose)
-    abnormalTestData, abnormalTestTimeList = loadData([success_list[x] for x in failure_test_idx],
+    abnormalTestData, abnormalTestTimeList = loadData([failure_list[x] for x in failure_test_idx],
                                                       isTrainingData=False, downSampleSize=downSampleSize,
                                                       verbose=verbose)
 
@@ -163,8 +163,8 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
-              isScooping=True, use_pkl=False, findThresholds=True):
-    task = ('pr2_scooping' if isScooping else 's*_feeding')
+              isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65]):
+    task = 'pr2_scooping' if isScooping else 's*_feeding'
     successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
     failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
 
@@ -177,6 +177,20 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
     thresTestData, _ , _ = scaleData(thresTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
     normalTestData, _ , _ = scaleData(normalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
     abnormalTestData, _ , _ = scaleData(abnormalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
+
+    # cutting data (only traing and thresTest data)
+    start_idx = int(float(len(trainData[0][0]))*train_cutting_ratio[0])
+    end_idx   = int(float(len(trainData[0][0]))*train_cutting_ratio[1])
+
+    for j in xrange(len(trainData)):
+        for k in xrange(len(trainData[j])):
+            trainData[j][k] = trainData[j][k][start_idx:end_idx]
+            trainTimeList[k] = trainTimeList[k][start_idx:end_idx]
+
+    for j in xrange(len(thresTestData)):
+        for k in xrange(len(thresTestData[j])):
+            thresTestData[j][k] = thresTestData[j][k][start_idx:end_idx]
+            thresTestTimeList[k] = thresTestTimeList[k][start_idx:end_idx]
 
     hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
