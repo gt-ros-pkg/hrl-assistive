@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>hrl_undo</name>
+  <version>0.0.0</version>
+  <description>The hrl_undo package contains code for a state-based robotic undo manager.</description>
+
+  <maintainer email="Phillip.Grice@gatech.edu">Phillip Grice</maintainer>
+
+  <license>BSD</license>
+
+  <author email="Phillip.Grice@gatech.edu">Phillip Grice</author> 
+  <author>Advisor: Prof. Charles C. Kemp</author> 
+  <author>Lab: Healthcare Robotics Lab at Georgia Tech</author> 
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>rospy</build_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>pr2_controllers_msgs</run_depend>
+
+</package>
