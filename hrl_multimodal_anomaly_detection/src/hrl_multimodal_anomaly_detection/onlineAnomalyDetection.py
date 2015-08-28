@@ -2,15 +2,13 @@
 
 __author__ = 'zerickson'
 
-import math
 import time
 import rospy
-import struct
 import pyaudio
-import numpy as np
 from threading import Thread
 import matplotlib.pyplot as plt
-import onlineHMMLauncher as onlineHMM
+import hmm.icra2015Batch as onlineHMM
+from util import *
 
 try :
     import sensor_msgs.point_cloud2 as pc2
@@ -30,18 +28,25 @@ from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeature
 
 class onlineAnomalyDetection(Thread):
     MAX_INT = 32768.0
-    CHUNK   = 4096 # frame per buffer
-    RATE    = 44100 # sampling rate
+    CHUNK   = 1024 # frame per buffer
+    RATE    = 48000 # sampling rate
     UNIT_SAMPLE_TIME = 1.0 / float(RATE)
     CHANNEL = 2 # number of channels
     FORMAT  = pyaudio.paInt16
 
-    def __init__(self, targetFrame=None, tfListener=None, isScooping=True, useAudio=False):
+    def __init__(self, targetFrame=None, tfListener=None, isScooping=True):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False
 
+        # Predefined settings
+        self.downSampleSize = 200
+        self.scale = 10
+        self.nState = 20
+        self.cov_mult = 1.0
         self.isScooping = isScooping
+        self.c = -5
+        # self.c = []
 
         print 'is scooping:', self.isScooping
 
@@ -62,7 +67,6 @@ class onlineAnomalyDetection(Thread):
         # Gripper
         self.lGripperPosition = None
         self.lGripperRotation = None
-        self.lGripperTransposeMatrix = None
         self.mic = None
         self.grips = []
         # Spoon
@@ -75,15 +79,22 @@ class onlineAnomalyDetection(Thread):
         ## self.soundHandle = SoundClient()
 
         # Setup HMM to perform online anomaly detection
-        self.hmm, self.minVals, self.maxVals, self.forces, self.distances, self.angles, self.audios, self.times, self.forcesList, self.distancesList, self.anglesList, self.audioList, self.timesList = onlineHMM.setupMultiHMM(isScooping=self.isScooping)
-        # if not self.isScooping:
-        #     self.forces, self.distances, self.angles, self.audios = self.forcesList[1], self.distancesList[1], self.anglesList[1], self.audioList[1]
-        self.times = np.array(self.times)
+        self.hmm, self.minVals, self.maxVals = onlineHMM.iteration(downSampleSize=self.downSampleSize,
+                                                            scale=self.scale, nState=self.nState,
+                                                            cov_mult=self.cov_mult, verbose=False,
+                                                            isScooping=self.isScooping, use_pkl=False,
+                                                            findThresholds=False)
+        self.forces = []
+        self.distances = []
+        self.angles = []
+        self.audios = []
+        self.times = []
         self.anomalyOccured = False
 
         self.p = pyaudio.PyAudio()
         deviceIndex = self.find_input_device()
         print 'Audio device:', deviceIndex
+        print 'Sample rate:', self.p.get_device_info_by_index(0)['defaultSampleRate']
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
 
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
@@ -105,12 +116,10 @@ class onlineAnomalyDetection(Thread):
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured:
-                    # Best c value gains determined from cross validation set
-                    c = -1 if self.isScooping else -9
                     # Perform anomaly detection
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, c)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.c)
                     print 'Anomaly error:', error
-                    if anomaly > 0:
+                    if anomaly:
                         if self.isScooping:
                             self.interruptPublisher.publish('Interrupt')
                         else:
@@ -132,10 +141,6 @@ class onlineAnomalyDetection(Thread):
         self.publisher.unregister()
         rospy.sleep(1.0)
 
-    @staticmethod
-    def scaling(x, minVal, maxVal, scale=1.0):
-        return (x - minVal) / (maxVal - minVal) * scale
-
     def processData(self):
         # Find nearest time stamp from training data
         timeStamp = rospy.get_time() - self.init_time
@@ -145,70 +150,37 @@ class onlineAnomalyDetection(Thread):
 
         # Use magnitude of forces
         force = np.linalg.norm(self.force)
-        force = self.scaling(force, self.minVals[0], self.maxVals[0])
 
         # Determine distance between mic and center of object
         distance = np.linalg.norm(self.mic - self.objectCenter)
-        distance = self.scaling(distance, self.minVals[1], self.maxVals[1])
         # Find angle between gripper-object vector and gripper-spoon vector
         micSpoonVector = self.spoon - self.mic
         micObjectVector = self.objectCenter - self.mic
         angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
-        angle = self.scaling(angle, self.minVals[2], self.maxVals[2])
 
         # Process either visual or audio data depending on which we're using
         audio = self.processAudio()
 
-        # Magnify relative errors for online detection
-        # Since we are overwriting a sample from the training set, we need to magnify errors
-        # for them to be recognized as an anomaly
-        if index < len(self.forces):
-            scalar = 1.0 if self.isScooping else 3.0
-            forceDiff = np.abs(self.forces[index] - force)
-            if forceDiff > 0.5:
-                if force < self.forces[index]:
-                    force -= scalar*forceDiff
-                else:
-                    force += scalar*forceDiff
-            distanceDiff = np.abs(self.distances[index] - distance)
-            if distanceDiff > 0.5:
-                if distance < self.distances[index]:
-                    distance -= scalar*distanceDiff
-                else:
-                    distance += scalar*distanceDiff
-            angleDiff = np.abs(self.angles[index] - angle)
-            if angleDiff > 0.5:
-                if angle < self.angles[index]:
-                    angle -= scalar*angleDiff
-                else:
-                    angle += scalar*angleDiff
-            audioDiff = np.abs(self.audios[index] - audio)
-            if audioDiff > 0.5:
-                if audio < self.audios[index]:
-                    audio -= scalar*audioDiff
-                else:
-                    audio += scalar*audioDiff
 
-        if index >= len(self.forces):
-            self.forces.append(force)
-            self.distances.append(distance)
-            self.angles.append(angle)
-            self.audios.append(audio)
-        else:
-            print 'Current force:', self.forces[index], 'New force:', force
-            self.forces[index] = force
-            print 'Current distance:', self.distances[index], 'New distance:', distance
-            self.distances[index] = distance
-            print 'Current angle:', self.angles[index], 'New angle:', angle
-            self.angles[index] = angle
-            print 'Current audio:', self.audios[index], 'New audio:', audio
-            self.audios[index] = audio
+        # Scale data
+        force = self.scaling(force, minVal=self.minVals[0], maxVal=self.maxVals[0], scale=self.scale)
+        distance = self.scaling(distance, minVal=self.minVals[1], maxVal=self.maxVals[1], scale=self.scale)
+        audio = self.scaling(audio, minVal=self.minVals[3], maxVal=self.maxVals[3], scale=self.scale)
+        angle = self.scaling(angle, minVal=self.minVals[2], maxVal=self.maxVals[2], scale=self.scale)
+
+        self.forces.append(force)
+        self.distances.append(distance)
+        self.angles.append(angle)
+        self.audios.append(audio)
 
     def processAudio(self):
         data = self.stream.read(self.CHUNK)
-        audio = self.get_rms(data)
-        audio = self.scaling(audio, self.minVals[3], self.maxVals[3])
+        audio = get_rms(data)
         return audio
+
+    @staticmethod
+    def scaling(x, minVal, maxVal, scale=1.0):
+        return (x - minVal) / (maxVal - minVal) * scale
 
     def forceCallback(self, msg):
         self.force = np.array([msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z])
@@ -230,41 +202,36 @@ class onlineAnomalyDetection(Thread):
 
         # Use a buffer of gripper positions
         if len(self.grips) >= 2:
-            self.lGripperTransposeMatrix = self.grips[-2]
+            lGripperTransposeMatrix = self.grips[-2]
         else:
-            self.lGripperTransposeMatrix = transMatrix
+            lGripperTransposeMatrix = transMatrix
         self.grips.append(transMatrix)
 
         # Determine location of mic
         mic = [0.12, -0.02, 0]
         # print 'Mic before', mic
-        self.mic = np.dot(self.lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        self.mic = np.dot(lGripperTransposeMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
         # print 'Mic after', self.mic
         # Determine location of spoon
         spoon3D = [0.22, -0.050, 0]
-        self.spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        self.spoon = np.dot(lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
 
-    def get_rms(self, block):
-        # RMS amplitude is defined as the square root of the
-        # mean over time of the square of the amplitude.
-        # so we need to convert this string of bytes into
-        # a string of 16-bit samples...
+    def find_input_device(self):
+        device_index = None
+        for i in range(self.p.get_device_count()):
+            devinfo = self.p.get_device_info_by_index(i)
+            print('Device %d: %s'%(i, devinfo['name']))
 
-        # we will get one short out for each
-        # two chars in the string.
-        count = len(block)/2
-        structFormat = '%dh' % count
-        shorts = struct.unpack(structFormat, block)
+            for keyword in ['mic', 'input', 'icicle']:
+                if keyword in devinfo['name'].lower():
+                    print('Found an input: device %d - %s'%(i, devinfo['name']))
+                    device_index = i
+                    return device_index
 
-        # iterate over the block.
-        sum_squares = 0.0
-        for sample in shorts:
-            # sample is a signed short in +/- 32768.
-            # normalize it to 1.0
-            n = sample / self.MAX_INT
-            sum_squares += n*n
+        if device_index is None:
+            print('No preferred input found; using default input device.')
 
-        return math.sqrt(sum_squares / count)
+        return device_index
 
     def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0):
         marker = Marker()
