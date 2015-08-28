@@ -196,6 +196,11 @@ class learning_hmm_multi_4d:
                     min_dist  = dist
 
             ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
+            ## if logp >= 0.:                
+            ##     ths = (logp*0.95 - self.ll_mu[min_index])/self.ll_std[min_index]
+            ## else:
+            ##     ths = (logp*1.05 - self.ll_mu[min_index])/self.ll_std[min_index]
+                        
             return ths, min_index
 
         elif self.check_method == 'global':
@@ -574,7 +579,8 @@ class learning_hmm_multi_4d:
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-        return err < 0.0, err
+        ## return err < 0.0, err
+        return err < -45.0, err
         # if err < 0.0: return 1.0, err # anomaly
         # else: return 0.0, err # normal
 
@@ -616,7 +622,7 @@ class learning_hmm_multi_4d:
         # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
-            print min_index, self.ll_mu[min_index], self.ll_std[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
+            ## print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
 
             return (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:
