@@ -99,6 +99,9 @@ var RFH = {
         initMjpegCanvas('video-main');
         initMarkerDisplay('markers');
         RFH.initTaskMenu('main-menu');
+        RFH.undo = new RFH.Undo({ros: RFH.ros,
+                                 undoTopic: '/undo',
+                                 buttonDiv: 'undo'});
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');

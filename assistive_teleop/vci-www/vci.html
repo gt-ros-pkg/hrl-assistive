@@ -26,6 +26,7 @@
 
   <script type="text/javascript" src="js/init.js"></script>
   <script type="text/javascript" src="js/log.js"></script>
+  <script type="text/javascript" src="js/undo.js"></script>
   <script type="text/javascript" src="js/connection_monitor.js"></script>
   <script type="text/javascript" src="js/battery_monitor.js"></script>
   <script type="text/javascript" src="js/teleop/pr2.js"></script>
@@ -48,11 +49,13 @@
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
   <link type="text/css" href="css/focus.css" rel="stylesheet" />
+  <link type="text/css" href="css/undo.css" rel="stylesheet" />
   
 </head>
 
 <body onload="RFH.init()">
  <div id="status-bar">
+     <div id="undo"><p>Undo</p></div>
      <div id="notifications"></div>
      <div id="network-status"></div>
      <div id='battery-status'>
