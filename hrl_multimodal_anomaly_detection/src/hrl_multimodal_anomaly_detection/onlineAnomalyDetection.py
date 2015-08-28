@@ -89,7 +89,9 @@ class onlineAnomalyDetection(Thread):
                               cov_mult=self.cov_mult, verbose=False,
                               isScooping=self.isScooping, use_pkl=False,
                               train_cutting_ratio=self.cutting_ratio,
-                              findThresholds=True, ml_pkl=self.ml_thres_pkl)
+                              findThresholds=True, ml_pkl=self.ml_thres_pkl,
+                              savedDataFile='hmm/batchDataFiles/scooping_%d_%d_%d_%d.pkl'
+                                            % (self.downSampleSize, self.scale, self.nState, int(self.cov_mult)))
 
         print 'Threshold:', self.minThresholds
         
