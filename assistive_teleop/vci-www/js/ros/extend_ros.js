@@ -6,17 +6,19 @@ var extendROSJS = function (ros) {
         serviceType: 'rosapi/MessageDetails'});
 
     ros.getMsgDetails = function (msgType) {
-        var req = new ROSLIB.ServiceRequest({type: msgType});
-        ros.getMsgDetailsClient.callService(req, function(res) {
-            ros.msgs = ros.msgs || {};
-            for (item in res.typedefs){
-                if (ros.msgs[res.typedefs[item].type] === undefined) {
-                    console.log('Imported '+
-                        res.typedefs[item].type.toString()+' Msg')
-                    ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+        if (ros.msgs[msgType] === undefined) {
+            var req = new ROSLIB.ServiceRequest({type: msgType});
+            ros.getMsgDetailsClient.callService(req, function(res) {
+                ros.msgs = ros.msgs || {};
+                for (item in res.typedefs){
+                    if (ros.msgs[res.typedefs[item].type] === undefined) {
+                        console.log('Imported '+
+                            res.typedefs[item].type.toString()+' Msg')
+                        ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+                    }
                 }
-            }
-        });
+            });
+        }
     };
 
     ros.composeMsg = function (type) {

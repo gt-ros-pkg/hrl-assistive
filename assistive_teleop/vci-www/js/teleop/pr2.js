@@ -80,71 +80,74 @@ var PR2Gripper = function (side, ros) {
 
 var PR2Head = function (ros) {
     'use strict';
-    var head = this;
-    head.ros = ros;
-    head.state = [0.0, 0.0];
-    head.limits = [[-2.85, 2.85], [1.18, -0.38]];
-    head.joints = ['head_pan_joint', 'head_tilt_joint'];
-    head.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
-    head.ros.getMsgDetails('pr2_controllers_msgs/JointTrajectoryActionGoal');
-    head.jointPub = new ROSLIB.Topic({
-        ros: head.ros,
-        name: 'head_traj_controller/joint_trajectory_action/goal',
-        messageType: 'pr2_controllers_msgs/JointTrajectoryActionGoal'
+    var self = this;
+    self.ros = ros;
+    self.state = [0.0, 0.0];
+    self.limits = [[-2.85, 2.85], [1.18, -0.38]];
+    self.joints = ['head_pan_joint', 'head_tilt_joint'];
+    self.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
+    self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
+    self.ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
+    self.jointPub = new ROSLIB.Topic({
+        ros: self.ros,
+        name: 'head_traj_controller/command',
+        messageType: 'trajectory_msgs/JointTrajectory'
     });
-    head.jointPub.advertise();
+    self.jointPub.advertise();
 
-    head.ros.getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
-    head.pointPub = new ROSLIB.Topic({
-        ros: head.ros,
+    self.ros.getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
+    self.pointPub = new ROSLIB.Topic({
+        ros: self.ros,
         name: 'head_traj_controller/point_head_action/goal',
         messageType: 'pr2_controllers_msgs/PointHeadActionGoal'
     });
-    head.pointPub.advertise();
+    self.pointPub.advertise();
 
-    head.stateSub = new ROSLIB.Topic({
-        ros: head.ros,
+    self.stateSub = new ROSLIB.Topic({
+        ros: self.ros,
         name: '/head_traj_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    head.setState = function (msg) {
-        head.state = msg.actual.positions;    
+    self.setState = function (msg) {
+        self.state = msg.actual.positions;    
     };
-    head.stateCBList = [head.setState];
-    head.stateCB = function (msg){
-        for (var i=0; i<head.stateCBList.length; i++){
-            head.stateCBList[i](msg);
+    self.stateCBList = [self.setState];
+    self.stateCB = function (msg){
+        for (var i=0; i<self.stateCBList.length; i++){
+            self.stateCBList[i](msg);
         };
     };
-    head.stateSub.subscribe(head.stateCB);
+    self.stateSub.subscribe(self.stateCB);
 
-    head.enforceLimits = function (pan, tilt) {
-        pan  = pan > head.limits[0][0] ? pan : head.limits[0][0];
-        pan  = pan < head.limits[0][1] ? pan : head.limits[0][1];
-        tilt  = tilt < head.limits[1][0] ? tilt : head.limits[1][0];
-        tilt  = tilt > head.limits[1][1] ? tilt : head.limits[1][1];
+    self.enforceLimits = function (pan, tilt) {
+        pan  = pan > self.limits[0][0] ? pan : self.limits[0][0];
+        pan  = pan < self.limits[0][1] ? pan : self.limits[0][1];
+        tilt  = tilt < self.limits[1][0] ? tilt : self.limits[1][0];
+        tilt  = tilt > self.limits[1][1] ? tilt : self.limits[1][1];
         return [pan, tilt];
     };
 
-    head.setPosition = function (pan, tilt) {
-        var dPan = Math.abs(pan - head.state[0]);
-        var dTilt = Math.abs(tilt - head.state[1]);
-        var trajPointMsg = head.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
-        trajPointMsg.positions = head.enforceLimits(pan, tilt);
+    self.setPosition = function (pan, tilt) {
+        var dPan = Math.abs(pan - self.state[0]);
+        var dTilt = Math.abs(tilt - self.state[1]);
+        var trajPointMsg = self.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        trajPointMsg.positions = self.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
         trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
-        var goalMsg = head.ros.composeMsg('pr2_controllers_msgs/JointTrajectoryActionGoal');
-        goalMsg.goal.trajectory.joint_names = head.joints;
-        goalMsg.goal.trajectory.points.push(trajPointMsg);
-        head.jointPub.publish(goalMsg);
+        var goalMsg = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
+        goalMsg.joint_names = self.joints;
+        goalMsg.points.push(trajPointMsg);
+        self.jointPub.publish(goalMsg);
     };
-    head.delPosition = function (delPan, delTilt) {
-        var pan = head.state[0] += delPan;
-        var tilt = head.state[1] += delTilt;
-        head.setPosition(pan, tilt);
+
+    self.delPosition = function (delPan, delTilt) {
+        var pan = self.state[0] += delPan;
+        var tilt = self.state[1] += delTilt;
+        self.setPosition(pan, tilt);
     };
-    head.pointHead = function (x, y, z, frame) {
-        var headPointMsg = head.ros.composeMsg('pr2_controllers_msgs/PointHeadActionGoal');
+
+    self.pointHead = function (x, y, z, frame) {
+        var headPointMsg = self.ros.composeMsg('pr2_controllers_msgs/PointHeadActionGoal');
         headPointMsg.goal.pointing_axis = {
             x: 0,
             y: 0,
@@ -156,50 +159,53 @@ var PR2Head = function (ros) {
             y: y,
             z: z
         };
-        headPointMsg.goal.pointing_frame = head.pointingFrame;
+        headPointMsg.goal.pointing_frame = self.pointingFrame;
         headPointMsg.goal.max_velocity = 0.25;
-        head.pointPub.publish(headPointMsg);
+        self.pointPub.publish(headPointMsg);
     };
 };
 
 var PR2Torso = function (ros) {
     'use strict';
-    var torso = this;
-    torso.ros = ros;
-    torso.state = 0.0;
-    torso.ros.getMsgDetails('pr2_controllers_msgs/SingleJointPositionActionGoal');
+    var self = this;
+    self.ros = ros;
+    self.state = null;
+    self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
+    self.ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
+    self.jointNames = ['torso_lift_joint'];
 
-    torso.goalPub = new ROSLIB.Topic({
-        ros: torso.ros,
-        name: 'torso_controller/position_joint_action/goal',
-        messageType: 'pr2_controllers_msgs/SingleJointPositionActionGoal'
+    self.goalPub = new ROSLIB.Topic({
+        ros: self.ros,
+        name: 'torso_controller/command',
+        messageType: 'trajectory_msgs/JointTrajectory'
     });
-    torso.goalPub.advertise();
+    self.goalPub.advertise();
 
-    torso.stateSub = new ROSLIB.Topic({
-        ros: torso.ros,
+    self.stateSub = new ROSLIB.Topic({
+        ros: self.ros,
         name: 'torso_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    torso.setState = function (msg) {
-        torso.state = msg.actual.positions[0];
+    self.setState = function (msg) {
+        self.state = msg.actual.positions[0];
     };
-    torso.stateCBList = [torso.setState];
-    torso.stateCB = function (msg) {
-        for (var i=0; i<torso.stateCBList.length; i++){
-            torso.stateCBList[i](msg);
+    self.stateCBList = [self.setState];
+    self.stateCB = function (msg) {
+        for (var i=0; i<self.stateCBList.length; i++){
+            self.stateCBList[i](msg);
         };
     };
-    torso.stateSub.subscribe(torso.stateCB);
+    self.stateSub.subscribe(self.stateCB);
 
-    torso.setPosition = function (z) {
-        var dir = (z < torso.state) ? 'Lowering' : 'Raising';
-        log(dir + " Torso");
-        console.log('Commanding torso' + ' from z=' + torso.state.toString() + ' to z=' + z.toString());
-        var goal_msg = torso.ros.composeMsg('pr2_controllers_msgs/SingleJointPositionActionGoal');
-        goal_msg.goal.position = z;
-        goal_msg.goal.max_velocity = 1.0;
-        torso.goalPub.publish(goal_msg);
+    self.setPosition = function (z) {
+        console.log('Commanding torso' + ' from z=' + self.state.toString() + ' to z=' + z.toString());
+        var goal_msg = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
+        var traj_point = self.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        traj_point.positions = [z];
+        traj_point.time_from_start.secs = 1
+        goal_msg.joint_names = self.jointNames;
+        goal_msg.points = [traj_point];
+        self.goalPub.publish(goal_msg);
     };
 };
 
