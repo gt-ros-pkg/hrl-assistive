@@ -39,6 +39,7 @@ class onlineAnomalyDetection(Thread):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False
+        self.isRunning = False
 
         # Predefined settings
         self.downSampleSize = 100 #200
@@ -111,7 +112,7 @@ class onlineAnomalyDetection(Thread):
         print 'Connected to center of object publisher'
 
     def reset(self):
-        self.cancelled = False
+        self.isRunning = True
         self.forces = []
         self.distances = []
         self.angles = []
@@ -129,15 +130,14 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
         self.objectCenter = None
-        pass
+        self.audioTool.begin()
 
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
         # rate = rospy.Rate(1000) # 25Hz, nominally.
-        self.audioTool.begin()
         while not self.cancelled:
-            if self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
+            if self.isRunning and self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
                 if not self.anomalyOccured and len(self.forces) > 15:
@@ -159,8 +159,7 @@ class onlineAnomalyDetection(Thread):
             # rate.sleep()
 
     def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
+        self.isRunning = False
         self.audioTool.reset()
         # self.forceSub.unregister()
         # self.objectCenterSub.unregister()
