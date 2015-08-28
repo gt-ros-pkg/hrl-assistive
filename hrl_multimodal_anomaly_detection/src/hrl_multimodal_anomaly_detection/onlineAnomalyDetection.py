@@ -8,6 +8,7 @@ import pyaudio
 from threading import Thread
 import matplotlib.pyplot as plt
 import hmm.icra2015Batch as onlineHMM
+from audio.tool_audio_slim import tool_audio_slim
 from hmm.util import *
 
 try :
@@ -77,7 +78,7 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
-        self.audio = None
+        self.audioTool = tool_audio_slim()
 
         ## self.soundHandle = SoundClient()
 
@@ -97,13 +98,6 @@ class onlineAnomalyDetection(Thread):
         self.times = []
         self.anomalyOccured = False
 
-        self.p = pyaudio.PyAudio()
-        deviceIndex = self.find_input_device()
-        print 'Audio device:', deviceIndex
-        print 'Sample rate:', self.p.get_device_info_by_index(0)['defaultSampleRate']
-        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, \
-                                  frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
-        
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
         print 'Connected to FT sensor'
 
@@ -118,6 +112,7 @@ class onlineAnomalyDetection(Thread):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
         # rate = rospy.Rate(1000) # 25Hz, nominally.
+        self.audioTool.start()
         while not self.cancelled:
             if self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
@@ -168,9 +163,9 @@ class onlineAnomalyDetection(Thread):
         angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
 
         # Process either visual or audio data depending on which we're using
-        audio = self.processAudio()
+        audio = self.audioTool.readData()
+        audio = get_rms(audio)
         print 'Audio:', audio
-
 
         # Scale data
         force = self.scaling(force, minVal=self.minVals[0], maxVal=self.maxVals[0], scale=self.scale)
@@ -182,14 +177,6 @@ class onlineAnomalyDetection(Thread):
         self.distances.append(distance)
         self.angles.append(angle)
         self.audios.append(audio)
-
-    def processAudio(self):
-        try:
-            data = self.stream.read(self.CHUNK)
-            self.audio = get_rms(data)
-        except:
-            print 'Audio read failure due to input overflow'
-        return self.audio
 
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):

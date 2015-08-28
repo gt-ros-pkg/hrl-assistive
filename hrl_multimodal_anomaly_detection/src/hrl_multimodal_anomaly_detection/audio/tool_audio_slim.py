@@ -22,6 +22,8 @@ class tool_audio_slim(Thread):
         self.audio_data_raw = []
         self.time_data = []
 
+        self.audio = None
+
         self.p = pyaudio.PyAudio()
         deviceIndex = self.find_input_device()
         print 'Audio device:', deviceIndex
@@ -66,6 +68,13 @@ class tool_audio_slim(Thread):
             self.audio_data_raw.append(data)
         except:
             print 'Audio read failure due to input overflow'
+
+    def readData(self):
+        try:
+            self.audio = self.stream.read(self.CHUNK)
+        except:
+            print 'Audio read failure due to input overflow'
+        return self.audio
 
     def cancel(self):
         """End this timer thread"""
