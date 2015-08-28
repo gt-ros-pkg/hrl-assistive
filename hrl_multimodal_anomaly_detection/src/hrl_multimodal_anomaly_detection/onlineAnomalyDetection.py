@@ -35,7 +35,7 @@ class onlineAnomalyDetection(Thread):
     CHANNEL = 2 # number of channels
     FORMAT  = pyaudio.paInt16
 
-    def __init__(self, targetFrame=None, tfListener=None, isScooping=True):
+    def __init__(self, subject='s1', task='scooping', targetFrame=None, tfListener=None, isScooping=True):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False
@@ -48,6 +48,8 @@ class onlineAnomalyDetection(Thread):
         self.cov_mult = 1.0
         self.cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
         self.isScooping = isScooping
+        self.subject = subject
+        self.task = task
         if self.isScooping: self.ml_thres_pkl='ml_scooping_thres.pkl'
         else: self.ml_thres_pkl='ml_feeding_thres.pkl'
 
@@ -101,6 +103,10 @@ class onlineAnomalyDetection(Thread):
         self.distances = []
         self.angles = []
         self.audios = []
+        self.forcesRaw = []
+        self.distancesRaw = []
+        self.anglesRaw = []
+        self.audiosRaw = []
         self.times = []
         self.anomalyOccured = False
 
@@ -117,6 +123,10 @@ class onlineAnomalyDetection(Thread):
         self.distances = []
         self.angles = []
         self.audios = []
+        self.forcesRaw = []
+        self.distancesRaw = []
+        self.anglesRaw = []
+        self.audiosRaw = []
         self.times = []
         self.anomalyOccured = False
         self.updateNumber = 0
@@ -161,11 +171,31 @@ class onlineAnomalyDetection(Thread):
     def cancel(self):
         self.isRunning = False
         self.audioTool.reset()
-        # self.forceSub.unregister()
-        # self.objectCenterSub.unregister()
-        # self.publisher.unregister()
+        self.saveData()
         rospy.sleep(1.0)
-                
+
+    def saveData(self):
+        # TODO Save data (Check with daehyung if any more data should be added)
+        data = dict()
+        data['forces'] = self.forces
+        data['distances'] = self.distances
+        data['angles'] = self.angles
+        data['audios'] = self.audios
+        data['forcesRaw'] = self.forcesRaw
+        data['distancesRaw'] = self.distancesRaw
+        data['anglesRaw'] = self.anglesRaw
+        data['audioRaw'] = self.audiosRaw
+        data['times'] = self.times
+        data['anomalyOccured'] = self.anomalyOccured
+
+        directory = os.path.join(os.path.dirname(__file__), 'onlineDataRecordings/')
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        fileName = os.path.join(directory, self.subject + '_' + self.task + '_' + time.strftime('%m-%d-%Y_%H-%M-%S.pkl'))
+        with open(fileName, 'wb') as f:
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print 'Online data saved to file.'
+
     def processData(self):
         # Find nearest time stamp from training data
         # timeStamp = rospy.get_time() - self.init_time
@@ -191,16 +221,22 @@ class onlineAnomalyDetection(Thread):
         audio = get_rms(audio)
         # print 'Audio:', audio
 
+        self.forcesRaw.append(force)
+        self.distancesRaw.append(distance)
+        self.anglesRaw.append(angle)
+        self.audiosRaw.append(audio)
+
         # Scale data
         force = self.scaling(force, minVal=self.minVals[0], maxVal=self.maxVals[0], scale=self.scale)
         distance = self.scaling(distance, minVal=self.minVals[1], maxVal=self.maxVals[1], scale=self.scale)
-        audio = self.scaling(audio, minVal=self.minVals[3], maxVal=self.maxVals[3], scale=self.scale)
         angle = self.scaling(angle, minVal=self.minVals[2], maxVal=self.maxVals[2], scale=self.scale)
+        audio = self.scaling(audio, minVal=self.minVals[3], maxVal=self.maxVals[3], scale=self.scale)
 
         self.forces.append(force)
         self.distances.append(distance)
         self.angles.append(angle)
         self.audios.append(audio)
+        self.times.append(rospy.get_time() - self.init_time)
 
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):
