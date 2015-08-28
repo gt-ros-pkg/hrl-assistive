@@ -82,6 +82,7 @@ class onlineAnomalyDetection(Thread):
 
         ## self.soundHandle = SoundClient()
 
+        saveDataPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/batchDataFiles/%s_%d_%d_%d_%d.pkl'
         # Setup HMM to perform online anomaly detection
         self.hmm, self.minVals, self.maxVals, self.minThresholds \
         = onlineHMM.iteration(downSampleSize=self.downSampleSize,
@@ -90,8 +91,8 @@ class onlineAnomalyDetection(Thread):
                               isScooping=self.isScooping, use_pkl=False,
                               train_cutting_ratio=self.cutting_ratio,
                               findThresholds=True, ml_pkl=self.ml_thres_pkl,
-                              savedDataFile='/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/batchDataFiles/scooping_%d_%d_%d_%d.pkl'
-                                            % (self.downSampleSize, self.scale, self.nState, int(self.cov_mult)))
+                              savedDataFile=saveDataPath % (('scooping' if self.isScooping else 'feeding'),
+                                            self.downSampleSize, self.scale, self.nState, int(self.cov_mult)))
 
         print 'Threshold:', self.minThresholds
         
