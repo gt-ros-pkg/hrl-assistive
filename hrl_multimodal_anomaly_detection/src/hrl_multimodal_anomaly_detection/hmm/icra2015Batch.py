@@ -247,7 +247,7 @@ def plotData(isScooping=False):
     plt.legend()
     plt.show()
 
-plotData(isScooping=False)
+# plotData(isScooping=False)
 
 orig_stdout = sys.stdout
 f = file('out.txt', 'w')
