@@ -555,7 +555,10 @@ class learning_hmm_multi_4d:
                 if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return 1.0, 0.0 # anomaly
 
-            n = len(np.squeeze(X1))
+            if len(X1) == 1:
+                n = 1
+            else:
+                n = len(np.squeeze(X1))
 
             # Find the best posterior distribution
             min_dist  = 100000000

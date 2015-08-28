@@ -52,7 +52,7 @@ def getData(successPath, failurePath, folding_ratio=(0.5, 0.2, 0.3), downSampleS
         print 'Number of successful test iterations:', nTest
         print 'Number of failure test iterations:', len(failure_list)
         sys.exit()
-
+        
     # index selection
     success_idx  = range(len(success_list))
     failure_idx  = range(len(failure_list))
@@ -163,7 +163,8 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
-              isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65]):
+              isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
+              ml_pkl='ml_temp_4d.pkl', saveData=False):
     task = 'pr2_scooping' if isScooping else 's*_feeding'
     successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
     failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
@@ -172,11 +173,24 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
     thresTestTimeList, normalTestTimeList, abnormalTestTimeList = getData(successPath, failurePath,
                                                                           downSampleSize=downSampleSize, verbose=verbose)
 
+    # minimum and maximum vales for scaling from Daehyung
+    success_list = glob.glob(successPath)
+    dataList, _ = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
+    minVals = []
+    maxVals = []
+    for modality in dataList:
+        minVals.append(np.min(modality))
+        maxVals.append(np.max(modality))
+    
     # Scale data
-    trainData, minVals, maxVals = scaleData(trainDataTrue, scale=scale, verbose=verbose)
-    thresTestData, _ , _ = scaleData(thresTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
-    normalTestData, _ , _ = scaleData(normalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
-    abnormalTestData, _ , _ = scaleData(abnormalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, verbose=verbose)
+    trainData, _, _ = scaleData(trainDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, 
+                                            verbose=verbose)
+    thresTestData, _ , _ = scaleData(thresTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, 
+                                     verbose=verbose)
+    normalTestData, _ , _ = scaleData(normalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, 
+                                      verbose=verbose)
+    abnormalTestData, _ , _ = scaleData(abnormalTestDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, 
+                                        verbose=verbose)
 
     # cutting data (only traing and thresTest data)
     start_idx = int(float(len(trainData[0][0]))*train_cutting_ratio[0])
@@ -194,7 +208,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
 
     hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
-                  use_pkl=use_pkl, cov_mult=[cov_mult]*16)
+                  ml_pkl=ml_pkl, use_pkl=use_pkl, cov_mult=[cov_mult]*16)
 
     if ret == 'Failure':
         return
@@ -210,26 +224,29 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
             print 'Min threshold size:', np.shape(minThresholds)
             print minThresholds
 
-        tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
+        if not saveData:
+            return hmm, minVals, maxVals, minThresholds
+        else:
+            tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
 
-        # Save data into file for later use (since it was randomly sampled)
-        d = dict()
-        d['trainData'] = trainData
-        d['thresTestData'] = thresTestData
-        d['normalTestData'] = normalTestData
-        d['abnormalTestData'] = abnormalTestData
-        d['trainDataTrue'] = trainDataTrue
-        d['thresTestDataTrue'] = thresTestDataTrue
-        d['normalTestDataTrue'] = normalTestDataTrue
-        d['abnormalTestDataTrue'] = abnormalTestDataTrue
-        d['trainTimeList'] = trainTimeList
-        d['thresTestTimeList'] = thresTestTimeList
-        d['normalTestTimeList'] = normalTestTimeList
-        d['abnormalTestTimeList'] = abnormalTestTimeList
-        taskName = 'scooping' if isScooping else 'feeding'
-        fileName = 'batchDataFiles/%s_%d_%d_%d_%d.pkl' % (taskName, downSampleSize, scale, nState, int(cov_mult))
-        with open(fileName, 'wb') as f:
-            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+            # Save data into file for later use (since it was randomly sampled)
+            d = dict()
+            d['trainData'] = trainData
+            d['thresTestData'] = thresTestData
+            d['normalTestData'] = normalTestData
+            d['abnormalTestData'] = abnormalTestData
+            d['trainDataTrue'] = trainDataTrue
+            d['thresTestDataTrue'] = thresTestDataTrue
+            d['normalTestDataTrue'] = normalTestDataTrue
+            d['abnormalTestDataTrue'] = abnormalTestDataTrue
+            d['trainTimeList'] = trainTimeList
+            d['thresTestTimeList'] = thresTestTimeList
+            d['normalTestTimeList'] = normalTestTimeList
+            d['abnormalTestTimeList'] = abnormalTestTimeList
+            taskName = 'scooping' if isScooping else 'feeding'
+            fileName = 'batchDataFiles/%s_%d_%d_%d_%d.pkl' % (taskName, downSampleSize, scale, nState, int(cov_mult))
+            with open(fileName, 'wb') as f:
+                pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def batchTrain(parallel=True):

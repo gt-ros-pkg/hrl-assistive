@@ -40,13 +40,14 @@ class onlineAnomalyDetection(Thread):
         self.cancelled = False
 
         # Predefined settings
-        self.downSampleSize = 200
-        self.scale = 10
-        self.nState = 20
+        self.downSampleSize = 100 #200
+        self.scale = 1.0 #10
+        self.nState = 10 #20
         self.cov_mult = 1.0
+        self.cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
         self.isScooping = isScooping
-        self.c = -5
-        # self.c = []
+        if self.isScooping: self.ml_thres_pkl='ml_scooping_thres.pkl'
+        else: self.ml_thres_pkl='ml_feeding_thres.pkl'
 
         print 'is scooping:', self.isScooping
 
@@ -76,14 +77,19 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
+        self.audio = None
+
         ## self.soundHandle = SoundClient()
 
         # Setup HMM to perform online anomaly detection
-        self.hmm, self.minVals, self.maxVals = onlineHMM.iteration(downSampleSize=self.downSampleSize,
-                                                            scale=self.scale, nState=self.nState,
-                                                            cov_mult=self.cov_mult, verbose=False,
-                                                            isScooping=self.isScooping, use_pkl=False,
-                                                            findThresholds=False)
+        self.hmm, self.minVals, self.maxVals, self.minThresholds \
+        = onlineHMM.iteration(downSampleSize=self.downSampleSize,
+                              scale=self.scale, nState=self.nState,
+                              cov_mult=self.cov_mult, verbose=False,
+                              isScooping=self.isScooping, use_pkl=False,
+                              train_cutting_ratio=self.cutting_ratio,
+                              findThresholds=True, ml_pkl=self.ml_thres_pkl)
+        
         self.forces = []
         self.distances = []
         self.angles = []
@@ -95,8 +101,9 @@ class onlineAnomalyDetection(Thread):
         deviceIndex = self.find_input_device()
         print 'Audio device:', deviceIndex
         print 'Sample rate:', self.p.get_device_info_by_index(0)['defaultSampleRate']
-        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
-
+        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, \
+                                  frames_per_buffer=self.CHUNK, input_device_index=deviceIndex)
+        
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
         print 'Connected to FT sensor'
 
@@ -117,7 +124,7 @@ class onlineAnomalyDetection(Thread):
                 self.processData()
                 if not self.anomalyOccured:
                     # Perform anomaly detection
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.c)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds)
                     print 'Anomaly error:', error
                     if anomaly:
                         if self.isScooping:
@@ -139,12 +146,14 @@ class onlineAnomalyDetection(Thread):
         self.forceSub.unregister()
         self.objectCenterSub.unregister()
         self.publisher.unregister()
+        self.stream.stop_stream()
+        self.stream.close()
         rospy.sleep(1.0)
-
+                
     def processData(self):
         # Find nearest time stamp from training data
-        timeStamp = rospy.get_time() - self.init_time
-        index = np.abs(self.times - timeStamp).argmin()
+        # timeStamp = rospy.get_time() - self.init_time
+        # index = np.abs(self.times - timeStamp).argmin()
 
         self.transposeGripper()
 
@@ -160,6 +169,7 @@ class onlineAnomalyDetection(Thread):
 
         # Process either visual or audio data depending on which we're using
         audio = self.processAudio()
+        print 'Audio:', audio
 
 
         # Scale data
@@ -174,9 +184,12 @@ class onlineAnomalyDetection(Thread):
         self.audios.append(audio)
 
     def processAudio(self):
-        data = self.stream.read(self.CHUNK)
-        audio = get_rms(data)
-        return audio
+        try:
+            data = self.stream.read(self.CHUNK)
+            self.audio = get_rms(data)
+        except:
+            print 'Audio read failure due to input overflow'
+        return self.audio
 
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):

@@ -118,13 +118,15 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, hmm_rene
           trainTimeList, thresTestTimeList, normalTestTimeList, abnormalTestTimeList, \
           trainFileList, thsTestFileList, normalTestFileList, abnormalTestFileList \
           = getData(task_name, target_path, i)
-                    
+
+        dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+".pkl")
+          
         nDimension = len(trainData)
 
         # Create and train multivariate HMM
         hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=False)
-        ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
-                      use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
+        ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
+                      ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
         minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
         minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
@@ -196,12 +198,14 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
       trainFileList, thsTestFileList, normalTestFileList, abnormalTestFileList \
     = getData(task_name, target_path, setID)
 
+    dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(setID)+".pkl")
+
     nDimension = len(trainData)
 
     # Create and train multivariate HMM
     hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=True)
-    ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
-                  use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
+    ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
+                  ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
     minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
     minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
@@ -306,7 +310,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
             plt.plot(log_ll[i], label=str(i))
             plt.legend(loc=4,prop={'size':16})
             if verbose: 
-                print i, normalTestFileList[i], np.amin(log_ll[i])
+                print i, normalTestFileList[i], np.amin(log_ll[i]), log_ll[i][-1]
                 
 
             
@@ -399,10 +403,11 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         sys.exit()
 
     # minimum and maximum vales for scaling
-    abnormalData, _ = loadData(failure_list, isTrainingData=False, downSampleSize=downSampleSize)
+    ## dataList, _ = loadData(failure_list, isTrainingData=False, downSampleSize=downSampleSize)
+    dataList, _ = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
     minVals = []
     maxVals = []
-    for modality in abnormalData:
+    for modality in dataList:
         minVals.append(np.min(modality))
         maxVals.append(np.max(modality))
         
@@ -620,21 +625,21 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     opt, args = p.parse_args()
 
-    ## subject_names = ['s1'] #'personal', 
-    ## task_name     = 'feeding' #['scooping', 'feeding']
-    subject_names = ['pr2'] #'personal', 
-    task_name     = 'scooping'
+    subject_names = ['s1'] #'personal', 
+    task_name     = 'feeding' #['scooping', 'feeding']
+    ## subject_names = ['pr2'] #'personal', 
+    ## task_name     = 'scooping'
 
     data_root_path   = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
     data_target_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/data'
 
     nSet           = 1
-    folding_ratio  = [0.5, 0.2, 0.3]
+    folding_ratio  = [0.4, 0.2, 0.3]
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
     scale          = 1.0
-    cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
+    cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
             
     preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
                    folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
@@ -642,13 +647,13 @@ if __name__ == '__main__':
 
     if opt.bPlot:
         distributionOfSequences(task_name, data_target_path, setID=0, scale=scale,\
-                                useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
-                                save_pdf=True, verbose=True)        
+                                useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
+                                save_pdf=False, verbose=True)        
     elif opt.bLikelihoodPlot:
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
-                              useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
-                              hmm_renew=opt.bHMMRenew, save_pdf=True, verbose=True)        
+                              useTrain=True, useThsTest=False, useNormalTest=True, useAbnormalTest=False,\
+                              hmm_renew=opt.bHMMRenew, save_pdf=False, verbose=True)        
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\

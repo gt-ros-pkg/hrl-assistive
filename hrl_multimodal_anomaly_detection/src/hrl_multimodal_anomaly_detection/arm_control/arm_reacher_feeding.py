@@ -62,16 +62,14 @@ class armReachAction(mpcBaseAction):
                          PoseStamped, self.bowlPoseManualCallback)
         rospy.Subscriber('/ar_track_alvar/mouth_pose',
                          PoseStamped, self.mouthPoseManualCallback)
-        ## rospy.Subscriber('hrl_feeding_task/bowl_location',
-        ##                  PoseStamped, self.bowlPoseManualCallback)
-        ## rospy.Subscriber('hrl_feeding_task/mouth_location',
-        ##                  PoseStamped, self.mouthPoseManualCallback)
+        rospy.Subscriber('InterruptAction', String, self.interruptCallback)
 
         ## rospy.Subscriber('hrl_feeding_task/RYDS_CupLocation',
         ##                  PoseStamped, self.bowlPoseKinectCallback)
 
         #rospy.Subscriber('hrl_feeding_task/emergency_arm_stop', String, self.stopCallback)
-        ## rospy.Subscriber('InterruptAction', String, self.interrupt)
+
+        
 
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
@@ -391,6 +389,29 @@ class armReachAction(mpcBaseAction):
             self.leftArmStopQuats[0][3])
         self.setOrientGoal(posStopL, quatStopL, 10)
 
+
+    def interruptCallback(self, data):
+        print '\n\nAction Interrupted! Event Stop\n\n'
+        print 'Interrupt Data:', data.data
+        self.interrupted = True
+
+        print "Stopping Motion..."
+        self.setStop() #Stops Current Motion
+        try:
+            self.setStopRight() #Sends message to service node
+        except:
+            print "Couldn't stop right arm! "
+
+        posStopL = Point()
+        quatStopL = Quaternion()
+
+        print "Moving left arm to safe position "
+        if data.data == 'InterruptHead':
+            self.feeding([0])
+        else:
+            self.scooping([0])
+
+        
     #converts an array of euler angles (in degrees) to array of quaternions
     def euler2quatArray(self, eulersIn): 
 
