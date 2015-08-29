@@ -35,7 +35,7 @@ class onlineAnomalyDetection(Thread):
     CHANNEL = 2 # number of channels
     FORMAT  = pyaudio.paInt16
 
-    def __init__(self, subject='s1', task='scooping', targetFrame=None, tfListener=None, isScooping=True):
+    def __init__(self, subject='s1', task='s', targetFrame=None, tfListener=None, isScooping=True):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False

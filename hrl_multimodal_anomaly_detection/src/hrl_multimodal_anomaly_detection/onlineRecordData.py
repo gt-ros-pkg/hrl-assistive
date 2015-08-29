@@ -11,8 +11,6 @@ import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import rospy, optparse
 import tf
-from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
-from hrl_multimodal_anomaly_detection.srv import String_String
 
 def log_parse():
     parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
@@ -28,22 +26,34 @@ def log_parse():
 
 
 class ADL_log:
-    def __init__(self, subject='s1', task='scooping', isScooping=True):
+    def __init__(self, subject='s1', task='s'):
         self.init_time = 0
         self.tf_listener = tf.TransformListener()
         rospy.logout('ADLs_log node subscribing..')
-        self.isScooping = isScooping
+        self.isScooping = task == 's' or task == 'b'
 
-        self.detector = onlineAnomalyDetection(subject=subject, task=task, targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=isScooping)
+        self.detector = onlineAnomalyDetection(subject=subject, task=task, targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=self.isScooping)
         self.detector.start()
 
-    def log_start(self):
-        self.detector.reset()
-        self.init_time = rospy.get_time()
-        self.detector.init_time = self.init_time
+        self.detector2 = None
+        if task == 'b':
+            self.detector2 = onlineAnomalyDetection(subject=subject, task=task, targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=False)
+            self.detector2.start()
 
-    def close_log_file(self):
-        self.detector.cancel()
+    def log_start(self, secondDetector=False):
+        self.init_time = rospy.get_time()
+        if not secondDetector:
+            self.detector.reset()
+            self.detector.init_time = self.init_time
+        else:
+            self.detector2.reset()
+            self.detector2.init_time = self.init_time
+
+    def close_log_file(self, secondDetector=False):
+        if not secondDetector:
+            self.detector.cancel()
+        else:
+            self.detector2.cancel()
 
         # Reinitialize all sensors
         # self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=self.isScooping)
