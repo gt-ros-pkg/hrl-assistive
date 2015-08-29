@@ -25,6 +25,7 @@ roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import tf
 import image_geometry
 from cv_bridge import CvBridge, CvBridgeError
+from sound_play.libsoundplay import SoundClient
 from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
 
 class onlineAnomalyDetection(Thread):
@@ -86,7 +87,7 @@ class onlineAnomalyDetection(Thread):
         else:
             self.audioTool = audioTool
 
-        ## self.soundHandle = SoundClient()
+        self.soundHandle = SoundClient()
 
         saveDataPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/batchDataFiles/%s_%d_%d_%d_%d.pkl'
         # Setup HMM to perform online anomaly detection
@@ -163,6 +164,7 @@ class onlineAnomalyDetection(Thread):
                         else:
                             self.interruptPublisher.publish('InterruptHead')
                         self.anomalyOccured = True
+                        self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
                         # for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
                         #     for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
