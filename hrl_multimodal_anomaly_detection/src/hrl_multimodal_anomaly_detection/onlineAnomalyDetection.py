@@ -35,7 +35,7 @@ class onlineAnomalyDetection(Thread):
     CHANNEL = 2 # number of channels
     FORMAT  = pyaudio.paInt16
 
-    def __init__(self, subject='s1', task='s', targetFrame=None, tfListener=None, isScooping=True):
+    def __init__(self, subject='s1', task='s', targetFrame=None, tfListener=None, isScooping=True, audioTool=None):
         super(onlineAnomalyDetection, self).__init__()
         self.daemon = True
         self.cancelled = False
@@ -81,7 +81,10 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
-        self.audioTool = tool_audio_slim()
+        if audioTool is None:
+            self.audioTool = tool_audio_slim()
+        else:
+            self.audioTool = audioTool
 
         ## self.soundHandle = SoundClient()
 

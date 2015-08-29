@@ -37,7 +37,7 @@ class ADL_log:
 
         self.detector2 = None
         if task == 'b':
-            self.detector2 = onlineAnomalyDetection(subject=subject, task=task, targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=False)
+            self.detector2 = onlineAnomalyDetection(subject=subject, task=task, targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=False, audioTool=self.detector.audioTool)
             self.detector2.start()
 
     def log_start(self, secondDetector=False):
