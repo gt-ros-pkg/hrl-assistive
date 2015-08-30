@@ -59,7 +59,7 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                 ax1.plot(trainTimeList[i], trainData[0][i])
                 ax2.plot(trainTimeList[i], trainData[1][i])
                 ax3.plot(trainTimeList[i], trainData[2][i])
-                ax4.plot(trainTimeList[i], trainData[3][i], label=str(count))            
+                ax4.plot(trainTimeList[i], trainData[3][i])            
             else:
                 ax1.plot(trainTimeList[i], trainData[0][i], 'b')
                 ax2.plot(trainTimeList[i], trainData[1][i], 'b')
@@ -67,17 +67,18 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                 ax4.plot(trainTimeList[i], trainData[3][i], 'b', label=str(count))            
             count = count + 1
             if verbose: print i, trainFileList[i]
-        ax4.legend(loc=4,prop={'size':16})
+
+        if not useTrain_color: ax4.legend(loc=3,prop={'size':16})
 
     # threshold-test data
     if useThsTest:
     
         count = 0
         for i in xrange(len(thresTestData[0])):
-            ax1.plot(thresTestTimeList[i], thresTestData[0][i], 'k')
-            ax2.plot(thresTestTimeList[i], thresTestData[1][i], 'k')
-            ax3.plot(thresTestTimeList[i], thresTestData[2][i], 'k')
-            ax4.plot(thresTestTimeList[i], thresTestData[3][i], 'k')            
+            ax1.plot(thresTestTimeList[i], thresTestData[0][i], 'k--')
+            ax2.plot(thresTestTimeList[i], thresTestData[1][i], 'k--')
+            ax3.plot(thresTestTimeList[i], thresTestData[2][i], 'k--')
+            ax4.plot(thresTestTimeList[i], thresTestData[3][i], 'k--')            
             count = count + 1
 
     # normal test data
@@ -85,10 +86,10 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     
         count = 0
         for i in xrange(len(normalTestData[0])):
-            ax1.plot(normalTestTimeList[i], normalTestData[0][i])
-            ax2.plot(normalTestTimeList[i], normalTestData[1][i])
-            ax3.plot(normalTestTimeList[i], normalTestData[2][i])
-            ax4.plot(normalTestTimeList[i], normalTestData[3][i])
+            ax1.plot(normalTestTimeList[i], normalTestData[0][i], 'm--')
+            ax2.plot(normalTestTimeList[i], normalTestData[1][i], 'm--')
+            ax3.plot(normalTestTimeList[i], normalTestData[2][i], 'm--')
+            ax4.plot(normalTestTimeList[i], normalTestData[3][i], 'm--')
             count = count + 1
 
     # normal test data
@@ -197,6 +198,7 @@ def getData(task_name, target_path, setID=0):
 def likelihoodOfSequences(task_name, target_path, setID=0, \
                           nState=20, cov_mult=5.0,\
                           useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=True, \
+                          useTrain_color=False, useThsTest_color=False, useNormalTest_color=True,\
                           hmm_renew=False, save_pdf=False, verbose=False):
 
     # get data
@@ -210,7 +212,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
     nDimension = len(trainData)
 
     # Create and train multivariate HMM
-    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=True)
+    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=False)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                   ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
@@ -250,9 +252,17 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                                               minThresholds)
                 exp_log_ll[i].append(exp_logp)
                 
-            # disp 
-            plt.plot(log_ll[i], 'g-')
-            ## plt.plot(exp_log_ll[i], 'r-')            
+            # disp
+            if useTrain_color:
+                plt.plot(log_ll[i], label=str(i))
+                print i, " : ", trainFileList[i]                
+            else:
+                plt.plot(log_ll[i], 'b-')
+
+        if useTrain_color: 
+            plt.legend(loc=3,prop={'size':16})
+            
+        ## plt.plot(exp_log_ll[i], 'r-')            
             
           
     # threshold-test data
@@ -282,9 +292,18 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                 exp_log_ll[i].append(exp_logp)
                 
             # disp 
-            plt.plot(log_ll[i], 'b-')
-            plt.plot(exp_log_ll[i], 'r--')
-            
+            if useThsTest_color:
+                print i, " : ", thsTestFileList[i]                
+                plt.plot(log_ll[i], label=str(i))
+            else:
+                plt.plot(log_ll[i], 'k-')
+
+        if useThsTest_color: 
+            plt.legend(loc=3,prop={'size':16})
+
+            ## plt.plot(log_ll[i], 'b-')
+            ## plt.plot(exp_log_ll[i], 'r--')
+                        
 
     # normal test data
     if useNormalTest:
@@ -313,15 +332,24 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                 exp_log_ll[i].append(exp_logp)
                 
             # disp 
-            ## plt.plot(log_ll[i], 'm-', label=str(i))
-            plt.plot(log_ll[i], label=str(i))
-            plt.legend(loc=4,prop={'size':16})
             if verbose: 
                 print i, normalTestFileList[i], np.amin(log_ll[i]), log_ll[i][-1]
                 
 
+            # disp 
+            if useNormalTest_color:
+                print i, " : ", normalTestFileList[i]                
+                plt.plot(log_ll[i], label=str(i))
+            else:
+                plt.plot(log_ll[i], 'g-')
+
+        if useNormalTest_color: 
+            plt.legend(loc=3,prop={'size':16})
+
+
+                
             
-    # normal test data
+    # abnormal test data
     if useAbnormalTest:
         log_ll = []
         exp_log_ll = []        
@@ -635,7 +663,7 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     opt, args = p.parse_args()
 
-    subject_names = ['s3'] #'personal', 
+    subject_names = ['s2'] #'personal', 
     task_name     = 'feeding' #['scooping', 'feeding']
     ## subject_names = ['pr2'] #'personal', 
     ## task_name     = 'scooping'
@@ -643,27 +671,38 @@ if __name__ == '__main__':
     data_root_path   = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
     data_target_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/data'
 
+    # Scooping
+    ## nSet           = 1
+    ## folding_ratio  = [0.4, 0.2, 0.3]
+    ## downSampleSize = 100
+    ## nState         = 10
+    ## cov_mult       = 5.0
+    ## scale          = 1.0
+    ## cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
+
+    # Feeding
     nSet           = 1
-    folding_ratio  = [0.4, 0.2, 0.3]
+    folding_ratio  = [0.5, 0.2, 0.3]
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
     scale          = 1.0
     cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
-            
+    
     preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
                    folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
                    train_cutting_ratio=cutting_ratio, renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     if opt.bPlot:
         distributionOfSequences(task_name, data_target_path, setID=0, scale=scale,\
-                                useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
-                                useTrain_color=True,\
+                                useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
+                                useTrain_color=False,\
                                 save_pdf=False, verbose=True)        
     elif opt.bLikelihoodPlot:
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
-                              useTrain=True, useThsTest=False, useNormalTest=True, useAbnormalTest=False,\
+                              useTrain=True, useThsTest=True, useNormalTest=False, useAbnormalTest=True,\
+                              useTrain_color=False, useThsTest_color=True, useNormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, save_pdf=False, verbose=True)        
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
