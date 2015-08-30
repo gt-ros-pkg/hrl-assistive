@@ -19,6 +19,7 @@ from learning_hmm_multi_4d import *
 
 def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                             useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False, \
+                            useTrain_color=True,
                             save_pdf=False, verbose=False):
 
     # get data
@@ -54,10 +55,16 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     
         count = 0
         for i in xrange(len(trainData[0])):
-            ax1.plot(trainTimeList[i], trainData[0][i])
-            ax2.plot(trainTimeList[i], trainData[1][i])
-            ax3.plot(trainTimeList[i], trainData[2][i])
-            ax4.plot(trainTimeList[i], trainData[3][i], label=str(count))            
+            if useTrain_color:
+                ax1.plot(trainTimeList[i], trainData[0][i])
+                ax2.plot(trainTimeList[i], trainData[1][i])
+                ax3.plot(trainTimeList[i], trainData[2][i])
+                ax4.plot(trainTimeList[i], trainData[3][i], label=str(count))            
+            else:
+                ax1.plot(trainTimeList[i], trainData[0][i], 'b')
+                ax2.plot(trainTimeList[i], trainData[1][i], 'b')
+                ax3.plot(trainTimeList[i], trainData[2][i], 'b')
+                ax4.plot(trainTimeList[i], trainData[3][i], 'b', label=str(count))            
             count = count + 1
             if verbose: print i, trainFileList[i]
         ax4.legend(loc=4,prop={'size':16})
@@ -489,6 +496,9 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         d['normalTestFileList'] = normalTestFileList
         d['abnormalTestFileList'] = abnormalTestFileList 
 
+        d['minVals'] = minVals
+        d['maxVals'] = maxVals
+
         target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i) )
         try:
             ut.save_pickle(d, target_file)        
@@ -625,7 +635,7 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     opt, args = p.parse_args()
 
-    subject_names = ['s1'] #'personal', 
+    subject_names = ['s3'] #'personal', 
     task_name     = 'feeding' #['scooping', 'feeding']
     ## subject_names = ['pr2'] #'personal', 
     ## task_name     = 'scooping'
@@ -647,7 +657,8 @@ if __name__ == '__main__':
 
     if opt.bPlot:
         distributionOfSequences(task_name, data_target_path, setID=0, scale=scale,\
-                                useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
+                                useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
+                                useTrain_color=True,\
                                 save_pdf=False, verbose=True)        
     elif opt.bLikelihoodPlot:
         if opt.bDataRenew == True: opt.bHMMRenew=True

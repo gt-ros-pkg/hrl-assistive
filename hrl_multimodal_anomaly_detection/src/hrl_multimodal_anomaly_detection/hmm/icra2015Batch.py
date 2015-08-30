@@ -166,8 +166,11 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
               isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
               ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None):
 
+    # Daehyung: where are you using savedDataFile?, what is different with ml_pkl?
+    #           if savedDataFile is updated, ml_pkl should be replaced!!         
     if savedDataFile is not None:
-        with open(ml_pkl, 'rb') as f:
+        ## with open(ml_pkl, 'rb') as f:
+        with open(savedDataFile, 'rb') as f:
             d = pickle.load(f)
             trainData = d['trainData']
             hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
@@ -299,7 +302,7 @@ if __name__ == '__main__':
     plotData(isScooping=False)
 
     iteration(downSampleSize=100, scale=1.0, nState=10, cov_mult=1.0, train_cutting_ratio=[0.0, 1.0],
-                                      verbose=False, isScooping=True, use_pkl=False, saveData=True)
+                                      verbose=False, isScooping=False, use_pkl=False, saveData=True)
 
     sys.exit()
 

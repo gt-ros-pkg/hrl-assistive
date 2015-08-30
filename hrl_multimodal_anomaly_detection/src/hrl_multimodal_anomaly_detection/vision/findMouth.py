@@ -29,7 +29,7 @@ class arTagDetector:
 
         self.head_tag_id   = head_tag_id
         self.head_calib    = False
-        self.head_z_offset = 0.12 #0.15
+        self.head_z_offset = 0.09 #12 #0.15
         self.head_tag_flag = False
 
         self.mouth_frame_off = None

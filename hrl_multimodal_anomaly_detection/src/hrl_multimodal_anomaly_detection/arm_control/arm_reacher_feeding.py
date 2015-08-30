@@ -110,7 +110,7 @@ class armReachAction(mpcBaseAction):
 
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.leftArmFeedingPos = np.array([[-0.15, 0, 0.0],
-                                           [0.05, 0, 0.0],
+                                           [0.07, 0, 0.0],
                                            [-0.15, 0, 0.0]])
         ## self.leftArmFeedingPos = np.array([[-0.2, 0, 0.0],
         ##                                    [0.05, 0, 0.0],
@@ -402,6 +402,8 @@ class armReachAction(mpcBaseAction):
         except:
             print "Couldn't stop right arm! "
 
+        rospy.sleep(0.1)
+        
         posStopL = Point()
         quatStopL = Quaternion()
 
