@@ -86,6 +86,7 @@ var PR2Head = function (ros) {
     self.limits = [[-2.85, 2.85], [1.18, -0.38]];
     self.joints = ['head_pan_joint', 'head_tilt_joint'];
     self.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
+    self.trackingActionGoal = null;
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
     self.jointPub = new ROSLIB.Topic({
@@ -95,13 +96,18 @@ var PR2Head = function (ros) {
     });
     self.jointPub.advertise();
 
-    self.ros.getMsgDetails('pr2_controllers_msgs/PointHeadActionGoal');
-    self.pointPub = new ROSLIB.Topic({
+    self.ros.getMsgDetails('pr2_controllers_msgs/PointHeadGoal');
+    self.pointHeadActionClient = new ROSLIB.ActionClient({
         ros: self.ros,
-        name: 'head_traj_controller/point_head_action/goal',
-        messageType: 'pr2_controllers_msgs/PointHeadActionGoal'
+        serverName: "/head_traj_controller/point_head_action",
+        actionName: "pr2_controllers_msgs/PointHeadAction"
     });
-    self.pointPub.advertise();
+
+    self.pointHeadFollowActionClient = new ROSLIB.ActionClient({
+        ros: self.ros,
+        serverName: "/point_head_follow_action",
+        actionName: "pr2_controllers_msgs/PointHeadAction"
+    });
 
     self.stateSub = new ROSLIB.Topic({
         ros: self.ros,
@@ -146,22 +152,47 @@ var PR2Head = function (ros) {
         self.setPosition(pan, tilt);
     };
 
-    self.pointHead = function (x, y, z, frame) {
-        var headPointMsg = self.ros.composeMsg('pr2_controllers_msgs/PointHeadActionGoal');
-        headPointMsg.goal.pointing_axis = {
+    self.getPointHeadGoal = function (x, y, z, frame) {
+        var headPointMsg = self.ros.composeMsg('pr2_controllers_msgs/PointHeadGoal');
+        headPointMsg.pointing_axis = {
             x: 0,
             y: 0,
             z: 1
         };
-        headPointMsg.goal.target.header.frame_id = frame;
-        headPointMsg.goal.target.point = {
+        headPointMsg.target.header.frame_id = frame;
+        headPointMsg.target.point = {
             x: x,
             y: y,
             z: z
         };
-        headPointMsg.goal.pointing_frame = self.pointingFrame;
-        headPointMsg.goal.max_velocity = 0.25;
-        self.pointPub.publish(headPointMsg);
+        headPointMsg.pointing_frame = self.pointingFrame;
+        headPointMsg.max_velocity = 0.25;
+        return headPointMsg;
+    };
+
+    self.pointHead = function (x, y, z, frame) {
+        var headPointMsg = self.getPointHeadGoal(x, y, z, frame);
+        var actionGoal = new ROSLIB.Goal({
+            actionClient: self.pointHeadActionClient,
+            goalMessage: headPointMsg
+        });
+        actionGoal.send();
+    };
+
+    self.trackPoint = function (x, y, z, frame) {
+        var headPointMsg = self.getPointHeadGoal(x, y, z, frame);
+        self.trackingActionGoal = new ROSLIB.Goal({
+            actionClient: self.pointHeadFollowActionClient,
+            goalMessage: headPointMsg
+        });
+        self.trackingActionGoal.send();
+    };
+
+    self.stopTracking = function () {
+        if (self.trackingActionGoal !== null) {
+            self.trackingActionGoal.cancel();
+            self.trackingActionGoal = null;
+        }
     };
 };
 

@@ -27,6 +27,7 @@ bin
 build
 msg_gen
 srv_gen
+.ropeproject
 
 # Files specific to this repo #
 ###############################

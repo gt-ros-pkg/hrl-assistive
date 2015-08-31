@@ -8,6 +8,11 @@ from threading import Lock, Timer
 import rospy
 from std_msgs.msg import Int32
 
+# Imports for specific implementations of undo actions -- may move to own files
+from pr2_controllers_msgs.msg import JointTrajectoryControllerState
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from geometry_msgs.msg import PoseStamped
+
 
 class UndoManager(object):
     """ A manager for tracking actions and coordinating undo along a history list. """
@@ -21,7 +26,7 @@ class UndoManager(object):
         """ Register an UndoAction description to monitor commands and include them in the undo deque."""
         self.actions[action_description.name] = action_description
         sub = rospy.Subscriber(action_description.command_topic,
-                               action_description.command_msg,
+                               action_description.command_topic_type,
                                self.command_cb,
                                action_description.name)
         self.command_subs.append(sub)
@@ -83,22 +88,21 @@ class UndoManager(object):
 class UndoAction(object):
     """ An consistent API for actions which can be undone through an UndoManager. """
     def __init__(self, name,
-                 state_topic, state_msg,
-                 command_topic, command_msg,
-                 undo_command_topic=None, undo_command_msg=None):
+                 state_topic, state_topic_type,
+                 command_topic, command_topic_type,
+                 undo_command_topic=None, undo_command_topic_type=None):
         self.name = name
         self.state_topic = state_topic
-        self.state_msg = state_msg
-        self.state_sub = rospy.Subscriber(state_topic, state_msg, self.state_cb)
+        self.state_topic_type = state_topic_type
+        self.state_sub = rospy.Subscriber(self.state_topic, self.state_topic_type, self.state_cb)
         self.command_topic = command_topic
-        self.command_msg = command_msg
+        self.command_topic_type = command_topic_type
         self.undo_command_topic = undo_command_topic if undo_command_topic is not None else command_topic
-        self.undo_command_msg = undo_command_msg if undo_command_msg is not None else command_msg
-        self.undo_command_pub = rospy.Publisher(self.undo_command_topic, self.undo_command_msg)
+        self.undo_command_topic_type = undo_command_topic_type if undo_command_topic_type is not None else command_topic_type
+        self.undo_command_pub = rospy.Publisher(self.undo_command_topic, self.undo_command_topic_type)
         self.sent_commands_lock = Lock()
         self.sent_commands_count = 0
         self.sent_commands = {}
-
         self.state_msg = None
 
     def _remove_goal(self, goal_num):
@@ -126,10 +130,6 @@ class UndoAction(object):
         raise NotImplementedError()
 
 
-from pr2_controllers_msgs.msg import JointTrajectoryControllerState
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
-
 class UndoMoveHead(UndoAction):
     def _get_trajectory_time(self, start, end, vel=math.pi/4):
         """ Get the total duration for a transition from start to end angles with max rotational velocity vel. """
@@ -143,22 +143,6 @@ class UndoMoveHead(UndoAction):
                 max_diff = diff
         total_angle /= 1.414  # Normalize for 2 perpendicular rotations
         return total_angle/vel
-
-    #  def goal_from_state(self, state_msg):
-    #      """ Accepts a msg from the state topic,
-    #          returns a goal for the command topic
-    #          which will return the component to the specified state.
-    #      """
-    #      traj_point = JointTrajectoryPoint()
-    #      traj_point.positions = state_msg.actual.positions
-    #      traj_point.velocities = state_msg.actual.velocities
-    #      traj_point.accelerations = state_msg.actual.accelerations
-    #      traj_point.effort = state_msg.actual.effort
-
-    #      goal_msg = JointTrajectory()
-    #      goal_msg.joint_names = state_msg.joint_names
-    #      goal_msg.points.append(traj_point)
-    #      return goal_msg
 
     def goal_from_state(self, state_msg):
         traj_point = JointTrajectoryPoint()
@@ -183,8 +167,16 @@ class UndoMoveTorso(UndoAction):
         traj_point.time_from_start = rospy.Duration(0.1)
 
         goal_msg = JointTrajectory()
+        goal_msg.header.stamp = rospy.Time.now()
         goal_msg.joint_names = state_msg.joint_names
         goal_msg.points.append(traj_point)
+        return goal_msg
+
+
+class UndoMoveCartMPC(UndoAction):
+    def goal_from_state(self, state_msg):
+        goal_msg = deepcopy(state_msg)
+        goal_msg.header.stamp = rospy.Time.now()
         return goal_msg
 
 
@@ -196,19 +188,30 @@ class UndoSkill(object):
 
 def main():
     rospy.init_node("undo_manager")
+
     undo_move_head = UndoMoveHead('move_head',
                                   state_topic='/head_traj_controller/state',
-                                  state_msg=JointTrajectoryControllerState,
+                                  state_topic_type=JointTrajectoryControllerState,
                                   command_topic='/head_traj_controller/command',
-                                  command_msg=JointTrajectory
-                                  )
+                                  command_topic_type=JointTrajectory)
     undo_move_torso = UndoMoveTorso('move_torso',
                                     state_topic='/torso_controller/state',
-                                    state_msg=JointTrajectoryControllerState,
+                                    state_topic_type=JointTrajectoryControllerState,
                                     command_topic='/torso_controller/command',
-                                    command_msg=JointTrajectory)
-
+                                    command_topic_type=JointTrajectory)
+    undo_move_cart_mpc_right = UndoMoveCartMPC('right_mpc_cart',
+                                               state_topic='/right_arm/haptic_mpc/gripper_pose',
+                                               state_topic_type=PoseStamped,
+                                               command_topic='/right_arm/haptic_mpc/command_pose',
+                                               command_topic_type=PoseStamped)
+    undo_move_cart_mpc_left = UndoMoveCartMPC('left_mpc_cart',
+                                              state_topic='/left_arm/haptic_mpc/gripper_pose',
+                                              state_topic_type=PoseStamped,
+                                              command_topic='/left_arm/haptic_mpc/command_pose',
+                                              command_topic_type=PoseStamped)
     manager = UndoManager()
     manager.register_action(undo_move_head)
     manager.register_action(undo_move_torso)
+    manager.register_action(undo_move_cart_mpc_right)
+    manager.register_action(undo_move_cart_mpc_left)
     rospy.spin()

@@ -553,12 +553,12 @@ RFH.CartesianEEControl = function (options) {
     });
 
     /// TRACK HAND WITH CAMERA ///
-    self.trackHand = function () {
-        clearInterval(RFH.pr2.head.pubInterval);
-        RFH.pr2.head.pointHead(0, 0, 0, self.side+'_gripper_tool_frame'); // Start now, don't wait for first CB
-        RFH.pr2.head.pubInterval = setInterval(function () {
-            RFH.pr2.head.pointHead(0, 0, 0, self.side+'_gripper_tool_frame');
-        }, 500);
+    self.trackHand = function (doTrack) {
+        if (doTrack) {
+            RFH.pr2.head.trackPoint(0, 0, 0, self.side+'_gripper_tool_frame');
+        } else {
+            RFH.pr2.head.stopTracking();
+        }
     }
 
     /// GRIPPER SLIDER CONTROLS ///
@@ -681,7 +681,7 @@ RFH.CartesianEEControl = function (options) {
 
     /// TASK START/STOP ROUTINES ///
     self.start = function () {
-        self.trackHand();
+        self.trackHand(true);
         $('.'+self.side+'-arm-ctrl, .arm-ctrl').show();
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $("#select-focus-toggle-label").show();
@@ -698,7 +698,7 @@ RFH.CartesianEEControl = function (options) {
     };
 
     self.stop = function () {
-        clearInterval(RFH.pr2.head.pubInterval);
+        self.trackHand(false);
         $('.'+self.side+'-arm-ctrl, .arm-ctrl').hide();
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('mousedown.rfh').hide();
