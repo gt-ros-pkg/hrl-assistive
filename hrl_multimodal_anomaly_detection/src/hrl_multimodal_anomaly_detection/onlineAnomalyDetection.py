@@ -3,10 +3,12 @@
 __author__ = 'zerickson'
 
 import time
+import ghmm
 import rospy
 import pyaudio
 from threading import Thread
 import matplotlib.pyplot as plt
+from scipy.stats import norm, entropy
 import hmm.icra2015Batch as onlineHMM
 from audio.tool_audio_slim import tool_audio_slim
 from hmm.util import *
@@ -112,6 +114,7 @@ class onlineAnomalyDetection(Thread):
         self.anglesRaw = []
         self.audiosRaw = []
         self.times = []
+        self.likelihoods = []
         self.anomalyOccured = False
 
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
@@ -192,6 +195,8 @@ class onlineAnomalyDetection(Thread):
         data['audioRaw'] = self.audiosRaw
         data['times'] = self.times
         data['anomalyOccured'] = self.anomalyOccured
+        data['minThreshold'] = self.minThresholds
+        data['likelihoods'] = self.likelihoods
 
         directory = os.path.join(os.path.dirname(__file__), 'onlineDataRecordings/')
         if not os.path.exists(directory):
@@ -242,6 +247,7 @@ class onlineAnomalyDetection(Thread):
         self.angles.append(angle)
         self.audios.append(audio)
         self.times.append(rospy.get_time() - self.init_time)
+        self.likelihoods.append(self.hmm.likelihoods(self.forces, self.distances, self.angles, self.audios))
 
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):
