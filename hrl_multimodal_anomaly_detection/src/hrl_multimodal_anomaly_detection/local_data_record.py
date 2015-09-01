@@ -126,7 +126,6 @@ class dataRecord:
             print self.armReachAction("runScooping")
 
             time.sleep(1)
-
             self.log.close_log_file()
 
             runScoopingAns = raw_input("Run scooping again? [y/n] ")

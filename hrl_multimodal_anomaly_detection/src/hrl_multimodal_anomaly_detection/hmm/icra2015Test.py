@@ -19,8 +19,8 @@ from learning_hmm_multi_4d import *
 
 def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                             useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False, \
-                            useTrain_color=True,
-                            save_pdf=False, verbose=False):
+                            useTrain_color=True, useThsTest_color=False, useNormalTest_color=False,\
+                            save_pdf=False, show_plot=True, verbose=False):
 
     # get data
     trainData, thresTestData, normalTestData, abnormalTestData, \
@@ -28,7 +28,7 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
       trainFileList, thsTestFileList, normalTestFileList, abnormalTestFileList \
     = getData(task_name, target_path, setID)
 
-    fig = plt.figure()
+    if show_plot: fig = plt.figure()
     ax1 = plt.subplot(412)
     ax1.set_ylabel('Force\nMagnitude (N)', fontsize=16)
     ax1.set_xticks(np.arange(0, 25, 5))
@@ -59,16 +59,16 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                 ax1.plot(trainTimeList[i], trainData[0][i])
                 ax2.plot(trainTimeList[i], trainData[1][i])
                 ax3.plot(trainTimeList[i], trainData[2][i])
-                ax4.plot(trainTimeList[i], trainData[3][i])            
+                ax4.plot(trainTimeList[i], trainData[3][i], label=str(count))            
             else:
                 ax1.plot(trainTimeList[i], trainData[0][i], 'b')
                 ax2.plot(trainTimeList[i], trainData[1][i], 'b')
                 ax3.plot(trainTimeList[i], trainData[2][i], 'b')
-                ax4.plot(trainTimeList[i], trainData[3][i], 'b', label=str(count))            
+                ax4.plot(trainTimeList[i], trainData[3][i], 'b')            
             count = count + 1
             if verbose: print i, trainFileList[i]
 
-        if not useTrain_color: ax4.legend(loc=3,prop={'size':16})
+        if useTrain_color: ax4.legend(loc=3,prop={'size':16})
 
     # threshold-test data
     if useThsTest:
@@ -86,10 +86,10 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     
         count = 0
         for i in xrange(len(normalTestData[0])):
-            ax1.plot(normalTestTimeList[i], normalTestData[0][i], 'm--')
-            ax2.plot(normalTestTimeList[i], normalTestData[1][i], 'm--')
-            ax3.plot(normalTestTimeList[i], normalTestData[2][i], 'm--')
-            ax4.plot(normalTestTimeList[i], normalTestData[3][i], 'm--')
+            ax1.plot(normalTestTimeList[i], normalTestData[0][i], 'g--')
+            ax2.plot(normalTestTimeList[i], normalTestData[1][i], 'g--')
+            ax3.plot(normalTestTimeList[i], normalTestData[2][i], 'g--')
+            ax4.plot(normalTestTimeList[i], normalTestData[3][i], 'g--')
             count = count + 1
 
     # normal test data
@@ -97,10 +97,10 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     
         count = 0
         for i in xrange(len(abnormalTestData[0])):
-            ax1.plot(abnormalTestTimeList[i], abnormalTestData[0][i])
-            ax2.plot(abnormalTestTimeList[i], abnormalTestData[1][i])
-            ax3.plot(abnormalTestTimeList[i], abnormalTestData[2][i])
-            ax4.plot(abnormalTestTimeList[i], abnormalTestData[3][i])
+            ax1.plot(abnormalTestTimeList[i], abnormalTestData[0][i],'m')
+            ax2.plot(abnormalTestTimeList[i], abnormalTestData[1][i],'m')
+            ax3.plot(abnormalTestTimeList[i], abnormalTestData[2][i],'m')
+            ax4.plot(abnormalTestTimeList[i], abnormalTestData[3][i],'m')
             count = count + 1
             
     if save_pdf == True:
@@ -108,10 +108,71 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
     else:
+        if show_plot: plt.show()        
+
+
+def plotTestSequences(test_subject_names, task_name, data_root_path, data_target_path, setID=0, \
+                      scale=1.0, downSampleSize=200,\
+                      useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False, \
+                      save_pdf=False, verbose=False):
+
+    fig = plt.figure()
+    distributionOfSequences(task_name, data_target_path, setID=0, scale=scale, \
+                            useTrain=useTrain, useThsTest=useThsTest, useNormalTest=useNormalTest, \
+                            useAbnormalTest=useAbnormalTest, useTrain_color=useTrain_color,\
+                            save_pdf=False, show_plot=False, verbose=verbose)        
+
+    # Check if there is already scaled data
+    target_file = os.path.join(data_target_path, task_name+'_dataSet_'+str(setID) )        
+    if os.path.isfile(target_file) is not True: 
+        print "Missing data: ", setID
+        return
+
+    print "file: ", target_file
+    d = ut.load_pickle(target_file)
+    minVals = d['minVals'] 
+    maxVals = d['maxVals'] 
+
+    ax1 = plt.subplot(412)
+    ax2 = plt.subplot(411)
+    ax3 = plt.subplot(414)
+    ax4 = plt.subplot(413)
+ 
+    success_list, failure_list = getSubjectFileList(data_root_path, test_subject_names, task_name)
+    
+    if len(success_list)>0:
+        testData, testTimeList = loadData(success_list, isTrainingData=False, 
+                                                downSampleSize=downSampleSize)
+        testData_scaled,_ ,_  = scaleData(testData, scale=scale, minVals=minVals, 
+                                          maxVals=maxVals, verbose=verbose)
+
+        for i in xrange(len(testData[0])):
+            ax1.plot(testTimeList[i], testData_scaled[0][i],'m')
+            ax2.plot(testTimeList[i], testData_scaled[1][i],'m')
+            ax3.plot(testTimeList[i], testData_scaled[2][i],'m')
+            ax4.plot(testTimeList[i], testData_scaled[3][i],'m')            
+        
+    if len(failure_list)>0 and False:
+        testData, testTimeList = loadData(failure_list, isTrainingData=False, 
+                                          downSampleSize=downSampleSize)
+        testData_scaled,_ ,_  = scaleData(testData, scale=scale, minVals=minVals, 
+                                          maxVals=maxVals, verbose=verbose)
+
+        for i in xrange(len(testData[0])):
+            ax1.plot(testTimeList[i], testData_scaled[0][i],'m')
+            ax2.plot(testTimeList[i], testData_scaled[1][i],'m')
+            ax3.plot(testTimeList[i], testData_scaled[2][i],'m')
+            ax4.plot(testTimeList[i], testData_scaled[3][i],'m')            
+
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
         plt.show()        
-
-
-def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, hmm_renew=False, 
+    
+        
+def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0, hmm_renew=False, 
                verbose=False):
 
     tot_truePos = 0
@@ -132,7 +193,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, hmm_rene
         nDimension = len(trainData)
 
         # Create and train multivariate HMM
-        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=False)
+        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, verbose=False)
         ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                       ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
@@ -196,10 +257,10 @@ def getData(task_name, target_path, setID=0):
 
 
 def likelihoodOfSequences(task_name, target_path, setID=0, \
-                          nState=20, cov_mult=5.0,\
-                          useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=True, \
+                          nState=20, cov_mult=5.0, anomaly_offset=0.0,\
+                          useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=True,\
                           useTrain_color=False, useThsTest_color=False, useNormalTest_color=True,\
-                          hmm_renew=False, save_pdf=False, verbose=False):
+                          hmm_renew=False, save_pdf=False, show_plot=True, verbose=False):
 
     # get data
     trainData, thresTestData, normalTestData, abnormalTestData, \
@@ -212,7 +273,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
     nDimension = len(trainData)
 
     # Create and train multivariate HMM
-    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, verbose=False)
+    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, verbose=False)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                   ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
@@ -222,8 +283,10 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
     for i in xrange(len(minThresholds1)):
         if minThresholds1[i] < minThresholds2[i]:
             minThresholds[i] = minThresholds1[i]
-    
-    fig = plt.figure()
+
+    min_logp = 0.0
+    max_logp = 0.0
+    if show_plot: fig = plt.figure()
 
     # training data
     if useTrain:
@@ -251,11 +314,14 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                                               trainData[2][i][:j], trainData[3][i][:j],
                                               minThresholds)
                 exp_log_ll[i].append(exp_logp)
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
                 
             # disp
             if useTrain_color:
                 plt.plot(log_ll[i], label=str(i))
-                print i, " : ", trainFileList[i]                
+                print i, " : ", trainFileList[i], log_ll[i][-1]                
             else:
                 plt.plot(log_ll[i], 'b-')
 
@@ -290,10 +356,14 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                                               thresTestData[2][i][:j], thresTestData[3][i][:j],
                                               minThresholds)
                 exp_log_ll[i].append(exp_logp)
+
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
                 
             # disp 
             if useThsTest_color:
-                print i, " : ", thsTestFileList[i]                
+                print i, " : ", thsTestFileList[i], log_ll[i][-1]
                 plt.plot(log_ll[i], label=str(i))
             else:
                 plt.plot(log_ll[i], 'k-')
@@ -335,6 +405,8 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
             if verbose: 
                 print i, normalTestFileList[i], np.amin(log_ll[i]), log_ll[i][-1]
                 
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
 
             # disp 
             if useNormalTest_color:
@@ -345,10 +417,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
 
         if useNormalTest_color: 
             plt.legend(loc=3,prop={'size':16})
-
-
-                
-            
+                           
     # abnormal test data
     if useAbnormalTest:
         log_ll = []
@@ -376,17 +445,106 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                 
             # disp 
             plt.plot(log_ll[i], 'r-')
-            
+
+
+    plt.ylim([min_logp, max_logp])
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        if show_plot: plt.show()        
+
+    return hmm
+
+def plotTestLikelihoodSequences(test_subject_names, task_name, data_root_path, data_target_path, setID=0, \
+                                scale=1.0, downSampleSize=200, nState=10, cov_mult=5.0, \
+                                anomaly_offset= 0, hmm_renew=True,\
+                                useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False, \
+                                save_pdf=False, verbose=False):
+
+    fig = plt.figure()
+    hmm = likelihoodOfSequences(task_name, data_target_path, setID=setID, nState=nState, cov_mult=cov_mult,\
+                                anomaly_offset=anomaly_offset,\
+                                useTrain=useTrain, useThsTest=useThsTest, useNormalTest=useNormalTest, \
+                                useAbnormalTest=useAbnormalTest,\
+                                useTrain_color=False, useThsTest_color=False, useNormalTest_color=False,\
+                                hmm_renew=hmm_renew, save_pdf=False, show_plot=False, verbose=True)       
+
+    # Check if there is already scaled data
+    target_file = os.path.join(data_target_path, task_name+'_dataSet_'+str(setID) )        
+    if os.path.isfile(target_file) is not True: 
+        print "Missing data: ", setID
+        return
+
+    print "file: ", target_file
+    d = ut.load_pickle(target_file)
+    minVals = d['minVals'] 
+    maxVals = d['maxVals'] 
+
+ 
+    success_list, failure_list = getSubjectFileList(data_root_path, test_subject_names, task_name)
+    
+    if len(success_list)>0:
+        testData, testTimeList = loadData(success_list, isTrainingData=False, 
+                                                downSampleSize=downSampleSize)
+        testData_scaled,_ ,_  = scaleData(testData, scale=scale, minVals=minVals, 
+                                          maxVals=maxVals, verbose=verbose)
+
+        log_ll = []
+        for i in xrange(len(testData[0])):
+
+            log_ll.append([])
+            for j in range(2, len(testData_scaled[0][i])):
+                X_test = hmm.convert_sequence(testData_scaled[0][i][:j], testData_scaled[1][i][:j], 
+                                              testData_scaled[2][i][:j], testData_scaled[3][i][:j])
+                try:
+                    logp = hmm.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+            plt.plot(log_ll[i], 'm-')
+                
+        
+    if len(failure_list)>0 and False:
+        testData, testTimeList = loadData(failure_list, isTrainingData=False, 
+                                          downSampleSize=downSampleSize)
+        testData_scaled,_ ,_  = scaleData(testData, scale=scale, minVals=minVals, 
+                                          maxVals=maxVals, verbose=verbose)
+
+        log_ll = []
+        for i in xrange(len(testData[0])):
+
+            log_ll.append([])
+            for j in range(2, len(testData_scaled[0][i])):
+                X_test = hmm.convert_sequence(testData_scaled[0][i][:j], testData_scaled[1][i][:j], 
+                                              testData_scaled[2][i][:j], testData_scaled[3][i][:j])
+                try:
+                    logp = hmm.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+            plt.plot(log_ll[i], 'm--')
+
+
+        
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
     else:
         plt.show()        
-      
+        
 
 def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, folding_ratio=[0.6, 0.2, 0.2], 
-                   scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], renew=False, verbose=False):
+                   scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], full_abnormal_test=False,\
+                   renew=False, verbose=False):
 
 
     # Check if there is already scaled data
@@ -395,38 +553,8 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         if os.path.isfile(target_file) is not True: renew=True
             
     if renew == False: return        
-    
-    # List up recorded files
-    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]        
 
-    success_list = []
-    failure_list = []
-    for d in folder_list:
-
-        name_flag = False
-        for name in subject_names:
-            if d.find(name) >= 0: name_flag = True
-                                    
-        if name_flag and d.find(task_name) >= 0:
-            files = os.listdir(os.path.join(root_path,d))
-
-            for f in files:
-                # pickle file name with full path
-                pkl_file = os.path.join(root_path,d,f)
-                
-                if f.find('success') >= 0:
-                    if len(success_list)==0: success_list = [pkl_file]
-                    else: success_list.append(pkl_file)
-                elif f.find('failure') >= 0:
-                    if len(failure_list)==0: failure_list = [pkl_file]
-                    else: failure_list.append(pkl_file)
-                else:
-                    print "It's not success/failure file: ", f
-
-    print "--------------------------------------------"
-    print "# of Success files: ", len(success_list)
-    print "# of Failure files: ", len(failure_list)
-    print "--------------------------------------------"
+    success_list, failure_list = getSubjectFileList(root_path, subject_names, task_name)
     
     # random training, threshold-test, test set selection
     nTrain   = int(len(success_list) * folding_ratio[0])
@@ -454,7 +582,9 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         train_idx    = random.sample(success_idx, nTrain)
         ths_test_idx = random.sample([x for x in success_idx if not x in train_idx], nThsTest)
         success_test_idx = [x for x in success_idx if not (x in train_idx or x in ths_test_idx)]
-        failure_test_idx = random.sample(failure_idx, nTest)
+
+        if full_abnormal_test: failure_test_idx = failure_idx #temp
+        else: failure_test_idx = random.sample(failure_idx, nTest)
 
         # get training data
         trainFileList = [success_list[x] for x in train_idx]
@@ -583,7 +713,6 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
                 minThresholds[index] = threshold
                 if verbose: print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
 
-    print minThresholds
     return minThresholds
 
 
@@ -614,7 +743,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                 falsePos += 1
                 print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, error
                 break
-            elif not anomaly and j == len(normalTestData[0][i]) - 1:
+            elif j == len(normalTestData[0][i]) - 1:
                 trueNeg += 1
                 break
 
@@ -636,7 +765,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                 if anomaly:
                     truePos += 1
                     break
-                elif not anomaly and j == len(abnormalTestData[0][i]) - 1:
+                elif j == len(abnormalTestData[0][i]) - 1:
                     falseNeg += 1
                     print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
                     break
@@ -661,50 +790,72 @@ if __name__ == '__main__':
                  default=False, help='Plot distribution of data.')
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
+    p.add_option('--plotTest', '--pt', action='store_true', dest='bPlotTest',
+                 default=False, help='Plot the test data.')
+    p.add_option('--plotTestLikelihood', '--ptl', action='store_true', dest='bPlotTestLikelihood',
+                 default=False, help='Plot the likelihoods of test data.')
     opt, args = p.parse_args()
-
-    subject_names = ['s2'] #'personal', 
-    task_name     = 'feeding' #['scooping', 'feeding']
-    ## subject_names = ['pr2'] #'personal', 
-    ## task_name     = 'scooping'
 
     data_root_path   = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
     data_target_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/data'
 
     # Scooping
-    ## nSet           = 1
-    ## folding_ratio  = [0.4, 0.2, 0.3]
-    ## downSampleSize = 100
-    ## nState         = 10
-    ## cov_mult       = 5.0
-    ## scale          = 1.0
-    ## cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
-
-    # Feeding
+    subject_names  = ['pr2'] #'personal', 
+    task_name      = 'scooping'
     nSet           = 1
-    folding_ratio  = [0.5, 0.2, 0.3]
+    folding_ratio  = [0.5, 0.3, 0.2]
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
     scale          = 1.0
-    cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
+    cutting_ratio  = [0.0, 0.9]
+    anomaly_offset = -20.0
+
+    # Feeding
+    ## subject_names  = ['s2','s3','s4','s5'] #['s2','s3','s4'] #'personal', 's3',
+    ## task_name      = 'feeding' #['scooping', 'feeding']
+    ## nSet           = 1
+    ## folding_ratio  = [0.5, 0.3, 0.2]
+    ## downSampleSize = 100
+    ## nState         = 10
+    ## cov_mult       = 5.0
+    ## scale          = 1.0
+    ## cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
+    ## anomaly_offset = 0.0
     
     preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
                    folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
-                   train_cutting_ratio=cutting_ratio, renew=opt.bDataRenew, verbose=opt.bVerbose)
+                   train_cutting_ratio=cutting_ratio, full_abnormal_test=True,\
+                   renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     if opt.bPlot:
-        distributionOfSequences(task_name, data_target_path, setID=0, scale=scale,\
-                                useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
-                                useTrain_color=False,\
+        distributionOfSequences(task_name, data_target_path, setID=0, scale=scale, \
+                                useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
+                                useTrain_color=True,\
                                 save_pdf=False, verbose=True)        
     elif opt.bLikelihoodPlot:
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
-                              useTrain=True, useThsTest=True, useNormalTest=False, useAbnormalTest=True,\
-                              useTrain_color=False, useThsTest_color=True, useNormalTest_color=False,\
-                              hmm_renew=opt.bHMMRenew, save_pdf=False, verbose=True)        
+                              anomaly_offset=anomaly_offset,\
+                              useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
+                              useTrain_color=True, useThsTest_color=False, useNormalTest_color=False,\
+                              hmm_renew=opt.bHMMRenew, save_pdf=False, verbose=True)       
+    elif opt.bPlotTest:
+        test_subject_names=['s5']            
+        plotTestSequences(test_subject_names, task_name, data_root_path, data_target_path, \
+                          scale=scale, downSampleSize=downSampleSize, \
+                          useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
+                          save_pdf=False, verbose=True)
+    elif opt.bPlotTestLikelihood:
+        test_subject_names=['s5']            
+        plotTestLikelihoodSequences(test_subject_names, task_name, data_root_path, data_target_path, \
+                                    scale=scale, downSampleSize=downSampleSize, nState=nState, cov_mult=cov_mult,
+                                    anomaly_offset=anomaly_offset, hmm_renew=opt.bHMMRenew, \
+                                    useTrain=True, useThsTest=True, useNormalTest=True, \
+                                    useAbnormalTest=False,\
+                                    save_pdf=False, verbose=True)                
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
+                   anomaly_offset=anomaly_offset,\
                    hmm_renew = opt.bHMMRenew, verbose=False)
