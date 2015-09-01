@@ -142,6 +142,53 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
     print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
 
 
+def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=None, abnormalTestData=None,
+                          save_pdf=False, verbose=False):
+
+    minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
+    minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+    minThresholds = minThresholds2
+    for i in xrange(len(minThresholds1)):
+        if minThresholds1[i] < minThresholds2[i]:
+            minThresholds[i] = minThresholds1[i]
+
+    fig = plt.figure()
+
+    dataSet = [x for x in [trainData, thresTestData, normalTestData, abnormalTestData] if x is not None]
+    colors = ['b', 'k', 'g', 'r'][:len(dataSet)]
+
+    # training data
+    for data, color in zip(dataSet, colors):
+        log_ll = []
+        exp_log_ll = []
+        for i in xrange(len(data[0])):
+            log_ll.append([])
+            exp_log_ll.append([])
+            for j in range(2, len(data[0][i])):
+                X_test = hmm.convert_sequence(data[0][i][:j], data[1][i][:j],
+                                              data[2][i][:j], data[3][i][:j])
+                try:
+                    logp = hmm.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+                exp_logp = hmm.expLikelihoods(data[0][i][:j], data[1][i][:j],
+                                              data[2][i][:j], data[3][i][:j],
+                                              minThresholds)
+                exp_log_ll[i].append(exp_logp)
+
+            plt.plot(log_ll[i], color + '-')
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+    else:
+        plt.show()
+
+
 def tuneSensitivityGain(hmm, dataSample, verbose=False):
     minThresholds = np.zeros(hmm.nGaussian) + 10000
 

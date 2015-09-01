@@ -21,6 +21,7 @@ from geometry_msgs.msg import PoseStamped, WrenchStamped, Point
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker
 from roslib import message
+from sensor_msgs.msg import JointState
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
@@ -84,10 +85,15 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
+        # Audio
         if audioTool is None:
             self.audioTool = tool_audio_slim()
         else:
             self.audioTool = audioTool
+
+        # Kinematics
+        self.jointAngles = None
+        self.jointVelocities = None
 
         self.soundHandle = SoundClient()
 
@@ -124,6 +130,16 @@ class onlineAnomalyDetection(Thread):
         self.objectCenterSub = rospy.Subscriber('/ar_track_alvar/bowl_cen_pose' if isScooping else '/ar_track_alvar/mouth_pose', PoseStamped, self.objectCenterCallback)
         print 'Connected to center of object publisher'
 
+        groups = rospy.get_param('/right/haptic_mpc/groups' )
+        for group in groups:
+            if group['name'] == 'left_arm_joints' and self.arm == 'l':
+                self.joint_names_list = group['joints']
+            elif group['name'] == 'right_arm_joints' and self.arm == 'r':
+                self.joint_names_list = group['joints']
+
+        self.jointSub = rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
+        print 'Connected to robot kinematics'
+
     def reset(self):
         self.isRunning = True
         self.forces = []
@@ -146,6 +162,8 @@ class onlineAnomalyDetection(Thread):
         self.spoon = None
         self.force = None
         self.torque = None
+        self.jointAngles = None
+        self.jointVelocities = None
         self.objectCenter = None
         self.audioTool.begin()
 
@@ -197,6 +215,8 @@ class onlineAnomalyDetection(Thread):
         data['anomalyOccured'] = self.anomalyOccured
         data['minThreshold'] = self.minThresholds
         data['likelihoods'] = self.likelihoods
+        data['jointAngles'] = self.jointAngles
+        data['jointVelocities'] = self.jointVelocities
 
         directory = os.path.join(os.path.dirname(__file__), 'onlineDataRecordings/')
         if not os.path.exists(directory):
@@ -260,6 +280,26 @@ class onlineAnomalyDetection(Thread):
 
     def objectCenterCallback(self, msg):
         self.objectCenter = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
+
+    def jointStatesCallback(self, data):
+        joint_angles = []
+        ## joint_efforts = []
+        joint_vel = []
+        jt_idx_list = [0]*len(self.joint_names_list)
+        for i, jt_nm in enumerate(self.joint_names_list):
+            jt_idx_list[i] = data.name.index(jt_nm)
+
+        for i, idx in enumerate(jt_idx_list):
+            if data.name[idx] != self.joint_names_list[i]:
+                raise RuntimeError('joint angle name does not match.')
+            joint_angles.append(data.position[idx])
+            ## joint_efforts.append(data.effort[idx])
+            joint_vel.append(data.velocity[idx])
+
+        with self.jstate_lock:
+            self.jointAngles  = joint_angles
+            ## self.joint_efforts = joint_efforts
+            self.jointVelocities = joint_vel
 
     def transposeGripper(self):
         # Transpose gripper position to camera frame
