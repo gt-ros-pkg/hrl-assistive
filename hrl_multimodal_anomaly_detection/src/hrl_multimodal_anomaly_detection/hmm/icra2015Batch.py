@@ -211,7 +211,7 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_offset=0.0, verbose=False,
               isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
-              ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None):
+              ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None, plotLikelihood=False):
 
     # Daehyung: where are you using savedDataFile?, what is different with ml_pkl?
     #           if savedDataFile is updated, ml_pkl should be replaced!!         
@@ -331,6 +331,10 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
             print 'Min threshold size:', np.shape(minThresholds)
             print minThresholds
 
+        if plotLikelihood:
+            likelihoodOfSequences(hmm, trainData, thresTestData, normalTestData, abnormalTestData,
+                                  save_pdf=False, verbose=False)
+
         if not saveData:
             return hmm, minVals, maxVals, minThresholds
         else:
@@ -409,7 +413,8 @@ if __name__ == '__main__':
     ## cutting_ratio  = [0.0, 0.7]
 
     iteration(downSampleSize=100, scale=1.0, nState=nState, cov_mult=5.0, train_cutting_ratio=cutting_ratio,
-              anomaly_offset=anomaly_offset, verbose=False, isScooping=isScooping, use_pkl=False, saveData=True)
+              anomaly_offset=anomaly_offset, verbose=False, isScooping=isScooping, use_pkl=False, saveData=True,
+              plotLikelihood=True)
 
     sys.exit()
 
