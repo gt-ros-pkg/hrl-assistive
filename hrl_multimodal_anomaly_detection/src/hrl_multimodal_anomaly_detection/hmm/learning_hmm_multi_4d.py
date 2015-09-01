@@ -18,7 +18,7 @@ from joblib import Parallel, delayed
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_4d:
-    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress', verbose=False):
+    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, verbose=False):
         self.ml = None
 
         ## Tunable parameters
@@ -44,6 +44,8 @@ class learning_hmm_multi_4d:
         self.l_mu = None
         self.l_std = None
         self.std_coff = None
+
+        self.anomaly_offset=anomaly_offset
 
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -608,7 +610,8 @@ class learning_hmm_multi_4d:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
         ## return err < 0.0, err
-        return err < -45.0, err
+        return err < self.anomaly_offset, err
+        # return err < -45.0, err
         # if err < 0.0: return 1.0, err # anomaly
         # else: return 0.0, err # normal
 

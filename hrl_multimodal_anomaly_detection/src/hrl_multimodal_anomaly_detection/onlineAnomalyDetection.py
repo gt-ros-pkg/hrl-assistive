@@ -47,15 +47,21 @@ class onlineAnomalyDetection(Thread):
 
         # Predefined settings
         self.downSampleSize = 100 #200
-        self.scale = 1.0 #10
-        self.nState = 10 #20
-        self.cov_mult = 1.0
-        self.cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
-        self.isScooping = isScooping
-        self.subject = subject
-        self.task = task
-        if self.isScooping: self.ml_thres_pkl='ml_scooping_thres.pkl'
-        else: self.ml_thres_pkl='ml_feeding_thres.pkl'
+        self.scale          = 1.0 #10
+        self.cov_mult       = 5.0
+        self.isScooping     = isScooping
+        self.subject        = subject
+        self.task           = task
+        if self.isScooping:
+            self.nState         = 10
+            self.cutting_ratio  = [0.0, 0.9] #[0.0, 0.7]
+            self.anomaly_offset = -25.0
+            self.ml_thres_pkl='ml_scooping_thres.pkl'
+        else:
+            self.nState         = 10
+            self.cutting_ratio  = [0.0, 0.7]
+            self.anomaly_offset = -20
+            self.ml_thres_pkl='ml_feeding_thres.pkl'
 
         print 'is scooping:', self.isScooping
 
@@ -102,7 +108,7 @@ class onlineAnomalyDetection(Thread):
         self.hmm, self.minVals, self.maxVals, self.minThresholds \
         = onlineHMM.iteration(downSampleSize=self.downSampleSize,
                               scale=self.scale, nState=self.nState,
-                              cov_mult=self.cov_mult, verbose=False,
+                              cov_mult=self.cov_mult, anomaly_offset=self.anomaly_offset, verbose=False,
                               isScooping=self.isScooping, use_pkl=False,
                               train_cutting_ratio=self.cutting_ratio,
                               findThresholds=True, ml_pkl=self.ml_thres_pkl,
@@ -175,7 +181,7 @@ class onlineAnomalyDetection(Thread):
             if self.isRunning and self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
-                if not self.anomalyOccured and len(self.forces) > 15:
+                if not self.anomalyOccured and len(self.forces) > 10:
                     # Perform anomaly detection
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds)
                     print 'Anomaly error:', error
@@ -193,6 +199,7 @@ class onlineAnomalyDetection(Thread):
                         #     plt.legend()
                         #     plt.show()
             # rate.sleep()
+        print 'Online anomaly thread cancelled'
 
     def cancel(self):
         self.isRunning = False

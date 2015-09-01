@@ -32,7 +32,7 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
     return dataList_scaled, minVals, maxVals
 
 
-def getData(successPath, failurePath, folding_ratio=(0.5, 0.2, 0.3), downSampleSize=200, verbose=False):
+def getData(successPath, failurePath, folding_ratio=(0.5, 0.3, 0.2), downSampleSize=200, verbose=False):
     success_list = glob.glob(successPath)
     failure_list = glob.glob(failurePath)
 
@@ -209,7 +209,7 @@ def tuneSensitivityGain(hmm, dataSample, verbose=False):
     return minThresholds
 
 
-def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=False,
+def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_offset=0.0, verbose=False,
               isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
               ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None):
 
@@ -220,7 +220,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
         with open(savedDataFile, 'rb') as f:
             d = pickle.load(f)
             trainData = d['trainData']
-            hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
+            hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
             hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
                           ml_pkl=ml_pkl, use_pkl=use_pkl, cov_mult=[cov_mult]*16)
             return hmm, d['minVals'], d['maxVals'], d['minThresholds']
@@ -228,6 +228,43 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
     task = 'pr2_scooping' if isScooping else 's*_feeding'
     successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
     failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
+
+    # # Daehyung: Modified to select multiple subjects
+    # #           folder name should include subject name, task name, and success/failure words.
+    # if isScooping:
+    #     subject_names = ['pr2']
+    #     task_name     = 'scooping'
+    # else:
+    #     subject_names = ['s2','s3','s4','s5'] #'personal',
+    #     task_name     = 'feeding'
+    #
+    # # Loading success and failure data
+    # root_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
+    # folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]
+    #
+    # success_list = []
+    # failure_list = []
+    # for d in folder_list:
+    #
+    #     name_flag = False
+    #     for name in subject_names:
+    #         if d.find(name) >= 0: name_flag = True
+    #
+    #     if name_flag and d.find(task_name) >= 0:
+    #         files = os.listdir(os.path.join(root_path,d))
+    #
+    #         for f in files:
+    #             # pickle file name with full path
+    #             pkl_file = os.path.join(root_path,d,f)
+    #
+    #             if f.find('success') >= 0:
+    #                 if len(success_list)==0: success_list = [pkl_file]
+    #                 else: success_list.append(pkl_file)
+    #             elif f.find('failure') >= 0:
+    #                 if len(failure_list)==0: failure_list = [pkl_file]
+    #                 else: failure_list.append(pkl_file)
+    #             else:
+    #                 print "It's not success/failure file: ", f
 
     trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue, trainTimeList, \
     thresTestTimeList, normalTestTimeList, abnormalTestTimeList = getData(successPath, failurePath,
@@ -266,7 +303,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
             thresTestData[j][k] = thresTestData[j][k][start_idx:end_idx]
             thresTestTimeList[k] = thresTestTimeList[k][start_idx:end_idx]
 
-    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, verbose=verbose)
+    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
                   ml_pkl=ml_pkl, use_pkl=use_pkl, cov_mult=[cov_mult]*16)
 
@@ -278,7 +315,17 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, verbose=Fal
 
     else:
         with suppress_output():
-            minThresholds = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+            # minThresholds = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+            # #thresTest is not enough, so we also use training data.
+            minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
+            minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+            minThresholds3 = tuneSensitivityGain(hmm, normalTestData, verbose=verbose)
+            minThresholds = minThresholds3
+            for i in xrange(len(minThresholds1)):
+                if minThresholds1[i] < minThresholds[i]:
+                    minThresholds[i] = minThresholds1[i]
+                if minThresholds2[i] < minThresholds[i]:
+                    minThresholds[i] = minThresholds2[i]
 
         if verbose:
             print 'Min threshold size:', np.shape(minThresholds)
@@ -323,6 +370,7 @@ def batchTrain(parallel=True):
                             p = multiprocessing.Process(target=iteration, args=(downSampleSize, scale, nState, covMult, False, isScooping, False, False))
                             p.start()
                         else:
+                            # TODO Needs to be updates
                             iteration(downSampleSize=downSampleSize, scale=scale, nState=nState, cov_mult=covMult,
                                       verbose=False, isScooping=isScooping, use_pkl=False, saveData=True)
                         print 'End of iteration'
@@ -346,10 +394,22 @@ def plotData(isScooping=False):
 
 
 if __name__ == '__main__':
-    plotData(isScooping=False)
+    # plotData(isScooping=False)
 
-    iteration(downSampleSize=100, scale=1.0, nState=10, cov_mult=1.0, train_cutting_ratio=[0.0, 1.0],
-                                      verbose=False, isScooping=False, use_pkl=False, saveData=True)
+    # scooping
+    isScooping = True
+    nState=10
+    anomaly_offset = -25.0
+    cutting_ratio  = [0.0, 0.9]
+
+    # feeding
+    ## isScooping = False
+    ## nState=10
+    ## anomaly_offset = -0.0
+    ## cutting_ratio  = [0.0, 0.7]
+
+    iteration(downSampleSize=100, scale=1.0, nState=nState, cov_mult=5.0, train_cutting_ratio=cutting_ratio,
+              anomaly_offset=anomaly_offset, verbose=False, isScooping=isScooping, use_pkl=False, saveData=True)
 
     sys.exit()
 
