@@ -156,8 +156,40 @@ def suppress_output():
             sys.stderr = old_stderr
 
 
+def getSubjectFileList(root_path, subject_names, task_name):
+    # List up recorded files
+    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]        
 
+    success_list = []
+    failure_list = []
+    for d in folder_list:
 
+        name_flag = False
+        for name in subject_names:
+            if d.find(name) >= 0: name_flag = True
+                                    
+        if name_flag and d.find(task_name) >= 0:
+            files = os.listdir(os.path.join(root_path,d))
+
+            for f in files:
+                # pickle file name with full path
+                pkl_file = os.path.join(root_path,d,f)
+                
+                if f.find('success') >= 0:
+                    if len(success_list)==0: success_list = [pkl_file]
+                    else: success_list.append(pkl_file)
+                elif f.find('failure') >= 0:
+                    if len(failure_list)==0: failure_list = [pkl_file]
+                    else: failure_list.append(pkl_file)
+                else:
+                    print "It's not success/failure file: ", f
+
+    print "--------------------------------------------"
+    print "# of Success files: ", len(success_list)
+    print "# of Failure files: ", len(failure_list)
+    print "--------------------------------------------"
+    
+    return success_list, failure_list
 
 
 def displayExpLikelihoods(hmm, trainData, normalTestData, abnormalTestData, ths_mult, save_pdf=False):

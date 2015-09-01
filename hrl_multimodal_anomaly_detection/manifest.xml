@@ -21,7 +21,7 @@
 
     <depend package="sensor_msgs"/>
     <depend package="visualization_msgs"/>
-    <!--depend package="ar_track_alvar"/-->
+    <depend package="ar_track_alvar"/>
     <depend package="image_geometry"/>
     <depend package="cv_bridge"/>
     <depend package="sound_play"/>

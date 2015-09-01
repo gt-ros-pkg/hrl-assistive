@@ -104,9 +104,9 @@ class armReachAction(mpcBaseAction):
         #Used to perform motions relative to bowl/mouth positions > It should use relative frame
         self.leftArmScoopingPos = np.array([[-.005,	0,	  .15],
                                             [-.005,	0,	-.055], #Moving down into bowl
-                                            [.02,	0,	-.035], #Moving forward in bowl
-                                            [0,		0,	  .10], #While rotating spoon to scoop out
-                                            [0,		0,    .15]]) #Moving up out of bowl
+                                            [.02,	0,	-.025], #Moving forward in bowl
+                                            [0,	 -0.02,	  .10], #While rotating spoon to scoop out
+                                            [0,	 -0.02,    .15]]) #Moving up out of bowl
 
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.leftArmFeedingPos = np.array([[-0.15, 0, 0.0],
@@ -331,8 +331,8 @@ class armReachAction(mpcBaseAction):
                           '#2 Moving into mouth...',
                           '#3 Moving away from mouth...']
 
-        mouth_pos = copy.deepcopy(self.mouth_pos_manual)
-        mouth_quat = copy.deepcopy(self.mouth_quat_manual)
+        mouth_pos = self.mouth_pos_manual
+        mouth_quat = self.mouth_quat_manual
 
         for i in iterations:
             print 'Feeding step #%d ' % i
@@ -356,7 +356,6 @@ class armReachAction(mpcBaseAction):
                                                                       spoon_rot.GetQuaternion()[1],
                                                                       spoon_rot.GetQuaternion()[2],
                                                                       spoon_rot.GetQuaternion()[3])
-
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
             time.sleep(self.pausesFeeding[i])
@@ -407,11 +406,14 @@ class armReachAction(mpcBaseAction):
         posStopL = Point()
         quatStopL = Quaternion()
 
+        # TODO: location should be replaced into the last scooping or feeding starts.
         print "Moving left arm to safe position "
         if data.data == 'InterruptHead':
             self.feeding([0])
+            self.setPostureGoal(self.leftArmInitialJointAnglesFeeding, 10)
         else:
             self.scooping([0])
+            self.setPostureGoal(self.leftArmInitialJointAnglesScooping, 10)
 
         
     #converts an array of euler angles (in degrees) to array of quaternions
