@@ -85,6 +85,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     anglesTrueList = []
     audioTrueList = []
     for idx, fileName in enumerate(fileNames):
+        if os.path.isdir(fileName):
+            continue
         audio, audioTimes = audioFeatures(fileName)
         forces, distances, angles, kinematicsTimes, forceTimes = forceKinematics(fileName)
 
