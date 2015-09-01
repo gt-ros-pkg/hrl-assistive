@@ -3,10 +3,12 @@
 __author__ = 'zerickson'
 
 import time
+import ghmm
 import rospy
 import pyaudio
 from threading import Thread
 import matplotlib.pyplot as plt
+from scipy.stats import norm, entropy
 import hmm.icra2015Batch as onlineHMM
 from audio.tool_audio_slim import tool_audio_slim
 from hmm.util import *
@@ -19,6 +21,7 @@ from geometry_msgs.msg import PoseStamped, WrenchStamped, Point
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker
 from roslib import message
+from sensor_msgs.msg import JointState
 
 import roslib
 roslib.load_manifest('hrl_multimodal_anomaly_detection')
@@ -44,15 +47,21 @@ class onlineAnomalyDetection(Thread):
 
         # Predefined settings
         self.downSampleSize = 100 #200
-        self.scale = 1.0 #10
-        self.nState = 10 #20
-        self.cov_mult = 1.0
-        self.cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
-        self.isScooping = isScooping
-        self.subject = subject
-        self.task = task
-        if self.isScooping: self.ml_thres_pkl='ml_scooping_thres.pkl'
-        else: self.ml_thres_pkl='ml_feeding_thres.pkl'
+        self.scale          = 1.0 #10
+        self.cov_mult       = 5.0
+        self.isScooping     = isScooping
+        self.subject        = subject
+        self.task           = task
+        if self.isScooping:
+            self.nState         = 10
+            self.cutting_ratio  = [0.0, 0.9] #[0.0, 0.7]
+            self.anomaly_offset = -25.0
+            self.ml_thres_pkl='ml_scooping_thres.pkl'
+        else:
+            self.nState         = 10
+            self.cutting_ratio  = [0.0, 0.7]
+            self.anomaly_offset = -20
+            self.ml_thres_pkl='ml_feeding_thres.pkl'
 
         print 'is scooping:', self.isScooping
 
@@ -82,10 +91,15 @@ class onlineAnomalyDetection(Thread):
         self.force = None
         self.torque = None
 
+        # Audio
         if audioTool is None:
             self.audioTool = tool_audio_slim()
         else:
             self.audioTool = audioTool
+
+        # Kinematics
+        self.jointAngles = None
+        self.jointVelocities = None
 
         self.soundHandle = SoundClient()
 
@@ -94,7 +108,7 @@ class onlineAnomalyDetection(Thread):
         self.hmm, self.minVals, self.maxVals, self.minThresholds \
         = onlineHMM.iteration(downSampleSize=self.downSampleSize,
                               scale=self.scale, nState=self.nState,
-                              cov_mult=self.cov_mult, verbose=False,
+                              cov_mult=self.cov_mult, anomaly_offset=self.anomaly_offset, verbose=False,
                               isScooping=self.isScooping, use_pkl=False,
                               train_cutting_ratio=self.cutting_ratio,
                               findThresholds=True, ml_pkl=self.ml_thres_pkl,
@@ -112,6 +126,7 @@ class onlineAnomalyDetection(Thread):
         self.anglesRaw = []
         self.audiosRaw = []
         self.times = []
+        self.likelihoods = []
         self.anomalyOccured = False
 
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
@@ -120,6 +135,16 @@ class onlineAnomalyDetection(Thread):
         self.objectCenter = None
         self.objectCenterSub = rospy.Subscriber('/ar_track_alvar/bowl_cen_pose' if isScooping else '/ar_track_alvar/mouth_pose', PoseStamped, self.objectCenterCallback)
         print 'Connected to center of object publisher'
+
+        groups = rospy.get_param('/right/haptic_mpc/groups' )
+        for group in groups:
+            if group['name'] == 'left_arm_joints' and self.arm == 'l':
+                self.joint_names_list = group['joints']
+            elif group['name'] == 'right_arm_joints' and self.arm == 'r':
+                self.joint_names_list = group['joints']
+
+        self.jointSub = rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
+        print 'Connected to robot kinematics'
 
     def reset(self):
         self.isRunning = True
@@ -143,6 +168,8 @@ class onlineAnomalyDetection(Thread):
         self.spoon = None
         self.force = None
         self.torque = None
+        self.jointAngles = None
+        self.jointVelocities = None
         self.objectCenter = None
         self.audioTool.begin()
 
@@ -154,7 +181,7 @@ class onlineAnomalyDetection(Thread):
             if self.isRunning and self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
                 self.processData()
-                if not self.anomalyOccured and len(self.forces) > 15:
+                if not self.anomalyOccured and len(self.forces) > 10:
                     # Perform anomaly detection
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds)
                     print 'Anomaly error:', error
@@ -172,6 +199,7 @@ class onlineAnomalyDetection(Thread):
                         #     plt.legend()
                         #     plt.show()
             # rate.sleep()
+        print 'Online anomaly thread cancelled'
 
     def cancel(self):
         self.isRunning = False
@@ -192,6 +220,10 @@ class onlineAnomalyDetection(Thread):
         data['audioRaw'] = self.audiosRaw
         data['times'] = self.times
         data['anomalyOccured'] = self.anomalyOccured
+        data['minThreshold'] = self.minThresholds
+        data['likelihoods'] = self.likelihoods
+        data['jointAngles'] = self.jointAngles
+        data['jointVelocities'] = self.jointVelocities
 
         directory = os.path.join(os.path.dirname(__file__), 'onlineDataRecordings/')
         if not os.path.exists(directory):
@@ -242,6 +274,7 @@ class onlineAnomalyDetection(Thread):
         self.angles.append(angle)
         self.audios.append(audio)
         self.times.append(rospy.get_time() - self.init_time)
+        self.likelihoods.append(self.hmm.likelihoods(self.forces, self.distances, self.angles, self.audios))
 
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):
@@ -254,6 +287,26 @@ class onlineAnomalyDetection(Thread):
 
     def objectCenterCallback(self, msg):
         self.objectCenter = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
+
+    def jointStatesCallback(self, data):
+        joint_angles = []
+        ## joint_efforts = []
+        joint_vel = []
+        jt_idx_list = [0]*len(self.joint_names_list)
+        for i, jt_nm in enumerate(self.joint_names_list):
+            jt_idx_list[i] = data.name.index(jt_nm)
+
+        for i, idx in enumerate(jt_idx_list):
+            if data.name[idx] != self.joint_names_list[i]:
+                raise RuntimeError('joint angle name does not match.')
+            joint_angles.append(data.position[idx])
+            ## joint_efforts.append(data.effort[idx])
+            joint_vel.append(data.velocity[idx])
+
+        with self.jstate_lock:
+            self.jointAngles  = joint_angles
+            ## self.joint_efforts = joint_efforts
+            self.jointVelocities = joint_vel
 
     def transposeGripper(self):
         # Transpose gripper position to camera frame

@@ -18,7 +18,7 @@ from joblib import Parallel, delayed
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_4d:
-    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress', verbose=False):
+    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, verbose=False):
         self.ml = None
 
         ## Tunable parameters
@@ -44,6 +44,8 @@ class learning_hmm_multi_4d:
         self.l_mu = None
         self.l_std = None
         self.std_coff = None
+
+        self.anomaly_offset=anomaly_offset
 
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -379,7 +381,32 @@ class learning_hmm_multi_4d:
             sys.exit()
 
         return p
-        
+
+    def likelihoods(self, X1, X2, X3, X4):
+        n, m = np.shape(X1)
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+        i = m - 1
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
+        logp = self.ml.loglikelihood(final_ts_obj)
+        post = np.array(self.ml.posterior(final_ts_obj))
+
+        # Find the best posterior distribution
+        min_dist  = 100000000
+        min_index = 0
+        for j in xrange(self.nGaussian):
+            dist = entropy(post[i-1], self.l_statePosterior[j])
+            if min_dist > dist:
+                min_index = j
+                min_dist  = dist
+
+        ll_likelihood = logp
+        ll_state_idx  = min_index
+        ll_likelihood_mu  = self.ll_mu[min_index]
+        ll_likelihood_std = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
+
+        return ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std
+
     # Returns mu,sigma for n hidden-states from feature-vector
     @staticmethod
     def vectors_to_mean_sigma(vec, nState):
@@ -583,7 +610,8 @@ class learning_hmm_multi_4d:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
         ## return err < 0.0, err
-        return err < -45.0, err
+        return err < self.anomaly_offset, err
+        # return err < -45.0, err
         # if err < 0.0: return 1.0, err # anomaly
         # else: return 0.0, err # normal
 
