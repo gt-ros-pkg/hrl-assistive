@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
+# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-12-45.pkl'
 isNewFormat = False
 
 parts = fileName.split('/')[-1].split('_')
@@ -58,6 +59,39 @@ else:
     ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.allLikelihoods(forces, distances, angles, audios)
 
 print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
+
+
+def plotDataAndLikelihood():
+    fig = plt.figure()
+    ax1 = plt.subplot(411)
+    # ax1.plot(times, trainData[0][:3], c='k')
+    ax1.plot(times, forces, c='b')
+    ax1.set_ylabel('Force')
+
+    ax2 = plt.subplot(412)
+    # ax2.plot(times, trainData[1][:3], c='k')
+    ax2.plot(times, distances, c='b')
+    ax2.set_ylabel('Distance')
+
+    ax3 = plt.subplot(413)
+    # ax3.plot(times, trainData[2][:3], c='k')
+    ax3.plot(times, angles, c='b')
+    ax3.set_ylabel('Angle')
+
+    ax4 = plt.subplot(414)
+    # ax4.plot(times, trainData[3][:3], c='k')
+    ax4.plot(times, audios, c='b')
+    ax4.set_ylabel('Audio')
+
+    # ax5 = plt.subplot(515)
+    # ax5.plot(times, trainData[0][:3], c='k')
+    # ax5.plot(times, ll_likelihood, c='b')
+    # ax5.set_ylabel('Log-likelihood')
+
+    plt.show()
+
+plotDataAndLikelihood()
+
 
 # fig = plt.figure()
 # plt.plot(times, ll_likelihood)
