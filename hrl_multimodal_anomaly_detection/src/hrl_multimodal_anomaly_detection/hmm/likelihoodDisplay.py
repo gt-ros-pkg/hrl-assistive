@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import cPickle as pickle
+import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 
 fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
@@ -26,8 +27,8 @@ with open(fileName, 'rb') as f:
 downSampleSize = 100 #200
 scale = 1.0 #10
 nState = 10 #20
-cov_mult = 1.0
-cutting_ratio  = [0.0, 1.0] #[0.0, 0.7]
+cov_mult = 5.0
+cutting_ratio = [0.0, 0.7] #[0.0, 0.7]
 isScooping = task == 's' or task == 'b'
 if isScooping: ml_thres_pkl='ml_scooping_thres.pkl'
 else: ml_thres_pkl='ml_feeding_thres.pkl'
@@ -44,4 +45,10 @@ hmm, minVals, maxVals, minThresholds \
                       savedDataFile=saveDataPath % (('scooping' if isScooping else 'feeding'),
                                     downSampleSize, scale, nState, int(cov_mult)))
 
-onlineHMM.likelihoodOfSequences(hmm, trainData=[forces, distances, angles, audios])
+ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.likelihoods(forces, distances, angles, audios)
+
+print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
+
+fig = plt.figure()
+plt.plot(times, ll_likelihood)
+plt.show()

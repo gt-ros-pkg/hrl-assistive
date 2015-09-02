@@ -143,14 +143,16 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
 
 
 def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=None, abnormalTestData=None,
-                          save_pdf=False, verbose=False):
+                          save_pdf=False, verbose=False, minThresholds=None):
+    print 'Plotting likelihoods'
 
-    minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
-    minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
-    minThresholds = minThresholds2
-    for i in xrange(len(minThresholds1)):
-        if minThresholds1[i] < minThresholds2[i]:
-            minThresholds[i] = minThresholds1[i]
+    if minThresholds is None:
+        minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
+        minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+        minThresholds = minThresholds2
+        for i in xrange(len(minThresholds1)):
+            if minThresholds1[i] < minThresholds2[i]:
+                minThresholds[i] = minThresholds1[i]
 
     fig = plt.figure()
 
@@ -333,7 +335,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
 
         if plotLikelihood:
             likelihoodOfSequences(hmm, trainData, thresTestData, normalTestData, abnormalTestData,
-                                  save_pdf=False, verbose=False)
+                                  save_pdf=False, verbose=False, minThresholds=minThresholds)
 
         if not saveData:
             return hmm, minVals, maxVals, minThresholds
@@ -358,7 +360,8 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
             d['normalTestTimeList'] = normalTestTimeList
             d['abnormalTestTimeList'] = abnormalTestTimeList
             taskName = 'scooping' if isScooping else 'feeding'
-            fileName = 'batchDataFiles/%s_%d_%d_%d_%d.pkl' % (taskName, downSampleSize, scale, nState, int(cov_mult))
+            fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/batchDataFiles/%s_%d_%d_%d_%d.pkl' \
+                       % (taskName, downSampleSize, scale, nState, int(cov_mult))
             with open(fileName, 'wb') as f:
                 pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
