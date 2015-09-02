@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
+import matplotlib.animation as animation
 
 fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
 
@@ -52,3 +54,22 @@ print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
 fig = plt.figure()
 plt.plot(times, ll_likelihood)
 plt.show()
+
+# Animation
+fig, ax = plt.subplots()
+
+line, = ax.plot(times, ll_likelihood)
+
+def animate(i):
+    # Update the plot
+    line.set_ydata(ll_likelihood[:i])
+    return line,
+
+# Init only required for blitting to give a clean slate.
+def init():
+    line.set_ydata(np.ma.array(times, mask=True))
+    return line,
+
+ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=25, blit=True)
+plt.show()
+
