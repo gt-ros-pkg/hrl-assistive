@@ -58,6 +58,9 @@ print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
 
 # Animation
 fig, ax = plt.subplots()
+# ax.set_title('Likelihood')
+ax.set_xlabel('Time (sec)')
+ax.set_ylabel('Log-likelihood')
 
 line, = ax.plot(times, ll_likelihood)
 
