@@ -62,6 +62,7 @@ line, = ax.plot(times, ll_likelihood)
 
 def animate(i):
     # Update the plot
+    line.set_xdata(times[:i])
     line.set_ydata(ll_likelihood[:i])
     return line,
 
