@@ -383,27 +383,34 @@ class learning_hmm_multi_4d:
         return p
 
     def likelihoods(self, X1, X2, X3, X4):
-        n, m = np.shape(X1)
+        # n, m = np.shape(X1)
         X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
-        i = m - 1
+        # i = m - 1
 
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
-        logp = self.ml.loglikelihood(final_ts_obj)
-        post = np.array(self.ml.posterior(final_ts_obj))
+        m = len(np.squeeze(X1))
 
-        # Find the best posterior distribution
-        min_dist  = 100000000
-        min_index = 0
-        for j in xrange(self.nGaussian):
-            dist = entropy(post[i-1], self.l_statePosterior[j])
-            if min_dist > dist:
-                min_index = j
-                min_dist  = dist
+        ll_likelihood = np.zeros(m)
+        ll_state_idx  = np.zeros(m)
+        ll_likelihood_mu  = np.zeros(m)
+        ll_likelihood_std = np.zeros(m)
+        for i in xrange(1, m):
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
+            logp = self.ml.loglikelihood(final_ts_obj)
+            post = np.array(self.ml.posterior(final_ts_obj))
 
-        ll_likelihood = logp
-        ll_state_idx  = min_index
-        ll_likelihood_mu  = self.ll_mu[min_index]
-        ll_likelihood_std = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
+            # Find the best posterior distribution
+            min_dist  = 100000000
+            min_index = 0
+            for j in xrange(self.nGaussian):
+                dist = entropy(post[i-1], self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist
+
+            ll_likelihood[i] = logp
+            ll_state_idx[i]  = min_index
+            ll_likelihood_mu[i]  = self.ll_mu[min_index]
+            ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
 
         return ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std
 
