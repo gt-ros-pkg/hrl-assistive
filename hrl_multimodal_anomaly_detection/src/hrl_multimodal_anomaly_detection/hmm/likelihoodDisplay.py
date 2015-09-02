@@ -45,7 +45,7 @@ hmm, minVals, maxVals, minThresholds \
                       savedDataFile=saveDataPath % (('scooping' if isScooping else 'feeding'),
                                     downSampleSize, scale, nState, int(cov_mult)))
 
-ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.likelihoods(forces, distances, angles, audios)
+ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.allLikelihoods(forces, distances, angles, audios)
 
 print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
 

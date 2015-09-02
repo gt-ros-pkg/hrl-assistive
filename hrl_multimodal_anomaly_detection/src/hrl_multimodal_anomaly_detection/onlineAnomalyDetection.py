@@ -6,6 +6,7 @@ import time
 import ghmm
 import rospy
 import pyaudio
+import threading
 from threading import Thread
 import matplotlib.pyplot as plt
 from scipy.stats import norm, entropy
@@ -136,11 +137,12 @@ class onlineAnomalyDetection(Thread):
         self.objectCenterSub = rospy.Subscriber('/ar_track_alvar/bowl_cen_pose' if isScooping else '/ar_track_alvar/mouth_pose', PoseStamped, self.objectCenterCallback)
         print 'Connected to center of object publisher'
 
-        groups = rospy.get_param('/right/haptic_mpc/groups' )
+        groups = rospy.get_param('/haptic_mpc/groups' )
         for group in groups:
             if group['name'] == 'left_arm_joints':
                 self.joint_names_list = group['joints']
 
+        self.jstate_lock = threading.RLock()
         self.jointSub = rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
         print 'Connected to robot kinematics'
 
@@ -272,7 +274,8 @@ class onlineAnomalyDetection(Thread):
         self.angles.append(angle)
         self.audios.append(audio)
         self.times.append(rospy.get_time() - self.init_time)
-        self.likelihoods.append(self.hmm.likelihoods(self.forces, self.distances, self.angles, self.audios))
+        if len(self.forces) > 1:
+            self.likelihoods.append(self.hmm.likelihoods(self.forces, self.distances, self.angles, self.audios))
 
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):
