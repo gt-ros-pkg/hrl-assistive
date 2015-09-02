@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
@@ -71,6 +72,9 @@ def init():
     line.set_ydata(np.ma.array(times, mask=True))
     return line,
 
-ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=25, blit=True)
-plt.show()
+interval = times[-1]/len(ll_likelihood)
+print 'Interval:', interval
+ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=interval, blit=True)
+ani.save(time.strftime('likelihood_%m-%d-%Y_%H-%M-%S.mp4'))
+# plt.show()
 
