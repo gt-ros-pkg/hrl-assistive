@@ -168,6 +168,18 @@ class learning_hmm_multi_4d:
                 with open(ml_pkl, 'wb') as f:
                     pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+            ## print "++++++++++++++++++++++++++++++++++++++++++=="
+            ## print "std_coff: ", self.std_coff
+            ## print "length: ", m 
+            ## print g_mu_list
+            ## print g_sig
+            ## print "000000000000000000000000000000000"
+            ## print self.ll_mu
+            ## print self.ll_std
+            ## print "use_pkl: ", use_pkl
+            ## print "++++++++++++++++++++++++++++++++++++++++++=="
+            
+                    
     def get_sensitivity_gain(self, X1, X2, X3, X4):
 
         X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
@@ -499,11 +511,11 @@ class learning_hmm_multi_4d:
         for i in xrange(nState):
             # Exponential function
             # From y = a*e^(-bx)
-            #a = 0.4
-            #b = np.log(0.00001/a)/(-(nState-i))
-            #f = lambda x: a*np.exp(-b*x)
+            ## a = 0.4
+            ## b = np.log(0.00001/a)/(-(nState-i))
+            ## f = lambda x: a*np.exp(-b*x)
 
-            # Exponential function
+            # Linear function
             # From y = -a*x + b
             b = 0.4
             a = b/float(nState)
@@ -687,7 +699,7 @@ class learning_hmm_multi_4d:
         # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
-            ## print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
+            print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
 
             return (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:

@@ -379,3 +379,24 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
         os.system('cp test.p* ~/Dropbox/HRL/')
     else:
         plt.show()        
+
+
+def tuneSensitivityGain(hmm, dataSample, verbose=False):
+    minThresholds = np.zeros(hmm.nGaussian) + 10000
+
+    n = len(dataSample[0])
+    for i in range(n):
+        m = len(dataSample[0][i])
+
+        for j in range(2, m):
+            threshold, index = hmm.get_sensitivity_gain(dataSample[0][i][:j], dataSample[1][i][:j],
+                                                        dataSample[2][i][:j], dataSample[3][i][:j])
+            if not threshold:
+                continue
+
+            if minThresholds[index] > threshold:
+                minThresholds[index] = threshold
+                if verbose: print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
+
+    return minThresholds
+

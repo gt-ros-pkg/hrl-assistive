@@ -278,13 +278,21 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                   ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
-    minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
-    minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
-    minThresholds = minThresholds2
-    for i in xrange(len(minThresholds1)):
-        if minThresholds1[i] < minThresholds2[i]:
-            minThresholds[i] = minThresholds1[i]
-
+    minThresholds = None                  
+    if hmm_renew:
+        minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
+        minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
+        minThresholds = minThresholds2
+        for i in xrange(len(minThresholds1)):
+            if minThresholds1[i] < minThresholds2[i]:
+                minThresholds[i] = minThresholds1[i]
+        d = ut.load_pickle(dynamic_thres_pkl)
+        d['minThresholds'] = minThresholds                
+        ut.save_pickle(d, dynamic_thres_pkl)                
+    else:
+        d = ut.load_pickle(dynamic_thres_pkl)
+        minThresholds = d['minThresholds']
+        
     min_logp = 0.0
     max_logp = 0.0
     if show_plot: fig = plt.figure()
@@ -310,11 +318,10 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
 
                 log_ll[i].append(logp)
 
-
-                exp_logp = hmm.expLikelihoods(trainData[0][i][:j], trainData[1][i][:j], 
-                                              trainData[2][i][:j], trainData[3][i][:j],
-                                              minThresholds)
-                exp_log_ll[i].append(exp_logp)
+                ## exp_logp = hmm.expLikelihoods(trainData[0][i][:j], trainData[1][i][:j], 
+                ##                               trainData[2][i][:j], trainData[3][i][:j],
+                ##                               minThresholds)
+                ## exp_log_ll[i].append(exp_logp)
 
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
@@ -353,10 +360,10 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
 
                 log_ll[i].append(logp)
 
-                exp_logp = hmm.expLikelihoods(thresTestData[0][i][:j], thresTestData[1][i][:j], 
-                                              thresTestData[2][i][:j], thresTestData[3][i][:j],
-                                              minThresholds)
-                exp_log_ll[i].append(exp_logp)
+                ## exp_logp = hmm.expLikelihoods(thresTestData[0][i][:j], thresTestData[1][i][:j], 
+                ##                               thresTestData[2][i][:j], thresTestData[3][i][:j],
+                ##                               minThresholds)
+                ## exp_log_ll[i].append(exp_logp)
 
 
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
@@ -373,7 +380,6 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
             plt.legend(loc=3,prop={'size':16})
 
             ## plt.plot(log_ll[i], 'b-')
-            ## plt.plot(exp_log_ll[i], 'r--')
                         
 
     # normal test data
@@ -386,6 +392,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
 
             log_ll.append([])
             exp_log_ll.append([])
+
             for j in range(2, len(normalTestData[0][i])):
                 X_test = hmm.convert_sequence(normalTestData[0][i][:j], normalTestData[1][i][:j], 
                                               normalTestData[2][i][:j], normalTestData[3][i][:j])
@@ -402,10 +409,6 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                                               minThresholds)
                 exp_log_ll[i].append(exp_logp)
                 
-            # disp 
-            if verbose: 
-                print i, normalTestFileList[i], np.amin(log_ll[i]), log_ll[i][-1]
-                
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
 
@@ -416,6 +419,9 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
             else:
                 plt.plot(log_ll[i], 'g-')
 
+            plt.plot(exp_log_ll[i], 'r*-')
+                
+
         if useNormalTest_color: 
             plt.legend(loc=3,prop={'size':16})
                            
@@ -425,9 +431,10 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
         exp_log_ll = []        
         count = 0
         for i in xrange(len(abnormalTestData[0])):
-
+            
             log_ll.append([])
             exp_log_ll.append([])
+            
             for j in range(2, len(abnormalTestData[0][i])):
                 X_test = hmm.convert_sequence(abnormalTestData[0][i][:j], abnormalTestData[1][i][:j], 
                                               abnormalTestData[2][i][:j], abnormalTestData[3][i][:j])
@@ -446,6 +453,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
                 
             # disp 
             plt.plot(log_ll[i], 'r-')
+            ## plt.plot(exp_log_ll[i], 'r*-')
 
 
     plt.ylim([min_logp, max_logp])
@@ -697,24 +705,6 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
     return dataList_scaled, minVals, maxVals
 
 
-def tuneSensitivityGain(hmm, dataSample, verbose=False):
-    minThresholds = np.zeros(hmm.nGaussian) + 10000
-
-    n = len(dataSample[0])
-    for i in range(n):
-        m = len(dataSample[0][i])
-
-        for j in range(2, m):
-            threshold, index = hmm.get_sensitivity_gain(dataSample[0][i][:j], dataSample[1][i][:j], 
-                                                        dataSample[2][i][:j], dataSample[3][i][:j])
-            if not threshold:
-                continue
-
-            if minThresholds[index] > threshold:
-                minThresholds[index] = threshold
-                if verbose: print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
-
-    return minThresholds
 
 
 def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=False):
@@ -815,16 +805,16 @@ if __name__ == '__main__':
     ## anomaly_offset = -20.0
 
     # Feeding
-    subject_names  = ['s8'] #['s2','s3','s4'] #'personal', 's3',
+    subject_names  = ['s2','s3','s4','s8'] #'personal', 's3',
     task_name      = 'feeding' #['scooping', 'feeding']
     nSet           = 1
     folding_ratio  = [0.5, 0.3, 0.2]
     downSampleSize = 100
-    nState         = 10
+    nState         = 15
     cov_mult       = 5.0
     scale          = 1.0
     cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
-    anomaly_offset = 0.0
+    anomaly_offset = -20.0
     
     preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
                    folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
@@ -840,8 +830,8 @@ if __name__ == '__main__':
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
                               anomaly_offset=anomaly_offset,\
-                              useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
-                              useTrain_color=True, useThsTest_color=False, useNormalTest_color=False,\
+                              useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
+                              useTrain_color=False, useThsTest_color=False, useNormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, save_pdf=opt.bSavePdf, verbose=True)       
     elif opt.bPlotTest:
         test_subject_names=['s5']            

@@ -32,9 +32,8 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
     return dataList_scaled, minVals, maxVals
 
 
-def getData(successPath, failurePath, folding_ratio=(0.5, 0.3, 0.2), downSampleSize=200, verbose=False):
-    success_list = glob.glob(successPath)
-    failure_list = glob.glob(failurePath)
+
+def getData(success_list, failure_list, folding_ratio=(0.5, 0.3, 0.2), downSampleSize=200, verbose=False):
 
     if verbose:
         print "--------------------------------------------"
@@ -159,6 +158,9 @@ def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=Non
     dataSet = [x for x in [trainData, thresTestData, normalTestData, abnormalTestData] if x is not None]
     colors = ['b', 'k', 'g', 'r'][:len(dataSet)]
 
+    min_logp = 0.0
+    max_logp = 0.0
+        
     # training data
     for data, color in zip(dataSet, colors):
         log_ll = []
@@ -177,13 +179,17 @@ def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=Non
 
                 log_ll[i].append(logp)
 
-                exp_logp = hmm.expLikelihoods(data[0][i][:j], data[1][i][:j],
-                                              data[2][i][:j], data[3][i][:j],
-                                              minThresholds)
-                exp_log_ll[i].append(exp_logp)
+                ## exp_logp = hmm.expLikelihoods(data[0][i][:j], data[1][i][:j],
+                ##                               data[2][i][:j], data[3][i][:j],
+                ##                               minThresholds)
+                ## exp_log_ll[i].append(exp_logp)
 
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+                
             plt.plot(log_ll[i], color + '-')
 
+    plt.ylim([min_logp, max_logp])
+            
     if save_pdf:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
@@ -191,24 +197,6 @@ def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=Non
         plt.show()
 
 
-def tuneSensitivityGain(hmm, dataSample, verbose=False):
-    minThresholds = np.zeros(hmm.nGaussian) + 10000
-
-    n = len(dataSample[0])
-    for i in range(n):
-        m = len(dataSample[0][i])
-
-        for j in range(2, m):
-            threshold, index = hmm.get_sensitivity_gain(dataSample[0][i][:j], dataSample[1][i][:j],
-                                                        dataSample[2][i][:j], dataSample[3][i][:j])
-            if not threshold:
-                continue
-
-            if minThresholds[index] > threshold:
-                minThresholds[index] = threshold
-                if verbose: print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
-
-    return minThresholds
 
 
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_offset=0.0, verbose=False,
@@ -227,53 +215,28 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
                           ml_pkl=ml_pkl, use_pkl=use_pkl, cov_mult=[cov_mult]*16)
             return hmm, d['minVals'], d['maxVals'], d['minThresholds']
 
-    task = 'pr2_scooping' if isScooping else 's*_feeding'
-    successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
-    failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
+    ## task = 'pr2_scooping' if isScooping else 's*_feeding'
+    ## successPath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_success/*' % task
+    ## failurePath = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/%s_failure/*' % task
 
-    # # Daehyung: Modified to select multiple subjects
-    # #           folder name should include subject name, task name, and success/failure words.
-    # if isScooping:
-    #     subject_names = ['pr2']
-    #     task_name     = 'scooping'
-    # else:
-    #     subject_names = ['s2','s3','s4','s5'] #'personal',
-    #     task_name     = 'feeding'
-    #
-    # # Loading success and failure data
-    # root_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
-    # folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]
-    #
-    # success_list = []
-    # failure_list = []
-    # for d in folder_list:
-    #
-    #     name_flag = False
-    #     for name in subject_names:
-    #         if d.find(name) >= 0: name_flag = True
-    #
-    #     if name_flag and d.find(task_name) >= 0:
-    #         files = os.listdir(os.path.join(root_path,d))
-    #
-    #         for f in files:
-    #             # pickle file name with full path
-    #             pkl_file = os.path.join(root_path,d,f)
-    #
-    #             if f.find('success') >= 0:
-    #                 if len(success_list)==0: success_list = [pkl_file]
-    #                 else: success_list.append(pkl_file)
-    #             elif f.find('failure') >= 0:
-    #                 if len(failure_list)==0: failure_list = [pkl_file]
-    #                 else: failure_list.append(pkl_file)
-    #             else:
-    #                 print "It's not success/failure file: ", f
+    # Daehyung: Modified to select multiple subjects
+    #           folder name should include subject name, task name, and success/failure words.
+    if isScooping:
+        subject_names = ['pr2']
+        task_name     = 'scooping'
+    else:
+        subject_names = ['s2','s3','s4','s8'] #'personal',
+        task_name     = 'feeding'
+    
+    # Loading success and failure data
+    root_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
+    success_list, failure_list = getSubjectFileList(root_path, subject_names, task_name)
 
     trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue, trainTimeList, \
-    thresTestTimeList, normalTestTimeList, abnormalTestTimeList = getData(successPath, failurePath,
+    thresTestTimeList, normalTestTimeList, abnormalTestTimeList = getData(success_list, failure_list,
                                                                           downSampleSize=downSampleSize, verbose=verbose)
 
     # minimum and maximum vales for scaling from Daehyung
-    success_list = glob.glob(successPath)
     dataList, _ = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
     minVals = []
     maxVals = []
@@ -411,8 +374,8 @@ if __name__ == '__main__':
 
     # feeding
     ## isScooping = False
-    ## nState=10
-    ## anomaly_offset = -0.0
+    ## nState=15
+    ## anomaly_offset = -20.0
     ## cutting_ratio  = [0.0, 0.7]
 
     iteration(downSampleSize=100, scale=1.0, nState=nState, cov_mult=5.0, train_cutting_ratio=cutting_ratio,
