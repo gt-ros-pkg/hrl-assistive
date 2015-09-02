@@ -138,9 +138,7 @@ class onlineAnomalyDetection(Thread):
 
         groups = rospy.get_param('/right/haptic_mpc/groups' )
         for group in groups:
-            if group['name'] == 'left_arm_joints' and self.arm == 'l':
-                self.joint_names_list = group['joints']
-            elif group['name'] == 'right_arm_joints' and self.arm == 'r':
+            if group['name'] == 'left_arm_joints':
                 self.joint_names_list = group['joints']
 
         self.jointSub = rospy.Subscriber("/joint_states", JointState, self.jointStatesCallback)
