@@ -171,7 +171,7 @@ class onlineAnomalyDetection(Thread):
         self.jointAngles = None
         self.jointVelocities = None
         self.objectCenter = None
-        self.audioTool.begin()
+        self.audioTool.start()
 
     def run(self):
         """Overloaded Thread.run, runs the update
@@ -203,9 +203,10 @@ class onlineAnomalyDetection(Thread):
 
     def cancel(self):
         self.isRunning = False
-        self.audioTool.reset()
+        self.audioTool.cancel()
         self.saveData()
         rospy.sleep(1.0)
+        self.audioTool = tool_audio_slim()
 
     def saveData(self):
         # TODO Save data (Check with daehyung if any more data should be added)
@@ -251,7 +252,7 @@ class onlineAnomalyDetection(Thread):
         angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
 
         # Process either visual or audio data depending on which we're using
-        audio = self.audioTool.readData()
+        audio = self.audioTool.audio_data_raw[-1]
         if audio is None:
             print 'Audio is None'
             return
