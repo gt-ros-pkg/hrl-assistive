@@ -13,14 +13,15 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
-from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv, String_String
+
+from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 import hrl_lib.quaternion as quatMath 
 from std_msgs.msg import String
 import PyKDL
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm):
+    def __init__(self, d_robot, controller, arm, head_noise=False):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Variables...! #
@@ -37,6 +38,9 @@ class armReachAction(mpcBaseAction):
         self.bowl_pos_kinect = None
         self.mouth_pos_manual = None
         self.mouth_pos_kinect = None
+
+        # Artificial error
+        self.head_noise = head_noise
         
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
@@ -332,7 +336,7 @@ class armReachAction(mpcBaseAction):
                           '#3 Moving away from mouth...']
 
         mouth_pos = self.mouth_pos_manual
-        mouth_quat = self.mouth_quat_manual
+        mouth_quat = self.mouth_quat_manual                
 
         for i in iterations:
             print 'Feeding step #%d ' % i
@@ -346,19 +350,56 @@ class armReachAction(mpcBaseAction):
             spoon_y = spoon_z * spoon_x
             spoon_rot = PyKDL.Rotation(spoon_x, spoon_y, spoon_z)
 
-            spoon_offset = PyKDL.Vector(self.leftArmFeedingPos[i][0], self.leftArmFeedingPos[i][1], self.leftArmFeedingPos[i][2])
+            spoon_offset = PyKDL.Vector(self.leftArmFeedingPos[i][0], self.leftArmFeedingPos[i][1], 
+                                        self.leftArmFeedingPos[i][2])
             spoon_offset = spoon_rot * spoon_offset
 
-            self.posL.x, self.posL.y, self.posL.z = (mouth_pos[0] + spoon_offset[0],
-                                                     mouth_pos[1] + spoon_offset[1],
-                                                     mouth_pos[2] + spoon_offset[2])
+            head_pos_noise = np.zeros(3)
+            if self.head_noise and i==1:
+                print "Head pose noise on feeding sequence 1"
+                min_rad = 0.03
+                max_rad = 0.08
+                x = 0.0
+                
+                y = np.random.uniform(min_rad, max_rad, 1)                           
+                y_sign = np.random.uniform(-1.0, 1.0, 1)
+                if y_sign < 0.0: y = y*-1.0
+                    
+                z = np.random.uniform(min_rad, max_rad, 1)                           
+                z_sign = np.random.uniform(-1.0, 1.0, 1)
+                if z_sign < 0.0: z = z*-1.0
+                    
+                noise_offset = PyKDL.Vector(x,y,z)
+                head_pos_noise = spoon_rot * noise_offset
+                print "pos offset: ", x, y, z
+
+                min_ang = -15.*np.pi/180.0
+                max_ang = 15.*np.pi/180.0
+                roll = 0.0
+                pitch = np.random.uniform(min_ang, max_ang, 1)                           
+                yaw = 0.0 
+                noise_rot = PyKDL.Rotation.RPY(roll, pitch, yaw )                           
+                spoon_rot = spoon_rot * noise_rot
+
+                print "rpy error: ", roll , pitch, yaw
+                ## print "before: ", self.quatL
+                ## ## quatL = quatMath.quat_QuTem(spoon_rot.GetQuaternion(), 1, [0.0001,0.0001,0.0001])[0]
+                ## self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (quatL[0],quatL[1],quatL[2],quatL[3])
+                ## print "after: ", self.quatL
+            
+            self.posL.x, self.posL.y, self.posL.z = (mouth_pos[0] + spoon_offset[0] + head_pos_noise[0],
+                                                     mouth_pos[1] + spoon_offset[1] + head_pos_noise[1],
+                                                     mouth_pos[2] + spoon_offset[2] + head_pos_noise[2])
             self.quatL.x, self.quatL.y, self.quatL.z, self.quatL.w = (spoon_rot.GetQuaternion()[0],
                                                                       spoon_rot.GetQuaternion()[1],
                                                                       spoon_rot.GetQuaternion()[2],
                                                                       spoon_rot.GetQuaternion()[3])
+            
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
-            time.sleep(self.pausesFeeding[i])
+
+            # Daehyung: don't use time sleep. use rospy.sleep. the time sleep will stop communication either. 
+            ## time.sleep(self.pausesFeeding[i])
             if self.interrupted:
                 break
 
@@ -444,8 +485,11 @@ if __name__ == '__main__':
     #controller = 'actionlib'
     arm        = 'l'
 
+    # Manual anomaly by a robot
+    head_noise = False
+    
     rospy.init_node('arm_reacher_feeding')
-    ara = armReachAction(d_robot, controller, arm)
+    ara = armReachAction(d_robot, controller, arm, head_noise=head_noise)
     rospy.spin()
 
 

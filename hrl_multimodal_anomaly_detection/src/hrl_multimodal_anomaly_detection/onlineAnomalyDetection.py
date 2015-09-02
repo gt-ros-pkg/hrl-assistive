@@ -59,7 +59,7 @@ class onlineAnomalyDetection(Thread):
             self.anomaly_offset = -25.0
             self.ml_thres_pkl='ml_scooping_thres.pkl'
         else:
-            self.nState         = 10
+            self.nState         = 15
             self.cutting_ratio  = [0.0, 0.7]
             self.anomaly_offset = -20
             self.ml_thres_pkl='ml_feeding_thres.pkl'
