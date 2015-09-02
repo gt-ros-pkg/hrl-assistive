@@ -106,7 +106,8 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
+        ## os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('scp test.p* dpark@brain:~/Dropbox/HRL/')
     else:
         if show_plot: plt.show()        
 
@@ -794,34 +795,36 @@ if __name__ == '__main__':
                  default=False, help='Plot the test data.')
     p.add_option('--plotTestLikelihood', '--ptl', action='store_true', dest='bPlotTestLikelihood',
                  default=False, help='Plot the likelihoods of test data.')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')
     opt, args = p.parse_args()
 
     data_root_path   = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
     data_target_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/data'
 
     # Scooping
-    subject_names  = ['pr2'] #'personal', 
-    task_name      = 'scooping'
-    nSet           = 1
-    folding_ratio  = [0.5, 0.3, 0.2]
-    downSampleSize = 100
-    nState         = 10
-    cov_mult       = 5.0
-    scale          = 1.0
-    cutting_ratio  = [0.0, 0.9]
-    anomaly_offset = -20.0
-
-    # Feeding
-    ## subject_names  = ['s2','s3','s4','s5'] #['s2','s3','s4'] #'personal', 's3',
-    ## task_name      = 'feeding' #['scooping', 'feeding']
+    ## subject_names  = ['pr2'] #'personal', 
+    ## task_name      = 'scooping'
     ## nSet           = 1
     ## folding_ratio  = [0.5, 0.3, 0.2]
     ## downSampleSize = 100
     ## nState         = 10
     ## cov_mult       = 5.0
     ## scale          = 1.0
-    ## cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
-    ## anomaly_offset = 0.0
+    ## cutting_ratio  = [0.0, 0.9]
+    ## anomaly_offset = -20.0
+
+    # Feeding
+    subject_names  = ['s8'] #['s2','s3','s4'] #'personal', 's3',
+    task_name      = 'feeding' #['scooping', 'feeding']
+    nSet           = 1
+    folding_ratio  = [0.5, 0.3, 0.2]
+    downSampleSize = 100
+    nState         = 10
+    cov_mult       = 5.0
+    scale          = 1.0
+    cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
+    anomaly_offset = 0.0
     
     preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
                    folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
@@ -832,20 +835,20 @@ if __name__ == '__main__':
         distributionOfSequences(task_name, data_target_path, setID=0, scale=scale, \
                                 useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
                                 useTrain_color=True,\
-                                save_pdf=False, verbose=True)        
+                                save_pdf=opt.bSavePdf, verbose=True)        
     elif opt.bLikelihoodPlot:
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
                               anomaly_offset=anomaly_offset,\
                               useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
                               useTrain_color=True, useThsTest_color=False, useNormalTest_color=False,\
-                              hmm_renew=opt.bHMMRenew, save_pdf=False, verbose=True)       
+                              hmm_renew=opt.bHMMRenew, save_pdf=opt.bSavePdf, verbose=True)       
     elif opt.bPlotTest:
         test_subject_names=['s5']            
         plotTestSequences(test_subject_names, task_name, data_root_path, data_target_path, \
                           scale=scale, downSampleSize=downSampleSize, \
                           useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False,\
-                          save_pdf=False, verbose=True)
+                          save_pdf=opt.bSavePdf, verbose=True)
     elif opt.bPlotTestLikelihood:
         test_subject_names=['s5']            
         plotTestLikelihoodSequences(test_subject_names, task_name, data_root_path, data_target_path, \
@@ -853,7 +856,7 @@ if __name__ == '__main__':
                                     anomaly_offset=anomaly_offset, hmm_renew=opt.bHMMRenew, \
                                     useTrain=True, useThsTest=True, useNormalTest=True, \
                                     useAbnormalTest=False,\
-                                    save_pdf=False, verbose=True)                
+                                    save_pdf=opt.bSavePdf, verbose=True)                
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\

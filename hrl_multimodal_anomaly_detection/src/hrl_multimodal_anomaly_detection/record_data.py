@@ -22,6 +22,7 @@ import tf
 
 from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
 from hrl_multimodal_anomaly_detection.srv import String_String
+from hmm.util import *
 
 def log_parse():
     parser = optparse.OptionParser('Input the Pose node name and the ft sensor node name')
@@ -63,7 +64,10 @@ class ADL_log:
         if self.ft is not None: sensors += 'f'
         if self.audio is not None: sensors += 'a'
         if self.kinematics is not None: sensors += 'k'
-        self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + sensors + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
+
+        self.record_root_path = directory
+        self.folderName = os.path.join(directory, self.subject + '_' + self.task)
+        ## self.folderName = os.path.join(directory, self.subject + '_' + self.task + '_' + sensors + '_' + time.strftime('%m-%d-%Y_%H-%M-%S/'))
 
         self.scooping_steps_times = []
 
@@ -118,9 +122,27 @@ class ADL_log:
         elif flag == '3': sys.exit(0)
         else: status = flag
 
+        if status == 'failure':
+            failure_class = raw_input('Enter failure reason if there is: ')
+                
         if not os.path.exists(self.folderName):
             os.makedirs(self.folderName)
-        fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (self.iteration, status))
+
+        # get next file id
+        if status == 'success':
+            fileList = getSubjectFileList(self.record_root_path, [self.subject], self.task)[0]
+        else:
+            fileList = getSubjectFileList(self.record_root_path, [self.subject], self.task)[1]
+        test_id = -1
+        if len(fileList)>0:
+            for f in fileList:            
+                if test_id < int((os.path.split(f)[1]).split('_')[1]):
+                    test_id = int((os.path.split(f)[1]).split('_')[1])
+
+        if status == 'failure':        
+            fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
+        else:
+            fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
 
         print 'Saving to', fileName
 
