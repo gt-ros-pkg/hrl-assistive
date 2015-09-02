@@ -72,10 +72,10 @@ def init():
     line.set_ydata(np.ma.array(times, mask=True))
     return line,
 
-# interval = times[-1]/len(ll_likelihood)
 interval = 1000 / len(ll_likelihood) * times[-1]
-print 'Max time:', times[-1], 'Interval:', interval
+fps = times[-1] / len(ll_likelihood)
+print 'Max time:', times[-1], 'Interval:', interval, 'FPS:', fps
 ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=interval, blit=True)
-ani.save(time.strftime('likelihood_%m-%d-%Y_%H-%M-%S.mp4'))
+ani.save(time.strftime('likelihood_%m-%d-%Y_%H-%M-%S.mp4'), fps=fps)
 # plt.show()
 
