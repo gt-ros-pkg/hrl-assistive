@@ -117,7 +117,7 @@ class onlineAnomalyDetection(Thread):
                                             self.downSampleSize, self.scale, self.nState, int(self.cov_mult)))
 
         print 'Threshold:', self.minThresholds
-        
+
         self.forces = []
         self.distances = []
         self.angles = []
@@ -129,6 +129,8 @@ class onlineAnomalyDetection(Thread):
         self.times = []
         self.likelihoods = []
         self.anomalyOccured = False
+
+        # self.avgAngle = onlineHMM.trainData[2]
 
         self.forceSub = rospy.Subscriber('/netft_data', WrenchStamped, self.forceCallback)
         print 'Connected to FT sensor'
@@ -194,13 +196,13 @@ class onlineAnomalyDetection(Thread):
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
 
-                        fig = plt.figure()
-                        for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]):
-                            ax = plt.subplot(int('41' + str(i)))
-                            for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
-                                ax.plot(times, modal, label='%d' % index)
-                            ax.legend()
-                        plt.show()
+                        # fig = plt.figure()
+                        # for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]):
+                        #     ax = plt.subplot(int('41' + str(i+1)))
+                        #     for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
+                        #         ax.plot(times, modal, label='%d' % index)
+                        #     ax.legend()
+                        # plt.show()
             # rate.sleep()
         print 'Online anomaly thread cancelled'
 
@@ -273,9 +275,14 @@ class onlineAnomalyDetection(Thread):
         angle = self.scaling(angle, minVal=self.minVals[2], maxVal=self.maxVals[2], scale=self.scale)
         audio = self.scaling(audio, minVal=self.minVals[3], maxVal=self.maxVals[3], scale=self.scale)
 
+        # Find nearest time stamp from training data
+        timeStamp = rospy.get_time() - self.init_time
+        index = np.abs(onlineHMM.trainTimeList[0] - timeStamp).argmin()
+
         self.forces.append(force)
         self.distances.append(distance)
-        self.angles.append(angle)
+        # self.angles.append(angle)
+        self.angles.append(onlineHMM.trainData[2][0][index])
         self.audios.append(audio)
         self.times.append(rospy.get_time() - self.init_time)
         if len(self.forces) > 1:
