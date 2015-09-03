@@ -196,12 +196,13 @@ class onlineAnomalyDetection(Thread):
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
 
-                        # fig = plt.figure()
-                        # for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]):
-                        #     ax = plt.subplot(int('41' + str(i+1)))
-                        #     for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
-                        #         ax.plot(times, modal, label='%d' % index)
-                        #     ax.legend()
+                        fig = plt.figure()
+                        for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]):
+                            ax = plt.subplot(int('41' + str(i+1)))
+                            for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
+                                ax.plot(times, modal, label='%d' % index)
+                            ax.legend()
+                        plt.savefig('fooboohooyou.pdf')
                         # plt.show()
             # rate.sleep()
         print 'Online anomaly thread cancelled'
@@ -277,7 +278,7 @@ class onlineAnomalyDetection(Thread):
 
         # Find nearest time stamp from training data
         timeStamp = rospy.get_time() - self.init_time
-        index = np.abs(onlineHMM.trainTimeList[0] - timeStamp).argmin()
+        index = np.abs(np.array(onlineHMM.trainTimeList[0]) - timeStamp).argmin()
 
         self.forces.append(force)
         self.distances.append(distance)
