@@ -198,10 +198,12 @@ def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=Non
 
 
 
-
+trainData = None
+trainTimeList = None
 def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_offset=0.0, verbose=False,
               isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
               ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None, plotLikelihood=False):
+    global trainData, trainTimeList
 
     # Daehyung: where are you using savedDataFile?, what is different with ml_pkl?
     #           if savedDataFile is updated, ml_pkl should be replaced!!         
@@ -210,6 +212,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
         with open(savedDataFile, 'rb') as f:
             d = pickle.load(f)
             trainData = d['trainData']
+            trainTimeList = d['trainTimeList']
             hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
             hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],
                           ml_pkl=ml_pkl, use_pkl=use_pkl, cov_mult=[cov_mult]*16)
@@ -352,15 +355,17 @@ def plotData(isScooping=False):
     else:
         fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings/s*_feeding_success/*'
 
-    successList = glob.glob(fileName)
-    iterations = [os.path.basename(f).split('_')[1] for f in glob.glob(fileName)]
+    successList = [f for f in glob.glob(fileName) if not os.path.isdir(f)]
+    iterations = [os.path.basename(f).split('_')[1] for f in glob.glob(fileName) if not os.path.isdir(f)]
 
     dataList, timeList = loadData(successList, isTrainingData=True, downSampleSize=200, verbose=False)
 
-    for line, times, num in zip(dataList[0], timeList, iterations):
-        plt.plot(times, line, label='%s' % num)
-    plt.legend()
-    plt.show()
+    for i, title in zip(xrange(len(dataList)), ['Forces', 'Distances', 'Angles', 'Audio']):
+        for line, times, num in zip(dataList[i], timeList, iterations):
+            plt.plot(times, line, label='%s' % num)
+        plt.title(title)
+        plt.legend()
+        plt.show()
 
 
 if __name__ == '__main__':

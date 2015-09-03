@@ -193,11 +193,11 @@ class onlineAnomalyDetection(Thread):
                         self.anomalyOccured = True
                         self.soundHandle.play(2)
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
-                        # for modality in [[self.forces] + self.forcesList[:5], [self.distances] + self.distancesList[:5], [self.angles] + self.anglesList[:5], [self.pdfs] + self.pdfList[:5]]:
-                        #     for index, (modal, times) in enumerate(zip(modality, [self.times] + self.timesList[:5])):
-                        #         plt.plot(times, modal, label='%d' % index)
-                        #     plt.legend()
-                        #     plt.show()
+                        for modality in [[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]:
+                            for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
+                                plt.plot(times, modal, label='%d' % index)
+                            plt.legend()
+                            plt.show()
             # rate.sleep()
         print 'Online anomaly thread cancelled'
 
