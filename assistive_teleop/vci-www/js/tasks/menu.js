@@ -55,6 +55,7 @@ RFH.initTaskMenu = function (divId) {
                                        div: 'mjpeg',
                                        head: RFH.pr2.head,
                                        camera: RFH.mjpeg.cameraModel}));
+
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
                                                      div: 'mjpeg',
                                                      gripper: RFH.pr2.l_gripper,
@@ -66,9 +67,11 @@ RFH.initTaskMenu = function (divId) {
                                                      gripper: RFH.pr2.r_gripper,
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
+
     RFH.taskMenu.addTask(new RFH.Torso({containerDiv: 'mjpeg',
                                         sliderDiv: 'torsoSlider',
                                         torso: RFH.pr2.torso}));
+
     RFH.taskMenu.addTask(new RFH.Drive({ros: RFH.ros, 
                                        targetDiv: 'mjpeg-image',
                                        camera: RFH.mjpeg.cameraModel,

@@ -22,7 +22,7 @@ RFH.CartesianEEControl = function (options) {
     self.op2baseMat = null;
     self.orientRot = 0;
     self.camera = options.camera;
-    self.dt = 500; //hold-repeat time in ms
+    self.dt = 1000; //hold-repeat time in ms
     self.mode = "table" // "wall", "free"
     self.active = false;
     self.raycaster = new THREE.Raycaster();
@@ -456,10 +456,6 @@ RFH.CartesianEEControl = function (options) {
         var pos = {x: self.eeTF.translation.x + dx,
                    y: self.eeTF.translation.y + dy,
                    z: self.eeTF.translation.z - dz}
-//        var quat = {x: self.eeTF.rotation.x,
-//                y: self.eeTF.rotation.y,
-//                z: self.eeTF.rotation.z,
-//                w: self.eeTF.rotation.w}
         quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
         self.arm.sendGoal({position: pos,
             orientation: quat,
@@ -692,7 +688,6 @@ RFH.CartesianEEControl = function (options) {
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
         $('#'+self.side+'-posrot-pos').click();
-        self.setPositionCtrls();
         self.updateCtrlRingViz();
         self.active = true;
     };
