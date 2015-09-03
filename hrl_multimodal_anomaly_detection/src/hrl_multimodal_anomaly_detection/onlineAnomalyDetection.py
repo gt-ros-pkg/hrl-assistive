@@ -196,7 +196,7 @@ class onlineAnomalyDetection(Thread):
 
                         fig = plt.figure()
                         for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]):
-                            ax = plt.subplot(int('41' + i))
+                            ax = plt.subplot(int('41' + str(i)))
                             for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
                                 ax.plot(times, modal, label='%d' % index)
                             ax.legend()
