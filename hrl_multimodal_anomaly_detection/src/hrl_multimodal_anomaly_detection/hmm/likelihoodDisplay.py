@@ -9,7 +9,8 @@ import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
 # fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2/t2_f_success.pkl'
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s10/s10_f_success.pkl'
+# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s10/s10_f_success.pkl'
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s11/ash_b_success1.pkl'
 isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
@@ -64,12 +65,6 @@ else:
 
     ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.allLikelihoods(forces, distances, angles, audios)
 
-print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
-if len(ll_likelihood) > len(times):
-    i = len(times)
-    ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = ll_likelihood[-i:], ll_state_idx[-i:], ll_likelihood_mu[-i:], ll_likelihood_std[-i:]
-    print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
-
 def plotDataAndLikelihood():
     fig = plt.figure()
     ax1 = plt.subplot(411)
@@ -102,9 +97,13 @@ def plotDataAndLikelihood():
 plotDataAndLikelihood()
 
 
-# fig = plt.figure()
-# plt.plot(times, ll_likelihood)
-# plt.show()
+print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
+if len(ll_likelihood) > len(times):
+    i = len(times)
+    ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = ll_likelihood[-i:], ll_state_idx[-i:], ll_likelihood_mu[-i:], ll_likelihood_std[-i:]
+    print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
+elif len(ll_likelihood) < len(times):
+    times = times[:len(ll_likelihood)]
 
 # Animation
 fig, ax = plt.subplots()
