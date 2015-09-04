@@ -18,6 +18,7 @@ class tool_audio_slim(Thread):
         self.cancelled = False
 
         self.init_time = 0.0
+        self.isReset = False
 
         self.audio_data_raw = []
         self.time_data = []
@@ -58,7 +59,8 @@ class tool_audio_slim(Thread):
 
         # rate = rospy.Rate(1000) # 25Hz, nominally.
         while not self.cancelled:
-            self.log()
+            if self.isReset:
+                self.log()
             # rate.sleep()
 
     def log(self):
@@ -75,9 +77,11 @@ class tool_audio_slim(Thread):
         rospy.sleep(0.5)
         self.stream.stop_stream()
         self.stream.close()
+        self.isReset = False
 
     def reset(self, init_time):
         self.audio_data_raw = []
         self.time_data = []
         self.init_time = init_time
+        self.isReset = True
         pass
