@@ -48,7 +48,6 @@ class onlineAnomalyDetection(Thread):
 
         # Predefined settings
         self.downSampleSize = 100 #200
-        self.scale          = 1.0 #10
         self.cov_mult       = 5.0
         self.isScooping     = isScooping
         self.subject        = subject
@@ -56,12 +55,14 @@ class onlineAnomalyDetection(Thread):
         if self.isScooping:
             self.nState         = 10
             self.cutting_ratio  = [0.0, 0.9] #[0.0, 0.7]
-            self.anomaly_offset = -25.0
+            self.anomaly_offset = -15.0
+            self.scale          = [1.0,1.0,1.0,0.7]  #10
             self.ml_thres_pkl='ml_scooping_thres.pkl'
         else:
             self.nState         = 15
             self.cutting_ratio  = [0.0, 0.7]
             self.anomaly_offset = -20
+            self.scale          = [1.0,1.0,0.7,1.0]  #10
             self.ml_thres_pkl='ml_feeding_thres.pkl'
 
         print 'is scooping:', self.isScooping
@@ -95,6 +96,7 @@ class onlineAnomalyDetection(Thread):
         # Audio
         if audioTool is None:
             self.audioTool = tool_audio_slim()
+            self.audioTool.start()
         else:
             self.audioTool = audioTool
 
@@ -114,7 +116,7 @@ class onlineAnomalyDetection(Thread):
                               train_cutting_ratio=self.cutting_ratio,
                               findThresholds=True, ml_pkl=self.ml_thres_pkl,
                               savedDataFile=saveDataPath % (('scooping' if self.isScooping else 'feeding'),
-                                            self.downSampleSize, self.scale, self.nState, int(self.cov_mult)))
+                                            self.downSampleSize, self.scale[0], self.nState, int(self.cov_mult)))
 
         print 'Threshold:', self.minThresholds
 
@@ -173,7 +175,7 @@ class onlineAnomalyDetection(Thread):
         self.jointAngles = None
         self.jointVelocities = None
         self.objectCenter = None
-        self.audioTool.start()
+        self.audioTool.reset(self.init_time)
 
     def run(self):
         """Overloaded Thread.run, runs the update
@@ -182,8 +184,9 @@ class onlineAnomalyDetection(Thread):
         while not self.cancelled:
             if self.isRunning and self.updateNumber > self.lastUpdateNumber and self.objectCenter is not None:
                 self.lastUpdateNumber = self.updateNumber
-                self.processData()
-                if not self.anomalyOccured and len(self.forces) > 10:
+                if not self.processData(): continue
+                
+                if not self.anomalyOccured and len(self.forces) > 15:
                     # Perform anomaly detection
                     (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds)
                     print 'Anomaly error:', error
@@ -197,22 +200,24 @@ class onlineAnomalyDetection(Thread):
                         print 'AHH!! There is an anomaly at time stamp', rospy.get_time() - self.init_time, (anomaly, error)
 
                         fig = plt.figure()
-                        for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:3], [self.distances] + onlineHMM.trainData[1][:3], [self.angles] + onlineHMM.trainData[2][:3], [self.audios] + onlineHMM.trainData[3][:3]]):
+                        for i, modality in enumerate([[self.forces] + onlineHMM.trainData[0][:13], [self.distances] + onlineHMM.trainData[1][:13], [self.angles] + onlineHMM.trainData[2][:13], [self.audios] + onlineHMM.trainData[3][:13]]):
                             ax = plt.subplot(int('41' + str(i+1)))
                             for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
                                 ax.plot(times, modal, label='%d' % index)
                             ax.legend()
-                        plt.savefig('fooboohooyou.pdf')
+                        fig.savefig('fooboohooyou.pdf')
+                        print "saved pdf file"
+                        rospy.sleep(2.0)
                         # plt.show()
             # rate.sleep()
         print 'Online anomaly thread cancelled'
 
-    def cancel(self):
+    def cancel(self, cancelAudio=True):
         self.isRunning = False
-        self.audioTool.cancel()
+        if cancelAudio:
+            self.audioTool.cancel()
         self.saveData()
         rospy.sleep(1.0)
-        self.audioTool = tool_audio_slim()
 
     def saveData(self):
         # TODO Save data (Check with daehyung if any more data should be added)
@@ -258,10 +263,13 @@ class onlineAnomalyDetection(Thread):
         angle = np.arccos(np.dot(micSpoonVector, micObjectVector) / (np.linalg.norm(micSpoonVector) * np.linalg.norm(micObjectVector)))
 
         # Process either visual or audio data depending on which we're using
-        audio = self.audioTool.audio_data_raw[-1]
+        if len(self.audioTool.audio_data_raw) > 0:
+            audio = self.audioTool.audio_data_raw[-1]
+        else:
+            return False
         if audio is None:
             print 'Audio is None'
-            return
+            return False
         audio = get_rms(audio)
         # print 'Audio:', audio
 
@@ -271,10 +279,10 @@ class onlineAnomalyDetection(Thread):
         self.audiosRaw.append(audio)
 
         # Scale data
-        force = self.scaling(force, minVal=self.minVals[0], maxVal=self.maxVals[0], scale=self.scale)
-        distance = self.scaling(distance, minVal=self.minVals[1], maxVal=self.maxVals[1], scale=self.scale)
-        angle = self.scaling(angle, minVal=self.minVals[2], maxVal=self.maxVals[2], scale=self.scale)
-        audio = self.scaling(audio, minVal=self.minVals[3], maxVal=self.maxVals[3], scale=self.scale)
+        force = self.scaling(force, minVal=self.minVals[0], maxVal=self.maxVals[0], scale=self.scale[0])
+        distance = self.scaling(distance, minVal=self.minVals[1], maxVal=self.maxVals[1], scale=self.scale[1])
+        angle = self.scaling(angle, minVal=self.minVals[2], maxVal=self.maxVals[2], scale=self.scale[2])
+        audio = self.scaling(audio, minVal=self.minVals[3], maxVal=self.maxVals[3], scale=self.scale[3])
 
         # Find nearest time stamp from training data
         timeStamp = rospy.get_time() - self.init_time
@@ -282,13 +290,15 @@ class onlineAnomalyDetection(Thread):
 
         self.forces.append(force)
         self.distances.append(distance)
-        # self.angles.append(angle)
-        self.angles.append(onlineHMM.trainData[2][0][index])
+        self.angles.append(angle)
+        #self.angles.append(onlineHMM.trainData[2][0][index])
         self.audios.append(audio)
         self.times.append(rospy.get_time() - self.init_time)
         if len(self.forces) > 1:
             self.likelihoods.append(self.hmm.likelihoods(self.forces, self.distances, self.angles, self.audios))
 
+        return True
+            
     @staticmethod
     def scaling(x, minVal, maxVal, scale=1.0):
         return (x - minVal) / (maxVal - minVal) * scale

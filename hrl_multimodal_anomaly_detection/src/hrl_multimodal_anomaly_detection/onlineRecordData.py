@@ -51,9 +51,9 @@ class ADL_log:
 
     def close_log_file(self, secondDetector=False):
         if not secondDetector:
-            self.detector.cancel()
+            self.detector.cancel(cancelAudio=(self.detector is None))
         else:
-            self.detector2.cancel()
+            self.detector2.cancel(cancelAudio=(self.detector is not None))
 
         # Reinitialize all sensors
         # self.detector = onlineAnomalyDetection(targetFrame='/torso_lift_link', tfListener=self.tf_listener, isScooping=self.isScooping)
