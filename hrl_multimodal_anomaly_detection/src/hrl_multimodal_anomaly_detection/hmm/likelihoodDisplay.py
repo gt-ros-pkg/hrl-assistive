@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2/t2_f_success.pkl'
-# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-14-47.pkl'
-isNewFormat = False
+# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2/t2_f_success.pkl'
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s10/s10_f_success.pkl'
+isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
 subject = parts[0]
@@ -111,7 +111,7 @@ ax.set_ylabel('Log-likelihood')
 line, = ax.plot(times, ll_likelihood, 'b', label='Actual from\ntest data')
 expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected from\ntrained model')
 threshold, = ax.plot(times, ll_likelihood_mu + minThresholds[0]*ll_likelihood_std, 'r--', label='Threshold')
-ax.legend()
+ax.legend(loc=2)
 
 # ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
 # ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
