@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import time
 import numpy as np
 import cPickle as pickle
@@ -142,6 +143,7 @@ interval = 1000 / len(ll_likelihood) * times[-1]
 fps = int(len(ll_likelihood) / times[-1])
 print 'Max time:', times[-1], 'Interval:', interval, 'FPS:', fps
 ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=25, blit=True)
-ani.save(time.strftime('likelihood_%m-%d-%Y_%H-%M-%S.mp4'), fps=fps)
+location = os.path.join(os.path.dirname(__file__), 'likelihood_%m-%d-%Y_%H-%M-%S.mp4')
+ani.save(time.strftime(location), fps=fps)
 # plt.show()
 
