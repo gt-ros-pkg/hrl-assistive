@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2/t2_f_success.pkl'
 # fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-14-47.pkl'
 isNewFormat = False
 
@@ -35,6 +35,7 @@ print np.shape(times)
         
 if isNewFormat:
     ll_likelihood = [x[0] for x in likelihoods]
+    ll_state_idx = [x[1] for x in likelihoods]
     ll_likelihood_mu = [x[2] for x in likelihoods]
     ll_likelihood_std = [x[3] for x in likelihoods]
 else:
@@ -109,7 +110,7 @@ ax.set_ylabel('Log-likelihood')
 
 line, = ax.plot(times, ll_likelihood, 'b', label='Actual from\ntest data')
 expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected from\ntrained model')
-threshold, = ax.plot(times, ll_likelihood_mu + minThresholds*ll_likelihood_std, 'r--', label='Threshold')
+threshold, = ax.plot(times, ll_likelihood_mu + minThresholds[0]*ll_likelihood_std, 'r--', label='Threshold')
 ax.legend()
 
 # ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
@@ -122,8 +123,12 @@ def animate(i):
     line.set_ydata(ll_likelihood[:i])
     expected.set_xdata(times[:i])
     expected.set_ydata(ll_likelihood_mu[:i])
+    thresholdValues = []
+    for index in xrange(i):
+        minIndex = ll_state_idx[index]
+        thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
     threshold.set_xdata(times[:i])
-    threshold.set_ydata(ll_likelihood_mu[:i] + minThresholds*ll_likelihood_std[:i])
+    threshold.set_ydata(thresholdValues)
     return line,
 
 # Init only required for blitting to give a clean slate.
