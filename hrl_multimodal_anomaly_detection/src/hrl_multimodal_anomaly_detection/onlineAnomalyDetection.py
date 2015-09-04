@@ -205,7 +205,7 @@ class onlineAnomalyDetection(Thread):
                             for index, (modal, times) in enumerate(zip(modality, [self.times] + onlineHMM.trainTimeList[:3])):
                                 ax.plot(times, modal, label='%d' % index)
                             ax.legend()
-                        fig.savefig('fooboohooyou.pdf')
+                        fig.savefig('/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/fooboohooyou.pdf')
                         print "saved pdf file"
                         rospy.sleep(2.0)
                         # plt.show()

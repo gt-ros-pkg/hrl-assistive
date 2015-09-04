@@ -797,6 +797,8 @@ if __name__ == '__main__':
                  default=False, help='Plot the test data.')
     p.add_option('--plotTestLikelihood', '--ptl', action='store_true', dest='bPlotTestLikelihood',
                  default=False, help='Plot the likelihoods of test data.')
+    p.add_option('--eval', '--e', action='store_true', dest='bEvaluation',
+                 default=False, help='Evaluate each subject data.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')
     opt, args = p.parse_args()
@@ -859,6 +861,10 @@ if __name__ == '__main__':
                                     useTrain=True, useThsTest=True, useNormalTest=True, \
                                     useAbnormalTest=False,\
                                     save_pdf=opt.bSavePdf, verbose=True)                
+    elif opt.bEvaluation:
+
+
+        
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
