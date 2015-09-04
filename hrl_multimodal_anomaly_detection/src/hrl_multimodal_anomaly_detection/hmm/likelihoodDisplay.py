@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
-# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-14-47.pkl'
-isNewFormat = True
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
+# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-14-47.pkl'
+isNewFormat = False
 
 parts = fileName.split('/')[-1].split('_')
 subject = parts[0]
@@ -35,6 +35,8 @@ print np.shape(times)
         
 if isNewFormat:
     ll_likelihood = [x[0] for x in likelihoods]
+    ll_likelihood_mu = [x[2] for x in likelihoods]
+    ll_likelihood_std = [x[3] for x in likelihoods]
 else:
     # Predefined settings
     downSampleSize = 100 #200
@@ -101,21 +103,34 @@ plotDataAndLikelihood()
 
 # Animation
 fig, ax = plt.subplots()
-# ax.set_title('Likelihood')
+ax.set_title('Log-likelihood')
 ax.set_xlabel('Time (sec)')
 ax.set_ylabel('Log-likelihood')
 
-line, = ax.plot(times, ll_likelihood)
+line, = ax.plot(times, ll_likelihood, 'b', label='Actual from\ntest data')
+expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected from\ntrained model')
+threshold, = ax.plot(times, ll_likelihood_mu + minThresholds*ll_likelihood_std, 'r--', label='Threshold')
+ax.legend()
+
+# ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
+# ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
+# ax3.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
 
 def animate(i):
-    # Update the plot
+    # Update the plots
     line.set_xdata(times[:i])
     line.set_ydata(ll_likelihood[:i])
+    expected.set_xdata(times[:i])
+    expected.set_ydata(ll_likelihood_mu[:i])
+    threshold.set_xdata(times[:i])
+    threshold.set_ydata(ll_likelihood_mu[:i] + minThresholds*ll_likelihood_std[:i])
     return line,
 
 # Init only required for blitting to give a clean slate.
 def init():
     line.set_ydata(np.ma.array(times, mask=True))
+    expected.set_ydata(np.ma.array(times, mask=True))
+    threshold.set_ydata(np.ma.array(times, mask=True))
     return line,
 
 interval = 1000 / len(ll_likelihood) * times[-1]
