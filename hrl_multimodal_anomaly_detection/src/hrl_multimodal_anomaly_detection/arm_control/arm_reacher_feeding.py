@@ -106,11 +106,11 @@ class armReachAction(mpcBaseAction):
         
         #Array of offsets from bowl/mouth positions
         #Used to perform motions relative to bowl/mouth positions > It should use relative frame
-        self.leftArmScoopingPos = np.array([[-.005,	0,	  .15],
-                                            [-.005,	0,	-.055], #Moving down into bowl
-                                            [.02,	0,	-.025], #Moving forward in bowl
-                                            [0,	 -0.02,	  .10], #While rotating spoon to scoop out
-                                            [0,	 -0.02,    .15]]) #Moving up out of bowl
+        self.leftArmScoopingPos = np.array([[-.015,	-0.02,	  .15],
+                                            [-.015,	-0.02,	-.055], #Moving down into bowl
+                                            [.02,	-0.02,	-.025], #Moving forward in bowl
+                                            [0,	 -0.03,	  .20], #While rotating spoon to scoop out
+                                            [0,	 -0.03,    .25]]) #Moving up out of bowl
 
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.leftArmFeedingPos = np.array([[-0.15, 0, 0.0],

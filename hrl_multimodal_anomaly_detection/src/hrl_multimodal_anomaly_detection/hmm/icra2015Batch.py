@@ -7,7 +7,7 @@ from learning_hmm_multi_4d import learning_hmm_multi_4d
 
 from util import *
 
-def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
+def scaleData(dataList, scale=[10,10,10,10], minVals=None, maxVals=None, verbose=False):
     # Determine max and min values
     if minVals is None:
         minVals = []
@@ -27,7 +27,7 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
     # Scale features
     for i in xrange(nDimension):
         for j in xrange(len(dataList[i])):
-            dataList_scaled[i].append( scaling(dataList[i][j], minVals[i], maxVals[i], scale).tolist() )
+            dataList_scaled[i].append( scaling(dataList[i][j], minVals[i], maxVals[i], scale[i]).tolist() )
 
     return dataList_scaled, minVals, maxVals
 
@@ -200,7 +200,7 @@ def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=Non
 
 trainData = None
 trainTimeList = None
-def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_offset=0.0, verbose=False,
+def iteration(downSampleSize=200, scale=[10,10,10,10], nState=20, cov_mult=1.0, anomaly_offset=0.0, verbose=False,
               isScooping=True, use_pkl=False, findThresholds=True, train_cutting_ratio=[0.0, 0.65],
               ml_pkl='ml_temp_4d.pkl', saveData=False, savedDataFile=None, plotLikelihood=False):
     global trainData, trainTimeList
@@ -228,7 +228,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
         subject_names = ['pr2']
         task_name     = 'scooping'
     else:
-        subject_names = ['s2','s3','s4','s8'] #'personal',
+        subject_names = ['s2','s3','s4'] #'personal',
         task_name     = 'feeding'
     
     # Loading success and failure data
@@ -246,7 +246,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
     for modality in dataList:
         minVals.append(np.min(modality))
         maxVals.append(np.max(modality))
-    
+
     # Scale data
     trainData, _, _ = scaleData(trainDataTrue, scale=scale, minVals=minVals, maxVals=maxVals, 
                                             verbose=verbose)
@@ -327,7 +327,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
             d['abnormalTestTimeList'] = abnormalTestTimeList
             taskName = 'scooping' if isScooping else 'feeding'
             fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/batchDataFiles/%s_%d_%d_%d_%d.pkl' \
-                       % (taskName, downSampleSize, scale, nState, int(cov_mult))
+                       % (taskName, downSampleSize, scale[0], nState, int(cov_mult))
             with open(fileName, 'wb') as f:
                 pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -335,7 +335,7 @@ def iteration(downSampleSize=200, scale=10, nState=20, cov_mult=1.0, anomaly_off
 def batchTrain(parallel=True):
     for isScooping in [False, True]:
         for downSampleSize in [100, 200, 300]:
-            for scale in [1, 5, 10]:
+            for scale in [1, 5, 10]: # scale is not anymore single value
                 for nState in [20, 30]:
                     for covMult in [1.0, 3.0, 5.0, 10.0]:
                         print 'Beginning iteration | isScooping: %s, downSampleSize: %d, scale: %d, nState: %d, covMult: %d' % (isScooping, downSampleSize, scale, nState, covMult)
@@ -376,14 +376,16 @@ if __name__ == '__main__':
     nState=10
     anomaly_offset = -25.0
     cutting_ratio  = [0.0, 0.9]
+    scale = [1.0,1.0,1.0,0.7]
 
     # feeding
     ## isScooping = False
     ## nState=15
     ## anomaly_offset = -20.0
     ## cutting_ratio  = [0.0, 0.7]
-
-    iteration(downSampleSize=100, scale=1.0, nState=nState, cov_mult=5.0, train_cutting_ratio=cutting_ratio,
+    ## scale = [1.0,1.0,0.7,1.0]
+        
+    iteration(downSampleSize=100, scale=scale, nState=nState, cov_mult=5.0, train_cutting_ratio=cutting_ratio,
               anomaly_offset=anomaly_offset, verbose=False, isScooping=isScooping, use_pkl=False, saveData=True,
               plotLikelihood=True)
 

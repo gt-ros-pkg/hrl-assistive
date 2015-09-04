@@ -8,8 +8,8 @@ import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
 # fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-12-45.pkl'
-isNewFormat = False
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-14-47.pkl'
+isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
 subject = parts[0]
@@ -31,6 +31,8 @@ with open(fileName, 'rb') as f:
         minThresholds = data['minThreshold']
         likelihoods = data['likelihoods']
 
+print np.shape(times)
+        
 if isNewFormat:
     ll_likelihood = [x[0] for x in likelihoods]
 else:

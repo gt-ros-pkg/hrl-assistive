@@ -76,7 +76,7 @@ class tool_audio_slim(Thread):
         try:
             self.audio = self.stream.read(self.CHUNK)
         except:
-            # print 'Audio read failure due to input overflow'
+            print 'Audio read failure due to input overflow'
             pass
         return self.audio
 
