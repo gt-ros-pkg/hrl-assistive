@@ -65,7 +65,10 @@ else:
     ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.allLikelihoods(forces, distances, angles, audios)
 
 print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
-
+if len(ll_likelihood) > len(times):
+    i = len(times)
+    ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = ll_likelihood[-i:], ll_state_idx[-i:], ll_likelihood_mu[-i:], ll_likelihood_std[-i:]
+    print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
 
 def plotDataAndLikelihood():
     fig = plt.figure()
@@ -143,7 +146,9 @@ interval = 1000 / len(ll_likelihood) * times[-1]
 fps = int(len(ll_likelihood) / times[-1])
 print 'Max time:', times[-1], 'Interval:', interval, 'FPS:', fps
 ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=25, blit=True)
-location = os.path.join(os.path.dirname(__file__), 'likelihood_%m-%d-%Y_%H-%M-%S.mp4')
-ani.save(time.strftime(location), fps=fps)
+location = time.strftime(os.path.join(os.path.dirname(__file__), 'likelihood_%m-%d-%Y_%H-%M-%S.mp4'))
+ani.save(location, fps=fps)
 # plt.show()
+
+print 'Animation saved to:', location
 
