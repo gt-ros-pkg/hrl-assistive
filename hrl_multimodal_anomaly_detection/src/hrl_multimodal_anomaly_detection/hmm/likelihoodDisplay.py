@@ -107,12 +107,13 @@ if len(ll_likelihood) > len(times):
     print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
 elif len(ll_likelihood) < len(times):
     times = times[:len(ll_likelihood)]
+    print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
 
 # Animation
 fig, ax = plt.subplots()
-ax.set_title('Log-likelihood')
-ax.set_xlabel('Time (sec)')
-ax.set_ylabel('Log-likelihood')
+# ax.set_title('Log-likelihood')
+ax.set_xlabel('Time (sec)', fontsize=16)
+ax.set_ylabel('Log-likelihood', fontsize=16)
 
 line, = ax.plot(times, ll_likelihood, 'b', label='Actual likelihood')
 expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected from\ntrained model')
@@ -121,7 +122,11 @@ for index in xrange(len(ll_likelihood)):
     minIndex = ll_state_idx[index]
     thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
 threshold, = ax.plot(times, thresholdValues, 'r--', label='Threshold')
-ax.legend(loc=2)
+legend = ax.legend(loc=2)
+
+# Increase legend line width
+for label in legend.get_lines():
+    label.set_linewidth(2.0)
 
 # ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
 # ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')

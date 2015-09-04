@@ -81,7 +81,7 @@ class ADL_log:
         if self.audio is not None:
             self.audio.init_time = self.init_time
             self.audio.start()
-            # self.audio("start")
+            self.audio.reset(self.init_time)
         if self.kinematics is not None:
             self.kinematics.init_time = self.init_time
             self.kinematics.start()
