@@ -13,6 +13,9 @@ import rospy
 # Util
 import hrl_lib.util as ut
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
+import matplotlib.pyplot as pp
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 #
 from util import *
@@ -209,7 +212,8 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
         else:
             dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+'_eval_'+str(crossEvalID)+\
                                              ".pkl")
-          
+
+        print dynamic_thres_pkl
         nDimension = len(trainData)
 
         # Create and train multivariate HMM
@@ -218,13 +222,16 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
         ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                       ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
-        if ret == 'Failure': return (-1,-1,-1,-1)
+        if ret == 'Failure': 
+            print "-------------------------"
+            print "HMM returned failure!!   "
+            print "-------------------------"
+            return (-1,-1,-1,-1)
                       
 
         minThresholds1 = tuneSensitivityGain(hmm, trainData, method=check_method, verbose=verbose)
         minThresholds2 = tuneSensitivityGain(hmm, thresTestData, method=check_method, verbose=verbose)
         minThresholds = minThresholds2
-
         if type(minThresholds) == list or type(minThresholds) == np.ndarray:
             for i in xrange(len(minThresholds1)):
                 if minThresholds1[i] < minThresholds2[i]:
@@ -232,7 +239,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
         else:
             if minThresholds1 < minThresholds2:
                 minThresholds = minThresholds1
- 
+
         truePos, falseNeg, trueNeg, falsePos = \
         tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
 
@@ -257,7 +264,7 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
                    nState=20, scale=1.0, \
                    cov_mult=5., folding_ratio=[0.6, 0.2, 0.2], downSampleSize=200, \
                    cutting_ratio=[0.0, 0.65], anomaly_offset=0.0,\
-                   data_renew=False, hmm_renew=False, verbose=False):
+                   data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, verbose=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -295,14 +302,18 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
             preprocessData([subject_name], task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
                            folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
                            train_cutting_ratio=cutting_ratio, full_abnormal_test=False,\
-                           crossEvalID=idx, verbose=False)
+                           crossEvalID=idx, verbose=True)
 
             # Run evaluation
             (truePos, falseNeg, trueNeg, falsePos)\
               = evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
                            anomaly_offset=anomaly_offset, crossEvalID=idx, check_method=method,\
-                           hmm_renew=True, verbose=False)
+                           hmm_renew=True, verbose=True)
 
+            truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
+            trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+            print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+                           
             if truePos!=-1 :                 
                 d = {}
                 d['subject'] = subject_name
@@ -326,30 +337,80 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
             print "-----------------------------------------------"
 
 
-
-        ## # temp
-        ## tot_truePos = 0
-        ## tot_falseNeg = 0
-        ## tot_trueNeg = 0 
-        ## tot_falsePos = 0
-
+    if count == len(check_methods)*len(subject_names):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
+    else:
+        return
             
-            ## # Sum up evaluatoin result
-            ## tot_truePos += truePos
-            ## tot_falseNeg += falseNeg
-            ## tot_trueNeg += trueNeg
-            ## tot_falsePos += falsePos
 
+    if bPlot:
 
-        ## truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
-        ## trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
-        ## print "------------------------------------------------"
-        ## print "Total set of data: ", len(subject_name)
-        ## print "------------------------------------------------"
-        ## print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
-        ## print "------------------------------------------------"
-                   
-    
+        tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),    
+                     (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),    
+                     (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),    
+                     (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),    
+                     (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+        tableau20 = np.array(tableau20)/255.0
+        width = 0.2
+        tp_rates = []
+
+        for i, method in enumerate(check_methods):        
+            
+            method_path = os.path.join(data_target_path, method)
+            
+            tot_truePos = 0
+            tot_falseNeg = 0
+            tot_trueNeg = 0 
+            tot_falsePos = 0
+
+            for j, subject_name in enumerate(subject_names):
+
+                # save file name
+                res_file = task_name+'_'+subject_name+'_'+method+'.pkl'
+                res_file = os.path.join(method_path, res_file)
+                d = ut.load_pickle(res_file)
+
+                subject_name = d['subject']
+                truePos  = d['tp']
+                falseNeg = d['fn']
+                trueNeg  = d['tn']
+                falsePos = d['fp']
+                nSet     = d['nSet']
+                            
+                # Sum up evaluatoin result
+                tot_truePos += truePos
+                tot_falseNeg += falseNeg
+                tot_trueNeg += trueNeg
+                tot_falsePos += falsePos
+
+            truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
+            trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+            print "------------------------------------------------"
+            print "Method: ", method
+            print "------------------------------------------------"
+            print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+            print "------------------------------------------------"
+
+            tp_rates.append(truePositiveRate)
+
+        
+        fig = pp.figure()       
+            
+        ind = np.arange(len(check_methods))+1           
+        pp.bar(ind, tp_rates, width, color=tableau20[i*2])
+                
+        pp.ylim([0.0, 100.0])
+        pp.ylabel('Detection Rate [%]', fontsize=16)    
+
+        if save_pdf:
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('cp test.p* ~/Dropbox/HRL/')
+        else:
+            pp.show()
+            
 
 def getData(task_name, target_path, setID=0, crossEvalID=None):
     print "start to getting data"
@@ -881,7 +942,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
 
     # for normal test data
     for i in xrange(len(normalTestData[0])):
-        if verbose: print 'Anomaly Error for test set %d' % i
+        if verbose: print 'Anomaly Error for test set ', i
 
         for j in range(2, len(normalTestData[0][i])):
             anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
@@ -903,7 +964,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
 
     # for abnormal test data
     for i in xrange(len(abnormalTestData[0])):
-        if verbose: print 'Anomaly Error for test set %d' % i
+        if verbose: print 'Anomaly Error for test set ', i
 
         for j in range(2, len(abnormalTestData[0][i])):
             anomaly, error = hmm.anomaly_check(abnormalTestData[0][i][:j], 
@@ -912,19 +973,24 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                                                abnormalTestData[3][i][:j], c)
 
             if verbose: print anomaly, error
+                
+            if anomaly:
+                truePos += 1
+                break
+            elif j == len(abnormalTestData[0][i]) - 1:
+                falseNeg += 1
+                print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
+                break
 
-
-            else:
-                if anomaly:
-                    truePos += 1
-                    break
-                elif j == len(abnormalTestData[0][i]) - 1:
-                    falseNeg += 1
-                    print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
-                    break
-
-    truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
-    trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+    try:
+        truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
+        trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+    except:
+        print np.shape(normalTestData)
+        print np.shape(abnormalTestData)
+        print truePos, falseNeg, trueNeg, falsePos
+        sys.exit()
+        
     return truePos, falseNeg, trueNeg, falsePos
     
 
@@ -1082,6 +1148,8 @@ if __name__ == '__main__':
     elif opt.bEvaluation:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
         check_methods  = ['change', 'global', 'globalChange', 'progress']        
+        ## subject_names  = ['s2']       
+        ## check_methods  = ['change']        
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         nSet = 10
@@ -1099,7 +1167,8 @@ if __name__ == '__main__':
                        nSet=nSet, nState=nState, scale=scale, \
                        cov_mult=cov_mult, folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
                        cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
-                       data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, verbose=False)
+                       data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
+                       save_pdf=False, bPlot=False, verbose=False)
         
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True

@@ -661,10 +661,12 @@ class learning_hmm_multi_4d:
             if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
-
+            
         if self.check_method == 'change' or self.check_method == 'globalChange':
 
-            if len(X1)<3: return -1, 0.0 #error
+            ## if len(X1)<3: 
+            ##     if self.verbose: print "Too short profile!"
+            ##     return -1, 0.0 #error
 
             X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
 
@@ -687,7 +689,7 @@ class learning_hmm_multi_4d:
                 err = logp - (self.l_mu + ths_mult[1]*self.l_std)
             else:
                 err = logp - (self.l_mu + ths_mult*self.l_std)
-        else:
+        elif self.check_method == 'progress':
             try:
                 post = np.array(self.ml.posterior(final_ts_obj))
             except:
@@ -714,6 +716,7 @@ class learning_hmm_multi_4d:
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
+        print "+++++++++++++++++++++++++++++"
         return err < self.anomaly_offset, err
         # if err < 0.0: return 1.0, err # anomaly
         # else: return 0.0, err # normal
