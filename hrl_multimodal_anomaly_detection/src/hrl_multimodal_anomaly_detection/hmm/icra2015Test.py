@@ -12,6 +12,7 @@ import rospy
 
 # Util
 import hrl_lib.util as ut
+import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 
 #
 from util import *
@@ -55,6 +56,8 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     
         count = 0
         for i in xrange(len(trainData[0])):
+            
+            #if count > 5: continue
             if useTrain_color:
                 ax1.plot(trainTimeList[i], trainData[0][i])
                 ax2.plot(trainTimeList[i], trainData[1][i])
@@ -185,8 +188,8 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
         plt.show()        
     
         
-def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0, hmm_renew=False, 
-               verbose=False):
+def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0, \
+               crossEvalID=None, check_method='progress', hmm_renew=False, verbose=False):
 
     tot_truePos = 0
     tot_falseNeg = 0
@@ -199,25 +202,37 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
         trainData, thresTestData, normalTestData, abnormalTestData, \
           trainTimeList, thresTestTimeList, normalTestTimeList, abnormalTestTimeList, \
           trainFileList, thsTestFileList, normalTestFileList, abnormalTestFileList \
-          = getData(task_name, target_path, i)
+          = getData(task_name, target_path, i, crossEvalID)
 
-        dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+".pkl")
+        if crossEvalID is None:
+            dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+".pkl")
+        else:
+            dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+'_eval_'+str(crossEvalID)+\
+                                             ".pkl")
           
         nDimension = len(trainData)
 
         # Create and train multivariate HMM
-        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, verbose=False)
+        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, \
+                                    check_method=check_method, verbose=False)
         ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                       ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
-        minThresholds1 = tuneSensitivityGain(hmm, trainData, verbose=verbose)
-        minThresholds2 = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
-        minThresholds = minThresholds2
-        for i in xrange(len(minThresholds1)):
-            if minThresholds1[i] < minThresholds2[i]:
-                minThresholds[i] = minThresholds1[i]
-        minThresholds = minThresholds                
+        if ret == 'Failure': return (-1,-1,-1,-1)
+                      
 
+        minThresholds1 = tuneSensitivityGain(hmm, trainData, method=check_method, verbose=verbose)
+        minThresholds2 = tuneSensitivityGain(hmm, thresTestData, method=check_method, verbose=verbose)
+        minThresholds = minThresholds2
+
+        if type(minThresholds) == list or type(minThresholds) == np.ndarray:
+            for i in xrange(len(minThresholds1)):
+                if minThresholds1[i] < minThresholds2[i]:
+                    minThresholds[i] = minThresholds1[i]
+        else:
+            if minThresholds1 < minThresholds2:
+                minThresholds = minThresholds1
+ 
         truePos, falseNeg, trueNeg, falsePos = \
         tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
 
@@ -235,14 +250,116 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
     print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
     print "------------------------------------------------"
 
-    return 
+    return (tot_truePos, tot_falseNeg, tot_trueNeg, tot_falsePos)
 
 
-def getData(task_name, target_path, setID=0):
+def evaluation_all(subject_names, task_name, check_methods, data_root_path, data_target_path, nSet=1,\
+                   nState=20, scale=1.0, \
+                   cov_mult=5., folding_ratio=[0.6, 0.2, 0.2], downSampleSize=200, \
+                   cutting_ratio=[0.0, 0.65], anomaly_offset=0.0,\
+                   data_renew=False, hmm_renew=False, verbose=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+
+    count = 0
+    for method in check_methods:        
+
+        # Check the existance of workspace
+        method_path = os.path.join(data_target_path, method)
+        if os.path.isdir(method_path) == False:
+            os.system('mkdir -p '+method_path)
+
+        for idx, subject_name in enumerate(subject_names):
+
+            print method, " : ", subject_name        
+
+            ## For parallel computing
+            # save file name
+            res_file = task_name+'_'+subject_name+'_'+method+'.pkl'
+            mutex_file_part = 'running_'+task_name+'_'+subject_name+'_'+method
+
+            res_file = os.path.join(method_path, res_file)
+            mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+            mutex_file      = os.path.join(method_path, mutex_file_full)
+
+            if os.path.isfile(res_file): 
+                count += 1            
+                continue
+            elif hcu.is_file(method_path, mutex_file_part): 
+                continue
+            ## elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
+            
+            ## Data pre-processing
+            preprocessData([subject_name], task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
+                           folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
+                           train_cutting_ratio=cutting_ratio, full_abnormal_test=False,\
+                           crossEvalID=idx, verbose=False)
+
+            # Run evaluation
+            (truePos, falseNeg, trueNeg, falsePos)\
+              = evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
+                           anomaly_offset=anomaly_offset, crossEvalID=idx, check_method=method,\
+                           hmm_renew=True, verbose=False)
+
+            if truePos!=-1 :                 
+                d = {}
+                d['subject'] = subject_name
+                d['tp'] = truePos
+                d['fn'] = falseNeg
+                d['tn'] = trueNeg
+                d['fp'] = falsePos
+                d['nSet'] = nSet
+
+                try:
+                    ut.save_pickle(d,res_file)        
+                except:
+                    print "There is already the targeted pkl file"
+            else:
+                target_file = os.path.join(data_target_path, task_name+'_dataSet_%d_eval_'+str(idx) ) 
+                for j in xrange(nSet):
+                    os.system('rm '+target_file % j)
+                
+
+            os.system('rm '+mutex_file)
+            print "-----------------------------------------------"
+
+
+
+        ## # temp
+        ## tot_truePos = 0
+        ## tot_falseNeg = 0
+        ## tot_trueNeg = 0 
+        ## tot_falsePos = 0
+
+            
+            ## # Sum up evaluatoin result
+            ## tot_truePos += truePos
+            ## tot_falseNeg += falseNeg
+            ## tot_trueNeg += trueNeg
+            ## tot_falsePos += falsePos
+
+
+        ## truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
+        ## trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+        ## print "------------------------------------------------"
+        ## print "Total set of data: ", len(subject_name)
+        ## print "------------------------------------------------"
+        ## print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+        ## print "------------------------------------------------"
+                   
+    
+
+def getData(task_name, target_path, setID=0, crossEvalID=None):
     print "start to getting data"
     
     # Check if there is already scaled data
-    target_file = os.path.join(target_path, task_name+'_dataSet_'+str(setID) )        
+    if crossEvalID is None:
+        target_file = os.path.join(target_path, task_name+'_dataSet_'+str(setID) )        
+    else:
+        target_file = os.path.join(target_path, task_name+'_dataSet_'+str(setID)+'_eval_'+str(crossEvalID) )
+        
     if os.path.isfile(target_file) is not True: 
         print "Missing data: ", setID
         return
@@ -565,12 +682,17 @@ def plotTestLikelihoodSequences(test_subject_names, task_name, data_root_path, d
 
 def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, folding_ratio=[0.6, 0.2, 0.2], 
                    scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], full_abnormal_test=False,\
+                   crossEvalID=None, test_subject_name=None,\
                    renew=False, verbose=False):
 
 
     # Check if there is already scaled data
     for i in xrange(nSet):        
-        target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i) )        
+        if crossEvalID is None:
+            target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i) )        
+        else:
+            target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i)+'_eval_'+str(crossEvalID) ) 
+            
         if os.path.isfile(target_file) is not True: renew=True
             
     if renew == False: return        
@@ -579,15 +701,19 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
     
     # random training, threshold-test, test set selection
     nTrain   = int(len(success_list) * folding_ratio[0])
-    nThsTest = int(len(success_list) * folding_ratio[1])
-    nTest    = len(success_list) - nTrain - nThsTest
+
+    if folding_ratio[2] == 0.0:
+        nThsTest = len(success_list) - nTrain
+        nTest    = 0
+    else:
+        nThsTest = int(len(success_list) * folding_ratio[1])
+        nTest    = len(success_list) - nTrain - nThsTest
 
     if len(failure_list) < nTest: 
         print "Not enough failure data"
         sys.exit()
 
     # minimum and maximum vales for scaling
-    ## dataList, _ = loadData(failure_list, isTrainingData=False, downSampleSize=downSampleSize)
     dataList, _ = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
     minVals = []
     maxVals = []
@@ -602,10 +728,15 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         failure_idx  = range(len(failure_list))
         train_idx    = random.sample(success_idx, nTrain)
         ths_test_idx = random.sample([x for x in success_idx if not x in train_idx], nThsTest)
-        success_test_idx = [x for x in success_idx if not (x in train_idx or x in ths_test_idx)]
+
+        if nTest == 0: 
+            success_test_idx = []
+            failure_test_idx = []
+        else: 
+            success_test_idx = [x for x in success_idx if not (x in train_idx or x in ths_test_idx)]
+            failure_test_idx = random.sample(failure_idx, nTest)
 
         if full_abnormal_test: failure_test_idx = failure_idx #temp
-        else: failure_test_idx = random.sample(failure_idx, nTest)
 
         # get training data
         trainFileList = [success_list[x] for x in train_idx]
@@ -617,13 +748,31 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
                                                     isTrainingData=True, downSampleSize=downSampleSize)
 
         # get test data
-        normalTestFileList = [success_list[x] for x in success_test_idx]
-        abnormalTestFileList = [failure_list[x] for x in failure_test_idx]
-        normalTestData, normalTestTimeList = loadData([success_list[x] for x in success_test_idx], 
+        if nTest != 0:        
+            normalTestFileList = [success_list[x] for x in success_test_idx]
+            normalTestData, normalTestTimeList = loadData([success_list[x] for x in success_test_idx], 
                                                       isTrainingData=False, downSampleSize=downSampleSize)
-        abnormalTestData, abnormalTestTimeList = loadData([failure_list[x] for x in failure_test_idx], 
+            abnormalTestFileList = [failure_list[x] for x in failure_test_idx]
+            abnormalTestData, abnormalTestTimeList \
+            = loadData([failure_list[x] for x in failure_test_idx], \
+                       isTrainingData=False, downSampleSize=downSampleSize)
+                       
+        elif crossEvalID is not None:
+            normalTestFileList, abnormalTestFileList\
+               = getSubjectFileList(root_path, test_subject_name, task_name)
+               
+            normalTestData, normalTestTimeList = loadData(normalTestFileList, 
                                                           isTrainingData=False, downSampleSize=downSampleSize)
+            abnormalTestData, abnormalTestTimeList \
+            = loadData(abnormalTestFileList, \
+                       isTrainingData=False, downSampleSize=downSampleSize)            
 
+        else:
+            print "no test folding ratio and cross evaluation"
+            sys.exit()
+
+
+            
         # scaling data
         trainData_scaled,_ ,_  = scaleData(trainData, scale=scale, minVals=minVals, 
                                                  maxVals=maxVals, verbose=verbose)
@@ -632,7 +781,7 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         normalTestData_scaled,_ ,_ = scaleData(normalTestData, scale=scale, minVals=minVals, 
                                                maxVals=maxVals, verbose=verbose)
         abnormalTestData_scaled,_ ,_ = scaleData(abnormalTestData, scale=scale, minVals=minVals, 
-                                               maxVals=maxVals, verbose=verbose)
+                                                 maxVals=maxVals, verbose=verbose)
 
         # cutting data (only traing and thresTest data)
         start_idx = int(float(len(trainData_scaled[0][0]))*train_cutting_ratio[0])
@@ -657,7 +806,6 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
             for k in xrange(len(abnormalTestData_scaled[j])):                
                 abnormalTestData_scaled[j][k] = abnormalTestData_scaled[j][k][start_idx:end_idx]
                 abnormalTestTimeList[k]       = abnormalTestTimeList[k][start_idx:end_idx]
-        
             
         # Save data using dictionary
         d = {}
@@ -678,7 +826,11 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
         d['minVals'] = minVals
         d['maxVals'] = maxVals
 
-        target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i) )
+        if crossEvalID is None:
+            target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i) )
+        else:
+            target_file = os.path.join(target_path, task_name+'_dataSet_'+str(i)+'_eval_'+str(crossEvalID) )
+        
         try:
             ut.save_pickle(d, target_file)        
         except:
@@ -715,8 +867,6 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
             dataList_scaled[i].append( scaling( dataList[i][j], minVals[i], maxVals[i], new_scale).tolist() )
             
     return dataList_scaled, minVals, maxVals
-
-
 
 
 def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=False):
@@ -778,6 +928,70 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
     return truePos, falseNeg, trueNeg, falsePos
     
 
+def crossEvaluation(subject_names, task_name, data_root_path, data_target_path, \
+                    folding_ratio=[0.6, 0.2, 0.2], scale=1.0, downSampleSize=200,\
+                    train_cutting_ratio=[0.0, 0.65],\
+                    nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0,\
+                    data_renew=False, hmm_renew=False, verbose=False):
+
+    # Set training and test id list (leave-one-out??)
+    training_names = []
+    test_names = []
+    for idx, test_name in enumerate(subject_names):
+        test_names.append(test_name)
+        training_name = copy.deepcopy(subject_names)
+        del training_name[idx]
+        training_names.append(training_name)
+
+    # over fitting
+    ## for idx, test_name in enumerate(subject_names):
+    ##     test_names.append([test_name])
+    ##     training_names.append([test_name])
+        
+    tot_truePos = 0
+    tot_falseNeg = 0
+    tot_trueNeg = 0 
+    tot_falsePos = 0
+    
+    # Get data
+    for idx in xrange(len(test_names)):
+        tr_names = training_names[idx]
+        t_name   = test_names[idx]
+
+        print idx, " : ", tr_names, t_name
+        
+        preprocessData(tr_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
+                       folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
+                       train_cutting_ratio=cutting_ratio, full_abnormal_test=False,\
+                       crossEvalID=idx, test_subject_name=t_name,\
+                       renew=data_renew, verbose=verbose)
+
+        # Run evaluation
+        (truePos, falseNeg, trueNeg, falsePos)\
+          = evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult, \
+                       anomaly_offset=anomaly_offset, \
+                       crossEvalID=idx, 
+                       hmm_renew=hmm_renew, verbose=verbose)
+       
+        # Sum up evaluatoin result
+        tot_truePos += truePos
+        tot_falseNeg += falseNeg
+        tot_trueNeg += trueNeg
+        tot_falsePos += falsePos
+        
+    
+    truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
+    trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+    print "------------------------------------------------"
+    print "Total set of data: ", len(test_names)
+    print "------------------------------------------------"
+    print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+    print "------------------------------------------------"
+
+
+    
+
+    return
 
 if __name__ == '__main__':
 
@@ -803,42 +1017,46 @@ if __name__ == '__main__':
                  default=False, help='Save pdf files.')
     opt, args = p.parse_args()
 
-    data_root_path   = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'
+    ## data_root_path   = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/recordings'    
+    data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
     data_target_path = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/hmm/data'
 
     # Scooping
-    subject_names  = ['pr2'] #'personal', 
-    task_name      = 'scooping'
-    nSet           = 1
-    folding_ratio  = [0.5, 0.3, 0.2]
-    downSampleSize = 100
-    nState         = 10
-    cov_mult       = 5.0
-    scale          = 1.0
-    cutting_ratio  = [0.0, 0.9]
-    anomaly_offset = -20.0
-
-    # Feeding
-    ## subject_names  = ['s2','s3','s4'] #'personal', 's3',
-    ## task_name      = 'feeding' #['scooping', 'feeding']
+    ## subject_names  = ['pr2'] #'personal', 
+    ## task_name      = 'scooping'
     ## nSet           = 1
     ## folding_ratio  = [0.5, 0.3, 0.2]
     ## downSampleSize = 100
-    ## nState         = 15
+    ## nState         = 10
     ## cov_mult       = 5.0
     ## scale          = 1.0
-    ## cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
+    ## cutting_ratio  = [0.0, 0.9]
     ## anomaly_offset = -20.0
-    
-    preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
-                   folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
-                   train_cutting_ratio=cutting_ratio, full_abnormal_test=True,\
-                   renew=opt.bDataRenew, verbose=opt.bVerbose)
 
+    # Feeding
+    ## subject_names  = ['s2','s3','s4'] #'personal', 's3',
+    subject_names  = ['s13']
+    task_name      = 'feeding' #['scooping', 'feeding']
+    nSet           = 1
+    folding_ratio  = [0.5, 0.3, 0.2]
+    downSampleSize = 100
+    nState         = 15
+    cov_mult       = 5.0
+    scale          = 1.0
+    cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
+    anomaly_offset = -20.0
+
+    if not opt.bEvaluation:
+        preprocessData(subject_names, task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
+                       folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
+                       train_cutting_ratio=cutting_ratio, full_abnormal_test=True,\
+                       renew=opt.bDataRenew, verbose=opt.bVerbose)
+                       
+    # ------------------------------------------- TEST ------------------------------------------
     if opt.bPlot:
         distributionOfSequences(task_name, data_target_path, setID=0, scale=scale, \
-                                useTrain=False, useThsTest=True, useNormalTest=False, useAbnormalTest=False,\
-                                useTrain_color=False, useThsTest_color=True,\
+                                useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
+                                useTrain_color=True, useThsTest_color=False,\
                                 save_pdf=opt.bSavePdf, verbose=True)        
     elif opt.bLikelihoodPlot:
         if opt.bDataRenew == True: opt.bHMMRenew=True
@@ -862,8 +1080,26 @@ if __name__ == '__main__':
                                     useAbnormalTest=False,\
                                     save_pdf=opt.bSavePdf, verbose=True)                
     elif opt.bEvaluation:
+        subject_names  = ['s2','s4','s8','s9','s10','s11']       
+        check_methods  = ['change', 'global', 'globalChange', 'progress']        
+        data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
+        data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+        nSet = 10
+        anomaly_offset = 0.0
+        
+        if opt.bDataRenew == True: opt.bHMMRenew=True        
+        ## folding_ratio  = [0.5, 0.5, 0.0]
+        ## crossEvaluation(subject_names, task_name, data_root_path, data_target_path, \
+        ##                 folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
+        ##                 train_cutting_ratio=cutting_ratio,\
+        ##                 nSet=nSet, nState=nState, cov_mult=cov_mult, anomaly_offset=anomaly_offset,
+        ##                 data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, verbose=False)
 
-
+        evaluation_all(subject_names, task_name, check_methods, data_root_path, data_target_path, \
+                       nSet=nSet, nState=nState, scale=scale, \
+                       cov_mult=cov_mult, folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
+                       cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
+                       data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, verbose=False)
         
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True

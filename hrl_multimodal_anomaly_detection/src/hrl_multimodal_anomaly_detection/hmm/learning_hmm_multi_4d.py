@@ -2,8 +2,10 @@
 
 import numpy as np
 import sys, os, copy
-import cPickle as pickle
 from scipy.stats import norm, entropy
+
+# Util
+import hrl_lib.util as ut
 
 # Matplot
 import matplotlib
@@ -52,7 +54,8 @@ class learning_hmm_multi_4d:
 
         # print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[1.0]*16, ml_pkl='ml_temp_4d.pkl', use_pkl=False):
+    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[1.0]*16, \
+            ml_pkl='ml_temp_4d.pkl', use_pkl=False):
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         X1 = np.array(xData1)
         X2 = np.array(xData2)
@@ -127,7 +130,26 @@ class learning_hmm_multi_4d:
         n, m = np.shape(X1)
         self.nGaussian = self.nState
 
-        if self.check_method == 'global':
+        if self.check_method == 'change' or self.check_method == 'globalChange':
+            # Get maximum change of loglikelihood over whole time
+            ll_delta_logp = []
+            for j in xrange(n):    
+                l_logp = []                
+                for k in xrange(1,m):
+                    final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
+                    logp         = self.ml.loglikelihoods(final_ts_obj)[0]
+
+                    l_logp.append(logp)
+                l_delta_logp = np.array(l_logp[1:]) - np.array(l_logp[:-1])                    
+                ll_delta_logp.append(l_delta_logp)
+
+            self.l_mean_delta = np.mean(abs(np.array(ll_delta_logp).flatten()))
+            self.l_std_delta = np.std(abs(np.array(ll_delta_logp).flatten()))
+
+            print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
+        
+        
+        if self.check_method == 'global' or self.check_method == 'globalChange':
             # Get average loglikelihood threshold over whole time
 
             l_logp = []
@@ -140,24 +162,24 @@ class learning_hmm_multi_4d:
 
             self.l_mu = np.mean(l_logp)
             self.l_std = np.std(l_logp)
-        else:
+            
+        elif self.check_method == 'progress':
+
             # Get average loglikelihood threshold wrt progress
             self.std_coff  = 1.0
             g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
             g_sig = float(m) / float(self.nGaussian) * self.std_coff
 
             if os.path.isfile(ml_pkl) and use_pkl:
-                with open(ml_pkl, 'rb') as f:
-                    d = pickle.load(f)
-                    self.l_statePosterior = d['state_post'] # time x state division
-                    self.ll_mu            = d['ll_mu']
-                    self.ll_std           = d['ll_std']
+                d = ut.load_pickle(ml_pkl)
+                self.l_statePosterior = d['state_post'] # time x state division
+                self.ll_mu            = d['ll_mu']
+                self.ll_std           = d['ll_std']
             else:
                 if self.verbose: print 'Begining parallel job'
                 r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
                                                                        self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
                                                                        for i in xrange(self.nGaussian))
-                # r = [self.learn_likelihoods_progress_par(i, n, m, A, B, pi, X_train, g_mu_list[i], g_sig) for i in xrange(self.nGaussian)]
                 if self.verbose: print 'Completed parallel job'
                 l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
@@ -165,20 +187,8 @@ class learning_hmm_multi_4d:
                 d['state_post'] = self.l_statePosterior
                 d['ll_mu'] = self.ll_mu
                 d['ll_std'] = self.ll_std
-                with open(ml_pkl, 'wb') as f:
-                    pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-            ## print "++++++++++++++++++++++++++++++++++++++++++=="
-            ## print "std_coff: ", self.std_coff
-            ## print "length: ", m 
-            ## print g_mu_list
-            ## print g_sig
-            ## print "000000000000000000000000000000000"
-            ## print self.ll_mu
-            ## print self.ll_std
-            ## print "use_pkl: ", use_pkl
-            ## print "++++++++++++++++++++++++++++++++++++++++++=="
-            
+                ut.save_pickle(d, ml_pkl)
+                            
                     
     def get_sensitivity_gain(self, X1, X2, X3, X4):
 
@@ -204,6 +214,7 @@ class learning_hmm_multi_4d:
             min_dist  = 100000000
             min_index = 0
             for j in xrange(self.nGaussian):
+                if post[n-1] is None or self.l_statePosterior[j] is None: continue
                 dist = entropy(post[n-1], self.l_statePosterior[j])
                 if min_dist > dist:
                     min_index = j
@@ -220,6 +231,40 @@ class learning_hmm_multi_4d:
         elif self.check_method == 'global':
             ths = (logp - self.l_mu) / self.l_std
             return ths, 0
+
+        elif self.check_method == 'change':
+            if len(X1)<3: return [], 0.0 #error
+
+            X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return -1, 0.0 # error
+            
+            ths = -(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
+            return ths, 0
+
+        elif self.check_method == 'globalChange':
+            if len(X1)<3: return [], 0.0 #error
+
+            X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return [], 0.0 # error
+            
+            ths_c = -(( abs(logp-last_logp) - self.l_mean_delta) / self.l_std_delta)
+
+            ths_g = (logp - self.l_mu) / self.l_std
+            
+            return [ths_c, ths_g], 0
+        
 
     def path_disp(self, X1, X2, X3, X4):
         X1 = np.array(X1)
@@ -616,6 +661,27 @@ class learning_hmm_multi_4d:
             if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
+
+        if self.check_method == 'change' or self.check_method == 'globalChange':
+
+            if len(X1)<3: return -1, 0.0 #error
+
+            X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
+
+            try:
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                last_logp         = self.ml.loglikelihood(final_ts_obj)
+            except:
+                print "Too different input profile that cannot be expressed by emission matrix"
+                return -1, 0.0 # error
+
+            ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
+            if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
+                err = (self.l_mean_delta + (-1.0*ths_mult[0])*self.l_std_delta ) - abs(logp-last_logp)
+            else:                
+                err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
+            if err < self.anomaly_offset: return 1.0, 0.0 # anomaly            
+            
         if self.check_method == 'global' or self.check_method == 'globalChange':
             if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
                 err = logp - (self.l_mu + ths_mult[1]*self.l_std)
@@ -643,21 +709,12 @@ class learning_hmm_multi_4d:
                     min_index = j
                     min_dist  = dist
 
-            # print 'Computing anomaly'
-            # print logp
-            # print self.ll_mu[min_index]
-            # print self.ll_std[min_index]
-
-            # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
-
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-        ## return err < 0.0, err
         return err < self.anomaly_offset, err
-        # return err < -45.0, err
         # if err < 0.0: return 1.0, err # anomaly
         # else: return 0.0, err # normal
 
