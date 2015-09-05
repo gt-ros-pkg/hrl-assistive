@@ -682,13 +682,16 @@ class learning_hmm_multi_4d:
                 err = (self.l_mean_delta + (-1.0*ths_mult[0])*self.l_std_delta ) - abs(logp-last_logp)
             else:                
                 err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
-            if err < self.anomaly_offset: return 1.0, 0.0 # anomaly            
+            ## if err < self.anomaly_offset: return 1.0, 0.0 # anomaly            
+            if err < 0.0: return 1.0, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':
             if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
                 err = logp - (self.l_mu + ths_mult[1]*self.l_std)
             else:
                 err = logp - (self.l_mu + ths_mult*self.l_std)
+            return err < 0.0, err
+                
         elif self.check_method == 'progress':
             try:
                 post = np.array(self.ml.posterior(final_ts_obj))
@@ -716,12 +719,9 @@ class learning_hmm_multi_4d:
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-        print "+++++++++++++++++++++++++++++"
-        return err < self.anomaly_offset, err
-        # if err < 0.0: return 1.0, err # anomaly
-        # else: return 0.0, err # normal
+            return err < self.anomaly_offset, err
 
-
+            
     def expLikelihoods(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
         if self.nEmissionDim == 1: X_test = np.array([X1])
         else: X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
