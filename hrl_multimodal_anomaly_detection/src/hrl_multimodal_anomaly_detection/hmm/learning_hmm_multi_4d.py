@@ -651,6 +651,7 @@ class learning_hmm_multi_4d:
         return np.array(X)
         
     def anomaly_check(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
+
         if self.nEmissionDim == 1: X_test = np.array([X1])
         else: X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
