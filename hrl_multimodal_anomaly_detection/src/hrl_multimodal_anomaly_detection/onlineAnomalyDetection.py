@@ -175,6 +175,7 @@ class onlineAnomalyDetection(Thread):
         self.jointAngles = None
         self.jointVelocities = None
         self.objectCenter = None
+        self.likelihoods = []
         self.audioTool.reset(self.init_time)
 
     def run(self):

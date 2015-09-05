@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import time
 import numpy as np
 import cPickle as pickle
@@ -7,8 +8,9 @@ import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
-# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2_f_success.pkl'
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s9_f_09-01-2015_20-14-47.pkl'
+# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2/t2_f_success.pkl'
+# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s10/s10_f_success.pkl'
+fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s11/ash_b_success1.pkl'
 isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
@@ -35,6 +37,9 @@ print np.shape(times)
         
 if isNewFormat:
     ll_likelihood = [x[0] for x in likelihoods]
+    ll_state_idx = [x[1] for x in likelihoods]
+    ll_likelihood_mu = [x[2] for x in likelihoods]
+    ll_likelihood_std = [x[3] for x in likelihoods]
 else:
     # Predefined settings
     downSampleSize = 100 #200
@@ -59,9 +64,6 @@ else:
                                         downSampleSize, scale, nState, int(cov_mult)))
 
     ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = hmm.allLikelihoods(forces, distances, angles, audios)
-
-print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
-
 
 def plotDataAndLikelihood():
     fig = plt.figure()
@@ -95,33 +97,71 @@ def plotDataAndLikelihood():
 plotDataAndLikelihood()
 
 
-# fig = plt.figure()
-# plt.plot(times, ll_likelihood)
-# plt.show()
+animateThreshold = False
+
+
+print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
+if len(ll_likelihood) > len(times):
+    i = len(times)
+    ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std = ll_likelihood[-i:], ll_state_idx[-i:], ll_likelihood_mu[-i:], ll_likelihood_std[-i:]
+    print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
+elif len(ll_likelihood) < len(times):
+    times = times[:len(ll_likelihood)]
+    print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
 
 # Animation
 fig, ax = plt.subplots()
-# ax.set_title('Likelihood')
-ax.set_xlabel('Time (sec)')
-ax.set_ylabel('Log-likelihood')
+# ax.set_title('Log-likelihood')
+ax.set_xlabel('Time (sec)', fontsize=16)
+ax.set_ylabel('Log-likelihood', fontsize=16)
 
-line, = ax.plot(times, ll_likelihood)
+line, = ax.plot(times, ll_likelihood, 'b', label='Actual likelihood')
+expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected from\ntrained model')
+thresholdValues = []
+for index in xrange(len(ll_likelihood)):
+    minIndex = ll_state_idx[index]
+    thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
+threshold, = ax.plot(times, thresholdValues, 'r--', label='Threshold')
+legend = ax.legend(loc=2)
+
+# Increase legend line width
+for label in legend.get_lines():
+    label.set_linewidth(2.0)
+
+# ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
+# ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
+# ax3.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
 
 def animate(i):
-    # Update the plot
+    # Update the plots
     line.set_xdata(times[:i])
     line.set_ydata(ll_likelihood[:i])
+    if animateThreshold:
+        expected.set_xdata(times[:i])
+        expected.set_ydata(ll_likelihood_mu[:i])
+        thresholdValues = []
+        for index in xrange(i):
+            minIndex = ll_state_idx[index]
+            thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
+        threshold.set_xdata(times[:i])
+        threshold.set_ydata(thresholdValues)
     return line,
 
 # Init only required for blitting to give a clean slate.
 def init():
     line.set_ydata(np.ma.array(times, mask=True))
+    if animateThreshold:
+        expected.set_ydata(np.ma.array(times, mask=True))
+        threshold.set_ydata(np.ma.array(times, mask=True))
     return line,
 
 interval = 1000 / len(ll_likelihood) * times[-1]
 fps = int(len(ll_likelihood) / times[-1])
 print 'Max time:', times[-1], 'Interval:', interval, 'FPS:', fps
 ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood)), init_func=init, interval=25, blit=True)
-ani.save(time.strftime('likelihood_%m-%d-%Y_%H-%M-%S.mp4'), fps=fps)
+location = time.strftime(os.path.join(os.path.dirname(__file__), 'likelihood_%m-%d-%Y_%H-%M-%S.mp4'))
+ani.save(location, fps=fps)
 # plt.show()
+
+print 'Animation saved to:', location
 
