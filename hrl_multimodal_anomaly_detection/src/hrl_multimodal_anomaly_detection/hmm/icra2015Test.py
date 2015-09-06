@@ -123,8 +123,8 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        ## os.system('cp test.p* ~/Dropbox/HRL/')
-        os.system('scp test.p* dpark@brain:~/Dropbox/HRL/')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        ##os.system('scp test.p* dpark@brain:~/Dropbox/HRL/')
     else:
         if show_plot: plt.show()        
 
@@ -213,7 +213,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
             dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+'_eval_'+str(crossEvalID)+\
                                              ".pkl")
 
-        print dynamic_thres_pkl
+        ## print dynamic_thres_pkl
         nDimension = len(trainData)
 
         # Create and train multivariate HMM
@@ -229,16 +229,25 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
             return (-1,-1,-1,-1)
                       
 
-        minThresholds1 = tuneSensitivityGain(hmm, trainData, method=check_method, verbose=verbose)
-        minThresholds2 = tuneSensitivityGain(hmm, thresTestData, method=check_method, verbose=verbose)
-        minThresholds = minThresholds2
-        if type(minThresholds) == list or type(minThresholds) == np.ndarray:
-            for i in xrange(len(minThresholds1)):
-                if minThresholds1[i] < minThresholds2[i]:
-                    minThresholds[i] = minThresholds1[i]
+        minThresholds = None                  
+        if hmm_renew:
+            minThresholds1 = tuneSensitivityGain(hmm, trainData, method=check_method, verbose=verbose)
+            minThresholds2 = tuneSensitivityGain(hmm, thresTestData, method=check_method, verbose=verbose)
+            minThresholds = minThresholds2
+            if type(minThresholds) == list or type(minThresholds) == np.ndarray:
+                for i in xrange(len(minThresholds1)):
+                    if minThresholds1[i] < minThresholds2[i]:
+                        minThresholds[i] = minThresholds1[i]
+            else:
+                if minThresholds1 < minThresholds2:
+                    minThresholds = minThresholds1
+            d = ut.load_pickle(dynamic_thres_pkl)
+            d['minThresholds'] = minThresholds                
+            ut.save_pickle(d, dynamic_thres_pkl)                
         else:
-            if minThresholds1 < minThresholds2:
-                minThresholds = minThresholds1
+            d = ut.load_pickle(dynamic_thres_pkl)
+            minThresholds = d['minThresholds']
+            
 
         truePos, falseNeg, trueNeg, falsePos = \
         tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
@@ -304,9 +313,10 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
             os.system('touch '+mutex_file)
             
             ## Data pre-processing
-            preprocessData([subject_name], task_name, data_root_path, data_target_path, nSet=nSet, scale=scale,\
+            preprocessData([subject_name], task_name, data_root_path, data_target_path, nSet=nSet, 
+                           scale=scale,\
                            folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
-                           train_cutting_ratio=cutting_ratio, full_abnormal_test=False,\
+                           train_cutting_ratio=cutting_ratio, full_abnormal_test=True,\
                            crossEvalID=idx, verbose=True)
 
             # Run evaluation
@@ -601,10 +611,10 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
 
                 log_ll[i].append(logp)
 
-                ## exp_logp = hmm.expLikelihoods(normalTestData[0][i][:j], normalTestData[1][i][:j], 
-                ##                               normalTestData[2][i][:j], normalTestData[3][i][:j],
-                ##                               minThresholds)
-                ## exp_log_ll[i].append(exp_logp)
+                exp_logp = hmm.expLikelihoods(normalTestData[0][i][:j], normalTestData[1][i][:j], 
+                                              normalTestData[2][i][:j], normalTestData[3][i][:j],
+                                              minThresholds)
+                exp_log_ll[i].append(exp_logp)
                 
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
@@ -616,7 +626,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
             else:
                 plt.plot(log_ll[i], 'g-')
 
-            ## plt.plot(exp_log_ll[i], 'r*-')
+            plt.plot(exp_log_ll[i], 'r*-')
                 
 
         if useNormalTest_color: 
@@ -748,8 +758,10 @@ def plotTestLikelihoodSequences(test_subject_names, task_name, data_root_path, d
         plt.show()        
         
 
-def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, folding_ratio=[0.6, 0.2, 0.2], 
-                   scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], full_abnormal_test=False,\
+def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, \
+                   folding_ratio=[0.6, 0.2, 0.2], 
+                   scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], \
+                   full_abnormal_test=False,\
                    crossEvalID=None, test_subject_name=None,\
                    renew=False, verbose=False):
 
@@ -824,16 +836,28 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
             abnormalTestData, abnormalTestTimeList \
             = loadData([failure_list[x] for x in failure_test_idx], \
                        isTrainingData=False, downSampleSize=downSampleSize)
-                       
+
         elif crossEvalID is not None:
-            normalTestFileList, abnormalTestFileList\
-               = getSubjectFileList(root_path, test_subject_name, task_name)
-               
-            normalTestData, normalTestTimeList = loadData(normalTestFileList, 
-                                                          isTrainingData=False, downSampleSize=downSampleSize)
-            abnormalTestData, abnormalTestTimeList \
-            = loadData(abnormalTestFileList, \
-                       isTrainingData=False, downSampleSize=downSampleSize)            
+
+            if False:
+                normalTestFileList, abnormalTestFileList\
+                   = getSubjectFileList(root_path, test_subject_name, task_name)
+
+                normalTestData, normalTestTimeList = loadData(normalTestFileList, 
+                                                              isTrainingData=False, downSampleSize=downSampleSize)
+                abnormalTestData, abnormalTestTimeList \
+                = loadData(abnormalTestFileList, \
+                           isTrainingData=False, downSampleSize=downSampleSize)            
+
+            else:
+                normalTestFileList = []
+                normalTestData =[]
+                normalTestTimeList = []
+                    
+                abnormalTestFileList = failure_list
+                abnormalTestData, abnormalTestTimeList \
+                = loadData(abnormalTestFileList, \
+                           isTrainingData=False, downSampleSize=downSampleSize)            
 
         else:
             print "no test folding ratio and cross evaluation"
@@ -910,6 +934,8 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, fol
 
 def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
 
+    if dataList = []: return [], [], []
+    
     # Determine max and min values
     if minVals is None:
         minVals = []
@@ -948,35 +974,35 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
     if verbose: print '\nBeginning anomaly testing for test set\n'
 
     # for normal test data
-    for i in xrange(len(normalTestData[0])):
-        if verbose: print 'Anomaly Error for test set ', i
+    if normalTestData != []:    
+        for i in xrange(len(normalTestData[0])):
+            if verbose: print 'Anomaly Error for test set ', i
 
-        for j in range(6, len(normalTestData[0][i])):
+            for j in range(6, len(normalTestData[0][i])):
+                try:    
+                    anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
+                                                   normalTestData[1][i][:j], 
+                                                   normalTestData[2][i][:j],
+                                                   normalTestData[3][i][:j], c)
+                except:
+                    print "anomaly_check failed: ", i, j
+                    return (-1,-1,-1,-1)
 
-            print i,j
-            try:    
-                anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
-                                               normalTestData[1][i][:j], 
-                                               normalTestData[2][i][:j],
-                                               normalTestData[3][i][:j], c)
-            except:
-                print "anomaly_check failed: ", i, j
-                return (-1,-1,-1,-1)
-            
-            if np.isnan(error):
-                print "anomaly check returned nan"
-                return (-1,-1,-1,-1)
-                
-            if verbose: print anomaly, error
+                if np.isnan(error):
+                    print "anomaly check returned nan"
+                    return (-1,-1,-1,-1)
 
-            # This is a successful nonanomalous attempt
-            if anomaly:
-                falsePos += 1
-                print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, error
-                break
-            elif j == len(normalTestData[0][i]) - 1:
-                trueNeg += 1
-                break
+                if verbose: print anomaly, error
+
+                # This is a successful nonanomalous attempt
+                if anomaly:
+                    falsePos += 1
+                    print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
+                    error
+                    break
+                elif j == len(normalTestData[0][i]) - 1:
+                    trueNeg += 1
+                    break
 
 
     # for abnormal test data
@@ -1121,12 +1147,12 @@ if __name__ == '__main__':
 
     # Feeding
     ## subject_names  = ['s2','s3','s4'] #'personal', 's3',
-    subject_names  = ['s13']
+    subject_names  = ['s11']
     task_name      = 'feeding' #['scooping', 'feeding']
     nSet           = 1
     folding_ratio  = [0.5, 0.3, 0.2]
     downSampleSize = 100
-    nState         = 15
+    nState         = 10
     cov_mult       = 5.0
     scale          = 1.0
     cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
@@ -1148,8 +1174,8 @@ if __name__ == '__main__':
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
                               anomaly_offset=anomaly_offset,\
-                              useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=False,\
-                              useTrain_color=False, useThsTest_color=False, useNormalTest_color=False,\
+                              useTrain=True, useThsTest=True, useNormalTest=False, useAbnormalTest=False,\
+                              useTrain_color=False, useThsTest_color=True, useNormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, save_pdf=opt.bSavePdf, verbose=True)       
     elif opt.bPlotTest:
         test_subject_names=['personal4']            
@@ -1174,6 +1200,7 @@ if __name__ == '__main__':
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         nSet = 10
         anomaly_offset = 0.0 #only for progress?
+        folding_ratio  = [0.5, 0.5, 0.0]
         
         if opt.bDataRenew == True: opt.bHMMRenew=True        
         ## folding_ratio  = [0.5, 0.5, 0.0]
@@ -1188,7 +1215,7 @@ if __name__ == '__main__':
                        cov_mult=cov_mult, folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
                        cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                        data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                       save_pdf=True, bPlot=False, verbose=False)
+                       save_pdf=True, bPlot=True, verbose=False)
         
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True

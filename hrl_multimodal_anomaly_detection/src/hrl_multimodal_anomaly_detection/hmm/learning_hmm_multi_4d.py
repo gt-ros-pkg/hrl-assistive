@@ -146,7 +146,8 @@ class learning_hmm_multi_4d:
             self.l_mean_delta = np.mean(abs(np.array(ll_delta_logp).flatten()))
             self.l_std_delta = np.std(abs(np.array(ll_delta_logp).flatten()))
 
-            print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
+            if self.verbose: 
+                print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
         
         
         if self.check_method == 'global' or self.check_method == 'globalChange':
@@ -762,8 +763,7 @@ class learning_hmm_multi_4d:
         # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
-            print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
-
+            ## print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
             return (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:
             return (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
@@ -791,7 +791,7 @@ class learning_hmm_multi_4d:
 
     def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true,
                         Z1, Z2, Z3, Z4, Z1_true, Z2_true, Z3_true, Z4_true, ths_mult, figureSaveName=None):
-        print np.shape(X1)
+        ## print np.shape(X1)
         n, m = np.shape(X1)
         n2, m2 = np.shape(Z1)
         if self.verbose: print "Input sequence X1: ", n, m

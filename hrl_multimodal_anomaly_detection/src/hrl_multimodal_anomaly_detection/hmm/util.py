@@ -322,10 +322,6 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
 
     n = len(normalTestData[0])
     log_ll = []
-
-    print "0000000000000000000000"
-    print n
-    print "0000000000000000000000"
         
     for i in range(n):
         m = len(normalTestData[0][i])
