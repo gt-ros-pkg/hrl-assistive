@@ -1173,7 +1173,7 @@ if __name__ == '__main__':
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         nSet = 10
-        anomaly_offset = -50.0 #only for progress?
+        anomaly_offset = 0.0 #only for progress?
         
         if opt.bDataRenew == True: opt.bHMMRenew=True        
         ## folding_ratio  = [0.5, 0.5, 0.0]
