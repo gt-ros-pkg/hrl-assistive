@@ -934,7 +934,7 @@ def preprocessData(subject_names, task_name, root_path, target_path, nSet=1, \
 
 def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
 
-    if dataList = []: return [], [], []
+    if dataList == []: return [], [], []
     
     # Determine max and min values
     if minVals is None:
