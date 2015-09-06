@@ -242,6 +242,11 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
 
         truePos, falseNeg, trueNeg, falsePos = \
         tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=minThresholds, verbose=verbose)
+        if truePos == -1: 
+            print "Error with task ", task_name
+            print "Error with nSet ", i
+            print "Error with crossEval ID: ", crossEvalID
+            return (-1,-1,-1,-1)
 
         tot_truePos += truePos
         tot_falseNeg += falseNeg
@@ -336,7 +341,9 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
             os.system('rm '+mutex_file)
             print "-----------------------------------------------"
 
+            if truePos==-1: sys.exit()
 
+            
     if count == len(check_methods)*len(subject_names):
         print "#############################################################################"
         print "All file exist ", count
@@ -944,15 +951,22 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
     for i in xrange(len(normalTestData[0])):
         if verbose: print 'Anomaly Error for test set ', i
 
-        print np.shape(normalTestData)
-            
         for j in range(6, len(normalTestData[0][i])):
 
-            anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
+            print i,j
+            try:    
+                anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
                                                normalTestData[1][i][:j], 
                                                normalTestData[2][i][:j],
                                                normalTestData[3][i][:j], c)
-
+            except:
+                print "anomaly_check failed: ", i, j
+                return (-1,-1,-1,-1)
+            
+            if np.isnan(error):
+                print "anomaly check returned nan"
+                return (-1,-1,-1,-1)
+                
             if verbose: print anomaly, error
 
             # This is a successful nonanomalous attempt
@@ -1041,7 +1055,10 @@ def crossEvaluation(subject_names, task_name, data_root_path, data_target_path, 
                        anomaly_offset=anomaly_offset, \
                        crossEvalID=idx, 
                        hmm_renew=hmm_renew, verbose=verbose)
-       
+
+        if truePos == -1:
+            print tr_names, t_name
+        
         # Sum up evaluatoin result
         tot_truePos += truePos
         tot_falseNeg += falseNeg

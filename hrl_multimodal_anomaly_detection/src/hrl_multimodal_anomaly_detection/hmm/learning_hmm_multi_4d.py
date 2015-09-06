@@ -662,7 +662,6 @@ class learning_hmm_multi_4d:
             if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
-            
         if self.check_method == 'change' or self.check_method == 'globalChange':
 
             ## if len(X1)<3: 
@@ -670,7 +669,6 @@ class learning_hmm_multi_4d:
             ##     return -1, 0.0 #error
 
             X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
-
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 last_logp         = self.ml.loglikelihood(final_ts_obj)
@@ -721,6 +719,10 @@ class learning_hmm_multi_4d:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
             return err < self.anomaly_offset, err
+            
+        else:
+            return err < 0.0, err
+            
 
             
     def expLikelihoods(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
