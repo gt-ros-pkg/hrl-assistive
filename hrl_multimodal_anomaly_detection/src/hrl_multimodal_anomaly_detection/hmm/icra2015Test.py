@@ -207,6 +207,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
           trainFileList, thsTestFileList, normalTestFileList, abnormalTestFileList \
           = getData(task_name, target_path, i, crossEvalID)
 
+
         if crossEvalID is None:
             dynamic_thres_pkl = os.path.join(target_path, "ml_"+task_name+"_"+str(i)+".pkl")
         else:
@@ -234,6 +235,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
             minThresholds1 = tuneSensitivityGain(hmm, trainData, method=check_method, verbose=verbose)
             minThresholds2 = tuneSensitivityGain(hmm, thresTestData, method=check_method, verbose=verbose)
             minThresholds = minThresholds2
+
             if type(minThresholds) == list or type(minThresholds) == np.ndarray:
                 for i in xrange(len(minThresholds1)):
                     if minThresholds1[i] < minThresholds2[i]:
@@ -241,7 +243,9 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
             else:
                 if minThresholds1 < minThresholds2:
                     minThresholds = minThresholds1
+
             d = ut.load_pickle(dynamic_thres_pkl)
+            if d is None: d = {}
             d['minThresholds'] = minThresholds                
             ut.save_pickle(d, dynamic_thres_pkl)                
         else:
@@ -262,9 +266,11 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
         tot_trueNeg += trueNeg 
         tot_falsePos += falsePos
 
-
     truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
-    trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+    if tot_trueNeg == 0 and tot_falsePos == 0:
+        trueNegativeRate = "not available"
+    else:
+        trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
     print "------------------------------------------------"
     print "Total set of data: ", nSet
     print "------------------------------------------------"
@@ -326,7 +332,11 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
                            hmm_renew=True, verbose=True)
 
             truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
-            trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+            if trueNeg == 0 and falsePos == 0:            
+                trueNegativeRate = "Not available"
+            else:
+                trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+                
             print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
                            
             if truePos!=-1 :                 
@@ -351,7 +361,9 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
             os.system('rm '+mutex_file)
             print "-----------------------------------------------"
 
-            if truePos==-1: sys.exit()
+            if truePos==-1: 
+                print "truePos is -1"
+                sys.exit()
 
             
     if count == len(check_methods)*len(subject_names):
@@ -1025,14 +1037,14 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                 print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
                 break
 
-    try:
-        truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
-        trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
-    except:
-        print np.shape(normalTestData)
-        print np.shape(abnormalTestData)
-        print truePos, falseNeg, trueNeg, falsePos
-        sys.exit()
+    ## try:
+    ##     truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
+    ##     trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+    ## except:
+    ##     print np.shape(normalTestData)
+    ##     print np.shape(abnormalTestData)
+    ##     print truePos, falseNeg, trueNeg, falsePos
+    ##     sys.exit()
         
     return truePos, falseNeg, trueNeg, falsePos
     
