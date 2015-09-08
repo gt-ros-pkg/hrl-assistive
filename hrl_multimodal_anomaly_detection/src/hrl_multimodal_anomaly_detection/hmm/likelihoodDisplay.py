@@ -8,9 +8,12 @@ import matplotlib.pyplot as plt
 import icra2015Batch as onlineHMM
 import matplotlib.animation as animation
 
-# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/t2/t2_f_success.pkl'
-# fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s10/s10_f_success.pkl'
-fileName = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/s11/ash_b_success1.pkl'
+directory = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/'
+# fileName = directory + 't2/t2_f_success.pkl'
+# fileName = directory + 's10/s10_f_success.pkl'
+fileName = directory + 's11/ash_b_success1.pkl'
+# fileName = directory + 's11/ash_b_failure_bowl.pkl'
+# fileName = directory + 's11/ash_b_failure_collision.pkl'
 isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
@@ -97,7 +100,7 @@ def plotDataAndLikelihood():
 plotDataAndLikelihood()
 
 
-animateThreshold = False
+animateThreshold = True
 
 
 print 'Times length:', len(times), 'Likelihood length:', len(ll_likelihood)
