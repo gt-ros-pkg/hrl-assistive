@@ -5,6 +5,8 @@ import sys, os, copy
 from scipy.stats import norm, entropy
 
 # Util
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
 import hrl_lib.util as ut
 
 # Matplot
