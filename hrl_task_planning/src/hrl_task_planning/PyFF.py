@@ -4,6 +4,8 @@ from tempfile import NamedTemporaryFile
 from subprocess import check_output, CalledProcessError
 from os import remove
 
+import rospy
+
 from pddl_utils import Planner
 
 
@@ -51,3 +53,27 @@ class FF(Planner):
                         raise ose
         self.solution = self._parse_solution(soln_txt)
         return self.solution
+
+
+class TaskPlannerNode(object):
+    """ A ROS node wrapping an instance of a task planner. """
+    def __init__(self, planner=FF):
+        self.planner = planner
+
+    def plan_req_cb(self, req):
+        problem = pddl_utils.PDDLProblem(req.problem)
+        try:
+            param = '/'.join(['~', 'domain_files', req.domain_file])
+            domain_file = rospy.get_param(param)
+        except KeyError:
+            rospy.logerr("[%s] Could not find domain file at param: %s" % (rospy.get_name(), param))
+        planner_instance = self.planner(problem, domain_file)
+        solution = planner_instance.solve()
+        return solution
+
+
+
+def main():
+    rospy.init_node("ff_task_planner")
+    planner_node = TaskPlannerNode()
+    rospy.spin()

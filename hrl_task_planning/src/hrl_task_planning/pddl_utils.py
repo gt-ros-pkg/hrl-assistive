@@ -1,18 +1,24 @@
 #!/usr/bin/env python
 
-
-from lis import parse
+# from lis import parse
 import copy
 
 
 class PDDLObject(object):
     """ A class describing an Object in PDDL. """
+    @classmethod
+    def init_from_string(cls, string):
+        """ Create a PDDLObject instance from a formatted string."""
+        string = string.strip('( )')
+        name, type_ = string.split('-')
+        return cls(name.strip(), type_.strip())
+
     def __init__(self, name, type=None):
         self.name = name
         self.type = type
 
     def __str__(self):
-        return "%s( %s )" % (self.name.upper(), self.type.upper())
+        return "%s - %s" % (self.name.upper(), self.type.upper())
 
     def __repr__(self):
         return self.__str__()
@@ -20,14 +26,32 @@ class PDDLObject(object):
 
 class PDDLPredicate(object):
     """ A class describing a predicate in PDDL. """
-    def __init__(self, name, args=None, neg=False):
+    @classmethod
+    def init_from_string(cls, string):
+        """ Create a PDDLPredicate instance from a formatted string."""
+        string = string.strip('( )')
+        assert string.count('(') <= 1, "Badly formed predicate string.  Too many opening parentheses"
+        string = string.upper()
+        parts = string.split('(')
+        neg = False
+        if len(parts) > 1:
+            neg = parts[0]
+            parts = parts[1:]
+            neg = True if 'NOT' == neg.strip() else False
+        name_args = parts[0].split()
+        name, args = name_args[0], name_args[1:]
+        return cls(name, args, neg)
+
+    def __init__(self, name=None, args=None, neg=False):
         self.name = name
         self.args = args
         self.neg = neg
 
     def __str__(self):
-        msg = "NOT" if self.neg else ""
-        return ' '.join([msg, "%s( %s )" % (self.name.upper(), ', '.join(self.args))])
+        msg = "(%s %s)" % (self.name, ' '.join(self.args))
+        if self.neg:
+            msg = ''.join(["( NOT ", msg, ")"])
+        return msg.upper()
 
     def __repr__(self):
         return self.__str__()
@@ -86,25 +110,27 @@ class PDDLDomain(object):
         return act[0], None
 
     def from_file(self, domain_file):
-        with open(domain_file, 'r') as f:
-            domain = f.read()
-        parsed_dom = parse(domain)
-        for statement in parsed_dom:
-            if statement == 'define':  # Ignore opening def statement
-                continue
-            elif statement[0] == 'domain':  # Get name of domain
-                self.name = statement[1]
-            elif statement[0] == ':requirements':
-                self.requirements.extend(statement[1:])  # Get requirements
-            elif statement[0] == ':types':
-                self.types = self._parse_types(statement[1:])
-            elif statement[0] == ':constants':
-                self.objects = self._parse_constants(statement[1:])
-            elif statement[0] == ':predicates':
-                self.predicates = self._parse_predicates(statement[1:])
-            elif statement[0] == ':action':
-                name, action = self._parse_action(statement[1:])
-                self.actions[name] = action
+        raise NotImplementedError
+        # TODO: Tested using content from Peter Norvig's lis.py, should find/make own replacement
+#        with open(domain_file, 'r') as f:
+#            domain = f.read()
+#        parsed_dom = parse(domain)
+#        for statement in parsed_dom:
+#            if statement == 'define':  # Ignore opening def statement
+#                continue
+#            elif statement[0] == 'domain':  # Get name of domain
+#                self.name = statement[1]
+#            elif statement[0] == ':requirements':
+#                self.requirements.extend(statement[1:])  # Get requirements
+#            elif statement[0] == ':types':
+#                self.types = self._parse_types(statement[1:])
+#            elif statement[0] == ':constants':
+#                self.objects = self._parse_constants(statement[1:])
+#            elif statement[0] == ':predicates':
+#                self.predicates = self._parse_predicates(statement[1:])
+#            elif statement[0] == ':action':
+#                name, action = self._parse_action(statement[1:])
+#                self.actions[name] = action
 
     def _get_constants_by_type(self):
         type_dict = {}
@@ -174,17 +200,18 @@ class PDDLProblem(object):
         preds = []
         for pred in init_str:
             p = pred.split(')')[0].split()
-            preds.append(PDDLPredicate(p[1        if problem_file is None:
-
-        else:
-            self.problem_file = problem_file
-], p[1:]))
+            preds.append(PDDLPredicate(p[1], p[1:]))
         return preds
 
-    def from_file(self, filename):
+    @classmethod
+    def init_from_file(cls, filename):
         """ Load a PDDL Problem from a PDDL problem file. """
         with open(filename, 'r') as pfile:
             string = ''.join(pfile.readlines())
+        return cls.init_from_string(string)
+
+    @classmethod
+    def init_from_string(cls, string):
         string = string.upper().replace('\n', ' ')
         # Extract the problem name
         ps = string.find('PROBLEM') + 7  # after def problem
@@ -209,7 +236,6 @@ class PDDLProblem(object):
             else:
                 pyobjs[-1].type = obj
                 exp = 'name'
-
         init_start = string.find(':INIT') + 5
         init_preds = self._grab_inits(string[init_start:])
         # Extract the goal states
@@ -225,26 +251,15 @@ class PDDLProblem(object):
             p = entry.split()
             goal_preds.append(PDDLPredicate(p[0], p[1:], neg=neg))
             neg = False
-        self.name = problem_name
-        self.problem_file = filename
-        self.problem_domain = problem_domain
-        self.objects = pyobjs
-        self.init = init_preds
-        self.goal = goal_preds
+        return cls(problem_name, problem_domain, objects=pyobjs, init=init_preds, goal=goal_preds)
 
-        self.__init__(problem_name,
-                      problem_domain,
-                      objects=pyobjs,
-                      init=init_preds,
-                      goal=goal_preds)
-
-    def to_file(self, problem, filename=None):
+    def to_file(self, filename=None):
         """ Write a PDDL Problem file based on a PDDLProblem instance. """
-        s = "(define (problem " + problem.name + ")\n"
-        s += "\t(:domain " + problem.domain + ")\n"
+        s = "(define (problem " + self.name + ")\n"
+        s += "\t(:domain " + self.domain + ")\n"
         # Define objects
         s += "\t(:objects "
-        for obj in problem.objects:
+        for obj in self.objects:
             s += ''.join(['\t', obj.name])
             if obj.type is not None:
                 s += " - " + obj.type
@@ -252,20 +267,20 @@ class PDDLProblem(object):
         s += ")\n"
         # Define initial conditions
         s += "(:init "
-        for pred in problem.init:
+        for pred in self.init:
             parts = ['\t(not ', '', ')\n'] if pred.neg else ['\t', '', '\n']
             parts[1] = ' '.join(['(', pred.name, ' '.join(pred.args), ')'])
             s += ''.join(parts)
         s += ')\n'
         # Defind goal conditions
         s += "(:goal\n\t(and \n"
-        for pred in problem.goal:
+        for pred in self.goal:
             parts = ['\t(not ', '', ')\n'] if pred.neg else ['\t', '', '\n']
             parts[1] = ' '.join(['(', pred.name, ' '.join(pred.args), ')'])
             s += ''.join(parts)
         s += ')))\n'
         # Write file to disk
-        filename = '.'.join([problem.name, 'problem']) if filename is None else filename
+        filename = '.'.join([self.name, 'problem']) if filename is None else filename
         with open(filename, 'w') as prob_file:
             prob_file.write(s)
 
