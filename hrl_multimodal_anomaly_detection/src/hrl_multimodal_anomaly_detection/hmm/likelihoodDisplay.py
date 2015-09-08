@@ -97,7 +97,7 @@ def plotDataAndLikelihood():
 
     plt.show()
 
-plotDataAndLikelihood()
+# plotDataAndLikelihood()
 
 
 animateThreshold = True
@@ -160,12 +160,8 @@ def animate(i):
     if animateThreshold:
         expected.set_xdata(times[:i])
         expected.set_ydata(ll_likelihood_mu[:i])
-        thresholdValues = []
-        for index in xrange(i):
-            minIndex = ll_state_idx[index]
-            thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
         threshold.set_xdata(times[:i])
-        threshold.set_ydata(thresholdValues)
+        threshold.set_ydata(thresholdValues[:i])
     return line,
 
 # Init only required for blitting to give a clean slate.
