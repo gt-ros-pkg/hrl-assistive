@@ -322,10 +322,6 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
 
     n = len(normalTestData[0])
     log_ll = []
-
-    print "0000000000000000000000"
-    print n
-    print "0000000000000000000000"
         
     for i in range(n):
         m = len(normalTestData[0][i])
@@ -381,22 +377,39 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
         plt.show()        
 
 
-def tuneSensitivityGain(hmm, dataSample, verbose=False):
-    minThresholds = np.zeros(hmm.nGaussian) + 10000
+def tuneSensitivityGain(hmm, dataSample, method='progress', verbose=False):
+
+    minThresholds = 0
+    if method == 'progress':    
+        minThresholds = np.zeros(hmm.nGaussian) + 10000
+    elif method == 'globalChange':
+        minThresholds = np.zeros(2) + 10000
 
     n = len(dataSample[0])
     for i in range(n):
         m = len(dataSample[0][i])
 
         for j in range(2, m):
-            threshold, index = hmm.get_sensitivity_gain(dataSample[0][i][:j], dataSample[1][i][:j],
+            ths, index = hmm.get_sensitivity_gain(dataSample[0][i][:j], dataSample[1][i][:j],
                                                         dataSample[2][i][:j], dataSample[3][i][:j])
-            if not threshold:
-                continue
+            if not ths: continue
 
-            if minThresholds[index] > threshold:
-                minThresholds[index] = threshold
-                if verbose: print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
+            if method == 'progress':               
+                if minThresholds[index] > ths:
+                    minThresholds[index] = ths
+                    if verbose: print '(',i,',',n,')', 'Minimum threshold: ', minThresholds[index], index
 
+            elif method == 'globalChange':
+                if minThresholds[0] > ths[0]:
+                    minThresholds[0] = ths[0]
+                if minThresholds[1] > ths[1]:
+                    minThresholds[1] = ths[1]
+                if verbose: print "Minimum threshold: ", minThresholds[0], minThresholds[1]
+                    
+            else:
+                if minThresholds > ths:
+                    minThresholds = ths
+                    if verbose: print "Minimum threshold: ", minThresholds
+                    
     return minThresholds
 
