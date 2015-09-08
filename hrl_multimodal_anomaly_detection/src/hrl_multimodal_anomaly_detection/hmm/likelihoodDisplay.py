@@ -11,9 +11,9 @@ import matplotlib.animation as animation
 directory = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/'
 # fileName = directory + 't2/t2_f_success.pkl'
 # fileName = directory + 's10/s10_f_success.pkl'
-fileName = directory + 's11/ash_b_success1.pkl'
+# fileName = directory + 's11/ash_b_success1.pkl'
 # fileName = directory + 's11/ash_b_failure_bowl.pkl'
-# fileName = directory + 's11/ash_b_failure_collision.pkl'
+fileName = directory + 's11/ash_b_failure_collision.pkl'
 isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
@@ -112,18 +112,36 @@ elif len(ll_likelihood) < len(times):
     times = times[:len(ll_likelihood)]
     print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
 
+# Determine thresholds
+thresholdValues = []
+for index in xrange(len(ll_likelihood)):
+    minIndex = ll_state_idx[index]
+    thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
+
+
+# Extrapolate data to see anomaly
+timeDiff = times[-1] - times[-2]
+times.append(times[-1] + timeDiff)
+times.append(times[-1] + timeDiff)
+lineDiff = ll_likelihood[-1] - ll_likelihood[-2]
+ll_likelihood.append(ll_likelihood[-1] + lineDiff)
+ll_likelihood.append(ll_likelihood[-1] + lineDiff)
+expectedDiff = ll_likelihood_mu[-1] - ll_likelihood_mu[-2]
+ll_likelihood_mu.append(ll_likelihood_mu[-1] + expectedDiff)
+ll_likelihood_mu.append(ll_likelihood_mu[-1] + expectedDiff)
+thresholdDiff = thresholdValues[-1] - thresholdValues[-2]
+thresholdValues.append(thresholdValues[-1] + thresholdDiff)
+thresholdValues.append(thresholdValues[-1] + thresholdDiff)
+
+
 # Animation
 fig, ax = plt.subplots()
 # ax.set_title('Log-likelihood')
 ax.set_xlabel('Time (sec)', fontsize=16)
 ax.set_ylabel('Log-likelihood', fontsize=16)
 
-line, = ax.plot(times, ll_likelihood, 'b', label='Actual likelihood')
-expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected from\ntrained model')
-thresholdValues = []
-for index in xrange(len(ll_likelihood)):
-    minIndex = ll_state_idx[index]
-    thresholdValues.append(ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index])
+line, = ax.plot(times, ll_likelihood, 'b', label='Log-likelihood')
+expected, = ax.plot(times, ll_likelihood_mu, 'r', label='Expected log-likelihood')
 threshold, = ax.plot(times, thresholdValues, 'r--', label='Threshold')
 legend = ax.legend(loc=2)
 
