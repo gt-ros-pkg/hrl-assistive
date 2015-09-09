@@ -398,7 +398,7 @@ class armReachAction(mpcBaseAction):
             self.setOrientGoal(self.posL, self.quatL, self.timeoutsFeeding[i])
             print 'Pausing for {} seconds '.format(self.pausesFeeding[i])
 
-            # Daehyung: don't use time sleep. use rospy.sleep. the time sleep will stop communication either. 
+            # Daehyung: don't use time sleep. use rospy.sleep. the time sleep will pause ros-communications. 
             ## time.sleep(self.pausesFeeding[i])
             if self.interrupted:
                 break

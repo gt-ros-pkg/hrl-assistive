@@ -119,7 +119,7 @@ def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
             ax3.plot(abnormalTestTimeList[i], abnormalTestData[2][i],'m')
             ax4.plot(abnormalTestTimeList[i], abnormalTestData[3][i],'m')
             count = count + 1
-            
+                           
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
@@ -158,7 +158,11 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
     ax4 = plt.subplot(413)
  
     success_list, failure_list = getSubjectFileList(data_root_path, test_subject_names, task_name)
-    
+
+    success_list = []
+    fileName = "/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/ash_b_09-04-2015_09-45-31.pkl"
+    failure_list = [fileName] 
+   
     if len(success_list)>0:
         testData, testTimeList = loadData(success_list, isTrainingData=False, 
                                                 downSampleSize=downSampleSize)
@@ -171,7 +175,7 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
             ax3.plot(testTimeList[i], testData_scaled[2][i],'m')
             ax4.plot(testTimeList[i], testData_scaled[3][i],'m')            
         
-    if len(failure_list)>0 and False:
+    if len(failure_list)>0 and True:
         testData, testTimeList = loadData(failure_list, isTrainingData=False, 
                                           downSampleSize=downSampleSize)
         testData_scaled,_ ,_  = scaleData(testData, scale=scale, minVals=minVals, 
@@ -186,7 +190,7 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
+        ## os.system('cp test.p* ~/Dropbox/HRL/')
     else:
         plt.show()        
     
