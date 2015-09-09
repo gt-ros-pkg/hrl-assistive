@@ -766,6 +766,49 @@ class learning_hmm_multi(learning_base):
 
     #----------------------------------------------------------------------        
     #
+    def get_sensitivity_gain_batch(self, x_test1, x_test2=None):
+
+        min_ths = 0
+        min_ind = 0
+        if self.check_method == 'progress':
+            min_ths = np.zeros(self.nGaussian)+10000
+            min_ind = np.zeros(self.nGaussian)
+        elif self.check_method == 'globalChange':
+            min_ths = np.zeros(2)+10000
+
+        n = len(x_test1)
+        for i in range(n):
+            m = len(x_test1[i])
+
+            # anomaly_check only returns anomaly cases only
+            for j in range(2,m):                    
+
+                if self.nEmissionDim == 2:            
+                    ths, ind = self.get_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
+                else:
+                    ths, ind = self.get_sensitivity_gain(x_test1[i][:j])
+
+                if ths == []: continue
+
+                if self.check_method == 'progress':
+                    if min_ths[ind] > ths:
+                        min_ths[ind] = ths
+                        print "Minimum threshold: ", min_ths[ind], ind                                
+                elif self.check_method == 'globalChange':
+                    if min_ths[0] > ths[0]:
+                        min_ths[0] = ths[0]
+                    if min_ths[1] > ths[1]:
+                        min_ths[1] = ths[1]
+                    print "Minimum threshold: ", min_ths[0], min_ths[1]                                
+                else:
+                    if min_ths > ths:
+                        min_ths = ths
+                        print "Minimum threshold: ", min_ths
+
+        return min_ths, min_ind
+        
+    #----------------------------------------------------------------------        
+    #
     def get_sensitivity_gain(self, X1, X2=None):
 
         if self.nEmissionDim == 1: X_test = np.array([X1])

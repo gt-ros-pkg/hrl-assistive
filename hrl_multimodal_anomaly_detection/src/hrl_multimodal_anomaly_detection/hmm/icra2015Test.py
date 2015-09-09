@@ -382,8 +382,12 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
                      (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),    
                      (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
         tableau20 = np.array(tableau20)/255.0
-        width = 0.2
-        tp_rates = []
+        width = 0.5
+        methods = ('Change \n detection', 'Fixed threshold \n detection', \
+                   'Fixed threshold \n & change detection', \
+                   'Dynamic threshold \n detection')
+        tp_mean = []
+        tp_std = []
 
         for i, method in enumerate(check_methods):        
             
@@ -393,6 +397,8 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
             tot_falseNeg = 0
             tot_trueNeg = 0 
             tot_falsePos = 0
+
+            fdr_l = []
 
             for j, subject_name in enumerate(subject_names):
 
@@ -414,24 +420,32 @@ def evaluation_all(subject_names, task_name, check_methods, data_root_path, data
                 tot_trueNeg += trueNeg
                 tot_falsePos += falsePos
 
+                fdr_l.append( float(truePos) / float(truePos + falseNeg) * 100.0 )
+
             truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
-            trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+            if trueNeg == 0 and falsePos == 0:            
+                trueNegativeRate = "Not available"
+            else:
+                trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
             print "------------------------------------------------"
             print "Method: ", method
             print "------------------------------------------------"
             print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
             print "------------------------------------------------"
 
-            tp_rates.append(truePositiveRate)
+            tp_mean.append( np.mean(fdr_l) )
+            tp_std.append( np.std( fdr_l ))
+            
 
         
         fig = pp.figure()       
             
         ind = np.arange(len(check_methods))+1           
-        pp.bar(ind, tp_rates, width, color=tableau20[i*2])
+        pp.bar(ind+width/4.0, tp_mean, width, color=[tableau20[0],tableau20[2],tableau20[4],tableau20[6]], yerr=tp_std)
                 
         pp.ylim([0.0, 100.0])
         pp.ylabel('Detection Rate [%]', fontsize=16)    
+        pp.xticks(ind + width*3.0/4, methods )
 
         if save_pdf:
             fig.savefig('test.pdf')

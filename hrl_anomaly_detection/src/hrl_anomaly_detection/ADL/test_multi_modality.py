@@ -368,10 +368,10 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
 
         pp.legend(loc=4,prop={'size':16})
         
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-        ## pp.show()
+        ## fig.savefig('test.pdf')
+        ## fig.savefig('test.png')
+        ## os.system('cp test.p* ~/Dropbox/HRL/')
+        pp.show()
         
     return
 
@@ -715,44 +715,9 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 else:
                     x_test1 = test_dataSet.samples[:,check_dim]
 
-                min_ths = 0
-                min_ind = 0
-                if method == 'progress':
-                    min_ths = np.zeros(lhm.nGaussian)+10000
-                    min_ind = np.zeros(lhm.nGaussian)
-                elif method == 'globalChange':
-                    min_ths = np.zeros(2)+10000
-                    
-                n = len(x_test1)
-                for i in range(n):
-                    m = len(x_test1[i])
 
-                    # anomaly_check only returns anomaly cases only
-                    for j in range(2,m):                    
-
-                        if check_dim == 2:            
-                            ths, ind = lhm.get_sensitivity_gain(x_test1[i][:j], x_test2[i][:j])   
-                        else:
-                            ths, ind = lhm.get_sensitivity_gain(x_test1[i][:j])
-
-                        if ths == []: continue
-
-                        if method == 'progress':
-                            if min_ths[ind] > ths:
-                                min_ths[ind] = ths
-                                print "Minimum threshold: ", min_ths[ind], ind                                
-                        elif method == 'globalChange':
-                            if min_ths[0] > ths[0]:
-                                min_ths[0] = ths[0]
-                            if min_ths[1] > ths[1]:
-                                min_ths[1] = ths[1]
-                            print "Minimum threshold: ", min_ths[0], min_ths[1]                                
-                        else:
-                            if min_ths > ths:
-                                min_ths = ths
-                                print "Minimum threshold: ", min_ths
-
-
+                min_ths, min_ind = lhm.get_sensitivity_gain_batch(x_test1, x_test2)
+                
                 if False:      
                     for j in xrange(len(false_chunks)):                     
                         if check_dim == 2:
@@ -1090,7 +1055,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
 
                     fd_sum += np.sum(d['false_detection_l'])
                     fd_cnt += len(d['false_detection_l'])
-
+                    
                     if delay_l == []: 
                         if d.get('delay_l',[]) == [[]]: 
                             delay_l = [-1]
@@ -1311,7 +1276,9 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     if test_title.find('param') < 0 :            
         fig = pp.figure()
 
-        pp.bar(ind + width/4.0, fdr_mu_class_l, width, color='y', yerr=fdr_std_class_l)
+        pp.bar(ind + width/4.0, fdr_mu_class_l, width, color=[tableau20[0],tableau20[2],
+                                                              tableau20[4],tableau20[6]], 
+                                                              yerr=fdr_std_class_l)
     
         pp.ylabel('Anomaly Detection Rate (Percentage)', fontsize=16)    
         ## pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
