@@ -6,7 +6,8 @@ from os import remove
 
 import rospy
 
-from pddl_utils import Planner
+from pddl_utils import Planner, PDDLProblem
+from hrl_task_planner.srv import TaskPlanService
 
 
 class FF(Planner):
@@ -59,18 +60,19 @@ class TaskPlannerNode(object):
     """ A ROS node wrapping an instance of a task planner. """
     def __init__(self, planner=FF):
         self.planner = planner
+        self.planner_service = rospy.Service('plan_task', TaskPlanService, self.plan_req_cb)
 
     def plan_req_cb(self, req):
-        problem = pddl_utils.PDDLProblem(req.problem)
+        problem = PDDLProblem(req.problem)
         try:
-            param = '/'.join(['~', 'domain_files', req.domain_file])
+            param = '/'.join(['~', 'domain_files', req.domain])
             domain_file = rospy.get_param(param)
         except KeyError:
             rospy.logerr("[%s] Could not find domain file at param: %s" % (rospy.get_name(), param))
+            return
         planner_instance = self.planner(problem, domain_file)
         solution = planner_instance.solve()
         return solution
-
 
 
 def main():

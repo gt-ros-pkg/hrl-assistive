@@ -2,6 +2,82 @@
 
 # from lis import parse
 import copy
+import re
+import sys
+
+
+def parse_lisp(string):
+    parts = re.split('\(|\)|\n| ', string.upper())
+    return [part.strip() for part in parts if part.strip()]  # Only keep each part if it isn't an empy string
+
+
+def separate_list(string):
+    string = string.replace(')', ' ) ')
+    string = string.replace('(', ' ( ')
+    return string.split()
+
+def to_lists(items):
+    item = items.pop(0)
+    list_ = []
+    if item == '(':
+        print "open brace"
+        sys.stdout.flush()
+        list_.append(to_lists(items))
+    elif item == ')':
+        print "close brace"
+        sys.stdout.flush()
+        return list_
+    else:
+        print "append %s" % item
+        sys.stdout.flush()
+        list_.append(item)
+
+
+def parse_problem(string):
+    sep_list = separate_list(string)
+    objects = []
+    init = []
+    goal = []
+    mode = None
+    level = 0
+    mode_level = 0
+    for i, item in enumerate(sep_list):
+        if item == '(':
+            level += 1
+        elif item == ')':
+            level -= 1
+            if level < mode_level:
+                mode = None
+        elif item == 'DEFINE':  # ignore
+          continue
+        elif item == "PROBLEM":
+            problem_name = sep_list[i+1]
+        elif item == ":DOMAIN":
+            domain_name = sep_list[i+1]
+        elif item == ":OBJECTS":
+            mode = ":OBJECTS"
+            mode_level = level
+        elif item == ":INIT":
+            mode = ":INIT"
+            mode_level = level
+        elif item == ":GOAL":
+            mode = ":GOAL"
+            mode_level = level
+        else:
+            if mode is None:
+                continue
+            elif mode == ":OBJECTS":
+                if sep_list[i+1] == '-':
+                    objects.append(PDDLObject(item, sep_list[i+2]))
+                continue
+            elif mode == ":Init":
+                pass
+
+
+
+
+
+
 
 
 class PDDLObject(object):
@@ -171,22 +247,21 @@ class PDDLProblem(object):
         self.goal = [i for i in goal if isinstance(i, PDDLPredicate)]
 
     def __str__(self):
-        s = "+"*20, " Problem ", "+"*20
-        s += "\nObjects:"
-        for obj in self.objects:
-            s += str(obj)
-        s += "\nInitial Predicates:"
-        for pred in self.init:
-            s += str(pred)
-        s += "\nGoal Predicates:"
-        for pred in self.goal:
-            s += str(pred)
-        return s
+        title = "PDDL Problem: %s" % self.name
+        domain = "PDDL Domain: %s" % self.domain
+        objects_title = "Objects:"
+        objects = "\t"+"\n\t".join(map(str, self.objects))
+        predicates_title = "Initial Predicates:"
+        predicates = "\t"+"\n\t".join(map(str, self.init))
+        goal_title = "Goal Predicates:"
+        goal = "\t"+"\n\t".join(map(str, self.goal))
+        return '\n'.join([title, domain, objects_title, objects, predicates_title, predicates, goal_title, goal])
 
     def __repr__(self):
         return self.__str__()
 
-    def _grab_inits(self, string):
+    @classmethod
+    def _grab_inits(cls, string):
         """ Extract initial predicates from a string"""
         # TODO: Doesn't catch negative initial cases
         op = 0
@@ -211,33 +286,81 @@ class PDDLProblem(object):
         return cls.init_from_string(string)
 
     @classmethod
+    def parse_objects(cls, stringlist):
+        """ Extract the objects defined for the problem."""
+        assert(len(stringlist) % 3 == 0), "Error parsing constants: should be (object, [hyphen], type) triples"
+        obj_list = []
+        for i in range(len(stringlist)/3):
+            obj_list.append(PDDLObject(stringlist[3*i], stringlist[3*i+2]))
+        return obj_list
+
+    @classmethod
+    def extract_init_text(cls, string):
+        """ Extract predicates from a defined list. """
+        predicate_strings = []
+        s = string[string.find(":INIT"):]
+        open_idx = s.find("(")
+        close_idx = s.find("(")
+        if open_idx < close_idx:
+            pass
+
+
+
+
+        i = 0
+        open_level = 1
+        while open_level > 0:
+            blockstart = None
+            print i, s[i]
+            if s[i] == "(":
+                if blockstart is None:
+                    blockstart = i
+                else:
+                    open_level += i
+            elif s[i] == ")":
+                predicate_strings.append(string[blockstart:i])
+                open_level -= 1
+                blockstart = None
+            i += 1
+        return predicate_strings
+
+
+
+    @classmethod
     def init_from_string(cls, string):
-        string = string.upper().replace('\n', ' ')
-        # Extract the problem name
-        ps = string.find('PROBLEM') + 7  # after def problem
-        pe = string.find(')', ps)
-        problem_name = string[ps:pe].strip()
-        # Extract the domain name
-        ds = string.find(':DOMAIN') + 7
-        de = string.find(')', ds)
-        problem_domain = string[ds:de].strip()
-        # Extract the objects defined for the problem
-        obj_start = string.find(':OBJECTS') + 8
-        oe = string.find(')', obj_start)
-        objs = string[obj_start:oe].strip().split()
-        pyobjs = []
-        exp = 'name'
-        for obj in objs:
-            if obj == '-':
-                exp = 'type'
-                continue
-            if exp == 'name':
-                pyobjs.append(PDDLObject(obj))
-            else:
-                pyobjs[-1].type = obj
-                exp = 'name'
+        string = string.upper()
+        parts = parse_lisp(string)
+        parts.remove("DEFINE")  # Get rid of the def statement
+        # Extract problem name
+        problem_idx = parts.index("PROBLEM")
+        problem_name = parts[problem_idx+1]
+        parts.pop(problem_idx)  # Removes problem statement
+        parts.pop(problem_idx)  # Removes problem name argument (falls back to vacated index after first pop)
+        # Extract domain name
+        dom_idx = parts.index(":DOMAIN")
+        problem_domain = parts[dom_idx + 1]
+        parts.pop(dom_idx)  # Removes domain statement
+        parts.pop(dom_idx)  # Removes domain name argument (falls back to vacated index after first pop)
+        # Extract components
+        obj_idx = string.find(":OBJECTS")
+        init_idx = string.find(":INIT")
+        goal_idx = string.find(":GOAL")
+        blocks = {obj_idx: ":OBJECTS",
+                  init_idx: ":INIT",
+                  goal_idx: ":GOAL"}
+        keys = blocks.keys()
+        keys.sort()
+        strings = {}
+        strings[blocks[keys[0]]] = parts[keys[0]+1:keys[1]]
+        strings[blocks[keys[1]]] = parts[keys[1]+1:keys[2]]
+        strings[blocks[keys[2]]] = parts[keys[2]+1:]
+        objects = cls.parse_objects(groups[":objects"])
+        init = cls.parse_predicates(groups[":init"])
+        goal = cls.parse_predicates(groups[":goal"])
+
+
         init_start = string.find(':INIT') + 5
-        init_preds = self._grab_inits(string[init_start:])
+        init_preds = cls._grab_inits(string[init_start:])
         # Extract the goal states
         goal_start = string.find(':GOAL') + 5
         goal_string = string[string.find('AND', goal_start) + 3:].strip()
