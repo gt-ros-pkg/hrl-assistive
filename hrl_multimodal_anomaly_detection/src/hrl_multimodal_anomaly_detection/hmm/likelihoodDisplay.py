@@ -14,7 +14,8 @@ directory = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/
 # fileName = directory + 's10/s10_f_success.pkl'
 # fileName = directory + 's11/ash_b_success1.pkl'
 # fileName = directory + 's11/ash_b_failure_bowl.pkl'
-fileName = directory + 's11/ash_b_failure_collision.pkl'
+# fileName = directory + 's11/ash_b_failure_collision.pkl'
+fileName = directory + 'ash_b_09-04-2015_09-45-31.pkl'
 isNewFormat = True
 
 parts = fileName.split('/')[-1].split('_')
@@ -149,6 +150,9 @@ ll_likelihood_mu = interpData(times, newTimes, ll_likelihood_mu)
 thresholdValues = interpData(times, newTimes, thresholdValues)
 times = newTimes
 
+print 'After interpolation:'
+print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
+
 # Animation
 fig, ax = plt.subplots()
 # ax.set_title('Log-likelihood')
@@ -157,7 +161,7 @@ ax.set_ylabel('Log-likelihood', fontsize=16)
 
 line, = ax.plot(times, ll_likelihood, 'b', linewidth=2.0, label='Log-likelihood')
 expected, = ax.plot(times, ll_likelihood_mu, 'm', linewidth=2.0, label='Expected log-likelihood')
-threshold, = ax.plot(times, thresholdValues, '--', color=0.75, linewidth=2.0, label='Threshold')
+threshold, = ax.plot(times, thresholdValues, '--', color='0.75', linewidth=2.0, label='Threshold')
 legend = ax.legend(loc=2)
 
 # Increase legend line width
