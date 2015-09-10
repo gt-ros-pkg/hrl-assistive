@@ -12,11 +12,12 @@ import matplotlib.animation as animation
 directory = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/'
 # fileName = directory + 't2/t2_f_success.pkl'
 # fileName = directory + 's10/s10_f_success.pkl'
-# fileName = directory + 's11/ash_b_success1.pkl'
+fileName = directory + 's11/ash_b_success_scooping.pkl'
+# fileName = directory + 's11/ash_b_success_feeding.pkl'
 # fileName = directory + 's11/ash_b_failure_bowl.pkl'
-# fileName = directory + 's11/ash_b_failure_collision.pkl'
-fileName = directory + 'ash_b_09-04-2015_09-45-31.pkl'
+# fileName = directory + 's11/ash_b_feedingfailure_collision.pkl'
 isNewFormat = True
+isFailure = 'failure' in fileName
 
 parts = fileName.split('/')[-1].split('_')
 subject = parts[0]
@@ -124,17 +125,11 @@ for index in xrange(len(ll_likelihood)):
 # Extrapolate data to see anomaly
 # timeDiff = times[-1] - times[-2]
 # times.append(times[-1] + timeDiff)
-# times.append(times[-1] + timeDiff)
 # lineDiff = ll_likelihood[-1] - ll_likelihood[-2]
-# print ll_likelihood[-1], ll_likelihood[-2], lineDiff
-# ll_likelihood.append(ll_likelihood[-1] + lineDiff)
 # ll_likelihood.append(ll_likelihood[-1] + lineDiff)
 # expectedDiff = ll_likelihood_mu[-1] - ll_likelihood_mu[-2]
-# print ll_likelihood_mu[-1], ll_likelihood_mu[-2], expectedDiff
-# ll_likelihood_mu.append(ll_likelihood_mu[-1] + expectedDiff)
 # ll_likelihood_mu.append(ll_likelihood_mu[-1] + expectedDiff)
 # thresholdDiff = thresholdValues[-1] - thresholdValues[-2]
-# thresholdValues.append(thresholdValues[-1] + thresholdDiff)
 # thresholdValues.append(thresholdValues[-1] + thresholdDiff)
 
 def interpData(oldTimes, newTimes, data):
@@ -158,9 +153,11 @@ fig, ax = plt.subplots()
 # ax.set_title('Log-likelihood')
 ax.set_xlabel('Time [s]', fontsize=16)
 ax.set_ylabel('Log-likelihood', fontsize=16)
+if isFailure:
+    ax.set_xlim([0, times[-1]*2])
 
 line, = ax.plot(times, ll_likelihood, 'b', linewidth=2.0, label='Log-likelihood')
-expected, = ax.plot(times, ll_likelihood_mu, 'm', linewidth=2.0, label='Expected log-likelihood')
+expected, = ax.plot(times, ll_likelihood_mu, 'm', linewidth=2.0, label='Expected\nlog-likelihood')
 threshold, = ax.plot(times, thresholdValues, '--', color='0.75', linewidth=2.0, label='Threshold')
 legend = ax.legend(loc=2)
 
@@ -198,7 +195,10 @@ interval = 1000 / len(ll_likelihood) * times[-1]
 print 'Max time:', times[-1], 'Interval:', interval, 'FPS:', fps
 ani = animation.FuncAnimation(fig, animate, np.arange(1, len(ll_likelihood) + 1), init_func=init, interval=25, blit=True)
 location = time.strftime(os.path.join(os.path.dirname(__file__), 'likelihood_%m-%d-%Y_%H-%M-%S.mp4'))
-ani.save(location, fps=fps)
+# FFMpegWriter = animation.writers['ffmpeg']
+writer = animation.FFMpegWriter(bitrate=1000, fps=fps)
+ani.save(location, writer=writer)
+# ani.save(location, fps=fps)
 # plt.show()
 
 print 'Animation saved to:', location
