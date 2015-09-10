@@ -38,7 +38,7 @@ class PDDLObject(object):
     def from_string(cls, string):
         """ Create a PDDLObject instance from a formatted string."""
         string = string.strip('( )')
-        name, type_ = string.split('-')
+        name, type_ = string.split(' - ')
         return cls(name.strip(), type_.strip())
 
     def __init__(self, name, type=None):

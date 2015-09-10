@@ -1,0 +1,121 @@
+(define (domain shaving)
+ (:requirements :typing :conditional-effects)
+ (:types 
+  robot tool - object
+  razor mirror - tool
+  face-side - location)
+
+ (:constants pr2 - robot
+             razor1 - razor
+             mirror1 - mirror
+             toolbox - location
+             unknown - location
+             user-right - face-side
+             user-left - face-side
+ )
+
+ (:predicates (at ?o - object ?l - location)
+  (in-place ?r - robot ?l - location)
+  (can-servo ?l - location)
+  (safe-for-tools ?l - location)
+  (arms-nav ?r - robot)
+  (grasped ?r - robot ?t - tool)
+  (arms-head ?r - robot)
+  (head-registered ?f - face-side)
+  (shaved ?f - face-side)
+ )
+
+ (:action navigate
+  :parameters (?r - robot ?to - location)
+  :precondition (and (arms-nav ?r))
+  :effect (and (at ?r ?to)
+      (forall (?fs - face-side)
+       (not (head-registered ?fs))
+      )
+      (forall (?loc - location)
+       (when (and (at ?r ?loc))
+        (and (not (at ?r ?loc))
+             (not (in-place ?r ?loc))
+        )
+       )
+      )
+      )
+ )
+
+    (:action tuck-arms
+     :parameters (?r - robot)
+     :effect (and (arms-nav ?r)
+                  (not (arms-head ?r))
+             )
+    )
+
+    (:action grasp-tool
+     :parameters (?r - robot ?t - tool ?l - location)
+     :precondition (and (in-place ?r ?l) (at ?t ?l))
+     :effect (and (grasped ?r ?t) 
+                  (not (at ?t ?l))
+                  (not (arms-nav ?r))
+                  (not (arms-head ?r))
+             )
+    )
+
+
+    (:action replace-tool
+     :parameters (?r - robot ?t - tool ?l - location)
+     :precondition (and (in-place ?r ?l)
+                        (grasped ?r ?t)
+                        (safe-for-tools ?l)
+                   )
+     :effect (and (at ?t ?l)
+                  (not (grasped ?r ?t))
+                  (not (arms-nav ?r))
+                  (not (arms-head ?r))
+         )
+    )
+
+    (:action recover-tool
+     :parameters (?r - robot ?t - tool ?l - location)
+     :precondition (and (at ?r ?l)
+                        (at ?t ?l)
+                        (not (can-servo ?l))
+                        (not (grasped ?r ?t))
+                    )
+     :effect (and (grasped ?r ?t)
+                  (not (at ?t ?l))
+              )
+    )
+
+    (:action servo
+     :parameters (?r - robot ?l - location)
+     :precondition (and (at ?r ?l)
+                        (can-servo ?l)
+                   )
+     :effect (and (in-place ?r ?l))
+    )
+
+    (:action register-head
+     :parameters (?r - robot ?fs - face-side)
+     :precondition (and (in-place ?r ?fs) (not (arms-head ?r)))
+     :effect (and (head-registered ?fs))
+    )
+
+    (:action untuck-arms
+     :parameters (?r - robot)
+     :effect (and (arms-head ?r) (not (arms-nav ?r)))
+    )
+
+    (:action shave
+     :parameters (?r - robot ?fs - face-side ?m - mirror ?raz - razor)
+     :precondition (and (in-place ?r ?fs)
+         (arms-head ?r)
+         (head-registered ?fs)
+         (grasped ?r ?raz)
+         (grasped ?r ?m)
+         )
+     :effect (and (shaved ?fs))
+    )
+
+
+)
+
+

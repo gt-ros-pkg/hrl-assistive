@@ -1,0 +1,19 @@
+domain_file: "shaving.domain"
+
+objects: ["PR2 - ROBOT", 
+          "TOOLBOX - LOCATION",
+          "USER-LEFT - LOCATION",
+          "USER-RIGHT - LOCATION",
+          "UNKNOWN - LOCATOIN",
+          "SHAVER - RAZOR",
+          "ROUND-MIRROR - MIRROR"]
+
+predicates: ["( SAFE-FOR-TOOLS TOOLBOX )",
+             "( CAN-SERVO TOOLBOX )",
+             "( CAN-SERVO USER-LEFT )",
+             "( CAN-SERVO USER-RIGHT )"]
+
+default_goal: ["(not ( GRASPED PR2 RAZOR1 ))",
+               "(not ( GRASPED PR2 MIRROR1 ))",
+               "( SHAVED USER-LEFT )",
+               "( SHAVED USER-RIGHT )"]

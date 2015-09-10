@@ -3,21 +3,22 @@
 from tempfile import NamedTemporaryFile
 from subprocess import check_output, CalledProcessError
 from os import remove
+import sys
 
 import rospy
 
-from pddl_utils import Planner, PDDLProblem
-from hrl_task_planner.srv import TaskPlanService
+from pddl_utils import PDDLProblem, PDDLPredicate, PDDLObject
+import hrl_task_planning.msg as planner_msgs
 
 
-class FF(Planner):
+class FF(object):
     """ A solver instance based on an FF executable. """
-    def __init__(self, problem, domain_file, ff_executable='./ff'):
-        super(FF, self).__init__(problem, domain_file)
+    def __init__(self, ff_executable='./ff'):
         self.ff_executable = ff_executable
 
     def _parse_solution(self, soln_txt):
         """ Extract list of solution steps from FF output. """
+        print "Parsing solution: %s" % soln_txt
         sol = []
         soln_txt = soln_txt.split('step')[1].strip()
         soln_txt = soln_txt.split('time spent')[0].strip()
@@ -28,23 +29,22 @@ class FF(Planner):
             sol.append({'act': act, 'args': args})
         return sol
 
-    def solve(self):
+    def solve(self, problem, domain_file):
         """ Create a temporary problem file and call FF to solve. """
         with NamedTemporaryFile() as problem_file:
-            self.problem.to_file(self.problem, problem_file.name)
+            problem.to_file(problem_file.name)
+            print ' '.join([self.ff_executable, '-o', domain_file, '-f', problem_file.name])
+            print problem.to_string()
             try:
-                soln_txt = check_output([self.ff_executable, '-o', self.domain_file, '-f', problem_file.name])
+                soln_txt = check_output([self.ff_executable, '-o', domain_file, '-f', problem_file.name])
+                print soln_txt
             except CalledProcessError as cpe:
                 if "goal can be simplified to TRUE." in cpe.output:
-                    self.solution = []
-                    return self.solution
+                    return []
                 else:
-                    print "Warning: FF Could not find a solution to problem: %s in domain %s" % (self.problem.name,
-                                                                                                 self.domain_file)
-                    print self.problem
-                    print "Output: ", cpe.output
-                    self.solution = False
-                    return self.solution
+                    rospy.logwarn("[%s] FF Could not find a solution to problem: %s"
+                                  % (rospy.get_name(), problem.name))
+                    return False
             finally:
                 # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
                 try:
@@ -52,30 +52,46 @@ class FF(Planner):
                 except OSError as ose:
                     if ose.errno != 2:
                         raise ose
-        self.solution = self._parse_solution(soln_txt)
-        return self.solution
+        return self._parse_solution(soln_txt)
 
 
 class TaskPlannerNode(object):
     """ A ROS node wrapping an instance of a task planner. """
     def __init__(self, planner=FF):
         self.planner = planner
-        self.planner_service = rospy.Service('plan_task', TaskPlanService, self.plan_req_cb)
+        self.problem_sub = rospy.Subscriber('~problem', planner_msgs.PDDLProblem, self.plan_req_cb)
+        self.solution_pub = rospy.Publisher('~solution', planner_msgs.PDDLSolution)
+        rospy.loginfo("[%s] Ready" % rospy.get_name())
 
     def plan_req_cb(self, req):
-        problem = PDDLProblem(req.problem)
         try:
-            param = '/'.join(['~', 'domain_files', req.domain])
-            domain_file = rospy.get_param(param)
-        except KeyError:
-            rospy.logerr("[%s] Could not find domain file at param: %s" % (rospy.get_name(), param))
-            return
-        planner_instance = self.planner(problem, domain_file)
-        solution = planner_instance.solve()
-        return solution
+            domain_file_param = '/'.join([req.domain, 'domain_file'])
+            domain_file = rospy.get_param(''.join(['~', domain_file_param]))
+            const_obj_param = '/'.join([req.domain, 'objects'])
+            objects = rospy.get_param(''.join(['~', const_obj_param]))
+            const_preds_param = '/'.join([req.domain, 'predicates'])
+            init = rospy.get_param(''.join(['~', const_preds_param]))
+            if not req.goal:
+                default_goal_param = '/'.join([req.domain, 'default_goal'])
+                req.goal = rospy.get_param(''.join(['~', default_goal_param]))
+        except KeyError as e:
+            rospy.logerr("[%s] Could not find parameter: %s" % (rospy.get_name(), e.message))
+            return []
+        objects.extend(req.objects)
+        objects = map(PDDLObject.from_string, objects)
+        init.extend(req.init)
+        init = map(PDDLPredicate.from_string, init)
+        goal = map(PDDLPredicate.from_string, req.goal)
+        problem = PDDLProblem(req.name, req.domain, objects, init, goal)
+        print "Calling solver"
+        solution = self.planner.solve(problem, domain_file)
+        print "Publishing solution: ", solution
+        self.solution_pub.publish(solution)
 
 
 def main():
     rospy.init_node("ff_task_planner")
-    planner_node = TaskPlannerNode()
+    args = rospy.myargv(argv=sys.argv)
+    planner = FF(args[1])  # Only arg is the ff executable file
+    planner_node = TaskPlannerNode(planner)
     rospy.spin()

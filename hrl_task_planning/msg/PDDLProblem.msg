@@ -3,5 +3,3 @@ string name
 string[] objects
 string[] init
 string[] goal
----
-string[] actions
