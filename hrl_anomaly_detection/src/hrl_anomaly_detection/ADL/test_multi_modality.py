@@ -709,7 +709,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                     # need to delete data and previous results with the dataset
                     os.system('rm '+pkl_file)
                     res_file = os.path.join(cross_test_path,prefix+'_dataset_'+str(i))
-                    os.system('rm '+res_file+'*.pkl')
+                    os.system('rm '+res_file+'_*.pkl')
                     os.system('rm '+mutex_file)
                     sys.exit()
                     
