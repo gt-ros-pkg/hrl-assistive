@@ -787,7 +787,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 os.system('rm '+mutex_file)
                 print "-----------------------------------------------"
 
-    if count == len(check_methods)*len(subject_names):
+    if count == len(check_methods)*(nDataSet)*len(check_dims):
         print "#############################################################################"
         print "All file exist ", count
         print "#############################################################################"        
