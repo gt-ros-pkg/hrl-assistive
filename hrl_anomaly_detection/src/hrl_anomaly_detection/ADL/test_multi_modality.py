@@ -688,6 +688,8 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 os.system('touch '+mutex_file)
 
                 ret = True
+                x_train1 = None
+                x_train2 = None
                 if check_dim is not 2:
                     x_train1 = train_dataSet.samples[:,check_dim,:]
                     lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
@@ -715,8 +717,17 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 else:
                     x_test1 = test_dataSet.samples[:,check_dim]
 
-
                 min_ths, min_ind = lhm.get_sensitivity_gain_batch(x_test1, x_test2)
+
+                # temp--------------------------------------------------------
+                min_ths2, min_ind2 = lhm.get_sensitivity_gain_batch(x_train1, x_train2)
+                if type(min_ths) == list or type(min_ths)==np.ndarray: 
+                    print type(min_ths), min_ths
+                    for j in xrange(len(min_ths)):
+                        if min_ths[j] > min_ths2[j]: min_ths[j] = min_ths2[j]
+                else:
+                    if min_ths > min_ths2: min_ths = min_ths2
+                
                 
                 if False:      
                     for j in xrange(len(false_chunks)):                     
@@ -761,7 +772,7 @@ def fig_eval(test_title, cross_data_path, nDataSet, onoff_type, check_methods, c
                 d['tn']    = tn
                 d['tp']    = tp
                 d['fp']    = fp
-                d['ths']   = ths
+                d['ths']   = min_ths
                 d['delay_l'] = delay_l
                 d['peak_l']  = tn_peak_l
                 d['width_l'] = tn_width_l
@@ -1356,7 +1367,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     fig.savefig('test.pdf')
     fig.savefig('test.png')
     os.system('cp test.p* ~/Dropbox/HRL/')
-    ## pp.show()
+    pp.show()
 
 
 #---------------------------------------------------------------------------------------#        
@@ -2557,19 +2568,17 @@ if __name__ == '__main__':
         # sound  = 2dim + all
         
         print "ROC Online Robot with simulated anomalies"
-        test_title      = 'online_method_param_check_sound'        
-        check_dims      = [2]
-        force_an        = ['normal']        
-        sound_an        = ['rndsharp', 'rnddull'] 
+        ## test_title      = 'online_method_param_check_sound'        
+        ## check_dims      = [2]
+        ## force_an        = ['normal']        
+        ## sound_an        = ['rndsharp', 'rnddull'] 
 
-        ## test_title      = 'online_method_param_check_force3'        
-        ## check_dims      = [2]            
-        ## force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        ## sound_an        = ['normal'] 
+        ## test_title      = 'online_method_param_check_force3'   # used for figure!!!     
+        test_title      = 'online_method_param_check_force4'   # used for figure!!!     
+        check_dims      = [2]            
+        force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
+        sound_an        = ['normal'] 
             
-        ## force_an        = ['normal', 'inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
-        ## sound_an        = ['normal', 'rndsharp', 'rnddull'] 
-
         cross_data_path = os.path.join(cross_root_path, 'multi_sim_'+task_names[task], test_title)
         nState          = nState_l[task]
         attr            = 'id'
@@ -2578,7 +2587,8 @@ if __name__ == '__main__':
         an_type         = 'both'
         
         disp            = 'None'
-        rFold           = 0.75 # ratio of training dataset in true dataset
+        ## rFold           = 0.75 # ratio of training dataset in true dataset #used for figure
+        rFold           = 0.5 # ratio of training dataset in true dataset #used for figure
         nDataSet        = -1
 
         if opt.bDelete:

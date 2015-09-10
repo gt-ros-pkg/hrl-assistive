@@ -159,9 +159,9 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
  
     success_list, failure_list = getSubjectFileList(data_root_path, test_subject_names, task_name)
 
-    success_list = []
-    fileName = "/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/ash_b_09-04-2015_09-45-31.pkl"
-    failure_list = [fileName] 
+    ## success_list = []
+    ## fileName = "/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/ash_b_09-04-2015_09-45-31.pkl"
+    ## failure_list = [fileName] 
    
     if len(success_list)>0:
         testData, testTimeList = loadData(success_list, isTrainingData=False, 
@@ -178,9 +178,19 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
     if len(failure_list)>0 and True:
         testData, testTimeList = loadData(failure_list, isTrainingData=False, 
                                           downSampleSize=downSampleSize)
+
+        ## d = ut.load_pickle(failure_list[0])
+        ## testData=[[d['forcesRaw'], d['distancesRaw'], d['anglesRaw'], d['audioRaw']]]
+        ## testTimeList = [d['times']]
+                
         testData_scaled,_ ,_  = scaleData(testData, scale=scale, minVals=minVals, 
                                           maxVals=maxVals, verbose=verbose)
 
+        ## ax1.plot(testTimeList[0], testData_scaled[0][0],'m')
+        ## ax2.plot(testTimeList[0], testData_scaled[0][1],'m')
+        ## ax3.plot(testTimeList[0], testData_scaled[0][2],'m')
+        ## ax4.plot(testTimeList[0], testData_scaled[0][3],'m')            
+        
         for i in xrange(len(testData[0])):
             ax1.plot(testTimeList[i], testData_scaled[0][i],'m')
             ax2.plot(testTimeList[i], testData_scaled[1][i],'m')
@@ -190,7 +200,7 @@ def plotTestSequences(test_subject_names, task_name, data_root_path, data_target
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        ## os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('cp test.p* ~/Dropbox/HRL/')
     else:
         plt.show()        
     
