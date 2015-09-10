@@ -35,7 +35,7 @@ def get_sublist(lists, tag):
 class PDDLObject(object):
     """ A class describing an Object in PDDL. """
     @classmethod
-    def init_from_string(cls, string):
+    def from_string(cls, string):
         """ Create a PDDLObject instance from a formatted string."""
         string = string.strip('( )')
         name, type_ = string.split('-')
@@ -55,7 +55,7 @@ class PDDLObject(object):
 class PDDLPredicate(object):
     """ A class describing a predicate in PDDL. """
     @classmethod
-    def init_from_string(cls, string):
+    def from_string(cls, string):
         """ Create a PDDLPredicate instance from a formatted string."""
         string = string.strip('( )')
         assert string.count('(') <= 1, "Badly formed predicate string.  Too many opening parentheses"
@@ -70,7 +70,7 @@ class PDDLPredicate(object):
         name, args = name_args[0], name_args[1:]
         return cls(name, args, neg)
 
-    def __init__(self, name=None, args=None, neg=False):
+    def __init__(self, name, args=[], neg=False):
         self.name = name
         self.args = args
         self.neg = neg
@@ -187,14 +187,21 @@ class PDDLProblem(object):
         return self.__str__()
 
     @classmethod
-    def init_from_file(cls, filename):
+    def from_msg(cls, msg):
+        objects = [PDDLObject.from_string(obj_str) for obj_str in msg.objects]
+        init = [PDDLObject.from_string(pred) for pred in msg.init]
+        goal = [PDDLPredicate.from_string(pred) for pred in msg.goal]
+        return cls(msg.name, msg.domain, objects, init, goal)
+
+    @classmethod
+    def from_file(cls, filename):
         """ Load a PDDL Problem from a PDDL problem file. """
         with open(filename, 'r') as pfile:
             string = ''.join(pfile.readlines())
-        return cls.init_from_string(string)
+        return cls.from_string(string)
 
     @classmethod
-    def init_from_string(cls, string):
+    def from_string(cls, string):
         data = lisp_to_list(string.upper())
         problem_name = get_sublist(data, 'PROBLEM')[1]
         domain_name = get_sublist(data, ':DOMAIN')[1]
