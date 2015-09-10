@@ -1,83 +1,35 @@
 #!/usr/bin/env python
 
-# from lis import parse
 import copy
-import re
-import sys
 
 
-def parse_lisp(string):
-    parts = re.split('\(|\)|\n| ', string.upper())
-    return [part.strip() for part in parts if part.strip()]  # Only keep each part if it isn't an empy string
-
-
-def separate_list(string):
+def _separate_string(string):
     string = string.replace(')', ' ) ')
     string = string.replace('(', ' ( ')
     return string.split()
 
-def to_lists(items):
-    item = items.pop(0)
+
+def _to_lists(items):
     list_ = []
-    if item == '(':
-        print "open brace"
-        sys.stdout.flush()
-        list_.append(to_lists(items))
-    elif item == ')':
-        print "close brace"
-        sys.stdout.flush()
-        return list_
-    else:
-        print "append %s" % item
-        sys.stdout.flush()
-        list_.append(item)
-
-
-def parse_problem(string):
-    sep_list = separate_list(string)
-    objects = []
-    init = []
-    goal = []
-    mode = None
-    level = 0
-    mode_level = 0
-    for i, item in enumerate(sep_list):
+    while items:
+        item = items.pop(0)
         if item == '(':
-            level += 1
+            list_.append(_to_lists(items))
         elif item == ')':
-            level -= 1
-            if level < mode_level:
-                mode = None
-        elif item == 'DEFINE':  # ignore
-          continue
-        elif item == "PROBLEM":
-            problem_name = sep_list[i+1]
-        elif item == ":DOMAIN":
-            domain_name = sep_list[i+1]
-        elif item == ":OBJECTS":
-            mode = ":OBJECTS"
-            mode_level = level
-        elif item == ":INIT":
-            mode = ":INIT"
-            mode_level = level
-        elif item == ":GOAL":
-            mode = ":GOAL"
-            mode_level = level
+            return list_
         else:
-            if mode is None:
-                continue
-            elif mode == ":OBJECTS":
-                if sep_list[i+1] == '-':
-                    objects.append(PDDLObject(item, sep_list[i+2]))
-                continue
-            elif mode == ":Init":
-                pass
+            list_.append(item)
+    return list_[0]  # return final list at end (if we run out of items), remove extra enclosure
 
 
+def lisp_to_list(string):
+    return _to_lists(_separate_string(string))
 
 
-
-
+def get_sublist(lists, tag):
+    for list_ in lists:
+        if tag == list_[0]:
+            return list_
 
 
 class PDDLObject(object):
@@ -188,25 +140,6 @@ class PDDLDomain(object):
     def from_file(self, domain_file):
         raise NotImplementedError
         # TODO: Tested using content from Peter Norvig's lis.py, should find/make own replacement
-#        with open(domain_file, 'r') as f:
-#            domain = f.read()
-#        parsed_dom = parse(domain)
-#        for statement in parsed_dom:
-#            if statement == 'define':  # Ignore opening def statement
-#                continue
-#            elif statement[0] == 'domain':  # Get name of domain
-#                self.name = statement[1]
-#            elif statement[0] == ':requirements':
-#                self.requirements.extend(statement[1:])  # Get requirements
-#            elif statement[0] == ':types':
-#                self.types = self._parse_types(statement[1:])
-#            elif statement[0] == ':constants':
-#                self.objects = self._parse_constants(statement[1:])
-#            elif statement[0] == ':predicates':
-#                self.predicates = self._parse_predicates(statement[1:])
-#            elif statement[0] == ':action':
-#                name, action = self._parse_action(statement[1:])
-#                self.actions[name] = action
 
     def _get_constants_by_type(self):
         type_dict = {}
@@ -232,17 +165,10 @@ class PDDLDomain(object):
 
 class PDDLProblem(object):
     """ A class describing a problem instance in PDDL. """
-    def __init__(self, name, domain,
-                 domain_file=None,
-                 problem_file=None,
-                 objects=[],
-                 init=[],
-                 goal=[]):
+    def __init__(self, name, domain, objects=[], init=[], goal=[]):
         self.name = name
         self.domain = domain
-        self.domain_file = domain_file
-        self.problem_file = '.'.join([self.name, 'problem']) if problem_file is None else problem_file
-        self.objects = [i for i in objects if isinstance(i, PDDLObject)]
+        self.objects = [i for i in objects if isinstance(i, PDDLObject)]  # Make sure type is correct
         self.init = [i for i in init if isinstance(i, PDDLPredicate)]
         self.goal = [i for i in goal if isinstance(i, PDDLPredicate)]
 
@@ -261,24 +187,6 @@ class PDDLProblem(object):
         return self.__str__()
 
     @classmethod
-    def _grab_inits(cls, string):
-        """ Extract initial predicates from a string"""
-        # TODO: Doesn't catch negative initial cases
-        op = 0
-        for i, c in enumerate(string):
-            op += c == '('
-            op -= c == ')'
-            if op < 0:
-                init_str = string[:i]
-                break
-        init_str = init_str.split('(')[1:]
-        preds = []
-        for pred in init_str:
-            p = pred.split(')')[0].split()
-            preds.append(PDDLPredicate(p[1], p[1:]))
-        return preds
-
-    @classmethod
     def init_from_file(cls, filename):
         """ Load a PDDL Problem from a PDDL problem file. """
         with open(filename, 'r') as pfile:
@@ -286,126 +194,65 @@ class PDDLProblem(object):
         return cls.init_from_string(string)
 
     @classmethod
-    def parse_objects(cls, stringlist):
-        """ Extract the objects defined for the problem."""
-        assert(len(stringlist) % 3 == 0), "Error parsing constants: should be (object, [hyphen], type) triples"
-        obj_list = []
-        for i in range(len(stringlist)/3):
-            obj_list.append(PDDLObject(stringlist[3*i], stringlist[3*i+2]))
-        return obj_list
-
-    @classmethod
-    def extract_init_text(cls, string):
-        """ Extract predicates from a defined list. """
-        predicate_strings = []
-        s = string[string.find(":INIT"):]
-        open_idx = s.find("(")
-        close_idx = s.find("(")
-        if open_idx < close_idx:
-            pass
-
-
-
-
-        i = 0
-        open_level = 1
-        while open_level > 0:
-            blockstart = None
-            print i, s[i]
-            if s[i] == "(":
-                if blockstart is None:
-                    blockstart = i
-                else:
-                    open_level += i
-            elif s[i] == ")":
-                predicate_strings.append(string[blockstart:i])
-                open_level -= 1
-                blockstart = None
-            i += 1
-        return predicate_strings
-
-
-
-    @classmethod
     def init_from_string(cls, string):
-        string = string.upper()
-        parts = parse_lisp(string)
-        parts.remove("DEFINE")  # Get rid of the def statement
-        # Extract problem name
-        problem_idx = parts.index("PROBLEM")
-        problem_name = parts[problem_idx+1]
-        parts.pop(problem_idx)  # Removes problem statement
-        parts.pop(problem_idx)  # Removes problem name argument (falls back to vacated index after first pop)
-        # Extract domain name
-        dom_idx = parts.index(":DOMAIN")
-        problem_domain = parts[dom_idx + 1]
-        parts.pop(dom_idx)  # Removes domain statement
-        parts.pop(dom_idx)  # Removes domain name argument (falls back to vacated index after first pop)
-        # Extract components
-        obj_idx = string.find(":OBJECTS")
-        init_idx = string.find(":INIT")
-        goal_idx = string.find(":GOAL")
-        blocks = {obj_idx: ":OBJECTS",
-                  init_idx: ":INIT",
-                  goal_idx: ":GOAL"}
-        keys = blocks.keys()
-        keys.sort()
-        strings = {}
-        strings[blocks[keys[0]]] = parts[keys[0]+1:keys[1]]
-        strings[blocks[keys[1]]] = parts[keys[1]+1:keys[2]]
-        strings[blocks[keys[2]]] = parts[keys[2]+1:]
-        objects = cls.parse_objects(groups[":objects"])
-        init = cls.parse_predicates(groups[":init"])
-        goal = cls.parse_predicates(groups[":goal"])
+        data = lisp_to_list(string.upper())
+        problem_name = get_sublist(data, 'PROBLEM')[1]
+        domain_name = get_sublist(data, ':DOMAIN')[1]
+        objects = cls._parse_objects(get_sublist(data, ":OBJECTS")[1:])  # Remove first entry, which is the tag just found
+        init = cls._parse_init(get_sublist(data, ":INIT")[1:])
+        goal = cls._parse_goal(get_sublist(data, ":GOAL")[1:][0])  # also remove spare wrapping list...
+        return cls(problem_name, domain_name, objects, init, goal)
 
+    @classmethod
+    def _parse_objects(cls, item_list):
+        """ Extract the objects defined for the problem."""
+        assert(len(item_list) % 3 == 0), "Error parsing constants: should be (object, [hyphen], type) triples"
+        objs = []
+        for i in range(len(item_list)/3):
+            objs.append(PDDLObject(item_list[3*i], item_list[3*i+2]))
+        return objs
 
-        init_start = string.find(':INIT') + 5
-        init_preds = cls._grab_inits(string[init_start:])
-        # Extract the goal states
-        goal_start = string.find(':GOAL') + 5
-        goal_string = string[string.find('AND', goal_start) + 3:].strip()
-        goal_items = [l.strip().split(')')[0] for l in goal_string.split('(')[1:]]
-        neg = False
-        goal_preds = []
-        for entry in goal_items:
-            if entry == 'NOT':
-                neg = True
+    @classmethod
+    def _parse_init(cls, items):
+        """ Extract predicates from a defined list. """
+        return [PDDLPredicate(item[0], item[1:]) for item in items]
+
+    @classmethod
+    def _parse_goal(cls, items):
+        preds = []
+        for item in items:
+            if item == 'AND':
                 continue
-            p = entry.split()
-            goal_preds.append(PDDLPredicate(p[0], p[1:], neg=neg))
-            neg = False
-        return cls(problem_name, problem_domain, objects=pyobjs, init=init_preds, goal=goal_preds)
+            elif item[0] == 'NOT':
+                preds.append(PDDLPredicate(item[1][0], item[1][1:], True))
+            else:
+                preds.append(PDDLPredicate(item[0], item[1:]))
+        return preds
 
     def to_file(self, filename=None):
         """ Write a PDDL Problem file based on a PDDLProblem instance. """
-        s = "(define (problem " + self.name + ")\n"
-        s += "\t(:domain " + self.domain + ")\n"
-        # Define objects
-        s += "\t(:objects "
-        for obj in self.objects:
-            s += ''.join(['\t', obj.name])
-            if obj.type is not None:
-                s += " - " + obj.type
-            s += "\n"
-        s += ")\n"
-        # Define initial conditions
-        s += "(:init "
-        for pred in self.init:
-            parts = ['\t(not ', '', ')\n'] if pred.neg else ['\t', '', '\n']
-            parts[1] = ' '.join(['(', pred.name, ' '.join(pred.args), ')'])
-            s += ''.join(parts)
-        s += ')\n'
-        # Defind goal conditions
-        s += "(:goal\n\t(and \n"
-        for pred in self.goal:
-            parts = ['\t(not ', '', ')\n'] if pred.neg else ['\t', '', '\n']
-            parts[1] = ' '.join(['(', pred.name, ' '.join(pred.args), ')'])
-            s += ''.join(parts)
-        s += ')))\n'
-        # Write file to disk
         filename = '.'.join([self.name, 'problem']) if filename is None else filename
+        s = self.to_string()
         with open(filename, 'w') as prob_file:
             prob_file.write(s)
+
+    def to_string(self):
+        """ Write a PDDL Problem as a string in PDDL File style """
+        s = "(DEFINE\n(PROBLEM " + self.name + ")\n"
+        s += "(:DOMAIN " + self.domain + ")\n"
+        # Define objects
+        s += "(:OBJECTS "
+        s += '\n\t'.join([str(obj) for obj in self.objects])
+        s += ")\n"
+        # Define initial conditions
+        s += "(:INIT "
+        s += '\n\t'.join(map(str, self.init))
+        s += ')\n'
+        # Defind goal conditions
+        s += "(:GOAL\n\t(AND \n"
+        s += '\n\t'.join(map(str, self.goal))
+        s += ')))\n'
+        return s
 
 
 class Planner(object):
