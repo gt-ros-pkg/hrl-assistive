@@ -299,7 +299,8 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                 if tn_l[i] + fn_l[i] + fp_l[i] != 0:
                     detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
 
-            idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
+            sum_l = tpr_l+fpr_l 
+            idx_list = sorted(range(len(sum_l)), key=lambda k: sum_l[k])
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
             sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
@@ -2234,6 +2235,9 @@ if __name__ == '__main__':
     p.add_option('--roc_online_simulated_method_check', '--ronsimmthd', action='store_true', \
                  dest='bRocOnlineSimMethodCheck',
                  default=False, help='Plot online ROC by simulated anomaly')    
+    p.add_option('--roc_online_dim_check', '--rondim', action='store_true', \
+                 dest='bRocOnlineDimCheck',
+                 default=False, help='Plot online ROC by real anomaly with dimension check')    
     p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
                  dest='bRocOnlineMethodCheck',
                  default=False, help='Plot online ROC by real anomaly')    
@@ -2243,9 +2247,6 @@ if __name__ == '__main__':
     p.add_option('--roc_offline_dim_check', '--roffdim', action='store_true', \
                  dest='bRocOfflineDimCheck',
                  default=False, help='Plot offline ROC by real anomaly with dimension check')    
-    p.add_option('--roc_online_dim_check', '--rondim', action='store_true', \
-                 dest='bRocOnlineDimCheck',
-                 default=False, help='Plot online ROC by real anomaly with dimension check')    
     p.add_option('--online_method_check', '--omc', action='store_true', \
                  dest='bOnlineMethodCheck',
                  default=False, help='Plot offline ROC by real anomaly')    
@@ -2298,8 +2299,10 @@ if __name__ == '__main__':
 
     ## data_path = os.environ['HRLBASEPATH']+'/src/projects/anomaly/test_data/'
     cross_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/Humanoids2015/robot'
+    ## all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
+    ##                    'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     all_task_names  = ['microwave_black', 'microwave_white', 'lab_cabinet', 'wallsw', 'switch_device', \
-                       'switch_outlet', 'case', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
+                       'switch_outlet', 'lock_wipes', 'lock_huggies', 'toaster_white', 'glass_case']
     ## all_task_names  = ['microwave_white']
 
     
@@ -2472,9 +2475,11 @@ if __name__ == '__main__':
         check_dims      = [2]
         disp            = 'None'
 
-        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
-                        audio_thres[task], cross_data_path)
+        ## true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+        ##   = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+        ##                 audio_thres[task], cross_data_path)
+        nDataSet = dm.kFoldLoadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                                    audio_thres[task], cross_data_path, kFold=3)
 
         if opt.bAllPlot is not True:
             fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
