@@ -1206,7 +1206,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     elif method == 'global':
                         threshold_list = -(np.logspace(-2.0, 2.5, nThres, endpoint=True) + 2.0)
                     else:
-                        threshold_list = -(np.logspace(-2.0, 1.5, nThres, endpoint=True) + 2.0)
+                        threshold_list = -(np.logspace(-2.0, 4.5, nThres, endpoint=True) + 2.0)
 
 
                     # Create and train multivariate HMM
