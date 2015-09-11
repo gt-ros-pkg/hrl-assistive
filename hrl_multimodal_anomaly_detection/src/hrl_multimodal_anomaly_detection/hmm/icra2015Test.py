@@ -1511,6 +1511,7 @@ if __name__ == '__main__':
     subject_names  = ['s11']
     task_name      = 'feeding' #['scooping', 'feeding']
     nSet           = 1
+    folding_ratio  = [0.5, 0.3, 0.2]
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
@@ -1605,7 +1606,7 @@ if __name__ == '__main__':
                     cov_mult=cov_mult, downSampleSize=downSampleSize, \
                     cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                     data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                    save_pdf=True, bPlot=True, verbose=False)
+                    save_pdf=False, bPlot=False, verbose=False)
             
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
