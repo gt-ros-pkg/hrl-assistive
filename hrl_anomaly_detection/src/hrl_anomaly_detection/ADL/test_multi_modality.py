@@ -567,11 +567,14 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
 
                 if min_idx == 0 or min_idx == len(fpr_l_fixed)-1: continue
 
-                a1 = (tpr_l_fixed[min_idx] - tpr_l_fixed[min_idx-1]) / (fpr_l_fixed[min_idx] - fpr_l_fixed[min_idx-1])
-                b1 = tpr_l_fixed[min_idx] - a1*fpr_l_fixed[min_idx]
+                try:
+                    a1 = (tpr_l_fixed[min_idx] - tpr_l_fixed[min_idx-1]) / (fpr_l_fixed[min_idx] - fpr_l_fixed[min_idx-1])
+                    b1 = tpr_l_fixed[min_idx] - a1*fpr_l_fixed[min_idx]
 
-                a2 = (tpr_l_fixed[min_idx+1] - tpr_l_fixed[min_idx]) / (fpr_l_fixed[min_idx+1] - fpr_l_fixed[min_idx])
-                b2 = tpr_l_fixed[min_idx+1] - a2*fpr_l_fixed[min_idx+1]
+                    a2 = (tpr_l_fixed[min_idx+1] - tpr_l_fixed[min_idx]) / (fpr_l_fixed[min_idx+1] - fpr_l_fixed[min_idx])
+                    b2 = tpr_l_fixed[min_idx+1] - a2*fpr_l_fixed[min_idx+1]
+                except:
+                    continue
                 
                 if y - (a1*x + b1) > 0 or y - (a2*x + b2) > 0:
                     xl.append(x)

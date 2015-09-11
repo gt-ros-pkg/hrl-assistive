@@ -16,6 +16,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from itertools import product
 
 #
 from util import *
@@ -1037,7 +1038,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                 # This is a successful nonanomalous attempt
                 if anomaly:
                     falsePos += 1
-                    print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
+                    if verbose: print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
                     error
                     break
                 elif j == len(normalTestData[0][i]) - 1:
@@ -1062,7 +1063,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                 break
             elif j == len(abnormalTestData[0][i]) - 1:
                 falseNeg += 1
-                print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
+                if verbose: print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
                 break
 
     ## try:
@@ -1140,11 +1141,315 @@ def crossEvaluation(subject_names, task_name, data_root_path, data_target_path, 
     print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
     print "------------------------------------------------"
 
-
-    
-
     return
 
+
+def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_path, nDataSet,\
+            nState=20, scale=1.0, threshold_mult=[3.0],\
+            cov_mult=5., downSampleSize=200, \
+            cutting_ratio=[0.0, 0.65], anomaly_offset=0.0, check_dims=[4],\
+            data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, verbose=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+
+    count = 0
+    threshold_list = None
+    for i in xrange(nDataSet):
+
+        # Load data
+        target_file = os.path.join(data_target_path, task_name+'_'+subject_name+'dataSet_'+str(i)+
+                                   '_kfold.pkl' ) 
+        d = ut.load_pickle(target_file)
+
+        true_train_data = d['trainData']
+        true_test_data  = d['normalTestData']
+        false_test_data = d['abnormalTestData']
+
+
+        # load data
+        for method in check_methods:        
+
+            # Check the existance of workspace
+            method_path = os.path.join(data_target_path, method)
+            if os.path.isdir(method_path) == False:
+                os.system('mkdir -p '+method_path)
+            print method, " : ", subject_name        
+
+            for check_dim in check_dims:
+
+                ## For parallel computing
+                # save file name
+                res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
+                mutex_file_part = 'running_'+task_name+'_'+subject_name+'_dim_'+str(check_dim)
+
+                res_file = os.path.join(method_path, res_file)
+                mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+                mutex_file      = os.path.join(method_path, mutex_file_full)
+
+                if os.path.isfile(res_file): 
+                    count += 1            
+                    continue
+                elif hcu.is_file(method_path, mutex_file_part): 
+                    continue
+                os.system('touch '+mutex_file)
+
+
+                ## print dynamic_thres_pkl
+                nDimension = len(true_train_data)
+                if method == 'globalChange':
+                    threshold_list = product(threshold_mult, threshold_mult)
+                else:
+                    threshold_list = threshold_mult
+                
+
+                # Create and train multivariate HMM
+                hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, 
+                                            anomaly_offset=anomaly_offset, \
+                                            check_method=method, verbose=False)
+                ret = hmm.fit(xData1=true_train_data[0], xData2=true_train_data[1],\
+                              xData3=true_train_data[2], xData4=true_train_data[3],\
+                              use_pkl=False, cov_mult=[cov_mult]*16)
+
+                if ret == 'Failure': 
+                    print "-------------------------"
+                    print "HMM returned failure!!   "
+                    print "-------------------------"
+                    os.system('rm '+mutex_file)                    
+                    return (-1,-1,-1,-1)
+
+
+                tp_l = []
+                fn_l = []
+                fp_l = []
+                tn_l = []
+                ths_l = []
+                
+                for ths in threshold_list:
+                
+                    tp, fn, tn, fp = \
+                      tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, 
+                                             verbose=verbose)
+
+                    tp_l.append(tp)
+                    fn_l.append(fn)
+                    fp_l.append(fp)
+                    tn_l.append(tn)
+                    ths_l.append(ths)
+                    
+
+                d = {}
+                d['fn_l']    = fn_l
+                d['tn_l']    = tn_l
+                d['tp_l']    = tp_l
+                d['fp_l']    = fp_l
+                d['ths_l']   = ths_l
+
+                try:
+                    ut.save_pickle(d,res_file)        
+                except:
+                    print "There is the targeted pkl file"
+
+                os.system('rm '+mutex_file)
+                print "-----------------------------------------------"
+
+                
+            
+    if count == len(check_methods)*nDataSet*len(check_dims):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
+    else:
+        return
+            
+
+    if bPlot:
+
+        tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),    
+                     (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),    
+                     (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),    
+                     (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),    
+                     (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+        tableau20 = np.array(tableau20)/255.0
+        width = 0.5
+        methods = ('Change \n detection', 'Fixed threshold \n detection', \
+                   'Fixed threshold \n & change detection', \
+                   'Dynamic threshold \n detection')
+        tp_mean = []
+        tp_std = []
+
+        for i, method in enumerate(check_methods):        
+            
+            method_path = os.path.join(data_target_path, method)
+            
+            tot_truePos = 0
+            tot_falseNeg = 0
+            tot_trueNeg = 0 
+            tot_falsePos = 0
+
+            fdr_l = []
+
+            for j, subject_name in enumerate(subject_names):
+
+                # save file name
+                res_file = task_name+'_'+subject_name+'_'+method+'.pkl'
+                res_file = os.path.join(method_path, res_file)
+                d = ut.load_pickle(res_file)
+
+                subject_name = d['subject']
+                truePos  = d['tp']
+                falseNeg = d['fn']
+                trueNeg  = d['tn']
+                falsePos = d['fp']
+                nSet     = d['nSet']
+                            
+                # Sum up evaluatoin result
+                tot_truePos += truePos
+                tot_falseNeg += falseNeg
+                tot_trueNeg += trueNeg
+                tot_falsePos += falsePos
+
+                fdr_l.append( float(truePos) / float(truePos + falseNeg) * 100.0 )
+
+            truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
+            if trueNeg == 0 and falsePos == 0:            
+                trueNegativeRate = "Not available"
+            else:
+                trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+            print "------------------------------------------------"
+            print "Method: ", method
+            print "------------------------------------------------"
+            print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+            print "------------------------------------------------"
+
+            tp_mean.append( np.mean(fdr_l) )
+            tp_std.append( np.std( fdr_l ))
+            
+
+        
+        fig = pp.figure()       
+            
+        ind = np.arange(len(check_methods))+1           
+        pp.bar(ind+width/4.0, tp_mean, width, color=[tableau20[0],tableau20[2],tableau20[4],tableau20[6]], yerr=tp_std)
+                
+        pp.ylim([0.0, 100.0])
+        pp.ylabel('Detection Rate [%]', fontsize=16)    
+        pp.xticks(ind + width*3.0/4, methods )
+
+        if save_pdf:
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('cp test.p* ~/Dropbox/HRL/')
+        else:
+            pp.show()
+            
+
+def kFoldPreprocessData(subject_name, task_name, root_path, target_path, \
+                        kFold=3, 
+                        scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], \
+                        renew=False, verbose=False):
+
+
+    # Check if there is already scaled data
+    for i in xrange(kFold*kFold):        
+        target_file = os.path.join(target_path, task_name+'_'+subject_name+'dataSet_'+str(i)+'_kfold.pkl' ) 
+        if os.path.isfile(target_file) is not True: renew=True
+            
+    if renew == False: 
+        return kFold*kFold       
+
+    success_list, failure_list = getSubjectFileList(root_path, [subject_name], task_name)
+
+    # Load all data
+    true_dataList, _ = loadData(success_list, isTrainingData=True, downSampleSize=downSampleSize)
+    false_dataList, _ = loadData(failure_list, isTrainingData=False, downSampleSize=downSampleSize)            
+
+
+    # cutting data (only traing and thresTest data)
+    start_idx = int(float(len(true_dataList[0][0]))*train_cutting_ratio[0])
+    end_idx   = int(float(len(true_dataList[0][0]))*train_cutting_ratio[1])
+
+    for j in xrange(len(true_dataList)):
+        for k in xrange(len(true_dataList[j])):
+            true_dataList[j][k] = true_dataList[j][k][start_idx:end_idx]
+            
+    for j in xrange(len(false_dataList)):
+        for k in xrange(len(false_dataList[j])):
+            false_dataList[j][k] = false_dataList[j][k][start_idx:end_idx]
+
+    
+    # minimum and maximum values for scaling
+    minVals = []
+    maxVals = []
+    for modality in true_dataList:
+        minVals.append(np.min(modality))
+        maxVals.append(np.max(modality))
+
+    # scaling data
+    true_dataList_scaled,_ ,_  = scaleData(true_dataList, scale=scale, minVals=minVals, 
+                                       maxVals=maxVals, verbose=verbose)
+    false_dataList_scaled,_ ,_  = scaleData(false_dataList, scale=scale, minVals=minVals, 
+                                            maxVals=maxVals, verbose=verbose)
+        
+    nTrueSequence = len(true_dataList[0])
+    nFalseSequence = len(false_dataList[0])
+
+    from sklearn import cross_validation
+    idx_list = range(nTrueSequence)
+    true_kf  = cross_validation.KFold(nTrueSequence,n_folds=kFold, shuffle=True)
+
+    count = 0
+    for true_train_index, true_test_index in true_kf:
+        false_kf = cross_validation.KFold(nFalseSequence,n_folds=kFold, shuffle=True)
+        for _, false_test_index in false_kf:
+
+            true_train_data = [[],[],[],[]]
+            true_train_data[0] = [true_dataList_scaled[0][x] for x in true_train_index]
+            true_train_data[1] = [true_dataList_scaled[1][x] for x in true_train_index]
+            true_train_data[2] = [true_dataList_scaled[2][x] for x in true_train_index]
+            true_train_data[3] = [true_dataList_scaled[3][x] for x in true_train_index]
+
+            true_test_data = [[],[],[],[]]
+            true_test_data[0] = [true_dataList_scaled[0][x] for x in true_test_index]
+            true_test_data[1] = [true_dataList_scaled[1][x] for x in true_test_index]
+            true_test_data[2] = [true_dataList_scaled[2][x] for x in true_test_index]
+            true_test_data[3] = [true_dataList_scaled[3][x] for x in true_test_index]
+
+            false_test_data = [[],[],[],[]]
+            false_test_data[0] = [false_dataList_scaled[0][x] for x in false_test_index]
+            false_test_data[1] = [false_dataList_scaled[1][x] for x in false_test_index]
+            false_test_data[2] = [false_dataList_scaled[2][x] for x in false_test_index]
+            false_test_data[3] = [false_dataList_scaled[3][x] for x in false_test_index]
+                
+                
+            # Save data using dictionary
+            d = {}
+            d['trainData'] = true_train_data
+            d['thresTestData'] = []
+            d['normalTestData'] = true_test_data
+            d['abnormalTestData'] = false_test_data
+            d['trainTimeList'] = []
+            d['thresTestTimeList'] = []
+            d['normalTestTimeList'] = []
+            d['abnormalTestTimeList'] = []
+
+            d['trainFileList'] = []
+            d['thsTestFileList'] = []
+            d['normalTestFileList'] = []
+            d['abnormalTestFileList'] = []
+
+            d['minVals'] = minVals
+            d['maxVals'] = maxVals
+
+            target_file = os.path.join(target_path, task_name+'_'+subject_name+'dataSet_'+str(count)+'_kfold.pkl' ) 
+            ut.save_pickle(d, target_file)        
+            count += 1
+    
+    return count
+    
+
+
+    
 if __name__ == '__main__':
 
     import optparse
@@ -1165,6 +1470,9 @@ if __name__ == '__main__':
                  default=False, help='Plot the likelihoods of test data.')
     p.add_option('--eval', '--e', action='store_true', dest='bEvaluation',
                  default=False, help='Evaluate each subject data.')
+    p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
+                 dest='bRocOnlineMethodCheck',
+                 default=False, help='Plot online ROC by real anomaly')    
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')
     opt, args = p.parse_args()
@@ -1256,7 +1564,35 @@ if __name__ == '__main__':
                        cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                        data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
                        save_pdf=True, bPlot=True, verbose=False)
-        
+
+
+    elif opt.bRocOnlineMethodCheck:
+        subject_names  = ['s2','s4','s8','s9','s10','s11']       
+        check_methods  = ['change', 'global', 'globalChange', 'progress']        
+        data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
+        data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+        kFold = 3
+        anomaly_offset = 0.0 #only for progress?
+        threshold_mult = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
+        nDataSet = None
+
+        # data preprocessing and splitting
+        for i, subject_name in enumerate(subject_names):
+            nDataSet = kFoldPreprocessData(subject_name, task_name, data_root_path, data_target_path, \
+                                           kFold=kFold,\
+                                           scale=scale, downSampleSize=downSampleSize, \
+                                           train_cutting_ratio=cutting_ratio,\
+                                           verbose=False)
+
+        for i, subject_name in enumerate(subject_names):                               
+            fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_path, 
+                    nDataSet=nDataSet,\
+                    nState=nState, scale=scale, threshold_mult=threshold_mult,\
+                    cov_mult=cov_mult, downSampleSize=downSampleSize, \
+                    cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
+                    data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
+                    save_pdf=False, bPlot=False, verbose=False)
+            
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
