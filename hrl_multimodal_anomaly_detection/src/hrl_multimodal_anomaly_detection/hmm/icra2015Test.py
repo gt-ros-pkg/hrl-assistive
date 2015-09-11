@@ -1208,7 +1208,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     elif method == 'change':
                         threshold_list = -(np.logspace(-2.0, 1.0, nThres, endpoint=True) + 2.0)
                     elif method == 'global':
-                        threshold_list = - np.linspace(-1.0, 17.0, nThres)
+                        threshold_list = - np.linspace(2.0, 17.0, nThres)
                         ## threshold_list = -(np.logspace(-0.1, 2.0, nThres, endpoint=True) - 1.0)
                     else:
                         threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
@@ -1692,13 +1692,13 @@ if __name__ == '__main__':
         check_methods  = ['change', 'global', 'progress']        
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
-        kFold = 6
+        kFold = 4
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
-        nThres   = 30
+        nThres   = 40
 
         # data preprocessing and splitting
         for i, subject_name in enumerate(subject_names):
