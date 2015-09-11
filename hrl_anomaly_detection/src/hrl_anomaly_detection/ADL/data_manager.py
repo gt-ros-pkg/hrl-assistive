@@ -1083,6 +1083,89 @@ def generate_sim_anomaly(true_aXData1, true_aXData2, n_false_data, an_type, forc
     return d
 
 
+def kFoldLoadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path=None, 
+                  an_type=None, force_an=None, sound_an=None, bRenew=False, kFold=3, delete=False):
+    
+    if os.path.isfile(pkl_file) and bRenew is False:
+        d = ut.load_pickle(pkl_file)
+    else:
+        d = load_data(data_path, task_name, normal_only=False)
+        d = cutting_for_robot(d, f_zero_size=f_zero_size, f_thres=f_thres, \
+                                 audio_thres=audio_thres, dtw_flag=False)        
+        ut.save_pickle(d, pkl_file)
+        
+    true_aXData1 = d['ft_force_mag_true_l']
+    true_aXData2 = d['audio_rms_true_l'] 
+    true_chunks  = d['true_chunks']
+
+    false_aXData1 = d['ft_force_mag_false_l']
+    false_aXData2 = d['audio_rms_false_l'] 
+    false_chunks  = d['false_chunks']
+
+    print "All: ", len(true_aXData1)+len(false_aXData1), \
+      " Success: ", len(true_aXData1), \
+      " Failure: ", len(false_aXData1)
+      
+    count = 0 
+      
+    if an_type is None:
+
+        if cross_data_path is not None:
+        
+            if os.path.isdir(cross_data_path) == False:
+                os.system('mkdir -p '+cross_data_path)        
+            
+            for i in xrange(kFold*kFold):
+                
+                pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
+                if os.path.isfile(pkl_file) is False: bRenew = True
+                else: count += 1
+
+            if bRenew == True:
+
+                labels        = [True]*len(true_aXData1)
+                true_dataSet  = create_mvpa_dataset(true_aXData1, true_aXData2, true_chunks, labels)
+                labels        = [False]*len(false_aXData1)                
+                false_dataSet = create_mvpa_dataset(false_aXData1, false_aXData2, false_chunks, labels)
+
+
+                from sklearn import cross_validation
+                idx_list = range(len(true_aXData1))
+                true_kf  = cross_validation.KFold(len(true_aXData1),n_folds=kFold, shuffle=True)
+
+                for true_train_index, true_test_index in true_kf:
+
+                    false_kf = cross_validation.KFold(len(false_aXData1),n_folds=kFold, shuffle=True)
+                    for _, false_test_index in false_kf:
+                        
+                        true_train_data = true_dataSet[true_train_index] 
+                        true_test_data  = true_dataSet[true_test_index]                    
+                        false_test_data = false_dataSet[false_test_index]
+
+                        dd = {}
+                        dd['ft_force_mag_train_l'] = true_train_data.samples[:,0,:]
+                        dd['audio_rms_train_l']    = true_train_data.samples[:,1,:]
+                        dd['train_chunks']         = true_train_data.sa.chunks
+                        
+                        dd['ft_force_mag_test_l']  = true_train_data.samples[:,0,:]
+                        dd['audio_rms_test_l']     = true_train_data.samples[:,1,:]
+                        dd['test_chunks']          = true_train_data.sa.chunks
+
+                        dd['ft_force_mag_false_l'] = false_test_data.samples[:,0]
+                        dd['audio_rms_false_l']    = false_test_data.samples[:,1]
+                        dd['false_chunks']         = false_test_data.sa.chunks
+                        dd['anomaly_start_idx']    = [0]*len(false_test_data)
+
+                        pkl_file = os.path.join(cross_data_path, "dataSet_"+str(count))                        
+                        ut.save_pickle(dd, pkl_file)
+                        count += 1
+
+    print "Total stored data files: ", count
+    return count
+    
+    
+    
+
 def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, cross_data_path=None, 
              an_type=None, force_an=None, sound_an=None, bRenew=False, rFold=None, nDataSet=None, 
              delete=False):
@@ -1176,8 +1259,7 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
     ##     if os.path.isfile(pkl_file) and opt.bRenew is False:
     ##         dd = ut.load_pickle(pkl_file)
     else:
-        print "Load real anomaly data"
-        
+        print "Load real anomaly data"        
         false_aXData1 = d['ft_force_mag_false_l']
         false_aXData2 = d['audio_rms_false_l'] 
         false_chunks  = d['false_chunks']

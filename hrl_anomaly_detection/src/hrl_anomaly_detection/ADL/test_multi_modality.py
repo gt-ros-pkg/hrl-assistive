@@ -69,7 +69,6 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         
     for method in check_methods:        
         for i in xrange(nDataSet):
-            
             pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
             dd = ut.load_pickle(pkl_file)
             print pkl_file
@@ -188,16 +187,16 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                                             scale2=[min_c2, max_c2, scale])
                         
 
-                    if test:
-                        tp, fn, fp, tn, delay_l = anomaly_check_online_test(lhm, test_dataSet, \
-                                                                               false_dataSet, \
-                                                                               ths, \
-                                                                               check_dim=check_dim)
-                    elif onoff_type == 'online':
-                        tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, \
-                                                                       false_dataSet, \
-                                                                       ths, \
-                                                                       check_dim=check_dim)
+                    if onoff_type == 'online':
+                        tp, fn, fp, tn, delay_l = anomaly_check_online_icra(lhm, test_dataSet, \
+                                                                            false_dataSet, \
+                                                                            ths, \
+                                                                            check_dim=check_dim)
+                    ## elif onoff_type == 'online':
+                    ##     tp, fn, fp, tn, delay_l, _ = anomaly_check_online(lhm, test_dataSet, \
+                    ##                                                    false_dataSet, \
+                    ##                                                    ths, \
+                    ##                                                    check_dim=check_dim)
                     else:
                         tp, fn, fp, tn, delay_l = anomaly_check_offline(lhm, test_dataSet, \
                                                                         false_dataSet, \
@@ -368,10 +367,10 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
 
         pp.legend(loc=4,prop={'size':16})
         
-        ## fig.savefig('test.pdf')
-        ## fig.savefig('test.png')
-        ## os.system('cp test.p* ~/Dropbox/HRL/')
-        pp.show()
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        #pp.show()
         
     return
 
@@ -589,7 +588,7 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
     fig.savefig('test.pdf')
     fig.savefig('test.png')
     os.system('cp test.p* ~/Dropbox/HRL/')
-    pp.show()
+    ## pp.show()
  
        
 #---------------------------------------------------------------------------------------#        
@@ -1371,7 +1370,7 @@ def fig_eval_all(cross_root_path, all_task_names, test_title, nState, check_meth
     fig.savefig('test.pdf')
     fig.savefig('test.png')
     os.system('cp test.p* ~/Dropbox/HRL/')
-    pp.show()
+    ## pp.show()
 
 
 #---------------------------------------------------------------------------------------#        
@@ -1848,38 +1847,46 @@ def anomaly_check_online(lhm, test_dataSet, false_dataSet, ths, check_dim=2,
     return tp, fn, fp, tn, delay_l, false_detection_l
 
 
-def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2, peak_l=None, width_l=None):
+def anomaly_check_online_icra(lhm, test_dataSet, false_dataSet, ths, check_dim=2, peak_l=None, width_l=None):
 
     tp = 0.0
     fn = 0.0
     fp = 0.0
     tn = 0.0
-
+    
     err_l = []
     delay_l = []
+    false_detection_l = []
 
-    ## # 1) Use True data to get true negative rate
-    ## if test_dataSet != []:    
-    ## if check_dim == 2:
-    ##     x_test1 = test_dataSet.samples[:,0]
-    ##     x_test2 = test_dataSet.samples[:,1]
-    ## else:
-    ##     x_test1 = test_dataSet.samples[:,check_dim]
+    # 1) Use True data to get true negative rate
+    if test_dataSet != []:    
+        if check_dim == 2:
+            x_test1 = test_dataSet.samples[:,0]
+            x_test2 = test_dataSet.samples[:,1]
+        else:
+            x_test1 = test_dataSet.samples[:,check_dim]
 
-    ## n = len(x_test1)
-    ## for i in range(n):
-    ##     m = len(x_test1[i])
+        n = len(x_test1)
+        for i in range(n):
+            m = len(x_test1[i])
+            anomaly = False
 
-    ##     # anomaly_check only returns anomaly cases only
-    ##     for j in range(2,m):                    
+            # anomaly_check only returns anomaly cases only
+            for j in range(2,m):                    
 
-    ##         if check_dim == 2:            
-    ##             an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
-    ##         else:
-    ##             an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
-            
-    ##         if an == 1.0:   fn += 1.0
-    ##         elif an == 0.0: tp += 1.0
+                if check_dim == 2:            
+                    an, err = lhm.anomaly_check(x_test1[i][:j], x_test2[i][:j], ths_mult=ths)   
+                else:
+                    an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
+
+                if an==1.0: 
+                    anomaly=True
+                    break
+
+            if anomaly is True:
+                fp += 1.0
+            else:                
+                tn += 1.0
 
                 
     # 2) Use False data to get true negative rate
@@ -1889,14 +1896,16 @@ def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2
             x_test2 = false_dataSet.samples[:,1]
         else:
             x_test1 = false_dataSet.samples[:,check_dim]
-        anomaly_idx = false_dataSet.sa.anomaly_idx
-
+        anomaly_idx  = false_dataSet.sa.anomaly_idx
+            
         n = len(x_test1)
+        false_detection_l = np.zeros(n)
+                
         for i in range(n):
             m = len(x_test1[i])
 
             # anomaly_check only returns anomaly cases only
-            delay = 0
+            anomaly = False
             for j in range(2,m):                    
 
                 if check_dim == 2:            
@@ -1904,22 +1913,17 @@ def anomaly_check_online_test(lhm, test_dataSet, false_dataSet, ths, check_dim=2
                 else:
                     an, err = lhm.anomaly_check(x_test1[i][:j], ths_mult=ths)           
 
-                delay = j-anomaly_idx[i]
+                if an == 1.0:
+                    anomaly=True
+                    break
 
-                if an == 1.0: break
-
-
-            if an == 1.0:
-                if delay >= 0:
-                    tn += 1.0
-                    delay_l.append(delay)                
-                else:
-                    fn += 1.0
-            elif an == 0.0:
-                print "Error with anomaly check"
-                fp += 1.0
-
-    return tp, fn, fp, tn, delay_l
+            if anomaly == True:
+                tp += 1.0
+            else:
+                fn += 1.0        
+            
+    return tp, fn, fp, tn, [], []
+    
     
     
 def anomaly_check(i, l_wdata, l_vdata, nState, trans_type, ths):
@@ -2211,9 +2215,10 @@ def plot_all(data1, data2, false_data1=None, false_data2=None, labels=None, dist
     ## false_line = ax2.plot([], [], color='k', linewidth=10, label='Abnormal data') #fake for legend
     ## ax2.legend()
 
-    fig.savefig('tool_case_normal.pdf')
-    fig.savefig('tool_case_normal.png')    
-    pp.show()
+    fig.savefig('test.pdf')
+    fig.savefig('test.png')    
+    os.system('cp test.p* ~/Dropbox/HRL/')
+    ## pp.show()
     
     
 
@@ -2438,9 +2443,11 @@ if __name__ == '__main__':
         check_dims      = [0,1,2]
         disp            = 'None'
 
-        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
-          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
-                        audio_thres[task], cross_data_path, nDataSet=-1)
+        ## true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+        ##   = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+        ##                 audio_thres[task], cross_data_path, nDataSet=-1)
+        nDataSet = dm.kFoldLoadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                                    audio_thres[task], cross_data_path, kFold=3)
 
         if opt.bAllPlot is not True:
             fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
@@ -2577,8 +2584,8 @@ if __name__ == '__main__':
         ## force_an        = ['normal']        
         ## sound_an        = ['rndsharp', 'rnddull'] 
 
-        ## test_title      = 'online_method_param_check_force3'   # used for figure!!!     
-        test_title      = 'online_method_param_check_force4'   # used for figure!!!     
+        test_title      = 'online_method_param_check_force3'   # used for figure!!!     
+        ## test_title      = 'online_method_param_check_force4'  
         check_dims      = [2]            
         force_an        = ['inelastic', 'inelastic_continue', 'elastic', 'elastic_continue']
         sound_an        = ['normal'] 
@@ -2591,8 +2598,8 @@ if __name__ == '__main__':
         an_type         = 'both'
         
         disp            = 'None'
-        ## rFold           = 0.75 # ratio of training dataset in true dataset #used for figure
-        rFold           = 0.5 # ratio of training dataset in true dataset #used for figure
+        rFold           = 0.75 # ratio of training dataset in true dataset #used for figure
+        ## rFold           = 0.5 # ratio of training dataset in true dataset #used for figure
         nDataSet        = -1
 
         if opt.bDelete:
