@@ -1681,7 +1681,7 @@ if __name__ == '__main__':
         check_methods  = ['change', 'global', 'globalChange', 'progress']        
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
-        kFold = 6
+        kFold = 8
         anomaly_offset = 0.0 #only for progress?
         threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
