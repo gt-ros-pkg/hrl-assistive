@@ -34,6 +34,7 @@ catkin_package(
 
 catkin_install_python(PROGRAMS
    scripts/PyFF
+   scripts/test_client
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

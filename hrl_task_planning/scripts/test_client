@@ -1,0 +1,20 @@
+#!/usr/bin/env python
+
+import rospy
+from hrl_task_planning.msg import PDDLProblem
+
+
+if __name__ == '__main__':
+    rospy.init_node('planning_test_node')
+    test_pub = rospy.Publisher('/task_planner/problem', PDDLProblem, latch=True)
+    msg = PDDLProblem()
+    #msg.name = "test_problem"
+    #msg.domain = "shaving"
+    #msg.init = ["(at pr2 user-right)", "(at ROUND-MIRROR TOOLBOX)", "(at SHAVER TOOLBOX)"]
+    msg.name = "test_problem"
+    msg.domain = "move-object"
+    msg.objects = ["new-favorite-toy - object"]
+    msg.init = ["(empty left-gripper","(can-grasp right-gripper new-favorite-toy)", "(can-grasp left-gripper new-favorite-toy)"]
+    msg.goal = ["(at-goal new-favorite-toy)"]
+    test_pub.publish(msg)
+    rospy.spin()

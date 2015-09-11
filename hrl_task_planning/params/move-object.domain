@@ -3,24 +3,22 @@
  (:types 
   object
   gripper
-  location
  )
 
  (:constants right-gripper - gripper
              left-gripper - gripper
-             goal - location
  )
 
  (:predicates
   (empty ?g - gripper)
   (can-grasp ?g - gripper ?o - object)
   (grasping ?g - gripper ?o - object)
-  (at ?o - object ?l - location)
+  (at-goal ?o - object)
  )
 
  (:action pick
   :parameters (?g - gripper ?o - object)
-  :precondition (and (empty ?g) (can-grasp ?g ?o) (not (at ?o goal)))
+  :precondition (and (empty ?g) (can-grasp ?g ?o) (not (at-goal ?o)))
   :effect (and (grasping ?g ?o)
                (not (empty ?g))
                (forall (?og - gripper)
@@ -35,7 +33,7 @@
   :parameters (?g - gripper ?o - object)
   :precondition (and (grasping ?g ?o))
   :effect (and (empty ?g) 
-               (at ?o goal)
+               (at-goal ?o)
                (not (grasping ?g ?o))
           )
  )
