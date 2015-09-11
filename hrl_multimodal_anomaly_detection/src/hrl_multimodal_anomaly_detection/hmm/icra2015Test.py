@@ -1174,7 +1174,6 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
             method_path = os.path.join(data_target_path, method)
             if os.path.isdir(method_path) == False:
                 os.system('mkdir -p '+method_path)
-            print method, " : ", subject_name        
 
             for check_dim in check_dims:
 
@@ -1187,6 +1186,8 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
                 mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
                 mutex_file      = os.path.join(method_path, mutex_file_full)
 
+                print method_path
+                
                 if os.path.isfile(res_file): 
                     count += 1            
                     continue
@@ -1252,9 +1253,7 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
 
                 os.system('rm '+mutex_file)
                 print "-----------------------------------------------"
-
                 
-            
     if count == len(check_methods)*nDataSet*len(check_dims):
         print "#############################################################################"
         print "All file exist ", count
@@ -1265,76 +1264,76 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
 
     if bPlot:
 
-        tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),    
-                     (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),    
-                     (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),    
-                     (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),    
-                     (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
-        tableau20 = np.array(tableau20)/255.0
-        width = 0.5
-        methods = ('Change \n detection', 'Fixed threshold \n detection', \
-                   'Fixed threshold \n & change detection', \
-                   'Dynamic threshold \n detection')
-        tp_mean = []
-        tp_std = []
-
-        for i, method in enumerate(check_methods):        
-            
-            method_path = os.path.join(data_target_path, method)
-            
-            tot_truePos = 0
-            tot_falseNeg = 0
-            tot_trueNeg = 0 
-            tot_falsePos = 0
-
-            fdr_l = []
-
-            for j, subject_name in enumerate(subject_names):
-
-                # save file name
-                res_file = task_name+'_'+subject_name+'_'+method+'.pkl'
-                res_file = os.path.join(method_path, res_file)
-                d = ut.load_pickle(res_file)
-
-                subject_name = d['subject']
-                truePos  = d['tp']
-                falseNeg = d['fn']
-                trueNeg  = d['tn']
-                falsePos = d['fp']
-                nSet     = d['nSet']
-                            
-                # Sum up evaluatoin result
-                tot_truePos += truePos
-                tot_falseNeg += falseNeg
-                tot_trueNeg += trueNeg
-                tot_falsePos += falsePos
-
-                fdr_l.append( float(truePos) / float(truePos + falseNeg) * 100.0 )
-
-            truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
-            if trueNeg == 0 and falsePos == 0:            
-                trueNegativeRate = "Not available"
-            else:
-                trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
-            print "------------------------------------------------"
-            print "Method: ", method
-            print "------------------------------------------------"
-            print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
-            print "------------------------------------------------"
-
-            tp_mean.append( np.mean(fdr_l) )
-            tp_std.append( np.std( fdr_l ))
-            
-
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k'])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
         
-        fig = pp.figure()       
-            
-        ind = np.arange(len(check_methods))+1           
-        pp.bar(ind+width/4.0, tp_mean, width, color=[tableau20[0],tableau20[2],tableau20[4],tableau20[6]], yerr=tp_std)
+        fig = pp.figure()
+
+        if len(check_methods) >= len(check_dims): nClass = len(check_methods)
+        else: nClass = len(check_dims)
+
+
+        for n in range(nClass):
+
+            if len(check_methods) >= len(check_dims): 
+                method = check_methods[n]
+                check_dim = check_dims[0]
+            else: 
+                method = check_methods[0]
+                check_dim = check_dims[n]
+
+            # Check the existance of workspace
+            method_path = os.path.join(data_target_path, method)
                 
-        pp.ylim([0.0, 100.0])
-        pp.ylabel('Detection Rate [%]', fontsize=16)    
-        pp.xticks(ind + width*3.0/4, methods )
+            if method == 'globalChange':
+                threshold_list = list(product(threshold_mult, threshold_mult))
+            else:
+                threshold_list = threshold_mult
+                
+            fn_l = np.zeros(len(threshold_list))
+            tp_l = np.zeros(len(threshold_list))
+            tn_l = np.zeros(len(threshold_list))
+            fp_l = np.zeros(len(threshold_list))
+
+            for i in xrange(nDataSet):
+
+                res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
+                res_file = os.path.join(method_path, res_file)
+
+                d = ut.load_pickle(res_file)
+                fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
+
+
+            tpr_l = np.zeros(len(threshold_list))
+            fpr_l = np.zeros(len(threshold_list))
+
+            for i in xrange(len(threshold_list)):
+                if tp_l[i]+fn_l[i] != 0:
+                    tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+
+                if fp_l[i]+tn_l[i] != 0:
+                    fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+            sum_l = tpr_l+fpr_l 
+            idx_list = sorted(range(len(sum_l)), key=lambda k: sum_l[k])
+            sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
+            sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
+
+            if method == 'globalChange':
+                label = 'Fixed threshold & \n change detection'
+            elif method == 'change':
+                label = 'Change detection'
+            elif method == 'global':
+                label = 'Fixed threshold \n detection'
+            elif method == 'progress':
+                label = 'Dynamic threshold \n detection'
+            else:
+                label = method +"_"+str(check_dim)
+
+            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -1342,6 +1341,11 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
             os.system('cp test.p* ~/Dropbox/HRL/')
         else:
             pp.show()
+
+
+    elif bAllPlot:
+
+        print "aaaaaaaaaaaaaaaaaaaaaaa"
             
 
 def kFoldPreprocessData(subject_name, task_name, root_path, target_path, \
@@ -1583,7 +1587,9 @@ if __name__ == '__main__':
                                            scale=scale, downSampleSize=downSampleSize, \
                                            train_cutting_ratio=cutting_ratio,\
                                            verbose=False)
-
+                                           
+        print "kFoldPreprocee finished...."
+        
         for i, subject_name in enumerate(subject_names):                               
             fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_path, 
                     nDataSet=nDataSet,\
@@ -1591,7 +1597,8 @@ if __name__ == '__main__':
                     cov_mult=cov_mult, downSampleSize=downSampleSize, \
                     cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                     data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                    save_pdf=False, bPlot=False, verbose=False)
+                    save_pdf=True, bPlot=True, verbose=False)
+            sys.exit()
             
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
