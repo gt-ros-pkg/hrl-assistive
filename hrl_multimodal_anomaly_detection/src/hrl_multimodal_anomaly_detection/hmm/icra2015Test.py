@@ -1352,9 +1352,9 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
             pp.show()
 
 
-    elif bAllPlot:
+    ## elif bAllPlot:
 
-        print "aaaaaaaaaaaaaaaaaaaaaaa"
+    ##     print "aaaaaaaaaaaaaaaaaaaaaaa"
             
 
 def kFoldPreprocessData(subject_name, task_name, root_path, target_path, \
