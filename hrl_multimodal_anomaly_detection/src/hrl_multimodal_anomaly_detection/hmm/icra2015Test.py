@@ -1144,141 +1144,230 @@ def crossEvaluation(subject_names, task_name, data_root_path, data_target_path, 
     return
 
 
-def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_path, nDataSet,\
+def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, nDataSet,\
             nState=20, scale=1.0, threshold_mult=[3.0],\
             cov_mult=5., downSampleSize=200, \
             cutting_ratio=[0.0, 0.65], anomaly_offset=0.0, check_dims=[4],\
-            data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, verbose=False):
+            data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, bAllPlot=False, verbose=False):
 
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
-
+    
     count = 0
-    threshold_list = None
-    for i in xrange(nDataSet):
+    for subject_name in subject_names:                               
+    
+        threshold_list = None
+        for i in xrange(nDataSet):
 
-        # Load data
-        target_file = os.path.join(data_target_path, task_name+'_'+subject_name+'dataSet_'+str(i)+
-                                   '_kfold.pkl' ) 
-        d = ut.load_pickle(target_file)
+            # Load data
+            target_file = os.path.join(data_target_path, task_name+'_'+subject_name+'dataSet_'+str(i)+
+                                       '_kfold.pkl' ) 
+            d = ut.load_pickle(target_file)
 
-        true_train_data = d['trainData']
-        true_test_data  = d['normalTestData']
-        false_test_data = d['abnormalTestData']
-
-
-        # load data
-        for method in check_methods:        
-
-            # Check the existance of workspace
-            method_path = os.path.join(data_target_path, method)
-            if os.path.isdir(method_path) == False:
-                os.system('mkdir -p '+method_path)
-
-            for check_dim in check_dims:
-
-                ## For parallel computing
-                # save file name
-                res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
-                mutex_file_part = 'running_'+task_name+'_'+subject_name+'_dim_'+str(check_dim)
-
-                res_file = os.path.join(method_path, res_file)
-                mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
-                mutex_file      = os.path.join(method_path, mutex_file_full)
-
-                if os.path.isfile(res_file): 
-                    count += 1            
-                    continue
-                elif hcu.is_file(method_path, mutex_file_part): 
-                    continue
-                os.system('touch '+mutex_file)
+            true_train_data = d['trainData']
+            true_test_data  = d['normalTestData']
+            false_test_data = d['abnormalTestData']
 
 
-                ## print dynamic_thres_pkl
-                nDimension = len(true_train_data)
-                if method == 'globalChange':
-                    threshold_list = product(threshold_mult, threshold_mult)
-                else:
-                    threshold_list = threshold_mult
-                
+            # load data
+            for method in check_methods:        
 
-                # Create and train multivariate HMM
-                hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, 
-                                            anomaly_offset=anomaly_offset, \
-                                            check_method=method, verbose=False)
-                ret = hmm.fit(xData1=true_train_data[0], xData2=true_train_data[1],\
-                              xData3=true_train_data[2], xData4=true_train_data[3],\
-                              use_pkl=False, cov_mult=[cov_mult]*16)
+                # Check the existance of workspace
+                method_path = os.path.join(data_target_path, method)
+                if os.path.isdir(method_path) == False:
+                    os.system('mkdir -p '+method_path)
 
-                if ret == 'Failure': 
-                    print "-------------------------"
-                    print "HMM returned failure!!   "
-                    print "-------------------------"
-                    os.system('rm '+mutex_file)                    
-                    return (-1,-1,-1,-1)
+                for check_dim in check_dims:
+
+                    ## For parallel computing
+                    # save file name
+                    res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
+                    mutex_file_part = 'running_'+task_name+'_'+subject_name+'_dim_'+str(check_dim)
+
+                    res_file = os.path.join(method_path, res_file)
+                    mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+                    mutex_file      = os.path.join(method_path, mutex_file_full)
+
+                    if os.path.isfile(res_file): 
+                        count += 1            
+                        continue
+                    elif hcu.is_file(method_path, mutex_file_part): 
+                        continue
+                    os.system('touch '+mutex_file)
 
 
-                tp_l = []
-                fn_l = []
-                fp_l = []
-                tn_l = []
-                ths_l = []
-                
-                for ths in threshold_list:
-                
-                    tp, fn, tn, fp = \
-                      tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, 
-                                             verbose=verbose)
+                    ## print dynamic_thres_pkl
+                    nDimension = len(true_train_data)
+                    if method == 'globalChange':
+                        threshold_list = product(threshold_mult, threshold_mult)
+                    else:
+                        threshold_list = threshold_mult
 
-                    if tp == -1:
-                        tp_l.append(0)
-                        fn_l.append(0)
-                        fp_l.append(0)
-                        tn_l.append(0)
-                        ths_l.append(ths)
-                    else:                       
-                        tp_l.append(tp)
-                        fn_l.append(fn)
-                        fp_l.append(fp)
-                        tn_l.append(tn)
-                        ths_l.append(ths)
-                    
 
-                d = {}
-                d['fn_l']    = fn_l
-                d['tn_l']    = tn_l
-                d['tp_l']    = tp_l
-                d['fp_l']    = fp_l
-                d['ths_l']   = ths_l
+                    # Create and train multivariate HMM
+                    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, 
+                                                anomaly_offset=anomaly_offset, \
+                                                check_method=method, verbose=False)
+                    ret = hmm.fit(xData1=true_train_data[0], xData2=true_train_data[1],\
+                                  xData3=true_train_data[2], xData4=true_train_data[3],\
+                                  use_pkl=False, cov_mult=[cov_mult]*16)
 
-                try:
-                    ut.save_pickle(d,res_file)        
-                except:
-                    print "There is the targeted pkl file"
+                    if ret == 'Failure': 
+                        print "-------------------------"
+                        print "HMM returned failure!!   "
+                        print "-------------------------"
+                        os.system('rm '+mutex_file)                    
+                        return (-1,-1,-1,-1)
 
-                os.system('rm '+mutex_file)
-                print "-----------------------------------------------"
-                
-    if count == len(check_methods)*nDataSet*len(check_dims):
+
+                    tp_l = []
+                    fn_l = []
+                    fp_l = []
+                    tn_l = []
+                    ths_l = []
+
+                    for ths in threshold_list:
+
+                        tp, fn, tn, fp = \
+                          tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, 
+                                                 verbose=verbose)
+
+                        if tp == -1:
+                            tp_l.append(0)
+                            fn_l.append(0)
+                            fp_l.append(0)
+                            tn_l.append(0)
+                            ths_l.append(ths)
+                        else:                       
+                            tp_l.append(tp)
+                            fn_l.append(fn)
+                            fp_l.append(fp)
+                            tn_l.append(tn)
+                            ths_l.append(ths)
+
+
+                    d = {}
+                    d['fn_l']    = fn_l
+                    d['tn_l']    = tn_l
+                    d['tp_l']    = tp_l
+                    d['fp_l']    = fp_l
+                    d['ths_l']   = ths_l
+
+                    try:
+                        ut.save_pickle(d,res_file)        
+                    except:
+                        print "There is the targeted pkl file"
+
+                    os.system('rm '+mutex_file)
+                    print "-----------------------------------------------"
+
+    if count == len(check_methods)*nDataSet*len(check_dims)*len(subject_names):
         print "#############################################################################"
         print "All file exist ", count
         print "#############################################################################"        
     else:
         return
-            
 
+
+
+
+    if len(check_methods) >= len(check_dims): nClass = len(check_methods)
+    else: nClass = len(check_dims)
+    
     if bPlot:
+        for subject_name in subject_names:                               
+
+            import itertools
+            colors = itertools.cycle(['g', 'm', 'c', 'k'])
+            shapes = itertools.cycle(['x','v', 'o', '+'])
+
+            fig = pp.figure()
+            
+            for n in range(nClass):
+
+                if len(check_methods) >= len(check_dims): 
+                    method = check_methods[n]
+                    check_dim = check_dims[0]
+                else: 
+                    method = check_methods[0]
+                    check_dim = check_dims[n]
+
+                # Check the existance of workspace
+                method_path = os.path.join(data_target_path, method)
+
+                if method == 'globalChange':
+                    threshold_list = list(product(threshold_mult, threshold_mult))
+                else:
+                    threshold_list = threshold_mult
+
+                fn_l = np.zeros(len(threshold_list))
+                tp_l = np.zeros(len(threshold_list))
+                tn_l = np.zeros(len(threshold_list))
+                fp_l = np.zeros(len(threshold_list))
+
+                for i in xrange(nDataSet):
+
+                    res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
+                    res_file = os.path.join(method_path, res_file)
+
+                    d = ut.load_pickle(res_file)
+                    fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                    tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
+
+
+                tpr_l = np.zeros(len(threshold_list))
+                fpr_l = np.zeros(len(threshold_list))
+
+                for i in xrange(len(threshold_list)):
+                    if tp_l[i]+fn_l[i] != 0:
+                        tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
+
+                    if fp_l[i]+tn_l[i] != 0:
+                        fpr_l[i] = fp_l[i]/(fp_l[i]+tn_l[i])*100.0
+
+                sum_l = tpr_l+fpr_l 
+                idx_list = sorted(range(len(sum_l)), key=lambda k: sum_l[k])
+                sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
+                sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
+
+
+                color = colors.next()
+                shape = shapes.next()
+
+                if method == 'globalChange':
+                    label = 'Fixed threshold & \n change detection'
+                elif method == 'change':
+                    label = 'Change detection'
+                elif method == 'global':
+                    label = 'Fixed threshold \n detection'
+                elif method == 'progress':
+                    label = 'Dynamic threshold \n detection'
+                else:
+                    label = method +"_"+str(check_dim)
+
+                pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+
+            pp.xlim([-1, 101])
+            pp.ylim([-1, 101])        
+            pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+            pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
+            pp.legend(loc=4,prop={'size':16})
+
+
+            if save_pdf:
+                fig.savefig('test.pdf')
+                fig.savefig('test.png')
+                os.system('cp test.p* ~/Dropbox/HRL/')
+            else:
+                pp.show()
+
+
+    elif bAllPlot:
 
         import itertools
         colors = itertools.cycle(['g', 'm', 'c', 'k'])
         shapes = itertools.cycle(['x','v', 'o', '+'])
         
-        fig = pp.figure()
-
-        if len(check_methods) >= len(check_dims): nClass = len(check_methods)
-        else: nClass = len(check_dims)
-
-
         for n in range(nClass):
 
             if len(check_methods) >= len(check_dims): 
@@ -1301,14 +1390,15 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
             tn_l = np.zeros(len(threshold_list))
             fp_l = np.zeros(len(threshold_list))
 
-            for i in xrange(nDataSet):
+            for subject_name in subject_names:
+                for i in xrange(nDataSet):
 
-                res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
-                res_file = os.path.join(method_path, res_file)
+                    res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
+                    res_file = os.path.join(method_path, res_file)
 
-                d = ut.load_pickle(res_file)
-                fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
-                tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
+                    d = ut.load_pickle(res_file)
+                    fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
+                    tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
 
 
             tpr_l = np.zeros(len(threshold_list))
@@ -1342,7 +1432,13 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
                 label = method +"_"+str(check_dim)
 
             pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
-                
+
+        pp.xlim([-1, 101])
+        pp.ylim([-1, 101])        
+        pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
+        pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
+        pp.legend(loc=4,prop={'size':16})
+
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -1351,9 +1447,7 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
         else:
             pp.show()
 
-
-    ## elif bAllPlot:
-
+        
     ##     print "aaaaaaaaaaaaaaaaaaaaaaa"
             
 
@@ -1486,6 +1580,8 @@ if __name__ == '__main__':
     p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
                  dest='bRocOnlineMethodCheck',
                  default=False, help='Plot online ROC by real anomaly')    
+    p.add_option('--allplot', '--all', action='store_true', dest='bAllPlot',
+                 default=False, help='Plot all data.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')
     opt, args = p.parse_args()
@@ -1585,7 +1681,7 @@ if __name__ == '__main__':
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 3
-        anomaly_offset = 0.0 #only for progress?
+        anomaly_offset = -50.0 #only for progress?
         threshold_mult = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         nDataSet = None
 
@@ -1599,15 +1695,14 @@ if __name__ == '__main__':
                                            
         print "kFoldPreprocee finished...."
         
-        for i, subject_name in enumerate(subject_names):                               
-            fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_path, 
-                    nDataSet=nDataSet,\
-                    nState=nState, scale=scale, threshold_mult=threshold_mult,\
-                    cov_mult=cov_mult, downSampleSize=downSampleSize, \
-                    cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
-                    data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                    save_pdf=False, bPlot=False, verbose=False)
-            
+        fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, 
+                nDataSet=nDataSet,\
+                nState=nState, scale=scale, threshold_mult=threshold_mult,\
+                cov_mult=cov_mult, downSampleSize=downSampleSize, \
+                cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
+                data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
+                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
