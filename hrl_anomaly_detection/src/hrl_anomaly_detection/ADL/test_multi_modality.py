@@ -71,7 +71,6 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
         for i in xrange(nDataSet):
             pkl_file = os.path.join(cross_data_path, "dataSet_"+str(i))
             dd = ut.load_pickle(pkl_file)
-            print pkl_file
 
             train_aXData1 = dd['ft_force_mag_train_l']
             train_aXData2 = dd['audio_rms_train_l'] 
