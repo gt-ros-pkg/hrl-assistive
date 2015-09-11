@@ -1684,7 +1684,7 @@ if __name__ == '__main__':
         kFold = 6
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.75] #[0.0, 0.7]        
-        downSampleSize = 150        
+        downSampleSize = 120        
         threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
 
