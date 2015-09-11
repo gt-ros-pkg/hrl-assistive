@@ -1027,16 +1027,20 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                                                    normalTestData[3][i][:j], c)
                 except:
                     print "anomaly_check failed: ", i, j
-                    return (-1,-1,-1,-1)
+                    ## return (-1,-1,-1,-1)
+                    falsePos += 1
+                    break
 
                 if np.isnan(error):
                     print "anomaly check returned nan"
-                    return (-1,-1,-1,-1)
+                    falsePos += 1
+                    break
+                    ## return (-1,-1,-1,-1)
 
                 if verbose: print anomaly, error
 
                 # This is a successful nonanomalous attempt
-                if anomaly:
+                if anomaly != 0:
                     falsePos += 1
                     if verbose: print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
                     error
@@ -1058,7 +1062,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
 
             if verbose: print anomaly, error
                 
-            if anomaly:
+            if anomaly != 0:
                 truePos += 1
                 break
             elif j == len(abnormalTestData[0][i]) - 1:
@@ -1204,7 +1208,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     elif method == 'change':
                         threshold_list = -(np.logspace(-2.0, 1.0, nThres, endpoint=True) + 2.0)
                     elif method == 'global':
-                        threshold_list = - np.linspace(-1.0, 1.0, nThres)
+                        threshold_list = - np.linspace(-1.0, 17.0, nThres)
                         ## threshold_list = -(np.logspace(-0.1, 2.0, nThres, endpoint=True) - 1.0)
                     else:
                         threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
