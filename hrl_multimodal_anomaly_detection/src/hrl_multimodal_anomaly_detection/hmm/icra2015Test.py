@@ -1230,7 +1230,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     for ths in threshold_list:
 
                         tp, fn, tn, fp = \
-                          tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths*minThresholds, 
+                        tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, #*minThresholds, 
                                                  verbose=verbose)
 
                         if tp == -1:
