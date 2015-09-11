@@ -1685,7 +1685,8 @@ if __name__ == '__main__':
         anomaly_offset = -40.0 #only for progress?
         cutting_ratio  = [0.0, 0.80] #[0.0, 0.7]        
         downSampleSize = 120        
-        threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
+        ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
+        threshold_mult = (np.logspace(-0.5, 2.5, 30, endpoint=True) -0.0)
         nDataSet = None
 
         # data preprocessing and splitting
