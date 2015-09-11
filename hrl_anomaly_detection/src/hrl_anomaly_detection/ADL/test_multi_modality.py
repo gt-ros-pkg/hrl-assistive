@@ -188,7 +188,7 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                         
 
                     if onoff_type == 'online':
-                        tp, fn, fp, tn, delay_l = anomaly_check_online_icra(lhm, test_dataSet, \
+                        tp, fn, fp, tn, delay_l,_ = anomaly_check_online_icra(lhm, test_dataSet, \
                                                                             false_dataSet, \
                                                                             ths, \
                                                                             check_dim=check_dim)
