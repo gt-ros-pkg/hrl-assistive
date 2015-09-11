@@ -1678,7 +1678,8 @@ if __name__ == '__main__':
 
     elif opt.bRocOnlineMethodCheck:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
-        check_methods  = ['change', 'global', 'globalChange', 'progress']        
+        ## check_methods  = ['change', 'global', 'globalChange', 'progress']        
+        check_methods  = ['change', 'global', 'progress']        
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 6
@@ -1686,7 +1687,7 @@ if __name__ == '__main__':
         cutting_ratio  = [0.0, 0.80] #[0.0, 0.7]        
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
-        threshold_mult = -(np.logspace(-0.5, 2.5, 30, endpoint=True) -2.0)
+        threshold_mult = -(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         nDataSet = None
 
         # data preprocessing and splitting
