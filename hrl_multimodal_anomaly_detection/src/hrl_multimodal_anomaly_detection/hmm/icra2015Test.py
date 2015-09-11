@@ -1683,7 +1683,7 @@ if __name__ == '__main__':
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 4
         anomaly_offset = 0.0 #only for progress?
-        cutting_ratio  = [0.0, 0.75] #[0.0, 0.7]        
+        cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 150        
         threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
