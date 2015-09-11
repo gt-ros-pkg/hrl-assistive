@@ -1219,7 +1219,8 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                         os.system('rm '+mutex_file)                    
                         return (-1,-1,-1,-1)
 
-
+                    minThresholds = tuneSensitivityGain(hmm, true_train_data, method=method, verbose=verbose)
+                    
                     tp_l = []
                     fn_l = []
                     fp_l = []
@@ -1229,7 +1230,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     for ths in threshold_list:
 
                         tp, fn, tn, fp = \
-                          tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, 
+                          tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths*minThresholds, 
                                                  verbose=verbose)
 
                         if tp == -1:
@@ -1680,9 +1681,9 @@ if __name__ == '__main__':
         check_methods  = ['change', 'global', 'globalChange', 'progress']        
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
-        kFold = 5
+        kFold = 3
         anomaly_offset = -0.0 #only for progress?
-        threshold_mult = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
+        threshold_mult = (np.logspace(-1.0, 2.5, 30, endpoint=True) -0.0)
         nDataSet = None
 
         # data preprocessing and splitting
