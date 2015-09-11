@@ -1687,7 +1687,7 @@ if __name__ == '__main__':
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
-        threshold_mult = -(np.logspace(-2.0, 2.5, 30, endpoint=True) - 0.0)
+        threshold_mult = -(np.logspace(-2.0, 2.5, 30, endpoint=True) - 2.0)
         nDataSet = None
 
         # data preprocessing and splitting
