@@ -1145,7 +1145,7 @@ def crossEvaluation(subject_names, task_name, data_root_path, data_target_path, 
 
 
 def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, nDataSet,\
-            nState=20, scale=1.0, threshold_mult=[3.0],\
+            nState=20, scale=1.0, nThres=30, \
             cov_mult=5., downSampleSize=200, \
             cutting_ratio=[0.0, 0.65], anomaly_offset=0.0, check_dims=[4],\
             data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, bAllPlot=False, verbose=False):
@@ -1199,9 +1199,14 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     ## print dynamic_thres_pkl
                     nDimension = len(true_train_data)
                     if method == 'globalChange':
+                        threshold_mult = -(np.logspace(-2.0, 2.5, nThres, endpoint=True) + 2.0)
                         threshold_list = product(threshold_mult, threshold_mult)
+                    elif method == 'change':
+                        threshold_list = -(np.logspace(-2.0, 1.0, nThres, endpoint=True) + 2.0)
+                    elif method == 'global':
+                        threshold_list = -(np.logspace(-2.0, 2.5, nThres, endpoint=True) + 2.0)
                     else:
-                        threshold_list = threshold_mult
+                        threshold_list = -(np.logspace(-2.0, 1.5, nThres, endpoint=True) + 2.0)
 
 
                     # Create and train multivariate HMM
@@ -1219,7 +1224,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                         os.system('rm '+mutex_file)                    
                         return (-1,-1,-1,-1)
 
-                    minThresholds = tuneSensitivityGain(hmm, true_train_data, method=method, verbose=verbose)
+                    ## minThresholds = tuneSensitivityGain(hmm, true_train_data, method=method, verbose=verbose)
                     
                     tp_l = []
                     fn_l = []
@@ -1297,14 +1302,14 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                 method_path = os.path.join(data_target_path, method)
 
                 if method == 'globalChange':
-                    threshold_list = list(product(threshold_mult, threshold_mult))
+                    threshold_list = nThres*nThres
                 else:
-                    threshold_list = threshold_mult
+                    threshold_list = nThres
 
-                fn_l = np.zeros(len(threshold_list))
-                tp_l = np.zeros(len(threshold_list))
-                tn_l = np.zeros(len(threshold_list))
-                fp_l = np.zeros(len(threshold_list))
+                fn_l = np.zeros((threshold_list))
+                tp_l = np.zeros((threshold_list))
+                tn_l = np.zeros((threshold_list))
+                fp_l = np.zeros((threshold_list))
 
                 for i in xrange(nDataSet):
 
@@ -1316,10 +1321,10 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
 
 
-                tpr_l = np.zeros(len(threshold_list))
-                fpr_l = np.zeros(len(threshold_list))
+                tpr_l = np.zeros((threshold_list))
+                fpr_l = np.zeros((threshold_list))
 
-                for i in xrange(len(threshold_list)):
+                for i in xrange((threshold_list)):
                     if tp_l[i]+fn_l[i] != 0:
                         tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
 
@@ -1346,7 +1351,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                 else:
                     label = method +"_"+str(check_dim)
 
-                pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
 
             pp.xlim([-1, 101])
             pp.ylim([-1, 101])        
@@ -1382,14 +1387,14 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
             method_path = os.path.join(data_target_path, method)
                 
             if method == 'globalChange':
-                threshold_list = list(product(threshold_mult, threshold_mult))
+                threshold_list = nThres * nThres 
             else:
-                threshold_list = threshold_mult
+                threshold_list = nThres
                 
-            fn_l = np.zeros(len(threshold_list))
-            tp_l = np.zeros(len(threshold_list))
-            tn_l = np.zeros(len(threshold_list))
-            fp_l = np.zeros(len(threshold_list))
+            fn_l = np.zeros((threshold_list))
+            tp_l = np.zeros((threshold_list))
+            tn_l = np.zeros((threshold_list))
+            fp_l = np.zeros((threshold_list))
 
             for subject_name in subject_names:
                 for i in xrange(nDataSet):
@@ -1402,10 +1407,10 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
 
 
-            tpr_l = np.zeros(len(threshold_list))
-            fpr_l = np.zeros(len(threshold_list))
+            tpr_l = np.zeros((threshold_list))
+            fpr_l = np.zeros((threshold_list))
 
-            for i in xrange(len(threshold_list)):
+            for i in xrange((threshold_list)):
                 if tp_l[i]+fn_l[i] != 0:
                     tpr_l[i] = tp_l[i]/(tp_l[i]+fn_l[i])*100.0
 
@@ -1687,8 +1692,8 @@ if __name__ == '__main__':
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
-        threshold_mult = -(np.logspace(-2.0, 2.5, 30, endpoint=True) + 2.0)
         nDataSet = None
+        nThres   = 30
 
         # data preprocessing and splitting
         for i, subject_name in enumerate(subject_names):
@@ -1702,7 +1707,7 @@ if __name__ == '__main__':
         
         fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, 
                 nDataSet=nDataSet,\
-                nState=nState, scale=scale, threshold_mult=threshold_mult,\
+                nState=nState, scale=scale, nThres=nThres, \
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
