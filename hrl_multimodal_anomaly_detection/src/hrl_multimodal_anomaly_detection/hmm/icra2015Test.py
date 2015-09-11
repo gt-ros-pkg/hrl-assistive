@@ -1186,8 +1186,6 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
                 mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
                 mutex_file      = os.path.join(method_path, mutex_file_full)
 
-                print method_path
-                
                 if os.path.isfile(res_file): 
                     count += 1            
                     continue
@@ -1232,11 +1230,18 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
                       tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, 
                                              verbose=verbose)
 
-                    tp_l.append(tp)
-                    fn_l.append(fn)
-                    fp_l.append(fp)
-                    tn_l.append(tn)
-                    ths_l.append(ths)
+                    if tp == -1:
+                        tp_l.append(0)
+                        fn_l.append(0)
+                        fp_l.append(0)
+                        tn_l.append(0)
+                        ths_l.append(ths)
+                    else:                       
+                        tp_l.append(tp)
+                        fn_l.append(fn)
+                        fp_l.append(fp)
+                        tn_l.append(tn)
+                        ths_l.append(ths)
                     
 
                 d = {}
@@ -1320,6 +1325,10 @@ def fig_roc(subject_name, task_name, check_methods, data_root_path, data_target_
             idx_list = sorted(range(len(sum_l)), key=lambda k: sum_l[k])
             sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
             sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
+
+
+            color = colors.next()
+            shape = shapes.next()
 
             if method == 'globalChange':
                 label = 'Fixed threshold & \n change detection'
@@ -1502,7 +1511,6 @@ if __name__ == '__main__':
     subject_names  = ['s11']
     task_name      = 'feeding' #['scooping', 'feeding']
     nSet           = 1
-    folding_ratio  = [0.5, 0.3, 0.2]
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
@@ -1598,7 +1606,6 @@ if __name__ == '__main__':
                     cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                     data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
                     save_pdf=True, bPlot=True, verbose=False)
-            sys.exit()
             
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
