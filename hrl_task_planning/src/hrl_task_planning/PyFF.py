@@ -7,7 +7,7 @@ import sys
 
 import rospy
 
-from pddl_utils import PDDLProblem, PDDLPredicate, PDDLObject
+from pddl_utils import PDDLProblem, PDDLPredicate, PDDLObject, PDDLPlanStep
 import hrl_task_planning.msg as planner_msgs
 
 
@@ -18,7 +18,6 @@ class FF(object):
 
     def _parse_solution(self, soln_txt):
         """ Extract list of solution steps from FF output. """
-        print "Parsing solution: %s" % soln_txt
         sol = []
         soln_txt = soln_txt.split('step')[1].strip()
         soln_txt = soln_txt.split('time spent')[0].strip()
@@ -26,7 +25,7 @@ class FF(object):
         for step in steps:
             args = step.split(':')[1].lstrip().split()
             act = args.pop(0)  # Remove action, leave all args
-            sol.append({'act': act, 'args': args})
+            sol.append(PDDLPlanStep(act, args))
         return sol
 
     def solve(self, problem, domain_file):
@@ -67,26 +66,26 @@ class TaskPlannerNode(object):
         try:
             domain_file_param = '/'.join([req.domain, 'domain_file'])
             domain_file = rospy.get_param(''.join(['~', domain_file_param]))
-            const_obj_param = '/'.join([req.domain, 'objects'])
-            objects = rospy.get_param(''.join(['~', const_obj_param]))
+            #const_obj_param = '/'.join([req.domain, 'objects'])
+            #objects = rospy.get_param(''.join(['~', const_obj_param]))
             const_preds_param = '/'.join([req.domain, 'predicates'])
-            init = rospy.get_param(''.join(['~', const_preds_param]))
+            init = rospy.get_param(''.join(['~', const_preds_param]), [])
             if not req.goal:
                 default_goal_param = '/'.join([req.domain, 'default_goal'])
-                req.goal = rospy.get_param(''.join(['~', default_goal_param]))
+                req.goal = rospy.get_param(''.join(['~', default_goal_param]), [])
         except KeyError as e:
             rospy.logerr("[%s] Could not find parameter: %s" % (rospy.get_name(), e.message))
             return []
-        objects.extend(req.objects)
-        objects = map(PDDLObject.from_string, objects)
+        #objects.extend(req.objects)
+        #objects = map(PDDLObject.from_string, objects)
+        objects = map(PDDLObject.from_string, req.objects)
         init.extend(req.init)
         init = map(PDDLPredicate.from_string, init)
         goal = map(PDDLPredicate.from_string, req.goal)
         problem = PDDLProblem(req.name, req.domain, objects, init, goal)
-        print "Calling solver"
         solution = self.planner.solve(problem, domain_file)
-        print "Publishing solution: ", solution
-        self.solution_pub.publish(solution)
+        sol_list = map(str, solution)
+        self.solution_pub.publish(sol_list)
 
 
 def main():

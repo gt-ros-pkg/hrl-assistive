@@ -1,0 +1,42 @@
+(define (domain move-object)
+ (:requirements :typing :conditional-effects)
+ (:types 
+  object
+  gripper
+  location
+ )
+
+ (:constants right-gripper - gripper
+             left-gripper - gripper
+             goal - location
+ )
+
+ (:predicates
+  (empty ?g - gripper)
+  (can-grasp ?g - gripper ?o - object)
+  (grasping ?g - gripper ?o - object)
+  (at ?o - object ?l - location)
+ )
+
+ (:action pick
+  :parameters (?g - gripper ?o - object)
+  :precondition (and (empty ?g) (can-grasp ?g ?o) (not (at ?o goal)))
+  :effect (and (grasping ?g ?o)
+               (not (empty ?g))
+               (forall (?og - gripper)
+                 (when (not (= ?og ?g))
+                       (not (can-grasp ?og ?o))
+                 )
+               )
+           )
+ )
+
+ (:action place
+  :parameters (?g - gripper ?o - object)
+  :precondition (and (grasping ?g ?o))
+  :effect (and (empty ?g) 
+               (at ?o goal)
+               (not (grasping ?g ?o))
+          )
+ )
+)

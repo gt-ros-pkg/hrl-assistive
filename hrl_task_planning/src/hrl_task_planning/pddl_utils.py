@@ -52,6 +52,34 @@ class PDDLObject(object):
         return self.__str__()
 
 
+class PDDLPlanStep(object):
+    """ A class specifying a PDDL action and the parameters with which to call apply it. """
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+
+    @classmethod
+    def from_string(cls, string):
+        name, args = lisp_to_list(string)
+        return cls(name, args)
+
+
+    def __str__(self):
+        return ''.join(["(", self.name, "(", ' '.join(self.args), "))"]).upper()
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class PDDLAction(object):
+    """ A class describing an action in PDDL. """
+    def __init__(self, name, parameters=[], preconditions=[], effects=[]):
+        self.name = name
+        self.parameters = parameters
+        self.preconditions = preconditions
+        self.effects = []
+
+
 class PDDLPredicate(object):
     """ A class describing a predicate in PDDL. """
     @classmethod
@@ -83,15 +111,6 @@ class PDDLPredicate(object):
 
     def __repr__(self):
         return self.__str__()
-
-
-class PDDLAction(object):
-    """ A class describing an action in PDDL. """
-    def __init__(self, name, parameters, preconditions, effects):
-        self.name = name
-        self.parameters = parameters
-        self.preconditions = preconditions
-        self.effects = effects
 
 
 class PDDLDomain(object):

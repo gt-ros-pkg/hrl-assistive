@@ -1,13 +1,3 @@
-domain_file: "shaving.domain"
-
-objects: ["PR2 - ROBOT", 
-          "TOOLBOX - LOCATION",
-          "USER-LEFT - LOCATION",
-          "USER-RIGHT - LOCATION",
-          "UNKNOWN - LOCATOIN",
-          "SHAVER - RAZOR",
-          "ROUND-MIRROR - MIRROR"]
-
 predicates: ["( SAFE-FOR-TOOLS TOOLBOX )",
              "( CAN-SERVO TOOLBOX )",
              "( CAN-SERVO USER-LEFT )",
