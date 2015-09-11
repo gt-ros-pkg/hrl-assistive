@@ -1682,7 +1682,7 @@ if __name__ == '__main__':
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 3
-        anomaly_offset = -0.0 #only for progress?
+        anomaly_offset = -30.0 #only for progress?
         threshold_mult = (np.logspace(-1.0, 2.5, 30, endpoint=True) -0.0)
         nDataSet = None
 
