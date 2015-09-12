@@ -20,7 +20,8 @@ from itertools import product
 
 #
 from util import *
-from learning_hmm_multi_4d import *
+import learning_hmm_multi_4d as hmm_4d
+import learning_hmm_multi_1d as hmm_1d
 
 def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                             useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False, \
@@ -233,7 +234,7 @@ def evaluation(task_name, target_path, nSet=1, nState=20, cov_mult=5.0, anomaly_
         nDimension = len(trainData)
 
         # Create and train multivariate HMM
-        hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, \
+        hmm = hmm_4d.learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, \
                                     check_method=check_method, verbose=False)
         ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                       ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
@@ -522,7 +523,7 @@ def likelihoodOfSequences(task_name, target_path, setID=0, \
     nDimension = len(trainData)
 
     # Create and train multivariate HMM
-    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, verbose=False)
+    hmm = hmm_4d.learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, anomaly_offset=anomaly_offset, verbose=False)
     ret = hmm.fit(xData1=trainData[0], xData2=trainData[1], xData3=trainData[2], xData4=trainData[3],\
                   ml_pkl=dynamic_thres_pkl, use_pkl=(not hmm_renew), cov_mult=[cov_mult]*16)
 
@@ -1004,7 +1005,7 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
     return dataList_scaled, minVals, maxVals
 
 
-def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=False):
+def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, check_dim=[0,1,2,3], verbose=False):
     truePos = 0
     trueNeg = 0
     falsePos = 0
@@ -1013,18 +1014,25 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
     # positive is anomaly
     # negative is non-anomaly
     if verbose: print '\nBeginning anomaly testing for test set\n'
+    nDim = len(check_dim)
 
     # for normal test data
     if normalTestData != []:    
         for i in xrange(len(normalTestData[0])):
             if verbose: print 'Anomaly Error for test set ', i
 
-            for j in range(3, len(normalTestData[0][i])):
+            for j in range(6, len(normalTestData[0][i])):
                 try:    
-                    anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
-                                                   normalTestData[1][i][:j], 
-                                                   normalTestData[2][i][:j],
-                                                   normalTestData[3][i][:j], c)
+                    if nDim == 4:                    
+                        anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
+                                                           normalTestData[1][i][:j], 
+                                                           normalTestData[2][i][:j],
+                                                           normalTestData[3][i][:j], c)
+                    elif nDim == 1:
+                        anomaly, error = hmm.anomaly_check(normalTestData[check_dim[0]][i][:j], c)
+                    else:
+                        print "Not available dimension"
+                        sys.exit()                        
                 except:
                     print "anomaly_check failed: ", i, j
                     ## return (-1,-1,-1,-1)
@@ -1056,10 +1064,16 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
 
         for j in range(6, len(abnormalTestData[0][i])):
             try:                    
-                anomaly, error = hmm.anomaly_check(abnormalTestData[0][i][:j], 
-                                                   abnormalTestData[1][i][:j], 
-                                                   abnormalTestData[2][i][:j],
-                                                   abnormalTestData[3][i][:j], c)
+                if nDim == 4:                                    
+                    anomaly, error = hmm.anomaly_check(abnormalTestData[0][i][:j], 
+                                                       abnormalTestData[1][i][:j], 
+                                                       abnormalTestData[2][i][:j],
+                                                       abnormalTestData[3][i][:j], c)
+                elif nDim == 1:
+                    anomaly, error = hmm.anomaly_check(abnormalTestData[check_dim[0]][i][:j], c)
+                else:
+                    print "Not available dimension"
+                    sys.exit()                                            
             except:
                 truePos += 1
                 break
@@ -1152,10 +1166,10 @@ def crossEvaluation(subject_names, task_name, data_root_path, data_target_path, 
     return
 
 
-def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, nDataSet,\
+def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path, data_target_path, nDataSet,\
             nState=20, scale=1.0, nThres=30, \
             cov_mult=5., downSampleSize=200, \
-            cutting_ratio=[0.0, 0.65], anomaly_offset=0.0, check_dims=[4],\
+            cutting_ratio=[0.0, 0.65], anomaly_offset=0.0,\
             data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, bAllPlot=False, verbose=False):
 
     # For parallel computing
@@ -1179,18 +1193,24 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
 
             # load data
             for method in check_methods:        
-
-                # Check the existance of workspace
-                method_path = os.path.join(data_target_path, method)
-                if os.path.isdir(method_path) == False:
-                    os.system('mkdir -p '+method_path)
-
                 for check_dim in check_dims:
 
+
+                    # Check the existance of workspace
+                    if len(check_methods) > len(check_dims):
+                        method_path = os.path.join(data_target_path, method)
+                    else:
+                        method_path = os.path.join(data_target_path, 'dim_'+str(check_dim[0]))
+                    if os.path.isdir(method_path) == False:
+                        os.system('mkdir -p '+method_path)
+                    
+
+                    nDim = len(check_dim)
+                    
                     ## For parallel computing
                     # save file name
-                    res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
-                    mutex_file_part = 'running_'+task_name+'_'+subject_name+'_dim_'+str(check_dim)
+                    res_file = task_name+'_'+subject_name+'_dim_'+str(nDim)+'.pkl'
+                    mutex_file_part = 'running_'+task_name+'_'+subject_name+'_dim_'+str(nDim)
 
                     res_file = os.path.join(method_path, res_file)
                     mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
@@ -1205,7 +1225,6 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
 
 
                     ## print dynamic_thres_pkl
-                    nDimension = len(true_train_data)
                     if method == 'globalChange':
                         threshold_mult = -(np.logspace(-2.0, 2.5, nThres, endpoint=True) + 2.0)
                         threshold_list = product(threshold_mult, threshold_mult)
@@ -1219,12 +1238,24 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
 
 
                     # Create and train multivariate HMM
-                    hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=nDimension, 
-                                                anomaly_offset=anomaly_offset, \
-                                                check_method=method, verbose=False)
-                    ret = hmm.fit(xData1=true_train_data[0], xData2=true_train_data[1],\
-                                  xData3=true_train_data[2], xData4=true_train_data[3],\
-                                  use_pkl=False, cov_mult=[cov_mult]*16)
+                    hmm = None
+                    if nDim == 4:
+                        hmm = hmm_4d.learning_hmm_multi_4d(nState=nState, nEmissionDim=nDim, 
+                                                    anomaly_offset=anomaly_offset, \
+                                                    check_method=method, verbose=False)
+                        ret = hmm.fit(xData1=true_train_data[0], xData2=true_train_data[1],\
+                                      xData3=true_train_data[2], xData4=true_train_data[3],\
+                                      use_pkl=False, cov_mult=[cov_mult]*16)
+                    elif nDim == 1:
+                        hmm = hmm_1d.learning_hmm_multi_1d(nState=nState, nEmissionDim=nDim, 
+                                                    anomaly_offset=anomaly_offset, \
+                                                    check_method=method, verbose=False)
+                        ret = hmm.fit(xData1=true_train_data[check_dim[0]],\
+                                      use_pkl=False, cov_mult=[cov_mult]*16)
+                    else:
+                        print "Not available dimension"
+                        sys.exit()
+                        
 
                     if ret == 'Failure': 
                         print "-------------------------"
@@ -1245,7 +1276,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
 
                         tp, fn, tn, fp = \
                         tableOfConfusionOnline(hmm, true_test_data, false_test_data, c=ths, #*minThresholds, 
-                                                 verbose=verbose)
+                                                check_dim=check_dim, verbose=verbose)
 
                         if tp == -1:
                             tp_l.append(0)
@@ -1409,7 +1440,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
             for subject_name in subject_names:
                 for i in xrange(nDataSet):
 
-                    res_file = task_name+'_'+subject_name+'_dim_'+str(check_dim)+'.pkl'
+                    res_file = task_name+'_'+subject_name+'_dim_'+str(len(check_dim))+'.pkl'
                     res_file = os.path.join(method_path, res_file)
 
                     d = ut.load_pickle(res_file)
@@ -1597,6 +1628,9 @@ if __name__ == '__main__':
     p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
                  dest='bRocOnlineMethodCheck',
                  default=False, help='Plot online ROC by real anomaly')    
+    p.add_option('--roc_online_dim_check', '--rondim', action='store_true', \
+                 dest='bRocOnlineDimCheck',
+                 default=False, help='Plot online ROC by real anomaly with dimension check')    
     p.add_option('--allplot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
@@ -1696,6 +1730,7 @@ if __name__ == '__main__':
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
         ## check_methods  = ['change', 'global', 'globalChange', 'progress']        
         check_methods  = ['change', 'global', 'progress']        
+        check_dims     = [[0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 4
@@ -1719,7 +1754,7 @@ if __name__ == '__main__':
                                            
         print "kFoldPreprocee finished...."
         
-        fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, 
+        fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path, data_target_path, 
                 nDataSet=tot_data,\
                 nState=nState, scale=scale, nThres=nThres, \
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
@@ -1727,6 +1762,41 @@ if __name__ == '__main__':
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
                 save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
+    elif opt.bRocOnlineDimCheck:
+        subject_names  = ['s2','s4','s8','s9','s10','s11']       
+        check_methods  = ['progress']        
+        check_dims     = [[0],[1],[2],[3]]
+        data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
+        data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+        kFold = 4
+        anomaly_offset = 0.0 #only for progress?
+        cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
+        downSampleSize = 150        
+        ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
+        nDataSet = 3
+        nThres   = 30
+        nState   = 10
+        cov_mult = 5.0
+        tot_data = None
+
+        # data preprocessing and splitting
+        for i, subject_name in enumerate(subject_names):
+            tot_data = kFoldPreprocessData(subject_name, task_name, data_root_path, data_target_path, \
+                                           kFold=kFold,\
+                                           scale=scale, downSampleSize=downSampleSize, \
+                                           train_cutting_ratio=cutting_ratio,\
+                                           verbose=False)
+                                           
+        print "kFoldPreprocee finished...."
+        
+        fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path, data_target_path, 
+                nDataSet=tot_data,\
+                nState=nState, scale=scale, nThres=nThres, \
+                cov_mult=cov_mult, downSampleSize=downSampleSize, \
+                cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
+                data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
+                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
         evaluation(task_name, data_target_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\

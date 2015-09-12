@@ -22,14 +22,12 @@ from joblib import Parallel, delayed
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_4d:
-    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, verbose=False):
+    def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, verbose=False):
         self.ml = None
 
         ## Tunable parameters
         self.nState = nState # the number of hidden states
         self.nGaussian = nState
-        self.nFutureStep = nFutureStep
-        self.nCurrentStep = nCurrentStep
         self.nEmissionDim = nEmissionDim
         self.verbose = verbose
         
@@ -116,16 +114,11 @@ class learning_hmm_multi_4d:
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
         print 'Baum Welch return:', ret
-
-        if np.isnan(ret):
-            return 'Failure'
+        if np.isnan(ret): return 'Failure'
 
         [self.A, self.B, self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
         self.B = np.array(self.B)
-        # print 'B\'s shape:', self.B.shape, self.B[0].shape, self.B[1].shape
-        # print B[0]
-        # print B[1]
 
         #--------------- learning for anomaly detection ----------------------------
         [A, B, pi] = self.ml.asMatrices()

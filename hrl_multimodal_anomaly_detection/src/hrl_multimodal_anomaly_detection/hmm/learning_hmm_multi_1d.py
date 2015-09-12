@@ -5,6 +5,10 @@ import sys, os, copy
 import cPickle as pickle
 from scipy.stats import norm, entropy
 
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import hrl_lib.util as ut
+
 # Matplot
 import matplotlib
 import matplotlib.pyplot as plt
@@ -17,15 +21,14 @@ from joblib import Parallel, delayed
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_1d:
-    def __init__(self, nState, nFutureStep=5, nCurrentStep=10, nEmissionDim=1, check_method='progress'):
+    def __init__(self, nState, nEmissionDim=1, check_method='progress', anomaly_offset=0.0, verbose=False):
         self.ml = None
 
         ## Tunable parameters
         self.nState = nState # the number of hidden states
         self.nGaussian = nState
-        self.nFutureStep = nFutureStep
-        self.nCurrentStep = nCurrentStep
         self.nEmissionDim = nEmissionDim
+        self.verbose = verbose
         
         ## Un-tunable parameters
         self.trans_type = 'left_right' # 'left_right' 'full'
@@ -43,12 +46,15 @@ class learning_hmm_multi_1d:
         self.l_std = None
         self.std_coff = None
 
+        self.anomaly_offset=anomaly_offset
+        
         # emission domain of this model        
         self.F = ghmm.Float()  
 
         # print 'HMM initialized for', self.check_method
 
-    def fit(self, xData1, A=None, B=None, pi=None, cov_mult=[1.0]*1, verbose=False, ml_pkl='ml_temp_1d.pkl', use_pkl=False):
+    def fit(self, xData1, A=None, B=None, pi=None, cov_mult=[1.0]*1, verbose=False, \
+            ml_pkl='ml_temp_1d.pkl', use_pkl=False):
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         X1 = np.array(xData1)
 
@@ -82,13 +88,11 @@ class learning_hmm_multi_1d:
         ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
         ret = self.ml.baumWelch(final_seq, 10000)
         print 'Baum Welch return:', ret
-
+        if np.isnan(ret): return 'Failure'
+        
         [self.A, self.B, self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
         self.B = np.array(self.B)
-        # print 'B\'s shape:', self.B.shape, self.B[0].shape, self.B[1].shape
-        # print B[0]
-        # print B[1]
 
         #--------------- learning for anomaly detection ----------------------------
         [A, B, pi] = self.ml.asMatrices()
@@ -123,8 +127,7 @@ class learning_hmm_multi_1d:
             d['state_post'] = self.l_statePosterior
             d['ll_mu'] = self.ll_mu
             d['ll_std'] = self.ll_std
-            with open(ml_pkl, 'wb') as f:
-                pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+            ut.save_pickle(d, ml_pkl)
 
     def predict(self, X):
         X = np.squeeze(X)
@@ -328,14 +331,14 @@ class learning_hmm_multi_1d:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
             logp = self.ml.loglikelihood(final_ts_obj)
         except:
-            print "Too different input profile that cannot be expressed by emission matrix"
+            if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
             return -1, 0.0 # error
 
         try:
             post = np.array(self.ml.posterior(final_ts_obj))
         except:
-            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            return 1.0, 0.0 # anomaly
+            if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+            return True, 0.0 # anomaly
 
         n = len(np.squeeze(X1))
 
@@ -349,20 +352,14 @@ class learning_hmm_multi_1d:
                 min_index = j
                 min_dist  = dist
 
-        # print 'Computing anomaly'
-        # print logp
-        # print self.ll_mu[min_index]
-        # print self.ll_std[min_index]
-
-        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
-
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
             err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:
             err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-        return err < 0.0, err
-
+        if err < self.anomaly_offset: return True, err
+        else: return False, err
+    
 
     @staticmethod
     def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
