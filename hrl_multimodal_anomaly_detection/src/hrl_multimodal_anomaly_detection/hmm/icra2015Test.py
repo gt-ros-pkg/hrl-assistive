@@ -1234,7 +1234,7 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                         threshold_list = product(threshold_mult, threshold_mult)
                     elif method == 'change':
                         ## threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
-                        threshold_list = - np.linspace(0.0, 300.0, nThres)
+                        threshold_list = - np.linspace(0.0, 400.0, nThres)
                         #threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 30.0)
                     elif method == 'global':
                         #threshold_list = - np.linspace(2.0, 37.0, nThres)
