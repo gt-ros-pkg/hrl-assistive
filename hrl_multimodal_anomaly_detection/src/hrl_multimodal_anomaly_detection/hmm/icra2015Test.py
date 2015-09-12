@@ -1705,7 +1705,7 @@ if __name__ == '__main__':
         nDataSet = None
         nThres   = 30
         nState   = 8
-        cov_mult = 5.0
+        cov_mult = 8.0
 
         # data preprocessing and splitting
         for i, subject_name in enumerate(subject_names):
