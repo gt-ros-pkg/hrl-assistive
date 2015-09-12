@@ -1238,7 +1238,7 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                         #threshold_list = - np.linspace(2.0, 37.0, nThres)
                         threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
                     elif method == 'progress' and len(check_dim) == 1:
-                        threshold_list = - np.linspace(-30.0, 10.0, nThres)
+                        threshold_list = - np.linspace(-30.0, 20.0, nThres)
                         ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10.0)
                     else:
                         threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
