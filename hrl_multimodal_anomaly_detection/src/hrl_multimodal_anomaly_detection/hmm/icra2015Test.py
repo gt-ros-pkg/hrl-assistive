@@ -1212,8 +1212,8 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
                     elif method == 'change':
                         threshold_list = -(np.logspace(-2.0, 1.0, nThres, endpoint=True) + 2.0)
                     elif method == 'global':
-                        threshold_list = - np.linspace(2.0, 17.0, nThres)
-                        ## threshold_list = -(np.logspace(-0.1, 2.0, nThres, endpoint=True) - 1.0)
+                        #threshold_list = - np.linspace(2.0, 37.0, nThres)
+                        threshold_list = -(np.logspace(-0.1, 2.0, nThres, endpoint=True) - 1.0)
                     else:
                         threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
 
@@ -1704,7 +1704,7 @@ if __name__ == '__main__':
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
         nThres   = 40
-        nState   = 10
+        nState   = 15
         cov_mult = 5.0
 
         # data preprocessing and splitting
