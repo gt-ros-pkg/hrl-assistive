@@ -1200,7 +1200,11 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     if len(check_methods) > len(check_dims):
                         method_path = os.path.join(data_target_path, method)
                     else:
-                        method_path = os.path.join(data_target_path, 'dim_'+str(check_dim[0]))
+                        if len(check_dim) == 1:
+                            method_path = os.path.join(data_target_path, 'dim_'+str(check_dim[0]))
+                        else:
+                            method_path = os.path.join(data_target_path, 'dim_all')
+                            
                     if os.path.isdir(method_path) == False:
                         os.system('mkdir -p '+method_path)
                     
@@ -1233,6 +1237,9 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     elif method == 'global':
                         #threshold_list = - np.linspace(2.0, 37.0, nThres)
                         threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
+                    elif method == 'progress' and len(check_dim) == 1:
+                        threshold_list = - np.linspace(-30.0, 10.0, nThres)
+                        ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10.0)
                     else:
                         threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
 
@@ -1425,7 +1432,13 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                 check_dim = check_dims[n]
 
             # Check the existance of workspace
-            method_path = os.path.join(data_target_path, method)
+            if len(check_methods) > len(check_dims):
+                method_path = os.path.join(data_target_path, method)
+            else:
+                if len(check_dim) == 1:
+                    method_path = os.path.join(data_target_path, 'dim_'+str(check_dim[0]))
+                else:
+                    method_path = os.path.join(data_target_path, 'dim_all')
                 
             if method == 'globalChange':
                 threshold_list = nThres * nThres 
@@ -1467,18 +1480,38 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
             color = colors.next()
             shape = shapes.next()
 
-            if method == 'globalChange':
-                label = 'Fixed threshold & \n change detection'
-            elif method == 'change':
-                label = 'Change detection'
-            elif method == 'global':
-                label = 'Fixed threshold \n detection'
-            elif method == 'progress':
-                label = 'Dynamic threshold \n detection'
+            if len(check_methods) >= len(check_dims):             
+                if method == 'globalChange':
+                    label = 'Fixed threshold & \n change detection'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif method == 'change':
+                    label = 'Change detection'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif method == 'global':
+                    label = 'Fixed threshold \n detection'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif method == 'progress':
+                    label = 'Dynamic threshold \n detection'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                else:
+                    label = method +"_"+str(check_dim)
             else:
-                label = method +"_"+str(check_dim)
-
-            pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                if check_dim == [0]:
+                    label = 'Force only'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif check_dim == [1]:
+                    label = 'Position only'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif check_dim == [2]:
+                    label = 'Orientation only'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif check_dim == [3]:
+                    label = 'Audio only'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                elif check_dim == [0,1,2,3]:
+                    label = 'All of modalities'
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                
 
         pp.xlim([-1, 101])
         pp.ylim([-1, 101])        
@@ -1765,7 +1798,7 @@ if __name__ == '__main__':
     elif opt.bRocOnlineDimCheck:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
         check_methods  = ['progress']        
-        check_dims     = [[0],[1],[2],[3]]
+        check_dims     = [[0],[1],[2],[3], [0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 4
@@ -1795,7 +1828,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
                 
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
