@@ -1703,8 +1703,8 @@ if __name__ == '__main__':
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
-        nThres   = 40
-        nState   = 6
+        nThres   = 30
+        nState   = 8
         cov_mult = 5.0
 
         # data preprocessing and splitting
