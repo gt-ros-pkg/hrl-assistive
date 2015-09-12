@@ -1260,7 +1260,6 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                                       xData3=true_train_data[2], xData4=true_train_data[3],\
                                       use_pkl=False, cov_mult=[cov_mult]*16)
                     elif nDim == 1:
-                        sys.exit()
                         hmm = hmm_1d.learning_hmm_multi_1d(nState=nState, nEmissionDim=nDim, 
                                                     anomaly_offset=anomaly_offset, \
                                                     check_method=method, verbose=False)
