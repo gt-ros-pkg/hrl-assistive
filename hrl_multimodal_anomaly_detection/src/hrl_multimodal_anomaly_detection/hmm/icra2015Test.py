@@ -1246,7 +1246,7 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                         ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10.0)
                     else:
                         threshold_list = - np.linspace(-30.0, 140.0, nThres)
-                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 150.0)
+                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10050.0)
 
 
                     # Create and train multivariate HMM
