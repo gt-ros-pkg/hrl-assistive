@@ -1378,6 +1378,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
         import itertools
         colors = itertools.cycle(['g', 'm', 'c', 'k'])
         shapes = itertools.cycle(['x','v', 'o', '+'])
+        fig = pp.figure()
         
         for n in range(nClass):
 
@@ -1692,7 +1693,7 @@ if __name__ == '__main__':
         check_methods  = ['change', 'global', 'progress']        
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
-        kFold = 4
+        kFold = 6
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
@@ -1716,7 +1717,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True
