@@ -1241,7 +1241,8 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                         threshold_list = - np.linspace(-30.0, 40.0, nThres)
                         ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10.0)
                     else:
-                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
+                        threshold_list = - np.linspace(-30.0, 40.0, nThres)
+                        ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) + 2.0)
 
 
                     # Create and train multivariate HMM
@@ -1486,31 +1487,31 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
                 elif method == 'change':
                     label = 'Change detection'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'x'+'g', label=label, mec='g', ms=8, mew=2)
                 elif method == 'global':
                     label = 'Fixed threshold \n detection'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'v'+'m', label=label, mec='m', ms=8, mew=2)
                 elif method == 'progress':
                     label = 'Dynamic threshold \n detection'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'o'+'c', label=label, mec='c', ms=8, mew=2)
                 else:
                     label = method +"_"+str(check_dim)
             else:
                 if check_dim == [0]:
                     label = 'Force only'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'x'+'g', label=label, mec='g', ms=8, mew=2)
                 elif check_dim == [1]:
                     label = 'Position only'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'v'+'m', label=label, mec='m', ms=8, mew=2)
                 elif check_dim == [2]:
                     label = 'Orientation only'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'*'+'k', label=label, mec='k', ms=8, mew=2)
                 elif check_dim == [3]:
                     label = 'Audio only'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'+'+'b', label=label, mec='b', ms=8, mew=2)
                 elif check_dim == [0,1,2,3]:
                     label = 'All of modalities'
-                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+shape+color, label=label, mec=color, ms=8, mew=2)
+                    pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'o'+'c', label=label, mec='c', ms=8, mew=2)
                 
 
         pp.xlim([-1, 101])
@@ -1756,7 +1757,7 @@ if __name__ == '__main__':
                        cov_mult=cov_mult, folding_ratio=folding_ratio, downSampleSize=downSampleSize, \
                        cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                        data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                       save_pdf=True, bPlot=True, verbose=False)
+                       save_pdf=False, bPlot=True, verbose=False)
 
 
     elif opt.bRocOnlineMethodCheck:
@@ -1772,7 +1773,7 @@ if __name__ == '__main__':
         downSampleSize = 150        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 3
-        nThres   = 30
+        nThres   = 100
         nState   = 10
         cov_mult = 5.0
         tot_data = None
@@ -1793,7 +1794,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
     elif opt.bRocOnlineDimCheck:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
