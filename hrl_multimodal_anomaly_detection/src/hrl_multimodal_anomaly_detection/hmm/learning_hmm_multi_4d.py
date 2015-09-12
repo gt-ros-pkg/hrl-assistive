@@ -656,7 +656,7 @@ class learning_hmm_multi_4d:
             logp = self.ml.loglikelihood(final_ts_obj)
         except:
             if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
-            return -1, 0.0 # error
+            return True, 0.0 # error
 
         if self.check_method == 'change' or self.check_method == 'globalChange':
 
@@ -670,7 +670,7 @@ class learning_hmm_multi_4d:
                 last_logp         = self.ml.loglikelihood(final_ts_obj)
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
-                return -1, 0.0 # error
+                return True, 0.0 # error
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
             if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
