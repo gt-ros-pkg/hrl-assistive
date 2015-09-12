@@ -1767,7 +1767,7 @@ if __name__ == '__main__':
 
 
     elif opt.bRocOnlineMethodCheck:
-        subject_names  = ['s2','s3','s4','s8','s9','s10','s11']       
+        subject_names  = ['s2','s4','s8','s9','s10','s11']       
         ## check_methods  = ['change', 'global', 'globalChange', 'progress']        
         check_methods  = ['change', 'global', 'progress']        
         check_dims     = [[0,1,2,3]]
@@ -1775,8 +1775,8 @@ if __name__ == '__main__':
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 4
         anomaly_offset = 0.0 #only for progress?
-        cutting_ratio  = [0.0, 0.9] #[0.0, 0.7]        
-        downSampleSize = 150        
+        cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]        
+        downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 10
         nThres   = 100
