@@ -1767,7 +1767,7 @@ if __name__ == '__main__':
 
 
     elif opt.bRocOnlineMethodCheck:
-        subject_names  = ['s2','s4','s8','s9','s10','s11']       
+        subject_names  = ['s2','s3','s4','s8','s9','s10','s11']       
         ## check_methods  = ['change', 'global', 'globalChange', 'progress']        
         check_methods  = ['change', 'global', 'progress']        
         check_dims     = [[0,1,2,3]]
@@ -1776,11 +1776,11 @@ if __name__ == '__main__':
         kFold = 6
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
-        downSampleSize = 100        
+        downSampleSize = 150        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 10
         nThres   = 100
-        nState   = 10
+        nState   = 12
         cov_mult = 5.0
         tot_data = None
 
