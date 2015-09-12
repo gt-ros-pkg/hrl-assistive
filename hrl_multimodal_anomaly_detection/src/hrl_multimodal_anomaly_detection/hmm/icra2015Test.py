@@ -1234,13 +1234,13 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                         threshold_list = product(threshold_mult, threshold_mult)
                     elif method == 'change':
                         ## threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
-                        ## threshold_list = - np.linspace(-30.0, 140.0, nThres)
-                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 30.0)
+                        threshold_list = - np.linspace(-30.0, 140.0, nThres)
+                        #threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 30.0)
                     elif method == 'global':
                         #threshold_list = - np.linspace(2.0, 37.0, nThres)
                         ## threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
-                        ## threshold_list = - np.linspace(-30.0, 140.0, nThres)
-                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 30.0)
+                        threshold_list = - np.linspace(-30.0, 140.0, nThres)
+                        #threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 30.0)
                     elif method == 'progress' and len(check_dim) == 1:
                         threshold_list = - np.linspace(-30.0, 40.0, nThres)
                         ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10.0)
@@ -1778,7 +1778,7 @@ if __name__ == '__main__':
         downSampleSize = 150        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 3
-        nThres   = 60
+        nThres   = 100
         nState   = 10
         cov_mult = 5.0
         tot_data = None
