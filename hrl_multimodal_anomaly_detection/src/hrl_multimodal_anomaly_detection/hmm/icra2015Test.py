@@ -1040,7 +1040,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
                 if verbose: print anomaly, error
 
                 # This is a successful nonanomalous attempt
-                if anomaly != 0:
+                if anomaly:
                     falsePos += 1
                     if verbose: print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
                     error
@@ -1066,7 +1066,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
 
             if verbose: print anomaly, error
                 
-            if anomaly != 0:
+            if anomaly:
                 truePos += 1
                 break
             elif j == len(abnormalTestData[0][i]) - 1:
