@@ -1468,7 +1468,7 @@ def fig_roc(subject_names, task_name, check_methods, data_root_path, data_target
             
 
 def kFoldPreprocessData(subject_name, task_name, root_path, target_path, \
-                        kFold=3, 
+                        kFold=3, nDataSet=1,
                         scale=1.0, downSampleSize=200, train_cutting_ratio=[0.0, 0.65], \
                         renew=False, verbose=False):
 
@@ -1516,57 +1516,58 @@ def kFoldPreprocessData(subject_name, task_name, root_path, target_path, \
         
     nTrueSequence = len(true_dataList[0])
     nFalseSequence = len(false_dataList[0])
-
-    from sklearn import cross_validation
-    idx_list = range(nTrueSequence)
-    true_kf  = cross_validation.KFold(nTrueSequence,n_folds=kFold, shuffle=True)
-
     count = 0
-    for true_train_index, true_test_index in true_kf:
-        false_kf = cross_validation.KFold(nFalseSequence,n_folds=kFold, shuffle=True)
-        for _, false_test_index in false_kf:
+    
+    from sklearn import cross_validation
+    ## idx_list = range(nTrueSequence)
 
-            true_train_data = [[],[],[],[]]
-            true_train_data[0] = [true_dataList_scaled[0][x] for x in true_train_index]
-            true_train_data[1] = [true_dataList_scaled[1][x] for x in true_train_index]
-            true_train_data[2] = [true_dataList_scaled[2][x] for x in true_train_index]
-            true_train_data[3] = [true_dataList_scaled[3][x] for x in true_train_index]
+    for n in xrange(nDataSet):
+        true_kf  = cross_validation.KFold(nTrueSequence,n_folds=kFold, shuffle=True)
+        for true_train_index, true_test_index in true_kf:
+            false_kf = cross_validation.KFold(nFalseSequence,n_folds=kFold, shuffle=True)
+            for _, false_test_index in false_kf:
 
-            true_test_data = [[],[],[],[]]
-            true_test_data[0] = [true_dataList_scaled[0][x] for x in true_test_index]
-            true_test_data[1] = [true_dataList_scaled[1][x] for x in true_test_index]
-            true_test_data[2] = [true_dataList_scaled[2][x] for x in true_test_index]
-            true_test_data[3] = [true_dataList_scaled[3][x] for x in true_test_index]
+                true_train_data = [[],[],[],[]]
+                true_train_data[0] = [true_dataList_scaled[0][x] for x in true_train_index]
+                true_train_data[1] = [true_dataList_scaled[1][x] for x in true_train_index]
+                true_train_data[2] = [true_dataList_scaled[2][x] for x in true_train_index]
+                true_train_data[3] = [true_dataList_scaled[3][x] for x in true_train_index]
 
-            false_test_data = [[],[],[],[]]
-            false_test_data[0] = [false_dataList_scaled[0][x] for x in false_test_index]
-            false_test_data[1] = [false_dataList_scaled[1][x] for x in false_test_index]
-            false_test_data[2] = [false_dataList_scaled[2][x] for x in false_test_index]
-            false_test_data[3] = [false_dataList_scaled[3][x] for x in false_test_index]
-                
-                
-            # Save data using dictionary
-            d = {}
-            d['trainData'] = true_train_data
-            d['thresTestData'] = []
-            d['normalTestData'] = true_test_data
-            d['abnormalTestData'] = false_test_data
-            d['trainTimeList'] = []
-            d['thresTestTimeList'] = []
-            d['normalTestTimeList'] = []
-            d['abnormalTestTimeList'] = []
+                true_test_data = [[],[],[],[]]
+                true_test_data[0] = [true_dataList_scaled[0][x] for x in true_test_index]
+                true_test_data[1] = [true_dataList_scaled[1][x] for x in true_test_index]
+                true_test_data[2] = [true_dataList_scaled[2][x] for x in true_test_index]
+                true_test_data[3] = [true_dataList_scaled[3][x] for x in true_test_index]
 
-            d['trainFileList'] = []
-            d['thsTestFileList'] = []
-            d['normalTestFileList'] = []
-            d['abnormalTestFileList'] = []
+                false_test_data = [[],[],[],[]]
+                false_test_data[0] = [false_dataList_scaled[0][x] for x in false_test_index]
+                false_test_data[1] = [false_dataList_scaled[1][x] for x in false_test_index]
+                false_test_data[2] = [false_dataList_scaled[2][x] for x in false_test_index]
+                false_test_data[3] = [false_dataList_scaled[3][x] for x in false_test_index]
 
-            d['minVals'] = minVals
-            d['maxVals'] = maxVals
 
-            target_file = os.path.join(target_path, task_name+'_'+subject_name+'dataSet_'+str(count)+'_kfold.pkl' ) 
-            ut.save_pickle(d, target_file)        
-            count += 1
+                # Save data using dictionary
+                d = {}
+                d['trainData'] = true_train_data
+                d['thresTestData'] = []
+                d['normalTestData'] = true_test_data
+                d['abnormalTestData'] = false_test_data
+                d['trainTimeList'] = []
+                d['thresTestTimeList'] = []
+                d['normalTestTimeList'] = []
+                d['abnormalTestTimeList'] = []
+
+                d['trainFileList'] = []
+                d['thsTestFileList'] = []
+                d['normalTestFileList'] = []
+                d['abnormalTestFileList'] = []
+
+                d['minVals'] = minVals
+                d['maxVals'] = maxVals
+
+                target_file = os.path.join(target_path, task_name+'_'+subject_name+'dataSet_'+str(count)+'_kfold.pkl' ) 
+                ut.save_pickle(d, target_file)        
+                count += 1
     
     return count
     
@@ -1702,14 +1703,15 @@ if __name__ == '__main__':
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 100        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
-        nDataSet = None
+        nDataSet = 3
         nThres   = 30
         nState   = 8
-        cov_mult = 10.0
+        cov_mult = 5.0
+        tot_data = None
 
         # data preprocessing and splitting
         for i, subject_name in enumerate(subject_names):
-            nDataSet = kFoldPreprocessData(subject_name, task_name, data_root_path, data_target_path, \
+            tot_data = kFoldPreprocessData(subject_name, task_name, data_root_path, data_target_path, \
                                            kFold=kFold,\
                                            scale=scale, downSampleSize=downSampleSize, \
                                            train_cutting_ratio=cutting_ratio,\
@@ -1718,7 +1720,7 @@ if __name__ == '__main__':
         print "kFoldPreprocee finished...."
         
         fig_roc(subject_names, task_name, check_methods, data_root_path, data_target_path, 
-                nDataSet=nDataSet,\
+                nDataSet=tot_data,\
                 nState=nState, scale=scale, nThres=nThres, \
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
