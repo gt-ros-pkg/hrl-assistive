@@ -1019,7 +1019,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
         for i in xrange(len(normalTestData[0])):
             if verbose: print 'Anomaly Error for test set ', i
 
-            for j in range(6, len(normalTestData[0][i])):
+            for j in range(15, len(normalTestData[0][i])):
                 try:    
                     anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
                                                    normalTestData[1][i][:j], 
@@ -1699,7 +1699,7 @@ if __name__ == '__main__':
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 6
         anomaly_offset = 0.0 #only for progress?
-        cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]        
+        cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 150        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = None
