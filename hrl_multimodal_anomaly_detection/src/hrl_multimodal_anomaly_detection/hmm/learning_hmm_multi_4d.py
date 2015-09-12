@@ -663,7 +663,7 @@ class learning_hmm_multi_4d:
             logp = self.ml.loglikelihood(final_ts_obj)
         except:
             if self.verbose: print "Too different input profile that cannot be expressed by emission matrix"
-            return -1, 0.0 # error
+            return True, 0.0 # error
 
         if self.check_method == 'change' or self.check_method == 'globalChange':
 
@@ -677,7 +677,7 @@ class learning_hmm_multi_4d:
                 last_logp         = self.ml.loglikelihood(final_ts_obj)
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
-                return -1, 0.0 # error
+                return True, 0.0 # error
 
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
             if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
@@ -685,21 +685,24 @@ class learning_hmm_multi_4d:
             else:                
                 err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             ## if err < self.anomaly_offset: return 1.0, 0.0 # anomaly            
-            if err < 0.0: return 1.0, 0.0 # anomaly            
+            if err < 0.0: return True, 0.0 # anomaly            
             
         if self.check_method == 'global' or self.check_method == 'globalChange':
             if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
                 err = logp - (self.l_mu + ths_mult[1]*self.l_std)
             else:
                 err = logp - (self.l_mu + ths_mult*self.l_std)
-            return err < 0.0, err
+
+            if err<0.0: return True, err
+            else: return False, err
+            ## return err < 0.0, err
                 
         elif self.check_method == 'progress':
             try:
                 post = np.array(self.ml.posterior(final_ts_obj))
             except:
                 if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-                return 1.0, 0.0 # anomaly
+                return True, 0.0 # anomaly
 
             if len(X1) == 1:
                 n = 1
@@ -721,10 +724,12 @@ class learning_hmm_multi_4d:
             else:
                 err = logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
-            return err < self.anomaly_offset, err
+            if err < self.anomaly_offset: return True, err
+            else: return False, err
             
         else:
-            return err < 0.0, err
+            if err < 0.0: return True, err
+            else: return False, err
             
 
             

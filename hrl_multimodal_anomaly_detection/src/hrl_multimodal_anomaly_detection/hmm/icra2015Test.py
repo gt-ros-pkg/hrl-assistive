@@ -1055,10 +1055,14 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, verbose=
         if verbose: print 'Anomaly Error for test set ', i
 
         for j in range(6, len(abnormalTestData[0][i])):
-            anomaly, error = hmm.anomaly_check(abnormalTestData[0][i][:j], 
-                                               abnormalTestData[1][i][:j], 
-                                               abnormalTestData[2][i][:j],
-                                               abnormalTestData[3][i][:j], c)
+            try:                    
+                anomaly, error = hmm.anomaly_check(abnormalTestData[0][i][:j], 
+                                                   abnormalTestData[1][i][:j], 
+                                                   abnormalTestData[2][i][:j],
+                                                   abnormalTestData[3][i][:j], c)
+            except:
+                truePos += 1
+                break
 
             if verbose: print anomaly, error
                 
