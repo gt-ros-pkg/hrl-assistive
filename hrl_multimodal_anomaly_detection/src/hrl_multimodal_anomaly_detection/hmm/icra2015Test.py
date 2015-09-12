@@ -1501,10 +1501,10 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     label = 'Force only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'x'+'g', label=label, mec='g', ms=8, mew=2)
                 elif check_dim == [1]:
-                    label = 'Position only'
+                    label = 'Relative distance only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'v'+'m', label=label, mec='m', ms=8, mew=2)
                 elif check_dim == [2]:
-                    label = 'Orientation only'
+                    label = 'Relative angle only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'*'+'k', label=label, mec='k', ms=8, mew=2)
                 elif check_dim == [3]:
                     label = 'Audio only'
@@ -1773,7 +1773,7 @@ if __name__ == '__main__':
         downSampleSize = 150        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 3
-        nThres   = 100
+        nThres   = 40
         nState   = 10
         cov_mult = 5.0
         tot_data = None
