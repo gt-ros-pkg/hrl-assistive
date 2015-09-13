@@ -1810,14 +1810,14 @@ if __name__ == '__main__':
         check_dims     = [[0],[1],[2],[3], [0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
-        kFold = 4
+        kFold = 6
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
-        downSampleSize = 150        
+        downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
-        nDataSet = 3
+        nDataSet = 6
         nThres   = 100
-        nState   = 10
+        nState   = 8
         cov_mult = 5.0
         tot_data = None
 
