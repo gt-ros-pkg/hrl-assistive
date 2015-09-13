@@ -1306,15 +1306,15 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                             ths_l.append(ths)
 
 
-                    d = {}
-                    d['fn_l']    = fn_l
-                    d['tn_l']    = tn_l
-                    d['tp_l']    = tp_l
-                    d['fp_l']    = fp_l
-                    d['ths_l']   = ths_l
+                    dd = {}
+                    dd['fn_l']    = fn_l
+                    dd['tn_l']    = tn_l
+                    dd['tp_l']    = tp_l
+                    dd['fp_l']    = fp_l
+                    dd['ths_l']   = ths_l
 
                     try:
-                        ut.save_pickle(d,res_file)        
+                        ut.save_pickle(dd,res_file)        
                     except:
                         print "There is the targeted pkl file"
 
@@ -1467,7 +1467,11 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     fn_l += np.array(d['fn_l']); tp_l += np.array(d['tp_l']) 
                     tn_l += np.array(d['tn_l']); fp_l += np.array(d['fp_l'])
 
-
+            ## print tn_l
+            ## print fp_l
+            ## print fn_l
+            ## print tp_l;
+            
             tpr_l = np.zeros((threshold_list))
             fpr_l = np.zeros((threshold_list))
 
@@ -1773,14 +1777,14 @@ if __name__ == '__main__':
         check_dims     = [[0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
-        kFold = 12
+        kFold = 4
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]        
         downSampleSize = 150        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
-        nDataSet = 10
+        nDataSet = 4
         nThres   = 100
-        nState   = 12
+        nState   = 8
         cov_mult = 5.0
         tot_data = None
 
