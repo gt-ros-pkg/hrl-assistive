@@ -1021,7 +1021,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, check_di
         for i in xrange(len(normalTestData[0])):
             if verbose: print 'Anomaly Error for test set ', i
 
-            for j in range(6, len(normalTestData[0][i])):
+            for j in range(20, len(normalTestData[0][i])):
                 try:    
                     if nDim == 4:                    
                         anomaly, error = hmm.anomaly_check(normalTestData[0][i][:j], 
@@ -1062,7 +1062,7 @@ def tableOfConfusionOnline(hmm, normalTestData, abnormalTestData, c=-5, check_di
     for i in xrange(len(abnormalTestData[0])):
         if verbose: print 'Anomaly Error for test set ', i
 
-        for j in range(6, len(abnormalTestData[0][i])):
+        for j in range(20, len(abnormalTestData[0][i])):
             try:                    
                 if nDim == 4:                                    
                     anomaly, error = hmm.anomaly_check(abnormalTestData[0][i][:j], 
