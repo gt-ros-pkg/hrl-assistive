@@ -1247,12 +1247,8 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                         ## threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 10.0)
                     else:
                         #threshold_list = - np.linspace(-30.0, 140.0, nThres)
-                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True) - 0.0)
-                        threshold_list[0] = 100000000.0
-                        threshold_list[-1] = -100000000.0
+                        threshold_list = -(np.logspace(-4.0, 4.5, nThres, endpoint=True)*10.0)
                         
-
-
                     # Create and train multivariate HMM
                     hmm = None
                     if nDim == 4:
@@ -1781,7 +1777,7 @@ if __name__ == '__main__':
         data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
         kFold = 6
         anomaly_offset = 0.0 #only for progress?
-        cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]        
+        cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 6
