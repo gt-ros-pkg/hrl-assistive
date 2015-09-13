@@ -1235,7 +1235,7 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     elif method == 'change':
                         ## threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
                         threshold_list = - np.linspace(0.0, 400.0, nThres)
-                        threshold_list = -(np.logspace(-1.0, 2.0, nThres, endpoint=True)       )
+                        threshold_list = -(np.logspace(-1.5, 2.0, nThres, endpoint=True) -1.0 )
                     elif method == 'global':
                         #threshold_list = - np.linspace(2.0, 37.0, nThres)
                         ## threshold_list = -(np.logspace(-0.1, 2.5, nThres, endpoint=True) - 1.0)
@@ -1802,7 +1802,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
     elif opt.bRocOnlineDimCheck:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
