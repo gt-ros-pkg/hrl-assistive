@@ -1522,8 +1522,8 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'o'+'c', label=label, mec='c', ms=8, mew=2)
                 
 
-        pp.xlim([-1, 101])
-        pp.ylim([-1, 101])        
+        pp.xlim([-0.5, 100.5])
+        pp.ylim([-0.5, 100.5])        
         pp.xlabel('False Positive Rate (Percentage)', fontsize=16)
         pp.ylabel('True Positive Rate (Percentage)', fontsize=16)    
         pp.legend(loc=4,prop={'size':16})
@@ -1781,7 +1781,7 @@ if __name__ == '__main__':
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 6
-        nThres   = 100
+        nThres   = 60
         nState   = 8
         cov_mult = 5.0
         tot_data = None
@@ -1802,7 +1802,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
     elif opt.bRocOnlineDimCheck:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
