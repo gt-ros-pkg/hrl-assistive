@@ -1816,7 +1816,7 @@ if __name__ == '__main__':
         downSampleSize = 120        
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 6
-        nThres   = 100
+        nThres   = 60
         nState   = 8
         cov_mult = 5.0
         tot_data = None
