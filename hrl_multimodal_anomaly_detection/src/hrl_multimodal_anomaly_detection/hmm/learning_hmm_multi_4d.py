@@ -17,6 +17,7 @@ import matplotlib.collections as collections
 
 import ghmm
 from sklearn.metrics import r2_score
+from sklearn.cluster import KMeans
 from joblib import Parallel, delayed
 
 os.system("taskset -p 0xff %d" % os.getpid())
