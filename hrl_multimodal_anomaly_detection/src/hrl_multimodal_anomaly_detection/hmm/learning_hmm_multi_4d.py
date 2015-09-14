@@ -22,7 +22,8 @@ from joblib import Parallel, delayed
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_4d:
-    def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, verbose=False):
+    def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
+                 cluster_type='time', verbose=False):
         self.ml = None
 
         ## Tunable parameters
@@ -37,6 +38,7 @@ class learning_hmm_multi_4d:
         self.B = None # emission matrix
         self.pi = None # Initial probabilities per state
         self.check_method = check_method # ['global', 'progress']
+        self.cluster_type = cluster_type
 
         self.l_statePosterior = None
         self.ll_mu = None
@@ -162,9 +164,6 @@ class learning_hmm_multi_4d:
         elif self.check_method == 'progress':
 
             # Get average loglikelihood threshold wrt progress
-            self.std_coff  = 1.0
-            g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
-            g_sig = float(m) / float(self.nGaussian) * self.std_coff
 
             if os.path.isfile(ml_pkl) and use_pkl:
                 d = ut.load_pickle(ml_pkl)
@@ -172,13 +171,26 @@ class learning_hmm_multi_4d:
                 self.ll_mu            = d['ll_mu']
                 self.ll_std           = d['ll_std']
             else:
-                if self.verbose: print 'Begining parallel job'
-                r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
-                                                                       self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
-                                                                       for i in xrange(self.nGaussian))
-                if self.verbose: print 'Completed parallel job'
-                l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+                if self.cluster_type == 'time':                
+                    if self.verbose: print 'Begining parallel job'
+                    self.std_coff  = 1.0
+                    g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
+                    g_sig = float(m) / float(self.nGaussian) * self.std_coff
+                    r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
+                                                                           self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
+                                                                           for i in xrange(self.nGaussian))
+                    if self.verbose: print 'Completed parallel job'
+                    l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
+                elif self.cluster_type == 'state':
+                    self.km = None                    
+                    self.ll_mu = None
+                    self.ll_std = None
+                    self.ll_mu, self.ll_std = self.state_clustering(X1, X2, X3, X4)
+                    path_mat  = np.zeros((self.nState, m*n))
+                    likelihood_mat = np.zeros((1, m*n))
+                    self.l_statePosterior=None
+                    
                 d = dict()
                 d['state_post'] = self.l_statePosterior
                 d['ll_mu'] = self.ll_mu
@@ -207,14 +219,7 @@ class learning_hmm_multi_4d:
             n = len(np.squeeze(X1))
 
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                if post[n-1] is None or self.l_statePosterior[j] is None: continue
-                dist = entropy(post[n-1], self.l_statePosterior[j])
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist
+            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
             ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
             ## if logp >= 0.:                
@@ -447,13 +452,7 @@ class learning_hmm_multi_4d:
         n = len(np.squeeze(X1))
 
         # Find the best posterior distribution
-        min_dist  = 100000000
-        min_index = 0
-        for j in xrange(self.nGaussian):
-            dist = entropy(post[n-1], self.l_statePosterior[j])
-            if min_dist > dist:
-                min_index = j
-                min_dist  = dist
+        min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
         ll_likelihood = logp
         ll_state_idx  = min_index
@@ -479,13 +478,7 @@ class learning_hmm_multi_4d:
             post = np.array(self.ml.posterior(final_ts_obj))
 
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                dist = entropy(post[i-1], self.l_statePosterior[j])
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist
+            min_index, min_dist = self.findBestPosteriorDistribution(post[i-1])
 
             ll_likelihood[i] = logp
             ll_state_idx[i]  = min_index
@@ -703,14 +696,7 @@ class learning_hmm_multi_4d:
                 n = len(np.squeeze(X1))
 
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                dist = entropy(post[n-1], self.l_statePosterior[j])
-                # print 'Index:', j, 'Entropy:', dist
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist
+            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
@@ -746,14 +732,7 @@ class learning_hmm_multi_4d:
         n = len(np.squeeze(X1))
 
         # Find the best posterior distribution
-        min_dist  = 100000000
-        min_index = 0
-        for j in xrange(self.nGaussian):
-            dist = entropy(post[n-1], self.l_statePosterior[j])
-            # print 'Index:', j, 'Entropy:', dist
-            if min_dist > dist:
-                min_index = j
-                min_dist  = dist
+        min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
         # print 'Computing anomaly'
         # print logp
@@ -813,13 +792,7 @@ class learning_hmm_multi_4d:
             post = np.array(self.ml.posterior(final_ts_obj))
 
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                dist = entropy(post[i-1], self.l_statePosterior[j])
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist
+            min_index, min_dist = self.findBestPosteriorDistribution(post[i-1])
 
             ll_likelihood[i] = logp
             ll_state_idx[i]  = min_index
@@ -999,6 +972,75 @@ class learning_hmm_multi_4d:
 
         return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
 
+
+    def state_clustering(self, X1, X2, X3, X4):
+        n,m = np.shape(X1)
+
+        print n,m
+        x   = np.arange(0., float(m))*(1./43.)
+        state_mat  = np.zeros((self.nState, m*n))
+        likelihood_mat = np.zeros((1, m*n))
+
+        count = 0           
+        for i in xrange(n):
+
+            for j in xrange(1,m):            
+
+                x_test1 = X1[i:i+1,:j]
+                x_test2 = X2[i:i+1,:j]            
+                x_test3 = X3[i:i+1,:j]            
+                x_test4 = X4[i:i+1,:j]            
+                X_test = self.convert_sequence(x_test1, x_test2, x_test3, x_test4, emission=False)
+
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                ## path,_    = self.ml.viterbi(final_ts_obj)        
+                post      = self.ml.posterior(final_ts_obj)
+                logp      = self.ml.loglikelihood(final_ts_obj)
+
+                state_mat[:, count] = np.array(post[j-1])
+                likelihood_mat[0,count] = logp
+                count += 1
+
+        # k-means
+        init_center = np.eye(self.nState, self.nState)
+        self.km = KMeans(self.nState, init=init_center)
+        idx_list = self.km.fit_predict(state_mat.transpose())
+
+        # mean and variance of likelihoods
+        l = []
+        for i in xrange(self.nState):
+            l.append([])
+
+        for i, idx in enumerate(idx_list):
+            l[idx].append(likelihood_mat[0][i]) 
+
+        l_mean = []
+        l_std = []
+        for i in xrange(self.nState):
+            l_mean.append( np.mean(l[i]) )
+            l_std.append( np.std(l[i]) )
+                
+        return l_mean, l_std
+
+    def findBestPosteriorDistribution(self, post):
+        # Find the best posterior distribution
+        min_dist  = 100000000
+        min_index = 0
+
+        if self.cluster_type == 'time':
+            for j in xrange(self.nGaussian):
+                dist = entropy(post, self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist 
+        else:
+            print "state based clustering"
+            min_index = self.km.predict(post)
+            min_dist  = -1
+
+        return min_index, min_dist
+        
+        
 ####################################################################
 # functions for paralell computation
 ####################################################################

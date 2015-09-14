@@ -1170,6 +1170,7 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
             nState=20, scale=1.0, nThres=30, \
             cov_mult=5., downSampleSize=200, \
             cutting_ratio=[0.0, 0.65], anomaly_offset=0.0,\
+            cluster_type='time',\
             data_renew=False, hmm_renew=False, save_pdf=False, bPlot=False, bAllPlot=False, verbose=False):
 
     # For parallel computing
@@ -1254,14 +1255,14 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     hmm = None
                     if nDim == 4:
                         hmm = hmm_4d.learning_hmm_multi_4d(nState=nState, nEmissionDim=nDim, 
-                                                    anomaly_offset=anomaly_offset, \
+                                                    anomaly_offset=anomaly_offset, cluster_type=cluster_type, \
                                                     check_method=method, verbose=False)
                         ret = hmm.fit(xData1=true_train_data[0], xData2=true_train_data[1],\
                                       xData3=true_train_data[2], xData4=true_train_data[3],\
                                       use_pkl=False, cov_mult=[cov_mult]*16)
                     elif nDim == 1:
                         hmm = hmm_1d.learning_hmm_multi_1d(nState=nState, nEmissionDim=nDim, 
-                                                    anomaly_offset=anomaly_offset, \
+                                                    anomaly_offset=anomaly_offset, cluster_type=cluster_type, \
                                                     check_method=method, verbose=False)
                         ret = hmm.fit(xData1=true_train_data[check_dim[0]],\
                                       use_pkl=False, cov_mult=[cov_mult]*16)
@@ -1668,12 +1669,18 @@ if __name__ == '__main__':
                  default=False, help='Plot the likelihoods of test data.')
     p.add_option('--eval', '--e', action='store_true', dest='bEvaluation',
                  default=False, help='Evaluate each subject data.')
+
+    # for ICRA figures
     p.add_option('--roc_online_method_check', '--ronmthd', action='store_true', \
                  dest='bRocOnlineMethodCheck',
                  default=False, help='Plot online ROC by real anomaly')    
     p.add_option('--roc_online_dim_check', '--rondim', action='store_true', \
                  dest='bRocOnlineDimCheck',
                  default=False, help='Plot online ROC by real anomaly with dimension check')    
+    p.add_option('--type_clustering', '--tc', action='store', dest='typeClustering',
+                 default='time', help='Type of clustering algorithm(default=time-based rbf)')
+
+    
     p.add_option('--allplot', '--all', action='store_true', dest='bAllPlot',
                  default=False, help='Plot all data.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
@@ -1775,12 +1782,14 @@ if __name__ == '__main__':
         check_methods  = ['change', 'global', 'progress']        
         check_dims     = [[0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
-        data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+        if opt.typeClustering == 'time' :
+            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+        else:
+            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_state'
         kFold = 6
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
-        ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 6
         nThres   = 60
         nState   = 8
@@ -1802,6 +1811,7 @@ if __name__ == '__main__':
                 nState=nState, scale=scale, nThres=nThres, \
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
+                cluster_type=opt.typeClustering, \
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
                 save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
@@ -1837,6 +1847,7 @@ if __name__ == '__main__':
                 nState=nState, scale=scale, nThres=nThres, \
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
+                cluster_type=opt.typeClustering, \
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
                 save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
                 

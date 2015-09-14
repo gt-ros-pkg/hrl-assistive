@@ -519,7 +519,8 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             if tn_l[i] + fn_l[i] + fp_l[i] != 0:
                 detect_l[i] = (tn_l[i]+fn_l[i])/(tn_l[i] + fn_l[i] + fp_l[i])*100.0
                 
-        idx_list = sorted(range(len(fpr_l)), key=lambda k: fpr_l[k])
+        sum_l = tpr_l+fpr_l 
+        idx_list = sorted(range(len(sum_l)), key=lambda k: sum_l[k])
         sorted_tpr_l   = np.array([tpr_l[k] for k in idx_list])
         sorted_fpr_l   = np.array([fpr_l[k] for k in idx_list])
         sorted_npv_l   = np.array([npv_l[k] for k in idx_list])
@@ -2494,10 +2495,10 @@ if __name__ == '__main__':
         ## true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
         ##   = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
         ##                 audio_thres[task], cross_data_path)
-        nDataSet = dm.kFoldLoadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
-                                    audio_thres[task], cross_data_path, kFold=3)
 
         if opt.bAllPlot is not True:
+            nDataSet = dm.kFoldLoadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task],\
+                                        audio_thres[task], cross_data_path, kFold=3)
             fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
@@ -3055,7 +3056,7 @@ if __name__ == '__main__':
             ## X2 = np.array([aXData2_scaled[idx]])
 
 
-            lhm.likelihood_disp(x_test1, x_test2, 2.0, scale1=[min_c1, max_c1, scale], \
+            lhm.likelihood_disp(x_test1, x_test2, 3.0, scale1=[min_c1, max_c1, scale], \
                                 scale2=[min_c2, max_c2, scale])
             print "-------------------------------------------------------------------"
 

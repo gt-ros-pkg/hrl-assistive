@@ -1202,10 +1202,11 @@ class learning_hmm_multi(learning_base):
         ax3.set_xlabel('Time [sec]', fontsize=18)
 
         plt.subplots_adjust(bottom=0.15)        
-        plt.show()
-        
         fig.savefig('test.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
         fig.savefig('test.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        plt.show()
         
         ## print "----------------------"
         ## seq = self.ml.sample(20, len(aXData1[0]), seed=3586663)
