@@ -197,6 +197,8 @@ class learning_hmm_multi(learning_base):
                 elif self.cluster_type == 'state':
 
                     self.km = None                    
+                    self.ll_mu = None
+                    self.ll_std = None
                     self.ll_mu, self.ll_std = self.state_clustering(X1, X2)
                     path_mat  = np.zeros((self.nState, m*n))
                     likelihood_mat = np.zeros((1, m*n))
@@ -1318,7 +1320,7 @@ class learning_hmm_multi(learning_base):
         ## plt.grid()            
         ## plt.show()
 
-    def state_clustering(self, X1, X2):
+    def state_clustering(self, X1, X2=None):
         n,m = np.shape(X1)
 
         print n,m
@@ -1330,12 +1332,13 @@ class learning_hmm_multi(learning_base):
         for i in xrange(n):
 
             for j in xrange(1,m):            
-                x_test1 = X1[i:i+1,:j]
-                x_test2 = X2[i:i+1,:j]            
 
                 if self.nEmissionDim == 1:
+                    x_test1 = X1[i:i+1,:j]
                     X_test = x_test1
                 else:        
+                    x_test1 = X1[i:i+1,:j]
+                    x_test2 = X2[i:i+1,:j]            
                     X_test = self.convert_sequence(x_test1, x_test2, emission=False)                
 
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
