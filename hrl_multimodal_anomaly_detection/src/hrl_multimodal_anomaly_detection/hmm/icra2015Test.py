@@ -1710,7 +1710,7 @@ if __name__ == '__main__':
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
-    scale          = [1.0,1.0,1.0,0.3]
+    scale          = [10.0,10.0,10.0,5.]
     cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]
     anomaly_offset = -20.0
 
