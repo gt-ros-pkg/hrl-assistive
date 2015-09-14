@@ -1710,7 +1710,7 @@ if __name__ == '__main__':
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
-    scale          = [10.0,10.0,10.0,2.]
+    scale          = [10.0,10.0,10.0,3.]
     cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]
     anomaly_offset = -20.0
 
@@ -1791,9 +1791,10 @@ if __name__ == '__main__':
         downSampleSize = 120        
         nDataSet = 20
         nThres   = 60
-        nState   = 8
+        nState   = 15 #8
         cov_mult = 5.0
         tot_data = None
+        scale    = [10.0,10.0,10.0,3.]
 
         # data preprocessing and splitting
         for i, subject_name in enumerate(subject_names):
