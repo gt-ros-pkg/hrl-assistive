@@ -46,7 +46,8 @@ tableau20 = np.array(tableau20)/255.0
 def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
             prefix, nState=20, \
             threshold_mult = -1.0*np.arange(0.05, 1.2, 0.05), opr='robot', attr='id', bPlot=False, \
-            cov_mult=[1.0, 1.0, 1.0, 1.0], renew=False, test=False, disp=None, rm_run=False, sim=False):
+            cov_mult=[1.0, 1.0, 1.0, 1.0], cluster_type='time', \
+            renew=False, test=False, disp=None, rm_run=False, sim=False):
     
     # For parallel computing
     strMachine = socket.gethostname()+"_"+str(os.getpid())    
@@ -145,13 +146,14 @@ def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, ch
                     if check_dim is not 2:
                         x_train1 = train_dataSet.samples[:,check_dim,:]
                         lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=1, \
-                                                 check_method=method)
+                                                 check_method=method, cluster_type=cluster_type)
                         if check_dim==0: ret = lhm.fit(x_train1, cov_mult=[cov_mult[0]]*4, use_pkl=use_ml_pkl)
                         elif check_dim==1: ret = lhm.fit(x_train1, cov_mult=[cov_mult[3]]*4, use_pkl=use_ml_pkl)
                     else:
                         x_train1 = train_dataSet.samples[:,0,:]
                         x_train2 = train_dataSet.samples[:,1,:]
-                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method)
+                        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, check_method=method,\
+                                                 cluster_type=cluster_type)
                         ret = lhm.fit(x_train1, x_train2, cov_mult=cov_mult, use_pkl=use_ml_pkl)            
 
                 if ret == False:
@@ -535,9 +537,9 @@ def fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_m
             if check_dim == 0:
                 label = 'Force only'
             elif check_dim == 1:
-                label = 'Sound only'
+                label = 'Audio only'
             elif check_dim == 2:
-                label = 'Force & sound'
+                label = 'Force & audio'
             else:
                 label = method +"_"+str(check_dim)                
         else:
@@ -2270,11 +2272,16 @@ if __name__ == '__main__':
                  default=False, help='Plot by time using animation')
     p.add_option('--path_disp', '--pd', action='store_true', dest='bPathDisp',
                  default=False, help='Plot all path')
+    p.add_option('--path_clustering', '--pc', action='store_true', dest='bPathClustering',
+                 default=False, help='Get all path')
 
+    
     p.add_option('--class', '--c', action='store', type='int', dest='nClass',
                  default=0, help='Store a class number')
     p.add_option('--task', '--t', action='store', type='int', dest='nTask',
                  default=0, help='Store a task number')
+    p.add_option('--type_clustering', '--tc', action='store', dest='typeClustering',
+                 default='time', help='Type of clustering algorithm(default=time-based rbf)')
     p.add_option('--data_gen', '--gen', action='store_true', dest='bDataGen',
                  default=False, help='Only data generation')
     p.add_option('--delete', '--del', action='store_true', dest='bDelete',
@@ -2468,16 +2475,20 @@ if __name__ == '__main__':
     elif opt.bRocOnlineMethodCheck:
         
         print "ROC Online Robot with real anomalies"
-        test_title      = 'online_method_comp'
+        if opt.typeClustering == 'time': test_title      = 'online_method_comp'
+        else: test_title      = 'online_method_comp_state'
+        
         cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
         nState          = nState_l[task]
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
         attr            = 'id'
         onoff_type      = 'online'
-        check_methods   = ['change', 'global', 'globalChange', 'progress']
+        check_methods   = ['change', 'global', 'progress']
+        ## check_methods   = ['change', 'global', 'globalChange', 'progress']
         check_dims      = [2]
         disp            = 'None'
 
+        
         ## true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
         ##   = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
         ##                 audio_thres[task], cross_data_path)
@@ -2488,6 +2499,7 @@ if __name__ == '__main__':
             fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                    cluster_type=opt.typeClustering, \
                     disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
@@ -2714,11 +2726,53 @@ if __name__ == '__main__':
         elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
         else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
 
-        x_test1 = x_train1
-        x_test2 = x_train2
+        x_test1 = x_train1[:1]
+        x_test2 = x_train2[:1]
         lhm.path_disp(x_test1, x_test2, scale1=[min_c1, max_c1, scale], \
                                 scale2=[min_c2, max_c2, scale])
+
+
+    #---------------------------------------------------------------------------   
+    elif opt.bPathClustering:
+            
+        print "Hidden-state path Visualization of each sequence"
+        true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
+          = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
+                        audio_thres[task])
         
+        nState   = nState_l[task]
+        trans_type= "left_right"
+        check_dim = 2
+        if check_dim == 0 or check_dim == 1: nEmissionDim=1
+        else: nEmissionDim=2
+
+        aXData1_scaled, min_c1, max_c1 = dm.scaling(true_aXData1)
+        aXData2_scaled, min_c2, max_c2 = dm.scaling(true_aXData2)    
+        true_labels = [True]*len(true_aXData1)
+
+        true_dataSet = dm.create_mvpa_dataset(aXData1_scaled, aXData2_scaled, true_chunks, true_labels)
+            
+        x_train1  = true_dataSet.samples[:,0,:]
+        x_train2  = true_dataSet.samples[:,1,:]
+
+        # Learning
+        cluster_type='time'
+        lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim,\
+                                 cluster_type=cluster_type)
+
+
+        res_file = 'clustering.pkl'
+        if os.path.isfile(res_file) is False: 
+        
+            if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
+            elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
+            else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
+
+        x_test1 = x_train1
+        x_test2 = x_train2
+        lhm.path_cluster(x_test1, x_test2, res_file, scale1=[min_c1, max_c1, scale], \
+                         scale2=[min_c2, max_c2, scale])
+                                
     #---------------------------------------------------------------------------           
     ## elif opt.bRocOfflineSimMethodCheck:
         
@@ -2948,6 +3002,11 @@ if __name__ == '__main__':
         # If you want normal likelihood, class 0, data 1
         # testData 0
         # false data 0 (make it false)
+
+        # ICRA figure generation
+        # 1) python test_multi_modality.py --c 0 --t 1
+        # 2) python test_multi_modality.py --c 0 --t 1 --an
+        
         if false_data_flag:
             test_dataSet    = false_dataSet
                                                                
@@ -2962,7 +3021,8 @@ if __name__ == '__main__':
                 x_test2  = test_dataSet.samples[:,1,:]
             
             # Learning
-            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim)
+            lhm = learning_hmm_multi(nState=nState, trans_type=trans_type, nEmissionDim=nEmissionDim, \
+                                     cluster_type=opt.typeClustering)
             
             if check_dim == 0: lhm.fit(x_train1, cov_mult=[cov_mult[task][0]]*4)
             elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)

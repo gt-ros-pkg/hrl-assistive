@@ -1510,16 +1510,16 @@ def fig_roc(subject_names, task_name, check_methods, check_dims, data_root_path,
                     label = 'Force only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'x'+'g', label=label, mec='g', ms=8, mew=2)
                 elif check_dim == [1]:
-                    label = 'Relative distance only'
+                    label = 'Distance only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'v'+'m', label=label, mec='m', ms=8, mew=2)
                 elif check_dim == [2]:
-                    label = 'Relative angle only'
+                    label = 'Angle only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'*'+'k', label=label, mec='k', ms=8, mew=2)
                 elif check_dim == [3]:
                     label = 'Audio only'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'+'+'b', label=label, mec='b', ms=8, mew=2)
                 elif check_dim == [0,1,2,3]:
-                    label = 'All of modalities'
+                    label = 'All features'
                     pp.plot(sorted_fpr_l, sorted_tpr_l, '-'+'o'+'c', label=label, mec='c', ms=8, mew=2)
                 
 
@@ -1803,7 +1803,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
 
     elif opt.bRocOnlineDimCheck:
         subject_names  = ['s2','s4','s8','s9','s10','s11']       
@@ -1838,7 +1838,7 @@ if __name__ == '__main__':
                 cov_mult=cov_mult, downSampleSize=downSampleSize, \
                 cutting_ratio=cutting_ratio, anomaly_offset=anomaly_offset,\
                 data_renew = opt.bDataRenew, hmm_renew = opt.bHMMRenew, \
-                save_pdf=False, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
+                save_pdf=True, bPlot=False, bAllPlot=opt.bAllPlot, verbose=False)
                 
     else:            
         if opt.bDataRenew == True: opt.bHMMRenew=True

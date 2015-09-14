@@ -30,6 +30,7 @@ from sklearn.metrics import r2_score
 from sklearn.base import clone
 from sklearn import cross_validation
 from joblib import Parallel, delayed
+from sklearn.cluster import KMeans
 ## from pysmac.optimize import fmin                
 ## from scipy.optimize import fsolve
 ## from scipy import interpolate
@@ -40,7 +41,7 @@ import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 
 class learning_hmm_multi(learning_base):
     def __init__(self, nState, nFutureStep=5, nCurrentStep=10, \
-                 trans_type="left_right", nEmissionDim=2, check_method='progress'):
+                 trans_type="left_right", nEmissionDim=2, check_method='progress', cluster_type='time'):
 
         learning_base.__init__(self, trans_type)
 
@@ -55,6 +56,7 @@ class learning_hmm_multi(learning_base):
         self.A = None # transition matrix        
         self.B = None # emission matrix        
         self.check_method = check_method # ['global', 'progress']
+        self.cluster_type = cluster_type
                 
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -133,7 +135,6 @@ class learning_hmm_multi(learning_base):
         #--------------- learning for anomaly detection ----------------------------
         [A, B, pi] = self.ml.asMatrices()
         n,m = np.shape(X1)
-        self.nGaussian = self.nState
 
 
         if self.check_method == 'change' or self.check_method == 'globalChange':
@@ -171,10 +172,6 @@ class learning_hmm_multi(learning_base):
 
         elif self.check_method == 'progress':
             # Get average loglikelihood threshold wrt progress
-            self.std_coff  = 1.0
-            g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
-            g_sig     = float(m) / float(self.nGaussian) * self.std_coff
-
             ######################################################################################
             if os.path.isfile(ml_pkl) and use_pkl:
                 d = ut.load_pickle(ml_pkl)
@@ -182,19 +179,36 @@ class learning_hmm_multi(learning_base):
                 self.ll_mu            = d['ll_mu']
                 self.ll_std           = d['ll_std']            
             else:        
-                n_jobs = -1
-                r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, \
-                                                                       self.F, X_train, \
-                                                                       self.nEmissionDim, g_mu_list[i], g_sig, \
-                                                                       self.nState) \
-                                                                       for i in xrange(self.nGaussian))
-                l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+
+                if self.cluster_type == 'time':
+                    self.nGaussian = self.nState
+                    self.std_coff  = 1.0
+                    g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
+                    g_sig     = float(m) / float(self.nGaussian) * self.std_coff
+
+                    n_jobs = -1
+                    r = Parallel(n_jobs=n_jobs)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, \
+                                                                           self.F, X_train, \
+                                                                           self.nEmissionDim, g_mu_list[i], g_sig, \
+                                                                           self.nState) \
+                                                                           for i in xrange(self.nGaussian))
+                    l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+
+                elif self.cluster_type == 'state':
+
+                    self.km = None                    
+                    self.ll_mu, self.ll_std = self.state_clustering(X1, X2)
+                    path_mat  = np.zeros((self.nState, m*n))
+                    likelihood_mat = np.zeros((1, m*n))
+                    self.l_statePosterior=None
+                    
 
                 d = {}
                 d['state_post'] = self.l_statePosterior
                 d['ll_mu'] = self.ll_mu
                 d['ll_std'] = self.ll_std
                 ut.save_pickle(d, ml_pkl)
+                    
 
             ##########################################################################
             ## path          = self.ml.viterbi(final_ts_obj)
@@ -1094,19 +1108,13 @@ class learning_hmm_multi(learning_base):
             post         = np.array(self.ml.posterior(final_ts_obj))
             
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                dist = entropy(post[i-1], self.l_statePosterior[j])
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist 
+            min_index, min_dist = self.findBestPosteriorDistribution(post[i-1])
                 
             ll_likelihood[i] = logp
             ll_state_idx[i]  = min_index
             ll_likelihood_mu[i]  = self.ll_mu[min_index]
             ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
-            if self.check_method == 'progress' and len(ths_mult)>1:
+            if self.check_method == 'progress' and type(ths_mult) is not float and len(ths_mult)>1:
                 ll_thres_mult[i] = ths_mult[min_index]
             else:
                 ll_thres_mult[i] = ths_mult
@@ -1200,7 +1208,7 @@ class learning_hmm_multi(learning_base):
         ax3 = plt.subplot(313)        
         ax3.plot(x*(1./43.), ll_likelihood, 'b', label='Log-likelihood \n from test data')
         ax3.plot(x*(1./43.), ll_likelihood_mu, 'r', label='Expected log-likelihood \n from trained model')
-        ax3.plot(x*(1./43.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
+        ax3.plot(x*(1./43.), ll_likelihood_mu - ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
         ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
         ax3.set_ylabel('Log-likelihood',fontsize=18)
         ax3.set_xlim([0, x[-1]*(1./43.)])
@@ -1325,9 +1333,149 @@ class learning_hmm_multi(learning_base):
         ## ax3 = plt.subplot(313)
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        plt.grid()            
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        ## plt.grid()            
+        ## plt.show()
+
+    def state_clustering(self, X1, X2):
+        n,m = np.shape(X1)
+
+        print n,m
+        x   = np.arange(0., float(m))*(1./43.)
+        state_mat  = np.zeros((self.nState, m*n))
+        likelihood_mat = np.zeros((1, m*n))
+
+        count = 0           
+        for i in xrange(n):
+
+            for j in xrange(1,m):            
+                x_test1 = X1[i:i+1,:j]
+                x_test2 = X2[i:i+1,:j]            
+
+                if self.nEmissionDim == 1:
+                    X_test = x_test1
+                else:        
+                    X_test = self.convert_sequence(x_test1, x_test2, emission=False)                
+
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+                ## path,_    = self.ml.viterbi(final_ts_obj)        
+                post      = self.ml.posterior(final_ts_obj)
+                logp      = self.ml.loglikelihood(final_ts_obj)
+
+                state_mat[:, count] = np.array(post[j-1])
+                likelihood_mat[0,count] = logp
+                count += 1
+
+        # k-means
+        init_center = np.eye(self.nState, self.nState)
+        self.km = KMeans(self.nState, init=init_center)
+        idx_list = self.km.fit_predict(state_mat.transpose())
+
+        # mean and variance of likelihoods
+        l = []
+        for i in xrange(self.nState):
+            l.append([])
+
+        for i, idx in enumerate(idx_list):
+            l[idx].append(likelihood_mat[0][i]) 
+
+        l_mean = []
+        l_std = []
+        for i in xrange(self.nState):
+            l_mean.append( np.mean(l[i]) )
+            l_std.append( np.std(l[i]) )
+                
+        return l_mean, l_std
+        
+    def path_cluster(self, X1, X2, res_file, scale1=None, scale2=None):
+
+        
+        if os.path.isfile(res_file): 
+            d = ut.load_pickle(res_file)
+            path_mat = d['path'] 
+            likelihood_mat = d['likelihoods'] 
+        else:                        
+            state_mat, likelihood_mat = self.state_clustering(X1, X2)
+            
+            d = {}
+            d['path'] = path_mat
+            d['likelihoods'] = likelihood_mat
+            ut.save_pickle(d, 'clustering.pkl')
+
+
+        # clustering
+        print n,m
+        print np.shape(path_mat), np.shape(likelihood_mat)
+        m=m-1
+        
+        raw_idx_list = []
+        raw_l_list = []
+        for i in xrange(n):
+            single_path = path_mat[:,i*m:(i+1)*m]
+            idx = np.argmax(single_path, axis=0)
+            raw_idx_list.append(idx)
+            raw_l_list.append(likelihood_mat[0][i*m:(i+1)*m])
+
+        raw_l_mean = np.mean(raw_l_list, axis=0)
+        raw_l_std = np.std(raw_l_list, axis=0)
+        #------------------------------------------------
+
+        # k-means
+        init_center = np.eye(self.nState, self.nState)
+        km = KMeans(self.nState, init=init_center)
+        idx_list = km.fit_predict(path_mat.transpose())
+
+        # mean and variance of likelihoods
+        l = []
+        for i in xrange(self.nState):
+            l.append([])
+
+        for i, idx in enumerate(idx_list):
+            l[idx].append(likelihood_mat[0][i]) 
+
+        l_mean = []
+        l_std = []
+        for i in xrange(self.nState):
+            l_mean.append( np.mean(l[i]) )
+            l_std.append( np.std(l[i]) )
+
+        path_list = []
+        path_l_list = []
+        for i in xrange(n):
+            #print idx_list[i*m:(i+1)*m]
+            path_list.append(idx_list[i*m:(i+1)*m])
+
+            path_l_list.append([])
+            for j in idx_list[i*m:(i+1)*m]:
+                path_l_list[-1].append(l_mean[j])
+
+        ###############
+        ## fig = plt.figure(1)
+        ## ax1 = plt.subplot(211)
+        ## plt.plot(np.array(raw_idx_list).transpose(), '*')
+
+        ## ax2 = plt.subplot(212)        
+        ## plt.plot(np.array(path_list).transpose(), '*')
+        
+        ###########
+        fig = plt.figure(1)
+        ax1 = plt.subplot(211)
+        plt.plot(raw_l_mean, 'r-', linewidth=2.0)
+        plt.plot(np.array(raw_l_list).transpose(), '-', linewidth=1.0)
+
+        ax2 = plt.subplot(212)        
+        plt.plot(raw_l_mean, 'r-', linewidth=2.0)        
+        plt.plot(np.array(path_l_list).transpose(), '*')
+        
+
+        
+
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        ## os.system('cp test.p* ~/Dropbox/HRL/')
         plt.show()
             
+        
 
     def progress_analysis(self, X1, X2, scale1=None, scale2=None):
 
@@ -1356,6 +1504,27 @@ class learning_hmm_multi(learning_base):
 
         return off_progress, on_progress
 
+
+    def findBestPosteriorDistribution(self, post):
+        # Find the best posterior distribution
+        min_dist  = 100000000
+        min_index = 0
+
+        if self.cluster_type == 'time':
+            for j in xrange(self.nGaussian):
+                dist = entropy(post, self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist 
+        else:
+            print "state based clustering"
+            print np.shape(post)
+            min_index = self.km.predict(post)
+            min_dist  = -1
+
+        return min_index, min_dist
+        
+        
 ####################################################################
 # functions for paralell computation
 ####################################################################
