@@ -753,14 +753,7 @@ class learning_hmm_multi(learning_base):
             n = len(np.squeeze(X1))
                 
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                dist = entropy(post[n-1], self.l_statePosterior[j])
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist 
-
+            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
             ## print logp, self.ll_mu[min_index], logp - (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
             ## raw_input()
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and \
@@ -846,13 +839,7 @@ class learning_hmm_multi(learning_base):
             n = len(np.squeeze(X1))
                 
             # Find the best posterior distribution
-            min_dist  = 100000000
-            min_index = 0
-            for j in xrange(self.nGaussian):
-                dist = entropy(post[n-1], self.l_statePosterior[j])
-                if min_dist > dist:
-                    min_index = j
-                    min_dist  = dist 
+            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
             ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
             return ths, min_index
@@ -1016,13 +1003,7 @@ class learning_hmm_multi(learning_base):
                 n = len(np.squeeze(y1))
 
                 # Find the best posterior distribution
-                min_dist  = 100000000
-                min_index = 0
-                for j in xrange(self.nGaussian):
-                    dist = entropy(post[n-1], self.l_statePosterior[j])
-                    if min_dist > dist:
-                        min_index = j
-                        min_dist  = dist 
+                min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
                 threshold = (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
 
