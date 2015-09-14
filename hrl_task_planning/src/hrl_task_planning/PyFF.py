@@ -32,11 +32,8 @@ class FF(object):
         """ Create a temporary problem file and call FF to solve. """
         with NamedTemporaryFile() as problem_file:
             problem.to_file(problem_file.name)
-            print ' '.join([self.ff_executable, '-o', domain_file, '-f', problem_file.name])
-            print problem.to_string()
             try:
                 soln_txt = check_output([self.ff_executable, '-o', domain_file, '-f', problem_file.name])
-                print soln_txt
             except CalledProcessError as cpe:
                 if "goal can be simplified to TRUE." in cpe.output:
                     return []
@@ -66,8 +63,8 @@ class TaskPlannerNode(object):
         try:
             domain_file_param = '/'.join([req.domain, 'domain_file'])
             domain_file = rospy.get_param(''.join(['~', domain_file_param]))
-            #const_obj_param = '/'.join([req.domain, 'objects'])
-            #objects = rospy.get_param(''.join(['~', const_obj_param]))
+            # const_obj_param = '/'.join([req.domain, 'objects'])
+            # objects = rospy.get_param(''.join(['~', const_obj_param]))
             const_preds_param = '/'.join([req.domain, 'predicates'])
             init = rospy.get_param(''.join(['~', const_preds_param]), [])
             if not req.goal:
@@ -76,8 +73,8 @@ class TaskPlannerNode(object):
         except KeyError as e:
             rospy.logerr("[%s] Could not find parameter: %s" % (rospy.get_name(), e.message))
             return []
-        #objects.extend(req.objects)
-        #objects = map(PDDLObject.from_string, objects)
+        # objects.extend(req.objects)
+        # objects = map(PDDLObject.from_string, objects)
         objects = map(PDDLObject.from_string, req.objects)
         init.extend(req.init)
         init = map(PDDLPredicate.from_string, init)

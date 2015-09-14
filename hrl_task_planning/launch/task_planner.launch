@@ -4,4 +4,7 @@
         <rosparam command="load" file="$(find hrl_task_planning)/params/shaving.yaml" ns="shaving"/>
         <param name="move-object/domain_file" value="$(find hrl_task_planning)/params/move-object.domain"/>
     </node>
+
+    <node name="grasp_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" output="screen" />
+    <node name="manual_move_object" pkg="hrl_task_planning" type="manual_move_object" output="screen" />
 </launch>
