@@ -508,6 +508,7 @@ def getData(task_name, target_path, setID=0, crossEvalID=None):
 
 def likelihoodOfSequences(task_name, target_path, setID=0, \
                           nState=20, cov_mult=5.0, anomaly_offset=0.0,\
+                          cluster_type='time',\
                           useTrain=True, useThsTest=True, useNormalTest=True, useAbnormalTest=True,\
                           useTrain_color=False, useThsTest_color=False, useNormalTest_color=True,\
                           hmm_renew=False, save_pdf=False, show_plot=True, verbose=False):
@@ -995,12 +996,9 @@ def scaleData(dataList, scale=10, minVals=None, maxVals=None, verbose=False):
         dataList_scaled.append([])
 
     # Scale features
-    for i in xrange(nDimension):
-        if i==3: new_scale=scale #*0.2
-        else: new_scale = scale
-        
+    for i in xrange(nDimension):       
         for j in xrange(len(dataList[i])):
-            dataList_scaled[i].append( scaling( dataList[i][j], minVals[i], maxVals[i], new_scale).tolist() )
+            dataList_scaled[i].append( scaling( dataList[i][j], minVals[i], maxVals[i], scale[i]).tolist() )
             
     return dataList_scaled, minVals, maxVals
 
@@ -1708,12 +1706,12 @@ if __name__ == '__main__':
     subject_names  = ['s11']
     task_name      = 'feeding' #['scooping', 'feeding']
     nSet           = 1
-    folding_ratio  = [0.5, 0.3, 0.2]
+    folding_ratio  = [0.5, 0.1, 0.2]
     downSampleSize = 100
     nState         = 10
     cov_mult       = 5.0
-    scale          = 1.0
-    cutting_ratio  = [0.0, 0.7] #[0.0, 0.7]
+    scale          = [1.0,1.0,1.0,0.3]
+    cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]
     anomaly_offset = -20.0
 
     if not opt.bEvaluation:
@@ -1732,7 +1730,8 @@ if __name__ == '__main__':
         if opt.bDataRenew == True: opt.bHMMRenew=True
         likelihoodOfSequences(task_name, data_target_path, setID=0, nState=nState, cov_mult=cov_mult,\
                               anomaly_offset=anomaly_offset,\
-                              useTrain=True, useThsTest=True, useNormalTest=False, useAbnormalTest=False,\
+                              cluster_type=opt.typeClustering,\
+                              useTrain=True, useThsTest=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useThsTest_color=True, useNormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, save_pdf=opt.bSavePdf, verbose=True)       
     elif opt.bPlotTest:
