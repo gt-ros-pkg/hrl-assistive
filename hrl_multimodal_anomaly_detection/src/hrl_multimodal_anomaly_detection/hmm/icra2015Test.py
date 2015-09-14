@@ -1597,9 +1597,9 @@ def kFoldPreprocessData(subject_name, task_name, root_path, target_path, \
     ## idx_list = range(nTrueSequence)
 
     for n in xrange(nDataSet):
-        true_kf  = cross_validation.KFold(nTrueSequence,n_folds=kFold, shuffle=True)
+        true_kf  = cross_validation.KFold(nTrueSequence,n_folds=kFold, shuffle=True, random_state=n)
         for true_train_index, true_test_index in true_kf:
-            false_kf = cross_validation.KFold(nFalseSequence,n_folds=kFold, shuffle=True)
+            false_kf = cross_validation.KFold(nFalseSequence,n_folds=kFold, shuffle=True, random_state=n)
             for _, false_test_index in false_kf:
 
                 true_train_data = [[],[],[],[]]
