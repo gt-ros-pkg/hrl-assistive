@@ -2466,7 +2466,7 @@ if __name__ == '__main__':
             fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
-                    cluster_type=opt.typeClustering, \                    
+                    cluster_type=opt.typeClustering, \
                     disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
