@@ -1782,7 +1782,7 @@ if __name__ == '__main__':
         check_dims     = [[0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         if opt.typeClustering == 'time' :
-            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_state'
         else:
             data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_state'
         kFold = 6
