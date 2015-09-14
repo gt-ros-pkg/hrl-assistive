@@ -1499,7 +1499,6 @@ class learning_hmm_multi(learning_base):
                     min_dist  = dist 
         else:
             print "state based clustering"
-            print np.shape(post)
             min_index = self.km.predict(post)
             min_dist  = -1
 

@@ -2445,7 +2445,8 @@ if __name__ == '__main__':
     elif opt.bRocOnlineDimCheck:
         
         print "ROC Online Robot with real anomalies"
-        test_title      = 'online_dim_comp'
+        if opt.typeClustering == 'time': test_title      = 'online_dim_comp'
+        else: test_title      = 'online_dim_comp_state'
         cross_data_path = os.path.join(cross_root_path, 'multi_'+task_names[task], test_title)
         nState          = nState_l[task]
         threshold_mult  = -1.0*(np.logspace(-1.0, 2.5, 30, endpoint=True) -2.0)
@@ -2465,6 +2466,7 @@ if __name__ == '__main__':
             fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
                     task_names[task], nState, threshold_mult, \
                     opr='robot', attr='id', bPlot=opt.bPlot, cov_mult=cov_mult[task], renew=False, \
+                    cluster_type=opt.typeClustering, \                    
                     disp=disp, rm_run=opt.bRemoveRunning)
         else:
             fig_roc_all(cross_root_path, all_task_names, test_title, nState, threshold_mult, check_methods, \
