@@ -1789,9 +1789,9 @@ if __name__ == '__main__':
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
         downSampleSize = 120        
-        nDataSet = 20
+        nDataSet = 6
         nThres   = 60
-        nState   = 15 #8
+        nState   = 10 #8
         cov_mult = 5.0
         tot_data = None
         scale    = [10.0,10.0,10.0,1.0]
