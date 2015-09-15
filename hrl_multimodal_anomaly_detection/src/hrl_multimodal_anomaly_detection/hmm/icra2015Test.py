@@ -1794,7 +1794,7 @@ if __name__ == '__main__':
         nState   = 15 #8
         cov_mult = 5.0
         tot_data = None
-        scale    = [10.0,10.0,10.0,0.1]
+        scale    = [10.0,10.0,10.0,1.0]
 
         # data preprocessing and splitting
         for i, subject_name in enumerate(subject_names):
