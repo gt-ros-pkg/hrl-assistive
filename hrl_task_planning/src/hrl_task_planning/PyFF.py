@@ -36,11 +36,11 @@ class FF(object):
                 soln_txt = check_output([self.ff_executable, '-o', domain_file, '-f', problem_file.name])
             except CalledProcessError as cpe:
                 if "goal can be simplified to TRUE." in cpe.output:
-                    return []
+                    return True
                 else:
                     rospy.logwarn("[%s] FF Could not find a solution to problem: %s"
                                   % (rospy.get_name(), problem.name))
-                    return False
+                    return []
             finally:
                 # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
                 try:
@@ -81,8 +81,11 @@ class TaskPlannerNode(object):
         goal = map(PDDLPredicate.from_string, req.goal)
         problem = PDDLProblem(req.name, req.domain, objects, init, goal)
         solution = self.planner.solve(problem, domain_file)
-        sol_list = map(str, solution)
-        self.solution_pub.publish(sol_list)
+        sol_msg = planner_msgs.PDDLSolution()
+        sol_msg.problem = req.name
+        sol_msg.solved = bool(solution)
+        sol_msg.actions = map(str, solution)
+        self.solution_pub.publish(sol_msg)
 
 
 def main():

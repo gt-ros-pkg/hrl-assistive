@@ -10,25 +10,24 @@
              left-gripper - gripper
              start - location
              goal - location
+             elsewhere - location
+             otherwhere - location
  )
 
  (:predicates
-  (empty ?g - gripper)
-  (can-grasp ?g - gripper ?o - object)
+  (known ?l - location)
   (grasping ?g - gripper ?o - object)
   (at ?o - object ?l - location)
  )
 
  (:action pick
-  :parameters (?g - gripper ?o - object)
-  :precondition (and (empty ?g) (can-grasp ?g ?o) )
+  :parameters (?g - gripper ?o - object ?l - location)
+  :precondition (and (known ?l)
+                     (at ?o ?l)
+                     (forall (?obj - object) (not (grasping ?g ?obj)))
+                     (forall (?gr - gripper) (not (grasping ?gr ?o)))
+                )
   :effect (and (grasping ?g ?o)
-               (not (empty ?g))
-               (forall (?og - gripper)
-                 (when (not (= ?og ?g))
-                       (not (can-grasp ?og ?o))
-                 )
-               )
                (forall (?loc - location)
                  (not (at ?o ?loc))
                )
@@ -37,10 +36,22 @@
 
  (:action place
   :parameters (?g - gripper ?o - object ?l - location)
-  :precondition (and (grasping ?g ?o))
-  :effect (and (empty ?g) 
-               (at ?o ?l)
+  :precondition (and (known ?l)
+                     (grasping ?g ?o)
+                     (forall (?obj - object) (not (at ?obj ?l)))
+                 )
+  :effect (and (at ?o ?l)
                (not (grasping ?g ?o))
           )
  )
+
+ (:action id-location
+  :parameters (?l - location)
+  :effect (known ?l)
+  )
+
+ (:action forget-location
+  :parameters (?l - location)
+  :effect (not (known ?l))
+  )
 )

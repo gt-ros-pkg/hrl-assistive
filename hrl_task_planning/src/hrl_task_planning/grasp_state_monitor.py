@@ -4,7 +4,7 @@ import numpy as np
 import rospy
 from std_msgs.msg import Bool, Float32
 from pr2_msgs.msg import PressureState
-from pr2_controllers_msgs.msg import JointControllerState
+from pr2_controllers_msgs.msg import JointControllerState, Pr2GripperCommand
 
 
 class GraspPressureMonitor(object):
@@ -14,23 +14,23 @@ class GraspPressureMonitor(object):
         self.side = side
         self.gripper_name = '_'.join([side, "gripper"])
         self.state_pub = rospy.Publisher('/'.join(["/grasping", self.gripper_name]), Bool, latch=True)
+        self.pressure_grad_pub = rospy.Publisher('/grasping/'+side+'/pressure_gradient', Float32)
+        self.gripper_cmd_pub = rospy.Publisher('/'+side[0]+"_gripper_controller/command", Pr2GripperCommand, latch=True)
+        self.l_pressure_sum_low = 0.0
+        self.r_pressure_sum_low = 0.0
+        self.l_pressure_sum_deque = deque([], 25)
+        self.l_pressure_grad_deque = deque([], 25)
+        self.r_pressure_sum_deque = deque([], 25)
+        self.r_pressure_grad_deque = deque([], 25)
+        self.motion_state = "STEADY"
+        self.pressure_state = "STEADY"
+        self.grasp_state = None
         self.pressure_sub = rospy.Subscriber(''.join(['/pressure/', side[0], "_gripper_motor"]),
                                              PressureState,
                                              self.pressure_cb)
         self.gripper_state_sub = rospy.Subscriber('_'.join([side[0], "gripper_controller/state"]),
                                                   JointControllerState,
                                                   self.gripper_state_cb)
-        self.pressure_grad_pub = rospy.Publisher('/pressure/gradient', Float32)
-        self.l_pressure_sum_low = 0.0
-        self.r_pressure_sum_low = 0.0
-        self.l_pressure_sum_deque = deque([0]*25, 25)
-        self.l_pressure_grad_deque = deque([0]*25, 25)
-        self.r_pressure_sum_deque = deque([0]*25, 25)
-        self.r_pressure_grad_deque = deque([0]*25, 25)
-        self.grasp_state = False  # Default assumption is that the hand is empty... (this may or may not be valid)
-        self.motion_state = "STEADY"
-        self.pressure_state = "STEADY"
-        self.state_pub.publish(self.grasp_state)  # Always have something latched, even if it's a bad guess...
         rospy.loginfo("[%s] %s Grasp State Monitor Ready" % (rospy.get_name(), side.capitalize()))
 
     def _sum_sensors(self, data):
@@ -39,9 +39,16 @@ class GraspPressureMonitor(object):
     def pressure_cb(self, pressure_msg):
         """ Record data from pressure sensors: Sum of pressure on pads of fingers, and gradient, of ~1 sec. """
         l_sum = self._sum_sensors(pressure_msg.l_finger_tip)
+        r_sum = self._sum_sensors(pressure_msg.r_finger_tip)
         self.l_pressure_sum_deque.append(l_sum)
-        l_grad = np.mean(np.gradient(np.array(self.l_pressure_sum_deque)))
+        self.r_pressure_sum_deque.append(r_sum)
+        try:
+            l_grad = np.mean(np.gradient(np.array(self.l_pressure_sum_deque)))
+            r_grad = np.mean(np.gradient(np.array(self.r_pressure_sum_deque)))
+        except IndexError:
+            return
         self.l_pressure_grad_deque.append(l_grad)
+        self.r_pressure_grad_deque.append(r_grad)
         l_grad_trend = np.mean(self.l_pressure_grad_deque)
         if l_grad_trend > 200:
             l_pressure_state = 1
@@ -50,10 +57,6 @@ class GraspPressureMonitor(object):
         else:
             l_pressure_state = 0
 
-        r_sum = self._sum_sensors(pressure_msg.r_finger_tip)
-        self.r_pressure_sum_deque.append(r_sum)
-        r_grad = np.mean(np.gradient(np.array(self.r_pressure_sum_deque)))
-        self.r_pressure_grad_deque.append(r_grad)
         r_grad_trend = np.mean(self.r_pressure_grad_deque)
         self.pressure_grad_pub.publish(r_grad_trend)
         if r_grad_trend > 200:
@@ -72,6 +75,14 @@ class GraspPressureMonitor(object):
             self.pressure_state = "STEADY"
 
     def gripper_state_cb(self, gs_msg):
+        current_state = gs_msg.process_value + gs_msg.error
+        if current_state < 0.001:
+            self.set_grasp_state(False)
+            return
+
+        if self.grasp_state is None:
+            self.gripper_cmd_pub.publish(Pr2GripperCommand(current_state - 0.0001, -1))
+
         delta = gs_msg.process_value_dot
         if abs(delta) < 0.0025:
             self.motion_state = "STEADY"
@@ -82,7 +93,12 @@ class GraspPressureMonitor(object):
 
         self.update_grasp_state()
 
-    def update_grasp_state(self):
+    def set_grasp_state(self, state):
+        if state != self.grasp_state:
+            self.state_pub.publish(state)
+            self.grasp_state = state
+
+    def update_grasp_state(self, set_state=None):
         grasp_state = self.grasp_state
         if self.motion_state == "OPENING":
             grasp_state = False
@@ -96,10 +112,7 @@ class GraspPressureMonitor(object):
                 grasp_state = True
             else:
                 grasp_state = False
-
-        if grasp_state != self.grasp_state:
-            self.state_pub.publish(grasp_state)
-            self.grasp_state = grasp_state
+        self.set_grasp_state(grasp_state)
 
 
 def main():

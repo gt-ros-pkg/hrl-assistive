@@ -1,0 +1,12 @@
+(define (problem test-move-object)
+     (:domain move-object)
+     (:objects block block2 target - object)
+     (:init  
+            (grasping left-gripper block)
+            (grasping right-gripper block2)
+            (at target start)
+     )
+     (:goal (and (at target goal))
+     )
+)
+
