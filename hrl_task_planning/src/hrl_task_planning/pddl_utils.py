@@ -223,22 +223,32 @@ class PDDLDomain(object):
 
     @classmethod
     def _parse_predicates(cls, pred_list, types):
-        return [PDDLPredicateDef(pred[0], [types[t] for t in pred[1:][2::3]]) for pred in pred_list]
+        preds = {}
+        for pred in pred_list:
+            preds[pred[0]] = PDDLPredicateDef(pred[0], [types[t] for t in pred[1:][2::3]])
+        return preds
 
-    def _parse_action(self, act, types):
+    def _parse_action(self, act, types, predicates):
         name = act[0]
         preconditions = []
-        params = []
+        params = {}
         effects = []
         try:
             param_list = act[act.index(':PARAMETERS') + 1]
             for i in range(len(param_list)/3):
-                params.append(PDDLParameter(param_list[3*i], types[param_list[3*i+2]]))
+                params[param_list[3*i]] = PDDLParameter(param_list[3*i], types[param_list[3*i+2]])
         except ValueError:
             pass
         try:
-            precond_list = act[act.index(":PRECONDITIONS") + 1]
-            for i
+            precond_list = act[act.index(":PRECONDITION") + 1]
+            precond_list = precond_list[1:] if precond_list[0] == 'AND' else precond_list  # Ignore initial AND
+            for cond in precond_list:
+                if cond[0] in predicates:
+                    preconditions.append(PDDLPredicateDef(cond[0], [params[param] for param in cond[1:]))
+                if cond[0] == 'FORALL':
+                     param = PDDLParameter(cond[1][0], cond[1][2])
+                     preds = [PDDLPredicate
+                    preconditions.append(["FORALL", param, PDDLPredicateDef(
         except ValueError:
             pass
 
