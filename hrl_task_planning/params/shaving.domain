@@ -3,7 +3,8 @@
  (:types 
   robot tool - object
   razor mirror - tool
-  face-side - location)
+  face-side - location
+  )
 
  (:constants pr2 - robot
              razor1 - razor
@@ -33,7 +34,7 @@
        (not (head-registered ?fs))
       )
       (forall (?loc - location)
-       (when (and (at ?r ?loc))
+       (when (at ?r ?loc)
         (and (not (at ?r ?loc))
              (not (in-place ?r ?loc))
         )
@@ -117,5 +118,3 @@
 
 
 )
-
-

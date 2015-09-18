@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import copy
-
 
 def _separate_string(string):
     string = string.replace(')', ' ) ')
@@ -32,29 +30,99 @@ def get_sublist(lists, tag):
             return list_
 
 
+class PDDLType(object):
+    """ A class describing a type in PDDL."""
+    def __init__(self, name, supertype=None):
+        self.name = name
+        self.supertype = supertype
+
+    def is_subtype(self):
+        return bool(self.supertype)
+
+    def is_type(self, check_type):
+        if self.name == check_type:
+            return True
+        elif self.is_subtype():
+            return self.supertype.is_type(check_type)
+        else:
+            return False
+
+    def __str__(self):
+        if self.is_subtype():
+            return " - ".join([self.name, self.supertype.name])
+        else:
+            return self.name
+
+
 class PDDLObject(object):
     """ A class describing an Object in PDDL. """
+    def __init__(self, name, type=None):
+        self.name = name
+        self.type = type
+
     @classmethod
     def from_string(cls, string):
         """ Create a PDDLObject instance from a formatted string."""
+        print "Object from String: ", string
         string = string.strip('( )')
         name, type_ = string.split(' - ')
         return cls(name.strip(), type_.strip())
 
-    def __init__(self, name, type=None):
-        self.name = name
-        self.type = type
+    def is_variable(self):
+        return bool(self.name[0] == '?')
 
     def __str__(self):
-        return "%s - %s" % (self.name.upper(), self.type.upper())
+        if self.type is None:
+            return self.name.upper()
+        else:
+            return "%s - %s" % (self.name.upper(), self.type.upper())
 
-    def __repr__(self):
-        return self.__str__()
 
-class PDDLParameter(object):
-    def __init__(self, name, type=None):
+class PDDLPredicate(object):
+    """ A class describing a predicate in PDDL. """
+    def __init__(self, name, args=[], neg=False):
         self.name = name
-        self.type = type
+        self.args = []
+        self.neg = neg
+        for arg in args:
+            if isinstance(arg, PDDLObject):
+                self.args.append(arg)
+            elif isinstance(arg, str):
+                self.args.append(PDDLObject.from_string(arg))
+
+    def is_abstract(self):
+        return any([bool(arg.name[0] == '?') for arg in self.args])
+
+    @classmethod
+    def from_string(cls, string):
+        """ Create a PDDLPredicate instance from a formatted string."""
+        return cls.from_list(lisp_to_list(string))
+
+    @classmethod
+    def from_list(cls, pred_list):
+        print "Predicate.from_list(%s)" % pred_list
+        neg = False
+        if pred_list[0] == 'NOT':
+            neg = True
+            pred_list = pred_list[1]
+        name = pred_list.pop(0)
+        print "Name-stripped Pred_list: ", pred_list
+        if '-' in pred_list:
+            name_type_pairs = pred_list.count('-')
+            args = []
+            for i in range(name_type_pairs):
+                args.append(PDDLObject(pred_list[3*i], pred_list[3*i+2]))
+        else:
+            args = [PDDLObject(arg) for arg in pred_list]
+        res = cls(name, args, neg)
+        print "Predicate object:", str(res)
+        return res
+
+    def __str__(self):
+        msg = "(%s %s)" % (self.name, ' '.join(map(str, self.args)))
+        if self.neg:
+            msg = ''.join(["( NOT ", msg, ")"])
+        return msg.upper()
 
 
 class PDDLPlanStep(object):
@@ -68,12 +136,8 @@ class PDDLPlanStep(object):
         name, args = lisp_to_list(string)
         return cls(name, args)
 
-
     def __str__(self):
         return ''.join(["(", self.name, "(", ' '.join(self.args), "))"]).upper()
-
-    def __repr__(self):
-        return self.__str__()
 
 
 class PDDLAction(object):
@@ -95,89 +159,100 @@ class PDDLAction(object):
         if not self._meets_preconditions(init_state):
             return False
 
-
     @classmethod
     def from_string(cls, string):
-        name, args = lisp_to_list(string)
-        return cls(name, args)
+        act = lisp_to_list(string)
+        act = act[1:] if act[0] == ":ACTION" else act
+        return cls.from_list(act)
 
-    def __str__(self):
-        return ''.join(["(", self.name, "(", ' '.join(self.args), "))"]).upper()
-
-    def __repr__(self):
-        return self.__str__()
-
-class PDDLPredicateDef(object):
-    """ A Class describing an abstract predicate in PDDL."""
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-
-
-class PDDLPredicate(object):
-    """ A class describing a predicate in PDDL. """
     @classmethod
-    def from_string(cls, string):
-        """ Create a PDDLPredicate instance from a formatted string."""
-        string = string.strip('( )')
-        assert string.count('(') <= 1, "Badly formed predicate string.  Too many opening parentheses"
-        string = string.upper()
-        parts = string.split('(')
-        neg = False
-        if len(parts) > 1:
-            neg = parts[0]
-            parts = parts[1:]
-            neg = True if 'NOT' == neg.strip() else False
-        name_args = parts[0].split()
-        name, args = name_args[0], name_args[1:]
-        return cls(name, args, neg)
+    def from_list(cls, act):
+        print "Action.from_list(%s)" % act
+        name = act[0]
+        preconditions = []
+        params = {}
+        effects = []
+        print "Parsing Params"
+        try:  # Evaluate parameters passed to action
+            param_list = act[act.index(':PARAMETERS') + 1]
+            for i in range(len(param_list)/3):
+                params[param_list[3*i]] = PDDLObject(param_list[3*i], param_list[3*i+2])
+        except ValueError:
+            pass
+        print "Params: %s" % params
+        print "Parsing Preconditions"
+        try:  # Evaluate Preconditions
+            precond_list = act[act.index(":PRECONDITION") + 1]
+            print "Precond list: ", precond_list
+            precond_list = precond_list[1:] if precond_list[0] == 'AND' else precond_list  # Ignore initial AND
+            for cond in precond_list:
+                print "Evaluating cond: ", cond
+                if cond[0] == 'FORALL':
+                    print "Forall; cond: %s" % cond
+                    param = PDDLObject(cond[1][0], cond[1][2])
+                    pred = PDDLPredicate.from_list(cond[2])
+                    preconditions.append(['FORALL', param, pred])
+                else:
+                    preconditions.append(PDDLPredicate.from_list(cond))
+        except ValueError:
+            pass
+        print "Parsed Preconditions for %s" % name, preconditions
+        print "Parsing Effects"
+        try:
+            effect_list = act[act.index(":EFFECT") + 1]
+            effect_list = effect_list[1:] if effect_list[0] == 'AND' else effect_list  # Ignore initial AND
+            effects = []
+            for effect in effect_list:
+                effects.append(cls._parse_effect(effect))
+                print "Fully parsed effects:", effects
+        except ValueError, e:
+            raise e
+        return cls(name, params, preconditions, effects)
 
-    def __init__(self, name, args=[], neg=False):
-        self.name = name
-        self.args = args
-        self.neg = neg
+    @classmethod
+    def _parse_effect(cls, effect):
+        print "Effect: ", effect
+        effects = []
+        if effect[0] == 'FORALL':
+            print "Forall; effect: %s" % effect
+            param = PDDLObject(effect[1][0], effect[1][2])
+            print "PARAM: %s" % param
+            preds = effect[2][1:] if effect[2][0] == 'AND' else effect[2] # Ignore initial AND
+            pred = [PDDLPredicate.from_list(p) for p in preds]
+            effects.append(['FORALL', param, pred])
+        elif effect[0] == 'WHEN':
+            print "WHEN; effect: %s" % effect
+            param = PDDLObject(effect[1][0], effect[1][2])
+            print "PARAM: %s" % param
+            preds = effect[2][1:] if effect[2][0] == 'AND' else effect[2] # Ignore initial AND
+            pred = [PDDLPredicate.from_list(p) for p in preds]
+            pred = PDDLPredicate.from_list(effect[2])
+            effects.append(['WHEN', param, pred])
+        else:
+            effects.append(PDDLPredicate.from_list(effect))
+        return effects
 
     def __str__(self):
-        msg = "(%s %s)" % (self.name, ' '.join(self.args))
-        if self.neg:
-            msg = ''.join(["( NOT ", msg, ")"])
-        return msg.upper()
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class PDDLType(object):
-    """ A class describing a type in PDDL."""
-    def __init__(self, name, supertype=None):
-        self.name = name
-        self.supertype = supertype
-
-    def is_subtype(self):
-        return bool(self.supertype)
-
-    def is_type(self, check_type):
-        if self.name == check_type:
-            return True
-        elif self.is_subtype():
-            return self.supertype.is_type(check_type)
-        else:
-            return False
-
-    def __str__(self):
-        if self.is_subtype():
-            return " - ".join([self.name, self.supertype])
-        else:
-            return self.name
+        string = ''.join(["(:ACTION ", self.name, '\n'])
+        string += ":PARAMETERS ( "
+        string += ' '.join(map(str, self.parameters.itervalues()))
+        string += ' )\n'
+        string += ":PRECONDITION ( AND ( "
+        string += " ".join(map(str, self.preconditions))
+        string += ' ))\n'
+        string += ":EFFECT ( AND ( "
+        string += ' '.join(map(str, self.effects))
+        string += " ))\n)"
+        return string
 
 
 class PDDLDomain(object):
     """ A class describing a domain instance in PDDL."""
-    def __init__(self, name, requirements=[], types=[], predicates=[], actions=[]):
+    def __init__(self, name, requirements=[], types={}, constants=[], predicates={}, actions={}):
         self.name = name
         self.requirements = requirements
         self.types = types
+        self.constants = constants
         self.predicates = predicates
         self.actions = actions
 
@@ -192,71 +267,54 @@ class PDDLDomain(object):
 
     @classmethod
     def _parse_types(cls, types_list):
+        types = {}
+        # Catch simple case of no sub-types
+        if '-' not in types_list:
+            for t in types_list:
+                types[t] = PDDLType(t)
+            return types
+        # Split super-types and sub-types
         type_set = set(types_list)
         type_set.discard('-')  # Get rid of hyphen if present
         chunks = ' '.join(types_list)
         chunks = chunks.split(' - ')
         subtypes = [chunks.pop(0).split()]
         supertypes = []
+        added = []
         for group in chunks:
             sp = group.split()
             supertypes.append(sp[0])  # The first item after the hypen is the supertype of the preceeding types
             subtypes.append(sp[1:])  # The remaining objects are their own types, or subtypes of the next super...
-        types = {}
+        # If more sub-type groups than supertypes, add extra sub-types now
+        if len(subtypes) > len(supertypes):
+            spare_types = subtypes.pop()  # can only be one extra set of un-classed types, remove them
+            for t in spare_types:
+                types[t] = PDDLType(t)
+                added.append(t)
+        # Deal with the rest of the mess
         subtype_list = [typ for group in subtypes for typ in group]
         for t in type_set:
-            if t in supertypes and t not in subtype_list:
+            if (t in supertypes) and (t not in subtype_list):  # Start with top-level types
                 types[t] = PDDLType(t)
-        keys = copy.deepcopy(types.keys())
-        while not set(keys) == type_set:
-            for k in keys:
+                added.append(t)
+        while not set(added) == type_set:
+            for supertype in added:
                 try:
-                    ind = supertypes.index(k)
+                    ind = supertypes.index(supertype)
                 except ValueError:
-                    break
+                    continue
                 subs = subtypes[ind]
                 for sub in subs:
-                    if sub not in keys:
-                        types[sub] = PDDLType(sub, types[k])
-            keys = copy.deepcopy(types.keys())
+                    types[sub] = PDDLType(sub, types[supertype])
+                    added.append(sub)
         return types
 
     @classmethod
     def _parse_predicates(cls, pred_list, types):
         preds = {}
         for pred in pred_list:
-            preds[pred[0]] = PDDLPredicateDef(pred[0], [types[t] for t in pred[1:][2::3]])
+            preds[pred[0]] = PDDLPredicate.from_list(pred)
         return preds
-
-    def _parse_action(self, act, types, predicates):
-        name = act[0]
-        preconditions = []
-        params = {}
-        effects = []
-        try:
-            param_list = act[act.index(':PARAMETERS') + 1]
-            for i in range(len(param_list)/3):
-                params[param_list[3*i]] = PDDLParameter(param_list[3*i], types[param_list[3*i+2]])
-        except ValueError:
-            pass
-        try:
-            precond_list = act[act.index(":PRECONDITION") + 1]
-            precond_list = precond_list[1:] if precond_list[0] == 'AND' else precond_list  # Ignore initial AND
-            for cond in precond_list:
-                if cond[0] in predicates:
-                    preconditions.append(PDDLPredicateDef(cond[0], [params[param] for param in cond[1:]))
-                if cond[0] == 'FORALL':
-                     param = PDDLParameter(cond[1][0], cond[1][2])
-                     preds = [PDDLPredicate
-                    preconditions.append(["FORALL", param, PDDLPredicateDef(
-        except ValueError:
-            pass
-
-
-
-        return PDDLAction(act[0], params)
-
-
 
     @classmethod
     def from_file(cls, domain_file):
@@ -274,15 +332,32 @@ class PDDLDomain(object):
         domain_types = cls._parse_types(get_sublist(items, ":TYPES")[1:])
         constants = cls._parse_objects(get_sublist(items, ":CONSTANTS")[1:])
         predicates = cls._parse_predicates(get_sublist(items, ":PREDICATES")[1:], domain_types)
-        actions = []
-        for action in actions:
-            actions.append(cls._parse_action(action_list, domain_types))
-
+        actions_list = [item[1:] for item in items if item[0] == ':ACTION']
+        actions = {}
+        for action in actions_list:
+            actions[action[0]] = PDDLAction.from_list(action)  # create dict of actions by name
         return cls(domain_name, domain_requirements, domain_types, constants, predicates, actions)
 
+    def to_file(self, filename):
+        with open(filename, 'w') as f:
+            f.write(str(self))
+
+    def __str__(self):
+        string = "(DEFINE (DOMAIN %s)\n" % self.name
+        string += "(:REQUIREMENTS %s)\n" % ' '.join(self.requirements)
+        types = [t for t in self.types.itervalues() if t.is_subtype()]  # Put all sub-types up front...
+        for t in self.types.iterkeys():  #...and all supertypes at the end of the list
+            if t not in types:
+                types.append(t)
+        string += "(:TYPES\n %s)" % '\n'.join(map(str, types))
+        string += "(:CONSTANTS\n %s)" % '\n'.join(map(str, self.constants))
+        string += "(:PREDICATES\n %s)" % '\n'.join(map(str, self.predicates.itervalues()))
+        string += '\n'.join(map(str, self.actions.itervalues()))
+        string += ")"
+        return string
 
     def _get_constants_by_type(self):
-        # TODO: Re-work to use actual type objects...
+        # TODO Check to make sure this still works!?
         type_dict = {}
         type_set = set(self.types.iterkeys())
         for subtypes in self.types.itervalues():
@@ -323,9 +398,6 @@ class PDDLProblem(object):
         goal_title = "Goal Predicates:"
         goal = "\t"+"\n\t".join(map(str, self.goal))
         return '\n'.join([title, domain, objects_title, objects, predicates_title, predicates, goal_title, goal])
-
-    def __repr__(self):
-        return self.__str__()
 
     @classmethod
     def from_msg(cls, msg):
