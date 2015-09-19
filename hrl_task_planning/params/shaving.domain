@@ -60,7 +60,6 @@
              )
     )
 
-
     (:action replace-tool
      :parameters (?r - robot ?t - tool ?l - location)
      :precondition (and (in-place ?r ?l)

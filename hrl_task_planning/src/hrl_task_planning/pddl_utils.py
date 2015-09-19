@@ -188,7 +188,7 @@ class PDDLAction(object):
             for cond in precond_list:
                 print "Evaluating cond: ", cond
                 if cond[0] == 'FORALL':
-                    print "Forall; cond: %s" % cond
+                    print "Forall"
                     param = PDDLObject(cond[1][0], cond[1][2])
                     pred = PDDLPredicate.from_list(cond[2])
                     preconditions.append(['FORALL', param, pred])
@@ -196,15 +196,12 @@ class PDDLAction(object):
                     preconditions.append(PDDLPredicate.from_list(cond))
         except ValueError:
             pass
-        print "Parsed Preconditions for %s" % name, preconditions
-        print "Parsing Effects"
+#        print "Parsed Preconditions for %s" % name, preconditions
+        print "Parsing Effects for %s" %name
         try:
             effect_list = act[act.index(":EFFECT") + 1]
-            effect_list = effect_list[1:] if effect_list[0] == 'AND' else effect_list  # Ignore initial AND
-            effects = []
-            for effect in effect_list:
-                effects.append(cls._parse_effect(effect))
-                print "Fully parsed effects:", effects
+            effects = cls._parse_effect(effect_list)
+            print "Effect_list: %s" %effect_list
         except ValueError, e:
             raise e
         return cls(name, params, preconditions, effects)
@@ -212,34 +209,33 @@ class PDDLAction(object):
     @classmethod
     def _parse_effect(cls, effect):
         print "Effect: ", effect
-        effects = []
+        if effect[0] == 'AND':
+            return [cls._parse_effect(eff) for eff in effect[1:]]
         if effect[0] == 'FORALL':
-            print "Forall; effect: %s" % effect
+            print "Forall"
             param = PDDLObject(effect[1][0], effect[1][2])
             print "PARAM: %s" % param
-            preds = effect[2][1:] if effect[2][0] == 'AND' else effect[2] # Ignore initial AND
-            pred = [PDDLPredicate.from_list(p) for p in preds]
-            effects.append(['FORALL', param, pred])
+            pred = cls._parse_effect(effect[2])
+            return ['FORALL', param, pred]
         elif effect[0] == 'WHEN':
-            print "WHEN; effect: %s" % effect
-            param = PDDLObject(effect[1][0], effect[1][2])
+            print "WHEN"
+            param = PDDLPredicate.from_list(effect[1])
             print "PARAM: %s" % param
-            preds = effect[2][1:] if effect[2][0] == 'AND' else effect[2] # Ignore initial AND
-            pred = [PDDLPredicate.from_list(p) for p in preds]
-            pred = PDDLPredicate.from_list(effect[2])
-            effects.append(['WHEN', param, pred])
+            pred = cls._parse_effect(effect[2])
+            return ['WHEN', param, pred]
         else:
-            effects.append(PDDLPredicate.from_list(effect))
-        return effects
+            return ["PREDICATE", PDDLPredicate.from_list(effect)]
 
     def __str__(self):
         string = ''.join(["(:ACTION ", self.name, '\n'])
         string += ":PARAMETERS ( "
         string += ' '.join(map(str, self.parameters.itervalues()))
         string += ' )\n'
-        string += ":PRECONDITION ( AND ( "
-        string += " ".join(map(str, self.preconditions))
-        string += ' ))\n'
+        if self.preconditions:
+            string += ":PRECONDITION ( AND ( "
+            string += " ".join(map(str, self.preconditions))
+            string += ' ))\n'
+        # TODO: Complete recursive printing for effects
         string += ":EFFECT ( AND ( "
         string += ' '.join(map(str, self.effects))
         string += " ))\n)"
@@ -343,16 +339,16 @@ class PDDLDomain(object):
             f.write(str(self))
 
     def __str__(self):
-        string = "(DEFINE (DOMAIN %s)\n" % self.name
-        string += "(:REQUIREMENTS %s)\n" % ' '.join(self.requirements)
+        string = "(DEFINE (DOMAIN %s)\n\n" % self.name
+        string += "(:REQUIREMENTS %s)\n\n" % ' '.join(self.requirements)
         types = [t for t in self.types.itervalues() if t.is_subtype()]  # Put all sub-types up front...
         for t in self.types.iterkeys():  #...and all supertypes at the end of the list
             if t not in types:
                 types.append(t)
-        string += "(:TYPES\n %s)" % '\n'.join(map(str, types))
-        string += "(:CONSTANTS\n %s)" % '\n'.join(map(str, self.constants))
-        string += "(:PREDICATES\n %s)" % '\n'.join(map(str, self.predicates.itervalues()))
-        string += '\n'.join(map(str, self.actions.itervalues()))
+        string += "(:TYPES\n %s)\n\n" % '\n'.join(map(str, types))
+        string += "(:CONSTANTS\n %s)\n\n" % '\n'.join(map(str, self.constants))
+        string += "(:PREDICATES\n %s)\n\n" % '\n'.join(map(str, self.predicates.itervalues()))
+        string += '\n\n'.join(map(str, self.actions.itervalues()))
         string += ")"
         return string
 
