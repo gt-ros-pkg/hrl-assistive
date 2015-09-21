@@ -11,45 +11,6 @@ from pddl_utils import PDDLProblem, PDDLPredicate, PDDLObject, PDDLPlanStep
 import hrl_task_planning.msg as planner_msgs
 
 
-class FF(object):
-    """ A solver instance based on an FF executable. """
-    def __init__(self, ff_executable='./ff'):
-        self.ff_executable = ff_executable
-
-    def _parse_solution(self, soln_txt):
-        """ Extract list of solution steps from FF output. """
-        sol = []
-        soln_txt = soln_txt.split('step')[1].strip()
-        soln_txt = soln_txt.split('time spent')[0].strip()
-        steps = [step.strip() for step in soln_txt.splitlines()]
-        for step in steps:
-            args = step.split(':')[1].lstrip().split()
-            act = args.pop(0)  # Remove action, leave all args
-            sol.append(PDDLPlanStep(act, args))
-        return sol
-
-    def solve(self, problem, domain_file):
-        """ Create a temporary problem file and call FF to solve. """
-        with NamedTemporaryFile() as problem_file:
-            problem.to_file(problem_file.name)
-            try:
-                soln_txt = check_output([self.ff_executable, '-o', domain_file, '-f', problem_file.name])
-            except CalledProcessError as cpe:
-                if "goal can be simplified to TRUE." in cpe.output:
-                    return True
-                else:
-                    rospy.logwarn("[%s] FF Could not find a solution to problem: %s"
-                                  % (rospy.get_name(), problem.name))
-                    return []
-            finally:
-                # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
-                try:
-                    remove('.'.join([problem_file.name, 'soln']))
-                except OSError as ose:
-                    if ose.errno != 2:
-                        raise ose
-        return self._parse_solution(soln_txt)
-
 
 class TaskPlannerNode(object):
     """ A ROS node wrapping an instance of a task planner. """

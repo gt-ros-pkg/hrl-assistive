@@ -9,4 +9,3 @@
      (:goal (and (at target goal))
      )
 )
-
