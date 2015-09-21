@@ -172,21 +172,16 @@ class PDDLAction(object):
         preconditions = []
         params = {}
         effects = []
-        print "Parsing Params"
         try:  # Evaluate parameters passed to action
             param_list = act[act.index(':PARAMETERS') + 1]
             for i in range(len(param_list)/3):
                 params[param_list[3*i]] = PDDLObject(param_list[3*i], param_list[3*i+2])
         except ValueError:
             pass
-        print "Params: %s" % params
-        print "Parsing Preconditions"
         try:  # Evaluate Preconditions
             precond_list = act[act.index(":PRECONDITION") + 1]
-            print "Precond list: ", precond_list
             precond_list = precond_list[1:] if precond_list[0] == 'AND' else precond_list  # Ignore initial AND
             for cond in precond_list:
-                print "Evaluating cond: ", cond
                 if cond[0] == 'FORALL':
                     print "Forall"
                     param = PDDLObject(cond[1][0], cond[1][2])
@@ -196,12 +191,9 @@ class PDDLAction(object):
                     preconditions.append(PDDLPredicate.from_list(cond))
         except ValueError:
             pass
-#        print "Parsed Preconditions for %s" % name, preconditions
-        print "Parsing Effects for %s" %name
         try:
             effect_list = act[act.index(":EFFECT") + 1]
             effects = cls._parse_effect(effect_list)
-            print "Effect_list: %s" %effect_list
         except ValueError, e:
             raise e
         return cls(name, params, preconditions, effects)
@@ -211,20 +203,28 @@ class PDDLAction(object):
         print "Effect: ", effect
         if effect[0] == 'AND':
             return [cls._parse_effect(eff) for eff in effect[1:]]
-        if effect[0] == 'FORALL':
-            print "Forall"
+        elif effect[0] == 'FORALL':
             param = PDDLObject(effect[1][0], effect[1][2])
-            print "PARAM: %s" % param
             pred = cls._parse_effect(effect[2])
             return ['FORALL', param, pred]
         elif effect[0] == 'WHEN':
-            print "WHEN"
             param = PDDLPredicate.from_list(effect[1])
-            print "PARAM: %s" % param
             pred = cls._parse_effect(effect[2])
             return ['WHEN', param, pred]
         else:
             return ["PREDICATE", PDDLPredicate.from_list(effect)]
+
+    def _effects_str(self, effect):
+        if effect[0] == 'FORALL':
+            return ''.join(["(FORALL (", str(effect[1]),") ", self._effect_str(effect[2])])
+        elif effect[0] == 'WHEN':
+            return ''.join(["(WHEN ", str(effect[1]), self.effect_str(effect[2])])
+        elif effect[0] == 'PREDICATE':
+            return str(effect[1])
+        else:
+            return ''.join(["(AND (", '\n'.join([self._effect_str(eff) for eff in effect[1:]]), ")"])
+
+    def _precondition_str(self, precond):
 
     def __str__(self):
         string = ''.join(["(:ACTION ", self.name, '\n'])
@@ -232,13 +232,15 @@ class PDDLAction(object):
         string += ' '.join(map(str, self.parameters.itervalues()))
         string += ' )\n'
         if self.preconditions:
-            string += ":PRECONDITION ( AND ( "
-            string += " ".join(map(str, self.preconditions))
-            string += ' ))\n'
+            string += ":PRECONDITION ( "
+            if len(self.preconditions) > 1:
+                string += 'AND(
+            string += self._precondition_str(self.preconditions)
+            string += ' )\n'
         # TODO: Complete recursive printing for effects
-        string += ":EFFECT ( AND ( "
-        string += ' '.join(map(str, self.effects))
-        string += " ))\n)"
+        string += ":EFFECT ( "
+        string += self._effects_str(self.effects)
+        string += " )\n)"
         return string
 
 
@@ -345,9 +347,9 @@ class PDDLDomain(object):
         for t in self.types.iterkeys():  #...and all supertypes at the end of the list
             if t not in types:
                 types.append(t)
-        string += "(:TYPES\n %s)\n\n" % '\n'.join(map(str, types))
-        string += "(:CONSTANTS\n %s)\n\n" % '\n'.join(map(str, self.constants))
-        string += "(:PREDICATES\n %s)\n\n" % '\n'.join(map(str, self.predicates.itervalues()))
+        string += "(:TYPES\n%s)\n\n" % '\n'.join(map(str, types))
+        string += "(:CONSTANTS\n%s)\n\n" % '\n'.join(map(str, self.constants))
+        string += "(:PREDICATES\n%s)\n\n" % '\n'.join(map(str, self.predicates.itervalues()))
         string += '\n\n'.join(map(str, self.actions.itervalues()))
         string += ")"
         return string
