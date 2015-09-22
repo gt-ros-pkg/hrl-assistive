@@ -550,11 +550,15 @@ class PDDLSituation(object):
         pass
 
     def _expand_conditions(self, action, args):
+        """ Create specific predicates for all preconditions of an action."""
         arg_map = self._resolve_args(action, args)
         condition_predicates = []
         for cond in action.preconditions:
             if isinstance(cond, PDDLPredicate):
-                condition_predicates.append(PDDLPredicate(cond.name, arg_map[cond.args]))
+                condition_predicates.append(PDDLPredicate(cond.name, [arg_map[arg] for arg in cond.args], cond.neg))
+            else:
+                for obj in self._get_objects_of_type(cond[1].type):
+                    condition_predicates.append(PDDLPredicate(cond[3].name, [
 
     def _check_precondition(self, condition_preds,  state_preds):
         """ Make sure that the initial state to which the action is being applied meets the required preconditions."""
