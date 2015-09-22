@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import copy
+
 
 def _separate_string(string):
     """ Space out parentheses and split to separate items in a lisp string."""
@@ -62,9 +64,9 @@ class PDDLType(object):
 
 class PDDLObject(object):
     """ A class describing an Object in PDDL. """
-    def __init__(self, name, type=None):
+    def __init__(self, name, type_=None):
         self.name = name
-        self.type = type
+        self.type = type_
 
     def __str__(self):
         if self.type is None:
@@ -73,7 +75,7 @@ class PDDLObject(object):
             return "%s - %s" % (self.name.upper(), self.type.upper())
 
     def __eq__(self, other):
-        return (isinstance(other, self.__class__) and (self.__dict__ == other.__dict__))
+        return isinstance(other, self.__class__) and (self.__dict__ == other.__dict__)
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -92,15 +94,15 @@ class PDDLObject(object):
 
 class PDDLPredicate(object):
     """ A class describing a predicate in PDDL. """
-    def __init__(self, name, args=[], neg=False):
+    def __init__(self, name, args=None, neg=False):
         self.name = name
-        self.args = []
+        self.args = [] if args is None else args
         self.neg = neg
-        for arg in args:
-            if isinstance(arg, PDDLObject):
-                self.args.append(arg)
-            elif isinstance(arg, str):
-                self.args.append(PDDLObject.from_string(arg))
+#        for arg in args:
+#            if isinstance(arg, PDDLObject):
+#                self.args.append(arg)
+#            elif isinstance(arg, str):
+#                self.args.append(PDDLObject.from_string(arg))
 
     def __str__(self):
         msg = "(%s %s)" % (self.name, ' '.join(map(str, self.args)))
@@ -109,7 +111,7 @@ class PDDLPredicate(object):
         return msg.upper()
 
     def __eq__(self, other):
-        return (isinstance(other, self.__class__) and (self.__dict__ == other.__dict__))
+        return isinstance(other, self.__class__) and (self.__dict__ == other.__dict__)
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -144,9 +146,9 @@ class PDDLPredicate(object):
 
 class PDDLPlanStep(object):
     """ A class specifying a PDDL action and the parameters with which to call apply it. """
-    def __init__(self, name, args=[]):
+    def __init__(self, name, args=None):
         self.name = name
-        self.args = args
+        self.args = [] if args is None else args
 
     @classmethod
     def from_string(cls, string):
@@ -165,11 +167,11 @@ class ActionException(Exception):
 
 class PDDLAction(object):
     """ A class describing an action in PDDL. """
-    def __init__(self, name, parameters=[], preconditions=[], effects=[]):
+    def __init__(self, name, parameters=None, preconditions=None, effects=None):
         self.name = name
-        self.parameters = parameters
-        self.preconditions = preconditions
-        self.effects = effects
+        self.parameters = [] if parameters is None else parameters
+        self.preconditions = [] if preconditions is None else preconditions
+        self.effects = [] if effects is None else effects
 
     def __str__(self):
         string = ''.join(["(:ACTION ", self.name, '\n'])
@@ -259,7 +261,8 @@ class PDDLAction(object):
         else:
             return ''.join(["(AND ", '\n'.join([self._effects_str(eff) for eff in effect]), ")"])
 
-    def _precondition_str(self, precond):
+    @staticmethod
+    def _precondition_str(precond):
         """ Produce a properly formatted string for a precondition of an action instance."""
         if isinstance(precond, PDDLPredicate):
             return str(precond)
@@ -269,13 +272,13 @@ class PDDLAction(object):
 
 class PDDLDomain(object):
     """ A class describing a domain instance in PDDL."""
-    def __init__(self, name, requirements=[], types={}, constants=[], predicates={}, actions={}):
+    def __init__(self, name, requirements=None, types=None, constants=None, predicates=None, actions=None):
         self.name = name
-        self.requirements = requirements
-        self.types = types
-        self.constants = constants
-        self.predicates = predicates
-        self.actions = actions
+        self.requirements = [] if requirements is None else requirements
+        self.types = {} if types is None else types
+        self.constants = [] if constants is None else constants
+        self.predicates = {} if predicates is None else predicates
+        self.actions = {} if actions is None else actions
 
     def __str__(self):
         string = "(DEFINE (DOMAIN %s)\n\n" % self.name
@@ -401,37 +404,15 @@ class PDDLDomain(object):
         with open(filename, 'w') as f:
             f.write(str(self))
 
-#    def _get_constants_by_type(self):
-#        # TODO Check to make sure this still works!?
-#        type_dict = {}
-#        type_set = set(self.types.iterkeys())
-#        for subtypes in self.types.itervalues():
-#            [type_set.add(subtype) for subtype in subtypes]
-#        for type_, objs in self.types.iteritems():
-#            type_dict[type_] = objs
-#            for obj in objs:
-#                if obj in self.types:
-#                    type_dict[type_].extend(self.types[obj])  # Add items of sub-class
-#                    type_dict[type_].pop(type_dict[type_].index(obj))  # Remove sub-class itself
-#        objs_dict = {}
-#        for type_ in type_set:
-#            objs_dict[type_] = []
-#            for obj in self.objects:
-#                if obj.type == type_:
-#                    objs_dict[type_].append(obj)
-#                if (type_ in type_dict and obj.type in type_dict[type_]):
-#                    objs_dict[type_].append(obj)
-#        return objs_dict
-
 
 class PDDLProblem(object):
     """ A class describing a problem instance in PDDL. """
-    def __init__(self, name, domain, objects=[], init=[], goal=[]):
+    def __init__(self, name, domain, objects=None, init=None, goal=None):
         self.name = name
         self.domain = domain
-        self.objects = objects
-        self.init = init
-        self.goal = goal
+        self.objects = [] if objects is None else objects
+        self.init = [] if init is None else init
+        self.goal = [] if goal is None else goal
 
     def __str__(self):
         """ Write a PDDL Problem as a string in PDDL File style """
@@ -523,80 +504,141 @@ class PDDLSituation(object):
             raise RuntimeError("Problem cannot be applied to this domain.")
         self.domain = domain
         self.problem = problem
-        self.solution = self.solve()
         self.objects = self._merge_objects(domain, problem)
+        self.solution = self.solve_FF()
+
+    @staticmethod
+    def _state_satisfies_preds(state, preds):
+        for pred in preds:
+            pos_pred = PDDLPredicate(pred.name, pred.args)  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            if (pred.neg and pos_pred in state) or (not pred.neg and pos_pred not in state):
+                return False
+        return True
+
+    def _states_are_equivalent(self, state1, state2):
+        """ Determine if two states are equivalent (same predicates). """
+        return (self._state_satisfies_preds(state1, state2) and
+                self._state_satisfies_preds(state2, state1))
 
     def _get_object_type(self, obj):
+        """ Get the type of an object from the combined object list by name."""
         for known_object in self.objects:
             if obj == known_object.name:
                 return known_object.type
         return None
 
     def _get_objects_of_type(self, type_):
+        """ Return a list of objects of the given type.  Used for 'FORALL' conditions."""
         objs = []
         for obj in self.objects:
             if self.domain.types[obj.type].is_type(type_):
                 objs.append(obj)
         return objs
 
-    def _merge_objects(self, domain, problem):
+    @staticmethod
+    def _merge_objects(domain, problem):
+        """ Merge objects from domain (constants) and problem (objects) to avoid repeated entries."""
         objs = domain.constants
         for obj in problem.objects:
             if obj not in objs:
                 objs.append(obj)
         return objs
 
-    def _apply_effect(self, effect, state):
-        pass
+    def _get_effects(self, effect, state, arg_map):
+        """ Get lists of predicates to add or remove from a state based on action effects."""
+        add_list = []
+        del_list = []
+        if effect[0] == 'PREDICATE':
+            eff = PDDLPredicate(effect[1].name, [PDDLObject(arg_map[arg.name].name) for arg in effect[1].args])
+            if effect[1].neg:
+                del_list.append(eff)
+            else:
+                add_list.append(eff)
+        elif effect[0] == 'WHEN':
+            cond = PDDLPredicate(effect[1].name, [PDDLObject(arg_map[arg.name].name) for arg in effect[1].args], effect[1].neg)
+            pos_pred = PDDLPredicate(cond.name, cond.args)
+            if (cond.neg and pos_pred not in state) or (not cond.neg and pos_pred in state):  # If condition negative and pred not in state, or condition positive and it is, evaluate it
+                al, dl = self._get_effects(effect[2], state, arg_map)
+        elif effect[0] == 'FORALL':
+            for obj in self._get_objects_of_type(effect[1].type):
+                arg_map[effect[1].name] = obj
+                al, dl = self._get_effects(effect[2], state, arg_map)
+                add_list.extend(al)
+                del_list.extend(dl)
+        else:
+            for eff in effect:
+                al, dl = self._get_effects(eff, state, arg_map)
+                add_list.extend(al)
+                del_list.extend(dl)
+        return (add_list, del_list)
 
-    def _expand_conditions(self, action, args):
+    @staticmethod
+    def _apply_changes(state, add_list, del_list):
+        """ Add/remove predicates from a state as appropriate (avoids removing states just added by this effect."""
+        filtered_add_list = [pred for pred in add_list if pred not in state]  # Actually add it if it doesn't exist
+        filtered_del_list = [pred for pred in del_list if pred in state]
+        for pred in filtered_add_list:
+            state.append(pred)
+        for pred in filtered_del_list:
+            for _ in range(filtered_del_list.count(pred)):
+                state.remove(pred)
+        return state
+
+    def _apply_effects(self, effect, state, arg_map):
+        """ Recursively apply the effects of of an action to a state.  Requires argument map."""
+        add_list, del_list = self._get_effects(effect, state, arg_map)
+        return self._apply_changes(state, add_list, del_list)
+
+    def _expand_conditions(self, action, arg_map):
         """ Create specific predicates for all preconditions of an action."""
-        arg_map = self._resolve_args(action, args)
         condition_predicates = []
         for cond in action.preconditions:
             if isinstance(cond, PDDLPredicate):
-                condition_predicates.append(PDDLPredicate(cond.name, [arg_map[arg] for arg in cond.args], cond.neg))
+                condition_predicates.append(PDDLPredicate(cond.name, [PDDLObject(arg_map[arg.name].name) for arg in cond.args], cond.neg))
             else:
                 for obj in self._get_objects_of_type(cond[1].type):
-                    condition_predicates.append(PDDLPredicate(cond[3].name, [
-
-    def _check_precondition(self, condition_preds,  state_preds):
-        """ Make sure that the initial state to which the action is being applied meets the required preconditions."""
-        print condition
-        if isinstance(condition, PDDLPredicate):
-            print "Checking Predicate"
-            if condition not in state:
-                return False
-        elif condition[0] == 'FORALL':
-            print "Recursing over forall"
-            args = self._get_objects_type(condition[1].type)
-            return self._check_preconditions(self, condition[2])
+                    arg_map[cond[1].name] = obj
+                    condition_predicates.append(PDDLPredicate(cond[2].name, [PDDLObject(arg_map[arg.name].name) for arg in cond[2].args], cond[2].neg))
+        return condition_predicates
 
     def _resolve_args(self, action, args):
+        """ Create a map from variable parameters in action defs to specific arguments in an action call."""
         param_arg_map = {}
         for arg, param in zip(args, action.parameters):
             arg_type = self._get_object_type(arg)
             if not self.domain.types[arg_type].is_type(param.type):
                 raise ActionException("Planed action arguments do not match action parameter types")
-            param_arg_map[param] = PDDLObject(arg, arg_type)
+            param_arg_map[param.name] = PDDLObject(arg, arg_type)
         return param_arg_map
 
     def apply_action(self, action, args, state):
         """ Apply an action to the given state. Returns (success, resulting_state)."""
-        if not self._check_preconditions(action, state):
-            raise ActionException("Cannot perform %s in current state." % action.name)
-        action.args = self._resolve_args(action, args)
-        for effect in action.effects:
-            self._apply_effect(effect, state)
+        arg_map = self._resolve_args(action, args)
+        all_preconditions = self._expand_conditions(action, arg_map)
+        if not self._state_satisfies_preds(state, all_preconditions):
+            raise ActionException("Cannot perform %s(%s) in current state (%s).\nPreconditions: %s"
+                                  % (action.name, map(str, args), map(str, state), map(str, all_preconditions)))
+        self._apply_effects(action.effects, state, arg_map)
+        return state
 
-    def get_plan_intermediary_states(self, problem, plan):
-        states = [problem.init]
+    def get_plan_intermediary_states(self, plan):
+        states = [self.problem.init]
         for step in plan:
-            states.append(self.apply_action(step.name, step.args, states[-1]))
+            new_state = self.apply_action(self.domain.actions[step.name], step.args, copy.copy(states[-1]))
+            states.append(new_state)
         return states
 
-    def solve(self):
-        """ Solve the given problem in this domain. """
+    @staticmethod
+    def _astar_dist(state, goal):
+        """ Compute the distance from the goal in terms of remaining predicates incorrect from goal."""
+        pass
+
+    def solve_Astar(self):
+        """ Solve this problem in this domain using the A* algorithm."""
+        pass
+
+    def solve_FF(self):
+        """ Solve the given problem in this domain using an external FF executable. """
         solver = FF(self.domain, self.problem, ff_executable="../ff")
         solution = solver.solve()
         return solution
@@ -638,7 +680,8 @@ class FF(Planner):
         super(FF, self).__init__(domain, problem)
         self.ff_executable = ff_executable
 
-    def _parse_solution(self, soln_txt):
+    @staticmethod
+    def _parse_solution(soln_txt):
         """ Extract list of solution steps from FF output. """
         sol = []
         soln_txt = soln_txt.split('step')[1].strip()
