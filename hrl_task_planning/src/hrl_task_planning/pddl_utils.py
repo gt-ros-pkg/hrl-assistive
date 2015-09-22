@@ -165,6 +165,11 @@ class ActionException(Exception):
     pass
 
 
+class PlanningException(Exception):
+    """ Exception raised by a planner when no solution is available."""
+    pass
+
+
 class PDDLAction(object):
     """ A class describing an action in PDDL. """
     def __init__(self, name, parameters=None, preconditions=None, effects=None):
@@ -296,8 +301,8 @@ class PDDLDomain(object):
 
     def check_problem(self, problem):
         """ Verify that the problem can be applied to this domain."""
-        if problem.domain != self.name:
-            print "Problem-specified domain (%s) does not match this domain (%s)" % (problem.domain, self.name)
+        if problem.domain_name != self.name:
+            print "Problem-specified domain (%s) does not match this domain (%s)" % (problem.domain_name, self.name)
             return False
         for obj in problem.objects:
             if obj.type not in self.types:
@@ -407,9 +412,9 @@ class PDDLDomain(object):
 
 class PDDLProblem(object):
     """ A class describing a problem instance in PDDL. """
-    def __init__(self, name, domain, objects=None, init=None, goal=None):
+    def __init__(self, name, domain_name, objects=None, init=None, goal=None):
         self.name = name
-        self.domain = domain
+        self.domain_name = domain_name
         self.objects = [] if objects is None else objects
         self.init = [] if init is None else init
         self.goal = [] if goal is None else goal
@@ -417,7 +422,7 @@ class PDDLProblem(object):
     def __str__(self):
         """ Write a PDDL Problem as a string in PDDL File style """
         s = "(DEFINE\n(PROBLEM " + self.name + ")\n"
-        s += "(:DOMAIN " + self.domain + ")\n"
+        s += "(:DOMAIN " + self.domain_name + ")\n"
         # Define objects
         s += "(:OBJECTS "
         s += '\n\t'.join([str(obj) for obj in self.objects])
@@ -506,6 +511,7 @@ class PDDLSituation(object):
         self.problem = problem
         self.objects = self._merge_objects(domain, problem)
         self.solution = self.solve_FF()
+        self.states = self.get_plan_intermediary_states(self.solution)
 
     @staticmethod
     def _state_satisfies_preds(state, preds):
@@ -628,6 +634,28 @@ class PDDLSituation(object):
             states.append(new_state)
         return states
 
+    def find_irreversible_actions(self):
+        irreversible_actions = []
+        for i in range(len(self.states)-1):
+            init = set(self.states[i+1])
+            goal = set(self.states[i])
+            negate = init.difference(goal)  # items in init, but not in the goal.  These need to be actively negated
+            goal = list(goal)
+            for pred in tuple(negate):
+                pred.neg = True
+                goal.append(pred)
+            p = PDDLProblem("undo-check-%s" % i,
+                            self.problem.domain_name,
+                            self.problem.objects,
+                            init,
+                            goal)
+            try:
+                self.solve_FF(p)
+            except PlanningException:
+                print "%s cannot be undone!" % self.solution[i]
+                irreversible_actions.append(self.solution[i])
+        return irreversible_actions
+
     @staticmethod
     def _astar_dist(state, goal):
         """ Compute the distance from the goal in terms of remaining predicates incorrect from goal."""
@@ -637,10 +665,14 @@ class PDDLSituation(object):
         """ Solve this problem in this domain using the A* algorithm."""
         pass
 
-    def solve_FF(self):
+    def solve_FF(self, problem=None):
         """ Solve the given problem in this domain using an external FF executable. """
-        solver = FF(self.domain, self.problem, ff_executable="../ff")
+        problem = self.problem if problem is None else problem
+        print "INIT:", map(str, problem.init)
+        print "GOAL:", map(str, problem.goal)
+        solver = FF(self.domain, problem, ff_executable="../ff")
         solution = solver.solve()
+        print "Solution: %s" % map(str, solution)
         return solution
 
 
@@ -703,10 +735,10 @@ class FF(Planner):
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
                 except CalledProcessError as cpe:
                     if "goal can be simplified to TRUE." in cpe.output:
-                        return True
-                    else:
-                        print "FF Could not find a solution to problem: %s" % self.problem.domain
                         return []
+                    else:
+                        print "FF Could not find a solution to problem: %s" % self.problem.domain_name
+                        raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (self.problem.name, self.domain.name))
                 finally:
                     # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
                     try:
