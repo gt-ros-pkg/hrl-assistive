@@ -565,6 +565,8 @@ class PDDLSituation(object):
             pos_pred = PDDLPredicate(cond.name, cond.args)
             if (cond.neg and pos_pred not in state) or (not cond.neg and pos_pred in state):  # If condition negative and pred not in state, or condition positive and it is, evaluate it
                 al, dl = self._get_effects(effect[2], state, arg_map)
+                add_list.extend(al)
+                del_list.extend(dl)
         elif effect[0] == 'FORALL':
             for obj in self._get_objects_of_type(effect[1].type):
                 arg_map[effect[1].name] = obj
@@ -624,8 +626,8 @@ class PDDLSituation(object):
         if not self._state_satisfies_preds(state, all_preconditions):
             raise ActionException("Cannot perform %s(%s) in current state (%s).\nPreconditions: %s"
                                   % (action.name, map(str, args), map(str, state), map(str, all_preconditions)))
-        self._apply_effects(action.effects, state, arg_map)
-        return state
+        result_state = self._apply_effects(action.effects, state, arg_map)
+        return result_state
 
     def get_plan_intermediary_states(self, plan):
         states = [self.problem.init]
@@ -637,13 +639,12 @@ class PDDLSituation(object):
     def find_irreversible_actions(self):
         irreversible_actions = []
         for i in range(len(self.states)-1):
-            init = set(self.states[i+1])
-            goal = set(self.states[i])
+            init = set(copy.copy(self.states[i+1]))
+            goal = set(copy.copy(self.states[i]))
             negate = init.difference(goal)  # items in init, but not in the goal.  These need to be actively negated
+            negations = [PDDLPredicate(pred.name, pred.args, True) for pred in list(negate)]
             goal = list(goal)
-            for pred in tuple(negate):
-                pred.neg = True
-                goal.append(pred)
+            goal.extend(negations)
             p = PDDLProblem("undo-check-%s" % i,
                             self.problem.domain_name,
                             self.problem.objects,
@@ -652,7 +653,6 @@ class PDDLSituation(object):
             try:
                 self.solve_FF(p)
             except PlanningException:
-                print "%s cannot be undone!" % self.solution[i]
                 irreversible_actions.append(self.solution[i])
         return irreversible_actions
 
@@ -668,11 +668,8 @@ class PDDLSituation(object):
     def solve_FF(self, problem=None):
         """ Solve the given problem in this domain using an external FF executable. """
         problem = self.problem if problem is None else problem
-        print "INIT:", map(str, problem.init)
-        print "GOAL:", map(str, problem.goal)
         solver = FF(self.domain, problem, ff_executable="../ff")
         solution = solver.solve()
-        print "Solution: %s" % map(str, solution)
         return solution
 
 
@@ -733,11 +730,14 @@ class FF(Planner):
                 self.domain.to_file(domain_file.name)
                 try:
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
+                    if "problem proven unsolvable." in soln_txt:
+                        # print "FF Could not find a solution to problem: %s" % self.problem.domain_name
+                        raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (self.problem.name, self.domain.name))
                 except CalledProcessError as cpe:
                     if "goal can be simplified to TRUE." in cpe.output:
                         return []
                     else:
-                        print "FF Could not find a solution to problem: %s" % self.problem.domain_name
+                        # print "FF Could not find a solution to problem: %s" % self.problem.domain_name
                         raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (self.problem.name, self.domain.name))
                 finally:
                     # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
