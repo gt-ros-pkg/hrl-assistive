@@ -36,7 +36,7 @@ def get_sublist(lists, tag):
             return list_
 
 
-class PDDLType(object):
+class Type(object):
     """ A class describing a type in PDDL."""
     def __init__(self, name, supertype=None):
         self.name = name
@@ -62,7 +62,7 @@ class PDDLType(object):
             return False
 
 
-class PDDLObject(object):
+class Object(object):
     """ A class describing an Object in PDDL. """
     def __init__(self, name, type_=None):
         self.name = name
@@ -92,17 +92,12 @@ class PDDLObject(object):
         return cls(name.strip(), type_.strip())
 
 
-class PDDLPredicate(object):
+class Predicate(object):
     """ A class describing a predicate in PDDL. """
     def __init__(self, name, args=None, neg=False):
         self.name = name
         self.args = [] if args is None else args
         self.neg = neg
-#        for arg in args:
-#            if isinstance(arg, PDDLObject):
-#                self.args.append(arg)
-#            elif isinstance(arg, str):
-#                self.args.append(PDDLObject.from_string(arg))
 
     def __str__(self):
         msg = "(%s %s)" % (self.name, ' '.join(map(str, self.args)))
@@ -122,12 +117,12 @@ class PDDLPredicate(object):
 
     @classmethod
     def from_string(cls, string):
-        """ Create a PDDLPredicate instance from a formatted string."""
+        """ Create a Predicate instance from a formatted string."""
         return cls.from_list(lisp_to_list(string))
 
     @classmethod
     def from_list(cls, pred_list):
-        """ Create a PDDLPredicate instance from a separated list of items."""
+        """ Create a Predicate instance from a separated list of items."""
         neg = False
         if pred_list[0] == 'NOT':
             neg = True
@@ -137,14 +132,14 @@ class PDDLPredicate(object):
             name_type_pairs = pred_list[1:].count('-')
             args = []
             for i in range(name_type_pairs):
-                args.append(PDDLObject(pred_list[1:][3*i], pred_list[1:][3*i+2]))
+                args.append(Object(pred_list[1:][3*i], pred_list[1:][3*i+2]))
         else:
-            args = [PDDLObject(arg) for arg in pred_list[1:]]
+            args = [Object(arg) for arg in pred_list[1:]]
         res = cls(name, args, neg)
         return res
 
 
-class PDDLPlanStep(object):
+class PlanStep(object):
     """ A class specifying a PDDL action and the parameters with which to call apply it. """
     def __init__(self, name, args=None):
         self.name = name
@@ -152,7 +147,7 @@ class PDDLPlanStep(object):
 
     @classmethod
     def from_string(cls, string):
-        """ Create a PDDLPlanStep from a formatted string."""
+        """ Create a PlanStep from a formatted string."""
         name, args = lisp_to_list(string)
         return cls(name, args)
 
@@ -170,7 +165,7 @@ class PlanningException(Exception):
     pass
 
 
-class PDDLAction(object):
+class Action(object):
     """ A class describing an action in PDDL. """
     def __init__(self, name, parameters=None, preconditions=None, effects=None):
         self.name = name
@@ -200,14 +195,14 @@ class PDDLAction(object):
 
     @classmethod
     def from_string(cls, string):
-        """ Create a PDDLAction from a formatted string."""
+        """ Create a Action from a formatted string."""
         act = lisp_to_list(string)
         act = act[1:] if act[0] == ":ACTION" else act
         return cls.from_list(act)
 
     @classmethod
     def from_list(cls, act):
-        """ Create a PDDLAction from a formatted list of items."""
+        """ Create a Action from a formatted list of items."""
         name = act[0]
         preconditions = []
         params = []
@@ -215,7 +210,7 @@ class PDDLAction(object):
         try:  # Evaluate parameters passed to action
             param_list = act[act.index(':PARAMETERS') + 1]
             for i in range(len(param_list)/3):
-                params.append(PDDLObject(param_list[3*i], param_list[3*i+2]))
+                params.append(Object(param_list[3*i], param_list[3*i+2]))
         except ValueError:
             pass
         try:  # Evaluate Preconditions
@@ -223,11 +218,11 @@ class PDDLAction(object):
             precond_list = precond_list[1:] if precond_list[0] == 'AND' else precond_list  # Ignore initial AND
             for cond in precond_list:
                 if cond[0] == 'FORALL':
-                    param = PDDLObject(cond[1][0], cond[1][2])
-                    pred = PDDLPredicate.from_list(cond[2])
+                    param = Object(cond[1][0], cond[1][2])
+                    pred = Predicate.from_list(cond[2])
                     preconditions.append(['FORALL', param, pred])
                 else:
-                    preconditions.append(PDDLPredicate.from_list(cond))
+                    preconditions.append(Predicate.from_list(cond))
         except ValueError:
             pass
         try:
@@ -243,15 +238,15 @@ class PDDLAction(object):
         if effect[0] == 'AND':
             return [cls._parse_effect(eff) for eff in effect[1:]]
         elif effect[0] == 'FORALL':
-            param = PDDLObject(effect[1][0], effect[1][2])
+            param = Object(effect[1][0], effect[1][2])
             pred = cls._parse_effect(effect[2])
             return ['FORALL', param, pred]
         elif effect[0] == 'WHEN':
-            param = PDDLPredicate.from_list(effect[1])
+            param = Predicate.from_list(effect[1])
             pred = cls._parse_effect(effect[2])
             return ['WHEN', param, pred]
         else:
-            return ["PREDICATE", PDDLPredicate.from_list(effect)]
+            return ["PREDICATE", Predicate.from_list(effect)]
 
     def _effects_str(self, effect):
         """ Produce a properly formatted string of the effects of an action instance."""
@@ -269,13 +264,13 @@ class PDDLAction(object):
     @staticmethod
     def _precondition_str(precond):
         """ Produce a properly formatted string for a precondition of an action instance."""
-        if isinstance(precond, PDDLPredicate):
+        if isinstance(precond, Predicate):
             return str(precond)
         elif precond[0] == 'FORALL':
             return ''.join(['(FORALL (', str(precond[1]), ') ', str(precond[2]), ")"])
 
 
-class PDDLDomain(object):
+class Domain(object):
     """ A class describing a domain instance in PDDL."""
     def __init__(self, name, requirements=None, types=None, constants=None, predicates=None, actions=None):
         self.name = name
@@ -324,17 +319,17 @@ class PDDLDomain(object):
         assert(len(item_list) % 3 == 0), "Error parsing constants: should be (object, [hyphen], type) triples"
         objs = []
         for i in range(len(item_list)/3):
-            objs.append(PDDLObject(item_list[3*i], item_list[3*i+2]))
+            objs.append(Object(item_list[3*i], item_list[3*i+2]))
         return objs
 
     @classmethod
     def _parse_types(cls, types_list):
-        """ Extract heirarchical PDDLTypes from a formatted list. """
+        """ Extract heirarchical Types from a formatted list. """
         types = {}
         # Catch simple case of no sub-types
         if '-' not in types_list:
             for t in types_list:
-                types[t] = PDDLType(t)
+                types[t] = Type(t)
             return types
         # Split super-types and sub-types
         type_set = set(types_list)
@@ -352,13 +347,13 @@ class PDDLDomain(object):
         if len(subtypes) > len(supertypes):
             spare_types = subtypes.pop()  # can only be one extra set of un-classed types, remove them
             for t in spare_types:
-                types[t] = PDDLType(t)
+                types[t] = Type(t)
                 added.append(t)
         # Deal with the rest of the mess
         subtype_list = [typ for group in subtypes for typ in group]
         for t in type_set:
             if (t in supertypes) and (t not in subtype_list):  # Start with top-level types
-                types[t] = PDDLType(t)
+                types[t] = Type(t)
                 added.append(t)
         while not set(added) == type_set:
             for supertype in added:
@@ -368,28 +363,28 @@ class PDDLDomain(object):
                     continue
                 subs = subtypes[ind]
                 for sub in subs:
-                    types[sub] = PDDLType(sub, types[supertype])
+                    types[sub] = Type(sub, types[supertype])
                     added.append(sub)
         return types
 
     @classmethod
     def _parse_predicates(cls, pred_list):
-        """ Produce a dict of PDDLPreciates from a list of predicate definition lists."""
+        """ Produce a dict of Preciates from a list of predicate definition lists."""
         preds = {}
         for pred in pred_list:
-            preds[pred[0]] = PDDLPredicate.from_list(pred)
+            preds[pred[0]] = Predicate.from_list(pred)
         return preds
 
     @classmethod
     def from_file(cls, domain_file):
-        """ Produce a PDDLDomain object from the specified PDDL domain file."""
+        """ Produce a Domain object from the specified PDDL domain file."""
         with open(domain_file, 'r') as f:
             string = f.read()
         return cls.from_string(string)
 
     @classmethod
     def from_string(cls, string):
-        """ Produce a PDDLDomain object from a PDDL domain file string."""
+        """ Produce a Domain object from a PDDL domain file string."""
         items = lisp_to_list(string.upper())
         ind = items.index('DEFINE')
         items.pop(ind)
@@ -401,16 +396,16 @@ class PDDLDomain(object):
         actions_list = [item[1:] for item in items if item[0] == ':ACTION']
         actions = {}
         for action in actions_list:
-            actions[action[0]] = PDDLAction.from_list(action)  # create dict of actions by name
+            actions[action[0]] = Action.from_list(action)  # create dict of actions by name
         return cls(domain_name, domain_requirements, domain_types, constants, predicates, actions)
 
     def to_file(self, filename):
-        """ Write this PDDLDomain as a properly-formatted domain file."""
+        """ Write this Domain as a properly-formatted domain file."""
         with open(filename, 'w') as f:
             f.write(str(self))
 
 
-class PDDLProblem(object):
+class Problem(object):
     """ A class describing a problem instance in PDDL. """
     def __init__(self, name, domain_name, objects=None, init=None, goal=None):
         self.name = name
@@ -439,9 +434,9 @@ class PDDLProblem(object):
 
     @classmethod
     def from_msg(cls, msg):
-        objects = [PDDLObject.from_string(obj_str) for obj_str in msg.objects]
-        init = [PDDLObject.from_string(pred) for pred in msg.init]
-        goal = [PDDLPredicate.from_string(pred) for pred in msg.goal]
+        objects = [Object.from_string(obj_str) for obj_str in msg.objects]
+        init = [Object.from_string(pred) for pred in msg.init]
+        goal = [Predicate.from_string(pred) for pred in msg.goal]
         return cls(msg.name, msg.domain, objects, init, goal)
 
     @classmethod
@@ -475,13 +470,13 @@ class PDDLProblem(object):
             if obj == '-':
                 item_list.pop(0)  # discard supertype name which comes after hyphen
                 continue
-            objs.append(PDDLObject(obj, supertype))
+            objs.append(Object(obj, supertype))
         return objs
 
     @classmethod
     def _parse_init(cls, items):
         """ Extract predicates from a defined list. """
-        return [PDDLPredicate(item[0], [PDDLObject(name) for name in item[1:]]) for item in items]
+        return [Predicate(item[0], [Object(name) for name in item[1:]]) for item in items]
 
     @classmethod
     def _parse_goal(cls, items):
@@ -490,20 +485,20 @@ class PDDLProblem(object):
             if item == 'AND':
                 continue
             elif item[0] == 'NOT':
-                preds.append(PDDLPredicate(item[1][0], [PDDLObject(name) for name in item[1][1:]], True))
+                preds.append(Predicate(item[1][0], [Object(name) for name in item[1][1:]], True))
             else:
-                preds.append(PDDLPredicate(item[0], [PDDLObject(name) for name in item[1:]]))
+                preds.append(Predicate(item[0], [Object(name) for name in item[1:]]))
         return preds
 
     def to_file(self, filename=None):
-        """ Write a PDDL Problem file based on a PDDLProblem instance. """
+        """ Write a PDDL Problem file based on a Problem instance. """
         filename = '.'.join([self.name, 'problem']) if filename is None else filename
         with open(filename, 'w') as prob_file:
             string = str(self)
             prob_file.write(string)
 
 
-class PDDLSituation(object):
+class Situation(object):
     def __init__(self, domain, problem):
         if not domain.check_problem(problem):
             raise RuntimeError("Problem cannot be applied to this domain.")
@@ -516,7 +511,7 @@ class PDDLSituation(object):
     @staticmethod
     def _state_satisfies_preds(state, preds):
         for pred in preds:
-            pos_pred = PDDLPredicate(pred.name, pred.args)  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            pos_pred = Predicate(pred.name, pred.args)  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
             if (pred.neg and pos_pred in state) or (not pred.neg and pos_pred not in state):
                 return False
         return True
@@ -555,14 +550,14 @@ class PDDLSituation(object):
         add_list = []
         del_list = []
         if effect[0] == 'PREDICATE':
-            eff = PDDLPredicate(effect[1].name, [PDDLObject(arg_map[arg.name].name) for arg in effect[1].args])
+            eff = Predicate(effect[1].name, [Object(arg_map[arg.name].name) for arg in effect[1].args])
             if effect[1].neg:
                 del_list.append(eff)
             else:
                 add_list.append(eff)
         elif effect[0] == 'WHEN':
-            cond = PDDLPredicate(effect[1].name, [PDDLObject(arg_map[arg.name].name) for arg in effect[1].args], effect[1].neg)
-            pos_pred = PDDLPredicate(cond.name, cond.args)
+            cond = Predicate(effect[1].name, [Object(arg_map[arg.name].name) for arg in effect[1].args], effect[1].neg)
+            pos_pred = Predicate(cond.name, cond.args)
             if (cond.neg and pos_pred not in state) or (not cond.neg and pos_pred in state):  # If condition negative and pred not in state, or condition positive and it is, evaluate it
                 al, dl = self._get_effects(effect[2], state, arg_map)
                 add_list.extend(al)
@@ -601,12 +596,12 @@ class PDDLSituation(object):
         """ Create specific predicates for all preconditions of an action."""
         condition_predicates = []
         for cond in action.preconditions:
-            if isinstance(cond, PDDLPredicate):
-                condition_predicates.append(PDDLPredicate(cond.name, [PDDLObject(arg_map[arg.name].name) for arg in cond.args], cond.neg))
+            if isinstance(cond, Predicate):
+                condition_predicates.append(Predicate(cond.name, [Object(arg_map[arg.name].name) for arg in cond.args], cond.neg))
             else:
                 for obj in self._get_objects_of_type(cond[1].type):
                     arg_map[cond[1].name] = obj
-                    condition_predicates.append(PDDLPredicate(cond[2].name, [PDDLObject(arg_map[arg.name].name) for arg in cond[2].args], cond[2].neg))
+                    condition_predicates.append(Predicate(cond[2].name, [Object(arg_map[arg.name].name) for arg in cond[2].args], cond[2].neg))
         return condition_predicates
 
     def _resolve_args(self, action, args):
@@ -616,7 +611,7 @@ class PDDLSituation(object):
             arg_type = self._get_object_type(arg)
             if not self.domain.types[arg_type].is_type(param.type):
                 raise ActionException("Planed action arguments do not match action parameter types")
-            param_arg_map[param.name] = PDDLObject(arg, arg_type)
+            param_arg_map[param.name] = Object(arg, arg_type)
         return param_arg_map
 
     def apply_action(self, action, args, state):
@@ -642,14 +637,10 @@ class PDDLSituation(object):
             init = set(copy.copy(self.states[i+1]))
             goal = set(copy.copy(self.states[i]))
             negate = init.difference(goal)  # items in init, but not in the goal.  These need to be actively negated
-            negations = [PDDLPredicate(pred.name, pred.args, True) for pred in list(negate)]
+            negations = [Predicate(pred.name, pred.args, True) for pred in list(negate)]
             goal = list(goal)
             goal.extend(negations)
-            p = PDDLProblem("undo-check-%s" % i,
-                            self.problem.domain_name,
-                            self.problem.objects,
-                            init,
-                            goal)
+            p = Problem("undo-check-%s" % i, self.problem.domain_name, self.problem.objects, init, goal)
             try:
                 self.solve_FF(p)
             except PlanningException:
@@ -719,7 +710,7 @@ class FF(Planner):
         for step in steps:
             args = step.split(':')[1].lstrip().split()
             act = args.pop(0)  # Remove action, leave all args
-            sol.append(PDDLPlanStep(act, args))
+            sol.append(PlanStep(act, args))
         return sol
 
     def solve(self):
