@@ -17,6 +17,13 @@ add_message_files(DIRECTORY msg
   FILES
   PDDLProblem.msg
   PDDLSolution.msg
+  PDDLState.msg
+)
+
+add_service_files(DIRECTORY srv
+  FILES
+  PDDLPlanner.srv
+  PreprocessProblem.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -33,9 +40,9 @@ catkin_package(
 )
 
 catkin_install_python(PROGRAMS
-   scripts/PyFF
+   scripts/pddl_planner
    scripts/grasp_state_monitor
-   scripts/manual_move_object
+   scripts/preprocess_problems
    scripts/test_client
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

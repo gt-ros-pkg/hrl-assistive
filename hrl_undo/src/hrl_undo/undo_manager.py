@@ -25,15 +25,16 @@ class UndoManager(object):
         self.command_subs = []
         self.serial_cmd_timeout = rospy.Duration(0.4)
         self.undo_sub = rospy.Subscriber(undo_topic, Int32, self.undo_cb)
-        rospy.loginfo("[%s] Undo manager ready." % rospy.get_name())
+        rospy.loginfo("[%s] Undo manager ready.", rospy.get_name())
 
     def register_action(self, action_description):
         """ Register an UndoAction description to monitor commands and include them in the undo deque."""
         self.actions[action_description.name] = action_description
-        rospy.loginfo("[%s] Registered Undo for %s:\r\n\tState Topic: %s\r\n\tCommand Topic:%s" % (rospy.get_name(),
-                                                                                                   action_description.name,
-                                                                                                   action_description.state_topic,
-                                                                                                   action_description.command_topic))
+        rospy.loginfo("[%s] Registered Undo for %s:\r\n\tState Topic: %s\r\n\tCommand Topic:%s",
+                      rospy.get_name(),
+                      action_description.name,
+                      action_description.state_topic,
+                      action_description.command_topic)
         sub = rospy.Subscriber(action_description.command_topic,
                                action_description.command_topic_type,
                                self.command_cb,
@@ -43,7 +44,7 @@ class UndoManager(object):
     def undo_cb(self, msg):
         """ Handles requests to undo a number of commands in the deque."""
         num = min(msg.data, len(self.command_deque))
-        cmds_to_undo = [self.command_deque.pop() for i in range(num)]  # Pop the most recent actions into their own list to undo
+        cmds_to_undo = [self.command_deque.pop() for _ in range(num)]  # Pop the most recent actions into their own list to undo
         undo_actions = self._get_commands_by_action(cmds_to_undo)  # Grab the oldest state for each action to undo to
         undo_list = []
         for action_cmd_list in undo_actions.itervalues():
@@ -78,7 +79,7 @@ class UndoManager(object):
 
     def command_cb(self, msg, action_name):
         """ Callback for commands received for any undoable actions which are being tracked. """
-        if (not self.actions[action_name].active or self.is_undo_command(msg, action_name)):
+        if not self.actions[action_name].active or self.is_undo_command(msg, action_name):
             # If undo module is inactivated, don't add to undo list
             # If goal was sent as an undo msg, don't add it to the list of forward commands
             return
@@ -100,7 +101,8 @@ class UndoManager(object):
             self.command_deque.append(command)  # Append record to deque
             print "Recorded new command for %s" % command['action']
 
-    def _get_commands_by_action(self, cmd_list):
+    @staticmethod
+    def _get_commands_by_action(cmd_list):
         action_lists = {}
         for command in cmd_list:
             if command['action'] not in action_lists:
@@ -135,10 +137,10 @@ class UndoAction(object):
     def set_active_cb(self, req):
         if req.set_active:
             self.active = True
-            rospy.loginfo("[%s] Undo %s Enabled." % (rospy.get_name(), self.name))
+            rospy.loginfo("[%s] Undo %s Enabled.", rospy.get_name(), self.name)
         else:
             self.active = False
-            rospy.loginfo("[%s] Undo %s Disabled." % (rospy.get_name(), self.name))
+            rospy.loginfo("[%s] Undo %s Disabled.", rospy.get_name(), self.name)
         return True
 
     def _remove_goal(self, goal_num):
@@ -165,7 +167,8 @@ class UndoAction(object):
         """
         raise NotImplementedError()
 
-    def combine_serial_commands(self, cmd_1, cmd_2):
+    @staticmethod
+    def combine_serial_commands(cmd_1, cmd_2):
         """ Combines two commands intended to be treated as a single command by the user.
         """
         cmd_1['msg'] = deepcopy(cmd_2['msg'])
@@ -174,7 +177,8 @@ class UndoAction(object):
 
 
 class UndoMoveHead(UndoAction):
-    def _get_trajectory_time(self, start, end, vel=math.pi/4):
+    @staticmethod
+    def _get_trajectory_time(start, end, vel=math.pi/4):
         """ Get the total duration for a transition from start to end angles with max rotational velocity vel. """
         assert len(start) == len(end), "Start and end joint angle lists are not the same length"
         total_angle = 0

@@ -1,10 +1,13 @@
 <launch>
-    <node name="task_planner" pkg="hrl_task_planning" type="PyFF" output="screen" args="$(find hrl_task_planning)/src/ff">
-        <param name="shaving/domain_file" value="$(find hrl_task_planning)/params/shaving.domain"/>
-        <rosparam command="load" file="$(find hrl_task_planning)/params/shaving.yaml" ns="shaving"/>
-        <param name="move-object/domain_file" value="$(find hrl_task_planning)/params/move-object.domain"/>
-    </node>
+
+    <param name="move_object/domain_file" value="$(find hrl_task_planning)/params/move_object.domain"/>
+    <rosparam command="load" file="$(find hrl_task_planning)/params/move_object.yaml" ns="move_object"/>
+
+    <param name="shaving/domain_file" value="$(find hrl_task_planning)/params/shaving.domain"/>
+    <rosparam command="load" file="$(find hrl_task_planning)/params/shaving.yaml" ns="shaving"/>
+
+    <node name="task_planner" pkg="hrl_task_planning" type="pddl_planner" output="screen" args="$(find hrl_task_planning)/src/ff"/>
 
     <node name="grasp_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" output="screen" />
-    <node name="manual_move_object" pkg="hrl_task_planning" type="manual_move_object" output="screen" />
+    <node name="problem_preprocessor" pkg="hrl_task_planning" type="preprocess_problems" output="screen" />
 </launch>

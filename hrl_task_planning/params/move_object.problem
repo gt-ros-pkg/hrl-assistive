@@ -1,5 +1,5 @@
 (define (problem test-move-object)
-     (:domain move-object)
+     (:domain move_object)
      (:objects block block2 target - object)
      (:init  
             (grasping left-gripper block)

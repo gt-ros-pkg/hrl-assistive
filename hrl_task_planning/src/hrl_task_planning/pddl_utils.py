@@ -505,8 +505,8 @@ class Situation(object):
         self.domain = domain
         self.problem = problem
         self.objects = self._merge_objects(domain, problem)
-        self.solution = self.solve_FF()
-        self.states = self.get_plan_intermediary_states(self.solution)
+        self.solution = None
+        self.states = []
 
     @staticmethod
     def _state_satisfies_preds(state, preds):
@@ -624,80 +624,87 @@ class Situation(object):
         result_state = self._apply_effects(action.effects, state, arg_map)
         return result_state
 
-    def get_plan_intermediary_states(self, plan):
+    def get_plan_intermediary_states(self, plan=None):
+        plan = self.solution if plan is None else plan
+        if plan is None:
+            raise RuntimeError("Cannot find intermediary plan states.  No plan probivded, and no solution already stored.")
         states = [self.problem.init]
         for step in plan:
             new_state = self.apply_action(self.domain.actions[step.name], step.args, copy.copy(states[-1]))
             states.append(new_state)
         return states
 
-    def find_irreversible_actions(self):
-        irreversible_actions = []
-        for i in range(len(self.states)-1):
-            init = set(copy.copy(self.states[i+1]))
-            goal = set(copy.copy(self.states[i]))
-            negate = init.difference(goal)  # items in init, but not in the goal.  These need to be actively negated
-            negations = [Predicate(pred.name, pred.args, True) for pred in list(negate)]
-            goal = list(goal)
-            goal.extend(negations)
-            p = Problem("undo-check-%s" % i, self.problem.domain_name, self.problem.objects, init, goal)
-            try:
-                self.solve_FF(p)
-            except PlanningException:
-                irreversible_actions.append(self.solution[i])
-        return irreversible_actions
 
-    @staticmethod
-    def _astar_dist(state, goal):
-        """ Compute the distance from the goal in terms of remaining predicates incorrect from goal."""
-        pass
+def find_irreversible_actions(self, solution, states, domain, planner):
+    irreversible_actions = []
+    for i in range(len(states)-1):
+        init = set(copy.copy(states[i+1]))
+        goal = set(copy.copy(states[i]))
+        negate = init.difference(goal)  # items in init, but not in the goal.  These need to be actively negated
+        negations = [Predicate(pred.name, pred.args, True) for pred in list(negate)]
+        goal = list(goal)
+        goal.extend(negations)
+        p = Problem("undo-check-%s" % i, self.problem.domain_name, self.problem.objects, init, goal)
+        try:
+            planner.solve(domain, p)
+        except PlanningException:
+            irreversible_actions.append(solution[i])
+    return irreversible_actions
 
-    def solve_Astar(self):
-        """ Solve this problem in this domain using the A* algorithm."""
-        pass
+#    @staticmethod
+#    def _astar_dist(state, goal):
+#        """ Compute the distance from the goal in terms of remaining predicates incorrect from goal."""
+#        pass
+#
+#    def solve_Astar(self):
+#        """ Solve this problem in this domain using the A* algorithm."""
+#        pass
+#
+#    def solve(self, problem=None):
+#        """ Masking function for switching solver implementations."""
+#        return self.solve_FF(problem)
+#
+#    def solve_FF(self, problem=None, ff_executable="../ff"):
+#        """ Solve the given problem in this domain using an external FF executable. """
+#        problem = self.problem if problem is None else problem
+#        solver = FF(self.domain, problem, ff_executable)
+#        self.solution = solver.solve()
+#        return self.solution
 
-    def solve_FF(self, problem=None):
-        """ Solve the given problem in this domain using an external FF executable. """
-        problem = self.problem if problem is None else problem
-        solver = FF(self.domain, problem, ff_executable="../ff")
-        solution = solver.solve()
-        return solution
 
-
-class Planner(object):
-    """ Base class for planners to solve PDDL problems. """
-    def __init__(self, domain, problem):
-        self.domain = domain
-        self.problem = problem
-        self.solution = None
-
-    def solve(self):
-        raise NotImplementedError()
-
-    def print_solution(self):
-        """ Print solution steps. """
-        if self.solution is None:
-            print "This problem has not been solved yet."
-        elif self.solution == []:
-            print "Result: Initial State satisfies the Goal State"
-        elif not self.solution:
-            print "Result: FF failed to find a solution"
-        else:
-            print "Result:\n\tPlan:"
-            for step in self.solution:
-                args = ', '.join(step['args'])
-                print ''.join(["\t", step['act'], "(", args, ")"])
-
+#class Planner(object):
+#    """ Base class for planners to solve PDDL problems. """
+#    def __init__(self, domain, problem):
+#        self.domain = domain
+#        self.problem = problem
+#        self.solution = None
+#
+#    def solve(self):
+#        raise NotImplementedError()
+#
+#    def print_solution(self):
+#        """ Print solution steps. """
+#        if self.solution is None:
+#            print "This problem has not been solved yet."
+#        elif self.solution == []:
+#            print "Result: Initial State satisfies the Goal State"
+#        elif not self.solution:
+#            print "Result: FF failed to find a solution"
+#        else:
+#            print "Result:\n\tPlan:"
+#            for step in self.solution:
+#                args = ', '.join(step['args'])
+#                print ''.join(["\t", step['act'], "(", args, ")"])
+#
 
 from tempfile import NamedTemporaryFile
 from subprocess import check_output, CalledProcessError
 from os import remove
 
 
-class FF(Planner):
+class FF(object):
     """ A solver instance based on an FF executable. """
-    def __init__(self, domain, problem, ff_executable='./ff'):
-        super(FF, self).__init__(domain, problem)
+    def __init__(self, ff_executable='./ff'):
         self.ff_executable = ff_executable
 
     @staticmethod
@@ -713,12 +720,12 @@ class FF(Planner):
             sol.append(PlanStep(act, args))
         return sol
 
-    def solve(self):
+    def solve(self, domain, problem):
         """ Create a temporary problem file and call FF to solve. """
         with NamedTemporaryFile() as problem_file:
-            self.problem.to_file(problem_file.name)
+            problem.to_file(problem_file.name)
             with NamedTemporaryFile() as domain_file:
-                self.domain.to_file(domain_file.name)
+                domain.to_file(domain_file.name)
                 try:
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
                     if "problem proven unsolvable." in soln_txt:

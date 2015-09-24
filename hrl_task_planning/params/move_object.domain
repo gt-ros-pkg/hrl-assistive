@@ -1,4 +1,4 @@
-(define (domain move-object)
+(define (domain move_object)
  (:requirements :typing :conditional-effects)
  (:types 
   object
@@ -10,8 +10,8 @@
              left-gripper - gripper
              start - location
              goal - location
-             elsewhere - location
-             otherwhere - location
+             somewhere - location
+             somewhere-else - location
  )
 
  (:predicates
