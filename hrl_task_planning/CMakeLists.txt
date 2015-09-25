@@ -43,6 +43,7 @@ catkin_install_python(PROGRAMS
    scripts/pddl_planner
    scripts/grasp_state_monitor
    scripts/preprocess_problems
+   scripts/task_smacher
    scripts/test_client
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

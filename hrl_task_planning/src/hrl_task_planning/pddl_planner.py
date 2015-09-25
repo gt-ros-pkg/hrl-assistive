@@ -18,11 +18,14 @@ class TaskPlannerNode(object):
 
     def plan_req_cb(self, req):
         try:
-            domain_file_param = '/'.join([req.domain, 'domain_file'])
+            domain_file_param = '/'.join([req.problem.domain, 'domain_file'])
             domain_file = rospy.get_param(domain_file_param)
         except KeyError as e:
             rospy.logerr("[%s] Could not find parameter: %s", rospy.get_name(), e.message)
             return (False, [], [])
+        except Exception as e:
+            raise rospy.ServiceException(e.message)
+        rospy.loginfo("[%s] Planner received problem:\n %s", rospy.get_name(), req.problem)
         # Create PDDL Domain object from domain file
         domain = pddl.Domain.from_file(domain_file)
         # Create PDDL Problem object from incoming message
@@ -34,7 +37,7 @@ class TaskPlannerNode(object):
         except pddl.PlanningError:
             return (False, [], [])
         states = situation.get_plan_intermediary_states()
-        states = [PDDLState(map(str, state)) for state in states]
+        states = [PDDLState(problem.name, map(str, state)) for state in states]
         return (True, map(str, situation.solution), states)
 
 

@@ -21,6 +21,7 @@ class PlanPreprocessor(object):
         self.service = rospy.Service('/preprocess_problem/%s' % self.domain, PreprocessProblem, self.problem_cb)
 
     def problem_cb(self, req):
+#        rospy.loginfo("[%s] Received Problem to process:\n%s", rospy.get_name(), req.problem)
         req.problem.init.extend(self.const_preds)
         req.problem.goal = req.problem.goal if req.problem.goal else self.default_goal
         req = self.update_request(req)
@@ -49,7 +50,7 @@ class MoveObjectPreprocessor(PlanPreprocessor):
         if None in self.gripper_grasp_state.itervalues():
             raise rospy.ServiceError("[%s] Unknown grasp state. Cannot correctly formulate plan.", rospy.get_name())
         # Update initial state predicates
-        preds = [pddl.Predicate('AT', ['target-object', 'start'])]
+        preds = []
         locations = ["start", "goal", "somewhere", "somewhere-else"]
         known_locations = [rospy.get_param("/%s/%s" % (req.problem.name, loc), None) for loc in locations]
         known_locations = [loc for loc in known_locations if loc is not None]
@@ -57,7 +58,7 @@ class MoveObjectPreprocessor(PlanPreprocessor):
         for gripper, grasping in self.gripper_grasp_state.iteritems():
             if grasping:
                 preds.append(pddl.Predicate("GRASPING", [gripper, "%s-object" % gripper]))
-        req.init.extend(map(str, preds))
+        req.problem.init.extend(map(str, preds))
 
         # Update Object list
         # Check to see if objects are already established for this task
@@ -72,7 +73,8 @@ class MoveObjectPreprocessor(PlanPreprocessor):
             obj_list = map(str, objs)
             rospy.set_param("/%s/objects" % req.problem.name, obj_list)
         req.problem.objects.extend(obj_list)
-        return req
+#        rospy.loginfo("[%s] Returning processed problem:\n%s", rospy.get_name(), req.problem)
+        return req.problem
 
 
 def main():

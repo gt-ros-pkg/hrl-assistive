@@ -296,7 +296,7 @@ class Domain(object):
 
     def check_problem(self, problem):
         """ Verify that the problem can be applied to this domain."""
-        if problem.domain_name != self.name:
+        if problem.domain_name.upper() != self.name.upper():
             print "Problem-specified domain (%s) does not match this domain (%s)" % (problem.domain_name, self.name)
             return False
         for obj in problem.objects:
@@ -435,7 +435,7 @@ class Problem(object):
     @classmethod
     def from_msg(cls, msg):
         objects = [Object.from_string(obj_str) for obj_str in msg.objects]
-        init = [Object.from_string(pred) for pred in msg.init]
+        init = [Predicate.from_string(pred) for pred in msg.init]
         goal = [Predicate.from_string(pred) for pred in msg.goal]
         return cls(msg.name, msg.domain, objects, init, goal)
 
