@@ -13,12 +13,14 @@
 
   <author email="kphawkins@gatech.edu">Kelsey Hawkins</author>
   <author email="Phillip.Grice@gatech.edu">Phillip Grice</author>
+  <author email="deric.park@gatech.edu">Daehyung Park</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <run_depend>assistive_teleop</run_depend>
   <run_depend>hrl_ellipsoidal_control</run_depend>
   <run_depend>hrl_face_adls</run_depend>
   <run_depend>hrl_head_registration</run_depend>
+  <run_depend>hrl_sound_localization</run_depend>
 
   <export>
     <metapackage/>
