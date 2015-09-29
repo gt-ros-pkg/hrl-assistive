@@ -42,6 +42,9 @@ tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
              (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
 tableau20 = np.array(tableau20)/255.0
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
 
 def fig_roc(test_title, cross_data_path, nDataSet, onoff_type, check_methods, check_dims, \
             prefix, nState=20, \
@@ -2701,7 +2704,9 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------   
     elif opt.bPathDisp:
-
+        # ICRA figure 
+        # run > python test_multi_modality.py --pd --c 0 --t 1
+        
         print "Hidden-state path Visualization of each sequence"
         true_aXData1, true_aXData2, true_chunks, false_aXData1, false_aXData2, false_chunks, nDataSet \
           = dm.loadData(pkl_file, data_path, task_names[task], f_zero_size[task], f_thres[task], \
@@ -2729,8 +2734,8 @@ if __name__ == '__main__':
         elif check_dim == 1: lhm.fit(x_train2, cov_mult=[cov_mult[task][3]]*4)
         else: lhm.fit(x_train1, x_train2, cov_mult=cov_mult[task])
 
-        x_test1 = x_train1[:1]
-        x_test2 = x_train2[:1]
+        x_test1 = x_train1 #[:1]
+        x_test2 = x_train2 #[:1]
         lhm.path_disp(x_test1, x_test2, scale1=[min_c1, max_c1, scale], \
                                 scale2=[min_c2, max_c2, scale])
 

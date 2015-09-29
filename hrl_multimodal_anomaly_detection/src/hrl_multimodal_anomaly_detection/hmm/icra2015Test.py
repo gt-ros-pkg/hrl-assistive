@@ -17,11 +17,15 @@ import matplotlib.pyplot as pp
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from itertools import product
+import matplotlib
 
 #
 from util import *
 import learning_hmm_multi_4d as hmm_4d
 import learning_hmm_multi_1d as hmm_1d
+
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 def distributionOfSequences(task_name, target_path, setID=0, scale=1.0,\
                             useTrain=True, useThsTest=False, useNormalTest=False, useAbnormalTest=False, \
@@ -1782,7 +1786,8 @@ if __name__ == '__main__':
         check_dims     = [[0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         if opt.typeClustering == 'time' :
-            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_time'
+            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+            ## data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_time'
         else:
             data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_state'
         kFold = 6
@@ -1791,7 +1796,7 @@ if __name__ == '__main__':
         downSampleSize = 120        
         nDataSet = 6
         nThres   = 60
-        nState   = 10 #8
+        nState   = 8 #10
         cov_mult = 5.0
         tot_data = None
         ## scale    = [10.0,10.0,10.0,1.0]
@@ -1822,10 +1827,11 @@ if __name__ == '__main__':
         check_dims     = [[0],[1],[2],[3], [0,1,2,3]]
         data_root_path = '/home/dpark/svn/robot1/src/projects/anomaly/feeding'
         if opt.typeClustering == 'time' :
-            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_time'
+            data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+            #data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_time'
         else:
             data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016_state'
-        ## data_target_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2016'
+        ## 
         kFold = 6
         anomaly_offset = 0.0 #only for progress?
         cutting_ratio  = [0.0, 0.8] #[0.0, 0.7]        
@@ -1833,7 +1839,7 @@ if __name__ == '__main__':
         ## threshold_mult = (np.logspace(-0.5, 1.0, 30, endpoint=True) -0.0)
         nDataSet = 6
         nThres   = 60
-        nState   = 10 #8
+        nState   = 8 #10
         cov_mult = 5.0
         tot_data = None
         scale    = [1.0,1.0,1.0,1.0]

@@ -1,0 +1,22 @@
+<package>
+  <description brief="hrl_manipulation_task">
+
+     hrl_manipulation_task
+
+  </description>
+    <author>Daehyung Park. Advisor : Prof. Charlie Kemp. Healthcare
+        Robotics Lab, Georgia Tech</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_manipulation_task</url>
+
+  <depend package="rospy"/>
+  <depend package="hrl_lib"/>
+
+  <depend package="sandbox_dpark_darpa_m3"/>
+  <depend package="sandbox_dpark_darpa_m3"/>
+
+
+</package>
+
+

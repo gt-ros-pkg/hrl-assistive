@@ -1105,7 +1105,7 @@ def kFoldLoadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_th
     print "All: ", len(true_aXData1)+len(false_aXData1), \
       " Success: ", len(true_aXData1), \
       " Failure: ", len(false_aXData1)
-      
+
     count = 0 
       
     if an_type is None:
@@ -1177,7 +1177,7 @@ def loadData(pkl_file, data_path, task_name, f_zero_size, f_thres, audio_thres, 
         d = cutting_for_robot(d, f_zero_size=f_zero_size, f_thres=f_thres, \
                                  audio_thres=audio_thres, dtw_flag=False)        
         ut.save_pickle(d, pkl_file)
-        
+
     #
     aXData1  = d['ft_force_mag_l']
     aXData2  = d['audio_rms_l'] 
