@@ -12,9 +12,9 @@ import matplotlib.animation as animation
 directory = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/src/hrl_multimodal_anomaly_detection/onlineDataRecordings/'
 # fileName = directory + 't2/t2_f_success.pkl'
 # fileName = directory + 's10/s10_f_success.pkl'
-fileName = directory + 's11/ash_b_success_scooping.pkl'
+# fileName = directory + 's11/ash_b_success_scooping.pkl'
 # fileName = directory + 's11/ash_b_success_feeding.pkl'
-# fileName = directory + 's11/ash_b_failure_bowl.pkl'
+fileName = directory + 's11/ash_b_failure_bowl.pkl'
 # fileName = directory + 's11/ash_b_feedingfailure_collision.pkl'
 isNewFormat = True
 isFailure = 'failure' in fileName
@@ -40,7 +40,7 @@ with open(fileName, 'rb') as f:
         likelihoods = data['likelihoods']
 
 print np.shape(times)
-        
+
 if isNewFormat:
     ll_likelihood = [x[0] for x in likelihoods]
     ll_state_idx = [x[1] for x in likelihoods]
@@ -114,6 +114,20 @@ if len(ll_likelihood) > len(times):
 elif len(ll_likelihood) < len(times):
     times = times[:len(ll_likelihood)]
     print 'New times length:', len(times), 'New likelihood length:', len(ll_likelihood)
+
+
+# Remove entries so long as the beginning likelihood is below threshold
+for index in xrange(len(ll_likelihood)):
+    minIndex = ll_state_idx[index]
+    thresholdValue = ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index]
+    if ll_likelihood[index] < thresholdValue:
+        ll_likelihood.pop(0)
+        ll_state_idx.pop(0)
+        ll_likelihood_mu.pop(0)
+        ll_likelihood_std.pop(0)
+    else:
+        break
+
 
 # Determine thresholds
 thresholdValues = []
