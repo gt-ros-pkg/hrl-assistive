@@ -121,6 +121,7 @@ for index in xrange(len(ll_likelihood)):
     minIndex = ll_state_idx[index]
     thresholdValue = ll_likelihood_mu[index] + minThresholds[minIndex]*ll_likelihood_std[index]
     if ll_likelihood[index] < thresholdValue:
+        times.pop(0)
         ll_likelihood.pop(0)
         ll_state_idx.pop(0)
         ll_likelihood_mu.pop(0)

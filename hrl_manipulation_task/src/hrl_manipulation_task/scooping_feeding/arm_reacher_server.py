@@ -32,8 +32,8 @@ class armReachAction(mpcBaseAction):
         else:  self.arm = 'right'
         self.interrupted = False
 
-        self.bowl_pos_kinect  = None
-        self.mouth_pos_kinect = None
+        self.bowl_frame_kinect  = None
+        self.mouth_frame_kinect = None
         self.default_frame    = PyKDL.Frame()
 
         self.initCommsForArmReach()                            
@@ -43,9 +43,9 @@ class armReachAction(mpcBaseAction):
         while not rospy.is_shutdown():
             if self.getJointAngles() != []:
                 print "--------------------------------"
-                print "Current left arm joint angles"
+                print "Current "+self.arm+" arm joint angles"
                 print self.getJointAngles()
-                print "Current left arm pose"
+                print "Current "+self.arm+" arm pose"
                 print self.getEndeffectorPose()
                 print "--------------------------------"
                 break
@@ -78,7 +78,7 @@ class armReachAction(mpcBaseAction):
 
         MOVEP: straight motion without orientation control (ex. MOVEP pos-euler timeout relative_frame)
         MOVES: straight motion with orientation control (ex. MOVES pos-euler timeout relative_frame)
-        MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout)
+        MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
         MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
 
@@ -88,18 +88,38 @@ class armReachAction(mpcBaseAction):
         '''
         
         self.motions = {}
+
+        ## test motoins --------------------------------------------------------
+        self.motions['test_orient'] = {}
+        self.motions['test_orient']['left'] = \
+          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],\
+          ['MOVET', '[ 0, 0, 0, 1.0, 0, 0]', 5.0],\
+          ['MOVET', '[ 0, 0, 0, -1.0, 0, 0]', 5.0],\
+          ['MOVET', '[ 0, 0, 0, 0, 0.5, 0]', 5.0],\
+          ['MOVET', '[ 0, 0, 0, 0, -0.5, 0]', 5.0]]
+        self.motions['test_orient']['right'] =\
+          [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
+
+        self.motions['test_pos'] = {}
+        self.motions['test_pos']['left'] = \
+          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],\
+          ['MOVET', '[ 0, 0, 0.3, 0, 0, 0]', 5.0],\
+          ['MOVET', '[ 0, 0, -0.3, 0, 0, 0]', 5.0],\
+          ['MOVET', '[ 0, 0.3, 0, 0, 0, 0]', 5.0],\
+          ['MOVET', '[ 0, -0.3, 0, 0, 0, 0]', 5.0]]
+        self.motions['test_pos']['right'] = []
         
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame                        
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', [1.570,     0, 1.570, -1.570, -4.71, 0, -1.570], 10.0] ] 
+          [['MOVEJ', '[1.570,     0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0] ] 
         self.motions['initScooping']['right'] = \
-          []
+          [['MOVEJ', '[1.570,     0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0] ]
           
         self.motions['runScooping'] = {}
-        self.motions['runScooping']['left'] = \        
-          [['MOVEJ', [1.570,     0, 1.570, -1.570, -4.71, 0, -1.570], 10.0],
+        self.motions['runScooping']['left'] = \
+          [['MOVEJ', [1.570,     0, 1.570, -1.570, -4.71, 0, -1.570], 10.0],\
            ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(),  .15+self.bowl_frame.p.z(),  90, -50, -30]', 6, 'self.default_frame'], 
            ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.055+self.bowl_frame.p.z(), 90, -50,	-30]', 3, 'self.default_frame'], #Moving down into bowl
            ['MOVES', '[  .02+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.025+self.bowl_frame.p.z(), 90, -30,	-30]', 3, 'self.default_frame'], #Moving forward in bowl
@@ -136,19 +156,18 @@ class armReachAction(mpcBaseAction):
         self.interrupted = False
 
         if req == "getBowlPos":
-            if self.bowl_pos_kinect is not None:
+            if self.bowl_frame_kinect is not None:
                 self.bowl_frame = self.bowl_frame_kinect
                 return "Chose kinect bowl position"
-            elif self.bowl_pos_kinect is None:
-                # TODO: Need to update!!!
+            elif self.bowl_frame_kinect is None:
                 # Get frame info from right arm and upate bowl_pos                
-                self.bowl_frame = PyKDL.Frame()
+                self.bowl_frame = PyKDL.Frame()  # TODO: Need to update!!!
                 return "Chose bowl position from kinematics using tf"                
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
         elif req == "getHeadPos":
-            if self.mouth_pos_kinect is not None:
+            if self.mouth_frame_kinect is not None:
                 self.mouth_frame = self.mouth_frame_kinect
                 return "Chose kinect head position"
             else:
@@ -156,6 +175,8 @@ class armReachAction(mpcBaseAction):
                 Provide head position and try again!"
         else:
             self.parsingMovements(self.motions[req][self.arm])
+            return "Completed to execute "+req 
+
         ## else:
         ##     return "Request not understood by server!!!"
 
@@ -168,7 +189,7 @@ class armReachAction(mpcBaseAction):
         
             if motion[0] == 'MOVEP':   
                 poseData  = eval(motion[1])            
-                frameData  = eval(motion[3])            
+                if len(motion)>3: frameData  = eval(motion[3])            
                 pos.x = poseData[0]
                 pos.y = poseData[1]
                 pos.z = poseData[2]
@@ -176,7 +197,7 @@ class armReachAction(mpcBaseAction):
                 
             elif motion[0] == 'MOVES':
                 poseData  = eval(motion[1])            
-                frameData  = eval(motion[3])            
+                if len(motion)>3: frameData  = eval(motion[3])            
                 pos.x = poseData[0]
                 pos.y = poseData[1]
                 pos.z = poseData[2]
@@ -211,17 +232,15 @@ class armReachAction(mpcBaseAction):
                 self.setOrientGoal(pos, quat, motion[2])                
                 
             elif motion[0] == 'MOVEJ': 
-                self.setPostureGoal(motionData, motion[2])
+                self.setPostureGoal(eval(motion[1]), motion[2])
                 
             elif motion[0] == 'PAUSE': 
                 rospy.sleep(motions[1])
                 print "Pausing for ", motions[1], " seconds "
 
+                
             if self.interrupted:
                 break
-                
-        else:
-            return "Request not understood by server!!!"
                 
 
     def bowlPoseCallback(self, data):
@@ -282,7 +301,7 @@ if __name__ == '__main__':
     d_robot    = 'pr2'
     controller = 'static'
     #controller = 'actionlib'
-    arm        = 'l'
+    arm        = opt.arm
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
     ara = armReachAction(d_robot, controller, arm)

@@ -24,7 +24,7 @@
     <depend package="image_geometry"/>
     <depend package="cv_bridge"/>
     <!--depend package="sound_play"/-->
-    <!--depend package="ar_track_alvar"/-->
+    <depend package="ar_track_alvar"/>
 
     <depend package="hrl_lib"/>
     <depend package="kdl"/>

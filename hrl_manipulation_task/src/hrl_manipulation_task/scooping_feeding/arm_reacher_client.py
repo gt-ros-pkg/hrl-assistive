@@ -20,41 +20,41 @@ if __name__ == '__main__':
     rospy.init_node('feed_client')
 
     rospy.wait_for_service("/arm_reach_enable")
-    armReachAction = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
     #armMovements = rospy.ServiceProxy("/arm_reach_enable", None_Bool)
 
-    ## ret = armReachAction()
-    ## #ret = armMovements()
-    ## print ret
-
+    ## TEST -----------------------------------    
+    # TODO: this code should be run in parallel.
+    print armReachActionLeft("test_orient")
+    print armReachActionRight("test_orient")
+    
     ## Scooping -----------------------------------    
-    print "Initializing left arm for scooping"
-    print armReachAction("leftArmInitScooping")
+    ## print "Initializing left arm for scooping"
+    ## print armReachAction("initScooping")
 
-    print armReachAction("chooseManualBowlPos")
-    ut.get_keystroke('Hit a key to proceed next')        
-
-    print 'Initializing scooping'
-    print armReachAction('initArmScooping')
-
-    print "Running scooping!"
-    print armReachAction("runScooping")
-    time.sleep(2.0)    
-
-
-    ## Feeding -----------------------------------
-    print "Initializing left arm for feeding"
-    print armReachAction("leftArmInitFeeding")
-
-    print armReachAction("chooseManualHeadPos")
-
-    print 'Initializing feeding'
-    print armReachAction('initArmFeeding')
-    time.sleep(2.0)    
+    ## print armReachAction("getBowlPos")
     ## ut.get_keystroke('Hit a key to proceed next')        
 
-    print "Running feeding!"
-    print armReachAction("runFeeding")
+    ## print "Running scooping!"
+    ## print armReachAction("runScooping")
+    
+    ## time.sleep(2.0)    
+
+
+    ## ## Feeding -----------------------------------
+    ## print "Initializing left arm for feeding"
+    ## print armReachAction("leftArmInitFeeding")
+
+    ## print armReachAction("chooseManualHeadPos")
+
+    ## print 'Initializing feeding'
+    ## print armReachAction('initArmFeeding')
+    ## time.sleep(2.0)    
+    ## ## ut.get_keystroke('Hit a key to proceed next')        
+
+    ## print "Running feeding!"
+    ## print armReachAction("runFeeding")
     
 
 
