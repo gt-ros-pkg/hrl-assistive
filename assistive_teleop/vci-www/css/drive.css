@@ -36,10 +36,6 @@
     background-image: url('./cursors/eyes/eyes-right.png');
 }
 
-#mjpeg {
-    overflow: hidden;
-}
-
 #drive-lines {
     position: absolute;
     left: 0%;

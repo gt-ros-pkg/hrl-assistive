@@ -1,7 +1,7 @@
 RFH.TaskMenu = function (divId) {
     "use strict";
     var self = this;
-    self.divId = divId;
+    self.div = $('#'+divId);
     self.tasks = {};
     self.activeTask = null;
 
@@ -13,20 +13,20 @@ RFH.TaskMenu = function (divId) {
             checkbox.id = taskObject.buttonText;
             var label = document.createElement('label');
             label.htmlFor = taskObject.buttonText;
-            $('#'+divId).append(checkbox, label);
+            self.div.append(checkbox, label);
             $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
             $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item');
-            $('#'+taskObject.buttonText).on('click.rfh', function(event){ self.buttonCB(taskObject) });
+            $('#'+taskObject.buttonText).on('click.rfh', function(event){ self.buttonCB(taskObject); });
         }
     };
 
     self.buttonCB = function (taskObject) {
         if (taskObject === self.activeTask) {
             self.stopTask(taskObject);
-            self.tasks['lookingTask'].start();
-            self.activeTask = self.tasks['lookingTask'];
+            self.tasks.lookingTask.start();
+            self.activeTask = self.tasks.lookingTask;
         } else {
-            self.stopTask(self.activeTask)
+            self.stopTask(self.activeTask);
             taskObject.start();
             self.activeTask = taskObject;
         }
@@ -44,31 +44,31 @@ RFH.TaskMenu = function (divId) {
     self.removeTask = function (taskObject) {
         self.stopTast(taskObject);
         $('#'+taskObject.buttonText).off('click.rfh');
-        $('#'+self.divId).removeChild('#'+taskObject.buttonText);
+        self.div.removeChild('#'+taskObject.buttonText);
         self.tasks.pop(self.tasks.indexOf(taskObject));
     };
-}
+};
 
 RFH.initTaskMenu = function (divId) {
     RFH.taskMenu = new RFH.TaskMenu( divId );
     RFH.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
-                                       div: 'mjpeg',
+                                       div: 'video-main',
                                        head: RFH.pr2.head,
                                        camera: RFH.mjpeg.cameraModel}));
 
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
-                                                     div: 'mjpeg',
+                                                     div: 'video-main',
                                                      gripper: RFH.pr2.l_gripper,
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
 
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
-                                                     div: 'mjpeg',
+                                                     div: 'video-main',
                                                      gripper: RFH.pr2.r_gripper,
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
 
-    RFH.taskMenu.addTask(new RFH.Torso({containerDiv: 'mjpeg',
+    RFH.taskMenu.addTask(new RFH.Torso({containerDiv: 'video-main',
                                         sliderDiv: 'torsoSlider',
                                         torso: RFH.pr2.torso}));
 
@@ -77,7 +77,9 @@ RFH.initTaskMenu = function (divId) {
                                        camera: RFH.mjpeg.cameraModel,
                                        head: RFH.pr2.head,
                                        base: RFH.pr2.base}));
+    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
+                                    
     // Start looking task by default
-    RFH.taskMenu.tasks['lookingTask'].start();
-    RFH.taskMenu.activeTask = RFH.taskMenu.tasks['lookingTask'];
-}
+    RFH.taskMenu.tasks.lookingTask.start();
+    RFH.taskMenu.activeTask = RFH.taskMenu.tasks.lookingTask;
+};

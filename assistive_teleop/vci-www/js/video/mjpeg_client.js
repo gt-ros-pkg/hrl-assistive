@@ -1,15 +1,14 @@
 RFH.MjpegClient = function (options) {
     "use strict";
     var self = this;
-    var options = options || {};
+    options = options || {};
     self.imageTopic = options.imageTopic;
-    self.containerId = options.containerId;
     self.divId = options.divId;
     self.imageId = options.imageId || self.divId + '-image';
     self.server = "http://"+options.host+":"+options.port;
     self.activeParams = {'quality': options.quality || 65,
                          'topic': options.imageTopic,
-                         'type': options.type || 'mjpeg'}
+                         'type': options.type || 'mjpeg'};
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
                                                infoTopic: options.infoTopic,
@@ -21,8 +20,8 @@ RFH.MjpegClient = function (options) {
             return false;
         }
         var camRatio = self.cameraModel.width/self.cameraModel.height;
-        var contWidth = $('#'+self.containerId).width();
-        var contHeight = $('#'+self.containerId).height();
+        var contWidth = $('body').width() - $('#'+self.divId).offset().left;
+        var contHeight = $('body').height() - $('#'+self.divId).offset().top;
         var contRatio = contWidth/contHeight;
         if (contRatio > camRatio) {
             var width  = contHeight * camRatio;
@@ -39,15 +38,16 @@ RFH.MjpegClient = function (options) {
 
     // Update the server and display to reflect the current properties
     self.update = function () {
-        var srcStr = self.server+ "/stream?"
+        var srcStr = self.server + "/stream?";
         for (var param in self.activeParams)
         {
-            srcStr += param + '=' + self.activeParams[param] + '&'
+            srcStr += param + '=' + self.activeParams[param] + '&';
         }
         $("#"+self.imageId).attr("src", srcStr);
         console.log("Video Request: ", srcStr);
-        $("#"+self.divId).width(self.activeParams['width'])
-                         .height(self.activeParams['height']);
+//        $("#"+self.divID).width(self.activeParams['width'])
+        $("#"+self.imageID).width(self.activeParams.width)
+                           .height(self.activeParams.height);
     };
 
     self.int_params = ['height', 'width', 'quality'];
@@ -97,16 +97,16 @@ RFH.ROSCameraModel = function (options) {
 
     self.tryTFSubscribe = function () {
         if (self.frame_id !== '') {
-            self.tfClient.subscribe(self.camera.frame_id, function (tf) { self.transform = tf });
+            self.tfClient.subscribe(self.camera.frame_id, function (tf) { self.transform = tf;});
             console.log("Got camera data, subscribing to TF Frame: "+self.camera.frame_id);
         } else {
             console.log("No camera data -> no TF Transform");
             setTimeout(self.tryTFSubscribe, 500);
             }
-    }
+    };
 
     self.infoMsgCB = function (infoMsg) {
-        console.log("Updating camera model from " + self.infoTopic)
+        console.log("Updating camera model from " + self.infoTopic);
         self.frame_id = infoMsg.header.frame_id;
         if (self.rotated) { self.frame_id += '_rotated'; }
         self.width = infoMsg.width;
@@ -130,43 +130,43 @@ RFH.ROSCameraModel = function (options) {
         self.KR_inv = numeric.inv(self.KR);
         self.has_data = true;
         if (self.frame_id !== '') {
-            self.tfClient.subscribe(self.frame_id, function (tf) { self.transform = tf });
+            self.tfClient.subscribe(self.frame_id, function (tf) { self.transform = tf; });
             console.log("Subscribing to TF Frame: "+self.frame_id);
         } else {
             console.log("Camera at " + self.infoTopic + " reported empty frame id, cannot get TF data");
         }
         self.cameraInfoSubscriber.unsubscribe(); // Close subscriber to save bandwidth
-        }
+        };
     
     self.infoSubCBList = [self.infoMsgCB];
     self.infoSubCB = function (msg) {
         for (var cb in self.infoSubCBList) {
            self.infoSubCBList[cb](msg); 
        }
-    }
+    };
     self.updateCameraInfo = function () {
         // Re-subscribe to get new parameters
         self.has_data = false;
         self.cameraInfoSubscriber.subscribe(self.infoSubCB);
-    }
+    };
 
     // back-project a pixel some distance into the real world
     // Returns a geoemtry_msgs/PointStamped msg
     self.projectPixel = function (px, py, dist) { 
-       if (!self.has_data) { console.error("Camera Model has not received data from "+self.infoTopic); };
+       if (!self.has_data) { console.error("Camera Model has not received data from "+self.infoTopic); }
        var d = dist !== undefined ? dist : 2; 
        var pixel_hom = [[px],[py],[1]]; //Pixel value in homogeneous coordinates
        var vec = numeric.dot(self.KR_inv, pixel_hom);
        vec = numeric.transpose(vec)[0];
        var mag = numeric.norm2(vec);
        return numeric.mul(d/mag, vec);
-    }
+    };
 
     self.checkFrameId = function (frame_id) {
         if (frame_id[0] === '/') { frame_id = frame_id.substring(1); }
         var fixedFrame = self.tfClient.fixedFrame.substring(1);
         return (frame_id !== fixedFrame && frame_id !== self.frame_id) ? false : true;
-    }
+    };
 
     self.projectPoints = function (pts, frame_id) {
         if (!self.has_data) { //Make sure camera has own transform data
@@ -178,7 +178,7 @@ RFH.ROSCameraModel = function (options) {
             console.log("cameraModel -- Unknown Frame Id: ", frame_id);
             return;
         }
-        var ptsFlat = pts.reduce(function(a,b){return a.concat(b)});
+        var ptsFlat = pts.reduce(function(a,b){return a.concat(b);});
         if (frame_id === self.tfClient.fixedFrame.substring(1)) {
             var q = new THREE.Quaternion(self.transform.rotation.x,
                                          self.transform.rotation.y,
@@ -196,15 +196,15 @@ RFH.ROSCameraModel = function (options) {
         }
         var pixel_hom = numeric.dot(self.P, numeric.transpose(pts));
         pixel_hom = numeric.transpose(pixel_hom);
-        for (var i=0; i < pixel_hom.length; i++) {
-            pixel_hom[i][0] /= pixel_hom[i][2]
-            pixel_hom[i][1] /= pixel_hom[i][2]
-            pixel_hom[i][0] /= self.width;
-            pixel_hom[i][1] /= self.height;
-            pixel_hom[i].pop();
+        for (var j=0; j < pixel_hom.length; j++) {
+            pixel_hom[j][0] /= pixel_hom[j][2];
+            pixel_hom[j][1] /= pixel_hom[j][2];
+            pixel_hom[j][0] /= self.width;
+            pixel_hom[j][1] /= self.height;
+            pixel_hom[j].pop();
         }
         return pixel_hom;
-    }
+    };
 
     self.projectPoint = function (px, py, pz, frame_id) {
         if (typeof frame_id === 'undefined') {
@@ -233,19 +233,20 @@ RFH.ROSCameraModel = function (options) {
         var pix_x = pixel_hom[0]/pixel_hom[2];
         var pix_y = pixel_hom[1]/pixel_hom[2];
         return [pix_x/self.width, pix_y/self.height];
-    }
+    };
 };
 
 var initMjpegCanvas = function (divId) {
     "use strict";
-    $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
+//    $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
                                      imageTopic: '/head_mount_kinect/rgb/image',
                                      infoTopic: '/head_mount_kinect/rgb/camera_info',
-                                     containerId: 'video-main',
-                                     divId: 'mjpeg',
+                                     divId: 'video-main',
+                                     imageId: 'mjpeg-image',
                                      host: RFH.ROBOT,
                                      port: 8080,
+                                     quality: 20,
                                      tfClient:RFH.tfClient});
     RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
     RFH.mjpeg.cameraModel.updateCameraInfo();

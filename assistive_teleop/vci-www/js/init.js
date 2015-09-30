@@ -96,8 +96,8 @@ var RFH = {
         RFH.pixel23DClient = new RFH.Pixel23DClient({ros: RFH.ros,
                                                      cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
                                                      });
-        initMjpegCanvas('video-main');
-        initMarkerDisplay('markers');
+        initMjpegCanvas();
+        initViewer('video-main');
         RFH.initTaskMenu('main-menu');
         RFH.undo = new RFH.Undo({ros: RFH.ros,
                                  undoTopic: '/undo',
