@@ -10,11 +10,11 @@ var extendROSJS = function (ros) {
             var req = new ROSLIB.ServiceRequest({type: msgType});
             ros.getMsgDetailsClient.callService(req, function(res) {
                 ros.msgs = ros.msgs || {};
-                for (item in res.typedefs){
+                for (var item in res.typedefs){
                     if (ros.msgs[res.typedefs[item].type] === undefined) {
                         console.log('Imported '+
-                            res.typedefs[item].type.toString()+' Msg')
-                        ros.msgs[res.typedefs[item].type] = res.typedefs[item] 
+                            res.typedefs[item].type.toString()+' Msg');
+                        ros.msgs[res.typedefs[item].type] = res.typedefs[item] ;
                     }
                 }
             });
@@ -23,12 +23,12 @@ var extendROSJS = function (ros) {
 
     ros.composeMsg = function (type) {
         if (ros.msgs[type] === undefined) {
-            console.error('Cannot compose '+ type + 'message:'+
+            console.error('Cannot compose '+ type + ' message: '+
                           'Message details not imported');
-            return
+            return;
         }
         var msg = {};
-        for (field in ros.msgs[type].fieldnames){
+        for (var field in ros.msgs[type].fieldnames){
             var example = ros.msgs[type].examples[field];
             if (example === "{}"){
                 msg[ros.msgs[type].fieldnames[field]] =
@@ -45,6 +45,6 @@ var extendROSJS = function (ros) {
                 msg[ros.msgs[type].fieldnames[field]] = undefined;
             }
         }
-        return msg
+        return msg;
     };
-}
+};
