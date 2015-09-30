@@ -61,7 +61,7 @@ class TaskSmacher(object):
         state_machine = self.build_sm(solution, self.modules[req.domain].get_action_state)
 
         try:
-            if self.running_sm_threads[req.problem].is_alive():
+            if self.running_sm_threads[req.name].is_alive():
                 self.running_sm_thread.preempt()
                 rospy.loginfo("[%s] Preempt requested. Waiting for State Machine for %s to finish.",
                             rospy.get_name(), self.running_sm_thread.problem_name)
@@ -69,8 +69,8 @@ class TaskSmacher(object):
         except KeyError:
             pass
 
-        self.running_sm_threads[req.problem] = StateMachineThread(state_machine, req.name)
-        self.running_sm_threads[req.problem].start()
+        self.running_sm_threads[req.name] = StateMachineThread(state_machine, req.name)
+        self.running_sm_threads[req.name].start()
 
     def build_sm(self, solution, get_state_fn):
         plan = map(PlanStep.from_string, solution.steps)

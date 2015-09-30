@@ -5,18 +5,18 @@ RFH.MoveObject = function (options) {
     self.name = options.name || 'moveObjectTask';
     self.buttonText = 'Move_Object';
     self.buttonClass = 'move-object-button';
-    self.ros.getMsgDetails('geometry_msgs/PoseStamped');
+    self.ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: self.ros,
         name: '/perform_task',
-        messageType: '/hrl_task_planning/PDDLProblem'
+        messageType: 'hrl_task_planning/PDDLProblem'
     });
     self.taskPublisher.advertise();
 
     self.publishMoveObject = function () {
-        msg = self.ros.composeMsg('/hrl_task_planning/PDDLProblem');
-        msg.name = 'move-object-'+ new Date().getTime().toString();
-        msg.domain = 'move-object';
+        var msg = self.ros.composeMsg('hrl_task_planning/PDDLProblem');
+        msg.name = 'move_object_'+ new Date().getTime().toString();
+        msg.domain = 'move_object';
         self.taskPublisher.publish(msg);
     };
 
