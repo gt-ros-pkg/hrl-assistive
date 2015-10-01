@@ -3,8 +3,7 @@ import pylab
 import exceptions
 import harkpython.harkbasenode as harkbasenode
 ## import harkbasenode
-
-import hrl_common_code_darpa_m3.visualization.draw_scene as ds
+## import hrl_common_code_darpa_m3.visualization.draw_scene as ds
 
 def cartesian2polar(xyz):
     """cartesian2polar(x, y, z)
@@ -44,6 +43,7 @@ class HarkNode(harkbasenode.HarkBaseNode):
                 
                 self.plot_frame[src["id"]].append(self.count)
                 (r, theta, phi) = cartesian2polar(src["x"])
+                print r
                 self.plot_r[src["id"]].append(r)
                 self.plot_theta[src["id"]].append(r2d(theta))
                 self.plot_azimuth[src["id"]].append(r2d(phi))
@@ -53,7 +53,7 @@ class HarkNode(harkbasenode.HarkBaseNode):
                 
                 if i == 0: pylab.hold(False)
                 else: pylab.hold(True)
-                pylab.plot(self.plotx[srcid], self.ploty[srcid], "." + "rgb"[srcid%3])
+                pylab.plot(self.plot_frame[srcid], self.plot_azimuth[srcid], "." + "rgb"[srcid%3])
             pylab.xlim([self.count-self.winlen, self.count])
             pylab.ylim([-180, 180])
             pylab.xlabel("Time [frame]")
