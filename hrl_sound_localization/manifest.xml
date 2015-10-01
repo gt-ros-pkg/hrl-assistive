@@ -1,0 +1,20 @@
+<package>
+    <description brief="hrl_sound_localization">
+
+        hrl_sound_localization
+
+    </description>
+    <author>Daehyung Park. Advisor : Prof. Charlie Kemp. Healthcare
+        Robotics Lab, Georgia Tech</author>
+    <license>BSD</license>
+    <review status="unreviewed" notes=""/>
+    <url>http://ros.org/wiki/</url>
+
+    <depend package="rospy"/>
+    <depend package="std_msgs"/>
+    <depend package="hark_msgs"/>
+    <depend package="hrl_common_code_darpa_m3"/>
+
+</package>
+
+

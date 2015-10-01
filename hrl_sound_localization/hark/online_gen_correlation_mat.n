@@ -1,0 +1,61 @@
+#!/usr/bin/env batchflow
+<?xml version="1.0"?>
+<Document>
+  <Network type="subnet" name="MAIN">
+    <Node name="node_LOOP0_1" type="LOOP0" x="260" y="180">
+    </Node>
+    <NetOutput name="OUTPUTCM" node="node_LOOP0_1" terminal="OUTPUTCM" object_type="any" description="Dynamic"/>
+  </Network>
+  <Network type="iterator" name="LOOP0">
+    <Node name="node_AudioStreamFromMic_1" type="AudioStreamFromMic" x="220" y="180">
+      <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
+      <Parameter name="CHANNEL_COUNT" type="int" value="4" description="The number of channels."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="DEVICETYPE" type="string" value="ALSA" description="Device type [default: WS]."/>
+      <Parameter name="GAIN" type="string" value="0dB" description="capture gain (dB)  [default: 0dB]."/>
+      <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
+    </Node>
+    <Node name="node_MultiFFT_1" type="MultiFFT" x="520" y="180">
+      <Parameter name="LENGTH" type="int" value="512" description="FFT length in sample. [default: 512]"/>
+      <Parameter name="WINDOW" type="string" value="CONJ" description="A window function for FFT. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: CONJ]"/>
+      <Parameter name="WINDOW_LENGTH" type="int" value="512" description="Window length of the window function. [default: 512]"/>
+    </Node>
+    <Node name="node_CMMakerFromFFTwithFlag_1" type="CMMakerFromFFTwithFlag" x="890" y="180">
+      <Parameter name="DURATION_TYPE" type="string" value="FLAG_PERIOD" description="If FLAG_PERIOD, CM is generated based on ADDER_FLAG. If WINDOW_PERIOD, CM is generated every PERIOD frames."/>
+      <Parameter name="WINDOW" type="int" value="50" description="The number of frames used for calculating a correlation function."/>
+      <Parameter name="PERIOD" type="int" value="50" description="The period for outputting the correlation matrix. Even if ADDER_FLAG is kept to be 1, this block forcely executes NormalizeCorrelation when sum_count is over PERIOD. Set this value 0 if you do not want to use this function."/>
+      <Parameter name="WINDOW_TYPE" type="string" value="FUTURE" description="Window selection to accumulate a correlation function. If PAST, the past WINDOW frames from the current frame are used for the accumulation. If MIDDLE, the current frame will be the middle of the accumulated frames. If FUTURE, the future WINDOW frames from the current frame are used for the accumulation. FUTURE is the default from version 1.0, but this makes a delay since we have to wait for the future information. PAST generates a internal buffers for the accumulation, which realizes no delay for localization."/>
+      <Parameter name="MAX_SUM_COUNT" type="int" value="200" description="The maximum count for adding the correlation matrix. Even if ADDER_FLAG is kept to be 1, this block forcely executes NormalizeCorrelation when sum_count is over MAX_SUM_COUNT. Set this value 0 if you do not want to use this function."/>
+      <Parameter name="ENABLE_ACCUM" type="bool" value="false" description="enable to accumulate the hitory of correlation matrix."/>
+      <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="enable debug print"/>
+    </Node>
+    <Node name="node_Smaller_1" type="Smaller" x="650" y="270">
+    </Node>
+    <Node name="node_CMSave_1" type="CMSave" x="930" y="340">
+      <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="enable debug print"/>
+    </Node>
+    <Node name="node_Constant_2" type="Constant" x="670" y="360">
+      <Parameter name="VALUE" type="string" value="correlation_mat.zip" description="The value"/>
+    </Node>
+    <Node name="node_Equal_1" type="Equal" x="670" y="520">
+    </Node>
+    <Node name="node_IterCount_1" type="IterCount" x="260" y="420">
+    </Node>
+    <Node name="node_Constant_4" type="Constant" x="270" y="530">
+      <Parameter name="VALUE" type="int" value="200" description="The value"/>
+    </Node>
+    <Link from="node_AudioStreamFromMic_1" output="AUDIO" to="node_MultiFFT_1" input="INPUT"/>
+    <Link from="node_MultiFFT_1" output="OUTPUT" to="node_CMMakerFromFFTwithFlag_1" input="INPUT"/>
+    <Link from="node_Smaller_1" output="OUTPUT" to="node_CMMakerFromFFTwithFlag_1" input="ADDER_FLAG"/>
+    <Link from="node_CMMakerFromFFTwithFlag_1" output="OUTPUT" to="node_CMSave_1" input="INPUTCM"/>
+    <Link from="node_IterCount_1" output="OUTPUT" to="node_Smaller_1" input="INPUT1"/>
+    <Link from="node_Constant_2" output="VALUE" to="node_CMSave_1" input="FILENAMER"/>
+    <Link from="node_Equal_1" output="OUTPUT" to="node_CMSave_1" input="OPERATION_FLAG"/>
+    <Link from="node_Constant_4" output="VALUE" to="node_Equal_1" input="INPUT2"/>
+    <Link from="node_Constant_4" output="VALUE" to="node_Smaller_1" input="INPUT2"/>
+    <Link from="node_IterCount_1" output="OUTPUT" to="node_Equal_1" input="INPUT1"/>
+    <NetCondition name="CONDITION" node="node_AudioStreamFromMic_1" terminal="NOT_EOF"/>
+    <NetOutput name="OUTPUTCM" node="node_CMSave_1" terminal="OUTPUTCM" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Same as INPUTCM"/>
+  </Network>
+</Document>

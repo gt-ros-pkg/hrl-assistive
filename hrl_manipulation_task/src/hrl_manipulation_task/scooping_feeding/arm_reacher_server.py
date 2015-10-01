@@ -64,7 +64,7 @@ class armReachAction(mpcBaseAction):
         
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
-        self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
+        ## self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
         rospy.loginfo("ROS-based communications are set up .")
                                     
