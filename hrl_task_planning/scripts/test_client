@@ -3,7 +3,6 @@
 import rospy
 from hrl_task_planning.msg import PDDLProblem
 
-
 if __name__ == '__main__':
     rospy.init_node('planning_test_node')
     test_pub = rospy.Publisher('/perform_task', PDDLProblem, latch=True)

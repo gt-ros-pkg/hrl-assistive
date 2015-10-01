@@ -3,7 +3,9 @@ RFH.Look = function (options) {
     var self = this;
     self.name = options.name || 'lookingTask';
     self.ros = options.ros;
-    self.div = options.div || 'mjpeg';
+    var imageDivId = options.imageDivId || 'mjpeg-image';
+    self.imageDiv = $("#" + imageDivId);
+    self.mapLookDivs = $(".map-look");
     self.camera = options.camera || new RFH.ROSCameraModel();
     self.head = options.head || new Pr2Head(self.ros);
     
@@ -14,10 +16,10 @@ RFH.Look = function (options) {
     for (var i = 0; i < lookAreas.length; i += 1) {
         var dx = 0, dy = 0;
         var classes = lookAreas[i].classList;
-        if (classes.contains("top")) { dy = -SCALE  * vfov };
-        if (classes.contains("bottom")) { dy = SCALE  * vfov };
-        if (classes.contains("left")) { dx = SCALE * hfov };
-        if (classes.contains("right")) { dx = -SCALE * hfov };
+        if (classes.contains("top")) { dy = -SCALE  * vfov; }
+        if (classes.contains("bottom")) { dy = SCALE  * vfov; }
+        if (classes.contains("left")) { dx = SCALE * hfov; }
+        if (classes.contains("right")) { dx = -SCALE * hfov; }
         $(lookAreas[i]).on('click.rfh-look', {dx: dx, dy: dy}, function (event) {
             self.head.delPosition(event.data.dx, event.data.dy); 
             event.stopPropagation();
@@ -33,14 +35,14 @@ RFH.Look = function (options) {
     };
 
     self.start = function () {
-        $('#'+self.div + '-image').addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
-        $('.map-look').css("display","block");
+        self.imageDiv.addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
+        self.mapLookDivs.css("display","block");
         console.log('Looking task started');
     };
 
     self.stop = function () {
-        $('#'+self.div + '-image').removeClass("cursor-eyes").off("click.rfh-look");
-        $('.map-look').css("display","none");
+        self.imageDiv.removeClass("cursor-eyes").off("click.rfh-look");
+        self.mapLookDivs.css("display","none");
         console.log('Looking task stopped');
     };
-}
+};

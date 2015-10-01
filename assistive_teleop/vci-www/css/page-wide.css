@@ -1,75 +1,78 @@
 body {
-    -webkit-touch-callout: none;/*for mobile*/
-    -webkit-user-select: none;/*for chrome*/
-    -khtml-user-select: none;/*for safari*/
-    -moz-user-select: none;/*for Mozilla*/
-    -ms-user-select: none;/*for mircosoft*/
-    -o-user-select: none;/*for opera*/
-    user-select: none;/*base css ,but not work in all browsers*/
+    -webkit-touch-callout: none;
+    /*for mobile*/
+    -webkit-user-select: none;
+    /*for chrome*/
+    -khtml-user-select: none;
+    /*for safari*/
+    -moz-user-select: none;
+    /*for Mozilla*/
+    -ms-user-select: none;
+    /*for mircosoft*/
+    -o-user-select: none;
+    /*for opera*/
+    user-select: none;
+    /*base css ,but not work in all browsers*/
     margin: 0px;
     overflow: hidden;
 }
-
 #left-col {
     float: left;
     height: calc(100% - 36px);
     width: 256px;
 }
-
-
 #main-menu {
     display: block;
     height: 40%;
     width: 100%;
-    background-color: rgba(218,236,255,0.87);
+    background-color: rgba(218, 236, 255, 0.87);
 }
-
 #main-menu h3 {
     display: block;
-    font-size: 1.6em;;
+    font-size: 1.6em;
+    ;
     width: 100%;
     text-align: center;
     margin: 0px;
     padding: 0.4em 0em;
 }
-
 .menu-item {
     display: inline-block;
     height: 40px;
     width: 48%;
     margin: 2px 0.5%;
 }
-
-.menu-item span.ui-button-text{
+.menu-item span.ui-button-text {
     padding: 0.4em 0.4em;
 }
-
 #video-main {
+    overflow: hidden;
     position: relative;
-    float:left;
-    width: calc(100% - 256px);
-    height: calc(100% - 36px);
+    float: left;
+}
+#viewer-canvas {
+    display:none;
+    position:absolute;
+    top:0px;
+    left:0px;
+    width: 100%;
+    height: 100%;
 }
 
-#mjpeg {
-    position: relative;
-}
 
 #controls {
-    display:inline-block;
+    display: inline-block;
     height: 60%;
     width: 100%;
     min-width: 128px;
     background-color: rgba(160, 200, 240, 0.87);
 }
-
 #controls h3 {
     display: block;
     font-size: 1.4em;
     width: 100%;
     text-align: center;
 }
-
 #controls h4 {
     display: block;
     font-size: 1.2em;

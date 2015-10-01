@@ -22,7 +22,7 @@
   <script type="text/javascript" src="js/ros/threejs/three.js"></script>
   <script type="text/javascript" src="js/ros/threejs/ColladaLoader.js"></script>
   <script type="text/javascript" src="js/ros/ros3d.js"></script>
-  <script type="text/javascript" src="js/video/markers.js"></script>
+  <script type="text/javascript" src="js/video/viewer.js"></script>
 
   <script type="text/javascript" src="js/init.js"></script>
   <script type="text/javascript" src="js/log.js"></script>
@@ -37,6 +37,7 @@
   <script type="text/javascript" src="js/tasks/ee_cart.js"></script>
   <script type="text/javascript" src="js/tasks/ee_rotation.js"></script>
   <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
+  <script type="text/javascript" src="js/tasks/move-object.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
 
   <script type="text/javascript" src="js/video/mjpeg_client.js"></script>
@@ -126,49 +127,46 @@
         </div>
      </div>
  </div>
- <div id="video-main">
-     <div id='mjpeg'>
-         <img id="mjpeg-image"></img>
-         <div id="markers"></div>
-         <!-- Divs for selecting eyeballs for looking task -->
-         <div class="map-look top left cursor-eyes-up-left"></div>
-         <div class="map-look top center cursor-eyes-up"></div>
-         <div class="map-look top right cursor-eyes-up-right"></div>
-         <div class="map-look middle left cursor-eyes-left"></div>
-         <div class="map-look middle right cursor-eyes-right"></div>
-         <div class="map-look bottom left cursor-eyes-down-left"></div>
-         <div class="map-look bottom center cursor-eyes-down"></div>
-         <div class="map-look bottom right cursor-eyes-down-right"></div>
-         <!-- divs for driving controls -->
-         <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
-         </svg>
-         <!--<svg id="arm-svg" class="arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
-         </svg>-->
-         <div class="drive-ctrl drive-look left"></div>
-         <div class="drive-ctrl drive-look right"></div>
-         <div class="drive-ctrl turn-signal left"></div>
-         <div class="drive-ctrl turn-signal right"></div>
-         <!-- divs for torso controls -->
-         <img id="tallIcon" src="./css/icons/tall.png"></img>
-         <img id="shortIcon" src="./css/icons/short.png"></img>
-         <div id="torsoSlider"></div>
-         <!-- divs for arm controls -->
+ <div id='video-main'>
+     <img id="mjpeg-image"></img>
+     <!-- Divs for selecting eyeballs for looking task -->
+     <div class="map-look top left cursor-eyes-up-left"></div>
+     <div class="map-look top center cursor-eyes-up"></div>
+     <div class="map-look top right cursor-eyes-up-right"></div>
+     <div class="map-look middle left cursor-eyes-left"></div>
+     <div class="map-look middle right cursor-eyes-right"></div>
+     <div class="map-look bottom left cursor-eyes-down-left"></div>
+     <div class="map-look bottom center cursor-eyes-down"></div>
+     <div class="map-look bottom right cursor-eyes-down-right"></div>
+     <!-- divs for driving controls -->
+     <svg id="drive-lines" class="drive-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+     </svg>
+     <!--<svg id="arm-svg" class="arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
+     </svg>-->
+     <div class="drive-ctrl drive-look left"></div>
+     <div class="drive-ctrl drive-look right"></div>
+     <div class="drive-ctrl turn-signal left"></div>
+     <div class="drive-ctrl turn-signal right"></div>
+     <!-- divs for torso controls -->
+     <img id="tallIcon" src="./css/icons/tall.png"></img>
+     <img id="shortIcon" src="./css/icons/short.png"></img>
+     <div id="torsoSlider"></div>
+     <!-- divs for arm controls -->
 <!--         <img id="rightFocusPoint" class="focus-point r-arm-ctrl" src="./css/icons/focus-point.png"></img>
-         <img id="leftFocusPoint" class="focus-point l-ARM-Ctrl" src="./css/icons/focus-point.png"></img>
-         <div id="depthMaskLeft" class="depth-mask arm-ctrl" ></div>
-         <div id="depthMaskRight" class="depth-mask arm-ctrl" ></div>-->
-         <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
-             <!--<div class="slider"></div>-->
-             <div id="ctrl-ring" class="default">
-                 <div class="arrow left default"></div>
-                 <div class="arrow right default"></div>
-                 <div class="arrow up default"></div>
-                 <div class="arrow down default"></div>
-             </div>
-             <div class="center"></div>
-             <div id="away-button"></div>
-             <div id="toward-button"></div>
+     <img id="leftFocusPoint" class="focus-point l-ARM-Ctrl" src="./css/icons/focus-point.png"></img>
+     <div id="depthMaskLeft" class="depth-mask arm-ctrl" ></div>
+     <div id="depthMaskRight" class="depth-mask arm-ctrl" ></div>-->
+     <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
+         <!--<div class="slider"></div>-->
+         <div id="ctrl-ring" class="default">
+             <div class="arrow left default"></div>
+             <div class="arrow right default"></div>
+             <div class="arrow up default"></div>
+             <div class="arrow down default"></div>
          </div>
+         <div class="center"></div>
+         <div id="away-button"></div>
+         <div id="toward-button"></div>
      </div>
  </div>
 

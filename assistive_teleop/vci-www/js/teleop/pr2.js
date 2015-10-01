@@ -22,11 +22,11 @@ var PR2Base = function (ros) {
         if ($(selector).hasClass('ui-state-active')){
             base.pubCmd(x,y,rot);
             setTimeout(function () {
-                base.drive(selector, x, y, rot)
+                base.drive(selector, x, y, rot);
                 }, 100);
         } else {
             console.log('End driving for '+selector);
-        };
+        }
     };
 };
 
@@ -50,7 +50,7 @@ var PR2Gripper = function (side, ros) {
     gripper.stateCB = function (msg) {
         for (var i=0; i<gripper.stateCBList.length; i++) {
             gripper.stateCBList[i](msg);
-        };
+        }
     };
     gripper.stateSub.subscribe(gripper.stateCB);
     
@@ -121,7 +121,7 @@ var PR2Head = function (ros) {
     self.stateCB = function (msg){
         for (var i=0; i<self.stateCBList.length; i++){
             self.stateCBList[i](msg);
-        };
+        }
     };
     self.stateSub.subscribe(self.stateCB);
 
@@ -189,10 +189,11 @@ var PR2Head = function (ros) {
     };
 
     self.stopTracking = function () {
-        if (self.trackingActionGoal !== null) {
-            self.trackingActionGoal.cancel();
-            self.trackingActionGoal = null;
-        }
+        self.pointHeadFollowActionClient.cancel();
+//        if (self.trackingActionGoal !== null) {
+ //           self.trackingActionGoal.cancel();
+  //          self.trackingActionGoal = null;
+//        }
     };
 };
 
@@ -224,7 +225,7 @@ var PR2Torso = function (ros) {
     self.stateCB = function (msg) {
         for (var i=0; i<self.stateCBList.length; i++){
             self.stateCBList[i](msg);
-        };
+        }
     };
     self.stateSub.subscribe(self.stateCB);
 
@@ -233,7 +234,7 @@ var PR2Torso = function (ros) {
         var goal_msg = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
         var traj_point = self.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         traj_point.positions = [z];
-        traj_point.time_from_start.secs = 1
+        traj_point.time_from_start.secs = 1;
         goal_msg.joint_names = self.jointNames;
         goal_msg.points = [traj_point];
         self.goalPub.publish(goal_msg);
@@ -290,8 +291,8 @@ var PR2ArmMPC = function (options) {
         msg.pose.position = position;
         msg.pose.orientation = orientation;
         self.goalPosePublisher.publish(msg);
-    }
-}
+    };
+};
 
 var PR2 = function (ros) {
     'use strict';
@@ -302,6 +303,7 @@ var PR2 = function (ros) {
     self.l_gripper = new PR2Gripper('left', self.ros);
     self.base = new PR2Base(self.ros);
     self.head = new PR2Head(self.ros);
+    self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...
     self.r_arm_cart = new PR2ArmMPC({side:'right',
                                      ros: self.ros,
                                      stateTopic: 'right_arm/haptic_mpc/gripper_pose',
@@ -312,4 +314,4 @@ var PR2 = function (ros) {
                                      stateTopic: 'left_arm/haptic_mpc/gripper_pose',
                                      goalTopic: 'left_arm/haptic_mpc/goal_pose',
                                      ee_frame:'l_gripper_tool_frame'});
-}
+};

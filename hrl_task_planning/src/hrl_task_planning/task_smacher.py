@@ -18,7 +18,7 @@ class TaskSmacher(object):
     def __init__(self):
         self.modules = {}
         self.preprocess_services = {}
-        self.running_sm_thread = Thread()  # Initialize with empty instance, never to be started
+        self.running_sm_threads = {}
         self.state_pub = rospy.Publisher('task_state', PDDLState, latch=True)
         self.planner_service = rospy.ServiceProxy("/pddl_planner", PDDLPlanner)
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
@@ -36,7 +36,7 @@ class TaskSmacher(object):
         if req.domain not in self.preprocess_services:
             self.preprocess_services[req.domain] = rospy.ServiceProxy("/preprocess_problem/%s" % req.domain, PreprocessProblem)
 
-        # Try to preprocess the given problem (fills out current state, known objects, defaults goals as applicable
+        # Try to preprocess the given problem (fills out current state, known objects, defaults goals as applicable)
         try:
             full_problem = self.preprocess_services[req.domain].call(req).problem
         except rospy.ServiceException as e:
@@ -60,14 +60,17 @@ class TaskSmacher(object):
 
         state_machine = self.build_sm(solution, self.modules[req.domain].get_action_state)
 
-        if self.running_sm_thread.is_alive():
-            self.running_sm_thread.preempt()
-            rospy.loginfo("[%s] Preempt requested. Waiting for State Machine for %s to finish.",
-                          rospy.get_name(), self.running_sm_thread.problem_name)
-            self.running_sm_thread.join()
+        try:
+            if self.running_sm_threads[req.name].is_alive():
+                self.running_sm_thread.preempt()
+                rospy.loginfo("[%s] Preempt requested. Waiting for State Machine for %s to finish.",
+                            rospy.get_name(), self.running_sm_thread.problem_name)
+                self.running_sm_thread.join()
+        except KeyError:
+            pass
 
-        self.running_sm_thread = StateMachineThread(state_machine, req.name)
-        self.running_sm_thread.start()
+        self.running_sm_threads[req.name] = StateMachineThread(state_machine, req.name)
+        self.running_sm_threads[req.name].start()
 
     def build_sm(self, solution, get_state_fn):
         plan = map(PlanStep.from_string, solution.steps)

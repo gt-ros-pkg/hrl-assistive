@@ -1,4 +1,4 @@
-var initMarkerDisplay = function (divID) {
+var initViewer = function (divID) {
     "use strict";
     // Create the main viewer.
     var width = $('#'+divID).width();
@@ -9,7 +9,7 @@ var initMarkerDisplay = function (divID) {
         height : height,
         antialias : true
     });
-    RFH.viewer.renderer.context.canvas.id = "clickable-canvas";
+    RFH.viewer.renderer.context.canvas.id = "viewer-canvas";
     RFH.viewer.camera.projectionMatrix.elements = [1.1129, 0,0,0,0,2.009,0,0,0,0,-1.001, -1, 0,0,-0.0400266,0];
 
     var updateCamera = function(transform) {
@@ -20,28 +20,20 @@ var initMarkerDisplay = function (divID) {
                                          transform.rotation.y,
                                          transform.rotation.z,
                                          transform.rotation.w);
-        RFH.viewer.camera.updateMatrix()
+        RFH.viewer.camera.updateMatrix();
         RFH.viewer.camera.updateMatrixWorld();
         var out = RFH.viewer.camera.localToWorld(new THREE.Vector3(1,0,0));
         RFH.viewer.camera.lookAt(out);
-    }
+    };
+
+    var resizeRenderer = function (event) {
+        var w = $(RFH.viewer.renderer.context.canvas.parentElement).width();
+        var h = $(RFH.viewer.renderer.context.canvas.parentElement).height();
+        RFH.viewer.renderer.setSize(w, h);
+        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera);
+    };
+    $(window).on('resize.rfh', resizeRenderer);
+    resizeRenderer();
 
     RFH.tfClient.subscribe('head_mount_kinect_rgb_link', updateCamera);
-
-    // Setup the marker client.
-//    RFH.markerClient = new ROS3D.MarkerClient({
-//        ros : RFH.ros,
-//        tfClient : RFH.tfClient,
-//        topic : '/visualization_marker',
-//        rootObject : RFH.viewer.scene
-//    });
-
-//    RFH.rMPCMarkerClient = new ROS3D.InteractiveMarkerClient({
-//        ros: RFH.ros,
-//        tfClient: RFH.tfClient,
-//        topic: '/haptic_mpc/interactive_markers',//TODO: FIXME (Get correct name)
-//        camera: RFH.viewer.renderer.camera,
-//        rootObject: RFH.viewer.scene
-//
-//    });
-}
+};

@@ -2,7 +2,8 @@ RFH.CartesianEEControl = function (options) {
     'use strict';
     var self = this;
     self.name = options.name || options.arm+'EECartTask';
-    self.div = options.div || 'mjpeg';
+    var divId = options.div || 'video-main';
+    self.div = $('#'+divId);
     self.arm = options.arm;
     self.side = self.arm.side[0];
     self.gripper = options.gripper;
@@ -23,7 +24,7 @@ RFH.CartesianEEControl = function (options) {
     self.orientRot = 0;
     self.camera = options.camera;
     self.dt = 1000; //hold-repeat time in ms
-    self.mode = "table" // "wall", "free"
+    self.mode = "table"; // "wall", "free"
     self.active = false;
     self.raycaster = new THREE.Raycaster();
 
@@ -37,11 +38,11 @@ RFH.CartesianEEControl = function (options) {
         self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
         var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
         if (objs.length > 0 && objs[0].object.userData.side === self.side) {
-            self.rotArrows[objs[0].object.userData.direction]['cb']();
+            self.rotArrows[objs[0].object.userData.direction].cb();
         }
     };
 
-    $('#markers').on('click.rfh', self.canvasClickCB);
+    $('#viewer-canvas').on('click.rfh', self.canvasClickCB);
 
     self.rotArrowLoader = new THREE.ColladaLoader();
     var arrowOnLoad = function (collada) {
@@ -58,7 +59,7 @@ RFH.CartesianEEControl = function (options) {
 
         //Create arrow meshes for each directional control
         var mesh, edges, pos, rot, mat, cb;
-        // X-Positive Rotation
+        // X-Positive Rotation 3D Arrow
         baseMaterial.color.setRGB(255,0,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xn';
@@ -69,9 +70,9 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'roll':1})};
+        cb = function (event) {self.eeDeltaCmd({'roll':1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // X-Negative Rotation
+        // X-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xp';
         mesh.userData.side = self.side;
@@ -81,9 +82,9 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'roll':-1})};
+        cb = function (event) {self.eeDeltaCmd({'roll':-1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Y-Positive Rotation
+        // Y-Positive Rotation 3D Arrow
         baseMaterial.color.setRGB(0,255,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yn';
@@ -94,21 +95,21 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(0, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'pitch':1})};
+        cb = function (event) {self.eeDeltaCmd({'pitch':1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Y-Negative Rotation
+        // Y-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yp';
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         pos = new THREE.Vector3(-0.13, 0.025, 0.13);
-        rot = new THREE.Euler(Math.PI,0,0)
+        rot = new THREE.Euler(Math.PI,0,0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'pitch':-1})};
+        cb = function (event) {self.eeDeltaCmd({'pitch':-1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Z-Positive Rotation
+        // Z-Positive Rotation 3D Arrow
         baseMaterial.color.setRGB(0,0,255);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'zp';
@@ -119,9 +120,9 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(-Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'yaw':1})};
+        cb = function (event) {self.eeDeltaCmd({'yaw':1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Z-Negative Rotation
+        // Z-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'zn';
         mesh.userData.side = self.side;
@@ -131,31 +132,26 @@ RFH.CartesianEEControl = function (options) {
         rot = new THREE.Euler(Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'yaw':-1})};
+        cb = function (event) {self.eeDeltaCmd({'yaw':-1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
 
         for (var dir in self.rotArrows) {
-            self.rotArrows[dir]['mesh'].visible = false;
-            self.rotArrows[dir]['edges'].visible = false;
-            RFH.viewer.scene.add(self.rotArrows[dir]['mesh']);
-            RFH.viewer.scene.add(self.rotArrows[dir]['edges']);
+            self.rotArrows[dir].mesh.visible = false;
+            self.rotArrows[dir].edges.visible = false;
+            RFH.viewer.scene.add(self.rotArrows[dir].mesh);
+            RFH.viewer.scene.add(self.rotArrows[dir].edges);
         }
-    }
+    };
+
     var arrowOnProgress = function (data) {
         console.log("Loading Rotation Arrow Collada Mesh: ", data.loaded/data.total);
-    }
-    self.rotArrowLoader.load('./data/Curved_Arrow_Square.dae', arrowOnLoad, arrowOnProgress)
+    };
 
-    self.resizeRenderer = function (event) {
-        var w = $('#'+self.div).width();
-        var h = $('#'+self.div).height();
-        RFH.viewer.renderer.setSize(w, h);
-        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
-    }
-    $(window).on('resize.rfh', self.resizeRenderer);
+    self.rotArrowLoader.load('./data/Curved_Arrow_Square.dae', arrowOnLoad, arrowOnProgress);
+
 
     self.updateRotImage = function () {
-        if (self.eeTF === null) { return };
+        if (self.eeTF === null) { return; }
         var q = new THREE.Quaternion(self.eeTF.rotation.x,
                                      self.eeTF.rotation.y,
                                      self.eeTF.rotation.z,
@@ -170,24 +166,28 @@ RFH.CartesianEEControl = function (options) {
         var arrowQuat = new THREE.Quaternion();
         var arrowScale = new THREE.Vector3();
         for (var dir in self.rotArrows) {
-            arrowInWorldFrame.multiplyMatrices(tfMat, self.rotArrows[dir]['transform']);
+            arrowInWorldFrame.multiplyMatrices(tfMat, self.rotArrows[dir].transform);
             arrowInWorldFrame.decompose(arrowPos, arrowQuat, arrowScale);
-            self.rotArrows[dir]['mesh'].position.set(arrowPos.x, arrowPos.y, arrowPos.z);
-            self.rotArrows[dir]['mesh'].quaternion.set(arrowQuat.x, arrowQuat.y, arrowQuat.z, arrowQuat.w);
+            self.rotArrows[dir].mesh.position.set(arrowPos.x, arrowPos.y, arrowPos.z);
+            self.rotArrows[dir].mesh.quaternion.set(arrowQuat.x, arrowQuat.y, arrowQuat.z, arrowQuat.w);
         }
-        RFH.viewer.renderer.render( RFH.viewer.scene, RFH.viewer.camera)
-    }
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+    };
 
     self.updateCtrlRingViz = function () {
         // Check that we have values for both camera and ee frames
-        if (!self.active) { return; };
+        if (!self.active) { return; }
         if (self.mode === 'free') {
             $('#armCtrlContainer').css({'transform':'none'});
             return;
         }
-        if (self.eeTF === null || self.cameraTF === null) { return; };
+        if (self.eeTF === null || self.cameraTF === null) { 
+            console.log("Cannot update hand control ring, missing tf information");
+            return;
+        }
         var eePos =  self.eeTF.translation.clone(); // 3D Hand position in /base_link
         var camPos = self.cameraTF.translation.clone(); // 3D camera position in /base_link
+        var transformStr;
 
         if (self.mode !== 'free') {
             var camQuat = self.cameraTF.rotation.clone();
@@ -204,29 +204,28 @@ RFH.CartesianEEControl = function (options) {
             switch (self.mode) {
                 case 'table':
                     var rotX = phi - Math.PI/2;
-                    var transformStr = "rotateX("+rotX.toString()+"rad) rotate("+rot.toString()+"rad)";
+                    transformStr = "rotateX("+rotX.toString()+"rad) rotate("+rot.toString()+"rad)";
                     break;
                 case 'wall':
-                    var transformStr = "rotateX("+phi.toString()+"rad) rotateY("+rot.toString()+"rad)";
+                    transformStr = "rotateX("+phi.toString()+"rad) rotateY("+rot.toString()+"rad)";
                     break;
             }
         } else {
             transformStr = 'none';
-        };
+        }
         //TODO: Clean up scaling so that it is useful.  See if it worsens visual understanding...
         var rect = $('#armCtrlContainer')[0].getBoundingClientRect();
         var videoHeight = $('#armCtrlContainer').parent().height();
         var videoWidth = $('#armCtrlContainer').parent().width();
         var ratio = Math.max(rect.height/videoHeight, rect.width/videoWidth);
-//        transformStr += " scale("+1/ratio+")";
         $('#armCtrlContainer').css({'transform':transformStr});
-    }
+    };
 
     self.focusPoint = new RFH.FocalPoint({camera: self.camera,
         tfClient: self.tfClient,
         ros: self.ros,
         side: self.arm.side,
-        divId: self.div,
+        divId: self.div.id,
     });
 
     self.pixel23d = new RFH.Pixel23DClient({
@@ -240,7 +239,7 @@ RFH.CartesianEEControl = function (options) {
     $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button').button();
     $('#speedOptions-buttons, #'+self.side+'-posrot-set, #ee-mode-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer').hide();
-    $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation() });
+    $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation(); });
 
     self.getStepSize = function () {
         return $('input[name=speedOption]:checked').attr('id');
@@ -258,16 +257,16 @@ RFH.CartesianEEControl = function (options) {
         var z = new THREE.Vector3();
         x.subVectors(target, eePos).normalize();
         if (x.length() === 0) {
-            throw "Orient Hand: End effector and target at same position"
-        };
+            throw "Orient Hand: End effector and target at same position";
+        }
         z.subVectors(camPos, eePos).normalize();
         if (z.length() === 0) {
-            throw "Orient Hand: End effector and camera at same position"
-        };
+            throw "Orient Hand: End effector and camera at same position";
+        }
         y.crossVectors(z,x).normalize();
         if (y.length() === 0) {
-            throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned."
-        };
+            throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned.";
+        }
         z.crossVectors(x,y).normalize();
         var rotMat = new THREE.Matrix4();
         rotMat.elements[0] = x.x; rotMat.elements[4] = y.x; rotMat.elements[8] = z.x;
@@ -283,7 +282,7 @@ RFH.CartesianEEControl = function (options) {
         // effect that it looks like they should from the flat, 2D camera view at all times.
 
         // Check that we have values for both camera and ee frames
-        if (self.eeTF === null || self.cameraTF === null) { return; };
+        if (self.eeTF === null || self.cameraTF === null) { return; }
         // Format ee frame as transformation matrix
         var eePosInBase = new THREE.Vector3().copy(self.eeTF.translation);
         var eeQuatInBase = new THREE.Quaternion(self.eeTF.rotation.x,
@@ -344,7 +343,7 @@ RFH.CartesianEEControl = function (options) {
         console.log("Subscribing to TF Frame: "+self.arm.ee_frame);
     } else {
         console.log("Empty EE Frame for " + self.arm.side + " arm.");
-    };
+    }
 
     // Get camera frame updates from TF
     self.checkCameraTF = function () {
@@ -369,8 +368,17 @@ RFH.CartesianEEControl = function (options) {
         var roll = xyzrpy.roll || 0.0;
         var pitch = xyzrpy.pitch || 0.0;
         var yaw = xyzrpy.yaw || 0.0;
-        var posStep = self.posStepSizes[self.getStepSize()]
-        var rotStep = self.rotStepSizes[self.getStepSize()]
+        var posStep = self.posStepSizes[self.getStepSize()];
+        var rotStep = self.rotStepSizes[self.getStepSize()];
+        var handAng;
+        var clickAng;
+        var goalAng;
+        var dx;
+        var dy;
+        var dz;
+        var dRoll;
+        var dPitch;
+        var dYaw;
 
         switch (self.mode) {
             case 'table':
@@ -378,15 +386,15 @@ RFH.CartesianEEControl = function (options) {
                     console.warn("Hand Data not available to send commands.");
                     return;
                 }
-                var handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
-                var clickAng = Math.atan2(y,x) - Math.PI/2;
-                var goalAng = handAng + clickAng;
-                var dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
-                var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
-                var dz = posStep * z;
-                var dRoll = rotStep * roll;
-                var dPitch = rotStep * pitch;
-                var dYaw = rotStep * yaw;
+                 handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
+                 clickAng = Math.atan2(y,x) - Math.PI/2;
+                 goalAng = handAng + clickAng;
+                 dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
+                 dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
+                 dz = posStep * z;
+                 dRoll = rotStep * roll;
+                 dPitch = rotStep * pitch;
+                 dYaw = rotStep * yaw;
                 // Convert del goal to Matrix4
                 var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
                 var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
@@ -413,18 +421,18 @@ RFH.CartesianEEControl = function (options) {
                     console.warn("Hand Data not available to send commands.");
                     return;
                 }
-                var handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
-                var clickAng = Math.atan2(y,x) - Math.PI/2;
-                var goalAng = clickAng;
-                var dx = posStep * z;
-                var dz = (x === 0.0) ? 0.0 : -posStep * Math.cos(goalAng);
-                var dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
+                 handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
+                 clickAng = Math.atan2(y,x) - Math.PI/2;
+                 goalAng = clickAng;
+                 dx = posStep * z;
+                 dz = (x === 0.0) ? 0.0 : -posStep * Math.cos(goalAng);
+                 dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
                 break;
             case 'free':
                 if (self.op2baseMat === null || self.eeInOpMat === null) {
                     console.warn("Hand Data not available to send commands.");
                     return;
-                };
+                }
                 // Convert to Matrix4
                 var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
                 var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
@@ -455,7 +463,7 @@ RFH.CartesianEEControl = function (options) {
         var frame = self.tfClient.fixedFrame;
         var pos = {x: self.eeTF.translation.x + dx,
                    y: self.eeTF.translation.y + dy,
-                   z: self.eeTF.translation.z - dz}
+                   z: self.eeTF.translation.z - dz};
         quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
         self.arm.sendGoal({position: pos,
             orientation: quat,
@@ -470,7 +478,7 @@ RFH.CartesianEEControl = function (options) {
                 e.stopPropagation();
                 return;
             }
-        }
+        };
     };
 
     self.ctrlRingActivate = self.checkMouseButtonDecorator(function (e) {
@@ -480,12 +488,12 @@ RFH.CartesianEEControl = function (options) {
         var h = $(e.target).height();
         var ang = Math.atan2(-(pt[1]-h/2)/h, (pt[0]-w/2)/w);
         var delX = Math.cos(ang);
-        var delY = Math.sin(ang)
+        var delY = Math.sin(ang);
         var ringMove = function (dX, dY) {
             if ( !$('#ctrl-ring').hasClass('active') ) { return; }
             self.eeDeltaCmd({x: dX, y: dY});
             setTimeout(function() {ringMove(dX, dY);} , self.dt);
-        }
+        };
         ringMove(delX, delY);
     });
 
@@ -500,7 +508,7 @@ RFH.CartesianEEControl = function (options) {
             if ( !$('#ctrl-ring').hasClass('active') ){ return; }
             self.eeDeltaCmd({roll: delY, pitch: delX});
             setTimeout(function() {ringMove(dX, dY);} , self.dt);
-        }
+        };
         ringMove(delX, delY);
     });
 
@@ -511,56 +519,56 @@ RFH.CartesianEEControl = function (options) {
     self.awayCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
-            if ( !$('#away-button').hasClass('active') ) {return};
+            if ( !$('#away-button').hasClass('active') ) {return;}
             self.eeDeltaCmd({z: 1});
             setTimeout(moveCB, self.dt);
-        }
+        };
         moveCB();
     });
 
     self.towardCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
-            if ( !$('#toward-button').hasClass('active') ) {return};
+            if ( !$('#toward-button').hasClass('active') ) {return;}
             self.eeDeltaCmd({z: -1});
             setTimeout(moveCB, self.dt);
-        }
+        };
         moveCB();
     });
 
     self.cwCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
-            if ( !$('#away-button').hasClass('active') ) {return};
+            if ( !$('#away-button').hasClass('active') ) {return;}
             self.eeDeltaCmd({yaw: 1});
             setTimeout(moveCB, self.dt);
-        }
+        };
         moveCB();
     });
 
     self.ccwCB = self.checkMouseButtonDecorator(function (e) {
         $(e.target).removeClass('default').addClass('active');
         var moveCB = function() {
-            if ( !$('#toward-button').hasClass('active') ) {return};
+            if ( !$('#toward-button').hasClass('active') ) {return;}
             self.eeDeltaCmd({yaw: -1});
             setTimeout(moveCB, self.dt);
-        }
+        };
         moveCB();
     });
 
     /// TRACK HAND WITH CAMERA ///
     self.trackHand = function (doTrack) {
         if (doTrack) {
-            RFH.pr2.head.trackPoint(0, 0, 0, self.side+'_gripper_tool_frame');
+            setTimeout(function(){ RFH.pr2.head.trackPoint(0, 0, 0, self.side+'_gripper_tool_frame');}, 20); // Wait 20 ms.  There seems to be a race condition in the prior goal being cancelled and this being sent, so it sometimes gets cancelled instead (maybe?).  This seems enough to fix it.
         } else {
             RFH.pr2.head.stopTracking();
         }
-    }
+    };
 
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplayDiv = self.side+'GripperDisplay';
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
-        parentId: self.div,
+        parentId: self.div.id,
         divId: self.gripperDisplayDiv});
     var gripperCSS = {position: "absolute",
         height: "5%",
@@ -613,7 +621,7 @@ RFH.CartesianEEControl = function (options) {
                                              pose.orientation.z,
                                              pose.orientation.w);
                 var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
-                var offset = new THREE.Vector3(0.03, 0, 0) //Get to 10cm from point along normal
+                var offset = new THREE.Vector3(0.03, 0, 0); //Get to 10cm from point along normal
                 offset.applyMatrix4(poseRotMat);
                 var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
                 poseRotMat.multiply(desRotMat);
@@ -627,7 +635,7 @@ RFH.CartesianEEControl = function (options) {
                     position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
                     orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
                     frame_id: 'base_link'
-                })
+                });
                 $('#touchspot-toggle').prop('checked', false).button('refresh');
                 self.setPositionCtrls();
             };
@@ -645,23 +653,23 @@ RFH.CartesianEEControl = function (options) {
     self.setRotationCtrls = function (e) {
         $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').show();
         $('#armCtrlContainer').hide();
-        $('#markers').show();
+        $('#viewer-canvas').show();
         for (var dir in self.rotArrows) {
-            self.rotArrows[dir]['mesh'].visible = true;
-            self.rotArrows[dir]['edges'].visible = true;
+            self.rotArrows[dir].mesh.visible = true;
+            self.rotArrows[dir].edges.visible = true;
         }
-        self.resizeRenderer();
+        $(window).resize(); // Trigger canvas to update size TODO: unreliable, inconsistent behavior -- Fix
     };
 
     self.setPositionCtrls = function (e) {
         $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').hide();
-        $('#markers').hide();
+        $('#viewer-canvas').hide();
         $('#armCtrlContainer').show();
         for (var dir in self.rotArrows) {
-            self.rotArrows[dir]['mesh'].visible = false;
-            self.rotArrows[dir]['edges'].visible = false;
+            self.rotArrows[dir].mesh.visible = false;
+            self.rotArrows[dir].edges.visible = false;
         }
-        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate)
+        $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate);
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
         $('#away-button').on('mousedown.rfh', self.awayCB);
         $('#toward-button').on('mousedown.rfh', self.towardCB);
@@ -688,8 +696,8 @@ RFH.CartesianEEControl = function (options) {
         $('#ee-mode-set').show();
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
         $('#'+self.side+'-posrot-pos').click();
-        self.updateCtrlRingViz();
         self.active = true;
+        self.updateCtrlRingViz();
     };
 
     self.stop = function () {
@@ -698,7 +706,7 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('mousedown.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
-        $('#markers').hide();
+        $('#viewer-canvas').hide();
 //        if ($('#select-focus-toggle').prop('checked')) {
 //            $('#select-focus-toggle').click();
 //        }
@@ -711,9 +719,9 @@ RFH.CartesianEEControl = function (options) {
         $('#touchspot-toggle-label').off('click.rfh').hide();
         self.active = false;
         for (var dir in self.rotArrows) {
-            self.rotArrows[dir]['mesh'].visible = false;
-            self.rotArrows[dir]['edges'].visible = false;
+            self.rotArrows[dir].mesh.visible = false;
+            self.rotArrows[dir].edges.visible = false;
         }
     };
-}
+};
 
