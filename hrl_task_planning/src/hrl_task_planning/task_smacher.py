@@ -83,8 +83,9 @@ class TaskSmacher(object):
         sm.userdata.problem_name = solution.states[0].problem
         sm_states = []
         for i, step in enumerate(plan):
-            sm_states.append(("PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
+            sm_states.append(("_PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
             sm_states.append((step.name + "+%d" % i, get_state_fn(step)))
+        sm_states.append(("_CLEANUP", CleanupState(outcomes=SPA, input_keys=["problem_name"])));
         with sm:
             try:
                 for i, sm_state in enumerate(sm_states):
@@ -112,6 +113,15 @@ class StateMachineThread(Thread):
 
     def preempt(self):
         return self.state_machine.request_preempt()
+
+
+class CleanupState(smach.State):
+    def execute(self, ud):
+        if self.preempt_requested():
+            self.service_preempt()
+            return 'preempted'
+        rospy.delete_param(ud.problem_name)
+        return 'succeeded'
 
 
 class PDDLStatePublisherState(smach.State):

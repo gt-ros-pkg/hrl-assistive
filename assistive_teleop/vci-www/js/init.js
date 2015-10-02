@@ -102,8 +102,8 @@ var RFH = {
         RFH.undo = new RFH.Undo({ros: RFH.ros,
                                  undoTopic: '/undo',
                                  buttonDiv: 'undo'});
-        RFH.smach = new RFH.SmachDisplay({container: $('#smach-container'),
-                                          ros: RFH.ros});
+        RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
+                                   ros: RFH.ros});
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');
