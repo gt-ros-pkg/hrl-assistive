@@ -15,7 +15,7 @@ RFH.MoveObject = function (options) {
 
     self.publishMoveObject = function () {
         var msg = self.ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'move_object_'+ new Date().getTime().toString();
+        msg.name = 'move_object+'+ new Date().getTime().toString();
         msg.domain = 'move_object';
         self.taskPublisher.publish(msg);
     };

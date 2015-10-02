@@ -25,7 +25,7 @@ class TaskPlannerNode(object):
             return (False, [], [])
         except Exception as e:
             raise rospy.ServiceException(e.message)
-        rospy.loginfo("[%s] Planner received problem:\n %s", rospy.get_name(), req.problem)
+#        rospy.loginfo("[%s] Planner received problem:\n %s", rospy.get_name(), req.problem)
         # Create PDDL Domain object from domain file
         domain = pddl.Domain.from_file(domain_file)
         # Create PDDL Problem object from incoming message

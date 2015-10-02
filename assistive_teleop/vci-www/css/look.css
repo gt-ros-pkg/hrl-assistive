@@ -2,6 +2,22 @@
     position: absolute;
 }
 
+.map-look.visible {
+    background-color: rgba(200,200,200,0.65);
+    border: 2px solid rgba(100,100,100,0.40);
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.map-look.visible:hover{
+    background-color: rgba(230,230,230,0.85);
+    border: 2px solid rgba(170,170,170,0.60);
+}
+
+.cursor-select{
+    cursor: url(cursors/select.png) 20 20, auto;
+}
+
 .cursor-eyes {
     cursor: url(cursors/eyes/eyes.png) 27 16, auto;
 }
@@ -13,12 +29,18 @@
     top: 15%;
     height: 70%;
 }
+.cursor-eyes-left.visible{
+    background-image: url(cursors/eyes/eyes-left.png);
+}
 .cursor-eyes-right {
     cursor: url(cursors/eyes/eyes-right.png) 27 16, auto;
     right: 0%;
     width: 15%;
     top: 15%;
     height: 70%;
+}
+.cursor-eyes-right.visible{
+    background-image: url(cursors/eyes/eyes-right.png);
 }
 .cursor-eyes-up {
     cursor: url(cursors/eyes/eyes-up.png) 27 16, auto;
@@ -27,12 +49,18 @@
     top: 0%;
     height: 15%;
 }
+.cursor-eyes-up.visible{
+    background-image: url(cursors/eyes/eyes-up.png);
+}
 .cursor-eyes-down {
     cursor: url(cursors/eyes/eyes-down.png) 27 16, auto;
     left: 15%;
     width: 70%;
     bottom: 0%;
     height: 15%;
+}
+.cursor-eyes-down.visible{
+    background-image: url(cursors/eyes/eyes-down.png);
 }
 .cursor-eyes-up-left {
     cursor: url(cursors/eyes/eyes-up-left.png) 27 16, auto;
@@ -41,12 +69,18 @@
     top: 0%;
     height: 15%;
 }
+.cursor-eyes-up-left.visible{
+    background-image: url(cursors/eyes/eyes-up-left.png);
+}
 .cursor-eyes-up-right {
     cursor: url(cursors/eyes/eyes-up-right.png) 27 16, auto;
     right: 0%;
     top: 0%;
     width: 15%;
     height: 15%;
+}
+.cursor-eyes-up-right.visible{
+    background-image: url(cursors/eyes/eyes-up-right.png);
 }
 .cursor-eyes-down-left {
     cursor: url(cursors/eyes/eyes-down-left.png) 27 16, auto;
@@ -55,11 +89,17 @@
     width: 15%;
     height: 15%;
 }
+.cursor-eyes-down-left.visible{
+    background-image: url(cursors/eyes/eyes-down-left.png);
+}
 .cursor-eyes-down-right {
     cursor: url(cursors/eyes/eyes-down-right.png) 27 16, auto;
     right: 0%;
     bottom: 0%;
     width: 15%;
     height: 15%;
+}
+.cursor-eyes-down-right.visible{
+    background-image: url(cursors/eyes/eyes-down-right.png);
 }
 

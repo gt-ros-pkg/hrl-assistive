@@ -78,6 +78,7 @@ RFH.initTaskMenu = function (divId) {
                                        head: RFH.pr2.head,
                                        base: RFH.pr2.base}));
     RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
+    RFH.taskMenu.addTask(new RFH.IdLocation({ros:RFH.ros}));
                                     
     // Start looking task by default
     RFH.taskMenu.tasks.lookingTask.start();

@@ -3,7 +3,7 @@ RFH.CartesianEEControl = function (options) {
     var self = this;
     self.name = options.name || options.arm+'EECartTask';
     var divId = options.div || 'video-main';
-    self.div = $('#'+divId);
+    self.$div = $('#'+divId);
     self.arm = options.arm;
     self.side = self.arm.side[0];
     self.gripper = options.gripper;
@@ -27,6 +27,12 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table"; // "wall", "free"
     self.active = false;
     self.raycaster = new THREE.Raycaster();
+
+    /// GRIPPER SLIDER CONTROLS ///
+    self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
+        parentId: self.$div.attr('id'),
+        divId: self.side +'GripperDisplay'});
+
 
     self.canvasClickCB = function (event) {
         var mouse = new THREE.Vector2();
@@ -225,7 +231,7 @@ RFH.CartesianEEControl = function (options) {
         tfClient: self.tfClient,
         ros: self.ros,
         side: self.arm.side,
-        divId: self.div.id,
+        divId: self.$div.id,
     });
 
     self.pixel23d = new RFH.Pixel23DClient({
@@ -565,18 +571,6 @@ RFH.CartesianEEControl = function (options) {
         }
     };
 
-    /// GRIPPER SLIDER CONTROLS ///
-    self.gripperDisplayDiv = self.side+'GripperDisplay';
-    self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
-        parentId: self.div.id,
-        divId: self.gripperDisplayDiv});
-    var gripperCSS = {position: "absolute",
-        height: "5%",
-        width: "27%",
-        bottom: "5%"};
-    gripperCSS[self.arm.side] = "2%";
-    $('#'+self.gripperDisplayDiv).css( gripperCSS ).hide();
-
     /// SELECT FOCUS POINT CONTROLS ///
 //    self.selectFocusCB = function (e, ui) {
 //        if ($('#select-focus-toggle').prop('checked')) {
@@ -690,7 +684,7 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $("#select-focus-toggle-label").show();
         $('#speedOptions').show();
-        $("#"+self.gripperDisplayDiv).show();
+        self.gripperDisplay.show();
         $('#'+self.side+'-posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
@@ -712,7 +706,7 @@ RFH.CartesianEEControl = function (options) {
 //        }
 //        $("#select-focus-toggle-label").off('click.rfh').hide();
         $('#speedOptions').hide();
-        $("#"+self.gripperDisplayDiv).hide();
+        self.gripperDisplay.hide();
         if ($('#touchspot-toggle').prop('checked')) {
             $('#touchspot-toggle').click();
         }
