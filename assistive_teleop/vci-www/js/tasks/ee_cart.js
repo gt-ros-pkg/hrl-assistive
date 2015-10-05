@@ -1,11 +1,11 @@
 RFH.CartesianEEControl = function (options) {
     'use strict';
     var self = this;
-    self.name = options.name || options.arm+'EECartTask';
-    var divId = options.div || 'video-main';
-    self.$div = $('#'+divId);
     self.arm = options.arm;
     self.side = self.arm.side[0];
+    self.name = options.name || self.side[0]+'EECartTask';
+    var divId = options.div || 'video-main';
+    self.$div = $('#'+divId);
     self.gripper = options.gripper;
     self.posStepSizes = {'tiny': 0.025,
         'small': 0.05,

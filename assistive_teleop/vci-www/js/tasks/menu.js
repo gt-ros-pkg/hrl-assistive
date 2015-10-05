@@ -16,23 +16,38 @@ RFH.TaskMenu = function (divId) {
             self.div.append(checkbox, label);
             $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
             $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item');
-            $('#'+taskObject.buttonText).on('click.rfh', function(event){ self.buttonCB(taskObject); });
+            $('#'+taskObject.buttonText).on('click.rfh', 
+                                            function(event){
+                                                self.buttonCB(taskObject);
+                                            });
         }
     };
 
     self.buttonCB = function (taskObject) {
+        var newTask;
         if (taskObject === self.activeTask) {
-            self.stopTask(taskObject);
-            self.tasks.lookingTask.start();
-            self.activeTask = self.tasks.lookingTask;
+            newTask = self.defaultTask;
         } else {
-            self.stopTask(self.activeTask);
-            taskObject.start();
-            self.activeTask = taskObject;
+            newTask = taskObject.name;
         }
+        self.stopActiveTask();
+        self.startTask(newTask);
+    };
+
+    self.startTask = function (taskName) {
+        if (self.activeTask !== null) {
+            self.stopActiveTask();
+        }
+        var taskObject = self.tasks[taskName];
+        taskObject.start();
+        if (taskObject.buttonText) {
+            $('#'+taskObject.buttonText).prop('checked', true).button('refresh');
+        }
+        self.activeTask = taskObject;
     };
     
-    self.stopTask = function (taskObject) {
+    self.stopActiveTask = function () {
+        var taskObject = self.activeTask;
         // Stop currently running task
         taskObject.stop();
         if (taskObject.buttonText) {
@@ -55,6 +70,7 @@ RFH.initTaskMenu = function (divId) {
                                        div: 'video-main',
                                        head: RFH.pr2.head,
                                        camera: RFH.mjpeg.cameraModel}));
+    RFH.taskMenu.defaultTask = 'lookingTask';
 
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
                                                      div: 'video-main',

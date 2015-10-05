@@ -2,7 +2,7 @@ RFH.MoveObject = function (options) {
     'use strict';
     var self = this;
     self.ros = options.ros;
-    self.name = options.name || 'move-object';
+    self.name = options.name || 'move_object';
     self.buttonText = 'Move_Object';
     self.buttonClass = 'move-object-button';
     self.ros.getMsgDetails('hrl_task_planning/PDDLProblem');
@@ -13,21 +13,24 @@ RFH.MoveObject = function (options) {
     });
     self.taskPublisher.advertise();
 
-    self.subtask_mapping = {'id-location': 'idLocationTask',
+    self.subtaskMapping = {'id-location': 'idLocationTask',
                             'pick-left-gripper':'lEECartTask',
                             'pick-right-gripper':'rEECartTask',
                             'place-left-gripper':'lEECartTask',
                             'place-right-gripper':'rEECartTask'};
 
-    self.get_subtask = function (plan_step) {
+    self.getInterfaceTask = function (plan_step) {
         if (plan_step.name == 'ID-LOCATION'){
             return 'idLocationTask';
         }
-        if (plan_step.name == 'pick'){
-            if (plan_step.args)
-            
+        if (plan_step.name == 'PICK'){
+            if (plan_step.args[0].indexOf('LEFT') >= 0) {return 'lEECartTask';}
+            if (plan_step.args[0].indexOf('RIGHT') >= 0) {return 'rEECartTask';}
         }
-
+        if (plan_step.name == 'PLACE'){
+            if (plan_step.args[0].indexOf('LEFT') >= 0) {return 'lEECartTask';}
+            if (plan_step.args[0].indexOf('RIGHT') >= 0) {return 'rEECartTask';}
+        }
     };
 
     self.publishMoveObject = function () {

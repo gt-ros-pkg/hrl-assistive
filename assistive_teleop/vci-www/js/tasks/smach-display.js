@@ -12,16 +12,19 @@ RFH.Smach = function(options) {
         type: 'hrl_task_planning/PDDLSolution'
     });
 
-    self.smachContainerCB = function(msg) {
+    self.planSolutionCB = function(msg) {
         self.display.empty(); // Out with the old
+        var actions = self.parseActions(msg.actions);
+        var interfaceTasks = self.getInterfaceTasks(msg.domain, actions);
         self.smach_tasks[msg.problem] = {
             domain: msg.domain,
-            actions: self.parseActions(msg.actions),
-            states: msg.states
+            actions: actions,
+            states: msg.states,
+            interfaceTasks: interfaceTasks
         };
         self.display.displaySmachStates(self.smach_tasks[msg.problem].actions);
     };
-    self.solutionSubscriber.subscribe(self.smachContainerCB);
+    self.solutionSubscriber.subscribe(self.planSolutionCB);
 
     self.parseActions = function(actions) {
         var act, i, name_args, name, args;
@@ -41,13 +44,23 @@ RFH.Smach = function(options) {
         return acts_list;
     };
 
-    self.statesSubscriber = new ROSLIB.Topic({
+    self.getInterfaceTasks = function (domain, actions) {
+        var task = RFH.taskMenu.tasks[domain];
+        var taskNames = [];
+        for (var i=0; i < actions.length; i += 1) {
+            taskNames.push(task.getInterfaceTask(actions[i]));
+        }
+        return taskNames;
+    };
+
+    self.smachStatusSubscriber = new ROSLIB.Topic({
         ros: self.ros,
         name: "/task_state",
         type: "hrl_task_planning/PDDLState"
     });
 
-    self.matchingStateIndex = function(state_msg) {
+
+    var matchingStateIndex = function(state_msg) {
         var problem_states = self.smach_tasks[state_msg.problem].states;
         for (var idx in problem_states) {
             if (problem_states[idx].predicates.length === state_msg.predicates.length) {
@@ -61,15 +74,24 @@ RFH.Smach = function(options) {
         }
         return -1; // No match found...
     };
-
-
-    self.pddlStateCB = function(state_msg) {
-        var idx = self.matchingStateIndex(state_msg);
+    
+    var pddlStateCB = function(state_msg) {
+        var idx = matchingStateIndex(state_msg);
         if (idx >= 0) {
-            self.display.setActive(idx);
+            self.display.setActive(idx); // Update Display
+            RFH.taskMenu.startTask(self.smach_tasks[state_msg.problem].interfaceTasks[idx]); // Start corresponding task
         }
     };
-    self.statesSubscriber.subscribe(self.pddlStateCB);
+    self.smachStatusCBList = [pddlStateCB];
+
+    self.smachStatusCB = function (msg) {
+        for (var i=0; i < self.smachStatusCBList.length; i += 1) {
+            self.smachStatusCBList[i](msg);
+        }
+    };
+    self.smachStatusSubscriber.subscribe(self.smachStatusCB);
+
+
 };
 
 
