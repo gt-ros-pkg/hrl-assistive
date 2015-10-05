@@ -5,7 +5,7 @@ RFH.Drive = function (options) {
     self.name = options.name || 'drivingTask';
     self.ros = options.ros;
     var divId = options.targetDiv || 'video-main'; 
-    self.div = $(divId);
+    self.$div = $('#'+divId);
     self.head = options.head;
     self.camera = options.camera;
     self.base = options.base;
@@ -403,7 +403,7 @@ RFH.Drive = function (options) {
 
     self.stop = function () {
         $(document).off("mouseleave.rfh mouseout.rfh");
-        self.div.removeClass('drive-safe');
+        self.$div.removeClass('drive-safe');
         $(self.driveSVG.node, '.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
         $('.drive-ctrl').hide();
         $('#controls h3').text("Controls");
@@ -420,13 +420,13 @@ RFH.Drive = function (options) {
     };
 
     self.setSafe = function () {
-        self.div.addClass('drive-safe');
+        self.$div.addClass('drive-safe');
     };
 
     self.setUnsafe = function (event) {
         //alert("Unsafe: "+event.type);
         clearTimeout(self.timer);
-        self.div.removeClass('drive-safe');
+        self.$div.removeClass('drive-safe');
     };
 
     self.getRTheta = function (e) {
@@ -458,7 +458,7 @@ RFH.Drive = function (options) {
         return [r, theta, gnd_pt[0], gnd_pt[1]];
     };
     self.sendCmd = function (cmd) {
-        if (!self.div.hasClass('drive-safe')) { return ;}
+        if (!self.$div.hasClass('drive-safe')) { return ;}
         self.base.pubCmd(cmd.x, cmd.y, cmd.theta);
         self.timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
     };
