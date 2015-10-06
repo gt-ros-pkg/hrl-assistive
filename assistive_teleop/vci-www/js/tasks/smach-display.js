@@ -77,7 +77,9 @@ RFH.Smach = function(options) {
     
     var pddlStateCB = function(state_msg) {
         var idx = matchingStateIndex(state_msg);
-        if (idx >= 0) {
+        if (idx == self.smach_tasks[state_msg.problem].states.length-2) { // -1 for initial state on states list, -1 for index vs length diff.
+            self.display.empty();
+        } else if (idx >= 0) {
             self.display.setActive(idx); // Update Display
             RFH.taskMenu.startTask(self.smach_tasks[state_msg.problem].interfaceTasks[idx]); // Start corresponding task
         }

@@ -239,8 +239,8 @@ var initMjpegCanvas = function (divId) {
     "use strict";
 //    $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     imageTopic: '/head_mount_kinect/rgb/image',
-                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     imageTopic: '/head_mount_kinect/rgb_lowres/image',
+                                     infoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
                                      divId: 'video-main',
                                      imageId: 'mjpeg-image',
                                      host: RFH.ROBOT,

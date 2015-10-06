@@ -17,17 +17,27 @@ RFH.IdLocation = function(options) {
     self.posePublisher = new ROSLIB.Topic({
         ros: self.ros,
         name: '/id_location',
-        type: 'geometry_msgs/PoseStamped'
+        messageType: 'geometry_msgs/PoseStamped'
     });
     self.posePublisher.advertise();
 
     self.poseCB = function(pose_msg) {
+        self.$image.removeClass('cursor-wait');
         self.posePublisher.publish(pose_msg);
+        console.log("Pixel23D Returned");
     };
 
     self.clickCB = function(event, ui) {
-        var click = RFH.positionInElement(event);
-        self.pixel23d.call(click[0], click[1], self.poseCB);
+        var pt = RFH.positionInElement(event);
+        var px = (pt[0]/event.target.clientWidth);
+        var py = (pt[1]/event.target.clientHeight);
+        try {
+            self.pixel23d.callRelativeScale(px, py, self.poseCB);
+            console.log("Called Pixel23D");
+            self.$image.addClass('cursor-wait');
+        } catch(err) {
+            log(err);
+        }
     };
 
     self.start = function() {

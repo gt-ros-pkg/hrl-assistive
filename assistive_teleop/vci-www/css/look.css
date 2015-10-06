@@ -12,7 +12,8 @@
 }
 
 .cursor-select{
-    cursor: url(cursors/select.png) 20 20, auto;
+/* cursor: url(cursors/select.png) 20 20, auto;*/
+    cursor: pointer;    
 }
 
 .cursor-eyes {

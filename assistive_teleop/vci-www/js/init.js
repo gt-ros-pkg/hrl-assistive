@@ -2,46 +2,47 @@ var RFH = {
     positionInElement: function (e) {
         var posx = 0;
         var posy = 0;
-        if (!e) var e = window.event;
+        if (e === undefined) {e = window.event;}
         if (e.pageX || e.pageY) 	{
             posx = e.pageX;
             posy = e.pageY;
         }
         else if (e.clientX || e.clientY) 	{
-            posx = e.clientX + document.body.scrollLeft
-                + document.documentElement.scrollLeft;
-            posy = e.clientY + document.body.scrollTop
-                + document.documentElement.scrollTop;
+            posx = e.clientX + document.body.scrollLeft +
+                 document.documentElement.scrollLeft;
+            posy = e.clientY + document.body.scrollTop +
+                 document.documentElement.scrollTop;
         }
         var offsetLeft = 0;
         var offsetTop = 0;
         var element = document.getElementById(e.target.id);
-        while (element && !isNaN(element.offsetLeft)
-                && !isNaN(element.offsetTop)) {
+        while (element &&
+               !isNaN(element.offsetLeft) &&
+               !isNaN(element.offsetTop)) {
             offsetLeft += element.offsetLeft;
             offsetTop += element.offsetTop;
             element = element.offsetParent;
         }
         posx -= offsetLeft;
         posy -= offsetTop;
-//        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
-        return [posx, posy]
+        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
+        return [posx, posy];
     },
 
   checkBrowser: function () {
       var ua = navigator.userAgent;
       var idx = ua.indexOf('Chrome/');
       if (idx === -1) {
-          $("body").replaceWith("<body><p>Please use Google Chrome</p></body>")
+          $("body").replaceWith("<body><p>Please use Google Chrome</p></body>");
           alert("Please Use Google Chrome");
           return false;
-      };
+      }
       var vm = ua.slice(idx+7, idx+9);
       if (vm <= 30) {
-          $("body").replaceWith("<body><p>Please update your Chrome Browser.</p></body>")
+          $("body").replaceWith("<body><p>Please update your Chrome Browser.</p></body>");
           alert("Please update your Chrome Browser.");
           return false;
-      };
+      }
       return true;
   },
 
@@ -50,12 +51,12 @@ var RFH = {
     this.ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     this.PORT = '9091';//Must match port on which rosbridge is being served
     $("body").css({"height": window.innerHeight, "width":window.innerWidth})
-             .on('dragstart', function (event) { return false})
-             .on('drop', function (event) { return false});
+             .on('dragstart', function (event) { return false;})
+             .on('drop', function (event) { return false;});
     window.addEventListener('resize', function () {
         $("body").css({"height": window.innerHeight, "width":window.innerWidth});
     });
-    initUserLog('#notifications')
+    initUserLog('#notifications');
 
   //  $('#tabs').css({'top':'0px'})
   //  var tabs = $("#tabs").tabs();

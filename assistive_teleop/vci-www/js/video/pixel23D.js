@@ -29,11 +29,10 @@ RFH.Pixel23DClient = function (options) {
     self.call = function (u, v, cb) {
         var req = new ROSLIB.ServiceRequest({'pixel_u':u, 'pixel_v':v});
         var cb_err_wrap = function (resp) {
+            console.log("Pixel23D response:\n");
+            console.log(resp);
             switch (resp.error_flag) {
                 case 0:
-//                    var pose = new ROSLIB.Pose({position: resp.pixel3d.pose.position,
-//                                                orientation: resp.pixel3d.pose.orientation});
-//                    cb(pose);
                     cb(resp.pixel3d);
                     break;
                 case 1:
