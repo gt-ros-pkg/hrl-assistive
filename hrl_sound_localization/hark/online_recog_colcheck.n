@@ -8,12 +8,8 @@
       <Parameter name="A_MATRIX_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
       <Parameter name="THRESH" type="float" value="24.5" description="subnet_param"/>
     </Node>
-    <Node name="node_RosNodeGenerator_1" type="RosNodeGenerator" x="369.99999999999994" y="350">
-      <Parameter name="NODE_NAME" type="string" value="HARK_MASTER_NODE" description="Node name for ROS"/>
-    </Node>
     <NetOutput name="RECOG" node="node_MAIN_LOOP_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_MAIN_LOOP_1" terminal="OUTPUT" object_type="any" description="No description available"/>
-    <NetOutput name="VALUE" node="node_RosNodeGenerator_1" terminal="VALUE" object_type="int" description="int parameter"/>
   </Network>
   <Network type="iterator" name="MAIN_LOOP">
     <Node name="node_MultiFFT_1" type="MultiFFT" x="750" y="180">
