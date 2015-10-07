@@ -6,7 +6,6 @@
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="TF_CONJ_FILENAME_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
       <Parameter name="A_MATRIX_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
-      <Parameter name="THRESH" type="float" value="24.5" description="subnet_param"/>
     </Node>
     <NetOutput name="RECOG" node="node_MAIN_LOOP_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_MAIN_LOOP_1" terminal="OUTPUT" object_type="any" description="No description available"/>
@@ -21,7 +20,7 @@
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
     </Node>
-    <Node name="node_sub_recognition_1" type="sub_recognition" x="1300" y="530">
+    <Node name="node_sub_recognition_1" type="sub_recognition" x="1290" y="520">
       <Parameter name="FBANK_COUNT" type="int" value="13" description="The size of the input feature vector."/>
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate in Hz.  [default: 16000]"/>
@@ -31,7 +30,6 @@
       <Parameter name="LENGTH" type="int" value="512" description="The length of a frame (per channel)."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling Rate (Hz)."/>
       <Parameter name="A_MATRIX" type="subnet_param" value="A_MATRIX_" description="subnet_param"/>
-      <Parameter name="THRESH" type="subnet_param" value="THRESH" description="subnet_param"/>
     </Node>
     <Node name="node_AudioStreamFromMic_1" type="AudioStreamFromMic" x="300" y="190">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
@@ -223,7 +221,7 @@
       <Parameter name="DEBUG" type="bool" value="true" description="Debug option. If the parameter is true, this node outputs sound localization results to a standard output."/>
     </Node>
     <Node name="node_SourceTracker_1" type="SourceTracker" x="930" y="440">
-      <Parameter name="THRESH" type="subnet_param" value="THRESH" description="Power threshold for localization results. A localization result with higher power than THRESH is tracked, otherwise ignored."/>
+      <Parameter name="THRESH" type="float" value="24.5" description="Power threshold for localization results. A localization result with higher power than THRESH is tracked, otherwise ignored."/>
       <Parameter name="PAUSE_LENGTH" type="float" value="1000" description="Life duration of source in ms. When any localization result for a source is found for more than PAUSE_LENGTH / 10 iterations, the source is terminated. [default: 800]"/>
       <Parameter name="MIN_SRC_INTERVAL" type="float" value="20" description="Source interval threshold in degree. When the angle between a localization result and a source is smaller than MIN_SRC_INTERVAL, the same ID is given to the localization result. [default: 20]"/>
       <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. MIN_ID should be greater than 0 or equal."/>
