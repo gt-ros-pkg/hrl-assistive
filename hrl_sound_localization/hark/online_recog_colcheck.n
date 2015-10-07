@@ -48,6 +48,7 @@
       <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
     </Node>
     <Node name="node_sub_collision_check_1" type="sub_collision_check" x="1220" y="540">
+      <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="" description="subnet_param"/>
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -295,18 +296,12 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_ConstantLocalization_1" type="ConstantLocalization" x="400" y="350">
-      <Parameter name="ANGLES" type="object" value="&lt;Vector&lt;float&gt; -20 20 &gt;" description="A vector to specify source locations. Each vector element shows azimuth of a source in degree."/>
-      <Parameter name="ELEVATIONS" type="object" value="&lt;Vector&lt;float&gt; -90 90&gt;" description="Elevations of source locations. Each element represents an elevation of each source location."/>
-      <Parameter name="POWER" type="object" value="" description="Power of sources. Each element represents a power of each source."/>
-      <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. ID is given from MIN_ID and incremented for the latter sources."/>
-    </Node>
     <Node name="node_GHDSS_2" type="GHDSS" x="490" y="200">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
       <Parameter name="LOWER_BOUND_FREQUENCY" type="int" value="0" description="Lower bound of frequency (Hz). [default: 0]"/>
-      <Parameter name="UPPER_BOUND_FREQUENCY" type="int" value="3000" description="Upper bound of frequency (Hz). [default: 8000]"/>
+      <Parameter name="UPPER_BOUND_FREQUENCY" type="int" value="8000" description="Upper bound of frequency (Hz). [default: 8000]"/>
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME" description="Filename of a pre-measured transfer function for separation."/>
       <Parameter name="INITW_FILENAME" type="string" value="" description="Filename of an initial separation matrix. If specified, a matrix in INITW_FILENAME is used as an initial separation matrix. Otherwise, initial separation matrix is estimated from the geometrical relationship or pre-measured TF according to TF_CONJ."/>
       <Parameter name="SS_METHOD" type="string" value="ADAPTIVE" description="The calculation method for SS step size parameter corresponding to the blind separation part. &quot;FIX&quot; uses a fixed step size,&quot;LC_MYU&quot; uses the same value as LC_MYU, and &quot;ADAPTIVE&quot; adaptively estimates an optimal step size. [default: ADAPTIVE]"/>
@@ -323,12 +318,19 @@
       <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
       <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
     </Node>
-    <Link from="node_ConstantLocalization_1" output="SOURCES" to="node_GHDSS_2" input="INPUT_SOURCES"/>
-    <Link from="node_ConstantLocalization_1" output="SOURCES" to="node_RosHarkMsgsPublisher_1" input="SRC_INFO"/>
+    <Node name="node_SourceSelectorByDirection_1" type="SourceSelectorByDirection" x="400" y="440">
+      <Parameter name="MIN_AZIMUTH" type="float" value="-20" description="Minimum azimuth for source selection in degree. [default: -20.0]"/>
+      <Parameter name="MAX_AZIMUTH" type="float" value="20" description="Maximum azimuth for source selection in degree. [default: 20.0]"/>
+      <Parameter name="MIN_ELEVATION" type="float" value="-90" description="Minimum elevation for source selection in degree. [default: -90.0]"/>
+      <Parameter name="MAX_ELEVATION" type="float" value="90" description="Maximum elevation for source selection in degree. [default: 90.0]"/>
+    </Node>
     <Link from="node_GHDSS_2" output="OUTPUT" to="node_RosHarkMsgsPublisher_1" input="SRC_FFT"/>
+    <Link from="node_SourceSelectorByDirection_1" output="OUTPUT" to="node_GHDSS_2" input="INPUT_SOURCES"/>
+    <Link from="node_SourceSelectorByDirection_1" output="OUTPUT" to="node_RosHarkMsgsPublisher_1" input="SRC_INFO"/>
     <NetOutput name="OUTPUT" node="node_RosHarkMsgsPublisher_1" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
     <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_2" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
     <NetInput name="SRC_FFT" node="node_RosHarkMsgsPublisher_2" terminal="SRC_FFT" object_type="Map&lt;int,ObjectRef&gt;" description="Fourier transformed signal after sound source separation."/>
     <NetInput name="FFT" node="node_GHDSS_2" terminal="INPUT_FRAMES" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Input multi-channel spectrum. A row is a channel, and a column is a spectrum for the corresponding channel."/>
+    <NetInput name="SRC" node="node_SourceSelectorByDirection_1" terminal="SOURCES" object_type="Vector&lt;ObjectRef&gt;" description="Source locations with ID. Each element of the vector is a source location with ID specified by &quot;Source&quot;."/>
   </Network>
 </Document>
