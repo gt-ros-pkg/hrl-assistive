@@ -57,6 +57,7 @@
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_recognition_1" input="SRC_INFO"/>
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SRC_INFO"/>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SPEC"/>
+    <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SRC"/>
     <NetOutput name="RECOG" node="node_sub_recognition_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_sub_separation_1" terminal="OUTPUT" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT_1" node="node_sub_collision_pub_1" terminal="OUTPUT" object_type="any" description="Dynamic"/>
@@ -278,12 +279,6 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_ConstantLocalization_1" type="ConstantLocalization" x="370" y="310">
-      <Parameter name="ANGLES" type="object" value="&lt;Vector&lt;float&gt; -20 20&gt;" description="A vector to specify source locations. Each vector element shows azimuth of a source in degree."/>
-      <Parameter name="ELEVATIONS" type="object" value="&lt;Vector&lt;float&gt; -90 90&gt;" description="Elevations of source locations. Each element represents an elevation of each source location."/>
-      <Parameter name="POWER" type="object" value="&lt;Vector&lt;float&gt; &gt;" description="Power of sources. Each element represents a power of each source."/>
-      <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. ID is given from MIN_ID and incremented for the latter sources."/>
-    </Node>
     <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="950" y="210">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
@@ -323,11 +318,11 @@
       <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
       <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
     </Node>
-    <Link from="node_ConstantLocalization_1" output="SOURCES" to="node_GHDSS_2" input="INPUT_SOURCES"/>
     <Link from="node_GHDSS_2" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_FFT"/>
     <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_1" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
     <NetOutput name="OUTPUT" node="node_RosHarkMsgsPublisher_1" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
     <NetInput name="SPEC" node="node_GHDSS_2" terminal="INPUT_FRAMES" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Input multi-channel spectrum. A row is a channel, and a column is a spectrum for the corresponding channel."/>
     <NetOutput name="OUTPUT_1" node="node_RosHarkMsgsPublisher_2" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
+    <NetInput name="SRC" node="node_GHDSS_2" terminal="INPUT_SOURCES" object_type="Vector&lt;ObjectRef&gt;" description="Source locations with ID. Each element of the vector is a source location with ID specified by &quot;Source&quot;."/>
   </Network>
 </Document>
