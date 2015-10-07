@@ -1,0 +1,41 @@
+-plugindir /usr/lib/julius_plugin
+-notypecheck
+
+-gram LM/en_order
+#-h AM/hmmdefs.gz
+#-hlist AM/allTriphones_en2
+-h AM/hmmdefs_en.bin
+-hlist AM/allTriphones_en
+
+-no_ccd  # 音素環境依存性を(強制的に)考慮しない    
+
+## Gaussian pruning 法の選択
+## 高速版ではbeam，それ以外ではsafeがデフォルトです
+#-gprune safe		# safe pruning 上位N個が確実に求まる．正確．
+#-gprune heuristic	# heuristic pruning
+-gprune beam		# beam pruning 次元ごとに足切り．高速．
+#-gprune none		# pruning を行わない
+#-gprune add_mask_to_safe	# pluginにて計算にmask追加したsafe
+#-gprune add_mask_to_heu		# pluginにて計算にmask追加したheu
+#-gprune add_mask_to_beam	# pluginにて計算にmask追加したbeam
+#-gprune add_mask_to_none	# pluginにて計算にmask追加したnone
+
+## 探索パラメータ
+-b 5000		# 第1パスのビーム幅（ノード数） triphone,PTM,engine=v2.1
+-b2 500		# 第2パスの仮説数ビームの幅（仮説数）
+-m 10000		# 第2パスの仮説オーバフローのしきい値
+-s 20000		# 第2パスの最大スタック数 (仮説数)
+
+#-walign		# 認識結果の単語ごとのアラインメント結果を出力
+#-palign		# 認識結果の音素ごとのアラインメント結果を出力
+#-salign		# 認識結果のHMM状態ごとのアラインメント結果を出力
+
+## 音声入力ソース
+-input mfcnet
+#-input mfcfile
+#-input rawfile	# wavefile
+
+#-adport 5530
+
+#-module		# サーバーモジュールモードで起動
+
