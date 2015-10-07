@@ -261,7 +261,7 @@
     <NetOutput name="OUTPUT" node="node_SourceIntervalExtender_1" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="Source locations PREROLL_LENGTH frames earlier than SOURCES."/>
   </Network>
   <Network type="subnet" name="sub_collision_pub">
-    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="917.9999999999999" y="450">
+    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1040" y="460">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/all" description="Published topic name for ROS (HarkWave type message)"/>
@@ -278,7 +278,7 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1000" y="210">
+    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1040" y="190">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/center" description="Published topic name for ROS (HarkWave type message)"/>
@@ -295,20 +295,20 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_ConstantLocalization_1" type="ConstantLocalization" x="230" y="350">
+    <Node name="node_ConstantLocalization_1" type="ConstantLocalization" x="261.99999999999994" y="350">
       <Parameter name="ANGLES" type="object" value="&lt;Vector&lt;float&gt; -20 20 &gt;" description="A vector to specify source locations. Each vector element shows azimuth of a source in degree."/>
-      <Parameter name="ELEVATIONS" type="object" value="&lt;Vector&lt;float&gt; -90 90&gt;" description="Elevations of source locations. Each element represents an elevation of each source location."/>
-      <Parameter name="POWER" type="object" value="" description="Power of sources. Each element represents a power of each source."/>
+      <Parameter name="ELEVATIONS" type="object" value="&lt;Vector&lt;float&gt; 0 0&gt;" description="Elevations of source locations. Each element represents an elevation of each source location."/>
+      <Parameter name="POWER" type="object" value="&lt;Vector&lt;float&gt; 1 100&gt;" description="Power of sources. Each element represents a power of each source."/>
       <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. ID is given from MIN_ID and incremented for the latter sources."/>
     </Node>
-    <Node name="node_SourceTracker_2" type="SourceTracker" x="560" y="350">
+    <Node name="node_SourceTracker_2" type="SourceTracker" x="592.0000000000001" y="350">
       <Parameter name="THRESH" type="float" value="24.5" description="Power threshold for localization results. A localization result with higher power than THRESH is tracked, otherwise ignored."/>
       <Parameter name="PAUSE_LENGTH" type="float" value="1000" description="Life duration of source in ms. When any localization result for a source is found for more than PAUSE_LENGTH / 10 iterations, the source is terminated. [default: 800]"/>
       <Parameter name="MIN_SRC_INTERVAL" type="float" value="20" description="Source interval threshold in degree. When the angle between a localization result and a source is smaller than MIN_SRC_INTERVAL, the same ID is given to the localization result. [default: 20]"/>
       <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. MIN_ID should be greater than 0 or equal."/>
       <Parameter name="DEBUG" type="bool" value="false" description="Output debug information if true [default: false]"/>
     </Node>
-    <Node name="node_GHDSS_2" type="GHDSS" x="550" y="190">
+    <Node name="node_GHDSS_2" type="GHDSS" x="360" y="200">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -330,9 +330,18 @@
       <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
       <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
     </Node>
+    <Node name="node_Synthesize_3" type="Synthesize" x="620" y="200">
+      <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
+      <Parameter name="ADVANCE" type="subnet_param" value="ADVANCE" description="The length in sample between a frame and a previous frame. [default: 160]"/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="MIN_FREQUENCY" type="int" value="125" description="Minimum frequency (Hz) [default: 125]"/>
+      <Parameter name="MAX_FREQUENCY" type="int" value="7900" description="Maximum frequency (Hz) [default: 7900]"/>
+      <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
+      <Parameter name="OUTPUT_GAIN" type="float" value="1.0" description="Output gain factor. [default: 1.0]"/>
+    </Node>
     <Link from="node_ConstantLocalization_1" output="SOURCES" to="node_SourceTracker_2" input="INPUT"/>
     <Link from="node_SourceTracker_2" output="OUTPUT" to="node_GHDSS_2" input="INPUT_SOURCES"/>
-    <Link from="node_GHDSS_2" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_FFT"/>
+    <Link from="node_GHDSS_2" output="OUTPUT" to="node_Synthesize_3" input="INPUT"/>
     <Link from="node_SourceTracker_2" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_INFO"/>
     <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_1" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
     <NetOutput name="OUTPUT" node="node_RosHarkMsgsPublisher_1" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
