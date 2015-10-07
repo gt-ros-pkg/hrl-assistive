@@ -7,8 +7,12 @@
       <Parameter name="TF_CONJ_FILENAME_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
       <Parameter name="A_MATRIX_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
     </Node>
+    <Node name="node_RosNodeGenerator_1" type="RosNodeGenerator" x="310" y="300">
+      <Parameter name="NODE_NAME" type="string" value="HARK_MASTER_NODE" description="Node name for ROS"/>
+    </Node>
     <NetOutput name="RECOG" node="node_MAIN_LOOP_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_MAIN_LOOP_1" terminal="OUTPUT" object_type="any" description="No description available"/>
+    <NetOutput name="VALUE" node="node_RosNodeGenerator_1" terminal="VALUE" object_type="int" description="int parameter"/>
   </Network>
   <Network type="iterator" name="MAIN_LOOP">
     <Node name="node_MultiFFT_1" type="MultiFFT" x="920" y="180">
@@ -39,6 +43,8 @@
       <Parameter name="DEVICETYPE" type="string" value="ALSA" description="Device type [default: WS]."/>
       <Parameter name="GAIN" type="string" value="0dB" description="capture gain (dB)  [default: 0dB]."/>
       <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
+    </Node>
+    <Node name="node_sub_collision_pub_1" type="sub_collision_pub" x="1280" y="650">
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -253,5 +259,26 @@
     <Link from="node_Constant_2" output="VALUE" to="node_CMLoad_1" input="OPERATION_FLAG"/>
     <NetInput name="WAV" node="node_LocalizeMUSIC_1" terminal="INPUT" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Multi-channel audio signals. In this matrix, a row is a channel, and a column is a sample."/>
     <NetOutput name="OUTPUT" node="node_DisplayLocalization_1" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="The same as input."/>
+  </Network>
+  <Network type="subnet" name="sub_collision_pub">
+    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="830" y="310">
+      <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
+      <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
+      <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/all" description="Published topic name for ROS (HarkWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFFT" type="string" value="HarkFFT/all" description="Published topic name for ROS (HarkFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFEATURE" type="string" value="HarkFeature/all" description="Published topic name for ROS (HarkFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSOURCE" type="string" value="HarkSource/all" description="Published topic name for ROS (HarkSource type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCWAVE" type="string" value="HarkSrcWave/all" description="Published topic name for ROS (HarkSrcWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFFT" type="string" value="HarkSrcFFT/all" description="Published topic name for ROS (HarkSrcFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATURE" type="string" value="HarkSrcFeature/all" description="Published topic name for ROS (HarkSrcFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATUREMFM" type="string" value="HarkSrcFeatureMFM/all" description="Published topic name for ROS (HarkSrcFeatureMFM type message)"/>
+      <Parameter name="BUFFER_NUM" type="int" value="100" description="Buffer size for a ROS published message"/>
+      <Parameter name="ROS_LOOP_RATE" type="float" value="100000" description="This allows you to specify a frequency that you would like to loop at [Hz]. Keep this value large. (If ROS interval is shorter than HARK interval, ROS interval is overwritten.)"/>
+      <Parameter name="TIMESTAMP_TYPE" type="string" value="ROS_TIME_NOW" description="Time stamp type. If TIMESTAMP is connected, this is ignored."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
+      <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
+    </Node>
+    <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_1" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
+    <NetInput name="SRC_FFT" node="node_RosHarkMsgsPublisher_1" terminal="SRC_FFT" object_type="Map&lt;int,ObjectRef&gt;" description="Fourier transformed signal after sound source separation."/>
   </Network>
 </Document>
