@@ -13,6 +13,7 @@
     <NetOutput name="RECOG" node="node_MAIN_LOOP_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_MAIN_LOOP_1" terminal="OUTPUT" object_type="any" description="No description available"/>
     <NetOutput name="VALUE" node="node_RosNodeGenerator_1" terminal="VALUE" object_type="int" description="int parameter"/>
+    <NetOutput name="OUTPUT_1" node="node_MAIN_LOOP_1" terminal="OUTPUT_1" object_type="any" description="Dynamic"/>
   </Network>
   <Network type="iterator" name="MAIN_LOOP">
     <Node name="node_MultiFFT_1" type="MultiFFT" x="920" y="180">
