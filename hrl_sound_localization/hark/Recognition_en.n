@@ -260,14 +260,14 @@
     <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="830" y="310">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
-      <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/all" description="Published topic name for ROS (HarkWave type message)"/>
-      <Parameter name="TOPIC_NAME_HARKFFT" type="string" value="HarkFFT/all" description="Published topic name for ROS (HarkFFT type message)"/>
-      <Parameter name="TOPIC_NAME_HARKFEATURE" type="string" value="HarkFeature/all" description="Published topic name for ROS (HarkFeature type message)"/>
-      <Parameter name="TOPIC_NAME_HARKSOURCE" type="string" value="HarkSource/all" description="Published topic name for ROS (HarkSource type message)"/>
-      <Parameter name="TOPIC_NAME_HARKSRCWAVE" type="string" value="HarkSrcWave/all" description="Published topic name for ROS (HarkSrcWave type message)"/>
-      <Parameter name="TOPIC_NAME_HARKSRCFFT" type="string" value="HarkSrcFFT/all" description="Published topic name for ROS (HarkSrcFFT type message)"/>
-      <Parameter name="TOPIC_NAME_HARKSRCFEATURE" type="string" value="HarkSrcFeature/all" description="Published topic name for ROS (HarkSrcFeature type message)"/>
-      <Parameter name="TOPIC_NAME_HARKSRCFEATUREMFM" type="string" value="HarkSrcFeatureMFM/all" description="Published topic name for ROS (HarkSrcFeatureMFM type message)"/>
+      <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave" description="Published topic name for ROS (HarkWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFFT" type="string" value="HarkFFT" description="Published topic name for ROS (HarkFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFEATURE" type="string" value="HarkFeature" description="Published topic name for ROS (HarkFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSOURCE" type="string" value="HarkSource" description="Published topic name for ROS (HarkSource type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCWAVE" type="string" value="HarkSrcWave" description="Published topic name for ROS (HarkSrcWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFFT" type="string" value="HarkSrcFFT" description="Published topic name for ROS (HarkSrcFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATURE" type="string" value="HarkSrcFeature" description="Published topic name for ROS (HarkSrcFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATUREMFM" type="string" value="HarkSrcFeatureMFM" description="Published topic name for ROS (HarkSrcFeatureMFM type message)"/>
       <Parameter name="BUFFER_NUM" type="int" value="100" description="Buffer size for a ROS published message"/>
       <Parameter name="ROS_LOOP_RATE" type="float" value="100000" description="This allows you to specify a frequency that you would like to loop at [Hz]. Keep this value large. (If ROS interval is shorter than HARK interval, ROS interval is overwritten.)"/>
       <Parameter name="TIMESTAMP_TYPE" type="string" value="ROS_TIME_NOW" description="Time stamp type. If TIMESTAMP is connected, this is ignored."/>
