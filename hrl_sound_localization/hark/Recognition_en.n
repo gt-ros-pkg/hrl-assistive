@@ -14,6 +14,7 @@
     <NetOutput name="OUTPUT" node="node_MAIN_LOOP_1" terminal="OUTPUT" object_type="any" description="No description available"/>
     <NetOutput name="VALUE" node="node_RosNodeGenerator_1" terminal="VALUE" object_type="int" description="int parameter"/>
     <NetOutput name="OUTPUT_1" node="node_MAIN_LOOP_1" terminal="OUTPUT_1" object_type="any" description="Dynamic"/>
+    <NetOutput name="OUTPUT_2" node="node_MAIN_LOOP_1" terminal="OUTPUT_2" object_type="any" description="Dynamic"/>
   </Network>
   <Network type="iterator" name="MAIN_LOOP">
     <Node name="node_MultiFFT_1" type="MultiFFT" x="578.6666666666667" y="180">
@@ -46,6 +47,7 @@
       <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
     </Node>
     <Node name="node_sub_collision_pub_1" type="sub_collision_pub" x="1270" y="400">
+      <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="" description="subnet_param"/>
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -54,27 +56,29 @@
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_separation_1" input="SRC_INFO"/>
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_recognition_1" input="SRC_INFO"/>
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SRC_INFO"/>
+    <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SPEC"/>
     <NetOutput name="RECOG" node="node_sub_recognition_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_sub_separation_1" terminal="OUTPUT" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT_1" node="node_sub_collision_pub_1" terminal="OUTPUT" object_type="any" description="Dynamic"/>
     <NetCondition name="CONDITION" node="node_AudioStreamFromMic_1" terminal="NOT_EOF"/>
+    <NetOutput name="OUTPUT_2" node="node_sub_collision_pub_1" terminal="OUTPUT_1" object_type="any" description="Dynamic"/>
   </Network>
   <Network type="subnet" name="sub_separation">
-    <Node name="node_PowerCalcForMap_1" type="PowerCalcForMap" x="580" y="220">
+    <Node name="node_PowerCalcForMap_1" type="PowerCalcForMap" x="580" y="149.33333333333331">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
     </Node>
-    <Node name="node_CalcSpecAddPower_1" type="CalcSpecAddPower" x="1110" y="390">
+    <Node name="node_CalcSpecAddPower_1" type="CalcSpecAddPower" x="1110" y="319.3333333333333">
     </Node>
-    <Node name="node_CalcSpecSubGain_1" type="CalcSpecSubGain" x="470" y="650">
+    <Node name="node_CalcSpecSubGain_1" type="CalcSpecSubGain" x="470" y="579.3333333333334">
       <Parameter name="ALPHA" type="float" value="1.0" description="Overestimation factor."/>
       <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
       <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
     </Node>
-    <Node name="node_EstimateLeak_1" type="EstimateLeak" x="780" y="440">
+    <Node name="node_EstimateLeak_1" type="EstimateLeak" x="780" y="369.3333333333333">
       <Parameter name="LEAK_FACTOR" type="float" value="0.25" description="Leak factor [default:0.25]"/>
       <Parameter name="OVER_CANCEL_FACTOR" type="float" value="1" description="Over cancel value [default:1]"/>
     </Node>
-    <Node name="node_HRLE_1" type="HRLE" x="860" y="180">
+    <Node name="node_HRLE_1" type="HRLE" x="860" y="109.33333333333333">
       <Parameter name="LX" type="float" value="0.20" description="Lx value of estimation, e.g. Lx=0 -&gt; Minimum (MCRA), Lx=0.5 -&gt; Median , Lx=1.0 -&gt; Maximum [default:0.85]"/>
       <Parameter name="TIME_CONST_METHOD" type="string" value="LEGACY" description="Time constant value definition, &quot;LEGACY&quot; uses time constant value for HARK 2.0.0,&quot;MILLISECOND&quot; uses time constant value in frames. [default: LEGACY]"/>
       <Parameter name="TIME_CONSTANT" type="float" value="16000" description="Time constant for exponential decay window in samples [default:]"/>
@@ -86,19 +90,19 @@
       <Parameter name="STEP_LEVEL" type="float" value="0.2" description="Step level of histogram bin (Width of each histogram bin) in dB [default:0.2]"/>
       <Parameter name="DEBUG" type="bool" value="false" description="Prints the histogram for each 100 iterations."/>
     </Node>
-    <Node name="node_SpectralGainFilter_1" type="SpectralGainFilter" x="830" y="560">
+    <Node name="node_SpectralGainFilter_1" type="SpectralGainFilter" x="830" y="489.3333333333333">
     </Node>
-    <Node name="node_WhiteNoiseAdder_1" type="WhiteNoiseAdder" x="1160" y="490">
+    <Node name="node_WhiteNoiseAdder_1" type="WhiteNoiseAdder" x="1160" y="419.3333333333333">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="WN_LEVEL" type="float" value="15" description="An amplitude of white noise to be added. [default: 0]"/>
     </Node>
-    <Node name="node_SaveWavePCM_1" type="SaveWavePCM" x="1300" y="630">
+    <Node name="node_SaveWavePCM_1" type="SaveWavePCM" x="1300" y="559.3333333333334">
       <Parameter name="BASENAME" type="string" value="sep_files/sep_" description="Basename of files. [default: sep_]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (in samples)[default: 16000]."/>
       <Parameter name="BITS" type="string" value="int24" description="Bit format of samples. int16 , int24 and float32 bits are supported."/>
     </Node>
-    <Node name="node_Synthesize_1" type="Synthesize" x="970" y="720">
+    <Node name="node_Synthesize_1" type="Synthesize" x="970" y="649.3333333333334">
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -107,7 +111,7 @@
       <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
       <Parameter name="OUTPUT_GAIN" type="float" value="50.0" description="Output gain factor. [default: 1.0]"/>
     </Node>
-    <Node name="node_GHDSS_1" type="GHDSS" x="340" y="240">
+    <Node name="node_GHDSS_1" type="GHDSS" x="340" y="169.33333333333331">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -207,7 +211,7 @@
     <NetOutput name="RECOG" node="node_SpeechRecognitionClient_1" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="The same as SOURCES."/>
   </Network>
   <Network type="subnet" name="sub_localization">
-    <Node name="node_LocalizeMUSIC_1" type="LocalizeMUSIC" x="740" y="180">
+    <Node name="node_LocalizeMUSIC_1" type="LocalizeMUSIC" x="740" y="250">
       <Parameter name="MUSIC_ALGORITHM" type="string" value="GEVD" description="Sound Source Localization Algorithm. If SEVD, NOISECM will be ignored"/>
       <Parameter name="TF_CHANNEL_SELECTION" type="object" value="&lt;Vector&lt;int&gt; 0 1 2 3&gt;" description="Microphone channels for localization"/>
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="The length of a frame (per channel)."/>
@@ -257,7 +261,7 @@
     <NetOutput name="OUTPUT" node="node_SourceIntervalExtender_1" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="Source locations PREROLL_LENGTH frames earlier than SOURCES."/>
   </Network>
   <Network type="subnet" name="sub_collision_pub">
-    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1010" y="270">
+    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="950" y="450">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave" description="Published topic name for ROS (HarkWave type message)"/>
@@ -274,7 +278,56 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
+    <Node name="node_ConstantLocalization_1" type="ConstantLocalization" x="370" y="310">
+      <Parameter name="ANGLES" type="object" value="&lt;Vector&lt;float&gt; -20 20&gt;" description="A vector to specify source locations. Each vector element shows azimuth of a source in degree."/>
+      <Parameter name="ELEVATIONS" type="object" value="&lt;Vector&lt;float&gt; -90 90&gt;" description="Elevations of source locations. Each element represents an elevation of each source location."/>
+      <Parameter name="POWER" type="object" value="&lt;Vector&lt;float&gt; &gt;" description="Power of sources. Each element represents a power of each source."/>
+      <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. ID is given from MIN_ID and incremented for the latter sources."/>
+    </Node>
+    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="950" y="210">
+      <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
+      <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
+      <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave" description="Published topic name for ROS (HarkWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFFT" type="string" value="HarkFFT/center" description="Published topic name for ROS (HarkFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFEATURE" type="string" value="HarkFeature/center" description="Published topic name for ROS (HarkFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSOURCE" type="string" value="HarkSource/center" description="Published topic name for ROS (HarkSource type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCWAVE" type="string" value="HarkSrcWave/center" description="Published topic name for ROS (HarkSrcWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFFT" type="string" value="HarkSrcFFT/all" description="Published topic name for ROS (HarkSrcFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATURE" type="string" value="HarkSrcFeature/center" description="Published topic name for ROS (HarkSrcFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATUREMFM" type="string" value="HarkSrcFeatureMFM/center" description="Published topic name for ROS (HarkSrcFeatureMFM type message)"/>
+      <Parameter name="BUFFER_NUM" type="int" value="100" description="Buffer size for a ROS published message"/>
+      <Parameter name="ROS_LOOP_RATE" type="float" value="100000" description="This allows you to specify a frequency that you would like to loop at [Hz]. Keep this value large. (If ROS interval is shorter than HARK interval, ROS interval is overwritten.)"/>
+      <Parameter name="TIMESTAMP_TYPE" type="string" value="ROS_TIME_NOW" description="Time stamp type. If TIMESTAMP is connected, this is ignored."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
+      <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
+    </Node>
+    <Node name="node_GHDSS_2" type="GHDSS" x="420" y="180">
+      <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="LOWER_BOUND_FREQUENCY" type="int" value="0" description="Lower bound of frequency (Hz). [default: 0]"/>
+      <Parameter name="UPPER_BOUND_FREQUENCY" type="int" value="8000" description="Upper bound of frequency (Hz). [default: 8000]"/>
+      <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME" description="Filename of a pre-measured transfer function for separation."/>
+      <Parameter name="INITW_FILENAME" type="string" value="" description="Filename of an initial separation matrix. If specified, a matrix in INITW_FILENAME is used as an initial separation matrix. Otherwise, initial separation matrix is estimated from the geometrical relationship or pre-measured TF according to TF_CONJ."/>
+      <Parameter name="SS_METHOD" type="string" value="ADAPTIVE" description="The calculation method for SS step size parameter corresponding to the blind separation part. &quot;FIX&quot; uses a fixed step size,&quot;LC_MYU&quot; uses the same value as LC_MYU, and &quot;ADAPTIVE&quot; adaptively estimates an optimal step size. [default: ADAPTIVE]"/>
+      <Parameter name="SS_SCAL" type="float" value="1.0" description="Scaling factor for SS step size. [default: 1.0]"/>
+      <Parameter name="SS_MYU" type="float" value="0.001" description="SS step size value. [default 0.001]"/>
+      <Parameter name="NOISE_FLOOR" type="float" value="0.0" description="Noise floor value. [default 0.0]"/>
+      <Parameter name="LC_CONST" type="string" value="DIAG" description="The calculation method for geometric constraints. &quot;FULL&quot; uses all elements of a matrix, and &quot;DIAG&quot; only uses diagonal parts. [default: FULL]"/>
+      <Parameter name="LC_METHOD" type="string" value="ADAPTIVE" description="The calculation method for LC step size corresponding to geometric constraints. &quot;FIX&quot; uses a fixed value, and &quot;Adaptive&quot; adaptively estimates an optimal step size. [default: ADAPTIVE]"/>
+      <Parameter name="LC_MYU" type="float" value="0.001" description="LC step size value. [default 0.001]"/>
+      <Parameter name="UPDATE_METHOD_TF_CONJ" type="string" value="POS" description="Switching method of TF_CONJ data. [default: POS]"/>
+      <Parameter name="UPDATE_METHOD_W" type="string" value="ID" description="Switching method of separation matrix, W. [default: ID]"/>
+      <Parameter name="UPDATE_ACCEPT_DISTANCE" type="float" value="300" description="Distance allowance to switch separation matrix in [mm]. available when when UPDATE_METHOD_W is POS or ID_POS. [default: 300.0]"/>
+      <Parameter name="EXPORT_W" type="bool" value="false" description="Separation matrix W is exported if true. [default: false]"/>
+      <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
+      <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
+    </Node>
+    <Link from="node_ConstantLocalization_1" output="SOURCES" to="node_GHDSS_2" input="INPUT_SOURCES"/>
+    <Link from="node_GHDSS_2" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_FFT"/>
     <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_1" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
     <NetOutput name="OUTPUT" node="node_RosHarkMsgsPublisher_1" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
+    <NetInput name="SPEC" node="node_GHDSS_2" terminal="INPUT_FRAMES" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Input multi-channel spectrum. A row is a channel, and a column is a spectrum for the corresponding channel."/>
+    <NetOutput name="OUTPUT_1" node="node_RosHarkMsgsPublisher_2" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
   </Network>
 </Document>
