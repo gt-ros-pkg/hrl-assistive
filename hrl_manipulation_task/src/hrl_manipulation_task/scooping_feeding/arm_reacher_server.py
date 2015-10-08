@@ -7,7 +7,7 @@ import numpy as np
 
 # ROS
 import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
+roslib.load_manifest('hrl_manipulation_task')
 import tf
 import PyKDL
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
@@ -16,8 +16,7 @@ from std_msgs.msg import String
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath 
-from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
-from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv, String_String
+from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -95,7 +94,7 @@ class armReachAction(mpcBaseAction):
         ## test motoins --------------------------------------------------------
         self.motions['test_orient'] = {}
         self.motions['test_orient']['left'] = \
-          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],\
+          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0],\
           ['MOVET', '[ 0, 0, 0, 1.0, 0, 0]', 5.0],\
           ['MOVET', '[ 0, 0, 0, -1.0, 0, 0]', 5.0],\
           ['MOVET', '[ 0, 0, 0, 0, 0.5, 0]', 5.0],\
@@ -111,6 +110,17 @@ class armReachAction(mpcBaseAction):
           ['MOVET', '[ 0, 0.3, 0, 0, 0, 0]', 5.0],\
           ['MOVET', '[ 0, -0.3, 0, 0, 0, 0]', 5.0]]
         self.motions['test_pos']['right'] = []
+
+
+        self.motions['test_debug'] = {}
+        self.motions['test_debug']['left'] = \
+          [['MOVEJ', '[1.7382057931777943, 0.20142793794186975, 1.3853886011657872, -2.0352426871809115, -3.850947412217563, -0.40998397763618755, -2.2920]', 30.0],\
+           ['MOVES', '[0.405, 0.391, 0.142, 1.521, 0.0, -1.558]', 10., 'self.default_frame'],\
+           ['MOVET', '[ 0, 0, 0, 0, 0, -0.39]', 5.0]]
+        ##    ['MOVES', '[0.489, 0.706, 0.122, 1.577, -0.03, -0.047]', 10., 'self.default_frame']]
+        self.motions['test_debug']['right'] =\
+          [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
+
         
         ## Testing Motions ---------------------------------------------------------
         # Used to test and find the best optimal procedure to scoop the target.
@@ -236,18 +246,13 @@ class armReachAction(mpcBaseAction):
                 quat.x, quat.y, quat.z, quat.w,  = (quat_kdl[0], quat_kdl[1],\
                                                     quat_kdl[2], quat_kdl[3])
 
-                quat.x = -0.674
-                quat.y = 0.104
-                quat.z = 0.726
-                quat.w = -0.083
-                                                    
                 self.setOrientGoal(pos, quat, motion[2])
 
             elif motion[0] == 'MOVET':
                 poseData  = eval(motion[1])            
 
                 [cur_pos, cur_quat] = self.getEndeffectorPose()
-                M = PyKDL.Rotation.Quaternion(cur_quat[0], cur_quat[1], cur_quat[2], cur_quat[3])
+                M = PyKDL.Rotation.Quaternion(cur_quat[0], cur_quat[1], cur_quat[2], cur_quat[3]) # R_0e
 
                 # position 
                 pos_offset = PyKDL.Vector(poseData[0], poseData[1], poseData[2])
@@ -258,13 +263,17 @@ class armReachAction(mpcBaseAction):
                 pos.z = cur_pos[2] + pos_offset[2]
 
                 # orientation
-                rot_offset = PyKDL.Rotation.RPY((poseData[3]), (poseData[4]), (poseData[5]))
-                rot_offset = M * rot_offset
+                M.DoRotX(poseData[3])
+                M.DoRotY(poseData[4])
+                M.DoRotZ(poseData[5])
+                rot_offset = M
+                ## rot_offset = PyKDL.Rotation.RPY(poseData[3], poseData[4], poseData[5]) #R_ee'
+                ## rot_offset = M * rot_offset
                 quat.x = rot_offset.GetQuaternion()[0]
                 quat.y = rot_offset.GetQuaternion()[1]
                 quat.z = rot_offset.GetQuaternion()[2]
                 quat.w = rot_offset.GetQuaternion()[3]
-                                
+
                 self.setOrientGoal(pos, quat, motion[2])                
                 
             elif motion[0] == 'MOVEJ': 
@@ -335,8 +344,8 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    controller = 'static'
-    #controller = 'actionlib'
+    #controller = 'static'
+    controller = 'actionlib'
     arm        = opt.arm
     if opt.arm == 'l': verbose = True
     else: verbose = False
