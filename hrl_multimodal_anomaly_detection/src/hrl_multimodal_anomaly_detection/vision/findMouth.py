@@ -276,7 +276,7 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
     
     total_tags = 1
-    tag_id = 9
+    tag_id = 10
     tag_side_length = 0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18

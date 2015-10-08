@@ -106,6 +106,11 @@ class armReachAction(mpcBaseAction):
         
         #Array of offsets from bowl/mouth positions
         #Used to perform motions relative to bowl/mouth positions > It should use relative frame
+        ## self.leftArmScoopingPos = np.array([[-.0,	-0.02,	  .15],
+        ##                                     [-.0,	-0.02,	-.055], #Moving down into bowl
+        ##                                     [.02,	-0.02,	-.025], #Moving forward in bowl
+        ##                                     [0,	 -0.03,	  .20], #While rotating spoon to scoop out
+        ##                                     [0,	 -0.03,    .25]]) #Moving up out of bowl
         self.leftArmScoopingPos = np.array([[-.015,	-0.02,	  .15],
                                             [-.015,	-0.02,	-.055], #Moving down into bowl
                                             [.02,	-0.02,	-.025], #Moving forward in bowl
@@ -116,9 +121,6 @@ class armReachAction(mpcBaseAction):
         self.leftArmFeedingPos = np.array([[-0.15, 0, 0.0],
                                            [0.07, 0, 0.0],
                                            [-0.15, 0, 0.0]])
-        ## self.leftArmFeedingPos = np.array([[-0.2, 0, 0.0],
-        ##                                    [0.05, 0, 0.0],
-        ##                                    [-0.2, 0, 0.0]])
 
         self.leftArmScoopingEulers = np.array([[90,	-50,    -30],
                                                [90,	-50,	-30], #Moving down into bowl
@@ -140,7 +142,7 @@ class armReachAction(mpcBaseAction):
 
         #Timeouts used in setOrientGoal() function for each motion
         self.timeoutsScooping = [6, 3, 3, 2, 2]
-        self.timeoutsFeeding = [3, 3, 3]
+        self.timeoutsFeeding = [6, 6, 6]
 
         #Paused used between each motion
         #... for automatic movement

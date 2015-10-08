@@ -7,7 +7,7 @@ import numpy as np
 
 # ROS
 import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
+roslib.load_manifest('hrl_manipulation_task')
 import tf
 import PyKDL
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
@@ -16,15 +16,14 @@ from std_msgs.msg import String
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath 
-from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int
-from hrl_multimodal_anomaly_detection.srv import PosQuatTimeoutSrv, AnglesTimeoutSrv, String_String
+from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm):
+    def __init__(self, d_robot, controller, arm, verbose=False):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Variables...! #
@@ -42,12 +41,15 @@ class armReachAction(mpcBaseAction):
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             if self.getJointAngles() != []:
-                print "--------------------------------"
-                print "Current "+self.arm+" arm joint angles"
-                print self.getJointAngles()
-                print "Current "+self.arm+" arm pose"
-                print self.getEndeffectorPose()
-                print "--------------------------------"
+                if verbose:
+                    print "--------------------------------"
+                    print "Current "+self.arm+" arm joint angles"
+                    print self.getJointAngles()
+                    print "Current "+self.arm+" arm pose"
+                    print self.getEndeffectorPose()
+                    print "Current "+self.arm+" arm orientation (w/ euler rpy)"
+                    print self.getEndeffectorRPY()*180.0/np.pi
+                    print "--------------------------------"
                 break
             rate.sleep()
             
@@ -82,7 +84,7 @@ class armReachAction(mpcBaseAction):
         MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
 
-        joint or pose: we use degree and meter unit. The order of euler angle follows z-y-x order.
+        joint or pose: we use radian and meter unit. The order of euler angle follows z-y-x order.
         timeout or duration: we use second
         relative_frame: Not implemented. You can put your custome PyKDL frame variable or 'self.default_frame'
         '''
@@ -92,7 +94,7 @@ class armReachAction(mpcBaseAction):
         ## test motoins --------------------------------------------------------
         self.motions['test_orient'] = {}
         self.motions['test_orient']['left'] = \
-          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],\
+          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0],\
           ['MOVET', '[ 0, 0, 0, 1.0, 0, 0]', 5.0],\
           ['MOVET', '[ 0, 0, 0, -1.0, 0, 0]', 5.0],\
           ['MOVET', '[ 0, 0, 0, 0, 0.5, 0]', 5.0],\
@@ -108,45 +110,81 @@ class armReachAction(mpcBaseAction):
           ['MOVET', '[ 0, 0.3, 0, 0, 0, 0]', 5.0],\
           ['MOVET', '[ 0, -0.3, 0, 0, 0, 0]', 5.0]]
         self.motions['test_pos']['right'] = []
+
+
+        self.motions['test_debug'] = {}
+        self.motions['test_debug']['left'] = \
+          [['MOVEJ', '[1.7382057931777943, 0.20142793794186975, 1.3853886011657872, -2.0352426871809115, -3.850947412217563, -0.40998397763618755, -2.2920]', 30.0],\
+           ['MOVES', '[0.405, 0.391, 0.142, 1.521, 0.0, -1.558]', 10., 'self.default_frame'],\
+           ['MOVET', '[ 0, 0, 0, 0, 0, -0.39]', 5.0]]
+        ##    ['MOVES', '[0.489, 0.706, 0.122, 1.577, -0.03, -0.047]', 10., 'self.default_frame']]
+        self.motions['test_debug']['right'] =\
+          [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
+
         
+        ## Testing Motions ---------------------------------------------------------
+        # Used to test and find the best optimal procedure to scoop the target.
+        self.motions['testingMotion'] = {}
+        self.motions['testingMotion']['left'] = \
+          [['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.052, -1.928, -1.64]', 5.0],\
+          ['MOVEJ', '[0.054, 0.038, 0.298, -2.118, -3.090, -1.872, -1.39]', 10.0],\
+          ['MOVEJ', '[0.645, 0.016, 0.279, -2.118, -3.127, -1.803, -2.176]', 10.0],\
+          ['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.053, -1.928, -1.64]', 10.0]]
+
+        #  ['MOVES', '[ 0.521, -0.137, -0.041, 38, -99, -4]', 5.0]]
+        self.motions['testingMotion']['right'] = []
+        ##  [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0]]
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame                        
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[1.570,     0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0] ] 
+          [['MOVEJ', '[0.677, 0.147, 0.625, -2.019, -3.544, -1.737, -2.077]', 10.0] ] 
         self.motions['initScooping']['right'] = \
-          [['MOVEJ', '[1.570,     0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0] ]
+          [['MOVEJ', '[-0.38766331112969, 0.10069929321857, -1.1663864746779473, -1.3783351499208258, -6.952309470970393, -0.7927793084206439, 2.179890685990797]', 10.0] ]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVEJ', [1.570,     0, 1.570, -1.570, -4.71, 0, -1.570], 10.0],\
-           ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(),  .15+self.bowl_frame.p.z(),  90, -50, -30]', 6, 'self.default_frame'], 
-           ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.055+self.bowl_frame.p.z(), 90, -50,	-30]', 3, 'self.default_frame'], #Moving down into bowl
-           ['MOVES', '[  .02+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.025+self.bowl_frame.p.z(), 90, -30,	-30]', 3, 'self.default_frame'], #Moving forward in bowl
-           ['MOVES', '[    0+self.bowl_frame.p.x(), -0.03+self.bowl_frame.p.y(),   .20+self.bowl_frame.p.z(), 90,   0,	-30]', 2, 'self.default_frame'], #While rotating spoon to scoop out
-           ['MOVES', '[    0+self.bowl_frame.p.x(), -0.03+self.bowl_frame.p.y(),   .25+self.bowl_frame.p.z(), 90,   0,	-30]', 2, 'self.default_frame']  #Moving up out of bowl
+          [['MOVEJ', '[0.5778482746916489, -0.33053534611272795, 0.9224823852146335, -1.6170620529922632, -3.868802912203407, -1.4730600051592582, -1.234066882640653]', 10.0],\
+           ['MOVEJ', '[0.5175751638731203, -0.17877205406333624, 0.8937788712944239, -1.8017894807176447, -3.6269442416631135, -2.011787453832436, -1.8558093508638567]', 10.0],\
+           ['MOVEJ', '[0.5778482746916489, -0.33053534611272795, 0.9224823852146335, -1.6170620529922632, -3.868802912203407, -1.4730600051592582, -1.234066882640653]', 10.0]
+        #  [['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -2.103]', 10., 'self.default_frame'],
+        #   ['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -1.103]', 10., 'self.default_frame'], 
+        #   ['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -2.103]', 10., 'self.default_frame'], 
+                    
+          ## [['MOVES', '[0.588, 0.158, 0.092, 46.8, 66., 48.92]', 10., 'self.default_frame'], 
+          ##  ['MOVES', '[0.588, 0.158, 0.0, 46.8, 66., 48.92]', 10., 'self.default_frame'], 
+          ##  ['MOVES', '[0.588, 0.158, 0.092, 46.8, 66., 48.92]', 10., 'self.default_frame']
+           
+           ## ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(),  .15+self.bowl_frame.p.z(),  90, -50, -30]', 6, 'self.default_frame'], 
+           ## ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.055+self.bowl_frame.p.z(), 90, -50,	-30]', 3, 'self.default_frame'], #Moving down into bowl
+           ## ['MOVES', '[  .02+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.025+self.bowl_frame.p.z(), 90, -30,	-30]', 3, 'self.default_frame'], #Moving forward in bowl
+           ## ['MOVES', '[    0+self.bowl_frame.p.x(), -0.03+self.bowl_frame.p.y(),   .20+self.bowl_frame.p.z(), 90,   0,	-30]', 2, 'self.default_frame'], #While rotating spoon to scoop out
+           ## ['MOVES', '[    0+self.bowl_frame.p.x(), -0.03+self.bowl_frame.p.y(),   .25+self.bowl_frame.p.z(), 90,   0,	-30]', 2, 'self.default_frame']  #Moving up out of bowl
            ]
         self.motions['runScooping']['right'] = \
           []
         
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
-        ## self.motions['initFeeding'] = {}
-        ## self.motions['initFeeding']['left'] = \
-        ##   [['MOVEJ', [0.397, 0.272, 1.088, -2.11, -3.78, -0.658, -2.288], 10.0]] 
-        ## self.motions['initFeeding']['right'] = \
-        ##   []
+        self.motions['initFeeding'] = {}
+        self.motions['initFeeding']['left'] = \
+          [['MOVEJ', '[0.39, 0.26, 0.61, -2.07, -3.36, -1.82, -2.33]', 10.0]] 
+        self.motions['initFeeding']['right'] = \
+          []
           
-        ## self.motions['runFeeding'] = {}
-        ## self.motions['runFeeding']['left'] = \        
-        ##   [['MOVEJ', [0.397, 0.272, 1.088, -2.11, -3.78, -0.658, -2.288], 10.0],
-        ##    ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
-        ##    ['MOVES', [-.07,  0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
-        ##    ['PAUSE', 0.5],
-        ##    ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
-        ##    ]
-        ## self.motions['runFeeding']['right'] = \
-        ##   []
+        self.motions['runFeeding'] = {}
+        self.motions['runFeeding']['left'] = \
+          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],
+           ['MOVET', '[0.0, 0., 0., 90, 0, 0]', 10.], 
+           ['MOVET', '[0.0, 0., 0., -90, 0, 0]', 10.]
+           ## ['PAUSE', 0.5],
+           ## ['MOVES', '[0.79, 0.35, 0.05, -59., 0.4, 77.]', 10., 'self.default_frame'], 
+           ## ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
+           ## ['MOVES', [-.07,  0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
+           ## ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
+           ]
+        self.motions['runFeeding']['right'] = \
+          []
                                                     
         rospy.loginfo("Parameters are loaded.")
                 
@@ -184,6 +222,7 @@ class armReachAction(mpcBaseAction):
     def parsingMovements(self, motions):
         
         for i, motion in enumerate(motions):
+            print "Exec: ", motion
             pos  = Point()
             quat = Quaternion()
         
@@ -202,16 +241,18 @@ class armReachAction(mpcBaseAction):
                 pos.y = poseData[1]
                 pos.z = poseData[2]
 
-                quatArray = quatMath.euler2quat(poseData[3], poseData[4], poseData[5]) 
-                quat.w, quat.x, quat.y, quat.z = (quatArray[0], quatArray[1],\
-                                                  quatArray[2], quatArray[3])
+                M = PyKDL.Rotation.RPY((poseData[3]), (poseData[4]), (poseData[5]))
+                quat_kdl = M.GetQuaternion()
+                quat.x, quat.y, quat.z, quat.w,  = (quat_kdl[0], quat_kdl[1],\
+                                                    quat_kdl[2], quat_kdl[3])
+
                 self.setOrientGoal(pos, quat, motion[2])
 
             elif motion[0] == 'MOVET':
                 poseData  = eval(motion[1])            
 
                 [cur_pos, cur_quat] = self.getEndeffectorPose()
-                M = PyKDL.Rotation.Quaternion(cur_quat[0], cur_quat[1], cur_quat[2], cur_quat[3])
+                M = PyKDL.Rotation.Quaternion(cur_quat[0], cur_quat[1], cur_quat[2], cur_quat[3]) # R_0e
 
                 # position 
                 pos_offset = PyKDL.Vector(poseData[0], poseData[1], poseData[2])
@@ -222,21 +263,25 @@ class armReachAction(mpcBaseAction):
                 pos.z = cur_pos[2] + pos_offset[2]
 
                 # orientation
-                rot_offset = PyKDL.Rotation.EulerZYX(poseData[3], poseData[4], poseData[5])
-                rot_offset = M * rot_offset
+                M.DoRotX(poseData[3])
+                M.DoRotY(poseData[4])
+                M.DoRotZ(poseData[5])
+                rot_offset = M
+                ## rot_offset = PyKDL.Rotation.RPY(poseData[3], poseData[4], poseData[5]) #R_ee'
+                ## rot_offset = M * rot_offset
                 quat.x = rot_offset.GetQuaternion()[0]
                 quat.y = rot_offset.GetQuaternion()[1]
                 quat.z = rot_offset.GetQuaternion()[2]
                 quat.w = rot_offset.GetQuaternion()[3]
-                                
+
                 self.setOrientGoal(pos, quat, motion[2])                
                 
             elif motion[0] == 'MOVEJ': 
                 self.setPostureGoal(eval(motion[1]), motion[2])
                 
             elif motion[0] == 'PAUSE': 
-                rospy.sleep(motions[1])
-                print "Pausing for ", motions[1], " seconds "
+                rospy.sleep(motion[1])
+                print "Pausing for ", str(motion[1]), " seconds "
 
                 
             if self.interrupted:
@@ -299,12 +344,15 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    controller = 'static'
-    #controller = 'actionlib'
+    #controller = 'static'
+    controller = 'actionlib'
     arm        = opt.arm
+    if opt.arm == 'l': verbose = True
+    else: verbose = False
+        
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
-    ara = armReachAction(d_robot, controller, arm)
+    ara = armReachAction(d_robot, controller, arm, verbose)
     rospy.spin()
 
 
