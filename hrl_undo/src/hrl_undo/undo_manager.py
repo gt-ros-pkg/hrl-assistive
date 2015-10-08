@@ -41,7 +41,8 @@ class UndoManager(object):
         self.command_subs.append(sub)
 
     def skill_state_cb(self, state_msg):
-        self.task_problems.append(state_msg.problem)
+        print "Recording Skill state: ", state_msg
+        self.task_problems.add(state_msg.problem)
         command = {}
         command['name'] = state_msg.problem
         command['time'] = rospy.Time.now()
@@ -49,9 +50,12 @@ class UndoManager(object):
         command['state'] = state_msg.predicates
         # Check for prior states of this skill
         with self.command_deque_lock:
+            last_task_state_idx = None
             for i, cmd in reversed(list(enumerate(self.command_deque))):
                 if cmd['name'] == state_msg.problem:
-                    self.command_deque = self.command_deque[:i]  # Throw away actions/skills since the most recent state in this problem
+                    last_task_state_idx = i
+            # Throw away actions/skills since the most recent state in this problem
+            self.command_deque = deque(list(self.command_deque)[:last_task_state_idx])
             self.task_problems.add(command['name'])
             self.command_deque.append(command)  # Add the new skill state
 
@@ -74,6 +78,7 @@ class UndoManager(object):
         with self.command_deque_lock:
             num = min(msg.data, len(self.command_deque))
             cmds_to_undo = [self.command_deque.pop() for _ in range(num)]  # Pop the most recent actions into their own list to undo
+        print cmds_to_undo
         undo_actions = self._get_commands_by_action(cmds_to_undo)  # Grab the oldest state for each action to undo to
         undo_list = []
         for action_cmd_list in undo_actions.itervalues():
@@ -86,6 +91,7 @@ class UndoManager(object):
     def undo(self, command):
         """ Calls the undo function of the appropriate action with the desired state."""
         if command['name'] in self.task_problems:
+            print "Undoing: ", command
             self.skill_undoer.undo(command)
         else:
             self.actions[command['name']].undo(command['state'])
@@ -132,6 +138,7 @@ class UndoManager(object):
         if self.is_serial_command(command):
             print "Updated serial command for %s" % command['name']
         else:
+            print "Received command: ", command
             with self.command_deque_lock:
                 self.command_deque.append(command)  # Append record to deque
             print "Recorded new command for %s" % command['name']
@@ -159,10 +166,10 @@ class UndoSkills(object):
 
     def undo(self, cmd):
         problem = PDDLProblem()
-        problem.problem = cmd['name']
+        problem.name = cmd['name']
         problem.domain = cmd['msg'].domain  # Grab the domain from the incoming state msg
         problem.goal = cmd['state']
-        self.command_topic.publish(cmd)
+        self.command_pub.publish(problem)
 
 
 class UndoAction(object):
@@ -296,7 +303,6 @@ class UndoMoveBase(UndoAction):
         return state_msg
 
 
-
 def main():
     rospy.init_node("undo_manager")
 
@@ -342,4 +348,5 @@ def main():
     manager.register_action(undo_move_cart_mpc_left)
     manager.register_action(undo_move_gripper_left)
     manager.register_action(undo_move_gripper_right)
+    manager.register_skill_undoer(undo_planned_task_skills)
     rospy.spin()
