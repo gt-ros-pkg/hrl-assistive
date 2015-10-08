@@ -26,6 +26,7 @@ class TaskSmacher(object):
         rospy.loginfo("[%s] Ready", rospy.get_name())
 
     def req_cb(self, req):
+        print "Received Request:",  req
         problem_type = req.name[:req.name.index('+')]
         # Make sure we have state machine definitions for this domain
         try:

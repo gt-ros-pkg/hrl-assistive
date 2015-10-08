@@ -37,7 +37,7 @@ class TaskPlannerNode(object):
         except pddl.PlanningError:
             return (False, [], [])
         states = situation.get_plan_intermediary_states()
-        states = [PDDLState(problem.name, domain.name, map(str, state)) for state in states]
+        states = [PDDLState(problem.name, req.problem.domain, map(str, state)) for state in states]
         return (True, map(str, situation.solution), states)
 
 

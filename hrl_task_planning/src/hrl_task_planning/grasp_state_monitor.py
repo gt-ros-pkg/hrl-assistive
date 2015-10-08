@@ -15,7 +15,7 @@ class GraspPressureMonitor(object):
         self.gripper_name = '_'.join([side, "gripper"])
         self.state_pub = rospy.Publisher('/'.join(["/grasping", self.gripper_name]), Bool, latch=True)
         self.pressure_grad_pub = rospy.Publisher('/grasping/'+side+'/pressure_gradient', Float32)
-        self.gripper_cmd_pub = rospy.Publisher('/'+side[0]+"_gripper_controller/command", Pr2GripperCommand, latch=True)
+        self.gripper_cmd_pub = rospy.Publisher('/'+side[0]+"_gripper_controller/command", Pr2GripperCommand)
         self.l_pressure_sum_low = 0.0
         self.r_pressure_sum_low = 0.0
         self.l_pressure_sum_deque = deque([], 25)
@@ -31,7 +31,8 @@ class GraspPressureMonitor(object):
         self.gripper_state_sub = rospy.Subscriber('_'.join([side[0], "gripper_controller/state"]),
                                                   JointControllerState,
                                                   self.gripper_state_cb)
-        rospy.loginfo("[%s] %s Grasp State Monitor Ready" % (rospy.get_name(), side.capitalize()))
+        self.set_grasp_state(False)
+        rospy.loginfo("[%s] %s Grasp State Monitor Ready", rospy.get_name(), side.capitalize())
 
     def _sum_sensors(self, data):
         return sum(data[7:])
@@ -49,7 +50,8 @@ class GraspPressureMonitor(object):
             return
         self.l_pressure_grad_deque.append(l_grad)
         self.r_pressure_grad_deque.append(r_grad)
-        l_grad_trend = np.mean(self.l_pressure_grad_deque)
+        #l_grad_trend = np.mean(self.l_pressure_grad_deque)
+        l_grad_trend = np.max(self.l_pressure_grad_deque)
         if l_grad_trend > 200:
             l_pressure_state = 1
         elif l_grad_trend < -200:
@@ -57,7 +59,8 @@ class GraspPressureMonitor(object):
         else:
             l_pressure_state = 0
 
-        r_grad_trend = np.mean(self.r_pressure_grad_deque)
+        #r_grad_trend = np.mean(self.r_pressure_grad_deque)
+        r_grad_trend = np.max(self.r_pressure_grad_deque)
         self.pressure_grad_pub.publish(r_grad_trend)
         if r_grad_trend > 200:
             r_pressure_state = 1
@@ -84,7 +87,7 @@ class GraspPressureMonitor(object):
             self.gripper_cmd_pub.publish(Pr2GripperCommand(current_state - 0.0001, -1))
 
         delta = gs_msg.process_value_dot
-        if abs(delta) < 0.0025:
+        if abs(delta) < 0.0015:
             self.motion_state = "STEADY"
         elif delta < 0:
             self.motion_state = "CLOSING"

@@ -1,4 +1,4 @@
-#!?usr/bin/env python
+#!/usr/bin/env python
 
 import rospy
 from std_msgs.msg import Bool
@@ -21,7 +21,7 @@ class PlanPreprocessor(object):
         self.service = rospy.Service('/preprocess_problem/%s' % self.domain, PreprocessProblem, self.problem_cb)
 
     def problem_cb(self, req):
-#        rospy.loginfo("[%s] Received Problem to process:\n%s", rospy.get_name(), req.problem)
+        # rospy.loginfo("[%s] Received Problem to process:\n%s", rospy.get_name(), req.problem)
         req.problem.init.extend(self.const_preds)
         req.problem.goal = req.problem.goal if req.problem.goal else self.default_goal
         req = self.update_request(req)
@@ -48,7 +48,7 @@ class MoveObjectPreprocessor(PlanPreprocessor):
     def update_request(self, req):
         # Check for state
         if None in self.gripper_grasp_state.itervalues():
-            raise rospy.ServiceError("[%s] Unknown grasp state. Cannot correctly formulate plan.", rospy.get_name())
+            raise rospy.ServiceException("[%s] Unknown grasp state. Cannot correctly formulate plan." % rospy.get_name())
         # Update initial state predicates
         preds = []
         locations = ["start", "goal", "somewhere", "somewhere-else"]
