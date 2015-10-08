@@ -189,7 +189,7 @@ class onlineAnomalyDetection(Thread):
                 
                 if not self.anomalyOccured and len(self.forces) > 15:
                     # Perform anomaly detection
-                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds)
+                    (anomaly, error) = self.hmm.anomaly_check(self.forces, self.distances, self.angles, self.audios, self.minThresholds*1.5) #temp
                     print 'Anomaly error:', error
                     if anomaly:
                         if self.isScooping:
