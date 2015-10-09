@@ -26,6 +26,7 @@ if __name__ == '__main__':
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
+    print armReachActionLeft("getBowlPos")
     print armReachActionLeft("test_debug")
     ## print armReachActionLeft("test_orient")
     ## print armReachActionRight("test_orient")

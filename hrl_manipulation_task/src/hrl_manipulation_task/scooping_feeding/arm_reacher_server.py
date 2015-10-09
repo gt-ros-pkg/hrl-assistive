@@ -84,9 +84,11 @@ class armReachAction(mpcBaseAction):
         MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
 
+        #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
+
         joint or pose: we use radian and meter unit. The order of euler angle follows z-y-x order.
         timeout or duration: we use second
-        relative_frame: Not implemented. You can put your custome PyKDL frame variable or 'self.default_frame'
+        relative_frame: You can put your custome PyKDL frame variable or you can use 'self.default_frame'
         '''
         
         self.motions = {}
@@ -114,9 +116,8 @@ class armReachAction(mpcBaseAction):
 
         self.motions['test_debug'] = {}
         self.motions['test_debug']['left'] = \
-          [['MOVEJ', '[1.7382057931777943, 0.20142793794186975, 1.3853886011657872, -2.0352426871809115, -3.850947412217563, -0.40998397763618755, -2.2920]', 30.0],\
-           ['MOVES', '[0.405, 0.391, 0.142, 1.521, 0.0, -1.558]', 10., 'self.default_frame'],\
-           ['MOVET', '[ 0, 0, 0, 0, 0, -0.39]', 5.0]]
+        [#['MOVEJ', '[1.738, 0.201, 1.385, -2.035, -3.850, -0.409, -2.292]', 30.0],\
+           ['MOVES', '[0.4, 0, 0, 0, 0, 0.5]', 20., 'self.bowl_frame']]
         ##    ['MOVES', '[0.489, 0.706, 0.122, 1.577, -0.03, -0.047]', 10., 'self.default_frame']]
         self.motions['test_debug']['right'] =\
           [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
@@ -228,24 +229,34 @@ class armReachAction(mpcBaseAction):
         
             if motion[0] == 'MOVEP':   
                 poseData  = eval(motion[1])            
-                if len(motion)>3: frameData  = eval(motion[3])            
-                pos.x = poseData[0]
-                pos.y = poseData[1]
-                pos.z = poseData[2]
+                if len(motion)>3: frameData  = eval(motion[3])   
+                else: frameData = PyKDL.Frame()         
+
+                poseFrame = array2KDLframe(poseData)
+                poseFrame = frameConversion(poseFrame, frameData)
+                    
+                pos.x = poseFrame.p[0]
+                pos.y = poseFrame.p[1]
+                pos.z = poseFrame.p[2]
                 self.setPositionGoal(pos, quat, motion[2])
                 
             elif motion[0] == 'MOVES':
                 poseData  = eval(motion[1])            
                 if len(motion)>3: frameData  = eval(motion[3])            
-                pos.x = poseData[0]
-                pos.y = poseData[1]
-                pos.z = poseData[2]
+                else: frameData = PyKDL.Frame()         
 
-                M = PyKDL.Rotation.RPY((poseData[3]), (poseData[4]), (poseData[5]))
-                quat_kdl = M.GetQuaternion()
-                quat.x, quat.y, quat.z, quat.w,  = (quat_kdl[0], quat_kdl[1],\
-                                                    quat_kdl[2], quat_kdl[3])
+                poseFrame = array2KDLframe(poseData)
+                poseFrame = frameConversion(poseFrame, frameData)
+                    
+                pos.x = poseFrame.p[0]
+                pos.y = poseFrame.p[1]
+                pos.z = poseFrame.p[2]
 
+                quat.x = poseFrame.M.GetQuaternion()[0]
+                quat.y = poseFrame.M.GetQuaternion()[1]
+                quat.z = poseFrame.M.GetQuaternion()[2]
+                quat.w = poseFrame.M.GetQuaternion()[3]
+                
                 self.setOrientGoal(pos, quat, motion[2])
 
             elif motion[0] == 'MOVET':
@@ -333,7 +344,36 @@ class armReachAction(mpcBaseAction):
         ##     self.scooping([0])
         ##     self.setPostureGoal(self.lInitAngScooping, 10)
 
+
+    ## def tfBroadcaster(self, ps):
+
+    ##     quat = tf.transformations.quaternion_matrix([ps.pose.orientation.x,
+    ##                                                  ps.pose.orientation.y,
+    ##                                                  ps.pose.orientation.z,
+    ##                                                  ps.pose.orientation.w])
+
+    ##     self.br = tf.TransformBroadcaster()
+    ##     self.br.sendTransform((ps.pose.position.x, ps.pose.position.y, ps.pose.position.z),
+    ##                           quat,
+    ##                           rospy.Time.now(),
+    ##                           "goal_viz",
+    ##                           "torso_lift_link")
         
+
+def frameConversion(cur_pose, cur_frame):
+
+    pos = cur_frame * cur_pose.p
+    rot = cur_frame.M * cur_pose.M
+    pose = PyKDL.Frame(rot, pos)
+    
+    return pose
+
+def array2KDLframe(pose_array):
+
+    p = PyKDL.Vector(pose_array[0], pose_array[1], pose_array[2])
+    M = PyKDL.Rotation.RPY(pose_array[3], pose_array[4], pose_array[5])
+
+    return PyKDL.Frame(M,p)
 
 if __name__ == '__main__':
 
@@ -344,8 +384,8 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    #controller = 'static'
-    controller = 'actionlib'
+    controller = 'static'
+    #controller = 'actionlib'
     arm        = opt.arm
     if opt.arm == 'l': verbose = True
     else: verbose = False

@@ -2,7 +2,7 @@
 
 import rospy
 import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
+roslib.load_manifest('hrl_manipulation_task')
 import numpy as np
 import os, threading, copy
 
@@ -273,7 +273,50 @@ class arTagDetector:
         ps.pose.orientation.w = f.M.GetQuaternion()[3]
 
         self.bowl_cen_pose_pub.publish(ps)
-            
+
+
+    def pubVirtualBowlcenPose(self):
+
+        f = PyKDL.Frame.Identity()
+        f.p = PyKDL.Vector(0.5, 0.2, -0.2)
+        f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        
+        # frame pub --------------------------------------
+        ps = PoseStamped()
+        ps.header.frame_id = 'ar_bowl_cen'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = f.p[0]
+        ps.pose.position.y = f.p[1]
+        ps.pose.position.z = f.p[2]
+        
+        ps.pose.orientation.x = f.M.GetQuaternion()[0]
+        ps.pose.orientation.y = f.M.GetQuaternion()[1]
+        ps.pose.orientation.z = f.M.GetQuaternion()[2]
+        ps.pose.orientation.w = f.M.GetQuaternion()[3]
+
+        self.bowl_cen_pose_pub.publish(ps)
+
+        # visualization --------------------------------------
+        start_id = 200
+        scale_x = scale_y = self.tag_side_length
+        scale_z = 0.005
+
+        self.draw_bowl_cen_block.pub_body([f.p[0], f.p[1], f.p[2]],
+                                          [f.M.GetQuaternion()[0],\
+                                           f.M.GetQuaternion()[1],\
+                                           f.M.GetQuaternion()[2],\
+                                           f.M.GetQuaternion()[3]],
+                                          [scale_x,scale_y,scale_z], 
+                                          [0.0, 1.0, 0.0, 0.7], 
+                                          start_id+0, 
+                                          self.draw_bowl_cen_block.Marker.CUBE)
+        
+        pos1 = np.array([[f.p[0], f.p[1], f.p[2]]]).T
+        z_axis = f.M.UnitZ() * 0.1            
+        pos2 = np.array([[f.p[0] + z_axis[0], f.p[1] + z_axis[1], f.p[2] + z_axis[2]]]).T
+        self.draw_bowl_cen_arrow.pub_arrow(pos1, pos2, [0.0, 1.0, 0.0, 0.7], str(0.0))
+
+        
 
 if __name__ == '__main__':
     rospy.init_node('ar_tag_bowl_cen_estimation')
@@ -282,6 +325,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew frame pickle files.')
+    p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
+                 default=False, help='Send a vitual frame.')
     opt, args = p.parse_args()
 
     
@@ -301,6 +346,10 @@ if __name__ == '__main__':
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
+        if opt.bVirtual:
+            atd.pubVirtualBowlcenPose()
+            continue
+        
         ## ret = input("Is bowl tag fine? ")
         if atd.bowl_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is bowl tag fine? (y: yes, n: no)')

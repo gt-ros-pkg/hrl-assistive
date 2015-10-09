@@ -12,8 +12,12 @@
 
   <depend package="rospy"/>
   <depend package="hrl_lib"/>
+  <depend package="tf"/>
+  <depend package="geometry_msgs"/>
+  <depend package="ar_track_alvar"/>
 
-  <depend package="sandbox_dpark_darpa_m3"/>
+  <depend package="tf_conversions"/>
+
   <depend package="sandbox_dpark_darpa_m3"/>
 
 
