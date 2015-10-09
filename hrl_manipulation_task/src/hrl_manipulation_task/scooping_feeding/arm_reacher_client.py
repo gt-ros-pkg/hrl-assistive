@@ -7,11 +7,11 @@ import datetime
 # ROS library
 import rospy
 import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
+roslib.load_manifest('hrl_manipulation_task')
 
 # HRL library
 ## from hrl_srvs.srv import None_Bool, None_BoolResponse
-from hrl_multimodal_anomaly_detection.srv import String_String
+from hrl_srvs.srv import String_String
 import hrl_lib.util as ut
 
 
@@ -26,6 +26,7 @@ if __name__ == '__main__':
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
+    print armReachActionLeft("test_debug")
     ## print armReachActionLeft("test_orient")
     ## print armReachActionRight("test_orient")
 
@@ -38,13 +39,13 @@ if __name__ == '__main__':
     ## print armReachActionRight("testingMotion")
     ## Scooping -----------------------------------    
     ## print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping")
-    print armReachActionRight("initScooping")
+    ## print armReachActionLeft("initScooping")
+    ## print armReachActionRight("initScooping")
     ## print armReachAction("getBowlPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 
     ##print "Running scooping!"
-    print armReachActionLeft("runScooping")
+    ## print armReachActionLeft("runScooping")
     
     ## time.sleep(2.0)    
 
