@@ -27,7 +27,7 @@ class TaskSmacher(object):
 
     def req_cb(self, req):
         print "Received Request:",  req
-        problem_type = req.name[:req.name.index('+')]
+#        req.name = req.name.split('+')[0] # Throw out anything after the + sign
         # Make sure we have state machine definitions for this domain
         try:
             self.modules[req.domain] = importlib.import_module("hrl_task_planning.%s_states" % req.domain)
@@ -64,17 +64,17 @@ class TaskSmacher(object):
         state_machine = self.build_sm(solution, self.modules[req.domain].get_action_state)
 
         try:
-            if self.running_sm_threads[problem_type].is_alive():
-                self.running_sm_threads[problem_type].preempt()
+            if self.running_sm_threads[req.domain].is_alive():
+                self.running_sm_threads[req.domain].preempt()
                 rospy.loginfo("[%s] Preempt requested. Waiting for State Machine for %s to finish.",
-                              rospy.get_name(), self.running_sm_threads[problem_type].problem_name)
-                self.running_sm_threads[problem_type].join()
+                              rospy.get_name(), self.running_sm_threads[req.domain].problem_name)
+                self.running_sm_threads[req.domain].join()
         except KeyError:
             pass
 
         self.solution_pub.publish(PDDLSolution(req.name, req.domain, solution.solved, solution.steps, solution.states))
-        self.running_sm_threads[problem_type] = StateMachineThread(state_machine, req.name)
-        self.running_sm_threads[problem_type].start()
+        self.running_sm_threads[req.domain] = StateMachineThread(state_machine, req.name)
+        self.running_sm_threads[req.domain].start()
 
     def build_sm(self, solution, get_state_fn):
         plan = map(PlanStep.from_string, solution.steps)
@@ -86,6 +86,7 @@ class TaskSmacher(object):
         for i, step in enumerate(plan):
             sm_states.append(("_PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
             sm_states.append((step.name + "+%d" % i, get_state_fn(step)))
+        sm_states.append(("_PDDL_STATE_PUB+FINAL", PDDLStatePublisherState(pddl_states[-1], self.state_pub, outcomes=SPA)));
         sm_states.append(("_CLEANUP", CleanupState(outcomes=SPA, input_keys=["problem_name"])));
         with sm:
             try:

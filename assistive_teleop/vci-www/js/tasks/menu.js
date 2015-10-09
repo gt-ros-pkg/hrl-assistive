@@ -47,6 +47,9 @@ RFH.TaskMenu = function (divId) {
     };
     
     self.stopActiveTask = function () {
+        if (self.activeTask === null) {
+            return;
+        }
         var taskObject = self.activeTask;
         // Stop currently running task
         taskObject.stop();

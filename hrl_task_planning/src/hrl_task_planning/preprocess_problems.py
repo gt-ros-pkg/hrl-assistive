@@ -59,6 +59,11 @@ class MoveObjectPreprocessor(PlanPreprocessor):
             if grasping:
                 preds.append(pddl.Predicate("GRASPING", [gripper, "%s-object" % gripper]))
         req.problem.init.extend(map(str, preds))
+        unique_preds = []
+        for pred in req.problem.init:
+            if pred not in unique_preds:
+                unique_preds.append(pred)
+        req.problem.init = unique_preds
 
         # Update Object list
         # Check to see if objects are already established for this task
