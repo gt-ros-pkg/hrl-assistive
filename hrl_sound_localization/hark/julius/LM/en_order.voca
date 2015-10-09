@@ -3,7 +3,6 @@
 % NS_E
 </s>	silE
 % CMD
-stop                    s t aa p
-pr2                     p iy aa r t uw
-scooping                s k uw p ih ng
-feeding                 f iy d ih ng
+pr2-stop                p iy aa r t uw s t aa p
+pr2-scooping            p iy aa r t uw s k uw p ih ng
+pr2-feeding                 p iy aa r t uw f iy d ih ng

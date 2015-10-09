@@ -2,38 +2,43 @@
 <?xml version="1.0"?>
 <Document>
   <Network type="subnet" name="MAIN">
-    <Node name="node_MAIN_LOOP_1" type="MAIN_LOOP" x="400" y="180">
+    <Node name="node_MAIN_LOOP_1" type="MAIN_LOOP" x="480" y="190">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="TF_CONJ_FILENAME_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
       <Parameter name="A_MATRIX_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
-      <Parameter name="THRESH" type="float" value="24.5" description="subnet_param"/>
+    </Node>
+    <Node name="node_RosNodeGenerator_1" type="RosNodeGenerator" x="440" y="390">
+      <Parameter name="NODE_NAME" type="string" value="HARK_MASTER_NODE" description="Node name for ROS"/>
     </Node>
     <NetOutput name="RECOG" node="node_MAIN_LOOP_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_MAIN_LOOP_1" terminal="OUTPUT" object_type="any" description="No description available"/>
+    <NetOutput name="VALUE" node="node_RosNodeGenerator_1" terminal="VALUE" object_type="int" description="int parameter"/>
+    <NetOutput name="OUTPUT_1" node="node_MAIN_LOOP_1" terminal="OUTPUT_1" object_type="any" description="Dynamic"/>
+    <NetOutput name="OUTPUT_2" node="node_MAIN_LOOP_1" terminal="OUTPUT_2" object_type="any" description="Dynamic"/>
+    <NetOutput name="OUTPUT_6" node="node_MAIN_LOOP_1" terminal="OUTPUT_6" object_type="any" description="Dynamic"/>
   </Network>
   <Network type="iterator" name="MAIN_LOOP">
-    <Node name="node_MultiFFT_1" type="MultiFFT" x="750" y="180">
+    <Node name="node_MultiFFT_1" type="MultiFFT" x="760" y="190">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="FFT length in sample. [default: 512]"/>
       <Parameter name="WINDOW" type="string" value="CONJ" description="A window function for FFT. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: CONJ]"/>
       <Parameter name="WINDOW_LENGTH" type="subnet_param" value="LENGTH" description="Window length of the window function. [default: 512]"/>
     </Node>
-    <Node name="node_sub_separation_1" type="sub_separation" x="1120" y="190">
+    <Node name="node_sub_separation_1" type="sub_separation" x="1170" y="170">
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
     </Node>
-    <Node name="node_sub_recognition_1" type="sub_recognition" x="1250" y="340">
+    <Node name="node_sub_recognition_1" type="sub_recognition" x="1180" y="570">
       <Parameter name="FBANK_COUNT" type="int" value="13" description="The size of the input feature vector."/>
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate in Hz.  [default: 16000]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
     </Node>
-    <Node name="node_sub_localization_1" type="sub_localization" x="720" y="480">
+    <Node name="node_sub_localization_1" type="sub_localization" x="830" y="420">
       <Parameter name="LENGTH" type="int" value="512" description="The length of a frame (per channel)."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling Rate (Hz)."/>
       <Parameter name="A_MATRIX" type="subnet_param" value="A_MATRIX_" description="subnet_param"/>
-      <Parameter name="THRESH" type="subnet_param" value="THRESH" description="subnet_param"/>
     </Node>
-    <Node name="node_AudioStreamFromMic_1" type="AudioStreamFromMic" x="370" y="320">
+    <Node name="node_AudioStreamFromMic_1" type="AudioStreamFromMic" x="450" y="280">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="CHANNEL_COUNT" type="int" value="4" description="The number of channels."/>
@@ -42,7 +47,8 @@
       <Parameter name="GAIN" type="string" value="0dB" description="capture gain (dB)  [default: 0dB]."/>
       <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
     </Node>
-    <Node name="node_sub_collision_check_1" type="sub_collision_check" x="1220" y="540">
+    <Node name="node_sub_collision_pub_1" type="sub_collision_pub" x="1410" y="360">
+      <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -50,26 +56,34 @@
     <Link from="node_AudioStreamFromMic_1" output="AUDIO" to="node_MultiFFT_1" input="INPUT"/>
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_separation_1" input="SRC_INFO"/>
     <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_recognition_1" input="SRC_INFO"/>
+    <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV2"/>
+    <Link from="node_sub_localization_1" output="OUTPUT_CENTER" to="node_sub_collision_pub_1" input="SRC_INFO_CENTER"/>
+    <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SPEC"/>
+    <Link from="node_sub_localization_1" output="OUTPUT" to="node_sub_collision_pub_1" input="SRC_INFO"/>
+    <Link from="node_sub_localization_1" output="OUTPUT_CENTER" to="node_sub_collision_pub_1" input="SRC"/>
     <NetOutput name="RECOG" node="node_sub_recognition_1" terminal="RECOG" object_type="any" description="No description available"/>
     <NetOutput name="OUTPUT" node="node_sub_separation_1" terminal="OUTPUT" object_type="any" description="No description available"/>
+    <NetOutput name="OUTPUT_1" node="node_sub_collision_pub_1" terminal="OUTPUT" object_type="any" description="Dynamic"/>
+    <NetOutput name="OUTPUT_2" node="node_sub_collision_pub_1" terminal="OUTPUT_1" object_type="any" description="Dynamic"/>
     <NetCondition name="CONDITION" node="node_AudioStreamFromMic_1" terminal="NOT_EOF"/>
+    <NetOutput name="OUTPUT_6" node="node_sub_collision_pub_1" terminal="OUTPUT_6" object_type="any" description="Dynamic"/>
   </Network>
   <Network type="subnet" name="sub_separation">
-    <Node name="node_PowerCalcForMap_1" type="PowerCalcForMap" x="610" y="220">
+    <Node name="node_PowerCalcForMap_1" type="PowerCalcForMap" x="690" y="190">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
     </Node>
-    <Node name="node_CalcSpecAddPower_1" type="CalcSpecAddPower" x="1140" y="390">
+    <Node name="node_CalcSpecAddPower_1" type="CalcSpecAddPower" x="1230" y="240">
     </Node>
-    <Node name="node_CalcSpecSubGain_1" type="CalcSpecSubGain" x="500" y="649.9999999999998">
+    <Node name="node_CalcSpecSubGain_1" type="CalcSpecSubGain" x="580" y="610">
       <Parameter name="ALPHA" type="float" value="1.0" description="Overestimation factor."/>
       <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
       <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
     </Node>
-    <Node name="node_EstimateLeak_1" type="EstimateLeak" x="810" y="440">
+    <Node name="node_EstimateLeak_1" type="EstimateLeak" x="890" y="400">
       <Parameter name="LEAK_FACTOR" type="float" value="0.25" description="Leak factor [default:0.25]"/>
       <Parameter name="OVER_CANCEL_FACTOR" type="float" value="1" description="Over cancel value [default:1]"/>
     </Node>
-    <Node name="node_HRLE_1" type="HRLE" x="890" y="180">
+    <Node name="node_HRLE_1" type="HRLE" x="980" y="210">
       <Parameter name="LX" type="float" value="0.20" description="Lx value of estimation, e.g. Lx=0 -&gt; Minimum (MCRA), Lx=0.5 -&gt; Median , Lx=1.0 -&gt; Maximum [default:0.85]"/>
       <Parameter name="TIME_CONST_METHOD" type="string" value="LEGACY" description="Time constant value definition, &quot;LEGACY&quot; uses time constant value for HARK 2.0.0,&quot;MILLISECOND&quot; uses time constant value in frames. [default: LEGACY]"/>
       <Parameter name="TIME_CONSTANT" type="float" value="16000" description="Time constant for exponential decay window in samples [default:]"/>
@@ -81,19 +95,19 @@
       <Parameter name="STEP_LEVEL" type="float" value="0.2" description="Step level of histogram bin (Width of each histogram bin) in dB [default:0.2]"/>
       <Parameter name="DEBUG" type="bool" value="false" description="Prints the histogram for each 100 iterations."/>
     </Node>
-    <Node name="node_SpectralGainFilter_1" type="SpectralGainFilter" x="860" y="560">
+    <Node name="node_SpectralGainFilter_1" type="SpectralGainFilter" x="940" y="520">
     </Node>
-    <Node name="node_WhiteNoiseAdder_1" type="WhiteNoiseAdder" x="1190" y="490">
+    <Node name="node_WhiteNoiseAdder_1" type="WhiteNoiseAdder" x="1590" y="410">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="WN_LEVEL" type="float" value="15" description="An amplitude of white noise to be added. [default: 0]"/>
     </Node>
-    <Node name="node_SaveWavePCM_1" type="SaveWavePCM" x="1330" y="629.9999999999998">
+    <Node name="node_SaveWavePCM_1" type="SaveWavePCM" x="1410" y="590">
       <Parameter name="BASENAME" type="string" value="sep_files/sep_" description="Basename of files. [default: sep_]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (in samples)[default: 16000]."/>
       <Parameter name="BITS" type="string" value="int24" description="Bit format of samples. int16 , int24 and float32 bits are supported."/>
     </Node>
-    <Node name="node_Synthesize_1" type="Synthesize" x="1000" y="720">
+    <Node name="node_Synthesize_1" type="Synthesize" x="1080" y="680">
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -102,7 +116,7 @@
       <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
       <Parameter name="OUTPUT_GAIN" type="float" value="50.0" description="Output gain factor. [default: 1.0]"/>
     </Node>
-    <Node name="node_GHDSS_1" type="GHDSS" x="370" y="240">
+    <Node name="node_GHDSS_1" type="GHDSS" x="450" y="200">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -143,18 +157,18 @@
     <NetOutput name="OUTPUT" node="node_SaveWavePCM_1" terminal="OUTPUT" object_type="Map&lt;int,ObjectRef&gt;" description="The same as input."/>
   </Network>
   <Network type="subnet" name="sub_recognition">
-    <Node name="node_Delta_1" type="Delta" x="370" y="570">
+    <Node name="node_Delta_1" type="Delta" x="450" y="580">
       <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="The size of the input feature vector."/>
     </Node>
-    <Node name="node_FeatureRemover_1" type="FeatureRemover" x="620" y="580">
+    <Node name="node_FeatureRemover_1" type="FeatureRemover" x="700" y="590">
       <Parameter name="SELECTOR" type="object" value="&lt;Vector&lt;int&gt; 13&gt;" description="Component indices in a feature vector to remove. E.g. &lt;Vector&lt;int&gt; 13&gt; to remove 14th comopnent (The index start with 0)."/>
     </Node>
-    <Node name="node_MSLSExtraction_1" type="MSLSExtraction" x="1000" y="260">
+    <Node name="node_MSLSExtraction_1" type="MSLSExtraction" x="1150" y="200">
       <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="Size of the static part of MSLS feature vector. [default: 13]"/>
       <Parameter name="NORMALIZATION_MODE" type="string" value="SPECTRAL" description="The domain to perform normalization. CEPSTRAL or SPECTRAL. [default: CEPSTRAL]"/>
       <Parameter name="USE_POWER" type="bool" value="true" description="Use power feature if true. [default: false]"/>
     </Node>
-    <Node name="node_MelFilterBank_1" type="MelFilterBank" x="740" y="180">
+    <Node name="node_MelFilterBank_1" type="MelFilterBank" x="820" y="190">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate in Hz.  [default: 16000]"/>
       <Parameter name="CUTOFF" type="int" value="8000" description="Cutoff frequency in Hz. Mel-filterbanks are placed between 0 Hz and CUTOFF Hz. [default: 8000]"/>
@@ -162,18 +176,18 @@
       <Parameter name="MAX_FREQUENCY" type="int" value="8000" description="Maximum frequency (Hz) [default: 8000]"/>
       <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="The number of Mel filter banks. [default: 13]"/>
     </Node>
-    <Node name="node_PreEmphasis_1" type="PreEmphasis" x="490" y="340">
+    <Node name="node_PreEmphasis_1" type="PreEmphasis" x="570" y="350">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="window length in sample [default: 512]"/>
       <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate in Hz [default: 16000]"/>
       <Parameter name="PREEMCOEF" type="float" value="0.97" description="pre-emphasis coefficient [default: 0.97]"/>
       <Parameter name="INPUT_TYPE" type="string" value="WAV" description="The domain to perform pre-emphasis [default: WAV]"/>
     </Node>
-    <Node name="node_MultiFFT_2" type="MultiFFT" x="710" y="320">
+    <Node name="node_MultiFFT_2" type="MultiFFT" x="790" y="330">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="FFT length in sample. [default: 512]"/>
       <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for FFT. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: CONJ]"/>
       <Parameter name="WINDOW_LENGTH" type="subnet_param" value="LENGTH" description="Window length of the window function. [default: 512]"/>
     </Node>
-    <Node name="node_Synthesize_2" type="Synthesize" x="380" y="220">
+    <Node name="node_Synthesize_2" type="Synthesize" x="460" y="230">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="ADVANCE" type="subnet_param" value="ADVANCE" description="The length in sample between a frame and a previous frame. [default: 160]"/>
       <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate (Hz) [default: 16000]."/>
@@ -182,7 +196,7 @@
       <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
       <Parameter name="OUTPUT_GAIN" type="float" value="1.0" description="Output gain factor. [default: 1.0]"/>
     </Node>
-    <Node name="node_SpeechRecognitionClient_1" type="SpeechRecognitionClient" x="930" y="550">
+    <Node name="node_SpeechRecognitionClient_1" type="SpeechRecognitionClient" x="1010" y="560">
       <Parameter name="MFM_ENABLED" type="bool" value="true" description="MFM is enbaled if true. [default: true]"/>
       <Parameter name="HOST" type="string" value="127.0.0.1" description="Hostname or IP of Julius/Julian server. [default: 127.0.0.1]"/>
       <Parameter name="PORT" type="int" value="5530" description="Port number of Julius/Julian server. [default: 5530]"/>
@@ -202,7 +216,7 @@
     <NetOutput name="RECOG" node="node_SpeechRecognitionClient_1" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="The same as SOURCES."/>
   </Network>
   <Network type="subnet" name="sub_localization">
-    <Node name="node_LocalizeMUSIC_1" type="LocalizeMUSIC" x="870" y="230">
+    <Node name="node_LocalizeMUSIC_1" type="LocalizeMUSIC" x="850" y="230">
       <Parameter name="MUSIC_ALGORITHM" type="string" value="GEVD" description="Sound Source Localization Algorithm. If SEVD, NOISECM will be ignored"/>
       <Parameter name="TF_CHANNEL_SELECTION" type="object" value="&lt;Vector&lt;int&gt; 0 1 2 3&gt;" description="Microphone channels for localization"/>
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="The length of a frame (per channel)."/>
@@ -222,33 +236,199 @@
       <Parameter name="MANUAL_WEIGHT_SQUARE" type="object" value="&lt;Vector&lt;float&gt; 0.0 2000.0 4000.0 6000.0 8000.0&gt;" description="MUSIC spectrum weight for each frequency bin. This is a M order vector. The element represents the frequency points for the square wave. &quot;M&quot; represents the number of key points for the square wave weight. The format is &quot;&lt;Vector&lt;float&gt; 1 2 3 4&gt;&quot;."/>
       <Parameter name="ENABLE_EIGENVALUE_WEIGHT" type="bool" value="false" description="If true, the spatial spectrum is weighted depending on the eigenvalues of a correlation matrix. We do not suggest to use this function with GEVD and GSVD, because the NOISECM changes the eigenvalue drastically. Only useful for SEVD."/>
       <Parameter name="MAXNUM_OUT_PEAKS" type="int" value="-1" description="Maximum number of output peaks. If MAXNUM_OUT_PEAKS = NUM_SOURCE, this is compatible with HARK version 1.0. If MAXNUM_OUT_PEAKS = 0, all local maxima are output. If MAXNUM_OUT_PEAKS &lt; 0, MAXNUM_OUT_PEAKS is set to NUM_SOURCE. If MAXNUM_OUT_PEAKS &gt; 0, number of output peaks is limited to MAXNUM_OUT_PEAKS."/>
-      <Parameter name="DEBUG" type="bool" value="true" description="Debug option. If the parameter is true, this node outputs sound localization results to a standard output."/>
+      <Parameter name="DEBUG" type="bool" value="false" description="Debug option. If the parameter is true, this node outputs sound localization results to a standard output."/>
     </Node>
-    <Node name="node_SourceTracker_1" type="SourceTracker" x="980" y="370">
-      <Parameter name="THRESH" type="subnet_param" value="THRESH" description="Power threshold for localization results. A localization result with higher power than THRESH is tracked, otherwise ignored."/>
+    <Node name="node_SourceTracker_1" type="SourceTracker" x="1090" y="480">
+      <Parameter name="THRESH" type="float" value="23.0" description="Power threshold for localization results. A localization result with higher power than THRESH is tracked, otherwise ignored."/>
       <Parameter name="PAUSE_LENGTH" type="float" value="1000" description="Life duration of source in ms. When any localization result for a source is found for more than PAUSE_LENGTH / 10 iterations, the source is terminated. [default: 800]"/>
       <Parameter name="MIN_SRC_INTERVAL" type="float" value="20" description="Source interval threshold in degree. When the angle between a localization result and a source is smaller than MIN_SRC_INTERVAL, the same ID is given to the localization result. [default: 20]"/>
       <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. MIN_ID should be greater than 0 or equal."/>
       <Parameter name="DEBUG" type="bool" value="false" description="Output debug information if true [default: false]"/>
     </Node>
-    <Node name="node_SourceIntervalExtender_1" type="SourceIntervalExtender" x="1070" y="520">
+    <Node name="node_SourceIntervalExtender_1" type="SourceIntervalExtender" x="1340" y="480">
       <Parameter name="PREROLL_LENGTH" type="int" value="50" description="Preroll length in frame. [default: 50]"/>
     </Node>
-    <Node name="node_Constant_1" type="Constant" x="370" y="380">
+    <Node name="node_Constant_1" type="Constant" x="450" y="320">
       <Parameter name="VALUE" type="string" value="correlation_mat.zip" description="The value"/>
     </Node>
-    <Node name="node_Constant_2" type="Constant" x="390" y="550">
+    <Node name="node_Constant_2" type="Constant" x="470" y="490">
       <Parameter name="VALUE" type="int" value="0" description="The value"/>
     </Node>
-    <Node name="node_CMLoad_1" type="CMLoad" x="610" y="470">
+    <Node name="node_CMLoad_1" type="CMLoad" x="610" y="360">
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="enable debug print"/>
     </Node>
-    <Link from="node_LocalizeMUSIC_1" output="OUTPUT" to="node_SourceTracker_1" input="INPUT"/>
+    <Node name="node_SourceIntervalExtender_2" type="SourceIntervalExtender" x="1450" y="230">
+      <Parameter name="PREROLL_LENGTH" type="int" value="50" description="Preroll length in frame. [default: 50]"/>
+    </Node>
+    <Node name="node_LocalizeMUSIC_2" type="LocalizeMUSIC" x="840" y="460">
+      <Parameter name="MUSIC_ALGORITHM" type="string" value="GEVD" description="Sound Source Localization Algorithm. If SEVD, NOISECM will be ignored"/>
+      <Parameter name="TF_CHANNEL_SELECTION" type="object" value="&lt;Vector&lt;int&gt; 0 1 2 3&gt;" description="Microphone channels for localization"/>
+      <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="The length of a frame (per channel)."/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling Rate (Hz)."/>
+      <Parameter name="A_MATRIX" type="subnet_param" value="A_MATRIX" description="Filename of a transfer function matrix."/>
+      <Parameter name="WINDOW" type="int" value="50" description="The number of frames used for calculating a correlation function."/>
+      <Parameter name="WINDOW_TYPE" type="string" value="FUTURE" description="Window selection to accumulate a correlation function. If PAST, the past WINDOW frames from the current frame are used for the accumulation. If MIDDLE, the current frame will be the middle of the accumulated frames. If FUTURE, the future WINDOW frames from the current frame are used for the accumulation. FUTURE is the default from version 1.0, but this makes a delay since we have to wait for the future information. PAST generates a internal buffers for the accumulation, which realizes no delay for localization."/>
+      <Parameter name="PERIOD" type="int" value="50" description="The period in which the source localization is processed."/>
+      <Parameter name="NUM_SOURCE" type="int" value="1" description="Number of sources, which should be less than number of channels."/>
+      <Parameter name="MIN_DEG" type="int" value="-90" description="source direction (lower)."/>
+      <Parameter name="MAX_DEG" type="int" value="90" description="source direction (higher)."/>
+      <Parameter name="LOWER_BOUND_FREQUENCY" type="int" value="50" description="Lower bound of frequency (Hz) used for correlation function calculation."/>
+      <Parameter name="UPPER_BOUND_FREQUENCY" type="int" value="2700" description="Upper bound of frequency (Hz) used for correlation function calculation."/>
+      <Parameter name="SPECTRUM_WEIGHT_TYPE" type="string" value="Uniform" description="MUSIC spectrum weight for each frequency bin."/>
+      <Parameter name="A_CHAR_SCALING" type="float" value="1.0" description="Scaling factor of the A-Weight with respect to frequency"/>
+      <Parameter name="MANUAL_WEIGHT_SPLINE" type="object" value="&lt;Matrix&lt;float&gt; &lt;rows 2&gt; &lt;cols 5&gt; &lt;data 0.0 2000.0 4000.0 6000.0 8000.0 1.0 1.0 1.0 1.0 1.0&gt; &gt;" description="MUSIC spectrum weight for each frequency bin. This is a 2 by M matrix. The first row represents the frequency, and the second row represents the weight gain. &quot;M&quot; represents the number of key points for the spectrum weight. The frequency range between M key points will be interpolated by spline manner. The format is &quot;&lt;Matrix&lt;float&gt; &lt;rows 2&gt; &lt;cols 2&gt; &lt;data 1 2 3 4&gt; &gt;&quot;."/>
+      <Parameter name="MANUAL_WEIGHT_SQUARE" type="object" value="&lt;Vector&lt;float&gt; 0.0 2000.0 4000.0 6000.0 8000.0&gt;" description="MUSIC spectrum weight for each frequency bin. This is a M order vector. The element represents the frequency points for the square wave. &quot;M&quot; represents the number of key points for the square wave weight. The format is &quot;&lt;Vector&lt;float&gt; 1 2 3 4&gt;&quot;."/>
+      <Parameter name="ENABLE_EIGENVALUE_WEIGHT" type="bool" value="false" description="If true, the spatial spectrum is weighted depending on the eigenvalues of a correlation matrix. We do not suggest to use this function with GEVD and GSVD, because the NOISECM changes the eigenvalue drastically. Only useful for SEVD."/>
+      <Parameter name="MAXNUM_OUT_PEAKS" type="int" value="-1" description="Maximum number of output peaks. If MAXNUM_OUT_PEAKS = NUM_SOURCE, this is compatible with HARK version 1.0. If MAXNUM_OUT_PEAKS = 0, all local maxima are output. If MAXNUM_OUT_PEAKS &lt; 0, MAXNUM_OUT_PEAKS is set to NUM_SOURCE. If MAXNUM_OUT_PEAKS &gt; 0, number of output peaks is limited to MAXNUM_OUT_PEAKS."/>
+      <Parameter name="DEBUG" type="bool" value="true" description="Debug option. If the parameter is true, this node outputs sound localization results to a standard output."/>
+    </Node>
+    <Node name="node_SourceTracker_2" type="SourceTracker" x="1150" y="300">
+      <Parameter name="THRESH" type="float" value="0.0" description="Power threshold for localization results. A localization result with higher power than THRESH is tracked, otherwise ignored."/>
+      <Parameter name="PAUSE_LENGTH" type="float" value="1000" description="Life duration of source in ms. When any localization result for a source is found for more than PAUSE_LENGTH / 10 iterations, the source is terminated. [default: 800]"/>
+      <Parameter name="MIN_SRC_INTERVAL" type="float" value="40" description="Source interval threshold in degree. When the angle between a localization result and a source is smaller than MIN_SRC_INTERVAL, the same ID is given to the localization result. [default: 20]"/>
+      <Parameter name="MIN_ID" type="int" value="0" description="Minimum ID of source locations. MIN_ID should be greater than 0 or equal."/>
+      <Parameter name="DEBUG" type="bool" value="false" description="Output debug information if true [default: false]"/>
+    </Node>
+    <Node name="node_SourceSelectorByDirection_1" type="SourceSelectorByDirection" x="1070" y="190">
+      <Parameter name="MIN_AZIMUTH" type="float" value="-20" description="Minimum azimuth for source selection in degree. [default: -20.0]"/>
+      <Parameter name="MAX_AZIMUTH" type="float" value="20" description="Maximum azimuth for source selection in degree. [default: 20.0]"/>
+      <Parameter name="MIN_ELEVATION" type="float" value="-90" description="Minimum elevation for source selection in degree. [default: -90.0]"/>
+      <Parameter name="MAX_ELEVATION" type="float" value="90" description="Maximum elevation for source selection in degree. [default: 90.0]"/>
+    </Node>
     <Link from="node_SourceTracker_1" output="OUTPUT" to="node_SourceIntervalExtender_1" input="SOURCES"/>
-    <Link from="node_CMLoad_1" output="OUTPUT" to="node_LocalizeMUSIC_1" input="NOISECM"/>
     <Link from="node_Constant_1" output="VALUE" to="node_CMLoad_1" input="FILENAMER"/>
     <Link from="node_Constant_2" output="VALUE" to="node_CMLoad_1" input="OPERATION_FLAG"/>
+    <Link from="node_CMLoad_1" output="OUTPUT" to="node_LocalizeMUSIC_2" input="NOISECM"/>
+    <Link from="node_LocalizeMUSIC_2" output="OUTPUT" to="node_SourceTracker_1" input="INPUT"/>
+    <Link from="node_SourceTracker_2" output="OUTPUT" to="node_SourceIntervalExtender_2" input="SOURCES"/>
+    <Link from="node_LocalizeMUSIC_1" output="OUTPUT" to="node_SourceSelectorByDirection_1" input="SOURCES"/>
+    <Link from="node_SourceSelectorByDirection_1" output="OUTPUT" to="node_SourceTracker_2" input="INPUT"/>
+    <Link from="node_CMLoad_1" output="OUTPUT" to="node_LocalizeMUSIC_1" input="NOISECM"/>
     <NetInput name="WAV" node="node_LocalizeMUSIC_1" terminal="INPUT" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Multi-channel audio signals. In this matrix, a row is a channel, and a column is a sample."/>
+    <NetInput name="WAV2" node="node_LocalizeMUSIC_2" terminal="INPUT" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Multi-channel audio signals. In this matrix, a row is a channel, and a column is a sample."/>
     <NetOutput name="OUTPUT" node="node_SourceIntervalExtender_1" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="Source locations PREROLL_LENGTH frames earlier than SOURCES."/>
+    <NetOutput name="OUTPUT_CENTER" node="node_SourceIntervalExtender_2" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="Source locations PREROLL_LENGTH frames earlier than SOURCES."/>
+  </Network>
+  <Network type="subnet" name="sub_collision_pub">
+    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1290" y="213.33332865326483">
+      <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
+      <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
+      <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/all" description="Published topic name for ROS (HarkWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFFT" type="string" value="HarkFFT/all" description="Published topic name for ROS (HarkFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFEATURE" type="string" value="HarkFeature/all" description="Published topic name for ROS (HarkFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSOURCE" type="string" value="HarkSource/all" description="Published topic name for ROS (HarkSource type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCWAVE" type="string" value="HarkSrcWave/all" description="Published topic name for ROS (HarkSrcWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFFT" type="string" value="HarkSrcFFT/all" description="Published topic name for ROS (HarkSrcFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATURE" type="string" value="HarkSrcFeature/all" description="Published topic name for ROS (HarkSrcFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATUREMFM" type="string" value="HarkSrcFeatureMFM/all" description="Published topic name for ROS (HarkSrcFeatureMFM type message)"/>
+      <Parameter name="BUFFER_NUM" type="int" value="100" description="Buffer size for a ROS published message"/>
+      <Parameter name="ROS_LOOP_RATE" type="float" value="100000" description="This allows you to specify a frequency that you would like to loop at [Hz]. Keep this value large. (If ROS interval is shorter than HARK interval, ROS interval is overwritten.)"/>
+      <Parameter name="TIMESTAMP_TYPE" type="string" value="ROS_TIME_NOW" description="Time stamp type. If TIMESTAMP is connected, this is ignored."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
+      <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
+    </Node>
+    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1440" y="598.8888904489118">
+      <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
+      <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
+      <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/center" description="Published topic name for ROS (HarkWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFFT" type="string" value="HarkFFT/center" description="Published topic name for ROS (HarkFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKFEATURE" type="string" value="HarkFeature/center" description="Published topic name for ROS (HarkFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSOURCE" type="string" value="HarkSource/center" description="Published topic name for ROS (HarkSource type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCWAVE" type="string" value="HarkSrcWave/center" description="Published topic name for ROS (HarkSrcWave type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFFT" type="string" value="HarkSrcFFT/center" description="Published topic name for ROS (HarkSrcFFT type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATURE" type="string" value="HarkSrcFeature/center" description="Published topic name for ROS (HarkSrcFeature type message)"/>
+      <Parameter name="TOPIC_NAME_HARKSRCFEATUREMFM" type="string" value="HarkSrcFeatureMFM/center" description="Published topic name for ROS (HarkSrcFeatureMFM type message)"/>
+      <Parameter name="BUFFER_NUM" type="int" value="100" description="Buffer size for a ROS published message"/>
+      <Parameter name="ROS_LOOP_RATE" type="float" value="100000" description="This allows you to specify a frequency that you would like to loop at [Hz]. Keep this value large. (If ROS interval is shorter than HARK interval, ROS interval is overwritten.)"/>
+      <Parameter name="TIMESTAMP_TYPE" type="string" value="ROS_TIME_NOW" description="Time stamp type. If TIMESTAMP is connected, this is ignored."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
+      <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
+    </Node>
+    <Node name="node_GHDSS_2" type="GHDSS" x="340" y="345.55554775544147">
+      <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="LOWER_BOUND_FREQUENCY" type="int" value="3000" description="Lower bound of frequency (Hz). [default: 0]"/>
+      <Parameter name="UPPER_BOUND_FREQUENCY" type="int" value="8000" description="Upper bound of frequency (Hz). [default: 8000]"/>
+      <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME" description="Filename of a pre-measured transfer function for separation."/>
+      <Parameter name="INITW_FILENAME" type="string" value="" description="Filename of an initial separation matrix. If specified, a matrix in INITW_FILENAME is used as an initial separation matrix. Otherwise, initial separation matrix is estimated from the geometrical relationship or pre-measured TF according to TF_CONJ."/>
+      <Parameter name="SS_METHOD" type="string" value="ADAPTIVE" description="The calculation method for SS step size parameter corresponding to the blind separation part. &quot;FIX&quot; uses a fixed step size,&quot;LC_MYU&quot; uses the same value as LC_MYU, and &quot;ADAPTIVE&quot; adaptively estimates an optimal step size. [default: ADAPTIVE]"/>
+      <Parameter name="SS_SCAL" type="float" value="1.0" description="Scaling factor for SS step size. [default: 1.0]"/>
+      <Parameter name="SS_MYU" type="float" value="0.001" description="SS step size value. [default 0.001]"/>
+      <Parameter name="NOISE_FLOOR" type="float" value="0.0" description="Noise floor value. [default 0.0]"/>
+      <Parameter name="LC_CONST" type="string" value="DIAG" description="The calculation method for geometric constraints. &quot;FULL&quot; uses all elements of a matrix, and &quot;DIAG&quot; only uses diagonal parts. [default: FULL]"/>
+      <Parameter name="LC_METHOD" type="string" value="ADAPTIVE" description="The calculation method for LC step size corresponding to geometric constraints. &quot;FIX&quot; uses a fixed value, and &quot;Adaptive&quot; adaptively estimates an optimal step size. [default: ADAPTIVE]"/>
+      <Parameter name="LC_MYU" type="float" value="0.001" description="LC step size value. [default 0.001]"/>
+      <Parameter name="UPDATE_METHOD_TF_CONJ" type="string" value="POS" description="Switching method of TF_CONJ data. [default: POS]"/>
+      <Parameter name="UPDATE_METHOD_W" type="string" value="ID" description="Switching method of separation matrix, W. [default: ID]"/>
+      <Parameter name="UPDATE_ACCEPT_DISTANCE" type="float" value="300" description="Distance allowance to switch separation matrix in [mm]. available when when UPDATE_METHOD_W is POS or ID_POS. [default: 300.0]"/>
+      <Parameter name="EXPORT_W" type="bool" value="false" description="Separation matrix W is exported if true. [default: false]"/>
+      <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
+      <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
+    </Node>
+    <Node name="node_PowerCalcForMap_3" type="PowerCalcForMap" x="630" y="301.1111095510886">
+      <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
+    </Node>
+    <Node name="node_CalcSpecSubGain_2" type="CalcSpecSubGain" x="470" y="758.8888904489113">
+      <Parameter name="ALPHA" type="float" value="1.0" description="Overestimation factor."/>
+      <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
+      <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
+    </Node>
+    <Node name="node_EstimateLeak_2" type="EstimateLeak" x="890" y="471.1111095510878">
+      <Parameter name="LEAK_FACTOR" type="float" value="0.25" description="Leak factor [default:0.25]"/>
+      <Parameter name="OVER_CANCEL_FACTOR" type="float" value="1" description="Over cancel value [default:1]"/>
+    </Node>
+    <Node name="node_HRLE_2" type="HRLE" x="940" y="341.1111095510885">
+      <Parameter name="LX" type="float" value="0.20" description="Lx value of estimation, e.g. Lx=0 -&gt; Minimum (MCRA), Lx=0.5 -&gt; Median , Lx=1.0 -&gt; Maximum [default:0.85]"/>
+      <Parameter name="TIME_CONST_METHOD" type="string" value="LEGACY" description="Time constant value definition, &quot;LEGACY&quot; uses time constant value for HARK 2.0.0,&quot;MILLISECOND&quot; uses time constant value in frames. [default: LEGACY]"/>
+      <Parameter name="TIME_CONSTANT" type="float" value="16000" description="Time constant for exponential decay window in samples [default:]"/>
+      <Parameter name="DECAY_FACTOR" type="int" value="1000" description="Time constant for exponential decay window in millisecond [default:100]"/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="NUM_BIN" type="float" value="2000" description="Number of histogram bins [default:1000]"/>
+      <Parameter name="MIN_LEVEL" type="float" value="-200" description="Minimum level of histogram bin in dB [default:-100]"/>
+      <Parameter name="STEP_LEVEL" type="float" value="0.2" description="Step level of histogram bin (Width of each histogram bin) in dB [default:0.2]"/>
+      <Parameter name="DEBUG" type="bool" value="false" description="Prints the histogram for each 100 iterations."/>
+    </Node>
+    <Node name="node_SpectralGainFilter_2" type="SpectralGainFilter" x="900" y="680">
+    </Node>
+    <Node name="node_SaveWavePCM_2" type="SaveWavePCM" x="1330" y="878.8888904489118">
+      <Parameter name="BASENAME" type="string" value="sep_col_files/sep_" description="Basename of files. [default: sep_]"/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (in samples)[default: 16000]."/>
+      <Parameter name="BITS" type="string" value="int24" description="Bit format of samples. int16 , int24 and float32 bits are supported."/>
+    </Node>
+    <Node name="node_Synthesize_3" type="Synthesize" x="1100" y="879.9999999999995">
+      <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="MIN_FREQUENCY" type="int" value="125" description="Minimum frequency (Hz) [default: 125]"/>
+      <Parameter name="MAX_FREQUENCY" type="int" value="7900" description="Maximum frequency (Hz) [default: 7900]"/>
+      <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
+      <Parameter name="OUTPUT_GAIN" type="float" value="50.0" description="Output gain factor. [default: 1.0]"/>
+    </Node>
+    <Node name="node_CalcSpecAddPower_2" type="CalcSpecAddPower" x="1250" y="462.22221910217627">
+    </Node>
+    <Link from="node_GHDSS_2" output="OUTPUT" to="node_PowerCalcForMap_3" input="INPUT"/>
+    <Link from="node_HRLE_2" output="NOISE_SPEC" to="node_CalcSpecAddPower_2" input="INPUT_POWER_SPEC1"/>
+    <Link from="node_EstimateLeak_2" output="LEAK_POWER_SPEC" to="node_CalcSpecAddPower_2" input="INPUT_POWER_SPEC2"/>
+    <Link from="node_CalcSpecAddPower_2" output="OUTPUT_POWER_SPEC" to="node_CalcSpecSubGain_2" input="NOISE_SPEC"/>
+    <Link from="node_PowerCalcForMap_3" output="OUTPUT" to="node_CalcSpecSubGain_2" input="INPUT_POWER_SPEC"/>
+    <Link from="node_CalcSpecSubGain_2" output="VOICE_PROB" to="node_SpectralGainFilter_2" input="VOICE_PROB"/>
+    <Link from="node_CalcSpecSubGain_2" output="GAIN" to="node_SpectralGainFilter_2" input="GAIN"/>
+    <Link from="node_GHDSS_2" output="OUTPUT" to="node_SpectralGainFilter_2" input="INPUT_SPEC"/>
+    <Link from="node_SpectralGainFilter_2" output="OUTPUT_SPEC" to="node_Synthesize_3" input="INPUT"/>
+    <Link from="node_PowerCalcForMap_3" output="OUTPUT" to="node_EstimateLeak_2" input="INPUT_POWER_SPEC"/>
+    <Link from="node_PowerCalcForMap_3" output="OUTPUT" to="node_HRLE_2" input="INPUT_SPEC"/>
+    <Link from="node_Synthesize_3" output="OUTPUT" to="node_SaveWavePCM_2" input="INPUT"/>
+    <Link from="node_SpectralGainFilter_2" output="OUTPUT_SPEC" to="node_RosHarkMsgsPublisher_2" input="SRC_FFT"/>
+    <Link from="node_Synthesize_3" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_WAVE"/>
+    <NetInput name="SRC_INFO_CENTER" node="node_RosHarkMsgsPublisher_2" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
+    <NetOutput name="OUTPUT" node="node_RosHarkMsgsPublisher_1" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
+    <NetOutput name="OUTPUT_1" node="node_RosHarkMsgsPublisher_2" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
+    <NetInput name="SPEC" node="node_GHDSS_2" terminal="INPUT_FRAMES" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Input multi-channel spectrum. A row is a channel, and a column is a spectrum for the corresponding channel."/>
+    <NetInput name="SRC" node="node_GHDSS_2" terminal="INPUT_SOURCES" object_type="Vector&lt;ObjectRef&gt;" description="Source locations with ID. Each element of the vector is a source location with ID specified by &quot;Source&quot;."/>
+    <NetOutput name="OUTPUT_6" node="node_SaveWavePCM_2" terminal="OUTPUT" object_type="Map&lt;int,ObjectRef&gt;" description="The same as input."/>
+    <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_1" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
   </Network>
 </Document>

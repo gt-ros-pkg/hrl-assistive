@@ -13,8 +13,8 @@
 ## 高速版ではbeam，それ以外ではsafeがデフォルトです
 #-gprune safe		# safe pruning 上位N個が確実に求まる．正確．
 #-gprune heuristic	# heuristic pruning
--gprune beam		# beam pruning 次元ごとに足切り．高速．
-#-gprune none		# pruning を行わない
+#-gprune beam		# beam pruning 次元ごとに足切り．高速．
+-gprune none		# pruning を行わない
 #-gprune add_mask_to_safe	# pluginにて計算にmask追加したsafe
 #-gprune add_mask_to_heu		# pluginにて計算にmask追加したheu
 #-gprune add_mask_to_beam	# pluginにて計算にmask追加したbeam
@@ -39,3 +39,4 @@
 
 #-module		# サーバーモジュールモードで起動
 
+-rejectshort 1000
