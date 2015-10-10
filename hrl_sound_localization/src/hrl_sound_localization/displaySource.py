@@ -51,12 +51,14 @@ class displaySource():
 
     FRAME_SIZE = 512
     
-    def __init__(self, enable_info_all, enable_info_cen, enable_fft_cen, enable_recog, viz=False):
+    def __init__(self, enable_info_all, enable_info_cen, enable_fft_cen, enable_feature_cen, \
+                 enable_recog, viz=False):
         rospy.init_node('display_sources')
 
         self.enable_info_all = enable_info_all
         self.enable_info_cen = enable_info_cen
         self.enable_fft_cen  = enable_fft_cen
+        self.enable_feature_cen = enable_feature_cen
         self.enable_recog    = enable_recog
 
         # Source info from all direction -----------------
@@ -76,6 +78,14 @@ class displaySource():
         self.exist_fft_num_cen = 0
         self.src_fft_cen       = 0
         self.src_fft_cen_lock = threading.RLock()
+        self.showFFTData = {}
+
+        # Source FEATURE from front direction -----------------
+        self.count_feature_cen     = 0
+        self.exist_feature_num_cen = 0
+        self.src_feature_cen       = 0
+        self.src_feature_cen_lock = threading.RLock()
+        self.showFeatureData = {}
         
         # Recognition -----------------
         self.recog_cmd   = ""
@@ -86,7 +96,6 @@ class displaySource():
         self.viz         = viz
         self.displen     = 22050
         self.max_sources = 3       
-        self.showData = {}
         self.plotFlag = False
 
         # Color
@@ -104,6 +113,8 @@ class displaySource():
         if self.enable_info_all: rospy.Subscriber('HarkSource/all', HarkSource, self.harkSrcInfoAllCallback)
         if self.enable_info_cen: rospy.Subscriber('HarkSource/center', HarkSource, self.harkSrcInfoCenterCallback)
         if self.enable_fft_cen:  rospy.Subscriber('HarkSrcFFT/center', HarkSrcFFT, self.harkSrcFFTCenterCallback)
+        if self.enable_feature_cen: rospy.Subscriber('HarkSrcFeature/center', HarkSrcFeature, \
+                                                     self.harkSrcFeatureCenterCallback)
         if self.enable_recog:    rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
 
         # drawing
@@ -142,14 +153,14 @@ class displaySource():
             if self.viz and self.exist_fft_num_cen > 0:
 
 
-                ## for i, key in enumerate( self.showData.keys() ):
+                ## for i, key in enumerate( self.showFFTData.keys() ):
 
                 ##     exist_key=False
                 ##     for j in xrange(len(self.src_fft_cen)):
                 ##         if key == self.src_fft_cen[j].id:
                 ##             exist_key = True
                 ##     if exist_key == False:
-                ##         del self.showData[key]
+                ##         del self.showFFTData[key]
 
                 for i in xrange(self.exist_fft_num_cen):
                     src_id = self.src_fft_cen[i].id
@@ -157,25 +168,62 @@ class displaySource():
                     # Force to use single source id
                     src_id = 0
                     
-                    ## if len(self.showData.keys()) > 0:
+                    ## if len(self.showFFTData.keys()) > 0:
                     ##     self.src_fft_cen[i]
 
                     real_fft = self.src_fft_cen[i].fftdata_real
 
-                    if src_id not in self.showData.keys():
-                        self.showData[src_id] = np.array([ RMS(real_fft, self.FRAME_SIZE) ])
+                    if src_id not in self.showFFTData.keys():
+                        self.showFFTData[src_id] = np.array([ RMS(real_fft, self.FRAME_SIZE) ])
                     else:
-                        self.showData[src_id] = np.hstack([ self.showData[src_id], \
+                        self.showFFTData[src_id] = np.hstack([ self.showFFTData[src_id], \
                                                             np.array([ RMS(real_fft, self.FRAME_SIZE) ]) ])
 
             elif self.viz and self.exist_fft_num_cen == 0:
-                if len(self.showData.keys()) == 0: return
-                if len(self.showData[0]) < 1 : return
+                if len(self.showFFTData.keys()) == 0: return
+                if len(self.showFFTData[0]) < 1 : return
 
                 src_id = 0
-                self.showData[src_id] = np.hstack([ self.showData[src_id], \
-                                                    np.array([ self.showData[src_id][-1] ]) ])
+                self.showFFTData[src_id] = np.hstack([ self.showFFTData[src_id], \
+                                                    np.array([ self.showFFTData[src_id][-1] ]) ])
 
+
+    def harkSrcFeatureCenterCallback(self, msg):
+        '''
+        Get MFCC features from hark. 
+        '''
+        with self.src_feature_cen_lock:
+            self.count_feature_cen     = msg.count
+            self.exist_feature_num_cen = msg.exist_src_num
+            self.src_feature_cen       = msg.src
+
+            if self.viz and self.exist_feature_num_cen > 0:
+
+                for i in xrange(self.exist_feature_num_cen):
+                    src_id = self.src_feature_cen[i].id
+                    length = self.src_feature_cen[i].length
+
+                    # Force to use single source id
+                    src_id = 0
+                    
+                    ## if len(self.showFeatureData.keys()) > 0:
+                    ##     self.src_feature_cen[i]
+
+                    feature = self.src_feature_cen[i].featuredata #float32 list
+
+                    if src_id not in self.showFeatureData.keys():
+                        self.showFeatureData[src_id] = np.array([ feature ]).T
+                    else:
+                        self.showFeatureData[src_id] = np.hstack([ self.showFeatureData[src_id], \
+                                                            np.array([ feature ]).T ])
+
+            elif self.viz and self.exist_feature_num_cen == 0:
+                if len(self.showFeatureData.keys()) == 0: return
+                if len(self.showFeatureData[0]) < 1 : return
+
+                src_id = 0
+                self.showFeatureData[src_id] = np.hstack([ self.showFeatureData[src_id], \
+                                                    np.array([ self.showFeatureData[src_id][:,-1:] ]) ])
 
             
     def harkCmdCallback(self, msg):
@@ -302,29 +350,32 @@ class displaySource():
     ##     pylab.draw()
             
 
-    def plotData(self):
+    def plotFFTData(self):
 
-        if self.plotFlag == False:
+        if self.plotFFTFlag == False:
+            self.fft_fig = pylab.figure(1)
             pylab.ion()
             pylab.hold(False)
-            self.plotFlag = True
-            self.showData[0]=[]
-                    
+            self.plotFFTFlag = True
+            self.showFFTData[0]=[]
+        else:
+            pylab.figure(1)
+            
         with self.src_fft_cen_lock:
 
-            if len(self.showData.keys()) > 1:
-                print "Failure: too many sources!! : ", self.showData.keys()
+            if len(self.showFFTData.keys()) > 1:
+                print "Failure: too many sources!! : ", self.showFFTData.keys()
                 return
             else:
             
-                key = self.showData.keys()[0]
-                if len(self.showData[0]) > self.displen:
-                    self.showData[0] = self.showData[0][len(self.showData)-self.displen:]
+                key = self.showFFTData.keys()[0]
+                if len(self.showFFTData[0]) > self.displen:
+                    self.showFFTData[0] = self.showFFTData[0][len(self.showFFTData)-self.displen:]
 
-                if len(self.showData[0]) < 1: return
+                if len(self.showFFTData[0]) < 1: return
 
                 ## pylab.subplot(self.max_powers, 1, i+1)
-                pylab.plot(self.showData[0], label=str(key))
+                pylab.plot(self.showFFTData[0], label=str(key))
 
                 
         pylab.xlim([0, self.displen])
@@ -332,13 +383,55 @@ class displaySource():
                      range(self.count_fft_cen, self.count_fft_cen + self.displen, 5000))
                 
         pylab.ylabel("RMS of ID ")
-        ## mx = max(abs(self.showData[key]))
+        ## mx = max(abs(self.showFFTData[key]))
         ## pylab.ylim([-mx, mx])
         ## pylab.ylim([20.0, 50.0])
         pylab.xlabel("Time [frame]")
         pylab.legend()
         pylab.draw()
         
+
+    def plotFeatureData(self):
+
+        if self.plotFeatureFlag == False:
+            self.feature_fig = pylab.figure(2)
+            pylab.ion()
+            pylab.hold(False)
+            self.plotFeatureFlag = True
+            self.showFeatureData[0]=[]
+        else:
+            pylab.figure(2)
+                    
+        with self.src_feature_cen_lock:
+
+            if len(self.showFeatureData.keys()) > 1:
+                print "Failure: too many sources!! : ", self.showFeatureData.keys()
+                return
+            else:
+            
+                key = self.showFeatureData.keys()[0]
+                if len(self.showFeatureData[0][0]) > self.displen:
+                    self.showFeatureData[0] = self.showFeatureData[0][:, len(self.showFeatureData)-self.displen:]
+
+                if len(self.showFeatureData[0][0]) < 1: return
+
+                ## pylab.subplot(self.max_powers, 1, i+1)
+                ## pylab.plot(self.showFeatureData[0], label=str(key))
+                pylab.imshow(self.showFeatureData[0])
+
+                
+        pylab.xlim([0, self.displen])
+        pylab.xticks(range(0, self.displen, 5000),
+                     range(self.count_feature_cen, self.count_feature_cen + self.displen, 5000))
+        pylab.xlabel("Time [frame]")
+                
+        ## pylab.ylabel("RMS of ID ")
+        ## mx = max(abs(self.showFeatureData[key]))
+        ## pylab.ylim([-mx, mx])
+        ## pylab.ylim([20.0, 50.0])
+        ## pylab.legend()
+        pylab.draw()
+
         
 
     def tfBroadcaster(self):
@@ -360,7 +453,8 @@ class displaySource():
             if self.enable_info_all: self.draw_sources_all(10)
             if self.enable_info_cen: self.draw_sources_cen(20)
             if self.enable_recog:    self.draw_sources_cmd(30)
-            if self.enable_fft_cen and self.viz: self.plotData()
+            if self.enable_fft_cen and self.viz: self.plotFFTData()
+            if self.enable_feature_cen and self.viz: self.plotFeatureData()
             rt.sleep()
             
 
@@ -376,9 +470,10 @@ if __name__ == '__main__':
     enable_info_all = True
     enable_info_cen = False
     enable_fft_cen  = True
+    enable_feature_cen  = True
     enable_recog    = True
 
-    ds = displaySource( enable_info_all, enable_info_cen, enable_fft_cen, enable_recog,\
+    ds = displaySource( enable_info_all, enable_info_cen, enable_fft_cen, enable_feature_cen, enable_recog,\
                         viz=opt.bViz)
     ds.run()
     
