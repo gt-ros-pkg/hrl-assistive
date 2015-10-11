@@ -421,20 +421,6 @@
     <Link from="node_MelFilterBank_2" output="OUTPUT" to="node_MFCCExtraction_1" input="FBANK"/>
     <Link from="node_PowerCalcForMap_3" output="OUTPUT" to="node_MFCCExtraction_1" input="SPECTRUM"/>
     <Link from="node_MFCCExtraction_1" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_FEATURE"/>
-    <Link from="node_GHDSS_3" output="OUTPUT" to="node_PowerCalcForMap_4" input="INPUT"/>
-    <Link from="node_HRLE_3" output="NOISE_SPEC" to="node_CalcSpecAddPower_3" input="INPUT_POWER_SPEC1"/>
-    <Link from="node_EstimateLeak_3" output="LEAK_POWER_SPEC" to="node_CalcSpecAddPower_3" input="INPUT_POWER_SPEC2"/>
-    <Link from="node_CalcSpecAddPower_3" output="OUTPUT_POWER_SPEC" to="node_CalcSpecSubGain_3" input="NOISE_SPEC"/>
-    <Link from="node_PowerCalcForMap_4" output="OUTPUT" to="node_CalcSpecSubGain_3" input="INPUT_POWER_SPEC"/>
-    <Link from="node_CalcSpecSubGain_3" output="VOICE_PROB" to="node_SpectralGainFilter_3" input="VOICE_PROB"/>
-    <Link from="node_CalcSpecSubGain_3" output="GAIN" to="node_SpectralGainFilter_3" input="GAIN"/>
-    <Link from="node_GHDSS_3" output="OUTPUT" to="node_SpectralGainFilter_3" input="INPUT_SPEC"/>
-    <Link from="node_PowerCalcForMap_4" output="OUTPUT" to="node_EstimateLeak_3" input="INPUT_POWER_SPEC"/>
-    <Link from="node_PowerCalcForMap_4" output="OUTPUT" to="node_HRLE_3" input="INPUT_SPEC"/>
-    <Link from="node_SpectralGainFilter_3" output="OUTPUT_SPEC" to="node_PowerCalcForMap_5" input="INPUT"/>
-    <Link from="node_PowerCalcForMap_5" output="OUTPUT" to="node_MelFilterBank_3" input="INPUT"/>
-    <Link from="node_MelFilterBank_3" output="OUTPUT" to="node_MFCCExtraction_2" input="FBANK"/>
-    <Link from="node_PowerCalcForMap_5" output="OUTPUT" to="node_MFCCExtraction_2" input="SPECTRUM"/>
     <NetInput name="SRC_INFO_CENTER" node="node_RosHarkMsgsPublisher_2" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
     <NetInput name="SPEC" node="node_GHDSS_2" terminal="INPUT_FRAMES" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Input multi-channel spectrum. A row is a channel, and a column is a spectrum for the corresponding channel."/>
     <NetInput name="SRC" node="node_GHDSS_2" terminal="INPUT_SOURCES" object_type="Vector&lt;ObjectRef&gt;" description="Source locations with ID. Each element of the vector is a source location with ID specified by &quot;Source&quot;."/>
@@ -483,7 +469,7 @@
     <Node name="node_PowerCalcForMap_4" type="PowerCalcForMap" x="590" y="190">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
     </Node>
-    <Node name="node_CalcSpecSubGain_3" type="CalcSpecSubGain" x="410" y="500">
+    <Node name="node_CalcSpecSubGain_3" type="CalcSpecSubGain" x="400" y="530">
       <Parameter name="ALPHA" type="float" value="1.0" description="Overestimation factor."/>
       <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
       <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
@@ -524,6 +510,20 @@
       <Parameter name="NUM_CEPS" type="subnet_param" value="NUM_CEPS" description="Number of Cepstrum coefficients. [default: 12]"/>
       <Parameter name="USE_POWER" type="bool" value="false" description="Use power feature if true. [default: false]"/>
     </Node>
+    <Link from="node_GHDSS_3" output="OUTPUT" to="node_PowerCalcForMap_4" input="INPUT"/>
+    <Link from="node_PowerCalcForMap_4" output="OUTPUT" to="node_HRLE_3" input="INPUT_SPEC"/>
+    <Link from="node_HRLE_3" output="NOISE_SPEC" to="node_CalcSpecAddPower_3" input="INPUT_POWER_SPEC1"/>
+    <Link from="node_EstimateLeak_3" output="LEAK_POWER_SPEC" to="node_CalcSpecAddPower_3" input="INPUT_POWER_SPEC2"/>
+    <Link from="node_PowerCalcForMap_4" output="OUTPUT" to="node_EstimateLeak_3" input="INPUT_POWER_SPEC"/>
+    <Link from="node_CalcSpecAddPower_3" output="OUTPUT_POWER_SPEC" to="node_CalcSpecSubGain_3" input="NOISE_SPEC"/>
+    <Link from="node_PowerCalcForMap_4" output="OUTPUT" to="node_CalcSpecSubGain_3" input="INPUT_POWER_SPEC"/>
+    <Link from="node_GHDSS_3" output="OUTPUT" to="node_SpectralGainFilter_3" input="INPUT_SPEC"/>
+    <Link from="node_CalcSpecSubGain_3" output="VOICE_PROB" to="node_SpectralGainFilter_3" input="VOICE_PROB"/>
+    <Link from="node_CalcSpecSubGain_3" output="GAIN" to="node_SpectralGainFilter_3" input="GAIN"/>
+    <Link from="node_SpectralGainFilter_3" output="OUTPUT_SPEC" to="node_PowerCalcForMap_5" input="INPUT"/>
+    <Link from="node_PowerCalcForMap_5" output="OUTPUT" to="node_MelFilterBank_3" input="INPUT"/>
+    <Link from="node_MelFilterBank_3" output="OUTPUT" to="node_MFCCExtraction_2" input="FBANK"/>
+    <Link from="node_PowerCalcForMap_5" output="OUTPUT" to="node_MFCCExtraction_2" input="SPECTRUM"/>
     <Link from="node_MFCCExtraction_2" output="OUTPUT" to="node_RosHarkMsgsPublisher_1" input="SRC_FEATURE"/>
     <NetOutput name="OUTPUT" node="node_RosHarkMsgsPublisher_1" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
     <NetInput name="SRC_INFO" node="node_RosHarkMsgsPublisher_1" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
