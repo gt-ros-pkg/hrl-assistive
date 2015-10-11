@@ -50,8 +50,6 @@
     <Node name="node_sub_collision_pub_1" type="sub_collision_pub" x="1230" y="290">
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="subnet_param"/>
-      <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="subnet_param"/>
-      <Parameter name="FBANK_COUNT" type="int" value="13" description="subnet_param"/>
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -313,7 +311,7 @@
     <NetOutput name="OUTPUT_CENTER" node="node_SourceIntervalExtender_2" terminal="OUTPUT" object_type="Vector&lt;ObjectRef&gt;" description="Source locations PREROLL_LENGTH frames earlier than SOURCES."/>
   </Network>
   <Network type="subnet" name="sub_collision_pub">
-    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1164.6666666666667" y="38.66666666666666">
+    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1230" y="38.66666666666666">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/all" description="Published topic name for ROS (HarkWave type message)"/>
@@ -330,7 +328,7 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1384.6666666666665" y="431.33333333333337">
+    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1449.9999999999998" y="431.33333333333337">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/center" description="Published topic name for ROS (HarkWave type message)"/>
@@ -347,7 +345,7 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_GHDSS_2" type="GHDSS" x="214.66666666666663" y="168.66666666666663">
+    <Node name="node_GHDSS_2" type="GHDSS" x="279.99999999999994" y="168.66666666666657">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -369,19 +367,19 @@
       <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
       <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
     </Node>
-    <Node name="node_PowerCalcForMap_2" type="PowerCalcForMap" x="504.66666666666674" y="128.66666666666663">
+    <Node name="node_PowerCalcForMap_2" type="PowerCalcForMap" x="570.0000000000001" y="128.66666666666657">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
     </Node>
-    <Node name="node_CalcSpecSubGain_2" type="CalcSpecSubGain" x="344.66666666666663" y="578.6666666666667">
+    <Node name="node_CalcSpecSubGain_2" type="CalcSpecSubGain" x="409.99999999999994" y="578.6666666666669">
       <Parameter name="ALPHA" type="float" value="1.0" description="Overestimation factor."/>
       <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
       <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
     </Node>
-    <Node name="node_EstimateLeak_2" type="EstimateLeak" x="764.6666666666669" y="298.66666666666663">
+    <Node name="node_EstimateLeak_2" type="EstimateLeak" x="830.0000000000002" y="298.6666666666666">
       <Parameter name="LEAK_FACTOR" type="float" value="0.25" description="Leak factor [default:0.25]"/>
       <Parameter name="OVER_CANCEL_FACTOR" type="float" value="1" description="Over cancel value [default:1]"/>
     </Node>
-    <Node name="node_HRLE_2" type="HRLE" x="814.6666666666669" y="168.66666666666663">
+    <Node name="node_HRLE_2" type="HRLE" x="880.0000000000002" y="168.66666666666657">
       <Parameter name="LX" type="float" value="0.20" description="Lx value of estimation, e.g. Lx=0 -&gt; Minimum (MCRA), Lx=0.5 -&gt; Median , Lx=1.0 -&gt; Maximum [default:0.85]"/>
       <Parameter name="TIME_CONST_METHOD" type="string" value="LEGACY" description="Time constant value definition, &quot;LEGACY&quot; uses time constant value for HARK 2.0.0,&quot;MILLISECOND&quot; uses time constant value in frames. [default: LEGACY]"/>
       <Parameter name="TIME_CONSTANT" type="float" value="16000" description="Time constant for exponential decay window in samples [default:]"/>
@@ -393,15 +391,15 @@
       <Parameter name="STEP_LEVEL" type="float" value="0.2" description="Step level of histogram bin (Width of each histogram bin) in dB [default:0.2]"/>
       <Parameter name="DEBUG" type="bool" value="false" description="Prints the histogram for each 100 iterations."/>
     </Node>
-    <Node name="node_SpectralGainFilter_2" type="SpectralGainFilter" x="774.6666666666669" y="508.66666666666663">
+    <Node name="node_SpectralGainFilter_2" type="SpectralGainFilter" x="840.0000000000002" y="508.6666666666667">
     </Node>
-    <Node name="node_SaveWavePCM_2" type="SaveWavePCM" x="1094.6666666666663" y="578.6666666666667">
+    <Node name="node_SaveWavePCM_2" type="SaveWavePCM" x="1159.9999999999995" y="578.6666666666669">
       <Parameter name="BASENAME" type="string" value="sep_col_files/sep_" description="Basename of files. [default: sep_]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (in samples)[default: 16000]."/>
       <Parameter name="BITS" type="string" value="int24" description="Bit format of samples. int16 , int24 and float32 bits are supported."/>
     </Node>
-    <Node name="node_Synthesize_3" type="Synthesize" x="1074.6666666666663" y="468.66666666666663">
+    <Node name="node_Synthesize_3" type="Synthesize" x="1139.9999999999995" y="468.6666666666667">
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
       <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate (Hz) [default: 16000]."/>
@@ -410,18 +408,10 @@
       <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
       <Parameter name="OUTPUT_GAIN" type="float" value="50.0" description="Output gain factor. [default: 1.0]"/>
     </Node>
-    <Node name="node_CalcSpecAddPower_2" type="CalcSpecAddPower" x="1124.6666666666663" y="288.66666666666663">
+    <Node name="node_CalcSpecAddPower_2" type="CalcSpecAddPower" x="1189.9999999999995" y="288.6666666666666">
     </Node>
-    <Node name="node_PowerCalcForMap_3" type="PowerCalcForMap" x="780" y="670.0000000000001">
+    <Node name="node_PowerCalcForMap_3" type="PowerCalcForMap" x="845.3333333333334" y="670.0000000000002">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
-    </Node>
-    <Node name="node_MelFilterBank_2" type="MelFilterBank" x="1050" y="670.6666666666666">
-      <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
-      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate in Hz.  [default: 16000]"/>
-      <Parameter name="CUTOFF" type="int" value="8000" description="Cutoff frequency in Hz. Mel-filterbanks are placed between 0 Hz and CUTOFF Hz. [default: 8000]"/>
-      <Parameter name="MIN_FREQUENCY" type="int" value="60" description="Minimum frequency (Hz) [default: 63]"/>
-      <Parameter name="MAX_FREQUENCY" type="int" value="8000" description="Maximum frequency (Hz) [default: 8000]"/>
-      <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="The number of Mel filter banks. [default: 13]"/>
     </Node>
     <Link from="node_GHDSS_2" output="OUTPUT" to="node_PowerCalcForMap_2" input="INPUT"/>
     <Link from="node_HRLE_2" output="NOISE_SPEC" to="node_CalcSpecAddPower_2" input="INPUT_POWER_SPEC1"/>
@@ -437,7 +427,6 @@
     <Link from="node_Synthesize_3" output="OUTPUT" to="node_SaveWavePCM_2" input="INPUT"/>
     <Link from="node_Synthesize_3" output="OUTPUT" to="node_RosHarkMsgsPublisher_2" input="SRC_WAVE"/>
     <Link from="node_SpectralGainFilter_2" output="OUTPUT_SPEC" to="node_PowerCalcForMap_3" input="INPUT"/>
-    <Link from="node_PowerCalcForMap_3" output="OUTPUT" to="node_MelFilterBank_2" input="INPUT"/>
     <NetInput name="SRC_INFO_CENTER" node="node_RosHarkMsgsPublisher_2" terminal="SRC_INFO" object_type="Vector&lt;ObjectRef&gt;" description="Source IDs and locations."/>
     <NetInput name="SPEC" node="node_GHDSS_2" terminal="INPUT_FRAMES" object_type="Matrix&lt;complex&lt;float&gt; &gt;" description="Input multi-channel spectrum. A row is a channel, and a column is a spectrum for the corresponding channel."/>
     <NetInput name="SRC" node="node_GHDSS_2" terminal="INPUT_SOURCES" object_type="Vector&lt;ObjectRef&gt;" description="Source locations with ID. Each element of the vector is a source location with ID specified by &quot;Source&quot;."/>
