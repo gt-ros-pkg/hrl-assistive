@@ -6,6 +6,7 @@
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="TF_CONJ_FILENAME_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
       <Parameter name="A_MATRIX_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
+      <Parameter name="SAMPLING_RATE" type="int" value="" description="subnet_param"/>
     </Node>
     <Node name="node_RosNodeGenerator_1" type="RosNodeGenerator" x="280" y="380">
       <Parameter name="NODE_NAME" type="string" value="HARK_MASTER_NODE" description="Node name for ROS"/>
@@ -23,32 +24,35 @@
       <Parameter name="WINDOW" type="string" value="CONJ" description="A window function for FFT. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: CONJ]"/>
       <Parameter name="WINDOW_LENGTH" type="subnet_param" value="LENGTH" description="Window length of the window function. [default: 512]"/>
     </Node>
-    <Node name="node_sub_separation_1" type="sub_separation" x="1000" y="180">
+    <Node name="node_sub_separation_1" type="sub_separation" x="990" y="170">
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
     </Node>
     <Node name="node_sub_recognition_1" type="sub_recognition" x="1010" y="580">
       <Parameter name="FBANK_COUNT" type="int" value="13" description="The size of the input feature vector."/>
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
-      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate in Hz.  [default: 16000]"/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate in Hz.  [default: 16000]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
     </Node>
     <Node name="node_sub_localization_1" type="sub_localization" x="660" y="430">
       <Parameter name="LENGTH" type="int" value="512" description="The length of a frame (per channel)."/>
-      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling Rate (Hz)."/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling Rate (Hz)."/>
       <Parameter name="A_MATRIX" type="subnet_param" value="A_MATRIX_" description="subnet_param"/>
     </Node>
     <Node name="node_AudioStreamFromMic_1" type="AudioStreamFromMic" x="280" y="290">
-      <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
+      <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="CHANNEL_COUNT" type="int" value="4" description="The number of channels."/>
-      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate (Hz) [default: 16000]."/>
       <Parameter name="DEVICETYPE" type="string" value="ALSA" description="Device type [default: WS]."/>
       <Parameter name="GAIN" type="string" value="0dB" description="capture gain (dB)  [default: 0dB]."/>
       <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
     </Node>
     <Node name="node_sub_collision_pub_1" type="sub_collision_pub" x="1240" y="370">
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
+      <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="subnet_param"/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="subnet_param"/>
+      <Parameter name="FBANK_COUNT" type="int" value="13" description="subnet_param"/>
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -327,7 +331,7 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1450" y="503.3333333333332">
+    <Node name="node_RosHarkMsgsPublisher_2" type="RosHarkMsgsPublisher" x="1450" y="503.3333333333333">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/center" description="Published topic name for ROS (HarkWave type message)"/>
@@ -374,7 +378,7 @@
       <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
       <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
     </Node>
-    <Node name="node_EstimateLeak_2" type="EstimateLeak" x="830" y="369.33333333333314">
+    <Node name="node_EstimateLeak_2" type="EstimateLeak" x="830" y="369.3333333333332">
       <Parameter name="LEAK_FACTOR" type="float" value="0.25" description="Leak factor [default:0.25]"/>
       <Parameter name="OVER_CANCEL_FACTOR" type="float" value="1" description="Over cancel value [default:1]"/>
     </Node>
@@ -390,7 +394,7 @@
       <Parameter name="STEP_LEVEL" type="float" value="0.2" description="Step level of histogram bin (Width of each histogram bin) in dB [default:0.2]"/>
       <Parameter name="DEBUG" type="bool" value="false" description="Prints the histogram for each 100 iterations."/>
     </Node>
-    <Node name="node_SpectralGainFilter_2" type="SpectralGainFilter" x="840" y="579.3333333333333">
+    <Node name="node_SpectralGainFilter_2" type="SpectralGainFilter" x="840" y="579.333333333333">
     </Node>
     <Node name="node_SaveWavePCM_2" type="SaveWavePCM" x="1160" y="649.3333333333336">
       <Parameter name="BASENAME" type="string" value="sep_col_files/sep_" description="Basename of files. [default: sep_]"/>
@@ -398,16 +402,16 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (in samples)[default: 16000]."/>
       <Parameter name="BITS" type="string" value="int24" description="Bit format of samples. int16 , int24 and float32 bits are supported."/>
     </Node>
-    <Node name="node_Synthesize_3" type="Synthesize" x="1140" y="539.3333333333333">
+    <Node name="node_Synthesize_3" type="Synthesize" x="1140" y="539.333333333333">
       <Parameter name="LENGTH" type="int" value="512" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="ADVANCE" type="int" value="160" description="The length in sample between a frame and a previous frame. [default: 160]"/>
-      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate (Hz) [default: 16000]."/>
       <Parameter name="MIN_FREQUENCY" type="int" value="125" description="Minimum frequency (Hz) [default: 125]"/>
       <Parameter name="MAX_FREQUENCY" type="int" value="7900" description="Maximum frequency (Hz) [default: 7900]"/>
       <Parameter name="WINDOW" type="string" value="HAMMING" description="A window function for overlap-add. WINDOW should be CONJ, HAMMING, RECTANGLE, or HANNING. [default: HAMMING]"/>
       <Parameter name="OUTPUT_GAIN" type="float" value="50.0" description="Output gain factor. [default: 1.0]"/>
     </Node>
-    <Node name="node_CalcSpecAddPower_2" type="CalcSpecAddPower" x="1190" y="359.33333333333314">
+    <Node name="node_CalcSpecAddPower_2" type="CalcSpecAddPower" x="1190" y="359.3333333333332">
     </Node>
     <Node name="node_MelFilterBank_2" type="MelFilterBank" x="850" y="832">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
