@@ -6,8 +6,6 @@
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="TF_CONJ_FILENAME_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
       <Parameter name="A_MATRIX_" type="string" value="kinectv2_geotf.zip" description="subnet_param"/>
-      <Parameter name="512" type="subnet_param" value="" description="subnet_param"/>
-      <Parameter name="16000" type="subnet_param" value="" description="subnet_param"/>
     </Node>
     <Node name="node_RosNodeGenerator_1" type="RosNodeGenerator" x="280" y="380">
       <Parameter name="NODE_NAME" type="string" value="HARK_MASTER_NODE" description="Node name for ROS"/>
@@ -59,8 +57,8 @@
       <Parameter name="FBANK_COUNT" type="int" value="24" description="subnet_param"/>
       <Parameter name="NUM_CEPS" type="int" value="12" description="subnet_param"/>
       <Parameter name="TF_CONJ_FILENAME" type="subnet_param" value="TF_CONJ_FILENAME_" description="subnet_param"/>
-      <Parameter name="LENGTH" type="subnet_param" value="512" description="subnet_param"/>
-      <Parameter name="SAMPLING_RATE" type="subnet_param" value="16000" description="subnet_param"/>
+      <Parameter name="LENGTH" type="int" value="512" description="subnet_param"/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="subnet_param"/>
     </Node>
     <Link from="node_MultiFFT_1" output="OUTPUT" to="node_sub_localization_1" input="WAV"/>
     <Link from="node_sub_separation_1" output="POSTFLT_SPEC" to="node_sub_recognition_1" input="SPEC"/>
@@ -427,7 +425,7 @@
     <NetOutput name="OUTPUT_1" node="node_RosHarkMsgsPublisher_2" terminal="OUTPUT" object_type="ObjectRef" description="This is a dummy output, and it has no mean. Only for an activation of this module."/>
   </Network>
   <Network type="subnet" name="sub_feature_pub">
-    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1400" y="419.9999999999999">
+    <Node name="node_RosHarkMsgsPublisher_1" type="RosHarkMsgsPublisher" x="1206.6666666666672" y="419.9999999999999">
       <Parameter name="ADVANCE" type="int" value="160" description="Shift sample number for sliding spectrum analysis."/>
       <Parameter name="ENABLE_DEBUG" type="bool" value="false" description="print debug message of this module in case of true."/>
       <Parameter name="TOPIC_NAME_HARKWAVE" type="string" value="HarkWave/all" description="Published topic name for ROS (HarkWave type message)"/>
@@ -444,7 +442,7 @@
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="The time increment is caluculated as ADVANCE / SAMPLING_RATE"/>
       <Parameter name="ROS_FRAME_ID" type="string" value="HarkRosFrameID" description="ROS frame_id of the message header"/>
     </Node>
-    <Node name="node_GHDSS_3" type="GHDSS" x="280" y="190">
+    <Node name="node_GHDSS_3" type="GHDSS" x="86.66666666666667" y="190">
       <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
       <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
       <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
@@ -466,19 +464,19 @@
       <Parameter name="EXPORT_W_FILENAME" type="string" value="" description="The filename to export W."/>
       <Parameter name="UPDATE" type="string" value="STEP" description="The update method of separation matrix. &quot;STEP&quot; updates W sequentially, i.e., based on SS and then on LC cost. &quot;TOTAL&quot; updates W based on an integrated value of SS and LC cost [default: STEP]"/>
     </Node>
-    <Node name="node_PowerCalcForMap_4" type="PowerCalcForMap" x="590" y="190">
+    <Node name="node_PowerCalcForMap_4" type="PowerCalcForMap" x="396.6666666666666" y="190">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
     </Node>
-    <Node name="node_CalcSpecSubGain_3" type="CalcSpecSubGain" x="400" y="530">
+    <Node name="node_CalcSpecSubGain_3" type="CalcSpecSubGain" x="206.6666666666667" y="530">
       <Parameter name="ALPHA" type="float" value="1.0" description="Overestimation factor."/>
       <Parameter name="BETA" type="float" value="0.0" description="Spectral floor."/>
       <Parameter name="SS_METHOD" type="int" value="2" description="1: Magnitude Spectral Subtraction, 2: Power SS"/>
     </Node>
-    <Node name="node_EstimateLeak_3" type="EstimateLeak" x="870" y="320">
+    <Node name="node_EstimateLeak_3" type="EstimateLeak" x="676.6666666666665" y="320">
       <Parameter name="LEAK_FACTOR" type="float" value="0.25" description="Leak factor [default:0.25]"/>
       <Parameter name="OVER_CANCEL_FACTOR" type="float" value="1" description="Over cancel value [default:1]"/>
     </Node>
-    <Node name="node_HRLE_3" type="HRLE" x="900" y="190">
+    <Node name="node_HRLE_3" type="HRLE" x="706.6666666666665" y="190">
       <Parameter name="LX" type="float" value="0.20" description="Lx value of estimation, e.g. Lx=0 -&gt; Minimum (MCRA), Lx=0.5 -&gt; Median , Lx=1.0 -&gt; Maximum [default:0.85]"/>
       <Parameter name="TIME_CONST_METHOD" type="string" value="LEGACY" description="Time constant value definition, &quot;LEGACY&quot; uses time constant value for HARK 2.0.0,&quot;MILLISECOND&quot; uses time constant value in frames. [default: LEGACY]"/>
       <Parameter name="TIME_CONSTANT" type="float" value="16000" description="Time constant for exponential decay window in samples [default:]"/>
@@ -490,14 +488,14 @@
       <Parameter name="STEP_LEVEL" type="float" value="0.2" description="Step level of histogram bin (Width of each histogram bin) in dB [default:0.2]"/>
       <Parameter name="DEBUG" type="bool" value="false" description="Prints the histogram for each 100 iterations."/>
     </Node>
-    <Node name="node_SpectralGainFilter_3" type="SpectralGainFilter" x="840" y="429.9999999999999">
+    <Node name="node_SpectralGainFilter_3" type="SpectralGainFilter" x="646.6666666666665" y="429.9999999999999">
     </Node>
-    <Node name="node_CalcSpecAddPower_3" type="CalcSpecAddPower" x="1280" y="250">
+    <Node name="node_CalcSpecAddPower_3" type="CalcSpecAddPower" x="1086.666666666667" y="250">
     </Node>
-    <Node name="node_PowerCalcForMap_5" type="PowerCalcForMap" x="840" y="580">
+    <Node name="node_PowerCalcForMap_5" type="PowerCalcForMap" x="646.6666666666665" y="580">
       <Parameter name="POWER_TYPE" type="string" value="POW" description="Measure for computing the POW or MAG (i.e. power or magnitude) of the complex spectrum [default: POW]"/>
     </Node>
-    <Node name="node_MelFilterBank_3" type="MelFilterBank" x="1120" y="540">
+    <Node name="node_MelFilterBank_3" type="MelFilterBank" x="926.6666666666667" y="540">
       <Parameter name="LENGTH" type="subnet_param" value="LENGTH" description="Size of window length in sample. [default: 512]"/>
       <Parameter name="SAMPLING_RATE" type="subnet_param" value="SAMPLING_RATE" description="Sampling rate in Hz.  [default: 16000]"/>
       <Parameter name="CUTOFF" type="int" value="8000" description="Cutoff frequency in Hz. Mel-filterbanks are placed between 0 Hz and CUTOFF Hz. [default: 8000]"/>
@@ -505,7 +503,7 @@
       <Parameter name="MAX_FREQUENCY" type="int" value="8000" description="Maximum frequency (Hz) [default: 8000]"/>
       <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="The number of Mel filter banks. [default: 13]"/>
     </Node>
-    <Node name="node_MFCCExtraction_2" type="MFCCExtraction" x="1120" y="649.9999999999999">
+    <Node name="node_MFCCExtraction_2" type="MFCCExtraction" x="926.6666666666667" y="649.9999999999999">
       <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="Number of filter banks of FBANK. [default: 24]"/>
       <Parameter name="NUM_CEPS" type="subnet_param" value="NUM_CEPS" description="Number of Cepstrum coefficients. [default: 12]"/>
       <Parameter name="USE_POWER" type="bool" value="false" description="Use power feature if true. [default: false]"/>
