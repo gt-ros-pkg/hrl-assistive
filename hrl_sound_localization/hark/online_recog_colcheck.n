@@ -419,7 +419,7 @@
     <Node name="node_MFCCExtraction_1" type="MFCCExtraction" x="868.6666666666665" y="530">
       <Parameter name="FBANK_COUNT" type="subnet_param" value="FBANK_COUNT" description="Number of filter banks of FBANK. [default: 24]"/>
       <Parameter name="NUM_CEPS" type="subnet_param" value="NUM_CEPS" description="Number of Cepstrum coefficients. [default: 12]"/>
-      <Parameter name="USE_POWER" type="bool" value="true" description="Use power feature if true. [default: false]"/>
+      <Parameter name="USE_POWER" type="bool" value="false" description="Use power feature if true. [default: false]"/>
     </Node>
     <Link from="node_GHDSS_2" output="OUTPUT" to="node_PowerCalcForMap_2" input="INPUT"/>
     <Link from="node_HRLE_2" output="NOISE_SPEC" to="node_CalcSpecAddPower_2" input="INPUT_POWER_SPEC1"/>
