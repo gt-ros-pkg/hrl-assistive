@@ -36,7 +36,7 @@ import pylab
 # ROS message
 import tf
 from std_msgs.msg import Bool, Empty, Int32, Int64, Float32, Float64, String
-from hark_msgs.msg import HarkSource, HarkSrcFFT
+from hark_msgs.msg import HarkSource, HarkSrcFFT, HarkSrcFeature
 
 # HRL library
 from hrl_common_code_darpa_m3.visualization import draw_scene as ds
@@ -86,6 +86,7 @@ class displaySource():
         self.src_feature_cen       = 0
         self.src_feature_cen_lock = threading.RLock()
         self.showFeatureData = {}
+        self.plotFeatureFlag = False
         
         # Recognition -----------------
         self.recog_cmd   = ""
@@ -94,7 +95,7 @@ class displaySource():
         # -----------------------------------------------------
         # plot
         self.viz         = viz
-        self.displen     = 22050
+        self.displen     = 300
         self.max_sources = 3       
         self.plotFlag = False
 
@@ -103,7 +104,14 @@ class displaySource():
         self.src_color_cen = [0.7,0,0,0.7]
         self.text_color    = [0.7,0.7,0.7,0.7]
 
+        # -----------------------------------------------------
+        # tf
+        self.torso_frame = 'torso_lift_link'
+        self.head_frame  = 'head_mount_link'
+
         self.initComms()
+        ## self.initParams()
+
 
     def initComms(self):
         '''
@@ -113,7 +121,7 @@ class displaySource():
         if self.enable_info_all: rospy.Subscriber('HarkSource/all', HarkSource, self.harkSrcInfoAllCallback)
         if self.enable_info_cen: rospy.Subscriber('HarkSource/center', HarkSource, self.harkSrcInfoCenterCallback)
         if self.enable_fft_cen:  rospy.Subscriber('HarkSrcFFT/center', HarkSrcFFT, self.harkSrcFFTCenterCallback)
-        if self.enable_feature_cen: rospy.Subscriber('HarkSrcFeature/center', HarkSrcFeature, \
+        if self.enable_feature_cen: rospy.Subscriber('HarkSrcFeature/all', HarkSrcFeature, \
                                                      self.harkSrcFeatureCenterCallback)
         if self.enable_recog:    rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
 
@@ -122,7 +130,29 @@ class displaySource():
         self.source_viz_cen = ds.SceneDraw("hark/source_viz_cen", "/world")
         self.source_viz_cmd = ds.SceneDraw("hark/source_viz_cmd", "/world")
 
+        # tf
+        ## try:
+        ##     self.tf_lstnr = tf.TransformListener()
+        ## except rospy.ServiceException, e:
+        ##     rospy.loginfo("ServiceException caught while instantiating a TF listener. Seems to be normal")
+        ##     pass
+               
 
+    def initParams(self):
+        '''
+        Initialize parameters
+        '''
+        try:
+            self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
+                                           rospy.Duration(5.0))
+        except:
+            self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
+                                           rospy.Duration(5.0))
+                                           
+            [self.head_pos, self.head_orient_quat] = \
+              self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
+
+        
     def harkSrcInfoAllCallback(self, msg):
         '''
         Get all the source locations from hark. 
@@ -199,9 +229,11 @@ class displaySource():
 
             if self.viz and self.exist_feature_num_cen > 0:
 
+                # get head frame
+
+                # save data
                 for i in xrange(self.exist_feature_num_cen):
                     src_id = self.src_feature_cen[i].id
-                    length = self.src_feature_cen[i].length
 
                     # Force to use single source id
                     src_id = 0
@@ -209,21 +241,44 @@ class displaySource():
                     ## if len(self.showFeatureData.keys()) > 0:
                     ##     self.src_feature_cen[i]
 
+                    power   = self.src_feature_cen[i].power #float32
+                    azimuth = self.src_feature_cen[i].azimuth #float32
+                    length  = self.src_feature_cen[i].length
                     feature = self.src_feature_cen[i].featuredata #float32 list
 
+                    if len(feature) < 1: continue
+
                     if src_id not in self.showFeatureData.keys():
-                        self.showFeatureData[src_id] = np.array([ feature ]).T
+                        self.showFeatureData[src_id] = {}
+                        self.showFeatureData[src_id]['power'] = np.array([ power ])
+                        self.showFeatureData[src_id]['azimuth'] = np.array([ azimuth ])
+                        self.showFeatureData[src_id]['feature'] = np.array([ feature ]).T
                     else:
-                        self.showFeatureData[src_id] = np.hstack([ self.showFeatureData[src_id], \
-                                                            np.array([ feature ]).T ])
+                        self.showFeatureData[src_id]['power'] = np.hstack([\
+                            self.showFeatureData[src_id]['power'], np.array([ power ]) ])
+                        self.showFeatureData[src_id]['azimuth'] = np.hstack([\
+                            self.showFeatureData[src_id]['azimuth'], np.array([ azimuth ]) ])
+                        self.showFeatureData[src_id]['feature'] = np.hstack([\
+                            self.showFeatureData[src_id]['feature'], \
+                            np.array([ feature ]).T ])
+
 
             elif self.viz and self.exist_feature_num_cen == 0:
                 if len(self.showFeatureData.keys()) == 0: return
                 if len(self.showFeatureData[0]) < 1 : return
 
                 src_id = 0
-                self.showFeatureData[src_id] = np.hstack([ self.showFeatureData[src_id], \
-                                                    np.array([ self.showFeatureData[src_id][:,-1:] ]) ])
+                self.showFeatureData[src_id]['power']\
+                = np.hstack([ self.showFeatureData[src_id]['power'], \
+                              np.array([ self.showFeatureData[src_id]['power'][-1] ]) ])
+
+                self.showFeatureData[src_id]['azimuth']\
+                = np.hstack([ self.showFeatureData[src_id]['azimuth'], \
+                              np.array([ self.showFeatureData[src_id]['azimuth'][-1] ]) ])
+
+                self.showFeatureData[src_id]['feature']\
+                = np.hstack([ self.showFeatureData[src_id]['feature'], \
+                              self.showFeatureData[src_id]['feature'][:,-1:] ])
 
             
     def harkCmdCallback(self, msg):
@@ -398,7 +453,8 @@ class displaySource():
             pylab.ion()
             pylab.hold(False)
             self.plotFeatureFlag = True
-            self.showFeatureData[0]=[]
+            ## self.showFeatureData = {}
+            self.im = None
         else:
             pylab.figure(2)
                     
@@ -407,22 +463,53 @@ class displaySource():
             if len(self.showFeatureData.keys()) > 1:
                 print "Failure: too many sources!! : ", self.showFeatureData.keys()
                 return
+            elif len(self.showFeatureData.keys()) == 0:
+                print "Failure: no sources!! ", self.showFeatureData
+                return
             else:
             
                 key = self.showFeatureData.keys()[0]
-                if len(self.showFeatureData[0][0]) > self.displen:
-                    self.showFeatureData[0] = self.showFeatureData[0][:, len(self.showFeatureData)-self.displen:]
 
-                if len(self.showFeatureData[0][0]) < 1: return
+                if len(self.showFeatureData[0]['power']) > self.displen:
+                    self.showFeatureData[0]['power']   = self.showFeatureData[0]['power']\
+                      [len(self.showFeatureData)-self.displen:]
+                    self.showFeatureData[0]['azimuth'] = self.showFeatureData[0]['azimuth']\
+                      [len(self.showFeatureData)-self.displen:]
+                    self.showFeatureData[0]['feature'] = self.showFeatureData[0]['feature']\
+                      [:, len(self.showFeatureData)-self.displen:]
 
-                ## pylab.subplot(self.max_powers, 1, i+1)
+                if len(self.showFeatureData[0]['power']) < 1: return
+
+                pylab.subplot(3, 1, 1)
+                pylab.plot(self.showFeatureData[0]['power'])
+                pylab.ylim([20, 35])
+
+                pylab.subplot(3, 1, 2)
+                pylab.plot(self.showFeatureData[0]['azimuth'])
+                pylab.ylim([-90.0, 90.0])
+
+                pylab.subplot(3, 1, 3)
+                max_feature = 12
+                if self.im is None:
+                    self.im = pylab.imshow(self.showFeatureData[0]['feature'][:max_feature,:])
+                    ## self.cb = pylab.colorbar()
+                    pylab.xlim([0, self.displen])
+                    pylab.gca().invert_yaxis()
+                else:
+                    self.im.set_array( self.showFeatureData[0]['feature'][:max_feature,:] )
+                    ext = self.im.get_extent()
+                    self.im.set_extent((ext[0], self.showFeatureData[0]['feature'].shape[1], ext[2], ext[3]))
+                    ## self.cb.set_clim(vmin=self.showFeatureData[0]['feature'].min(), \
+                    ##                  vmax=self.showFeatureData[0]['feature'].max())
+                                                            
                 ## pylab.plot(self.showFeatureData[0], label=str(key))
-                pylab.imshow(self.showFeatureData[0])
+                ## pylab.imshow(self.showFeatureData[0]['feature'])
+                ## pylab.ylim([0, 24])
+                pylab.axis('tight')
 
-                
         pylab.xlim([0, self.displen])
-        pylab.xticks(range(0, self.displen, 5000),
-                     range(self.count_feature_cen, self.count_feature_cen + self.displen, 5000))
+        ## pylab.xticks(range(0, self.displen, 50),
+        ##              range(self.count_feature_cen - self.displen, self.count_feature_cen, 50))
         pylab.xlabel("Time [frame]")
                 
         ## pylab.ylabel("RMS of ID ")
@@ -467,9 +554,9 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
 
-    enable_info_all = True
+    enable_info_all = False
     enable_info_cen = False
-    enable_fft_cen  = True
+    enable_fft_cen  = False
     enable_feature_cen  = True
     enable_recog    = True
 
