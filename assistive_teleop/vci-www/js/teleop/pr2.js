@@ -255,9 +255,12 @@ var PR2ArmMPC = function (options) {
     self.side = options.side;
     self.ee_frame = options.ee_frame;
     self.stateTopic = options.stateTopic || 'haptic_mpc/gripper_pose';
-    self.goalTopic = options.goalTopic || 'haptic_mpc/goal_pose';
+    self.poseGoalTopic = options.poseGoalTopic || 'haptic_mpc/goal_pose';
+    self.trajectoryGoalTopic = options.trajectoryGoalTopic || 'haptic_mpc/joint_trajectory';
+    self.plannerServiceName = options.plannerServiceName;
     self.state = null;
     self.ros.getMsgDetails('geometry_msgs/PoseStamped');
+    self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
 
     self.setState = function (msg) {
         self.state = msg;
@@ -277,12 +280,12 @@ var PR2ArmMPC = function (options) {
 
     self.goalPosePublisher = new ROSLIB.Topic({
         ros: self.ros,
-        name: self.goalTopic,
+        name: self.poseGoalTopic,
         messageType: 'geometry_msgs/PoseStamped'
     });
     self.goalPosePublisher.advertise();
 
-    self.sendGoal = function (options) {
+    self.sendPoseGoal = function (options) {
         var position =  options.position || self.state.pose.position;
         var orientation =  options.orientation || self.state.pose.orientation;
         var frame_id =  options.frame_id || self.state.header.frame_id;
@@ -292,6 +295,41 @@ var PR2ArmMPC = function (options) {
         msg.pose.orientation = orientation;
         self.goalPosePublisher.publish(msg);
     };
+
+    self.trajectoryGoalPublisher = new ROSLIB.Topic({
+        ros: self.ros,
+        name: self.trajectoryGoalTopic,
+        messageType: 'trajectory_msgs/JointTrajectory'
+    });
+    self.trajectoryGoalPublisher.advertise();
+
+    self.sendTrajectoryGoal = function (trajectory) {
+        self.trajectoryGoalPublisher.publish(trajectory);
+    };
+
+    self.moveitPlannerClient = new ROSLIB.Service({
+        ros: self.ros,
+        name: self.plannerServiceName,
+        serviceType: 'assistive_teleop/MoveItPlan'
+    });
+    
+    self.planTrajectory = function (options) {
+        var position =  options.position || self.state.pose.position;
+        var orientation =  options.orientation || self.state.pose.orientation;
+        var frame_id =  options.frame_id || self.state.header.frame_id;
+        var cb = options.cb || function () {}; // Default to no-op on return
+        var pose = self.ros.composeMsg('geometry_msgs/PoseStamped');
+        pose.header.frame_id = frame_id;
+        pose.pose.position = position;
+        pose.pose.orientation = orientation;
+        console.log("Requesting trajectory to ", pose);
+        var failureCB = function (msg) {console.log("Service Faluire!", msg);};
+        var req = new ROSLIB.ServiceRequest({'pose_target': pose});
+        self.moveitPlannerClient.callService(req, cb, failureCB);
+    };
+
+
+
 };
 
 var PR2 = function (ros) {
@@ -307,11 +345,15 @@ var PR2 = function (ros) {
     self.r_arm_cart = new PR2ArmMPC({side:'right',
                                      ros: self.ros,
                                      stateTopic: 'right_arm/haptic_mpc/gripper_pose',
-                                     goalTopic: 'right_arm/haptic_mpc/goal_pose',
-                                     ee_frame:'r_gripper_tool_frame'});
+                                     poseGoalTopic: 'right_arm/haptic_mpc/goal_pose',
+                                     ee_frame:'r_gripper_tool_frame',
+                                     trajectoryGoalTopic: '/right_arm/haptic_mpc/joint_trajectory',
+                                     plannerServiceName:'/moveit_plan/right_arm'});
     self.l_arm_cart = new PR2ArmMPC({side:'left',
                                      ros: self.ros,
                                      stateTopic: 'left_arm/haptic_mpc/gripper_pose',
                                      goalTopic: 'left_arm/haptic_mpc/goal_pose',
-                                     ee_frame:'l_gripper_tool_frame'});
+                                     ee_frame:'l_gripper_tool_frame',
+                                     trajectoryGoalTopic: '/left_arm/haptic_mpc/joint_trajectory',
+                                     plannerServiceName:'/moveit_plan/left_arm'});
 };

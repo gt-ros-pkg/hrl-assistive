@@ -471,7 +471,7 @@ RFH.CartesianEEControl = function (options) {
                    y: self.eeTF.translation.y + dy,
                    z: self.eeTF.translation.z - dz};
         quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
-        self.arm.sendGoal({position: pos,
+        self.arm.sendPoseGoal({position: pos,
             orientation: quat,
             frame_id: frame});
     };
@@ -604,18 +604,20 @@ RFH.CartesianEEControl = function (options) {
     self.touchSpotCB = function (e) {
         if ($('#touchspot-toggle').prop('checked')) {
             self.setPositionCtrls();
-            self.SVGCanvas.node.off('click.rfh');
+            self.$div.off('click.rfh');
         } else {
             $('#armCtrlContainer, .'+self.side+'-arm-rot-icon').hide();
             // TODO: Change cursor here?
 
-            var onRetCB = function (pose) {
+            var onRetCB = function (pose_stamped) {
+                var pose = pose_stamped.pose;
+                console.log(pose);
                 var quat = new THREE.Quaternion(pose.orientation.x,
                                              pose.orientation.y,
                                              pose.orientation.z,
                                              pose.orientation.w);
                 var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
-                var offset = new THREE.Vector3(0.03, 0, 0); //Get to 10cm from point along normal
+                var offset = new THREE.Vector3(0.13, 0, 0); //Get to x dist from point along normal
                 offset.applyMatrix4(poseRotMat);
                 var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
                 poseRotMat.multiply(desRotMat);
@@ -625,10 +627,16 @@ RFH.CartesianEEControl = function (options) {
                 var trans = new THREE.Matrix4();
                 var scale = new THREE.Vector3();
                 poseRotMat.decompose(trans, quat, scale);
-                self.arm.sendGoal({
+
+                var trajectoryCB = function (traj) {
+                    console.log("Got Trajectory", traj);
+                    self.arm.sendTrajectoryGoal(traj.joint_trajectory);
+                };
+                self.arm.planTrajectory({
                     position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
                     orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
-                    frame_id: 'base_link'
+                    frame_id: 'base_link',
+                    cb: trajectoryCB
                 });
                 $('#touchspot-toggle').prop('checked', false).button('refresh');
                 self.setPositionCtrls();
@@ -640,7 +648,7 @@ RFH.CartesianEEControl = function (options) {
                 var y = pt[1]/$(e.target).height();
                 self.pixel23d.callRelativeScale(x, y, onRetCB);
             };
-            $(self.SVGCanvas.node).one('click.rfh', clickCB);
+            self.$div.one('click.rfh', clickCB);
         }
     };
 

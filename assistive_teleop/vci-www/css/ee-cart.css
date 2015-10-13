@@ -1,3 +1,8 @@
+#touchspot-toggle-label {
+    display: block;
+    margin: 10%;
+}
+
 #arm-svg {
     display:none;
     position:absolute;
@@ -104,18 +109,17 @@
     width: 100%;
 }
 
-#posrot-set label{
+.posrot-set label{
     width: 48%;
     margin-bottom: 0.3em;
 }
 
-#posrot-set .ui-button-text{
+.posrot-set .ui-button-text{
     padding: 0.2em 1em;
 }
 
-#posrot-set{
-    margin-left:2%;
-    margin-right:2%;
+.posrot-set{
+    margin-left:5%;
 }
 
 #away-button {

@@ -23,6 +23,8 @@
   <build_depend>tf</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>moveit_msgs</build_depend>
   <build_depend>image_rotate</build_depend>
   <build_depend>pr2_msgs</build_depend>
   <build_depend>pr2_controllers_msgs</build_depend>
@@ -40,6 +42,8 @@
   <run_depend>tf</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>moveit_msgs</run_depend>
   <run_depend>image_rotate</run_depend>
   <run_depend>pr2_msgs</run_depend>
   <run_depend>pr2_controllers_msgs</run_depend>

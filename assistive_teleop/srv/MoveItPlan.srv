@@ -1,0 +1,3 @@
+geometry_msgs/PoseStamped pose_target
+---
+moveit_msgs/RobotTrajectory robot_trajectory
