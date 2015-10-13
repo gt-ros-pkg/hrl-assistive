@@ -17,6 +17,8 @@
         <!--node name="findBowl" pkg="hrl_multimodal_anomaly_detection" type="findBowl.py" respawn="false" output="screen" /-->
         <node name="findMouth" pkg="hrl_manipulation_task" type="findMouth.py" respawn="false" output="screen" />
 
+        <!-- F/T sensor -->
+        <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.120 --rate 10" respawn="true" />
 
 
 </launch>

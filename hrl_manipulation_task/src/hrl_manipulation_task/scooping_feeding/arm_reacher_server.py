@@ -200,6 +200,15 @@ class armReachAction(mpcBaseAction):
                 return "Chose kinect bowl position"
             elif self.bowl_frame_kinect is None:
                 # Get frame info from right arm and upate bowl_pos                
+                # 1. right arm ('r_gripper_tool_frame') from tf
+                self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), \
+                                               rospy.Duration(5.0))
+                [self.----pos, self.---quat] = \
+                    self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
+
+                
+                # 2. add offset 
+                # 3. Store in bowl_frame
                 self.bowl_frame = PyKDL.Frame()  # TODO: Need to update!!!
                 return "Chose bowl position from kinematics using tf"                
             else:
