@@ -293,6 +293,7 @@ var PR2ArmMPC = function (options) {
         msg.header.frame_id = frame_id;
         msg.pose.position = position;
         msg.pose.orientation = orientation;
+        console.log("Sending Goal:", msg);
         self.goalPosePublisher.publish(msg);
     };
 
@@ -352,7 +353,7 @@ var PR2 = function (ros) {
     self.l_arm_cart = new PR2ArmMPC({side:'left',
                                      ros: self.ros,
                                      stateTopic: 'left_arm/haptic_mpc/gripper_pose',
-                                     goalTopic: 'left_arm/haptic_mpc/goal_pose',
+                                     poseGoalTopic: 'left_arm/haptic_mpc/goal_pose',
                                      ee_frame:'l_gripper_tool_frame',
                                      trajectoryGoalTopic: '/left_arm/haptic_mpc/joint_trajectory',
                                      plannerServiceName:'/moveit_plan/left_arm'});

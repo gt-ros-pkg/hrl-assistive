@@ -27,14 +27,14 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table"; // "wall", "free"
     self.active = false;
     self.raycaster = new THREE.Raycaster();
+    self.hoveredMesh = null;
 
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
         parentId: self.$div.attr('id'),
         divId: self.side +'GripperDisplay'});
 
-
-    self.canvasClickCB = function (event) {
+    self.getMeshPointedAt = function (event) {
         var mouse = new THREE.Vector2();
         var pt = RFH.positionInElement(event);
         var canvas = RFH.viewer.renderer.getContext().canvas; 
@@ -44,18 +44,48 @@ RFH.CartesianEEControl = function (options) {
         self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
         var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
         if (objs.length > 0 && objs[0].object.userData.side === self.side) {
-            self.rotArrows[objs[0].object.userData.direction].cb();
+            return self.rotArrows[objs[0].object.userData.direction];
+        } else {
+            return null;
         }
     };
 
+    self.canvasClickCB = function (event) {
+        var clickedMesh = self.getMeshPointedAt(event);
+        if (clickedMesh !== null) {
+            console.log("clicked arrow mesh");
+            // set clicked color
+            clickedMesh.cb();
+        }
+    };
     $('#viewer-canvas').on('click.rfh', self.canvasClickCB);
+
+    self.canvasMouseMoveCB = function (event) {
+        var overMesh = self.getMeshPointedAt(event);
+        if (overMesh === null) {
+            if (self.hoveredMesh !== null){
+                self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
+                self.hoveredMesh = null;
+            }
+        } else {
+            if (self.hoveredMesh === null) {
+                overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
+                self.hoveredMesh = overMesh;
+            } else if (overMesh !== self.hoveredMesh) {
+                overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
+                self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
+                self.hoveredMesh = overMesh;
+            }
+        }
+    };
+    $('#viewer-canvas').on('mousemove.rfh', self.canvasMouseMoveCB);
 
     self.rotArrowLoader = new THREE.ColladaLoader();
     var arrowOnLoad = function (collada) {
         var arrowGeom = collada.scene.children[0].children[0].geometry.clone();
         var baseMaterial = new THREE.MeshLambertMaterial();
         baseMaterial.transparent = true;
-        baseMaterial.opacity = 0.87;
+        baseMaterial.opacity = 0.67;
         self.rotArrows = {};
         var scaleX = 0.00075;
         var scaleY = 0.00075;
@@ -69,6 +99,8 @@ RFH.CartesianEEControl = function (options) {
         baseMaterial.color.setRGB(255,0,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xn';
+        mesh.userData.defaultColor = new THREE.Color().setRGB(1,0,0);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(255,0,0);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -81,6 +113,8 @@ RFH.CartesianEEControl = function (options) {
         // X-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xp';
+        mesh.userData.defaultColor = [1,0,0];
+        mesh.userData.hoverColor = [0.8, 0.1, 0.1];
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -94,6 +128,8 @@ RFH.CartesianEEControl = function (options) {
         baseMaterial.color.setRGB(0,255,0);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yn';
+        mesh.userData.defaultColor = new THREE.Color(0,255,0);
+        mesh.userData.hoverColor = new THREE.Color(30,230,30);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -106,6 +142,8 @@ RFH.CartesianEEControl = function (options) {
         // Y-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yp';
+        mesh.userData.defaultColor = new THREE.Color(0,255,0);
+        mesh.userData.hoverColor = new THREE.Color(30,230,30);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -119,6 +157,8 @@ RFH.CartesianEEControl = function (options) {
         baseMaterial.color.setRGB(0,0,255);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'zp';
+        mesh.userData.defaultColor = new THREE.Color(0,0,255);
+        mesh.userData.hoverColor = new THREE.Color(30,30,230);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -131,6 +171,8 @@ RFH.CartesianEEControl = function (options) {
         // Z-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'zn';
+        mesh.userData.defaultColor = new THREE.Color(0,0,255);
+        mesh.userData.hoverColor = new THREE.Color(30,30,230);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -629,8 +671,12 @@ RFH.CartesianEEControl = function (options) {
                 poseRotMat.decompose(trans, quat, scale);
 
                 var trajectoryCB = function (traj) {
-                    console.log("Got Trajectory", traj);
-                    self.arm.sendTrajectoryGoal(traj.joint_trajectory);
+                    if (traj.joint_trajectory.points.length === 0) {
+                        console.log("Empty Trajectory Received.");
+                    } else {
+                        console.log("Got Trajectory", traj);
+                        self.arm.sendTrajectoryGoal(traj.joint_trajectory);
+                    }
                 };
                 self.arm.planTrajectory({
                     position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),

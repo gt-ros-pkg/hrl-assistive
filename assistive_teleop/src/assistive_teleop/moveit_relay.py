@@ -16,7 +16,7 @@ class MoveItInterface(object):
         self.groups = {'right_arm': moveit_commander.MoveGroupCommander("right_arm"),
                        'left_arm': moveit_commander.MoveGroupCommander("left_arm")}
         for group in self.groups.itervalues():
-            group.set_goal_tolerance(0.02)
+            group.set_goal_tolerance(0.12)
 
         self.traj_display_pub = rospy.Publisher("/move_group/display_planned_path", mm.DisplayTrajectory)
         self.debug_pub = rospy.Publisher("plan_goal", PoseStamped)
