@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
-    print armReachActionLeft("getBowlPos")
-    print armReachActionLeft("test_debug")
+    #print armReachActionLeft("getBowlPos")
+    ## print armReachActionLeft("test_debug")
     ## print armReachActionLeft("test_orient")
     ## print armReachActionRight("test_orient")
 
@@ -54,7 +54,8 @@ if __name__ == '__main__':
     ## ## Feeding -----------------------------------
     ## print "Initializing left arm for feeding"
     ## print armReachActionLeft("initFeeding")
-    ## print armReachActionLeft("runFeeding")
+    print armReachActionLeft("getHeadPos")
+    print armReachActionLeft("runFeeding")
 
     ## print armReachAction("chooseManualHeadPos")
 

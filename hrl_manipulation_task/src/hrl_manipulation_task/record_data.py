@@ -1,4 +1,32 @@
 #!/usr/bin/env python
+#
+# Copyright (c) 2014, Georgia Tech Research Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Georgia Tech Research Corporation nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
 import rospy
@@ -18,11 +46,13 @@ import hrl_lib.util as ut
 from sensor.kinect_audio import kinect_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
-## from vision.tool_vision import tool_vision
+from sensor.artag_vision import artag_vision
+from sensor.pps_skin import pps_skin
 
 
 class logger:
-    def __init__(self, ft=False, audio=False, kinematics=False, subject=None, task=None, verbose=False):
+    def __init__(self, ft=False, audio=False, kinematics=False, vision=False, pps=False, \
+                 subject=None, task=None, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject = subject
@@ -31,9 +61,11 @@ class logger:
         
         self.initParams()
         
-        self.audio      = kinect_audio(True) if audio else None
+        self.audio      = kinect_audio() if audio else None
         self.kinematics = robot_kinematics() if kinematics else None
         self.ft         = tool_ft() if ft else None
+        self.vision     = artag_vision(False, viz=False) if vision else None
+        self.pps_skin   = pps_skin(True) if pps else None
 
 
     def initParams(self):
@@ -61,6 +93,16 @@ class logger:
             self.ft.init_time = self.init_time
             self.ft.start()
             self.ft.reset(self.init_time)
+
+        if self.vision is not None:
+            self.vision.init_time = self.init_time
+            self.vision.start()
+            self.vision.reset(self.init_time)
+
+        if self.pps_skin is not None:
+            self.pps_skin.init_time = self.init_time
+            self.pps_skin.start()
+            self.pps_skin.reset(self.init_time)
             
     def close_log_file(self):
         data = {}
@@ -88,6 +130,18 @@ class logger:
             data['ft_time']   = self.ft.time_data
             data['ft_force']  = self.ft.force_array
             data['ft_torque'] = self.ft.torque_array
+
+        if self.vision is not None:
+            self.vision.cancel()
+            data['vision_time'] = self.vision.time_data
+            data['vision_pos']  = self.vision.vision_tag_pos
+            data['vision_quat'] = self.vision.vision_tag_quat
+
+        if self.pps_skin is not None:
+            self.pps_skin.cancel()
+            data['pps_skin_time'] = self.pps_skin.time_data
+            data['pps_skin_left']  = self.pps_skin.pps_skin_left
+            data['pps_skin_right'] = self.pps_skin.pps_skin_right
             
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
         if flag == '1':   status = 'success'
@@ -125,6 +179,8 @@ class logger:
         if self.audio is not None: self.audio = kinect_audio()
         if self.kinematics is not None: self.kinematics = robot_kinematics()
         if self.ft is not None: self.ft = tool_ft()
+        if self.vision is not None: self.vision = artag_vision()
+        if self.pps_skin is not None: self.pps_skin = pps_skin()
 
         gc.collect()
 
@@ -133,22 +189,24 @@ class logger:
 
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
+            rate.sleep()
 
-            flag = 1.0
             if self.audio is not None:
-                if self.audio.isReady(): flag *= 1.0
-                else: flag *= -1.0
+                if self.audio.isReady() is False: continue
 
             if self.kinematics is not None:
-                if self.kinematics.isReady(): flag *= 1.0
-                else: flag *= -1.0
+                if self.kinematics.isReady() is False: continue
 
             if self.ft is not None:
-                if self.ft.isReady(): flag *= 1.0
-                else: flag *= -1.0
+                if self.ft.isReady() is False: continue
 
-            if flag == 1.0: break                    
-            rate.sleep()
+            if self.vision is not None:
+                if self.vision.isReady() is False: continue
+
+            if self.pps_skin is not None:
+                if self.pps_skin.isReady() is False: continue
+                
+            break
 
         if self.verbose: print "record_data>> completed to wait sensing data"
             
@@ -172,11 +230,11 @@ if __name__ == '__main__':
     subject = 'gatsbii'
     task    = '10'
     actor   = '2'
-    manip   = True
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=True, audio=True, kinematics=True, subject=subject, task=task, verbose=verbose)
+    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=True, \
+                 subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
     log.run()

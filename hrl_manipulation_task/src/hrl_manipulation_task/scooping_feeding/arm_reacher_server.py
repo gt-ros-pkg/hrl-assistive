@@ -96,23 +96,9 @@ class armReachAction(mpcBaseAction):
         ## test motoins --------------------------------------------------------
         self.motions['test_orient'] = {}
         self.motions['test_orient']['left'] = \
-          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 10.0],\
-          ['MOVET', '[ 0, 0, 0, 1.0, 0, 0]', 5.0],\
-          ['MOVET', '[ 0, 0, 0, -1.0, 0, 0]', 5.0],\
-          ['MOVET', '[ 0, 0, 0, 0, 0.5, 0]', 5.0],\
-          ['MOVET', '[ 0, 0, 0, 0, -0.5, 0]', 5.0]]
+          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, 0.0, 0.0]', 10.0]]
         self.motions['test_orient']['right'] =\
           [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
-
-        self.motions['test_pos'] = {}
-        self.motions['test_pos']['left'] = \
-          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],\
-          ['MOVET', '[ 0, 0, 0.3, 0, 0, 0]', 5.0],\
-          ['MOVET', '[ 0, 0, -0.3, 0, 0, 0]', 5.0],\
-          ['MOVET', '[ 0, 0.3, 0, 0, 0, 0]', 5.0],\
-          ['MOVET', '[ 0, -0.3, 0, 0, 0, 0]', 5.0]]
-        self.motions['test_pos']['right'] = []
-
 
         self.motions['test_debug'] = {}
         self.motions['test_debug']['left'] = \
@@ -135,6 +121,7 @@ class armReachAction(mpcBaseAction):
         #  ['MOVES', '[ 0.521, -0.137, -0.041, 38, -99, -4]', 5.0]]
         self.motions['testingMotion']['right'] = []
         ##  [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0]]
+        
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame                        
         self.motions['initScooping'] = {}
@@ -169,15 +156,18 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = \
-          [['MOVEJ', '[0.39, 0.26, 0.61, -2.07, -3.36, -1.82, -2.33]', 10.0]] 
+          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, 0.0, 0.0]', 10.0]] 
         self.motions['initFeeding']['right'] = \
           []
-          
+
+        # another initial posture
+        #['MOVEJ', '[1.57, 0, 1.57, -2.356, -3.14, -0.5, 0.0]', 10.0]
+        
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
-          [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0],
-           ['MOVET', '[0.0, 0., 0., 90, 0, 0]', 10.], 
-           ['MOVET', '[0.0, 0., 0., -90, 0, 0]', 10.]
+          [['MOVEJ', '[1.57, 0, 1.57, -2.356, -3.14, -0.5, 0.0]', 10.0],
+           ['MOVES', '[0.0, 0.0, -0.2, 0., 0., 0.]', 10., 'self.mouth_frame'],
+           
            ## ['PAUSE', 0.5],
            ## ['MOVES', '[0.79, 0.35, 0.05, -59., 0.4, 77.]', 10., 'self.default_frame'], 
            ## ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
@@ -203,8 +193,8 @@ class armReachAction(mpcBaseAction):
                 # 1. right arm ('r_gripper_tool_frame') from tf
                 self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), \
                                                rospy.Duration(5.0))
-                [self.----pos, self.---quat] = \
-                    self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
+                ## [self.----pos, self.---quat] = \
+                ##     self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
 
                 
                 # 2. add offset 
@@ -229,85 +219,7 @@ class armReachAction(mpcBaseAction):
         ##     return "Request not understood by server!!!"
 
         
-    def parsingMovements(self, motions):
-        
-        for i, motion in enumerate(motions):
-            print "Exec: ", motion
-            pos  = Point()
-            quat = Quaternion()
-        
-            if motion[0] == 'MOVEP':   
-                poseData  = eval(motion[1])            
-                if len(motion)>3: frameData  = eval(motion[3])   
-                else: frameData = PyKDL.Frame()         
-
-                poseFrame = array2KDLframe(poseData)
-                poseFrame = frameConversion(poseFrame, frameData)
-                    
-                pos.x = poseFrame.p[0]
-                pos.y = poseFrame.p[1]
-                pos.z = poseFrame.p[2]
-                self.setPositionGoal(pos, quat, motion[2])
                 
-            elif motion[0] == 'MOVES':
-                poseData  = eval(motion[1])            
-                if len(motion)>3: frameData  = eval(motion[3])            
-                else: frameData = PyKDL.Frame()         
-
-                poseFrame = array2KDLframe(poseData)
-                poseFrame = frameConversion(poseFrame, frameData)
-                    
-                pos.x = poseFrame.p[0]
-                pos.y = poseFrame.p[1]
-                pos.z = poseFrame.p[2]
-
-                quat.x = poseFrame.M.GetQuaternion()[0]
-                quat.y = poseFrame.M.GetQuaternion()[1]
-                quat.z = poseFrame.M.GetQuaternion()[2]
-                quat.w = poseFrame.M.GetQuaternion()[3]
-                
-                self.setOrientGoal(pos, quat, motion[2])
-
-            elif motion[0] == 'MOVET':
-                poseData  = eval(motion[1])            
-
-                [cur_pos, cur_quat] = self.getEndeffectorPose()
-                M = PyKDL.Rotation.Quaternion(cur_quat[0], cur_quat[1], cur_quat[2], cur_quat[3]) # R_0e
-
-                # position 
-                pos_offset = PyKDL.Vector(poseData[0], poseData[1], poseData[2])
-                pos_offset = M * pos_offset
-
-                pos.x = cur_pos[0] + pos_offset[0]
-                pos.y = cur_pos[1] + pos_offset[1]
-                pos.z = cur_pos[2] + pos_offset[2]
-
-                # orientation
-                M.DoRotX(poseData[3])
-                M.DoRotY(poseData[4])
-                M.DoRotZ(poseData[5])
-                rot_offset = M
-                ## rot_offset = PyKDL.Rotation.RPY(poseData[3], poseData[4], poseData[5]) #R_ee'
-                ## rot_offset = M * rot_offset
-                quat.x = rot_offset.GetQuaternion()[0]
-                quat.y = rot_offset.GetQuaternion()[1]
-                quat.z = rot_offset.GetQuaternion()[2]
-                quat.w = rot_offset.GetQuaternion()[3]
-
-                self.setOrientGoal(pos, quat, motion[2])                
-                
-            elif motion[0] == 'MOVEJ': 
-                self.setPostureGoal(eval(motion[1]), motion[2])
-                
-            elif motion[0] == 'PAUSE': 
-                rospy.sleep(motion[1])
-                print "Pausing for ", str(motion[1]), " seconds "
-
-                
-            if self.interrupted:
-                break
-                
-
     def bowlPoseCallback(self, data):
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
         M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
@@ -320,13 +232,15 @@ class armReachAction(mpcBaseAction):
         M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
                                       data.pose.orientation.z, data.pose.orientation.w)
 
-        spoon_x = -M.UnitZ()
-        spoon_y = PyKDL.Vector(0, 0, 1.0)
-        spoon_z = spoon_x * spoon_y
-        spoon_y = spoon_z * spoon_x
-        spoon_rot = PyKDL.Rotation(spoon_x, spoon_y, spoon_z)
-
-        self.mouth_frame_kinect = PyKDL.Frame(spoon_rot,p)
+        ## spoon_z = -M.UnitZ()
+        ## spoon_x = PyKDL.Vector(0, 0, 1.0)
+        ## spoon_y = spoon_z * spoon_x
+        ## spoon_z = spoon_x * spoon_y
+        ## spoon_rot = PyKDL.Rotation(spoon_x, spoon_y, spoon_z)
+        M.DoRotX(np.pi)
+        
+        ## self.mouth_frame_kinect = PyKDL.Frame(spoon_rot,p)
+        self.mouth_frame_kinect = PyKDL.Frame(M,p)
         
 
     def stopCallback(self, msg):
@@ -354,35 +268,6 @@ class armReachAction(mpcBaseAction):
         ##     self.setPostureGoal(self.lInitAngScooping, 10)
 
 
-    ## def tfBroadcaster(self, ps):
-
-    ##     quat = tf.transformations.quaternion_matrix([ps.pose.orientation.x,
-    ##                                                  ps.pose.orientation.y,
-    ##                                                  ps.pose.orientation.z,
-    ##                                                  ps.pose.orientation.w])
-
-    ##     self.br = tf.TransformBroadcaster()
-    ##     self.br.sendTransform((ps.pose.position.x, ps.pose.position.y, ps.pose.position.z),
-    ##                           quat,
-    ##                           rospy.Time.now(),
-    ##                           "goal_viz",
-    ##                           "torso_lift_link")
-        
-
-def frameConversion(cur_pose, cur_frame):
-
-    pos = cur_frame * cur_pose.p
-    rot = cur_frame.M * cur_pose.M
-    pose = PyKDL.Frame(rot, pos)
-    
-    return pose
-
-def array2KDLframe(pose_array):
-
-    p = PyKDL.Vector(pose_array[0], pose_array[1], pose_array[2])
-    M = PyKDL.Rotation.RPY(pose_array[3], pose_array[4], pose_array[5])
-
-    return PyKDL.Frame(M,p)
 
 if __name__ == '__main__':
 

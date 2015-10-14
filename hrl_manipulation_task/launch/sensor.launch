@@ -14,7 +14,7 @@
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
         <!-- Bowl and Head conversion -->  
-        <!--node name="findBowl" pkg="hrl_multimodal_anomaly_detection" type="findBowl.py" respawn="false" output="screen" /-->
+        <!--node name="findBowl" pkg="hrl_manipulation_task" type="findBowl.py" respawn="false" output="screen" /-->
         <node name="findMouth" pkg="hrl_manipulation_task" type="findMouth.py" respawn="false" output="screen" />
 
         <!-- F/T sensor -->

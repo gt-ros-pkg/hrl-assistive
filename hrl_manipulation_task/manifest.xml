@@ -18,6 +18,8 @@
   <depend package="ar_track_alvar"/>
   <depend package="hark_msgs"/>
   <depend package="geometry_msgs"/>
+  <depend package="pr2_msgs"/>
+  <depend package="visualization_msgs"/>
 
   <depend package="sandbox_dpark_darpa_m3"/>
   <depend package="hrl_multimodal_anomaly_detection"/>
