@@ -29,7 +29,7 @@ class armReachAction(mpcBaseAction):
         #Variables...! #
         if arm == 'l':  self.arm = 'left'
         else:  self.arm = 'right'
-        self.interrupted = False
+        self.stop_motion = False
 
         self.bowl_frame_kinect  = None
         self.mouth_frame_kinect = None
@@ -182,7 +182,7 @@ class armReachAction(mpcBaseAction):
         
     def serverCallback(self, req):
         req = req.data
-        self.interrupted = False
+        self.stop_motion = False
 
         if req == "getBowlPos":
             if self.bowl_frame_kinect is not None:
@@ -246,7 +246,7 @@ class armReachAction(mpcBaseAction):
     def stopCallback(self, msg):
         print '\n\nAction Interrupted! Event Stop\n\n'
         print 'Interrupt Data:', msg.data
-        self.interrupted = True
+        self.stop_motion = True
 
         print "Stopping Motion..."
         self.setStop() #Stops Current Motion
