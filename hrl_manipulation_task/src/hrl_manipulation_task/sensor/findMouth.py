@@ -15,7 +15,6 @@ import hrl_lib.circular_buffer as cb
 
 from ar_track_alvar.msg import AlvarMarkers
 import geometry_msgs
-from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 
@@ -229,6 +228,31 @@ class arTagDetector:
         self.mouth_pose_pub.publish(ps)
             
 
+    def pubVirtualMouthPose(self):
+
+        f = PyKDL.Frame.Identity()
+        f.p = PyKDL.Vector(0.7, 0.35, 0.0)
+        f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        f.M.DoRotX(np.pi/2.0)
+        f.M.DoRotZ(np.pi/2.0)
+        
+        # frame pub --------------------------------------
+        ps = PoseStamped()
+        ps.header.frame_id = 'torso_lift_link'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = f.p[0]
+        ps.pose.position.y = f.p[1]
+        ps.pose.position.z = f.p[2]
+        
+        ps.pose.orientation.x = f.M.GetQuaternion()[0]
+        ps.pose.orientation.y = f.M.GetQuaternion()[1]
+        ps.pose.orientation.z = f.M.GetQuaternion()[2]
+        ps.pose.orientation.w = f.M.GetQuaternion()[3]
+
+        self.mouth_pose_pub.publish(ps)
+
+
+        
 if __name__ == '__main__':
     rospy.init_node('ar_tag_mouth_estimation')
 
@@ -236,6 +260,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew frame pickle files.')
+    p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
+                 default=False, help='Send a vitual frame.')
     opt, args = p.parse_args()
     
     total_tags = 1
@@ -254,6 +280,10 @@ if __name__ == '__main__':
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
+        if opt.bVirtual:
+            atd.pubVirtualMouthPose()
+            continue
+        
         ## ret = input("Is head tag fine? ")
         if atd.head_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is head tag fine? (y: yes, n: no)')

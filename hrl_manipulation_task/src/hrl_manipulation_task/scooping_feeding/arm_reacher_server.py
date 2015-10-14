@@ -48,7 +48,7 @@ class armReachAction(mpcBaseAction):
                     print "Current "+self.arm+" arm pose"
                     print self.getEndeffectorPose()
                     print "Current "+self.arm+" arm orientation (w/ euler rpy)"
-                    print self.getEndeffectorRPY()*180.0/np.pi
+                    print self.getEndeffectorRPY() #*180.0/np.pi
                     print "--------------------------------"
                 break
             rate.sleep()
@@ -166,7 +166,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
           [['MOVEJ', '[1.57, 0, 1.57, -2.356, -3.14, -0.5, 0.0]', 10.0],
-           ['MOVES', '[0.0, 0.0, -0.2, 0., 0., 0.]', 10., 'self.mouth_frame'],
+           ['MOVET', '[0.2, 0.0, 0., 0., 0., 0.]', 10.],
+           ## ['MOVES', '[0.67, 0.713, -0.03, 0.831, -1.569, -2.453]', 10., 'self.default_frame'], 
+           ## ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 20., 'self.mouth_frame'],
            
            ## ['PAUSE', 0.5],
            ## ['MOVES', '[0.79, 0.35, 0.05, -59., 0.4, 77.]', 10., 'self.default_frame'], 
