@@ -28,6 +28,7 @@ RFH.CartesianEEControl = function (options) {
     self.active = false;
     self.raycaster = new THREE.Raycaster();
     self.hoveredMesh = null;
+    self.clickedMesh = null;
 
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
@@ -53,12 +54,32 @@ RFH.CartesianEEControl = function (options) {
     self.canvasClickCB = function (event) {
         var clickedMesh = self.getMeshPointedAt(event);
         if (clickedMesh !== null) {
-            console.log("clicked arrow mesh");
-            // set clicked color
             clickedMesh.cb();
         }
     };
     $('#viewer-canvas').on('click.rfh', self.canvasClickCB);
+
+    self.canvasMousedownCB = function (event) {
+        var clickedMesh = self.getMeshPointedAt(event);
+        if (clickedMesh !== null) {
+            clickedMesh.mesh.material.color.set(clickedMesh.mesh.userData.clickColor);
+            self.clickedMesh = clickedMesh;
+        }
+    };
+    $('#viewer-canvas').on('mousedown.rfh', self.canvasMousedownCB);
+
+    self.canvasMouseupCB = function (event) {
+        var clickedMesh = self.getMeshPointedAt(event);
+        if (clickedMesh !== null) {
+            clickedMesh.mesh.material.color.set(clickedMesh.mesh.userData.hoverColor);
+        } else {
+            if (self.clickedMesh !== null) {
+                self.clickedMesh.mesh.material.color.set(self.clickedMesh.mesh.userData.defaultColor);
+                self.clickedMesh = null;
+            }
+        }
+    };
+    $('#viewer-canvas').on('mouseup.rfh', self.canvasMouseupCB);
 
     self.canvasMouseMoveCB = function (event) {
         var overMesh = self.getMeshPointedAt(event);
@@ -96,11 +117,12 @@ RFH.CartesianEEControl = function (options) {
         //Create arrow meshes for each directional control
         var mesh, edges, pos, rot, mat, cb;
         // X-Positive Rotation 3D Arrow
-        baseMaterial.color.setRGB(255,0,0);
+        baseMaterial.color.setRGB(2.75,0.1,0.1); //Something funny means RGB colors are rendered on a 0-3 scale...
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xn';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(1,0,0);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(255,0,0);
+        mesh.userData.defaultColor = new THREE.Color().setRGB(2.75,0.1,0.1);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(3, 0.1, 0.1);
+        mesh.userData.clickColor = new THREE.Color().setRGB(3, 1, 1);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -113,8 +135,9 @@ RFH.CartesianEEControl = function (options) {
         // X-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xp';
-        mesh.userData.defaultColor = [1,0,0];
-        mesh.userData.hoverColor = [0.8, 0.1, 0.1];
+        mesh.userData.defaultColor = new THREE.Color().setRGB(2.75,0.1,0.1);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(3, 0.1, 0.1);
+        mesh.userData.clickColor = new THREE.Color().setRGB(3, 1, 1);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -125,11 +148,12 @@ RFH.CartesianEEControl = function (options) {
         cb = function (event) {self.eeDeltaCmd({'roll':-1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Y-Positive Rotation 3D Arrow
-        baseMaterial.color.setRGB(0,255,0);
+        baseMaterial.color.setRGB(0.1, 2.75, 0.1);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yn';
-        mesh.userData.defaultColor = new THREE.Color(0,255,0);
-        mesh.userData.hoverColor = new THREE.Color(30,230,30);
+        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 2.75, 0.1);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 3, 0.1);
+        mesh.userData.clickColor = new THREE.Color().setRGB(1, 3, 1);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -142,8 +166,9 @@ RFH.CartesianEEControl = function (options) {
         // Y-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'yp';
-        mesh.userData.defaultColor = new THREE.Color(0,255,0);
-        mesh.userData.hoverColor = new THREE.Color(30,230,30);
+        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 2.75, 0.1);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 3, 0.1);
+        mesh.userData.clickColor = new THREE.Color().setRGB(1, 3, 1);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -154,11 +179,12 @@ RFH.CartesianEEControl = function (options) {
         cb = function (event) {self.eeDeltaCmd({'pitch':-1});};
         self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
         // Z-Positive Rotation 3D Arrow
-        baseMaterial.color.setRGB(0,0,255);
+        baseMaterial.color.setRGB(0.1,0.1,2.75);
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'zp';
-        mesh.userData.defaultColor = new THREE.Color(0,0,255);
-        mesh.userData.hoverColor = new THREE.Color(30,30,230);
+        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 0.1, 2.75);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 0.1, 3);
+        mesh.userData.clickColor = new THREE.Color().setRGB(1, 1, 3);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
@@ -171,8 +197,9 @@ RFH.CartesianEEControl = function (options) {
         // Z-Negative Rotation 3D Arrow
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'zn';
-        mesh.userData.defaultColor = new THREE.Color(0,0,255);
-        mesh.userData.hoverColor = new THREE.Color(30,30,230);
+        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 0.1, 2.75);
+        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 0.1, 3);
+        mesh.userData.clickColor = new THREE.Color().setRGB(1, 1, 3);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
