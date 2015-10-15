@@ -74,9 +74,9 @@ class armReachAction(mpcBaseAction):
                     print "Current "+self.arm+" arm joint angles"
                     print self.getJointAngles()
                     print "Current "+self.arm+" arm pose"
-                    print self.getEndeffectorPose(tool=1)
+                    print self.getEndeffectorPose(tool=0)
                     print "Current "+self.arm+" arm orientation (w/ euler rpy)"
-                    print self.getEndeffectorRPY(tool=1) #*180.0/np.pi
+                    print self.getEndeffectorRPY(tool=0) #*180.0/np.pi
                     print "--------------------------------"
                 break
             rate.sleep()
@@ -123,14 +123,14 @@ class armReachAction(mpcBaseAction):
         self.motions['initCabinet']['left'] = \
           [] 
         self.motions['initCabinet']['right'] = \
-          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, -1.0, 0.0]', 10.0]]
+        [['MOVEJ', '[-1.570, 0, -1.570, -1.570, 0, 0, 0]', 5.0]]
 
         self.motions['runCabinet'] = {}
         self.motions['runCabinet']['left'] = \
           []
         self.motions['runCabinet']['right'] = \
-          [['MOVET', '[0.2, 0.0, -0.1, 0., 0., 0.]', 10., 'self.default_frame'],
-           ['MOVET', '[-0.2, 0.0, -0.1, 0., 0., 0.]', 10., 'self.default_frame'],
+          [['MOVET', '[0., 0., -0.2, 0., 0., 0.]', 10., 'self.default_frame'],
+           ['MOVET', '[0., 0., 0.2, 0., 0., 0.]', 10., 'self.default_frame'],
            ]
                                                     
         rospy.loginfo("Parameters are loaded.")

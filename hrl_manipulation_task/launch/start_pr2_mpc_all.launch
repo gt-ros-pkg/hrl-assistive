@@ -11,7 +11,7 @@
     <rosparam command="load" file="$(arg robot_config)" />
 
     <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
-      <param name="tip_name" value="l_gripper_spoon_frame" />
+      <param name="tip_name" value="l_gripper_tool_frame" />
       <!--param name="tip_name" value="l_wrist_roll_link" /-->
       <param name="root_name" value="torso_lift_link" />
     </node>
@@ -31,7 +31,7 @@
       <rosparam command="load" file="$(arg robot_config_right)" />
 
       <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
-        <param name="tip_name" value="r_wrist_roll_link" />
+        <param name="tip_name" value="r_gripper_tool_link" />
         <param name="root_name" value="torso_lift_link" />
       </node>
       <node name="waypoint_generator" pkg="hrl_haptic_mpc" type="waypoint_generator.py" args="-r pr2 -s fabric -a $(arg arm2)" output="screen"/>
