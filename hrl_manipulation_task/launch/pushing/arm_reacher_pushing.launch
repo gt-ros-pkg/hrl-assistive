@@ -4,12 +4,23 @@
   <!--remap from="/ar_track_alvar/bowl_cen_pose" to="hrl_feeding_task/bowl_location"/-->  
   <!--remap from="/ar_track_alvar/mouth_pose" to="hrl_feeding_task/head_location"/-->  
 
-  <node name="arm_reacher_server_left" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm1)" output="screen"/>
+  <!--node name="arm_reacher_server_left" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm1)" output="screen"/-->
 
   
   <group ns="right" >
     <arg name="arm2" default="r"/>
-    <!--node name="arm_reacher_server_right" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm2)" output="screen"/-->
+
+    <arg name="mpc_config_right" default="$(find hrl_manipulation_task)/params/mpc_params_pr2.yaml" />    
+    <arg name="robot_config_right" default="$(find hrl_manipulation_task)/params/pr2sim_config_params_r.yaml" />
+    <rosparam command="load" file="$(arg mpc_config_right)" />
+    <rosparam command="load" file="$(arg robot_config_right)" />
+
+    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
+      <param name="tip_name" value="r_gripper_tool_frame" />
+      <param name="root_name" value="torso_lift_link" />
+    </node>
+
+    <node name="arm_reacher_server_right" pkg="hrl_manipulation_task" type="arm_reacher_pushing_server.py" args="-a $(arg arm2)" output="screen"/>
   </group>
 
 </launch>

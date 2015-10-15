@@ -182,8 +182,8 @@ if __name__ == '__main__':
     #controller = 'static'
     controller = 'actionlib'
     arm        = opt.arm
-    if opt.arm == 'l': verbose = True
-    else: verbose = False
+    if opt.arm == 'l': verbose = False
+    else: verbose = True
         
     rospy.init_node('arm_reacher_pushing')
     ara = armReachAction(d_robot, controller, arm, verbose)
