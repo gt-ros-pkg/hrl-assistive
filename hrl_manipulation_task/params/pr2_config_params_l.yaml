@@ -11,6 +11,7 @@ haptic_mpc:
     # Frames used for TF. torso_frame is the one the arm is attached to, inertial frame is to get the torso position in the world
     torso_frame: '/torso_lift_link'
     inertial_frame: '/base_link'
+    #end_effector_frame: '/l_gripper_tool_frame'
     end_effector_frame: '/l_gripper_spoon_frame'
 
     # Inposition parameter for action and log
@@ -28,6 +29,10 @@ haptic_mpc:
       right:
         max: [26.0, 68.0, 41.0, 0.010, 180.0, 0.01, 180.0]
         min: [-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0]
+    # tool frame
+    tool_frame_1:
+      pos: [0.00635, 0.031, 0.2032]
+      rpy: [0, 0, -1.570796006]
 
   groups:
     - name: left_arm_joints

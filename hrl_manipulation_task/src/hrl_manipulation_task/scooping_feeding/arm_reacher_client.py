@@ -54,7 +54,7 @@ if __name__ == '__main__':
     ## ## Feeding -----------------------------------
     ## print "Initializing left arm for feeding"
     ## print armReachActionLeft("initFeeding")
-    print armReachActionLeft("getHeadPos")
+    ## print armReachActionLeft("getHeadPos")
     print armReachActionLeft("runFeeding")
 
     ## print armReachAction("chooseManualHeadPos")

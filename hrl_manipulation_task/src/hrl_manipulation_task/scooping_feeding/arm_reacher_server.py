@@ -166,7 +166,7 @@ class armReachAction(mpcBaseAction):
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
           [['MOVEJ', '[1.57, 0, 1.57, -2.356, -3.14, -0.5, 0.0]', 10.0],
-           ['MOVET', '[0.2, 0.0, 0., 0., 0., 0.]', 10.],
+           ['MOVET', '[0.0, 0.2, 0., 0., 0., 0.]', 10.],
            ## ['MOVES', '[0.67, 0.713, -0.03, 0.831, -1.569, -2.453]', 10., 'self.default_frame'], 
            ## ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 20., 'self.mouth_frame'],
            
@@ -199,7 +199,7 @@ class armReachAction(mpcBaseAction):
                 ##     self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
 
                 
-                # 2. add offset 
+                # 2. add offset to called TF value. Make sure Orientation is up right. 
                 # 3. Store in bowl_frame
                 self.bowl_frame = PyKDL.Frame()  # TODO: Need to update!!!
                 return "Chose bowl position from kinematics using tf"                
