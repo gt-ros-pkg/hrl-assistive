@@ -45,40 +45,21 @@ if __name__ == '__main__':
 
     rospy.init_node('feed_client')
 
-    rospy.wait_for_service("/arm_reach_enable")
-    armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    ## armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    rospy.wait_for_service("/right/arm_reach_enable")
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
     
-    ## Testing ------------------------------------
-    # This setcion is sued to test the new end effector.
-    ## print armReachActionLeft("test_pos")
-    ## print armReachActionRight("test_pos")
+    ## ## Pushing -----------------------------------
+    print "Initializing right arm for pushing"
+    print armReachActionRight("initCabinet")
 
-    ## print armReachActionLeft("testingMotion")
-    ## print armReachActionRight("testingMotion")
-    ## Scooping -----------------------------------    
-    ## print "Initializing left arm for scooping"
-    ## print armReachActionLeft("initScooping")
-    ## print armReachActionRight("initScooping")
-    ## print armReachAction("getBowlPos")
-    #ut.get_keystroke('Hit a key to proceed next')        
-
-    ##print "Running scooping!"
-    ## print armReachActionLeft("runScooping")
-    
-    ## ## Feeding -----------------------------------
-    ## print "Initializing left arm for feeding"
-    print armReachActionLeft("initFeeding")
-
-    ## print "Detect ar tag on the head"
-    print armReachActionLeft("getHeadPos")
     ## ut.get_keystroke('Hit a key to proceed next')        
+    ## print "Running pushing!"
+    print armReachActionRight("runCabinet")
 
-    ## print "Running feeding!"
-    print armReachActionLeft("runFeeding")
 
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()

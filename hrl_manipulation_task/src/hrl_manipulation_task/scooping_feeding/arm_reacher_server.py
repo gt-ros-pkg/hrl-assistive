@@ -1,12 +1,39 @@
 #!/usr/bin/env python
+#
+# Copyright (c) 2014, Georgia Tech Research Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Georgia Tech Research Corporation nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # System
 import sys, time, copy
-import rospy
 import numpy as np
 
 # ROS
-import roslib
+import rospy, roslib
 roslib.load_manifest('hrl_manipulation_task')
 import tf
 import PyKDL
@@ -30,10 +57,11 @@ class armReachAction(mpcBaseAction):
         if arm == 'l':  self.arm = 'left'
         else:  self.arm = 'right'
         self.stop_motion = False
+        self.verbose = verbose
 
         self.bowl_frame_kinect  = None
         self.mouth_frame_kinect = None
-        self.default_frame    = PyKDL.Frame()
+        self.default_frame      = PyKDL.Frame()
 
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
@@ -46,9 +74,9 @@ class armReachAction(mpcBaseAction):
                     print "Current "+self.arm+" arm joint angles"
                     print self.getJointAngles()
                     print "Current "+self.arm+" arm pose"
-                    print self.getEndeffectorPose()
+                    print self.getEndeffectorPose(tool=1)
                     print "Current "+self.arm+" arm orientation (w/ euler rpy)"
-                    print self.getEndeffectorRPY() #*180.0/np.pi
+                    print self.getEndeffectorRPY(tool=1) #*180.0/np.pi
                     print "--------------------------------"
                 break
             rate.sleep()
@@ -68,7 +96,7 @@ class armReachAction(mpcBaseAction):
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
         ## self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
-        rospy.loginfo("ROS-based communications are set up .")
+        if self.verbose: rospy.loginfo("ROS-based communications are set up .")
                                     
     def initParamsForArmReach(self):
         '''
@@ -86,29 +114,13 @@ class armReachAction(mpcBaseAction):
 
         #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
 
-        joint or pose: we use radian and meter unit. The order of euler angle follows z-y-x order.
+        joint or pose: we use radian and meter unit. The order of euler angle follows original z-y-x order (RPY).
         timeout or duration: we use second
         relative_frame: You can put your custome PyKDL frame variable or you can use 'self.default_frame'
         '''
         
         self.motions = {}
 
-        ## test motoins --------------------------------------------------------
-        self.motions['test_orient'] = {}
-        self.motions['test_orient']['left'] = \
-          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, 0.0, 0.0]', 10.0]]
-        self.motions['test_orient']['right'] =\
-          [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
-
-        self.motions['test_debug'] = {}
-        self.motions['test_debug']['left'] = \
-        [#['MOVEJ', '[1.738, 0.201, 1.385, -2.035, -3.850, -0.409, -2.292]', 30.0],\
-           ['MOVES', '[0.4, 0, 0, 0, 0, 0.5]', 20., 'self.bowl_frame']]
-        ##    ['MOVES', '[0.489, 0.706, 0.122, 1.577, -0.03, -0.047]', 10., 'self.default_frame']]
-        self.motions['test_debug']['right'] =\
-          [['MOVEJ', '[-1.570, 0, -1.570, -1.570, -4.71, 0, -1.570]', 5.0] ]
-
-        
         ## Testing Motions ---------------------------------------------------------
         # Used to test and find the best optimal procedure to scoop the target.
         self.motions['testingMotion'] = {}
@@ -156,7 +168,7 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = \
-          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, 0.0, 0.0]', 10.0]] 
+          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, -1.0, 0.0]', 10.0]] 
         self.motions['initFeeding']['right'] = \
           []
 
@@ -165,16 +177,10 @@ class armReachAction(mpcBaseAction):
         
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
-          [['MOVEJ', '[1.57, 0, 1.57, -2.356, -3.14, -0.5, 0.0]', 10.0],
-           ['MOVET', '[0.0, 0.2, 0., 0., 0., 0.]', 10.],
-           ## ['MOVES', '[0.67, 0.713, -0.03, 0.831, -1.569, -2.453]', 10., 'self.default_frame'], 
-           ## ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 20., 'self.mouth_frame'],
-           
-           ## ['PAUSE', 0.5],
-           ## ['MOVES', '[0.79, 0.35, 0.05, -59., 0.4, 77.]', 10., 'self.default_frame'], 
-           ## ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
-           ## ['MOVES', [-.07,  0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
-           ## ['MOVES', [-.015, 0.0, 0.0, 90, 0, -75], 3, 'self.mouth_frame'], 
+          [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 20., 'self.mouth_frame'],
+           ['MOVES', '[0.0, 0.0, 0.0, 0., 0., 0.]', 10., 'self.mouth_frame'],
+           ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 10., 'self.mouth_frame'],
+           ['MOVEJ', '[0.785, 0., 1.57, -2.356, -3.14, -1.0, 0.0]', 10.0],           
            ]
         self.motions['runFeeding']['right'] = \
           []
@@ -227,21 +233,14 @@ class armReachAction(mpcBaseAction):
         M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
                                       data.pose.orientation.z, data.pose.orientation.w)
         self.bowl_frame_kinect = PyKDL.Frame(M,p)
-            
+
+        
     def mouthPoseCallback(self, data):
 
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
         M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
                                       data.pose.orientation.z, data.pose.orientation.w)
-
-        ## spoon_z = -M.UnitZ()
-        ## spoon_x = PyKDL.Vector(0, 0, 1.0)
-        ## spoon_y = spoon_z * spoon_x
-        ## spoon_z = spoon_x * spoon_y
-        ## spoon_rot = PyKDL.Rotation(spoon_x, spoon_y, spoon_z)
-        M.DoRotX(np.pi)
-        
-        ## self.mouth_frame_kinect = PyKDL.Frame(spoon_rot,p)
+        M.DoRotX(np.pi)        
         self.mouth_frame_kinect = PyKDL.Frame(M,p)
         
 
@@ -255,7 +254,7 @@ class armReachAction(mpcBaseAction):
         try:
             self.setStopRight() #Sends message to service node
         except:
-            print "Couldn't stop right arm! "
+            rospy.loginfo("Couldn't stop "+self.arm+" arm! ")
 
         ## posStopL = Point()
         ## quatStopL = Quaternion()

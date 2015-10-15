@@ -4,7 +4,7 @@
     <arg name="arm1" default="l"/>
     <arg name="verbose" default="False" />
 
-    <arg name="mpc_config" default="$(find hrl_haptic_mpc)/mpc_params_pr2.yaml" />
+    <arg name="mpc_config" default="$(find hrl_manipulation_task)/params/mpc_params_pr2.yaml" />
     <arg name="robot_config" default="$(find hrl_manipulation_task)/params/pr2sim_config_params_l.yaml" />
 
     <rosparam command="load" file="$(arg mpc_config)" />
@@ -23,7 +23,7 @@
     <group ns="right">
       <arg name="arm2" default="r"/>
 
-      <arg name="mpc_config_right" default="$(find hrl_haptic_mpc)/mpc_params_pr2.yaml" />    
+      <arg name="mpc_config_right" default="$(find hrl_manipulation_task)/params/mpc_params_pr2.yaml" />    
       <arg name="robot_config_right" default="$(find hrl_manipulation_task)/params/pr2sim_config_params_r.yaml" />
 
       <rosparam command="load" file="$(arg mpc_config_right)" />
