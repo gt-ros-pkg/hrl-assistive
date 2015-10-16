@@ -1,0 +1,39 @@
+.gripper-ctrl-cont {
+    position: absolute;
+    bottom: 0%;
+    height: 16%;
+    width: 30%;
+}
+
+.gripper-ctrl-cont.r-arm-ctrl{
+    right: 0%;
+}
+
+.gripper-ctrl-cont.l-arm-ctrl{
+    left: 0%;
+}
+
+.gripper-ctrl-cont > .gripper-slider {
+    width: 86%;
+    height: 25%;
+    margin-left: 7%;
+}
+
+.grab {
+    margin-top: 5%;
+    width: 20%;
+    height: auto;
+}
+.gripper-ctrl-cont.r-arm-ctrl > .grab {
+    margin-left: 9%;
+}
+
+.release {
+    margin-top: 5%;
+    width:60%;
+    height: auto;
+}
+
+.gripper-ctrl-cont.l-arm-ctrl > .release {
+    margin-left: 8%;
+}

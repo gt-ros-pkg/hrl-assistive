@@ -30,51 +30,142 @@ var PR2Base = function (ros) {
     };
 };
 
-var PR2Gripper = function (side, ros) {
+var PR2GripperSensor = function (options) {
     'use strict';
-    var gripper = this;
-    gripper.side = side;
-    gripper.ros = ros;
-    gripper.state = 0.0;
-    gripper.ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
-    gripper.stateSub = new ROSLIB.Topic({
-        ros: gripper.ros,
-        name: gripper.side.substring(0, 1) + '_gripper_controller/state_throttled',
+    var self = this;
+    var ros = options.ros;
+    self.side = options.side;
+    var state = 0.0;
+
+    // Subscribe to state msgs
+    var stateSub = new ROSLIB.Topic({
+        ros: ros,
+        name: self.side.substring(0, 1) + '_gripper_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointControllerState'
     });
 
-    gripper.setState = function (msg) {
-        gripper.state = msg.process_value;
+    var setState = function (msg) {
+        state = msg.process_value;
     };
-    gripper.stateCBList = [gripper.setState];
-    gripper.stateCB = function (msg) {
-        for (var i=0; i<gripper.stateCBList.length; i++) {
-            gripper.stateCBList[i](msg);
+    self.stateCBList = [setState];
+    var stateCB = function (msg) {
+        for (var i=0; i<self.stateCBList.length; i++) {
+            self.stateCBList[i](msg);
         }
     };
-    gripper.stateSub.subscribe(gripper.stateCB);
+    stateSub.subscribe(stateCB);
+
+    // Set Position through gripper_sensor gripper_action
+    var positionActionClient = new ROSLIB.ActionClient({
+        ros: ros,
+        serverName: self.side.substring(0, 1) + '_gripper_sensor_controller/gripper_action',
+        actionName: 'pr2_controllers_msgs/Pr2GripperCommandAction'
+    });
+
+    ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandGoal');
+    self.setPosition = function (pos, effort) {
+        var msg = ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandGoal');
+        msg.command.position = pos;
+        msg.command.max_effort = effort || -1;
+        var goal = new ROSLIB.Goal({
+            actionClient: positionActionClient,
+            goalMessage: msg
+        });
+        goal.send();
+    };
+
+    self.open = function () {
+        self.setPosition(0.09);
+    };
+
+    self.close = function () {
+        self.setPosition(-0.001);
+    };
+
+    // Grab action
+    var graspActionClient = new ROSLIB.ActionClient({
+        ros: ros,
+        serverName: self.side.substring(0, 1) + '_gripper_sensor_controller/grab',
+        actionName: 'pr2_gripper_sensor_msgs/PR2GripperGrabAction'
+    });
+
+    ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');
+    self.grab = function (hardness_gain) {
+        var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');
+        msg.command.hardness_gain = hardness_gain || 0.03; // Default value recommended from msg def file
+        var goal = new ROSLIB.Goal({
+            actionClient: graspActionClient,
+            goalMessage: msg
+        });
+        goal.send();
+    };
+
+    // Release action
+    var releaseActionClient = new ROSLIB.ActionClient({
+        ros: ros,
+        serverName: self.side.substring(0, 1) + '_gripper_sensor_controller/release',
+        actionName: 'pr2_gripper_sensor_msgs/PR2GripperReleaseAction'
+    });
+
+    ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
+    self.release = function () {
+        var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
+        msg.command.event.trigger_conditions = 2; // Slip OR finger contact OR accelerometer
+        msg.command.event.acceleration_trigger_magnitude = 4.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
+        msg.command.event.slip_trigger_magnitude = 0.01; // Default value recommended in msg def file
+        var goal = new ROSLIB.Goal({
+            actionClient: releaseActionClient,
+            goalMessage: msg
+        });
+        goal.send();
+    };
+
+};
+
+var PR2Gripper = function (options) {
+    'use strict';
+    var self = this;
+    self.side = options.side;
+    var ros = options.ros;
+    var state = 0.0;
+    ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
+    var stateSub = new ROSLIB.Topic({
+        ros: ros,
+        name: self.side.substring(0, 1) + '_gripper_controller/state_throttled',
+        messageType: 'pr2_controllers_msgs/JointControllerState'
+    });
+
+    var setState = function (msg) {
+        state = msg.process_value;
+    };
+    self.stateCBList = [setState];
+    var stateCB = function (msg) {
+        for (var i=0; i<self.stateCBList.length; i++) {
+            self.stateCBList[i](msg);
+        }
+    };
+    stateSub.subscribe(stateCB);
     
-    gripper.goalPub = new ROSLIB.Topic({
-        ros: gripper.ros,
-        name: gripper.side.substring(0, 1) + '_gripper_controller/gripper_action/goal',
+    var goalPub = new ROSLIB.Topic({
+        ros: ros,
+        name: self.side.substring(0, 1) + '_gripper_controller/gripper_action/goal',
         messageType: 'pr2_controllers_msgs/Pr2GripperCommandActionGoal'
     });
-    gripper.goalPub.advertise();
+    goalPub.advertise();
 
-    gripper.setPosition = function (pos, effort) {
-        var eff = effort || -1;
-        var goalMsg = gripper.ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
+    self.setPosition = function (pos, effort) {
+        var goalMsg = ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandActionGoal');
         goalMsg.goal.command.position = pos;
-        goalMsg.goal.command.max_effort = eff;
-        gripper.goalPub.publish(goalMsg);
+        goalMsg.goal.command.max_effort = effort || -1;
+        goalPub.publish(goalMsg);
     };
 
-    gripper.open = function () {
-        gripper.setPosition(0.09);
+    self.open = function () {
+        self.setPosition(0.09);
     };
 
-    gripper.close = function () {
-        gripper.setPosition(-0.001);
+    self.close = function () {
+        self.setPosition(-0.001);
     };
 };
 
@@ -338,8 +429,10 @@ var PR2 = function (ros) {
     var self = this;
     self.ros = ros;
     self.torso = new PR2Torso(self.ros);
-    self.r_gripper = new PR2Gripper('right', self.ros);
-    self.l_gripper = new PR2Gripper('left', self.ros);
+    self.r_gripper = new PR2GripperSensor({side: 'right', ros: self.ros});
+    self.l_gripper = new PR2GripperSensor({side: 'left', ros: self.ros});
+    //self.r_gripper = new PR2Gripper({side: 'right', ros: self.ros});
+    //self.l_gripper = new PR2Gripper({side: 'left', ros: self.ros});
     self.base = new PR2Base(self.ros);
     self.head = new PR2Head(self.ros);
     self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...

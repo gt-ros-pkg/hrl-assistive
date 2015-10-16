@@ -40,6 +40,8 @@
       <param name="use_closest_pixel"  value="true"/>
   </node>
 
+  <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
+
   <!-- State Throttling -->
   <node name="head_state_throttle" pkg="topic_tools" type="throttle"
         args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />

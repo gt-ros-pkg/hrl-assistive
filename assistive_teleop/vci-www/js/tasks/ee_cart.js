@@ -7,14 +7,10 @@ RFH.CartesianEEControl = function (options) {
     var divId = options.div || 'video-main';
     self.$div = $('#'+divId);
     self.gripper = options.gripper;
-    self.posStepSizes = {'tiny': 0.025,
+    self.stepSizes = {'tiny': 0.025,
         'small': 0.05,
         'medium': 0.1,
         'large': 0.25};
-    self.rotStepSizes = {'tiny': Math.PI/16,
-        'small': Math.PI/8,
-        'medium': Math.PI/6,
-        'large': Math.PI/4};
     self.tfClient = options.tfClient;
     self.ros = self.tfClient.ros;
     self.eeTF = null;
@@ -26,228 +22,124 @@ RFH.CartesianEEControl = function (options) {
     self.dt = 1000; //hold-repeat time in ms
     self.mode = "table"; // "wall", "free"
     self.active = false;
-    self.raycaster = new THREE.Raycaster();
-    self.hoveredMesh = null;
-    self.clickedMesh = null;
+
+    self.eeDeltaCmd = function (xyzrpy) {
+        // Get default values for unspecified options
+        var x = xyzrpy.x || 0.0;
+        var y = xyzrpy.y || 0.0;
+        var z = xyzrpy.z || 0.0;
+        var roll = xyzrpy.roll || 0.0;
+        var pitch = xyzrpy.pitch || 0.0;
+        var yaw = xyzrpy.yaw || 0.0;
+        var posStep = self.stepSizes[self.getStepSize()];
+        var rotStep = self.rotationControl.stepSizes[self.getStepSize()];
+        var handAng;
+        var clickAng;
+        var goalAng;
+        var dx;
+        var dy;
+        var dz;
+        var dRoll;
+        var dPitch;
+        var dYaw;
+
+        switch (self.mode) {
+            case 'table':
+                if (self.eeTF === null) {
+                    console.warn("Hand Data not available to send commands.");
+                    return;
+                }
+                 handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
+                 clickAng = Math.atan2(y,x) - Math.PI/2;
+                 goalAng = handAng + clickAng;
+                 dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
+                 dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
+                 dz = posStep * z;
+                 dRoll = rotStep * roll;
+                 dPitch = rotStep * pitch;
+                 dYaw = rotStep * yaw;
+                // Convert del goal to Matrix4
+                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
+                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
+                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
+                cmd.setPosition(cmdDelPos);
+                // Get EE transform in THREE mat4
+                var eeQuat = new THREE.Quaternion(self.eeTF.rotation.x,
+                                                 self.eeTF.rotation.y,
+                                                 self.eeTF.rotation.z,
+                                                 self.eeTF.rotation.w);
+                var eeMat = new THREE.Matrix4().makeRotationFromQuaternion(eeQuat);
+                // Transform del goal (in hand frame) to base frame
+                cmd.multiplyMatrices(eeMat, cmd);
+                var pos = new THREE.Vector3();
+                var quat = new THREE.Quaternion();
+                var scale = new THREE.Vector3();
+                cmd.decompose(pos, quat, scale);
+                pos.x += dx;
+                pos.y += dy;
+                pos.z += dz;
+                break;
+            case 'wall':
+                if (self.eeTF === null) {
+                    console.warn("Hand Data not available to send commands.");
+                    return;
+                }
+                 handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
+                 clickAng = Math.atan2(y,x) - Math.PI/2;
+                 goalAng = clickAng;
+                 dx = posStep * z;
+                 dz = (x === 0.0) ? 0.0 : -posStep * Math.cos(goalAng);
+                 dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
+                break;
+            case 'free':
+                if (self.op2baseMat === null || self.eeInOpMat === null) {
+                    console.warn("Hand Data not available to send commands.");
+                    return;
+                }
+                // Convert to Matrix4
+                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
+                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
+                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
+                cmd.setPosition(cmdDelPos);
+                // Apply delta to current ee position
+                var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
+                //Transform goal back to base frame
+                var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
+                // Compose and send ros msg
+                var pos = new THREE.Vector3();
+                var quat = new THREE.Quaternion();
+                var scale = new THREE.Vector3();
+                goalInBaseMat.decompose(pos, quat, scale);
+                try {
+                    quat = self.orientHand();
+                }
+                catch (e) {
+                    console.log(e); // log error and keep moving
+                }
+                var frame = self.tfClient.fixedFrame;
+                break;
+            default:
+                console.warn("Unknown arm control mode.");
+                return;
+        } // End mode switch-case
+
+        var frame = self.tfClient.fixedFrame;
+        var pos = {x: self.eeTF.translation.x + dx,
+                   y: self.eeTF.translation.y + dy,
+                   z: self.eeTF.translation.z - dz};
+        quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
+        self.arm.sendPoseGoal({position: pos,
+            orientation: quat,
+            frame_id: frame});
+    };
 
     /// GRIPPER SLIDER CONTROLS ///
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
-        parentId: self.$div.attr('id'),
-        divId: self.side +'GripperDisplay'});
+                                                  divId: self.side +'GripperCtrlContainer'});
 
-    self.getMeshPointedAt = function (event) {
-        var mouse = new THREE.Vector2();
-        var pt = RFH.positionInElement(event);
-        var canvas = RFH.viewer.renderer.getContext().canvas; 
-        mouse.x = 2 * (pt[0] - canvas.width / 2) / canvas.width;
-        mouse.y = -2 * (pt[1] - canvas.height / 2) / canvas.height;
-
-        self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
-        var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
-        if (objs.length > 0 && objs[0].object.userData.side === self.side) {
-            return self.rotArrows[objs[0].object.userData.direction];
-        } else {
-            return null;
-        }
-    };
-
-    self.canvasClickCB = function (event) {
-        var clickedMesh = self.getMeshPointedAt(event);
-        if (clickedMesh !== null) {
-            clickedMesh.cb();
-        }
-    };
-    $('#viewer-canvas').on('click.rfh', self.canvasClickCB);
-
-    self.canvasMousedownCB = function (event) {
-        var clickedMesh = self.getMeshPointedAt(event);
-        if (clickedMesh !== null) {
-            clickedMesh.mesh.material.color.set(clickedMesh.mesh.userData.clickColor);
-            self.clickedMesh = clickedMesh;
-        }
-    };
-    $('#viewer-canvas').on('mousedown.rfh', self.canvasMousedownCB);
-
-    self.canvasMouseupCB = function (event) {
-        var clickedMesh = self.getMeshPointedAt(event);
-        if (clickedMesh !== null) {
-            clickedMesh.mesh.material.color.set(clickedMesh.mesh.userData.hoverColor);
-        } else {
-            if (self.clickedMesh !== null) {
-                self.clickedMesh.mesh.material.color.set(self.clickedMesh.mesh.userData.defaultColor);
-                self.clickedMesh = null;
-            }
-        }
-    };
-    $('#viewer-canvas').on('mouseup.rfh', self.canvasMouseupCB);
-
-    self.canvasMouseMoveCB = function (event) {
-        var overMesh = self.getMeshPointedAt(event);
-        if (overMesh === null) {
-            if (self.hoveredMesh !== null){
-                self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
-                self.hoveredMesh = null;
-            }
-        } else {
-            if (self.hoveredMesh === null) {
-                overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
-                self.hoveredMesh = overMesh;
-            } else if (overMesh !== self.hoveredMesh) {
-                overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
-                self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
-                self.hoveredMesh = overMesh;
-            }
-        }
-    };
-    $('#viewer-canvas').on('mousemove.rfh', self.canvasMouseMoveCB);
-
-    self.rotArrowLoader = new THREE.ColladaLoader();
-    var arrowOnLoad = function (collada) {
-        var arrowGeom = collada.scene.children[0].children[0].geometry.clone();
-        var baseMaterial = new THREE.MeshLambertMaterial();
-        baseMaterial.transparent = true;
-        baseMaterial.opacity = 0.67;
-        self.rotArrows = {};
-        var scaleX = 0.00075;
-        var scaleY = 0.00075;
-        var scaleZ = 0.00075;
-        var edgeColor = new THREE.Color(0.1,0.1,0.1);
-        var edgeMinAngle = 45;
-
-        //Create arrow meshes for each directional control
-        var mesh, edges, pos, rot, mat, cb;
-        // X-Positive Rotation 3D Arrow
-        baseMaterial.color.setRGB(2.75,0.1,0.1); //Something funny means RGB colors are rendered on a 0-3 scale...
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'xn';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(2.75,0.1,0.1);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(3, 0.1, 0.1);
-        mesh.userData.clickColor = new THREE.Color().setRGB(3, 1, 1);
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.1, 0.13, 0.13);
-        rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'roll':1});};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // X-Negative Rotation 3D Arrow
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'xp';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(2.75,0.1,0.1);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(3, 0.1, 0.1);
-        mesh.userData.clickColor = new THREE.Color().setRGB(3, 1, 1);
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.1, -0.13, 0.13);
-        rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'roll':-1});};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Y-Positive Rotation 3D Arrow
-        baseMaterial.color.setRGB(0.1, 2.75, 0.1);
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'yn';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 2.75, 0.1);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 3, 0.1);
-        mesh.userData.clickColor = new THREE.Color().setRGB(1, 3, 1);
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.13, -0.025, -0.13);
-        rot = new THREE.Euler(0, 0, 0);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'pitch':1});};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Y-Negative Rotation 3D Arrow
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'yp';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 2.75, 0.1);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 3, 0.1);
-        mesh.userData.clickColor = new THREE.Color().setRGB(1, 3, 1);
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.13, 0.025, 0.13);
-        rot = new THREE.Euler(Math.PI,0,0);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'pitch':-1});};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Z-Positive Rotation 3D Arrow
-        baseMaterial.color.setRGB(0.1,0.1,2.75);
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'zp';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 0.1, 2.75);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 0.1, 3);
-        mesh.userData.clickColor = new THREE.Color().setRGB(1, 1, 3);
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.13, -0.13, 0.025);
-        rot = new THREE.Euler(-Math.PI/2, 0, 0);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'yaw':1});};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-        // Z-Negative Rotation 3D Arrow
-        mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
-        mesh.userData.direction = 'zn';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(0.1, 0.1, 2.75);
-        mesh.userData.hoverColor = new THREE.Color().setRGB(0.1, 0.1, 3);
-        mesh.userData.clickColor = new THREE.Color().setRGB(1, 1, 3);
-        mesh.userData.side = self.side;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-        edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
-        pos = new THREE.Vector3(-0.13, 0.13, -0.025);
-        rot = new THREE.Euler(Math.PI/2, 0, 0);
-        mat = new THREE.Matrix4().makeRotationFromEuler(rot);
-        mat.setPosition(pos);
-        cb = function (event) {self.eeDeltaCmd({'yaw':-1});};
-        self.rotArrows[mesh.userData.direction] = {'mesh': mesh, 'edges': edges, 'transform': mat, 'cb': cb};
-
-        for (var dir in self.rotArrows) {
-            self.rotArrows[dir].mesh.visible = false;
-            self.rotArrows[dir].edges.visible = false;
-            RFH.viewer.scene.add(self.rotArrows[dir].mesh);
-            RFH.viewer.scene.add(self.rotArrows[dir].edges);
-        }
-    };
-
-    var arrowOnProgress = function (data) {
-        console.log("Loading Rotation Arrow Collada Mesh: ", data.loaded/data.total);
-    };
-
-    self.rotArrowLoader.load('./data/Curved_Arrow_Square.dae', arrowOnLoad, arrowOnProgress);
-
-
-    self.updateRotImage = function () {
-        if (self.eeTF === null) { return; }
-        var q = new THREE.Quaternion(self.eeTF.rotation.x,
-                                     self.eeTF.rotation.y,
-                                     self.eeTF.rotation.z,
-                                     self.eeTF.rotation.w);
-        var tfMat = new THREE.Matrix4().makeRotationFromQuaternion(q);
-        tfMat.setPosition(new THREE.Vector3(self.eeTF.translation.x,
-                                            self.eeTF.translation.y,
-                                            self.eeTF.translation.z));
-
-        var arrowInWorldFrame = new THREE.Matrix4();
-        var arrowPos = new THREE.Vector3();
-        var arrowQuat = new THREE.Quaternion();
-        var arrowScale = new THREE.Vector3();
-        for (var dir in self.rotArrows) {
-            arrowInWorldFrame.multiplyMatrices(tfMat, self.rotArrows[dir].transform);
-            arrowInWorldFrame.decompose(arrowPos, arrowQuat, arrowScale);
-            self.rotArrows[dir].mesh.position.set(arrowPos.x, arrowPos.y, arrowPos.z);
-            self.rotArrows[dir].mesh.quaternion.set(arrowQuat.x, arrowQuat.y, arrowQuat.z, arrowQuat.w);
-        }
-        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
-    };
+    self.rotationControl = new RFH.EERotation({'tfClient': self.tfClient,
+                                               'arm':self.arm,
+                                               'eeDeltaCmdFn':self.eeDeltaCmd});
 
     self.updateCtrlRingViz = function () {
         // Check that we have values for both camera and ee frames
@@ -413,7 +305,6 @@ RFH.CartesianEEControl = function (options) {
             self.eeTF = tf;
             self.updateOpFrame();
             self.updateCtrlRingViz();
-            self.updateRotImage();
         });
         console.log("Subscribing to TF Frame: "+self.arm.ee_frame);
     } else {
@@ -434,116 +325,6 @@ RFH.CartesianEEControl = function (options) {
         }
     };
     self.checkCameraTF();
-
-    self.eeDeltaCmd = function (xyzrpy) {
-        // Get default values for unspecified options
-        var x = xyzrpy.x || 0.0;
-        var y = xyzrpy.y || 0.0;
-        var z = xyzrpy.z || 0.0;
-        var roll = xyzrpy.roll || 0.0;
-        var pitch = xyzrpy.pitch || 0.0;
-        var yaw = xyzrpy.yaw || 0.0;
-        var posStep = self.posStepSizes[self.getStepSize()];
-        var rotStep = self.rotStepSizes[self.getStepSize()];
-        var handAng;
-        var clickAng;
-        var goalAng;
-        var dx;
-        var dy;
-        var dz;
-        var dRoll;
-        var dPitch;
-        var dYaw;
-
-        switch (self.mode) {
-            case 'table':
-                if (self.eeTF === null) {
-                    console.warn("Hand Data not available to send commands.");
-                    return;
-                }
-                 handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
-                 clickAng = Math.atan2(y,x) - Math.PI/2;
-                 goalAng = handAng + clickAng;
-                 dx = (x === 0.0) ? 0.0 : posStep * Math.cos(goalAng);
-                 dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
-                 dz = posStep * z;
-                 dRoll = rotStep * roll;
-                 dPitch = rotStep * pitch;
-                 dYaw = rotStep * yaw;
-                // Convert del goal to Matrix4
-                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
-                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
-                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
-                cmd.setPosition(cmdDelPos);
-                // Get EE transform in THREE mat4
-                var eeQuat = new THREE.Quaternion(self.eeTF.rotation.x,
-                                                 self.eeTF.rotation.y,
-                                                 self.eeTF.rotation.z,
-                                                 self.eeTF.rotation.w);
-                var eeMat = new THREE.Matrix4().makeRotationFromQuaternion(eeQuat);
-                // Transform del goal (in hand frame) to base frame
-                cmd.multiplyMatrices(eeMat, cmd);
-                var pos = new THREE.Vector3();
-                var quat = new THREE.Quaternion();
-                var scale = new THREE.Vector3();
-                cmd.decompose(pos, quat, scale);
-                pos.x += dx;
-                pos.y += dy;
-                pos.z += dz;
-                break;
-            case 'wall':
-                if (self.eeTF === null) {
-                    console.warn("Hand Data not available to send commands.");
-                    return;
-                }
-                 handAng = Math.atan2(self.eeTF.translation.y, self.eeTF.translation.x);
-                 clickAng = Math.atan2(y,x) - Math.PI/2;
-                 goalAng = clickAng;
-                 dx = posStep * z;
-                 dz = (x === 0.0) ? 0.0 : -posStep * Math.cos(goalAng);
-                 dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
-                break;
-            case 'free':
-                if (self.op2baseMat === null || self.eeInOpMat === null) {
-                    console.warn("Hand Data not available to send commands.");
-                    return;
-                }
-                // Convert to Matrix4
-                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
-                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
-                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
-                cmd.setPosition(cmdDelPos);
-                // Apply delta to current ee position
-                var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
-                //Transform goal back to base frame
-                var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
-                // Compose and send ros msg
-                var pos = new THREE.Vector3();
-                var quat = new THREE.Quaternion();
-                var scale = new THREE.Vector3();
-                goalInBaseMat.decompose(pos, quat, scale);
-                try {
-                    quat = self.orientHand();
-                }
-                catch (e) {
-                    console.log(e); // log error and keep moving
-                }
-                var frame = self.tfClient.fixedFrame;
-                break;
-            default:
-                console.warn("Unknown arm control mode.");
-                return;
-        } // End mode switch-case
-
-        var frame = self.tfClient.fixedFrame;
-        var pos = {x: self.eeTF.translation.x + dx,
-                   y: self.eeTF.translation.y + dy,
-                   z: self.eeTF.translation.z - dz};
-        quat = new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w});
-        self.arm.sendPoseGoal({position: pos,
-            orientation: quat,
-            frame_id: frame});
-    };
 
     self.checkMouseButtonDecorator = function (f) {
         return function (e) {
@@ -675,7 +456,7 @@ RFH.CartesianEEControl = function (options) {
             self.setPositionCtrls();
             self.$div.off('click.rfh');
         } else {
-            $('#armCtrlContainer, .'+self.side+'-arm-rot-icon').hide();
+            $('#armCtrlContainer').hide();
             // TODO: Change cursor here?
 
             var onRetCB = function (pose_stamped) {
@@ -686,7 +467,7 @@ RFH.CartesianEEControl = function (options) {
                                              pose.orientation.z,
                                              pose.orientation.w);
                 var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
-                var offset = new THREE.Vector3(0.13, 0, 0); //Get to x dist from point along normal
+                var offset = new THREE.Vector3(0.18, 0, 0); //Get to x dist from point along normal
                 offset.applyMatrix4(poseRotMat);
                 var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
                 poseRotMat.multiply(desRotMat);
@@ -697,12 +478,12 @@ RFH.CartesianEEControl = function (options) {
                 var scale = new THREE.Vector3();
                 poseRotMat.decompose(trans, quat, scale);
 
-                var trajectoryCB = function (traj) {
-                    if (traj.joint_trajectory.points.length === 0) {
+                var trajectoryCB = function (msg) {
+                    if (msg.robot_trajectory.joint_trajectory.points.length === 0) {
                         console.log("Empty Trajectory Received.");
                     } else {
-                        console.log("Got Trajectory", traj);
-                        self.arm.sendTrajectoryGoal(traj.joint_trajectory);
+                        console.log("Got Trajectory", msg);
+                        self.arm.sendTrajectoryGoal(msg.robot_trajectory.joint_trajectory);
                     }
                 };
                 self.arm.planTrajectory({
@@ -726,24 +507,16 @@ RFH.CartesianEEControl = function (options) {
     };
 
     self.setRotationCtrls = function (e) {
-        $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').show();
         $('#armCtrlContainer').hide();
         $('#viewer-canvas').show();
-        for (var dir in self.rotArrows) {
-            self.rotArrows[dir].mesh.visible = true;
-            self.rotArrows[dir].edges.visible = true;
-        }
+        self.rotationControl.show();
         $(window).resize(); // Trigger canvas to update size TODO: unreliable, inconsistent behavior -- Fix
     };
 
     self.setPositionCtrls = function (e) {
-        $('.'+self.side+'-arm-rot-icon, .'+self.side+'-arm-rot-icon-baseline').hide();
         $('#viewer-canvas').hide();
+        self.rotationControl.hide();
         $('#armCtrlContainer').show();
-        for (var dir in self.rotArrows) {
-            self.rotArrows[dir].mesh.visible = false;
-            self.rotArrows[dir].edges.visible = false;
-        }
         $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate);
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
         $('#away-button').on('mousedown.rfh', self.awayCB);

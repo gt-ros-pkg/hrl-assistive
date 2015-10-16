@@ -1,68 +1,71 @@
 RFH.GripperDisplay = function (options) {
     "use strict";
     var self = this;
-    self.gripper = options.gripper;
-    self.parentId = options.parentId;
-    self.$gripperSlider = jQuery('<div/>', {id: options.divId}).appendTo('#'+self.parentId);
-    self.$gripperSlider.slider({
+    var gripper = options.gripper;
+    var $div = $('#'+options.divId);
+    var $gripperSlider = $div.find('.gripper-slider');
+    var $grabButton = $div.find('.grab').button();
+    var $releaseButton = $div.find('.release').button();
+    $gripperSlider.slider({
         range: true,
         min: 0.0,
         max: 0.085,
         step: 0.001,
         orientation: 'horizontal'});
 
-    var gripperCSS = {position: "absolute",
-        height: "5%",
-        width: "27%",
-        bottom: "5%"};
-    gripperCSS[self.gripper.side] = "2%";
-    self.$gripperSlider.css(gripperCSS);
-
-    self.show = function () { self.$gripperSlider.show(); };
-    self.hide = function () { self.$gripperSlider.hide(); };
+    self.show = function () { $div.show(); };
+    self.hide = function () { $div.hide(); };
     self.hide(); // Hide on init
+
+    $grabButton.on('click', function () { gripper.grab(); });
+    $releaseButton.on('click', function() { gripper.release(); });
+
     
-    self.$gripperSlider.css({"background":"rgba(50,50,50,0.72)" });
-    self.$gripperSlider.find('.ui-slider-range').css({"background":"rgba(22,22,22,0.9)",
+    // Set up slider display
+    $gripperSlider.css({"background":"rgba(50,50,50,0.72)" });
+    $gripperSlider.find('.ui-slider-range').css({"background":"rgba(22,22,22,0.9)",
                                                      "text-align":"center"}).html("Gripper");
-    self.$gripperSlider.find('.ui-slider-handle').css({"height":"160%",
-                                                      "top":"-30%",
+    $gripperSlider.find('.ui-slider-handle').css({"height":"160%",
+                                                 "top":"-30%",
                                                       "width":"7%",
                                                       "margin-left":"-3.5%",
                                                       "background":"rgba(42,42,42,1)",
                                                       "border":"2px solid rgba(82,82,82,0.87)"});
-    var min = self.$gripperSlider.slider("option", "min");
-    var max = self.$gripperSlider.slider("option", "max");
+    var min = $gripperSlider.slider("option", "min");
+    var max = $gripperSlider.slider("option", "max");
     self.mid = min + 0.5 * (max - min);
 
-    self.stopCB = function (event, ui) {
-        var values = self.$gripperSlider.slider("option", "values");
-        self.gripper.setPosition(values[1] - values[0]);
+    // Stop/start/slide callbacks for slider (don't move with state updates while the user is controlling)
+    var stopCB = function (event, ui) {
+        var values = $gripperSlider.slider("option", "values");
+        gripper.setPosition(values[1] - values[0]);
     };
-    self.$gripperSlider.off("slidestop").on("slidestop.rfh", self.stopCB);
+    $gripperSlider.off("slidestop").on("slidestop.rfh", stopCB);
 
-    self.startCB = function (event, ui) {
-        $('#'+event.target.id+' > a').addClass('ui-state-active');
+    var startCB = function (event, ui) {
+        $gripperSlider.find('a').addClass('ui-state-active');
     };
-    self.$gripperSlider.off("slidestart").on("slidestart.rfh", self.startCB);
+    $gripperSlider.off("slidestart").on("slidestart.rfh", startCB);
 
-    self.slideCB = function (event, ui) {
+    // Make both sides of display open/close together
+    var slideCB = function (event, ui) {
         if (ui.values.indexOf(ui.value) === 0) {//left/low side
             var high = self.mid + (self.mid - ui.value);
-            self.$gripperSlider.slider("option", "values", [ui.value, high]);
+            $gripperSlider.slider("option", "values", [ui.value, high]);
         } else { //right/high side
             var low = self.mid - (ui.value - self.mid);
-            self.$gripperSlider.slider("option", "values", [low, ui.value]);
+            $gripperSlider.slider("option", "values", [low, ui.value]);
         }
     };
-    self.$gripperSlider.off("slide").on("slide.rfh", self.slideCB);
+    $gripperSlider.off("slide").on("slide.rfh", slideCB);
 
+    // Update state display, add to gripper state CB list
     self.gripperStateDisplay = function (msg) {
-        if (!self.$gripperSlider.find('a').hasClass('ui-state-active')) {
+        if (!$gripperSlider.find('a').hasClass('ui-state-active')) {
             var high = self.mid + 0.5 * msg.process_value;
             var low = self.mid - 0.5 * msg.process_value;
-            self.$gripperSlider.slider('option', 'values', [low, high]);
+            $gripperSlider.slider('option', 'values', [low, high]);
         }
     };
-    self.gripper.stateCBList.push(self.gripperStateDisplay);
+    gripper.stateCBList.push(self.gripperStateDisplay);
 };
