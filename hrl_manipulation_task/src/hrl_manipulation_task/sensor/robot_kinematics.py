@@ -51,36 +51,41 @@ class robot_kinematics(threading.Thread):
         self.isReset = False
         self.verbose = verbose
 
-        self.init_time = 0.0        
-        self.counter = 0
-        self.counter_prev = 0
-
-        self.ee_pos    = None
-        self.ee_quat   = None
-        self.jnt_name     = None
-        self.jnt_position = None
-        self.jnt_velocity = None
-        self.jnt_effort   = None
-        self.jnt_positions  = None
-        self.jnt_velocities = None
-        self.jnt_efforts    = None
-        
-
-        # Declare containers
-        self.time_data = []
-        self.kinematics_ee_pos  = None
-        self.kinematics_ee_quat = None
-        self.kinematics_jnt_pos = None
-        self.kinematics_jnt_vel = None
-        self.kinematics_jnt_eff = None
-
         self.lock = threading.Lock()
-        
+
+        self.initVars()
         self.initParams()
         self.initComms()
 
         if self.verbose: print "Robot_kinematics>> initialization complete"
 
+            
+    def initVars(self):
+        with self.lock:
+            self.init_time = 0.0        
+            self.counter = 0
+            self.counter_prev = 0
+
+            self.ee_pos    = None
+            self.ee_quat   = None
+            self.jnt_name     = None
+            self.jnt_position = None
+            self.jnt_velocity = None
+            self.jnt_effort   = None
+            self.jnt_positions  = None
+            self.jnt_velocities = None
+            self.jnt_efforts    = None
+
+
+            # Declare containers
+            self.time_data = []
+            self.kinematics_ee_pos  = None
+            self.kinematics_ee_quat = None
+            self.kinematics_jnt_pos = None
+            self.kinematics_jnt_vel = None
+            self.kinematics_jnt_eff = None
+    
+            
     def initParams(self):
         '''
         Get parameters

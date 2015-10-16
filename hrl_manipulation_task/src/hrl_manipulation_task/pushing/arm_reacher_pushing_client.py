@@ -40,6 +40,7 @@ roslib.load_manifest('hrl_manipulation_task')
 from hrl_srvs.srv import String_String
 import hrl_lib.util as ut
 
+from hrl_manipulation_task.record_data import logger
 
 if __name__ == '__main__':
 
@@ -49,6 +50,11 @@ if __name__ == '__main__':
     rospy.wait_for_service("/right/arm_reach_enable")
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
+    
+    log = logger(ft=False, audio=False, kinematics=True, vision=False, pps=False, \
+                 subject="gatsbii", task='pushing', verbose=False)
+    
+    
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
     
@@ -57,9 +63,14 @@ if __name__ == '__main__':
     print armReachActionRight("initCabinet")
 
     ## ut.get_keystroke('Hit a key to proceed next')        
-    ## print "Running pushing!"
+    print "Start to log!"    
+    log.log_start()
+    
+    print "Running pushing!"    
     print armReachActionRight("runCabinet")
 
+    print "Finish to log!"    
+    log.close_log_file()
 
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()

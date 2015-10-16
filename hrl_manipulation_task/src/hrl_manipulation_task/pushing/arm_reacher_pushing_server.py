@@ -43,7 +43,7 @@ from std_msgs.msg import String
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath 
-from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int, String_String
+from hrl_srvs.srv import None_Bool, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -130,6 +130,8 @@ class armReachAction(mpcBaseAction):
           []
         self.motions['runCabinet']['right'] = \
           [['MOVET', '[0., 0., -0.2, 0., 0., 0.]', 10., 'self.default_frame'],
+           ['MOVET', '[0.2, 0., 0, 0., 0., 0.]', 10., 'self.default_frame'],
+           ['MOVET', '[-0.2, 0., 0, 0., 0., 0.]', 10., 'self.default_frame'],
            ['MOVET', '[0., 0., 0.2, 0., 0., 0.]', 10., 'self.default_frame'],
            ]
                                                     

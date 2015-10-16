@@ -41,6 +41,7 @@ import numpy as np
 # 
 from hrl_multimodal_anomaly_detection.hmm import util
 import hrl_lib.util as ut
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneResponse
 
 #
 from sensor.kinect_audio import kinect_audio
@@ -67,7 +68,9 @@ class logger:
         self.vision     = artag_vision(False, viz=False) if vision else None
         self.pps_skin   = pps_skin(True) if pps else None
 
-
+        self.waitForReady()
+        self.initComms()
+        
     def initParams(self):
         '''
         # load parameters
@@ -75,7 +78,18 @@ class logger:
         # File saving
         self.record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
+
         
+    def initComms(self):
+
+        self.log_start_service = rospy.Service('/data_record/log_start', String_None, self.logStartCallback)
+
+        
+    def logStartCallback(self, msg):
+        if msg.data == True: self.log_start()            
+        else: self.close_log_file()            
+        return Bool_NoneResponse()
+
         
     def log_start(self):
         self.init_time = rospy.get_time()
@@ -177,7 +191,7 @@ class logger:
         ## if self.ft is not None:
         ##     self.ft = tool_ft('/netft_data')
         if self.audio is not None: self.audio = kinect_audio()
-        if self.kinematics is not None: self.kinematics = robot_kinematics()
+        if self.kinematics is not None: self.kinematics.initVars() # = robot_kinematics()
         if self.ft is not None: self.ft = tool_ft()
         if self.vision is not None: self.vision = artag_vision()
         if self.pps_skin is not None: self.pps_skin = pps_skin()
@@ -213,7 +227,6 @@ class logger:
 
     def run(self):
 
-        self.waitForReady()
         self.log_start()
 
         rate = rospy.Rate(20) # 25Hz, nominally.
@@ -229,7 +242,6 @@ if __name__ == '__main__':
 
     subject = 'gatsbii'
     task    = '10'
-    actor   = '2'
     verbose = True
 
     rospy.init_node('record_data')

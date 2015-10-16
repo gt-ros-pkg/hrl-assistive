@@ -6,6 +6,9 @@
 
   <!--node name="arm_reacher_server_left" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm1)" output="screen"/-->
 
+  <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection_pushing.yaml" />    
+  <rosparam command="load" file="$(arg ad_param)" />
+
   <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
     <param name="tip_name" value="r_gripper_tool_frame" />
     <param name="root_name" value="torso_lift_link" />
