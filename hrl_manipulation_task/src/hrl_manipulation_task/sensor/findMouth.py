@@ -212,6 +212,7 @@ class arTagDetector:
     def pubMouthPose(self):
 
         f = self.head_frame * self.mouth_frame_off
+        f.M.DoRotX(np.pi)        
         
         ps = PoseStamped()
         ps.header.frame_id = 'torso_lift_link'
@@ -235,6 +236,7 @@ class arTagDetector:
         f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
         f.M.DoRotX(np.pi/2.0)
         f.M.DoRotZ(np.pi/2.0)
+        f.M.DoRotX(np.pi)        
         
         # frame pub --------------------------------------
         ps = PoseStamped()

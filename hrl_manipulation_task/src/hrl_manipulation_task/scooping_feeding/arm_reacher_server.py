@@ -86,7 +86,8 @@ class armReachAction(mpcBaseAction):
     def initCommsForArmReach(self):
 
         # publishers and subscribers
-        self.bowl_pub = rospy.Publisher('/ar_track_alvar/bowl_cen_pose', PoseStamped, latch=True)
+        self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/bowl_cen_pose', PoseStamped, latch=True)
+        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped, latch=True)
         
         rospy.Subscriber('InterruptAction', String, self.stopCallback)
         rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
@@ -137,35 +138,20 @@ class armReachAction(mpcBaseAction):
         ##  [['MOVEJ', '[1.570, 0, 1.570, -1.570, -4.71, 0, -1.570]', 5.0]]
         
         ## Scooping motoins --------------------------------------------------------
-        # Used to perform motions relative to bowl/mouth positions > It should use relative frame                        
+        # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[0.412, 0.061, 1.285, -1.769, 0.94, -0.435, 0.673]', 10.0] ] 
+          [['MOVEJ', '[0.936, -0.139, 0.962, -2.122, 0.725, -0.435, 0.367]', 10.0] ] 
         self.motions['initScooping']['right'] = \
-          [['MOVEJ', '[-1.0, 0.0, -1.57, -1.57, 0.0, -1.0, -1.57]', 5.0] ]
+          [['MOVEJ', '[-0.87, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0],
+           ['PAUSE', 2.0]]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVET', '[0., 0., 0., 0, 0, 0]', 10.],
-           ## ['MOVES', '[0.0, 0.0, -0.1, 0, 0, 0]', 20., 'self.bowl_frame']
-
-
-          #['MOVEJ', '[0.5778482746916489, -0.33053534611272795, 0.9224823852146335, -1.6170620529922632, -3.868802912203407, -1.4730600051592582, -1.234066882640653]', 10.0],\
-           
-        #  [['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -2.103]', 10., 'self.default_frame'],
-        #   ['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -1.103]', 10., 'self.default_frame'], 
-        #   ['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -2.103]', 10., 'self.default_frame'], 
-                    
-          ## [['MOVES', '[0.588, 0.158, 0.092, 46.8, 66., 48.92]', 10., 'self.default_frame'], 
-          ##  ['MOVES', '[0.588, 0.158, 0.0, 46.8, 66., 48.92]', 10., 'self.default_frame'], 
-          ##  ['MOVES', '[0.588, 0.158, 0.092, 46.8, 66., 48.92]', 10., 'self.default_frame']
-           
-           ## ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(),  .15+self.bowl_frame.p.z(),  90, -50, -30]', 6, 'self.default_frame'], 
-           ## ['MOVES', '[-.015+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.055+self.bowl_frame.p.z(), 90, -50,	-30]', 3, 'self.default_frame'], #Moving down into bowl
-           ## ['MOVES', '[  .02+self.bowl_frame.p.x(), -0.02+self.bowl_frame.p.y(), -.025+self.bowl_frame.p.z(), 90, -30,	-30]', 3, 'self.default_frame'], #Moving forward in bowl
-           ## ['MOVES', '[    0+self.bowl_frame.p.x(), -0.03+self.bowl_frame.p.y(),   .20+self.bowl_frame.p.z(), 90,   0,	-30]', 2, 'self.default_frame'], #While rotating spoon to scoop out
-           ## ['MOVES', '[    0+self.bowl_frame.p.x(), -0.03+self.bowl_frame.p.y(),   .25+self.bowl_frame.p.z(), 90,   0,	-30]', 2, 'self.default_frame']  #Moving up out of bowl
-           ]
+          [['MOVES', '[-0.05, 0.0, -0.1, 0, 0, 0]', 10., 'self.bowl_frame'],
+           ['MOVES', '[-0.05, 0.0, 0., 0, 0, 0]', 10., 'self.bowl_frame'],
+           ['MOVES', '[ 0.0, 0.0, 0., 0, 0.785, 0]', 10., 'self.bowl_frame'],
+           ['MOVES', '[ 0.0, 0.0, -0.1, 0, 1.2, 0]', 10., 'self.bowl_frame'] ]
         self.motions['runScooping']['right'] = \
           []
         
@@ -173,33 +159,19 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = \
-          [['MOVEJ', '[0.785, 0, 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0],
-           ['MOVEP', '[0.7, 0.3, 0.0, 2.46, -1.51, 2.15]', 5., 'self.default_frame'],
-           ## ['MOVEP', '[-0.2, 0.0, -0.1, 0., 0.2, 0.]', 5., 'self.mouth_frame'],
-           ## ['MOVEP', '[0.03, 0.0, -0.1, 0., 0.2, 0.]', 5., 'self.mouth_frame'],
-           ## ['MOVEP', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],
-           ## ['MOVES', '[0.0, 0.0, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],
-           ['PAUSE', 2.0]
-           ]           
+          [['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
+           ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0, 'self.default_frame'], 
+           ['PAUSE', 2.0] ]           
         self.motions['initFeeding']['right'] = \
-          []
+          [['MOVEJ', '[-1.57, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0]]
 
-        # another initial posture
-        #['MOVEJ', '[1.57, 0, 1.57, -2.356, 3.14, -0.5, 0.0]', 10.0]
-        
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
-          [['MOVES', '[0.0, 0.0, 0.0, 0., 0., 0.]', 5., 'self.mouth_frame'],
+          [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
+           ['MOVES', '[0.0, 0.0, -0.03, 0., 0., 0.]', 5., 'self.mouth_frame'],
            ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
         self.motions['runFeeding']['right'] = \
-          []
-
-        self.motions['finishFeeding'] = {}
-        self.motions['finishFeeding']['left'] = \
-          [['PAUSE', 2.0],
-           ['MOVEJ', '[0.785, 0., 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0] ]           
-        self.motions['finishFeeding']['right'] = \
           []
           
         rospy.loginfo("Parameters are loaded.")
@@ -247,10 +219,36 @@ class armReachAction(mpcBaseAction):
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
         M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
                                       data.pose.orientation.z, data.pose.orientation.w)
-        M.DoRotX(np.pi)        
-        self.mouth_frame_kinect = PyKDL.Frame(M,p)
-        
 
+        # get upright mouth frame        
+        tx = PyKDL.Vector(1.0, 0.0, 0.0)
+        ty = PyKDL.Vector(0.0, 1.0, 0.0)
+
+        # Projection to xy plane
+        px = PyKDL.dot(tx, M.UnitZ())
+        py = PyKDL.dot(ty, M.UnitZ())
+        mouth_z = PyKDL.Vector(px, py, 0.0)
+        mouth_z.Normalize()
+
+        mouth_x = PyKDL.Vector(0.0, 0.0, 1.0)
+        mouth_y = mouth_z * mouth_x
+        M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
+        self.mouth_frame_kinect = PyKDL.Frame(M,p)
+
+        # 4. (optional) publish pose for visualization        
+        ps = PoseStamped()
+        ps.header.frame_id = 'torso_lift_link'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = p[0]
+        ps.pose.position.y = p[1]
+        ps.pose.position.z = p[2]
+        
+        ps.pose.orientation.x = M.GetQuaternion()[0]
+        ps.pose.orientation.y = M.GetQuaternion()[1]
+        ps.pose.orientation.z = M.GetQuaternion()[2]
+        ps.pose.orientation.w = M.GetQuaternion()[3]                
+        self.mouth_pub.publish(ps)
+        
     def stopCallback(self, msg):
         print '\n\nAction Interrupted! Event Stop\n\n'
         print 'Interrupt Data:', msg.data
