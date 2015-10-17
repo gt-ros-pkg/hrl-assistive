@@ -86,6 +86,8 @@ class armReachAction(mpcBaseAction):
     def initCommsForArmReach(self):
 
         # publishers and subscribers
+        self.bowl_pub = rospy.Publisher('/ar_track_alvar/bowl_cen_pose', PoseStamped, latch=True)
+        
         rospy.Subscriber('InterruptAction', String, self.stopCallback)
         rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
                          PoseStamped, self.bowlPoseCallback)
@@ -138,15 +140,18 @@ class armReachAction(mpcBaseAction):
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame                        
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[0.677, 0.147, 0.625, -2.019, -3.544, -1.737, -2.077]', 10.0] ] 
+          [['MOVEJ', '[0.412, 0.061, 1.285, -1.769, 0.94, -0.435, 0.673]', 10.0] ] 
         self.motions['initScooping']['right'] = \
-          [['MOVEJ', '[-0.38766331112969, 0.10069929321857, -1.1663864746779473, -1.3783351499208258, -6.952309470970393, -0.7927793084206439, 2.179890685990797]', 10.0] ]
+          [['MOVEJ', '[-1.0, 0.0, -1.57, -1.57, 0.0, -1.0, -1.57]', 5.0] ]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVEJ', '[0.5778482746916489, -0.33053534611272795, 0.9224823852146335, -1.6170620529922632, -3.868802912203407, -1.4730600051592582, -1.234066882640653]', 10.0],\
-           ['MOVEJ', '[0.5175751638731203, -0.17877205406333624, 0.8937788712944239, -1.8017894807176447, -3.6269442416631135, -2.011787453832436, -1.8558093508638567]', 10.0],\
-           ['MOVEJ', '[0.5778482746916489, -0.33053534611272795, 0.9224823852146335, -1.6170620529922632, -3.868802912203407, -1.4730600051592582, -1.234066882640653]', 10.0]
+          [['MOVET', '[0., 0., 0., 0, 0, 0]', 10.],
+           ## ['MOVES', '[0.0, 0.0, -0.1, 0, 0, 0]', 20., 'self.bowl_frame']
+
+
+          #['MOVEJ', '[0.5778482746916489, -0.33053534611272795, 0.9224823852146335, -1.6170620529922632, -3.868802912203407, -1.4730600051592582, -1.234066882640653]', 10.0],\
+           
         #  [['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -2.103]', 10., 'self.default_frame'],
         #   ['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -1.103]', 10., 'self.default_frame'], 
         #   ['MOVES', '[0.62, 0.15, 0.1, 1.161, 1.238, -2.103]', 10., 'self.default_frame'], 
@@ -168,19 +173,19 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = \
-          [['MOVEJ', '[0.785, 0, 1.57, -2.356, -3.14, -1.0, 0.0]', 10.0]] 
+          [['MOVEJ', '[0.785, 0, 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0]] 
         self.motions['initFeeding']['right'] = \
           []
 
         # another initial posture
-        #['MOVEJ', '[1.57, 0, 1.57, -2.356, -3.14, -0.5, 0.0]', 10.0]
+        #['MOVEJ', '[1.57, 0, 1.57, -2.356, 3.14, -0.5, 0.0]', 10.0]
         
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
           [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 20., 'self.mouth_frame'],
            ['MOVES', '[0.0, 0.0, 0.0, 0., 0., 0.]', 10., 'self.mouth_frame'],
            ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 10., 'self.mouth_frame'],
-           ['MOVEJ', '[0.785, 0., 1.57, -2.356, -3.14, -1.0, 0.0]', 10.0],           
+           ['MOVEJ', '[0.785, 0., 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0],           
            ]
         self.motions['runFeeding']['right'] = \
           []
@@ -197,17 +202,7 @@ class armReachAction(mpcBaseAction):
                 self.bowl_frame = self.bowl_frame_kinect
                 return "Chose kinect bowl position"
             elif self.bowl_frame_kinect is None:
-                # Get frame info from right arm and upate bowl_pos                
-                # 1. right arm ('r_gripper_tool_frame') from tf
-                self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), \
-                                               rospy.Duration(5.0))
-                ## [self.----pos, self.---quat] = \
-                ##     self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
-
-                
-                # 2. add offset to called TF value. Make sure Orientation is up right. 
-                # 3. Store in bowl_frame
-                self.bowl_frame = PyKDL.Frame()  # TODO: Need to update!!!
+                self.bowl_frame = self.getBowlFrame()
                 return "Chose bowl position from kinematics using tf"                
             else:
                 return "No kinect head position available! \n Code won't work! \n \
@@ -268,6 +263,39 @@ class armReachAction(mpcBaseAction):
         ##     self.scooping([0])
         ##     self.setPostureGoal(self.lInitAngScooping, 10)
 
+
+    def getBowlFrame(self):
+        # Get frame info from right arm and upate bowl_pos                
+
+        # 1. right arm ('r_gripper_tool_frame') from tf
+        self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), \
+                                       rospy.Duration(5.0))
+        [pos, quat] = self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', \
+                                                   rospy.Time(0))
+        p = PyKDL.Vector(pos[0],pos[1],pos[2])
+        M = PyKDL.Rotation.Quaternion(quat[0], quat[1], quat[2], quat[3])
+
+        # 2. add offset to called TF value. Make sure Orientation is up right. 
+        ## Off set : 11 cm x direction, - 5 cm z direction. 
+        p = p + M*PyKDL.Vector(0.11, 0, 0.05)
+        M.DoRotZ(np.pi/2.0)        
+        ## RPY(np.pi, -np.py, 0.0)
+
+        # 4. (optional) publish pose for visualization
+        ps = PoseStamped()
+        ps.header.frame_id = 'torso_lift_link'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = p[0]
+        ps.pose.position.y = p[1]
+        ps.pose.position.z = p[2]
+        
+        ps.pose.orientation.x = M.GetQuaternion()[0]
+        ps.pose.orientation.y = M.GetQuaternion()[1]
+        ps.pose.orientation.z = M.GetQuaternion()[2]
+        ps.pose.orientation.w = M.GetQuaternion()[3]        
+        self.bowl_pub.publish(ps)
+        
+        return PyKDL.Frame(M,p)  
 
 
 if __name__ == '__main__':

@@ -215,7 +215,7 @@ class arTagDetector:
         f = self.bowl_frame * self.bowl_cen_frame_off
         
         ps = PoseStamped()
-        ps.header.frame_id = 'ar_bowl_cen'
+        ps.header.frame_id = 'torso_lift_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
