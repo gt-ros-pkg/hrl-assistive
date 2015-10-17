@@ -12,7 +12,7 @@
   
   <group ns="right" >
     <arg name="arm2" default="r"/>
-    <!--node name="arm_reacher_server_right" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm2)" output="screen"/-->
+    <node name="arm_reacher_server_right" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm2)" output="screen"/>
   </group>
 
 </launch>
