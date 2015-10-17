@@ -63,14 +63,14 @@ if __name__ == '__main__':
     print armReachActionRight("initCabinet")
 
     ## ut.get_keystroke('Hit a key to proceed next')        
-    print "Start to log!"    
-    log.log_start()
+    ## print "Start to log!"    
+    ## log.log_start()
     
     print "Running pushing!"    
     print armReachActionRight("runCabinet")
 
-    print "Finish to log!"    
-    log.close_log_file()
+    ## print "Finish to log!"    
+    ## log.close_log_file()
 
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()

@@ -68,19 +68,23 @@ if __name__ == '__main__':
     ## ut.get_keystroke('Hit a key to proceed next')        
 
     print "Running scooping!"
-    print armReachActionLeft("runScooping")
+    ## print armReachActionLeft("runScooping")
     
     ## Feeding -----------------------------------
-    ## print "Initializing left arm for feeding"
-    ## print armReachActionLeft("initFeeding")
-
     ## print "Detect ar tag on the head"
-    ## print armReachActionLeft("getHeadPos")
-    ## ## ut.get_keystroke('Hit a key to proceed next')        
+    print armReachActionLeft("getHeadPos")
+
+    print "Initializing left arm for feeding"
+    print armReachActionLeft("initFeeding")
+
+    #ut.get_keystroke('Hit a key to proceed next')        
 
     ## print "Running feeding!"
     ## print armReachActionLeft("runFeeding")
 
+    ## print "Finish feeding!"
+    ## print armReachActionLeft("finishFeeding")
+    
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()
     ## t  = t2-t1

@@ -173,7 +173,14 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = \
-          [['MOVEJ', '[0.785, 0, 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0]] 
+          [['MOVEJ', '[0.785, 0, 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0],
+           ['MOVEP', '[0.7, 0.3, 0.0, 2.46, -1.51, 2.15]', 5., 'self.default_frame'],
+           ## ['MOVEP', '[-0.2, 0.0, -0.1, 0., 0.2, 0.]', 5., 'self.mouth_frame'],
+           ## ['MOVEP', '[0.03, 0.0, -0.1, 0., 0.2, 0.]', 5., 'self.mouth_frame'],
+           ## ['MOVEP', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ## ['MOVES', '[0.0, 0.0, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['PAUSE', 2.0]
+           ]           
         self.motions['initFeeding']['right'] = \
           []
 
@@ -182,14 +189,19 @@ class armReachAction(mpcBaseAction):
         
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
-          [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 20., 'self.mouth_frame'],
-           ['MOVES', '[0.0, 0.0, 0.0, 0., 0., 0.]', 10., 'self.mouth_frame'],
-           ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 10., 'self.mouth_frame'],
-           ['MOVEJ', '[0.785, 0., 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0],           
+          [['MOVES', '[0.0, 0.0, 0.0, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
         self.motions['runFeeding']['right'] = \
           []
-                                                    
+
+        self.motions['finishFeeding'] = {}
+        self.motions['finishFeeding']['left'] = \
+          [['PAUSE', 2.0],
+           ['MOVEJ', '[0.785, 0., 1.57, -2.356, 3.14, -1.0, 0.0]', 10.0] ]           
+        self.motions['finishFeeding']['right'] = \
+          []
+          
         rospy.loginfo("Parameters are loaded.")
                 
         

@@ -123,7 +123,7 @@ class armReachAction(mpcBaseAction):
         self.motions['initCabinet']['left'] = \
           [] 
         self.motions['initCabinet']['right'] = \
-        [['MOVEJ', '[-1.570, 0, -1.570, -1.570, 0, 0, 0]', 5.0]]
+        [['MOVEJ', '[-1.19, 0.667, -0.36, -1.63, 4.32, -1.02, -2.007]', 5.0]]
 
         self.motions['runCabinet'] = {}
         self.motions['runCabinet']['left'] = \
@@ -181,8 +181,8 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    #controller = 'static'
-    controller = 'actionlib'
+    controller = 'static'
+    #controller = 'actionlib'
     arm        = opt.arm
     if opt.arm == 'l': verbose = False
     else: verbose = True
