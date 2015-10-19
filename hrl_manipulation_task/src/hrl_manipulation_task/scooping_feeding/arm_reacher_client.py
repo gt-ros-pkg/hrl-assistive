@@ -40,7 +40,6 @@ roslib.load_manifest('hrl_manipulation_task')
 from hrl_srvs.srv import String_String
 import hrl_lib.util as ut
 
-
 if __name__ == '__main__':
 
     rospy.init_node('feed_client')
@@ -49,30 +48,20 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    ## TEST -----------------------------------    
-    # TODO: this code should be run in parallel.
-    
-    ## Testing ------------------------------------
-    # This setcion is sued to test the new end effector.
-    ## print armReachActionLeft("test_pos")
-    ## print armReachActionRight("test_pos")
-
-    ## print armReachActionLeft("testingMotion")
-    ## print armReachActionRight("testingMotion")
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
     print armReachActionLeft("initScooping")
     print armReachActionRight("initScooping")
     
+    #ut.get_keystroke('Hit a key to proceed next')        
     print armReachActionLeft("getBowlPos")
 
     print "Running scooping!"
     print armReachActionLeft("runScooping")
-    ut.get_keystroke('Hit a key to proceed next')        
-    
+
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
-    print armReachActionRight("initFeeding")
+    #print armReachActionRight("initFeeding")
     print armReachActionLeft("initFeeding")
 
     print "Detect ar tag on the head"
@@ -82,8 +71,6 @@ if __name__ == '__main__':
     print "Running feeding!"
     print armReachActionLeft("runFeeding")
 
-    ## print "Finish feeding!"
-    ## print armReachActionLeft("finishFeeding")
     
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()

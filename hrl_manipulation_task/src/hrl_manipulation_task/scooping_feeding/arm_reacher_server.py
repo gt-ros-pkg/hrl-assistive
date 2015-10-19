@@ -141,17 +141,18 @@ class armReachAction(mpcBaseAction):
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[0.936, -0.139, 0.962, -2.122, 0.725, -0.435, 0.367]', 10.0] ] 
+          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0] ] 
         self.motions['initScooping']['right'] = \
-          [['MOVEJ', '[-0.87, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0],
+          [['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
+           ['MOVES', '[0.6, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
            ['PAUSE', 2.0]]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.0, -0.1, 0, 0, 0]', 10., 'self.bowl_frame'],
-           ['MOVES', '[-0.05, 0.0, 0., 0, 0, 0]', 10., 'self.bowl_frame'],
-           ['MOVES', '[ 0.0, 0.0, 0., 0, 0.785, 0]', 10., 'self.bowl_frame'],
-           ['MOVES', '[ 0.0, 0.0, -0.1, 0, 1.2, 0]', 10., 'self.bowl_frame'] ]
+          [['MOVES', '[-0.06, 0.0, -0.1, 0, 0.7, 0]', 5, 'self.bowl_frame'],
+           ['MOVES', '[-0.06, 0.0,  0.04, 0, 0.7, 0]', 5, 'self.bowl_frame'],
+           ['MOVES', '[ 0.02, 0.0,  0.04, 0, 1.2, 0]', 5, 'self.bowl_frame'],
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 5, 'self.bowl_frame'] ]
         self.motions['runScooping']['right'] = \
           []
         
@@ -168,7 +169,7 @@ class armReachAction(mpcBaseAction):
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
           [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
-           ['MOVES', '[0.0, 0.0, -0.03, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['MOVES', '[0.0, 0.0, -0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
            ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
         self.motions['runFeeding']['right'] = \
@@ -186,7 +187,7 @@ class armReachAction(mpcBaseAction):
                 self.bowl_frame = self.bowl_frame_kinect
                 return "Chose kinect bowl position"
             elif self.bowl_frame_kinect is None:
-                self.bowl_frame = self.getBowlFrame()
+                self.bowl_frame = copy.copy(self.getBowlFrame())
                 return "Chose bowl position from kinematics using tf"                
             else:
                 return "No kinect head position available! \n Code won't work! \n \
@@ -287,7 +288,7 @@ class armReachAction(mpcBaseAction):
 
         # 2. add offset to called TF value. Make sure Orientation is up right. 
         ## Off set : 11 cm x direction, - 5 cm z direction. 
-        p = p + M*PyKDL.Vector(0.11, 0, 0.05)
+        p = p + M*PyKDL.Vector(0.11, 0, 0.04)
         M.DoRotZ(np.pi/2.0)        
         ## RPY(np.pi, -np.py, 0.0)
 
@@ -320,8 +321,8 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
-    if opt.arm == 'l': verbose = True
-    else: verbose = False
+    if opt.arm == 'l': verbose = False
+    else: verbose = True
         
 
     rospy.init_node('arm_reacher_feeding_and_scooping')

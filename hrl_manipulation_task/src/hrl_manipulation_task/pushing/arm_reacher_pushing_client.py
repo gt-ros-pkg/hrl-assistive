@@ -44,7 +44,7 @@ from hrl_manipulation_task.record_data import logger
 
 if __name__ == '__main__':
 
-    rospy.init_node('feed_client')
+    rospy.init_node('push_client')
 
     ## armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     rospy.wait_for_service("/right/arm_reach_enable")
