@@ -453,56 +453,62 @@ RFH.CartesianEEControl = function (options) {
 
     self.touchSpotCB = function (e) {
         if ($('#touchspot-toggle').prop('checked')) {
+            self.$div.off('click.touchspot');
+            $('.map-look').removeClass('visible').hide();
+            self.$div.removeClass('cursor-select');
             self.setPositionCtrls();
-            self.$div.off('click.rfh');
         } else {
             $('#armCtrlContainer').hide();
-            // TODO: Change cursor here?
+            var clickCB = function (e) { // Define callback for click on image
+                var onRetCB = function (pose_stamped) { // Define callback for response to pixel-2-3D from click
+                    var pose = pose_stamped.pose;
+                    console.log(pose);
+                    var quat = new THREE.Quaternion(pose.orientation.x,
+                                                 pose.orientation.y,
+                                                 pose.orientation.z,
+                                                 pose.orientation.w);
+                    var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
+                    var offset = new THREE.Vector3(0.18, 0, 0); //Get to x dist from point along normal
+                    offset.applyMatrix4(poseRotMat);
+                    var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
+                    poseRotMat.multiply(desRotMat);
+                    poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
+                                                             pose.position.y + offset.y,
+                                                             pose.position.z + offset.z));
+                    var trans = new THREE.Matrix4();
+                    var scale = new THREE.Vector3();
+                    poseRotMat.decompose(trans, quat, scale);
 
-            var onRetCB = function (pose_stamped) {
-                var pose = pose_stamped.pose;
-                console.log(pose);
-                var quat = new THREE.Quaternion(pose.orientation.x,
-                                             pose.orientation.y,
-                                             pose.orientation.z,
-                                             pose.orientation.w);
-                var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
-                var offset = new THREE.Vector3(0.18, 0, 0); //Get to x dist from point along normal
-                offset.applyMatrix4(poseRotMat);
-                var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
-                poseRotMat.multiply(desRotMat);
-                poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
-                                                         pose.position.y + offset.y,
-                                                         pose.position.z + offset.z));
-                var trans = new THREE.Matrix4();
-                var scale = new THREE.Vector3();
-                poseRotMat.decompose(trans, quat, scale);
-
-                var trajectoryCB = function (msg) {
-                    if (msg.robot_trajectory.joint_trajectory.points.length === 0) {
-                        console.log("Empty Trajectory Received.");
-                    } else {
-                        console.log("Got Trajectory", msg);
-                        self.arm.sendTrajectoryGoal(msg.robot_trajectory.joint_trajectory);
-                    }
+                    var trajectoryCB = function (msg) { // Define CB for received trajectory from planner
+                        if (msg.robot_trajectory.joint_trajectory.points.length === 0) {
+                            console.log("Empty Trajectory Received.");
+                        } else {
+                            console.log("Got Trajectory", msg);
+                            self.arm.sendTrajectoryGoal(msg.robot_trajectory.joint_trajectory);
+                        }
+                        // Clean up interface once everything is done...
+                        $('#touchspot-toggle').prop('checked', false).button('refresh');
+                        $('.map-look').removeClass('visible').hide();
+                        self.$div.removeClass('cursor-select');
+                        self.setPositionCtrls();
+                    };
+                    self.arm.planTrajectory({
+                        position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
+                        orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
+                        frame_id: 'base_link',
+                        cb: trajectoryCB
+                    });
                 };
-                self.arm.planTrajectory({
-                    position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
-                    orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
-                    frame_id: 'base_link',
-                    cb: trajectoryCB
-                });
-                $('#touchspot-toggle').prop('checked', false).button('refresh');
-                self.setPositionCtrls();
-            };
 
-            var clickCB = function (e) {
                 var pt = RFH.positionInElement(e);
                 var x = pt[0]/$(e.target).width();
                 var y = pt[1]/$(e.target).height();
                 self.pixel23d.callRelativeScale(x, y, onRetCB);
             };
-            self.$div.one('click.rfh', clickCB);
+
+            $('.map-look').addClass('visible').show();
+            self.$div.addClass('cursor-select');
+            self.$div.one('click.touchspot', clickCB);
         }
     };
 

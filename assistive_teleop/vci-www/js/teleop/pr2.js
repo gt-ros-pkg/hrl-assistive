@@ -169,15 +169,16 @@ var PR2Gripper = function (options) {
     };
 };
 
-var PR2Head = function (ros) {
+var PR2Head = function (options) {
     'use strict';
     var self = this;
-    self.ros = ros;
-    self.state = [0.0, 0.0];
-    self.limits = [[-2.85, 2.85], [1.18, -0.38]];
-    self.joints = ['head_pan_joint', 'head_tilt_joint'];
-    self.pointingFrame = 'head_mount_kinect_rgb_optical_frame';
-    self.trackingActionGoal = null;
+    var ros = options.ros;
+    var state = [0.0, 0.0];
+    var limits = options.limits || [[-2.85, 2.85], [1.18, -0.38]];
+    var joints = options.joints || ['head_pan_joint', 'head_tilt_joint'];
+    self.pointingFrame = options.pointingFrame || 'head_mount_kinect_rgb_optical_frame';
+    var trackingInterval = null;
+    var undoSetActiveService = options.undoSetActiveService;
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
     self.jointPub = new ROSLIB.Topic({
@@ -191,12 +192,6 @@ var PR2Head = function (ros) {
     self.pointHeadActionClient = new ROSLIB.ActionClient({
         ros: self.ros,
         serverName: "/head_traj_controller/point_head_action",
-        actionName: "pr2_controllers_msgs/PointHeadAction"
-    });
-
-    self.pointHeadFollowActionClient = new ROSLIB.ActionClient({
-        ros: self.ros,
-        serverName: "/point_head_follow_action",
         actionName: "pr2_controllers_msgs/PointHeadAction"
     });
 
@@ -243,7 +238,7 @@ var PR2Head = function (ros) {
         self.setPosition(pan, tilt);
     };
 
-    self.getPointHeadGoal = function (x, y, z, frame) {
+    var getPointHeadGoal = function (x, y, z, frame) {
         var headPointMsg = self.ros.composeMsg('pr2_controllers_msgs/PointHeadGoal');
         headPointMsg.pointing_axis = {
             x: 0,
@@ -262,7 +257,7 @@ var PR2Head = function (ros) {
     };
 
     self.pointHead = function (x, y, z, frame) {
-        var headPointMsg = self.getPointHeadGoal(x, y, z, frame);
+        var headPointMsg = getPointHeadGoal(x, y, z, frame);
         var actionGoal = new ROSLIB.Goal({
             actionClient: self.pointHeadActionClient,
             goalMessage: headPointMsg
@@ -270,21 +265,19 @@ var PR2Head = function (ros) {
         actionGoal.send();
     };
 
+
+    self.undoToggleService = new ROSLIB.Service({
+        ros: ros,
+        name: undoSetActiveService,
+        serviceType: 'hrl_undo/SetActive'
+    });
+
     self.trackPoint = function (x, y, z, frame) {
-        var headPointMsg = self.getPointHeadGoal(x, y, z, frame);
-        self.trackingActionGoal = new ROSLIB.Goal({
-            actionClient: self.pointHeadFollowActionClient,
-            goalMessage: headPointMsg
-        });
-        self.trackingActionGoal.send();
+        trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500);
     };
 
     self.stopTracking = function () {
-        self.pointHeadFollowActionClient.cancel();
-//        if (self.trackingActionGoal !== null) {
- //           self.trackingActionGoal.cancel();
-  //          self.trackingActionGoal = null;
-//        }
+        clearInterval(trackingInterval);
     };
 };
 
@@ -427,24 +420,26 @@ var PR2ArmMPC = function (options) {
 var PR2 = function (ros) {
     'use strict';
     var self = this;
-    self.ros = ros;
-    self.torso = new PR2Torso(self.ros);
-    self.r_gripper = new PR2GripperSensor({side: 'right', ros: self.ros});
-    self.l_gripper = new PR2GripperSensor({side: 'left', ros: self.ros});
-    //self.r_gripper = new PR2Gripper({side: 'right', ros: self.ros});
-    //self.l_gripper = new PR2Gripper({side: 'left', ros: self.ros});
-    self.base = new PR2Base(self.ros);
-    self.head = new PR2Head(self.ros);
+    self.torso = new PR2Torso(ros);
+    self.r_gripper = new PR2GripperSensor({side: 'right', ros: ros});
+    self.l_gripper = new PR2GripperSensor({side: 'left', ros: ros});
+    //self.r_gripper = new PR2Gripper({side: 'right', ros: ros});
+    //self.l_gripper = new PR2Gripper({side: 'left', ros: ros});
+    self.base = new PR2Base(ros);
+    self.head = new PR2Head({ros: ros,
+                             
+    
+    });
     self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...
     self.r_arm_cart = new PR2ArmMPC({side:'right',
-                                     ros: self.ros,
+                                     ros: ros,
                                      stateTopic: 'right_arm/haptic_mpc/gripper_pose',
                                      poseGoalTopic: 'right_arm/haptic_mpc/goal_pose',
                                      ee_frame:'r_gripper_tool_frame',
                                      trajectoryGoalTopic: '/right_arm/haptic_mpc/joint_trajectory',
                                      plannerServiceName:'/moveit_plan/right_arm'});
     self.l_arm_cart = new PR2ArmMPC({side:'left',
-                                     ros: self.ros,
+                                     ros: ros,
                                      stateTopic: 'left_arm/haptic_mpc/gripper_pose',
                                      poseGoalTopic: 'left_arm/haptic_mpc/goal_pose',
                                      ee_frame:'l_gripper_tool_frame',
