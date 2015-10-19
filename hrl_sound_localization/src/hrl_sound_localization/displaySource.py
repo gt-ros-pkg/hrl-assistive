@@ -29,6 +29,8 @@
 
 import numpy as np, math
 import roslib
+roslib.load_manifest('hrl_sound_localization')
+
 import rospy
 import threading
 import pylab
@@ -149,8 +151,8 @@ class displaySource():
             self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
                                            rospy.Duration(5.0))
                                            
-        [self.head_pos, self.head_orient_quat] = \
-          self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
+            [self.head_pos, self.head_orient_quat] = \
+              self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
 
         
     def harkSrcInfoAllCallback(self, msg):
