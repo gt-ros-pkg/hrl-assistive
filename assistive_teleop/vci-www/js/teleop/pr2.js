@@ -178,25 +178,25 @@ var PR2Head = function (options) {
     var joints = options.joints || ['head_pan_joint', 'head_tilt_joint'];
     self.pointingFrame = options.pointingFrame || 'head_mount_kinect_rgb_optical_frame';
     var trackingInterval = null;
-    var undoSetActiveService = options.undoSetActiveService;
-    self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
-    self.ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
+    var undoSetActiveService = options.undoSetActiveService || 'undo/move_head/set_active';
+    ros.getMsgDetails('trajectory_msgs/JointTrajectory');
+    ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
     self.jointPub = new ROSLIB.Topic({
-        ros: self.ros,
+        ros: ros,
         name: 'head_traj_controller/command',
         messageType: 'trajectory_msgs/JointTrajectory'
     });
     self.jointPub.advertise();
 
-    self.ros.getMsgDetails('pr2_controllers_msgs/PointHeadGoal');
+    ros.getMsgDetails('pr2_controllers_msgs/PointHeadGoal');
     self.pointHeadActionClient = new ROSLIB.ActionClient({
-        ros: self.ros,
+        ros: ros,
         serverName: "/head_traj_controller/point_head_action",
         actionName: "pr2_controllers_msgs/PointHeadAction"
     });
 
     self.stateSub = new ROSLIB.Topic({
-        ros: self.ros,
+        ros: ros,
         name: '/head_traj_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
@@ -222,11 +222,11 @@ var PR2Head = function (options) {
     self.setPosition = function (pan, tilt) {
         var dPan = Math.abs(pan - self.state[0]);
         var dTilt = Math.abs(tilt - self.state[1]);
-        var trajPointMsg = self.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        var trajPointMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointMsg.positions = self.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
         trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
-        var goalMsg = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
+        var goalMsg = ros.composeMsg('trajectory_msgs/JointTrajectory');
         goalMsg.joint_names = self.joints;
         goalMsg.points.push(trajPointMsg);
         self.jointPub.publish(goalMsg);
@@ -239,7 +239,7 @@ var PR2Head = function (options) {
     };
 
     var getPointHeadGoal = function (x, y, z, frame) {
-        var headPointMsg = self.ros.composeMsg('pr2_controllers_msgs/PointHeadGoal');
+        var headPointMsg = ros.composeMsg('pr2_controllers_msgs/PointHeadGoal');
         headPointMsg.pointing_axis = {
             x: 0,
             y: 0,
@@ -266,7 +266,7 @@ var PR2Head = function (options) {
     };
 
 
-    self.undoToggleService = new ROSLIB.Service({
+    var undoToggleService = new ROSLIB.Service({
         ros: ros,
         name: undoSetActiveService,
         serviceType: 'hrl_undo/SetActive'
@@ -274,10 +274,14 @@ var PR2Head = function (options) {
 
     self.trackPoint = function (x, y, z, frame) {
         trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500);
+        var disableUndoReq = new ROSLIB.ServiceRequest({data:false});
+        undoToggleService.call(disableUndoReq, function(){});
     };
 
     self.stopTracking = function () {
         clearInterval(trackingInterval);
+        var enableUndoReq = new ROSLIB.ServiceRequest({data:true});
+        undoToggleService.call(enableUndoReq, function(){});
     };
 };
 
@@ -427,9 +431,10 @@ var PR2 = function (ros) {
     //self.l_gripper = new PR2Gripper({side: 'left', ros: ros});
     self.base = new PR2Base(ros);
     self.head = new PR2Head({ros: ros,
-                             
-    
-    });
+                            limits: [[-2.85, 2.85], [1.18, -0.38]],
+                            joints: ['head_pan_joint', 'head_tilt_joint'],
+                            pointingFrame: 'head_mount_kinect_rgb_optical_frame',
+                            undoSetActiveService || 'undo/move_head/set_active'});
     self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...
     self.r_arm_cart = new PR2ArmMPC({side:'right',
                                      ros: ros,
