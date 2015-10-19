@@ -61,17 +61,17 @@ if __name__ == '__main__':
     print armReachActionLeft("runScooping")
 
     ## Feeding -----------------------------------
-    print "Initializing left arm for feeding"
+    #print "Initializing left arm for feeding"
     #print armReachActionRight("initFeeding")
-    print armReachActionLeft("initFeeding")
+    #print armReachActionLeft("initFeeding")
 
-    print "Detect ar tag on the head"
-    print armReachActionLeft('lookAtMouth')
-    print armReachActionLeft("getHeadPos")
+    #print "Detect ar tag on the head"
+    #print armReachActionLeft('lookAtMouth')
+    #print armReachActionLeft("getHeadPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 
-    print "Running feeding!"
-    print armReachActionLeft("runFeeding")
+    #print "Running feeding!"
+    #print armReachActionLeft("runFeeding")
 
     
     ## t1 = datetime.datetime.now()
