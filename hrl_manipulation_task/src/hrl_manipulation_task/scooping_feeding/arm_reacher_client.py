@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system library
-import time
+import time, sys
 import datetime
 
 # ROS library
@@ -55,6 +55,7 @@ if __name__ == '__main__':
     
     #ut.get_keystroke('Hit a key to proceed next')        
     print armReachActionLeft("getBowlPos")
+    print armReachActionLeft('lookAtBowl')
 
     print "Running scooping!"
     print armReachActionLeft("runScooping")
@@ -65,6 +66,7 @@ if __name__ == '__main__':
     print armReachActionLeft("initFeeding")
 
     print "Detect ar tag on the head"
+    print armReachActionLeft('lookAtMouth')
     print armReachActionLeft("getHeadPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 

@@ -35,10 +35,11 @@ import numpy as np
 # ROS
 import rospy, roslib
 roslib.load_manifest('hrl_manipulation_task')
-import tf
 import PyKDL
-from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import String
+import pr2_controllers_msgs.msg
+import actionlib
 
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
@@ -176,8 +177,7 @@ class armReachAction(mpcBaseAction):
           []
           
         rospy.loginfo("Parameters are loaded.")
-                
-        
+
     def serverCallback(self, req):
         req = req.data
         self.stop_motion = False
@@ -199,13 +199,15 @@ class armReachAction(mpcBaseAction):
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
+        elif req == "lookAtBowl":
+            self.lookAt(self.bowl_frame.p)
+            return "Completed to move head"
+        elif req == "lookAtMouth":
+            self.lookAt(self.mouth_frame.p, tag_base='head')                            
+            return "Completed to move head"
         else:
             self.parsingMovements(self.motions[req][self.arm])
             return "Completed to execute "+req 
-
-        ## else:
-        ##     return "Request not understood by server!!!"
-
         
                 
     def bowlPoseCallback(self, data):
@@ -308,6 +310,44 @@ class armReachAction(mpcBaseAction):
         
         return PyKDL.Frame(M,p)  
 
+    def lookAt(self, target, tag_base='head'):
+
+        headClient = actionlib.SimpleActionClient("/head_traj_controller/point_head_action", \
+                                                  pr2_controllers_msgs.msg.PointHeadAction)
+        headClient.wait_for_server()
+        rospy.logout('Connected to head control server')
+
+        
+        if target is None:
+            rospy.loginfo("Search a tag")
+            tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')        
+        
+        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')        
+
+        pos = Point()
+        pos.x = target.x()
+        pos.y = target.y()
+        pos.z = target.z()
+                                        
+        ps = PointStamped()
+        ps.header.frame_id = self.torso_frame
+        ps.point = pos
+
+        head_goal_msg = pr2_controllers_msgs.msg.PointHeadGoal()
+        head_goal_msg.target = ps
+        head_goal_msg.pointing_frame = head_frame
+        head_goal_msg.pointing_axis.x = 1
+        head_goal_msg.pointing_axis.y = 0
+        head_goal_msg.pointing_axis.z = 0
+        head_goal_msg.min_duration = rospy.Duration(1.0)
+        head_goal_msg.max_velocity = 1.0;
+        
+        headClient.send_goal(head_goal_msg)
+        headClient.wait_for_result()
+
+        return "Success"
+        
+    
 
 if __name__ == '__main__':
 

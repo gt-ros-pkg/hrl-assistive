@@ -54,6 +54,7 @@ def scooping(armReachActionLeft, armReachActionRight, log):
     
     #ut.get_keystroke('Hit a key to proceed next')        
     print armReachActionLeft("getBowlPos")
+    print armReachActionLeft('lookAtBowl')
 
     print "Start to log!"    
     log.log_start()
@@ -75,6 +76,7 @@ def feeding(armReachActionLeft, armReachActionRight, log):
     print armReachActionLeft("initFeeding")
 
     print "Detect ar tag on the head"
+    print armReachActionLeft('lookAtMouth')
     print armReachActionLeft("getHeadPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 
