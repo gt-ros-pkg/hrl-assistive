@@ -12,6 +12,7 @@ RFH.Drive = function (options) {
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
     var timer = null;
+    var spinTimer = null;
     var lines = {'left':null, 'center':null, 'right':null};
     var nDots = 25;
     var clamp = function (x,a,b) {
@@ -310,6 +311,19 @@ RFH.Drive = function (options) {
         console.log("Drive Direction Icon Loaded"); 
     });
 
+    var linesSpin = function (cx, cy, dir, hz) {
+        var hz = hz || 1500;
+        lines.left.attr({'transform':'r0,'+cx+','+cy});
+        lines.right.attr({'transform':'r0,'+cx+','+cy});
+        if (dir[0] == 'l') { // left
+            lines.left.animate({'transform':'r-360,'+cx+','+cy}, hz, mina.linear);
+            lines.right.animate({'transform':'r-360,'+cx+','+cy}, hz, mina.linear);
+        } else {
+            lines.left.animate({'transform':'r360,'+cx+','+cy}, hz, mina.linear);
+            lines.right.animate({'transform':'r360,'+cx+','+cy}, hz, mina.linear);
+        }
+    };
+
     $('.turn-signal.left').on('mouseenter', function (event) {
         self.cmd = {'x':0, 'y':0, 'theta':0.1*Math.PI};
         lines.left.attr({'display':'block'});
@@ -331,16 +345,10 @@ RFH.Drive = function (options) {
             Lcircles[i].attr({'cx':cx + r*Math.cos(angs[i]),
                               'cy':cy + r*Math.sin(angs[i])});
         }
-        self.spinLeft = function () {
-            lines.left.attr({'transform':'r0,'+cx+','+cy});
-            lines.right.attr({'transform':'r0,'+cx+','+cy});
-            lines.left.animate({'transform':'r-360,'+cx+','+cy}, 1500, mina.linear);
-            lines.right.animate({'transform':'r-360,'+cx+','+cy}, 1500, mina.linear);
-        };
-        self.spinLeft();
-        self.leftSpinTimer = setInterval(self.spinLeft, 1500);
+        linesSpin(cx, cy, 'left', 1500);
+        spinTimer = setInterval(function(){linesSpin(cx, cy, 'left', 1500);}, 1500);
     }).on('mouseleave', function (event) {
-        clearTimeout(self.leftSpinTimer);
+        clearTimeout(spinTimer);
         lines.left.stop();
         lines.right.stop();
         lines.left.attr({'transform':'r0', 'display':'none'});
@@ -369,27 +377,22 @@ RFH.Drive = function (options) {
             Lcircles[nDots-i-1].attr({'cx':cx + r*Math.cos(angs[i]),
                                          'cy':cy + r*Math.sin(angs[i])});
         }
-        self.spinRight = function () {
-            lines.left.attr({'transform':'r0,'+cx+','+cy});
-            lines.right.attr({'transform':'r0,'+cx+','+cy});
-            lines.left.animate({'transform':'r360,'+cx+','+cy}, 1500, mina.linear);
-            lines.right.animate({'transform':'r360,'+cx+','+cy}, 1500, mina.linear);
-        };
-        self.spinRight();
-        self.rightSpinTimer = setInterval(self.spinRight, 1500);
+        linesSpin(cx, cy, 'right', 1500);
+        spinTimer = setInterval(function(){linesSpin(cx, cy, 'right', 1500);}, 1500);
     }).on('mouseleave', function (event) {
-        clearTimeout(self.rightSpinTimer);
+        clearTimeout(spinTimer);
         lines.left.stop();
         lines.right.stop();
         lines.left.attr({'transform':'r0', 'display':'none'});
         lines.right.attr({'transform':'r0', 'display':'none'});
         lines.center.attr({'display':'none'});
     });
-    
+
     self.start = function () {           
         // everything i can think of to not get stuck driving...
         $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
         $('.turn-signal').on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
+        $('.turn-signal').on('mouseenter.rfh', function(){$(driveSVG.node).blur();}); // Blurs driving on enter.  Otherwise, blur occurs on 1st click, and blur cb sets unsafe, stopping turning.
         $('.turn-signal').on('mousedown.rfh', self.driveGo);
         $(driveSVG.node).on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
         $(driveSVG.node).on('mousedown.rfh', self.driveGo);
@@ -408,6 +411,7 @@ RFH.Drive = function (options) {
     };
 
     self.driveGo = function (event) {
+        console.log("Clearing timer for new cmd");
         clearTimeout(timer);
         if (event.which === 1) { //Only react to left mouse button
             self.setSafe();
@@ -415,6 +419,7 @@ RFH.Drive = function (options) {
         } else {
             self.setUnsafe();
         }
+        event.stopPropagation();
     };
 
     self.setSafe = function () {
@@ -423,6 +428,7 @@ RFH.Drive = function (options) {
 
     self.setUnsafe = function (event) {
         //alert("Unsafe: "+event.type);
+        console.log(event.type.toString() + ": Clearing timer to stop driving");
         clearTimeout(timer);
         self.$div.removeClass('drive-safe');
     };
@@ -455,9 +461,15 @@ RFH.Drive = function (options) {
 //        console.log("R: "+r+", Theta: "+theta);
         return [r, theta, gnd_pt[0], gnd_pt[1]];
     };
+
     self.sendCmd = function (cmd) {
-        if (!self.$div.hasClass('drive-safe')) { return ;}
+        console.log("Prepared to send ", cmd);
+        if (!self.$div.hasClass('drive-safe')) {
+            console.log("Not safe to drive"); 
+            return ;}
         base.pubCmd(cmd.x, cmd.y, cmd.theta);
+        console.log("Sent ", cmd);
         timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
+        console.log("Set Timer: ", timer);
     };
 };
