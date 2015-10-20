@@ -62,6 +62,8 @@ class armReachAction(mpcBaseAction):
 
         self.bowl_frame_kinect  = None
         self.mouth_frame_kinect = None
+        self.bowl_frame         = None
+        self.mouth_frame        = None
         self.default_frame      = PyKDL.Frame()
 
         self.initCommsForArmReach()                            
@@ -184,26 +186,26 @@ class armReachAction(mpcBaseAction):
 
         if req == "getBowlPos":
             if self.bowl_frame_kinect is not None:
-                self.bowl_frame = self.bowl_frame_kinect
+                self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)
                 return "Chose kinect bowl position"
             elif self.bowl_frame_kinect is None:
-                self.bowl_frame = copy.copy(self.getBowlFrame())
+                self.bowl_frame = copy.deepcopy(self.getBowlFrame())
                 return "Chose bowl position from kinematics using tf"                
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
         elif req == "getHeadPos":
             if self.mouth_frame_kinect is not None:
-                self.mouth_frame = self.mouth_frame_kinect
+                self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
                 return "Chose kinect head position"
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
         elif req == "lookAtBowl":
-            self.lookAt(self.bowl_frame.p)
+            self.lookAt(self.bowl_frame)
             return "Completed to move head"
         elif req == "lookAtMouth":
-            self.lookAt(self.mouth_frame.p, tag_base='head')                            
+            self.lookAt(self.mouth_frame, tag_base='head')                            
             return "Completed to move head"
         else:
             self.parsingMovements(self.motions[req][self.arm])
@@ -312,29 +314,18 @@ class armReachAction(mpcBaseAction):
 
     def lookAt(self, target, tag_base='head'):
 
+        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')        
         headClient = actionlib.SimpleActionClient("/head_traj_controller/point_head_action", \
                                                   pr2_controllers_msgs.msg.PointHeadAction)
         headClient.wait_for_server()
         rospy.logout('Connected to head control server')
 
-        
-        if target is None:
-            rospy.loginfo("Search a tag")
-            tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')        
-        
-        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')        
-
         pos = Point()
-        pos.x = target.x()
-        pos.y = target.y()
-        pos.z = target.z()
-                                        
-        ps = PointStamped()
+        
+        ps  = PointStamped()
         ps.header.frame_id = self.torso_frame
-        ps.point = pos
-
+        
         head_goal_msg = pr2_controllers_msgs.msg.PointHeadGoal()
-        head_goal_msg.target = ps
         head_goal_msg.pointing_frame = head_frame
         head_goal_msg.pointing_axis.x = 1
         head_goal_msg.pointing_axis.y = 0
@@ -342,8 +333,37 @@ class armReachAction(mpcBaseAction):
         head_goal_msg.min_duration = rospy.Duration(1.0)
         head_goal_msg.max_velocity = 1.0;
         
+        if target is None:
+            ## tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')        
+
+            while not rospy.is_shutdown() and self.mouth_frame_kinect is None:
+                rospy.loginfo("Search "+tag_base+" tag")
+             
+                pos.x = 0.8
+                pos.y = 0.4
+                pos.z = 0.0
+
+                ps.point = pos
+                head_goal_msg.target = ps
+
+                headClient.send_goal(head_goal_msg)
+                headClient.wait_for_result()
+                rospy.sleep(2.0)
+            
+            self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
+            target = self.mouth_frame
+
+                   
+        pos.x = target.p.x()
+        pos.y = target.p.y()
+        pos.z = target.p.z()
+                                        
+        ps.point = pos
+        head_goal_msg.target = ps
+        
         headClient.send_goal(head_goal_msg)
         headClient.wait_for_result()
+        rospy.sleep(1.0)
 
         return "Success"
         
