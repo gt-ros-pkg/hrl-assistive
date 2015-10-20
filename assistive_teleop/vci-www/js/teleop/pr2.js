@@ -1,32 +1,23 @@
 var PR2Base = function (ros) {
     'use strict';
-    var base = this;
-    base.ros = ros;
-    base.ros.getMsgDetails('geometry_msgs/Twist');
-    base.commandPub = new ROSLIB.Topic({
-        ros: base.ros,
+    var self = this;
+    self.timer = null;
+
+    ros.getMsgDetails('geometry_msgs/Twist');
+    var commandPub = new ROSLIB.Topic({
+        ros: ros,
         name: 'base_controller/command',
         messageType: 'geometry_msgs/Twist'
     });
-    base.commandPub.advertise();
-    base.pubCmd = function (x, y, rot) {
+    commandPub.advertise();
+
+    self.pubCmd = function (x, y, rot) {
        // console.log("Base Command: ("+x+", "+y+", "+rot+").");
-        var cmd = base.ros.composeMsg('geometry_msgs/Twist');
+        var cmd = ros.composeMsg('geometry_msgs/Twist');
         cmd.linear.x = x;
         cmd.linear.y = y;
         cmd.angular.z = rot;
-        base.commandPub.publish(cmd);
-    };
-
-    base.drive = function (selector, x, y, rot) {
-        if ($(selector).hasClass('ui-state-active')){
-            base.pubCmd(x,y,rot);
-            setTimeout(function () {
-                base.drive(selector, x, y, rot);
-                }, 100);
-        } else {
-            console.log('End driving for '+selector);
-        }
+        commandPub.publish(cmd);
     };
 };
 
@@ -181,60 +172,64 @@ var PR2Head = function (options) {
     var undoSetActiveService = options.undoSetActiveService || 'undo/move_head/set_active';
     ros.getMsgDetails('trajectory_msgs/JointTrajectory');
     ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
-    self.jointPub = new ROSLIB.Topic({
+    var jointPub = new ROSLIB.Topic({
         ros: ros,
         name: 'head_traj_controller/command',
         messageType: 'trajectory_msgs/JointTrajectory'
     });
-    self.jointPub.advertise();
+    jointPub.advertise();
+
+    self.getState = function () {
+        return state;
+    };
 
     ros.getMsgDetails('pr2_controllers_msgs/PointHeadGoal');
-    self.pointHeadActionClient = new ROSLIB.ActionClient({
+    var pointHeadActionClient = new ROSLIB.ActionClient({
         ros: ros,
         serverName: "/head_traj_controller/point_head_action",
         actionName: "pr2_controllers_msgs/PointHeadAction"
     });
 
-    self.stateSub = new ROSLIB.Topic({
+    var stateSub = new ROSLIB.Topic({
         ros: ros,
         name: '/head_traj_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    self.setState = function (msg) {
-        self.state = msg.actual.positions;    
+    var setState = function (msg) {
+        state = msg.actual.positions;    
     };
-    self.stateCBList = [self.setState];
-    self.stateCB = function (msg){
-        for (var i=0; i<self.stateCBList.length; i++){
+    self.stateCBList = [setState];
+    var stateCB = function (msg){
+        for (var i=0; i < self.stateCBList.length; i += 1){
             self.stateCBList[i](msg);
         }
     };
-    self.stateSub.subscribe(self.stateCB);
+    stateSub.subscribe(stateCB);
 
     self.enforceLimits = function (pan, tilt) {
-        pan  = pan > self.limits[0][0] ? pan : self.limits[0][0];
-        pan  = pan < self.limits[0][1] ? pan : self.limits[0][1];
-        tilt  = tilt < self.limits[1][0] ? tilt : self.limits[1][0];
-        tilt  = tilt > self.limits[1][1] ? tilt : self.limits[1][1];
+        pan  = pan > limits[0][0] ? pan : limits[0][0];
+        pan  = pan < limits[0][1] ? pan : limits[0][1];
+        tilt  = tilt < limits[1][0] ? tilt : limits[1][0];
+        tilt  = tilt > limits[1][1] ? tilt : limits[1][1];
         return [pan, tilt];
     };
 
     self.setPosition = function (pan, tilt) {
-        var dPan = Math.abs(pan - self.state[0]);
-        var dTilt = Math.abs(tilt - self.state[1]);
+        var dPan = Math.abs(pan - state[0]);
+        var dTilt = Math.abs(tilt - state[1]);
         var trajPointMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointMsg.positions = self.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
         trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
         var goalMsg = ros.composeMsg('trajectory_msgs/JointTrajectory');
-        goalMsg.joint_names = self.joints;
+        goalMsg.joint_names = joints;
         goalMsg.points.push(trajPointMsg);
-        self.jointPub.publish(goalMsg);
+        jointPub.publish(goalMsg);
     };
 
     self.delPosition = function (delPan, delTilt) {
-        var pan = self.state[0] += delPan;
-        var tilt = self.state[1] += delTilt;
+        var pan = state[0] += delPan;
+        var tilt = state[1] += delTilt;
         self.setPosition(pan, tilt);
     };
 
@@ -259,12 +254,11 @@ var PR2Head = function (options) {
     self.pointHead = function (x, y, z, frame) {
         var headPointMsg = getPointHeadGoal(x, y, z, frame);
         var actionGoal = new ROSLIB.Goal({
-            actionClient: self.pointHeadActionClient,
+            actionClient: pointHeadActionClient,
             goalMessage: headPointMsg
         });
         actionGoal.send();
     };
-
 
     var undoToggleService = new ROSLIB.Service({
         ros: ros,
@@ -273,68 +267,66 @@ var PR2Head = function (options) {
     });
 
     self.trackPoint = function (x, y, z, frame) {
-        trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500);
+        // Don't register head tracking the hand with undo...
         var disableUndoReq = new ROSLIB.ServiceRequest({data:false});
-        undoToggleService.call(disableUndoReq, function(){});
+        undoToggleService.callService(disableUndoReq, function(){});
+        // Start looking now
+        self.pointHead(x, y, z, frame);
+        // Re-send goal regularly
+        trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500);
     };
 
     self.stopTracking = function () {
+        // Stop sending tracking messages
         clearInterval(trackingInterval);
+        // Re-enable undo recording of head movements
         var enableUndoReq = new ROSLIB.ServiceRequest({data:true});
-        undoToggleService.call(enableUndoReq, function(){});
+        undoToggleService.callService(enableUndoReq, function(){});
     };
 };
 
 var PR2Torso = function (ros) {
     'use strict';
     var self = this;
-    self.ros = ros;
-    self.state = null;
-    self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
-    self.ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
-    self.jointNames = ['torso_lift_joint'];
+    var state = 0.0;
+    ros.getMsgDetails('trajectory_msgs/JointTrajectory');
+    ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
+    var jointNames = ['torso_lift_joint'];
 
-    self.goalPub = new ROSLIB.Topic({
-        ros: self.ros,
+    var goalPub = new ROSLIB.Topic({
+        ros: ros,
         name: 'torso_controller/command',
         messageType: 'trajectory_msgs/JointTrajectory'
     });
-    self.goalPub.advertise();
+    goalPub.advertise();
 
-    self.stateSub = new ROSLIB.Topic({
-        ros: self.ros,
+    var stateSub = new ROSLIB.Topic({
+        ros: ros,
         name: 'torso_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    self.setState = function (msg) {
-        self.state = msg.actual.positions[0];
+    var setState = function (msg) {
+        state = msg.actual.positions[0];
     };
-    self.stateCBList = [self.setState];
-    self.stateCB = function (msg) {
-        for (var i=0; i<self.stateCBList.length; i++){
+    self.stateCBList = [setState];
+    var stateCB = function (msg) {
+        for (var i=0; i < self.stateCBList.length; i += 1){
             self.stateCBList[i](msg);
         }
     };
-    self.stateSub.subscribe(self.stateCB);
+    stateSub.subscribe(stateCB);
 
     self.setPosition = function (z) {
-        console.log('Commanding torso' + ' from z=' + self.state.toString() + ' to z=' + z.toString());
-        var goal_msg = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
-        var traj_point = self.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        console.log('Commanding torso' + ' from z=' + state.toString() + ' to z=' + z.toString());
+        var goal_msg = ros.composeMsg('trajectory_msgs/JointTrajectory');
+        var traj_point = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         traj_point.positions = [z];
         traj_point.time_from_start.secs = 1;
-        goal_msg.joint_names = self.jointNames;
+        goal_msg.joint_names = jointNames;
         goal_msg.points = [traj_point];
-        self.goalPub.publish(goal_msg);
+        goalPub.publish(goal_msg);
     };
 };
-
-//var PR2ArmJoints = function (ros) {
-//    'use strict';
-//    var self = this;
-//    this.state = null;
-//    self.getMsgDetails('p
-//};
 
 var PR2ArmMPC = function (options) {
     'use strict';
@@ -434,7 +426,7 @@ var PR2 = function (ros) {
                             limits: [[-2.85, 2.85], [1.18, -0.38]],
                             joints: ['head_pan_joint', 'head_tilt_joint'],
                             pointingFrame: 'head_mount_kinect_rgb_optical_frame',
-                            undoSetActiveService || 'undo/move_head/set_active'});
+                            undoSetActiveService: 'undo/move_head/set_active'});
     self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...
     self.r_arm_cart = new PR2ArmMPC({side:'right',
                                      ros: ros,

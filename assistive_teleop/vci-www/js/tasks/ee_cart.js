@@ -91,33 +91,33 @@ RFH.CartesianEEControl = function (options) {
                  dz = (x === 0.0) ? 0.0 : -posStep * Math.cos(goalAng);
                  dy = (y === 0.0) ? 0.0 : posStep * Math.sin(goalAng);
                 break;
-            case 'free':
-                if (self.op2baseMat === null || self.eeInOpMat === null) {
-                    console.warn("Hand Data not available to send commands.");
-                    return;
-                }
-                // Convert to Matrix4
-                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
-                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
-                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
-                cmd.setPosition(cmdDelPos);
-                // Apply delta to current ee position
-                var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
-                //Transform goal back to base frame
-                var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
-                // Compose and send ros msg
-                var pos = new THREE.Vector3();
-                var quat = new THREE.Quaternion();
-                var scale = new THREE.Vector3();
-                goalInBaseMat.decompose(pos, quat, scale);
-                try {
-                    quat = self.orientHand();
-                }
-                catch (e) {
-                    console.log(e); // log error and keep moving
-                }
-                var frame = self.tfClient.fixedFrame;
-                break;
+//            case 'free':
+//                if (self.op2baseMat === null || self.eeInOpMat === null) {
+//                    console.warn("Hand Data not available to send commands.");
+//                    return;
+//                }
+//                // Convert to Matrix4
+//                var cmdDelPos = new THREE.Vector3(posStep*x, -posStep*y, posStep*z);
+//                var cmdDelRot = new THREE.Euler(-rotStep*roll, -rotStep*pitch, rotStep*yaw);
+//                var cmd = new THREE.Matrix4().makeRotationFromEuler(cmdDelRot);
+//                cmd.setPosition(cmdDelPos);
+//                // Apply delta to current ee position
+//                var goalInOpMat = new THREE.Matrix4().multiplyMatrices(cmd, self.eeInOpMat.clone());
+//                //Transform goal back to base frame
+//                var goalInBaseMat = new THREE.Matrix4().multiplyMatrices(self.op2baseMat, goalInOpMat);
+//                // Compose and send ros msg
+//                var pos = new THREE.Vector3();
+//                var quat = new THREE.Quaternion();
+//                var scale = new THREE.Vector3();
+//                goalInBaseMat.decompose(pos, quat, scale);
+//                try {
+//                    quat = self.orientHand();
+//                }
+//                catch (e) {
+//                    console.log(e); // log error and keep moving
+//                }
+//                var frame = self.tfClient.fixedFrame;
+//                break;
             default:
                 console.warn("Unknown arm control mode.");
                 return;
@@ -188,13 +188,6 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer').css({'transform':transformStr});
     };
 
-    self.focusPoint = new RFH.FocalPoint({camera: self.camera,
-        tfClient: self.tfClient,
-        ros: self.ros,
-        side: self.arm.side,
-        divId: self.$div.id,
-    });
-
     self.pixel23d = new RFH.Pixel23DClient({
         ros: self.ros,
         cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
@@ -203,45 +196,45 @@ RFH.CartesianEEControl = function (options) {
 
     self.buttonText = self.side === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.buttonClass = 'hand-button';
-    $('#touchspot-toggle, #select-focus-toggle, #toward-button, #away-button').button();
+    $('#touchspot-toggle, #toward-button, #away-button').button();
     $('#speedOptions-buttons, #'+self.side+'-posrot-set, #ee-mode-set').buttonset();
-    $('#touchspot-toggle, #touchspot-toggle-label, #select-focus-toggle, #select-focus-toggle-label, #toward-button, #away-button, #armCtrlContainer').hide();
+    $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation(); });
 
     self.getStepSize = function () {
         return $('input[name=speedOption]:checked').attr('id');
     };
 
-    self.orientHand = function () {
-        if (self.focusPoint.point === null) {
-            throw "Orient Hand: No focus point.";
-        }
-        var target = self.focusPoint.point.clone(); // 3D point in /base_link to point at
-        var eePos =  self.eeTF.translation.clone(); // 3D point in /base_link from which to point
-        var camPos = self.cameraTF.translation.clone(); // 3D point of view (resolve free rotation to orient hand second axis toward camera)
-        var x = new THREE.Vector3();
-        var y = new THREE.Vector3();
-        var z = new THREE.Vector3();
-        x.subVectors(target, eePos).normalize();
-        if (x.length() === 0) {
-            throw "Orient Hand: End effector and target at same position";
-        }
-        z.subVectors(camPos, eePos).normalize();
-        if (z.length() === 0) {
-            throw "Orient Hand: End effector and camera at same position";
-        }
-        y.crossVectors(z,x).normalize();
-        if (y.length() === 0) {
-            throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned.";
-        }
-        z.crossVectors(x,y).normalize();
-        var rotMat = new THREE.Matrix4();
-        rotMat.elements[0] = x.x; rotMat.elements[4] = y.x; rotMat.elements[8] = z.x;
-        rotMat.elements[1] = x.y; rotMat.elements[5] = y.y; rotMat.elements[9] = z.y;
-        rotMat.elements[2] = x.z; rotMat.elements[6] = y.z; rotMat.elements[10] = z.z;
-        return new THREE.Quaternion().setFromRotationMatrix(rotMat);
-    };
-
+//    self.orientHand = function () {
+//        if (self.focusPoint.point === null) {
+//            throw "Orient Hand: No focus point.";
+//        }
+//        var target = self.focusPoint.point.clone(); // 3D point in /base_link to point at
+//        var eePos =  self.eeTF.translation.clone(); // 3D point in /base_link from which to point
+//        var camPos = self.cameraTF.translation.clone(); // 3D point of view (resolve free rotation to orient hand second axis toward camera)
+//        var x = new THREE.Vector3();
+//        var y = new THREE.Vector3();
+//        var z = new THREE.Vector3();
+//        x.subVectors(target, eePos).normalize();
+//        if (x.length() === 0) {
+//            throw "Orient Hand: End effector and target at same position";
+//        }
+//        z.subVectors(camPos, eePos).normalize();
+//        if (z.length() === 0) {
+//            throw "Orient Hand: End effector and camera at same position";
+//        }
+//        y.crossVectors(z,x).normalize();
+//        if (y.length() === 0) {
+//            throw "Orient Hand: Gimbal-lock - Camera, End Effector, and Target aligned.";
+//        }
+//        z.crossVectors(x,y).normalize();
+//        var rotMat = new THREE.Matrix4();
+//        rotMat.elements[0] = x.x; rotMat.elements[4] = y.x; rotMat.elements[8] = z.x;
+//        rotMat.elements[1] = x.y; rotMat.elements[5] = y.y; rotMat.elements[9] = z.y;
+//        rotMat.elements[2] = x.z; rotMat.elements[6] = y.z; rotMat.elements[10] = z.z;
+//        return new THREE.Quaternion().setFromRotationMatrix(rotMat);
+//    };
+//
     self.updateOpFrame = function () {
         // Define an 'operational frame' at the end effector (ee) aligned with the perspective of the camera
         // (i.e. z-axis along line from camera center through ee center for z-out optical frames,
@@ -415,30 +408,12 @@ RFH.CartesianEEControl = function (options) {
     /// TRACK HAND WITH CAMERA ///
     self.trackHand = function (doTrack) {
         if (doTrack) {
-            setTimeout(function(){ RFH.pr2.head.trackPoint(0, 0, 0, self.side+'_gripper_tool_frame');}, 20); // Wait 20 ms.  There seems to be a race condition in the prior goal being cancelled and this being sent, so it sometimes gets cancelled instead (maybe?).  This seems enough to fix it.
+            RFH.pr2.head.trackPoint(0, 0, 0, self.side+'_gripper_tool_frame');
         } else {
             RFH.pr2.head.stopTracking();
         }
     };
 
-    /// SELECT FOCUS POINT CONTROLS ///
-//    self.selectFocusCB = function (e, ui) {
-//        if ($('#select-focus-toggle').prop('checked')) {
-//            self.focusPoint.clear();
-//            if (self.focusPoint.point === null) {
-//                $('#armCtrlContainer').show();
-//            }
-//        } else {
-//            $('#armCtrlContainer').hide();
-//            var cb = function () {
-//                $('#armCtrlContainer').show();
-//                $('#select-focus-toggle').prop('checked', false).button('refresh');
-//                self.eeDeltaCmd({}); // Send command at current position to reorient arm
-//            };
-//            self.focusPoint.getNewFocusPoint(cb); // Pass in callback to perform cleanup/reversal
-//        }
-//    };
-//
 //    self.wristCWCB = function (e) {
 //        self.orientRot += Math.Pi/12;
 //        self.orientRot = self.orientRot % 2*Math.PI;
@@ -451,64 +426,72 @@ RFH.CartesianEEControl = function (options) {
 //        self.eeDeltaCmd({});
 //    };
 
-    self.touchSpotCB = function (e) {
-        if ($('#touchspot-toggle').prop('checked')) {
+    var trajectoryCB = function (msg) { // Define CB for received trajectory from planner
+        if (msg.robot_trajectory.joint_trajectory.points.length === 0) {
+            console.log("Empty Trajectory Received.");
+        } else {
+            console.log("Got Trajectory", msg);
+            self.arm.sendTrajectoryGoal(msg.robot_trajectory.joint_trajectory);
+        }
+        // Clean up interface once everything is done...
+        unsetTouchSpot();
+    };
+
+    var touchspotClickCB = function (e) { 
+        var onRetCB = function (pose_stamped) { // Define callback for response to pixel-2-3D from click
+            var pose = pose_stamped.pose;
+            var quat = new THREE.Quaternion(pose.orientation.x,
+                                            pose.orientation.y,
+                                            pose.orientation.z,
+                                            pose.orientation.w);
+            var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
+            var offset = new THREE.Vector3(0.18, 0, 0); //Get to x dist from point along normal
+            offset.applyMatrix4(poseRotMat);
+            var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
+            poseRotMat.multiply(desRotMat);
+            poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
+                                                     pose.position.y + offset.y,
+                                                     pose.position.z + offset.z));
+            var trans = new THREE.Matrix4();
+            var scale = new THREE.Vector3();
+            poseRotMat.decompose(trans, quat, scale);
+
+            self.arm.planTrajectory({
+                position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
+                orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
+                frame_id: 'base_link',
+                cb: trajectoryCB
+            });
+        };
+
+        var pt = RFH.positionInElement(e);
+        var x = pt[0]/$(e.target).width();
+        var y = pt[1]/$(e.target).height();
+        self.pixel23d.callRelativeScale(x, y, onRetCB);
+    };
+
+    var setTouchSpot = function () {
+            $('#armCtrlContainer').hide();
+            self.trackHand(false);
+            $('.map-look').addClass('visible').show();
+            self.$div.addClass('cursor-select');
+    };
+
+    var unsetTouchSpot = function () {
             self.$div.off('click.touchspot');
             $('.map-look').removeClass('visible').hide();
             self.$div.removeClass('cursor-select');
             self.setPositionCtrls();
+            self.trackHand(true);
+    };
+
+
+    self.touchSpotCB = function (e) {
+        if ($('#touchspot-toggle').prop('checked')) {
+            unsetTouchSpot();
         } else {
-            $('#armCtrlContainer').hide();
-            var clickCB = function (e) { // Define callback for click on image
-                var onRetCB = function (pose_stamped) { // Define callback for response to pixel-2-3D from click
-                    var pose = pose_stamped.pose;
-                    console.log(pose);
-                    var quat = new THREE.Quaternion(pose.orientation.x,
-                                                 pose.orientation.y,
-                                                 pose.orientation.z,
-                                                 pose.orientation.w);
-                    var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
-                    var offset = new THREE.Vector3(0.18, 0, 0); //Get to x dist from point along normal
-                    offset.applyMatrix4(poseRotMat);
-                    var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, 0));
-                    poseRotMat.multiply(desRotMat);
-                    poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
-                                                             pose.position.y + offset.y,
-                                                             pose.position.z + offset.z));
-                    var trans = new THREE.Matrix4();
-                    var scale = new THREE.Vector3();
-                    poseRotMat.decompose(trans, quat, scale);
-
-                    var trajectoryCB = function (msg) { // Define CB for received trajectory from planner
-                        if (msg.robot_trajectory.joint_trajectory.points.length === 0) {
-                            console.log("Empty Trajectory Received.");
-                        } else {
-                            console.log("Got Trajectory", msg);
-                            self.arm.sendTrajectoryGoal(msg.robot_trajectory.joint_trajectory);
-                        }
-                        // Clean up interface once everything is done...
-                        $('#touchspot-toggle').prop('checked', false).button('refresh');
-                        $('.map-look').removeClass('visible').hide();
-                        self.$div.removeClass('cursor-select');
-                        self.setPositionCtrls();
-                    };
-                    self.arm.planTrajectory({
-                        position: new ROSLIB.Vector3({x:trans.x, y:trans.y, z:trans.z}),
-                        orientation: new ROSLIB.Quaternion({x:quat.x, y:quat.y, z:quat.z, w:quat.w}),
-                        frame_id: 'base_link',
-                        cb: trajectoryCB
-                    });
-                };
-
-                var pt = RFH.positionInElement(e);
-                var x = pt[0]/$(e.target).width();
-                var y = pt[1]/$(e.target).height();
-                self.pixel23d.callRelativeScale(x, y, onRetCB);
-            };
-
-            $('.map-look').addClass('visible').show();
-            self.$div.addClass('cursor-select');
-            self.$div.one('click.touchspot', clickCB);
+            setTouchSpot();
+            self.$div.one('click.touchspot', touchspotClickCB);
         }
     };
 
@@ -542,7 +525,6 @@ RFH.CartesianEEControl = function (options) {
         self.trackHand(true);
         $('.'+self.side+'-arm-ctrl, .arm-ctrl').show();
         $('#armCtrlContainer, #away-button, #toward-button').show();
-        $("#select-focus-toggle-label").show();
         $('#speedOptions').show();
         self.gripperDisplay.show();
         $('#'+self.side+'-posrot-set').show();
@@ -555,22 +537,18 @@ RFH.CartesianEEControl = function (options) {
     };
 
     self.stop = function () {
-        self.trackHand(false);
         $('.'+self.side+'-arm-ctrl, .arm-ctrl').hide();
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('mousedown.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
         $('#viewer-canvas').hide();
-//        if ($('#select-focus-toggle').prop('checked')) {
-//            $('#select-focus-toggle').click();
-//        }
-//        $("#select-focus-toggle-label").off('click.rfh').hide();
         $('#speedOptions').hide();
         self.gripperDisplay.hide();
         if ($('#touchspot-toggle').prop('checked')) {
-            $('#touchspot-toggle').click();
+            $('#touchspot-toggle-label').click();
         }
         $('#touchspot-toggle-label').off('click.rfh').hide();
+        self.trackHand(false);
         self.active = false;
         for (var dir in self.rotArrows) {
             self.rotArrows[dir].mesh.visible = false;
