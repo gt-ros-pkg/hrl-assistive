@@ -2,7 +2,7 @@
 
 import rospy
 import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
+roslib.load_manifest('hrl_manipulation_task')
 import numpy as np
 import os, threading, copy
 
@@ -13,10 +13,8 @@ from hrl_lib import quaternion as qt
 import hrl_lib.util as ut
 import hrl_lib.circular_buffer as cb
 
-import hrl_common_code_darpa_m3.visualization.draw_scene as ds
 from ar_track_alvar.msg import AlvarMarkers
 import geometry_msgs
-from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 
@@ -40,8 +38,6 @@ class arTagDetector:
         self.head_pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         self.head_quat_buf = cb.CircularBuffer(self.hist_size, (4,))               
         
-        self.draw_mouth_block = ds.SceneDraw("ar_track_alvar/mouth_block", "/torso_lift_link")
-        self.draw_mouth_arrow = ds.SceneDraw("ar_track_alvar/mouth_arrow", "/torso_lift_link")
         self.mouth_pose_pub = rospy.Publisher("ar_track_alvar/mouth_pose", PoseStamped, latch=True)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
@@ -116,11 +112,10 @@ class arTagDetector:
 
                     if self.head_calib == False:
                         self.updateMouthFrames(head_tag_frame)
+                        self.pubMouthPose()
                     else:
                         self.pubMouthPose()
 
-                        
-        self.draw_mouth(100)
                         
         if head_tag_flag: self.head_tag_flag = True
                     
@@ -170,51 +165,18 @@ class arTagDetector:
             cur_quat.y = mouth_frame_off.M.GetQuaternion()[1]
             cur_quat.z = mouth_frame_off.M.GetQuaternion()[2]
             cur_quat.w = mouth_frame_off.M.GetQuaternion()[3]
+
+            # check close quaternion and inverse
+            if np.dot(self.mouth_frame_off.M.GetQuaternion(), mouth_frame_off.M.GetQuaternion()) < 0.0:
+                cur_quat.x *= -1.
+                cur_quat.y *= -1.
+                cur_quat.z *= -1.
+                cur_quat.w *= -1.
+
             
             quat = qt.slerp(pre_quat, cur_quat, 0.5)
             self.mouth_frame_off.M = PyKDL.Rotation.Quaternion(quat.x, quat.y, quat.z, quat.w)
-            
-        
-
-
-
-    def draw_mouth(self, start_id=0):
-        
-        ## assert (self.num_blocks == len(self.block_dim)), "num_blocks is different with the number of block_dim."        
-        ## self.block_lock.acquire()
-
-        ## if self.head_calib
-
-        with self.frame_lock:
-
-            if self.mouth_frame_off is None or self.head_frame is None: return
-            f = self.head_frame * self.mouth_frame_off
-            pos_x = f.p[0]
-            pos_y = f.p[1]
-            pos_z = f.p[2]
-
-            quat_x = f.M.GetQuaternion()[0]
-            quat_y = f.M.GetQuaternion()[1]
-            quat_z = f.M.GetQuaternion()[2]
-            quat_w = f.M.GetQuaternion()[3]
-
-            scale_x = scale_y = self.tag_side_length
-            scale_z = 0.005
-
-            self.draw_mouth_block.pub_body([pos_x, pos_y, pos_z],
-                                           [quat_x, quat_y, quat_z, quat_w],
-                                           [scale_x,scale_y,scale_z], 
-                                           [0.0, 1.0, 0.0, 0.7], 
-                                           start_id+0, 
-                                           self.draw_mouth_block.Marker.CUBE)
-
- 
-            ## f = f #* self.y_neg90_frame
-            pos1 = np.array([[f.p[0], f.p[1], f.p[2]]]).T
-            z_axis = f.M.UnitZ() * 0.1            
-            pos2 = np.array([[f.p[0] + z_axis[0], f.p[1] + z_axis[1], f.p[2] + z_axis[2]]]).T
-            self.draw_mouth_arrow.pub_arrow(pos1, pos2, [0.0, 1.0, 0.0, 0.7], str(0.0))
-
+                    
 
     def getCalibration(self, filename='mouth_frame.pkl'):
         if os.path.isfile(filename) == False: return False
@@ -250,9 +212,10 @@ class arTagDetector:
     def pubMouthPose(self):
 
         f = self.head_frame * self.mouth_frame_off
+        f.M.DoRotX(np.pi)        
         
         ps = PoseStamped()
-        ps.header.frame_id = 'ar_mouth'
+        ps.header.frame_id = 'torso_lift_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
@@ -266,6 +229,32 @@ class arTagDetector:
         self.mouth_pose_pub.publish(ps)
             
 
+    def pubVirtualMouthPose(self):
+
+        f = PyKDL.Frame.Identity()
+        f.p = PyKDL.Vector(0.85, 0.4, 0.0)
+        f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        f.M.DoRotX(np.pi/2.0)
+        f.M.DoRotZ(np.pi/2.0)
+        f.M.DoRotX(np.pi)        
+        
+        # frame pub --------------------------------------
+        ps = PoseStamped()
+        ps.header.frame_id = 'torso_lift_link'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = f.p[0]
+        ps.pose.position.y = f.p[1]
+        ps.pose.position.z = f.p[2]
+        
+        ps.pose.orientation.x = f.M.GetQuaternion()[0]
+        ps.pose.orientation.y = f.M.GetQuaternion()[1]
+        ps.pose.orientation.z = f.M.GetQuaternion()[2]
+        ps.pose.orientation.w = f.M.GetQuaternion()[3]
+
+        self.mouth_pose_pub.publish(ps)
+
+
+        
 if __name__ == '__main__':
     rospy.init_node('ar_tag_mouth_estimation')
 
@@ -273,15 +262,17 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew frame pickle files.')
+    p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
+                 default=False, help='Send a vitual frame.')
     opt, args = p.parse_args()
     
     total_tags = 1
-    tag_id = 10
+    tag_id = 10 #9
     tag_side_length = 0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18
 
-    save_file = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/params/ar_tag/mouth_offsetframe.pkl' 
+    save_file = '/home/dpark/git/hrl-assistive/hrl_manipulation_task/params/ar_tag/mouth_offsetframe.pkl' 
     
     atd = arTagDetector(tag_id, tag_side_length, pos_thres)
 
@@ -291,6 +282,10 @@ if __name__ == '__main__':
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
+        if opt.bVirtual:
+            atd.pubVirtualMouthPose()
+            continue
+        
         ## ret = input("Is head tag fine? ")
         if atd.head_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is head tag fine? (y: yes, n: no)')

@@ -1,0 +1,30 @@
+
+hrl_manipulation_task:
+
+  # Common parameters
+  arm: l
+
+  # For auditory perception
+  head_audio_frame: head_mount_link
+
+  # For kinematics perception
+  end_effector_frame: l_gripper_spoon_frame
+
+  joints:
+    - l_shoulder_pan_joint
+    - l_shoulder_lift_joint
+    - l_upper_arm_roll_joint
+    - l_elbow_flex_joint
+    - l_forearm_roll_joint
+    - l_wrist_flex_joint
+    - l_wrist_roll_joint
+
+  # For visual perception
+  head:
+    artag_id: 10
+    artag_length: 0.053
+    artag_max_id: 18
+    artag_total_tags: 1
+    artag_buf_size: 10
+  
+  

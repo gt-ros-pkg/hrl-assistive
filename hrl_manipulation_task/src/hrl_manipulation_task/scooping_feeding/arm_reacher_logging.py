@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system library
-import time, sys
+import time
 import datetime
 
 # ROS library
@@ -40,14 +40,12 @@ roslib.load_manifest('hrl_manipulation_task')
 from hrl_srvs.srv import String_String
 import hrl_lib.util as ut
 
-if __name__ == '__main__':
+from hrl_manipulation_task.record_data import logger
 
-    rospy.init_node('feed_client')
 
-    rospy.wait_for_service("/arm_reach_enable")
-    armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
-    armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
+def scooping(armReachActionLeft, armReachActionRight, log):
 
+    log.task = 'scooping'
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
@@ -58,21 +56,63 @@ if __name__ == '__main__':
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
 
+    print "Start to log!"    
+    log.log_start()
+    
     print "Running scooping!"
     print armReachActionLeft("runScooping")
 
-    ## Feeding -----------------------------------
-    #print "Initializing left arm for feeding"
-    #print armReachActionRight("initFeeding")
-    #print armReachActionLeft("initFeeding")
+    print "Finish to log!"    
+    log.close_log_file()
 
-    #print "Detect ar tag on the head"
-    #print armReachActionLeft('lookAtMouth')
-    #print armReachActionLeft("getHeadPos")
+    
+def feeding(armReachActionLeft, armReachActionRight, log):
+
+    log.task = 'feeding'
+    
+    ## Feeding -----------------------------------
+    print "Initializing left arm for feeding"
+    #print armReachActionRight("initFeeding")
+    print armReachActionLeft("initFeeding")
+
+    print "Detect ar tag on the head"
+    print armReachActionLeft('lookAtMouth')
+    print armReachActionLeft("getHeadPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 
-    #print "Running feeding!"
-    #print armReachActionLeft("runFeeding")
+    print "Start to log!"    
+    log.log_start()
+    
+    print "Running feeding!"
+    print armReachActionLeft("runFeeding")
+
+    print "Finish to log!"    
+    log.close_log_file()
+    
+    
+if __name__ == '__main__':
+
+    rospy.init_node('feed_client')
+
+    rospy.wait_for_service("/arm_reach_enable")
+    armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
+
+    log = logger(ft=True, audio=True, kinematics=True, vision=False, pps=False, \
+                 subject="gatsbii", task='scooping', verbose=False)
+
+    while not rospy.is_shutdown():
+                 
+        flag = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
+        if flag == '1':
+            scooping(armReachActionLeft, armReachActionRight, log)
+        elif flag == '2':
+            feeding(armReachActionLeft, armReachActionRight, log)
+        elif flag == '3':
+            scooping(armReachActionLeft, armReachActionRight, log)
+            feeding(armReachActionLeft, armReachActionRight, log)
+        else:
+            break
 
     
     ## t1 = datetime.datetime.now()

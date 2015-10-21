@@ -2,7 +2,7 @@
 
 import rospy
 import roslib
-roslib.load_manifest('hrl_multimodal_anomaly_detection')
+roslib.load_manifest('hrl_manipulation_task')
 import numpy as np
 import os, threading, copy
 
@@ -13,10 +13,8 @@ from hrl_lib import quaternion as qt
 import hrl_lib.util as ut
 import hrl_lib.circular_buffer as cb
 
-import hrl_common_code_darpa_m3.visualization.draw_scene as ds
 from ar_track_alvar.msg import AlvarMarkers
 import geometry_msgs
-from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 
@@ -44,10 +42,7 @@ class arTagDetector:
         self.x_neg90_frame.M = PyKDL.Rotation.Quaternion(-np.sqrt(0.5), 0.0, 0.0, np.sqrt(0.5))
         self.y_90_frame = PyKDL.Frame.Identity()
         self.y_90_frame.M = PyKDL.Rotation.Quaternion(0.0, np.sqrt(0.5), 0.0, np.sqrt(0.5))
-
-        
-        self.draw_bowl_cen_block = ds.SceneDraw("ar_track_alvar/bowl_cen_block", "/torso_lift_link")
-        self.draw_bowl_cen_arrow = ds.SceneDraw("ar_track_alvar/bowl_cen_arrow", "/torso_lift_link")
+       
         self.bowl_cen_pose_pub = rospy.Publisher("ar_track_alvar/bowl_cen_pose", PoseStamped, latch=True)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
@@ -125,9 +120,7 @@ class arTagDetector:
                     else:
                         self.pubBowlcenPose()
 
-                        
-        self.draw_bowl_cen(200)
-                        
+                                               
         if bowl_tag_flag: self.bowl_tag_flag = True
                     
 
@@ -190,45 +183,6 @@ class arTagDetector:
             
         
 
-
-
-    def draw_bowl_cen(self, start_id=0):
-        
-        ## assert (self.num_blocks == len(self.block_dim)), "num_blocks is different with the number of block_dim."        
-        ## self.block_lock.acquire()
-
-        ## if self.bowl_calib
-
-        with self.frame_lock:
-
-            if self.bowl_cen_frame_off is None or self.bowl_frame is None: return
-            f = self.bowl_frame * self.bowl_cen_frame_off
-            pos_x = f.p[0]
-            pos_y = f.p[1]
-            pos_z = f.p[2]
-
-            quat_x = f.M.GetQuaternion()[0]
-            quat_y = f.M.GetQuaternion()[1]
-            quat_z = f.M.GetQuaternion()[2]
-            quat_w = f.M.GetQuaternion()[3]
-
-            scale_x = scale_y = self.tag_side_length
-            scale_z = 0.005
-
-            self.draw_bowl_cen_block.pub_body([pos_x, pos_y, pos_z],
-                                           [quat_x, quat_y, quat_z, quat_w],
-                                           [scale_x,scale_y,scale_z], 
-                                           [0.0, 1.0, 0.0, 0.7], 
-                                           start_id+0, 
-                                           self.draw_bowl_cen_block.Marker.CUBE)
-
- 
-            ## f = f #* self.y_neg90_frame
-            pos1 = np.array([[f.p[0], f.p[1], f.p[2]]]).T
-            z_axis = f.M.UnitZ() * 0.1            
-            pos2 = np.array([[f.p[0] + z_axis[0], f.p[1] + z_axis[1], f.p[2] + z_axis[2]]]).T
-            self.draw_bowl_cen_arrow.pub_arrow(pos1, pos2, [0.0, 1.0, 0.0, 0.7], str(0.0))
-
     def getCalibration(self, filename='bowl_frame.pkl'):
         if os.path.isfile(filename) == False: return False
         
@@ -261,7 +215,7 @@ class arTagDetector:
         f = self.bowl_frame * self.bowl_cen_frame_off
         
         ps = PoseStamped()
-        ps.header.frame_id = 'ar_bowl_cen'
+        ps.header.frame_id = 'torso_lift_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
@@ -273,7 +227,29 @@ class arTagDetector:
         ps.pose.orientation.w = f.M.GetQuaternion()[3]
 
         self.bowl_cen_pose_pub.publish(ps)
-            
+
+
+    def pubVirtualBowlcenPose(self):
+
+        f = PyKDL.Frame.Identity()
+        f.p = PyKDL.Vector(0.5, 0.2, -0.2)
+        f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        
+        # frame pub --------------------------------------
+        ps = PoseStamped()
+        ps.header.frame_id = 'torso_lift_link'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = f.p[0]
+        ps.pose.position.y = f.p[1]
+        ps.pose.position.z = f.p[2]
+        
+        ps.pose.orientation.x = f.M.GetQuaternion()[0]
+        ps.pose.orientation.y = f.M.GetQuaternion()[1]
+        ps.pose.orientation.z = f.M.GetQuaternion()[2]
+        ps.pose.orientation.w = f.M.GetQuaternion()[3]
+
+        self.bowl_cen_pose_pub.publish(ps)
+        
 
 if __name__ == '__main__':
     rospy.init_node('ar_tag_bowl_cen_estimation')
@@ -282,6 +258,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew frame pickle files.')
+    p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
+                 default=False, help='Send a vitual frame.')
     opt, args = p.parse_args()
 
     
@@ -301,6 +279,10 @@ if __name__ == '__main__':
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
+        if opt.bVirtual:
+            atd.pubVirtualBowlcenPose()
+            continue
+        
         ## ret = input("Is bowl tag fine? ")
         if atd.bowl_calib == False and opt.bRenew == True:
             ret = ut.get_keystroke('Is bowl tag fine? (y: yes, n: no)')

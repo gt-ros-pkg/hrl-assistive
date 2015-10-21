@@ -13,7 +13,9 @@
     <depend package="rospy"/>
     <depend package="std_msgs"/>
     <depend package="hark_msgs"/>
+    <depend package="tf"/>
     <depend package="hrl_common_code_darpa_m3"/>
+    <depend package="tf"/>
 
 </package>
 

@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system library
-import time, sys
+import time
 import datetime
 
 # ROS library
@@ -40,41 +40,38 @@ roslib.load_manifest('hrl_manipulation_task')
 from hrl_srvs.srv import String_String
 import hrl_lib.util as ut
 
+from hrl_manipulation_task.record_data import logger
+
 if __name__ == '__main__':
 
-    rospy.init_node('feed_client')
+    rospy.init_node('push_client')
 
-    rospy.wait_for_service("/arm_reach_enable")
-    armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    ## armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+    rospy.wait_for_service("/right/arm_reach_enable")
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     
-    ## Scooping -----------------------------------    
-    print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping")
-    print armReachActionRight("initScooping")
+    log = logger(ft=False, audio=False, kinematics=True, vision=False, pps=False, \
+                 subject="gatsbii", task='pushing', verbose=False)
     
-    #ut.get_keystroke('Hit a key to proceed next')        
-    print armReachActionLeft("getBowlPos")
-    print armReachActionLeft('lookAtBowl')
-
-    print "Running scooping!"
-    print armReachActionLeft("runScooping")
-
-    ## Feeding -----------------------------------
-    #print "Initializing left arm for feeding"
-    #print armReachActionRight("initFeeding")
-    #print armReachActionLeft("initFeeding")
-
-    #print "Detect ar tag on the head"
-    #print armReachActionLeft('lookAtMouth')
-    #print armReachActionLeft("getHeadPos")
-    #ut.get_keystroke('Hit a key to proceed next')        
-
-    #print "Running feeding!"
-    #print armReachActionLeft("runFeeding")
-
     
+    ## TEST -----------------------------------    
+    # TODO: this code should be run in parallel.
+    
+    ## ## Pushing -----------------------------------
+    print "Initializing right arm for pushing"
+    print armReachActionRight("initCabinet")
+
+    ## ut.get_keystroke('Hit a key to proceed next')        
+    ## print "Start to log!"    
+    ## log.log_start()
+    
+    print "Running pushing!"    
+    print armReachActionRight("runCabinet")
+
+    ## print "Finish to log!"    
+    ## log.close_log_file()
+
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()
     ## t  = t2-t1

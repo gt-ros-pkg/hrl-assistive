@@ -1,0 +1,7 @@
+<launch>
+    
+  <rosparam command="load" file="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />
+
+  <node name="data_record" pkg="hrl_manipulation_task" type="record_data.py" output="screen" />
+
+</launch>

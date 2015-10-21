@@ -12,9 +12,19 @@
 
   <depend package="rospy"/>
   <depend package="hrl_lib"/>
+  <depend package="tf"/>
+  <depend package="tf_conversions"/>
+
+  <depend package="ar_track_alvar"/>
+  <depend package="hark_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="pr2_msgs"/>
+  <depend package="visualization_msgs"/>
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
 
   <depend package="sandbox_dpark_darpa_m3"/>
-  <depend package="sandbox_dpark_darpa_m3"/>
+  <depend package="hrl_multimodal_anomaly_detection"/>
 
 
 </package>
