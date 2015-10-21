@@ -13,35 +13,7 @@
     <depend package="rospy"/>
     <depend package="hrl_lib"/>
 
-    <depend package="modeling_forces"/>
-    <depend package="sandbox_dpark_darpa_m3"/>
-    <depend package="force_torque"/>
-    <!--depend package="hrl_cody_arms"/-->
-    <!--depend package="pr2_gripper_reactive_approach"/-->
-
-    <!--depend package="hrl_lib"/>
-    <depend package="actionlib"/>
-    <depend package="pr2_controllers_msgs"/>
     <depend package="geometry_msgs"/>"
-    <depend package="kinematics_msgs"/>
-    <depend package="arm_navigation_msgs"/>
-    <depend package="trajectory_msgs"/>
-
-    <depend package="std_msgs"/>    
-    <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
-    <depend package="hrl_haptic_manipulation_in_clutter_srvs"/>
-    <depend package="hrl_common_code_darpa_m3"/>
-    <depend package="hrl_software_simulation_darpa_m3"/>
-    <depend package="hrl_motion_planners_darpa_m3"/>
-
-    <depend package="hrl_haptic_mpc"/>
-
-    <depend package="tf"/>
-    <depend package="kdl"/>
-    <depend package="urdf_parser_py"/>
-    <depend package="pykdl_utils"/>
-    <depend package="hrl_geom"/>
-    <depend package="hrl_srvs"/-->
 
     <!-- RViZ -->
     <!--depend package="interactive_markers"/-->
