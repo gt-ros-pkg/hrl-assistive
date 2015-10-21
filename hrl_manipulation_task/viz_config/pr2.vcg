@@ -1,9 +1,9 @@
 Background\ ColorB=0
 Background\ ColorG=0
 Background\ ColorR=0
-Camera\ Config=-0.0252017 5.98186 2.36826 0.330199 0.394219 1.10475
+Camera\ Config=0.194797 4.71182 4.06239 0.477894 0.117738 -0.194588
 Camera\ Type=rviz::OrbitViewController
-Fixed\ Frame=/base_link
+Fixed\ Frame=/world
 MarkerArray.Enabled=1
 MarkerArray.Marker\ Array\ Topic=/pr2_fabric_forearm_sensor/viz/taxel_array_array
 MarkerArray.Queue\ Size=100
@@ -34,9 +34,9 @@ MarkerArray8.Queue\ Size=100
 MarkerArray9.Enabled=1
 MarkerArray9.Marker\ Array\ Topic=/pr2_pps_left_sensor/viz/taxel_array_array
 MarkerArray9.Queue\ Size=100
-Property\ Grid\ Splitter=789,78
-Property\ Grid\ State=expanded=.Global Options;splitterratio=0.573801
-QMainWindow=000000ff00000000fd000000030000000000000209000003b5fc0200000001fb000000100044006900730070006c006100790073010000001d000003b5000000ee00ffffff000000010000016500000397fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000001e00000006700fffffffb0000000a00560069006500770073000000001d0000024e000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003970000006700ffffff000000030000074200000048fc0100000001fb0000000800540069006d0065010000000000000742000002bf00ffffff00000533000003b500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+Property\ Grid\ Splitter=761,78
+Property\ Grid\ State=expanded=.Global Options,Sound Source.Enabled,Sound Source.Namespaces;splitterratio=0.573801
+QMainWindow=000000ff00000000fd00000003000000000000020900000399fc0200000001fb000000100044006900730070006c006100790073010000001d00000399000000ee00ffffff000000010000016500000397fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000001e00000006700fffffffb0000000a00560069006500770073000000001d0000024e000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003970000006700ffffff000000030000074200000048fc0100000001fb0000000800540069006d0065010000000000000742000002bf00ffffff000005330000039900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
 Robot\:\ RobotModel\ Link\ base_bellow_linkAlpha=1
 Robot\:\ RobotModel\ Link\ base_bellow_linkEnabled=1
 Robot\:\ RobotModel\ Link\ base_bellow_linkShow\ Axes=0
@@ -272,18 +272,19 @@ RobotModel.Robot\ Description=robot_description
 RobotModel.TF\ Prefix=
 RobotModel.Update\ Interval=0
 RobotModel.Visual\ Enabled=1
+Sound\ Source.Enabled=1
+Sound\ Source.Marker\ Topic=/hark/source_viz_all
+Sound\ Source.Queue\ Size=100
+Sound\ Source.basic_shapes=1
 Target\ Frame=<Fixed Frame>
 Tool\ 2D\ Nav\ GoalTopic=/move_base_simple/goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 ar_marker.Enabled=1
 ar_marker.Marker\ Topic=/visualization_marker
 ar_marker.Queue\ Size=100
-ar_marker.basic_shapes=1
-ar_points.3dpts=1
 ar_points.Enabled=1
 ar_points.Marker\ Topic=/ARmarker_points
 ar_points.Queue\ Size=100
-ar_points.arrow=1
 bowl_pose.Axes\ Length=0.1
 bowl_pose.Axes\ Radius=0.01
 bowl_pose.Enabled=1
@@ -344,6 +345,9 @@ Name=mouth_pose
 [Display18]
 ClassName=rviz::PoseDisplay
 Name=bowl_pose
+[Display19]
+ClassName=rviz::MarkerDisplay
+Name=Sound Source
 [Display2]
 ClassName=rviz::MarkerArrayDisplay
 Name=MarkerArray2
@@ -369,7 +373,7 @@ Name=MarkerArray8
 ClassName=rviz::MarkerArrayDisplay
 Name=MarkerArray9
 [Window]
-Height=1092
+Height=1064
 Width=1874
 X=1727
-Y=-28
+Y=0

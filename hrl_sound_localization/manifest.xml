@@ -14,6 +14,7 @@
     <depend package="std_msgs"/>
     <depend package="hark_msgs"/>
     <depend package="hrl_common_code_darpa_m3"/>
+    <depend package="tf"/>
 
 </package>
 

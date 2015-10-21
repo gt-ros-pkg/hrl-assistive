@@ -30,6 +30,8 @@
 import numpy as np, math
 import roslib
 import rospy
+roslib.load_manifest('hrl_sound_localization')
+
 import threading
 import pylab
 
