@@ -42,6 +42,7 @@ import PyKDL
 import tf
 from std_msgs.msg import Bool, Empty, Int32, Int64, Float32, Float64, String
 from hark_msgs.msg import HarkSource, HarkSrcFFT, HarkSrcFeature
+from pr2_controllers_msgs.msg import JointTrajectoryControllerState
 
 class kinect_audio(threading.Thread):
     CHUNK   = 512 # frame per buffer
@@ -60,6 +61,7 @@ class kinect_audio(threading.Thread):
         self.azimuth = None
         self.feature = None
         self.recog_cmd = None
+        self.head_joints = None
         
         # Declare containers
         self.time_data = []
@@ -67,13 +69,14 @@ class kinect_audio(threading.Thread):
         self.audio_power   = []
         self.audio_azimuth = []
         self.audio_cmd     = []
+        self.audio_head_joints = None
         
         self.src_feature_lock = threading.RLock()
         self.recog_cmd_lock = threading.RLock()
+        self.head_state_lock = threading.RLock()
         
         self.initParams()
         self.initComms()
-        self.getHeadFrame()
 
         if self.verbose: print "Kinect Audio>> initialization complete"
         
@@ -86,20 +89,15 @@ class kinect_audio(threading.Thread):
                          self.harkSrcFeatureCallback)
         rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
 
-        # tf
-        try:
-            self.tf_lstnr = tf.TransformListener()
-        except rospy.ServiceException, e:
-            rospy.loginfo("ServiceException caught while instantiating a TF listener. Seems to be normal")
-            pass
-              
+        rospy.Subscriber('/head_traj_controller/state', JointTrajectoryControllerState, self.headStateCallback)
+        
 
     def initParams(self):
         '''
         Get parameters
         '''
         self.torso_frame = 'torso_lift_link'
-        self.head_frame = rospy.get_param('/hrl_manipulation_task/head_audio_frame')
+        ## self.head_frame = rospy.get_param('/hrl_manipulation_task/head_audio_frame')
         
 
     def harkSrcFeatureCallback(self, msg):
@@ -142,41 +140,49 @@ class kinect_audio(threading.Thread):
             self.recog_cmd = msg.data
 
 
+    def headStateCallback(self, msg):
+        with self.head_state_lock:
+            self.head_joints = msg.actual.positions
+
     def getHeadFrame(self):
 
-        try:
-            self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
-                                           rospy.Duration(5.0))
-        except:
-            self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
-                                           rospy.Duration(5.0))
+        self.base_azimuth = self.head_joints[0] * 180.0/np.pi
+        
+        ## try:
+        ##     self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
+        ##                                    rospy.Duration(5.0))
+        ## except:
+        ##     self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
+        ##                                    rospy.Duration(5.0))
                                            
-        [self.head_pos, self.head_orient_quat] = \
-          self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
+        ## [self.head_pos, self.head_orient_quat] = \
+        ##   self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
 
 
-        rot = PyKDL.Rotation.Quaternion(self.head_orient_quat[0], 
-                                        self.head_orient_quat[1], 
-                                        self.head_orient_quat[2], 
-                                        self.head_orient_quat[3])        
+        ## rot = PyKDL.Rotation.Quaternion(self.head_orient_quat[0], 
+        ##                                 self.head_orient_quat[1], 
+        ##                                 self.head_orient_quat[2], 
+        ##                                 self.head_orient_quat[3])        
 
-        cur_x   = rot.UnitX()
-        x = PyKDL.Vector(1.0, 0.0, 0.0)
-        y = PyKDL.Vector(0.0, 1.0, 0.0)
+        ## cur_x   = rot.UnitX()
+        ## x = PyKDL.Vector(1.0, 0.0, 0.0)
+        ## y = PyKDL.Vector(0.0, 1.0, 0.0)
         
-        head_dir = PyKDL.Vector(PyKDL.dot(cur_x,x), PyKDL.dot(cur_x,y), 0.0)
-        head_dir.Normalize()
+        ## head_dir = PyKDL.Vector(PyKDL.dot(cur_x,x), PyKDL.dot(cur_x,y), 0.0)
+        ## head_dir.Normalize()
 
-        if (head_dir * x).z() > 0.0: sign = -1.0
-        else: sign = 1.0
+        ## if (head_dir * x).z() > 0.0: sign = -1.0
+        ## else: sign = 1.0
         
-        self.base_azimuth = np.arccos(PyKDL.dot(head_dir, x)) * sign * 180.0/np.pi
+        ## self.base_azimuth = np.arccos(PyKDL.dot(head_dir, x)) * sign * 180.0/np.pi
         if self.verbose: print "Computed head azimuth: ", self.base_azimuth
 
             
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
+        self.getHeadFrame()
+        
         while not self.cancelled:
             if self.isReset:
                 self.time_data.append(rospy.get_time() - self.init_time)
@@ -186,6 +192,7 @@ class kinect_audio(threading.Thread):
                     else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
                     self.audio_power.append(self.power)
                     self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+                    self.audio_head_joints = self.head_joints
 
                 with self.recog_cmd_lock:                    
                     self.audio_cmd.append(self.recog_cmd)
@@ -207,13 +214,14 @@ class kinect_audio(threading.Thread):
         self.audio_power   = []        
         self.audio_azimuth = []
         self.audio_cmd     = []
+        self.audio_head_joints = None
         
         self.isReset = True
 
         
     def isReady(self):
         if self.azimuth is not None and self.power is not None and \
-          self.feature is not None:
+          self.feature is not None and self.head_joints is not None:
           return True
         else:
           return False

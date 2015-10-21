@@ -124,11 +124,12 @@ class logger:
 
         if self.audio is not None:
             self.audio.cancel()            
-            data['audio_time']  = self.audio.time_data
-            data['audio_feature']  = self.audio.audio_feature
-            data['audio_power'] = self.audio.audio_power
-            data['audio_azimuth']  = self.audio.audio_azimuth
-            data['audio_cmd']  = self.audio.audio_cmd
+            data['audio_time']        = self.audio.time_data
+            data['audio_feature']     = self.audio.audio_feature
+            data['audio_power']       = self.audio.audio_power
+            data['audio_azimuth']     = self.audio.audio_azimuth
+            data['audio_head_joints'] = self.audio.audio_head_joints
+            data['audio_cmd']         = self.audio.audio_cmd
 
         if self.kinematics is not None:
             self.kinematics.cancel()
@@ -157,41 +158,40 @@ class logger:
             data['pps_skin_left']  = self.pps_skin.pps_skin_left
             data['pps_skin_right'] = self.pps_skin.pps_skin_right
             
-        flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: exit): ')
+        flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
         if flag == '1':   status = 'success'
         elif flag == '2': status = 'failure'
-        elif flag == '3': sys.exit(0)
+        elif flag == '3': status = 'skip'
         else: status = flag
 
-        if status == 'failure':
-            failure_class = raw_input('Enter failure reason if there is: ')
-                
-        if not os.path.exists(self.folderName): os.makedirs(self.folderName)
+        if status == 'success' or status == 'failure':
+            if status == 'failure':
+                failure_class = raw_input('Enter failure reason if there is: ')
 
-        # get next file id
-        if status == 'success':
-            fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)[0]
-        else:
-            fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)[1]
-        test_id = -1
-        if len(fileList)>0:
-            for f in fileList:            
-                if test_id < int((os.path.split(f)[1]).split('_')[1]):
-                    test_id = int((os.path.split(f)[1]).split('_')[1])
+            if not os.path.exists(self.folderName): os.makedirs(self.folderName)
 
-        if status == 'failure':        
-            fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
-        else:
-            fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
+            # get next file id
+            if status == 'success':
+                fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)[0]
+            else:
+                fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)[1]
+            test_id = -1
+            if len(fileList)>0:
+                for f in fileList:            
+                    if test_id < int((os.path.split(f)[1]).split('_')[1]):
+                        test_id = int((os.path.split(f)[1]).split('_')[1])
 
-        print 'Saving to', fileName
-        ut.save_pickle(data, fileName)
+            if status == 'failure':        
+                fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
+            else:
+                fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
+
+            print 'Saving to', fileName
+            ut.save_pickle(data, fileName)
 
         # Reinitialize all sensors
-        ## if self.ft is not None:
-        ##     self.ft = tool_ft('/netft_data')
         if self.audio is not None: self.audio = kinect_audio()
-        if self.kinematics is not None: self.kinematics.initVars() # = robot_kinematics()
+        if self.kinematics is not None: self.kinematics = robot_kinematics() #.initVars() #
         if self.ft is not None: self.ft = tool_ft()
         if self.vision is not None: self.vision = artag_vision()
         if self.pps_skin is not None: self.pps_skin = pps_skin()

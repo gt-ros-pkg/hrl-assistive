@@ -104,7 +104,6 @@ class robot_kinematics(threading.Thread):
             self.tf_lstnr = tf.TransformListener()
         except rospy.ServiceException, e:
             rospy.loginfo("ServiceException caught while instantiating a TF listener. Seems to be normal")
-            pass
 
         rospy.Subscriber('joint_states', JointState, self.joint_states_callback)
 

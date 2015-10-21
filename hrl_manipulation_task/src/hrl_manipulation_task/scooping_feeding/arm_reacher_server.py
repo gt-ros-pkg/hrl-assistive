@@ -35,10 +35,11 @@ import numpy as np
 # ROS
 import rospy, roslib
 roslib.load_manifest('hrl_manipulation_task')
-import tf
 import PyKDL
-from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import String
+import pr2_controllers_msgs.msg
+import actionlib
 
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
@@ -61,6 +62,8 @@ class armReachAction(mpcBaseAction):
 
         self.bowl_frame_kinect  = None
         self.mouth_frame_kinect = None
+        self.bowl_frame         = None
+        self.mouth_frame        = None
         self.default_frame      = PyKDL.Frame()
 
         self.initCommsForArmReach()                            
@@ -141,17 +144,18 @@ class armReachAction(mpcBaseAction):
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[0.936, -0.139, 0.962, -2.122, 0.725, -0.435, 0.367]', 10.0] ] 
+          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0] ] 
         self.motions['initScooping']['right'] = \
-          [['MOVEJ', '[-0.87, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0],
+          [['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
+           ['MOVES', '[0.6, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
            ['PAUSE', 2.0]]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.0, -0.1, 0, 0, 0]', 10., 'self.bowl_frame'],
-           ['MOVES', '[-0.05, 0.0, 0., 0, 0, 0]', 10., 'self.bowl_frame'],
-           ['MOVES', '[ 0.0, 0.0, 0., 0, 0.785, 0]', 10., 'self.bowl_frame'],
-           ['MOVES', '[ 0.0, 0.0, -0.1, 0, 1.2, 0]', 10., 'self.bowl_frame'] ]
+          [['MOVES', '[-0.06, 0.0, -0.1, 0, 0.7, 0]', 5, 'self.bowl_frame'],
+           ['MOVES', '[-0.06, 0.0,  0.04, 0, 0.7, 0]', 5, 'self.bowl_frame'],
+           ['MOVES', '[ 0.02, 0.0,  0.04, 0, 1.2, 0]', 5, 'self.bowl_frame'],
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 5, 'self.bowl_frame'] ]
         self.motions['runScooping']['right'] = \
           []
         
@@ -168,43 +172,44 @@ class armReachAction(mpcBaseAction):
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
           [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
-           ['MOVES', '[0.0, 0.0, -0.03, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['MOVES', '[0.0, 0.0, -0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
            ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
         self.motions['runFeeding']['right'] = \
           []
           
         rospy.loginfo("Parameters are loaded.")
-                
-        
+
     def serverCallback(self, req):
         req = req.data
         self.stop_motion = False
 
         if req == "getBowlPos":
             if self.bowl_frame_kinect is not None:
-                self.bowl_frame = self.bowl_frame_kinect
+                self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)
                 return "Chose kinect bowl position"
             elif self.bowl_frame_kinect is None:
-                self.bowl_frame = self.getBowlFrame()
+                self.bowl_frame = copy.deepcopy(self.getBowlFrame())
                 return "Chose bowl position from kinematics using tf"                
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
         elif req == "getHeadPos":
             if self.mouth_frame_kinect is not None:
-                self.mouth_frame = self.mouth_frame_kinect
+                self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
                 return "Chose kinect head position"
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
+        elif req == "lookAtBowl":
+            self.lookAt(self.bowl_frame)
+            return "Completed to move head"
+        elif req == "lookAtMouth":
+            self.lookAt(self.mouth_frame, tag_base='head')                            
+            return "Completed to move head"
         else:
             self.parsingMovements(self.motions[req][self.arm])
             return "Completed to execute "+req 
-
-        ## else:
-        ##     return "Request not understood by server!!!"
-
         
                 
     def bowlPoseCallback(self, data):
@@ -287,7 +292,7 @@ class armReachAction(mpcBaseAction):
 
         # 2. add offset to called TF value. Make sure Orientation is up right. 
         ## Off set : 11 cm x direction, - 5 cm z direction. 
-        p = p + M*PyKDL.Vector(0.11, 0, 0.05)
+        p = p + M*PyKDL.Vector(0.11, 0, 0.04)
         M.DoRotZ(np.pi/2.0)        
         ## RPY(np.pi, -np.py, 0.0)
 
@@ -307,6 +312,62 @@ class armReachAction(mpcBaseAction):
         
         return PyKDL.Frame(M,p)  
 
+    def lookAt(self, target, tag_base='head'):
+
+        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')        
+        headClient = actionlib.SimpleActionClient("/head_traj_controller/point_head_action", \
+                                                  pr2_controllers_msgs.msg.PointHeadAction)
+        headClient.wait_for_server()
+        rospy.logout('Connected to head control server')
+
+        pos = Point()
+        
+        ps  = PointStamped()
+        ps.header.frame_id = self.torso_frame
+        
+        head_goal_msg = pr2_controllers_msgs.msg.PointHeadGoal()
+        head_goal_msg.pointing_frame = head_frame
+        head_goal_msg.pointing_axis.x = 1
+        head_goal_msg.pointing_axis.y = 0
+        head_goal_msg.pointing_axis.z = 0
+        head_goal_msg.min_duration = rospy.Duration(1.0)
+        head_goal_msg.max_velocity = 1.0;
+        
+        if target is None:
+            ## tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')        
+
+            while not rospy.is_shutdown() and self.mouth_frame_kinect is None:
+                rospy.loginfo("Search "+tag_base+" tag")
+             
+                pos.x = 0.8
+                pos.y = 0.4
+                pos.z = 0.0
+
+                ps.point = pos
+                head_goal_msg.target = ps
+
+                headClient.send_goal(head_goal_msg)
+                headClient.wait_for_result()
+                rospy.sleep(2.0)
+            
+            self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
+            target = self.mouth_frame
+
+                   
+        pos.x = target.p.x()
+        pos.y = target.p.y()
+        pos.z = target.p.z()
+                                        
+        ps.point = pos
+        head_goal_msg.target = ps
+        
+        headClient.send_goal(head_goal_msg)
+        headClient.wait_for_result()
+        rospy.sleep(1.0)
+
+        return "Success"
+        
+    
 
 if __name__ == '__main__':
 
@@ -320,8 +381,8 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
-    if opt.arm == 'l': verbose = True
-    else: verbose = False
+    if opt.arm == 'l': verbose = False
+    else: verbose = True
         
 
     rospy.init_node('arm_reacher_feeding_and_scooping')

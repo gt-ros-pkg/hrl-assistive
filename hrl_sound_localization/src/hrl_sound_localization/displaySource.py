@@ -29,6 +29,8 @@
 
 import numpy as np, math
 import roslib
+roslib.load_manifest('hrl_sound_localization')
+
 import rospy
 roslib.load_manifest('hrl_sound_localization')
 
@@ -113,6 +115,7 @@ class displaySource():
 
         self.initComms()
         ## self.initParams()
+        print "Initialized display source class"
 
 
     def initComms(self):
@@ -151,8 +154,8 @@ class displaySource():
             self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
                                            rospy.Duration(5.0))
                                            
-        [self.head_pos, self.head_orient_quat] = \
-          self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
+            [self.head_pos, self.head_orient_quat] = \
+              self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
 
         
     def harkSrcInfoAllCallback(self, msg):
@@ -301,8 +304,8 @@ class displaySource():
                                          [0.1, 0.1, 0.1],
                                          self.src_color_all, 
                                          start_id+i,
-                                         self.source_viz_all.Marker.SPHERE,
-                                         action=2)
+                                         self.source_viz_all.Marker.SPHERE)
+                                         ## action=2)
             
         self.src_info_all_lock.acquire()
         for i in xrange(self.exist_info_num_all):
@@ -556,7 +559,7 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
 
-    enable_info_all = False
+    enable_info_all = True
     enable_info_cen = False
     enable_fft_cen  = False
     enable_feature_cen  = True

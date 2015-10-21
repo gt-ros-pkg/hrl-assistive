@@ -20,10 +20,11 @@ hrl_manipulation_task:
     - l_wrist_roll_joint
 
   # For visual perception
-  artag_id: 10
-  artag_length: 0.053
-  artag_max_id: 18
-  artag_total_tags: 1
-  artag_buf_size: 10
+  head:
+    artag_id: 10
+    artag_length: 0.053
+    artag_max_id: 18
+    artag_total_tags: 1
+    artag_buf_size: 10
   
   

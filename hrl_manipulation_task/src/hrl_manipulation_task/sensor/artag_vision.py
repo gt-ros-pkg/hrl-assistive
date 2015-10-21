@@ -85,11 +85,11 @@ class artag_vision(threading.Thread):
         '''
         Get parameters
         '''
-        self.tag_id         = rospy.get_param('hrl_manipulation_task/artag_id')
-        self.tag_length     = rospy.get_param('hrl_manipulation_task/artag_length')
-        self.tag_max_id     = rospy.get_param('hrl_manipulation_task/artag_max_id')
-        self.tag_total_tags = rospy.get_param('hrl_manipulation_task/artag_total_tags')
-        self.tag_buf_size  = rospy.get_param('hrl_manipulation_task/artag_buf_size')
+        self.tag_id         = rospy.get_param('hrl_manipulation_task/head/artag_id')
+        self.tag_length     = rospy.get_param('hrl_manipulation_task/head/artag_length')
+        self.tag_max_id     = rospy.get_param('hrl_manipulation_task/head/artag_max_id')
+        self.tag_total_tags = rospy.get_param('hrl_manipulation_task/head/artag_total_tags')
+        self.tag_buf_size   = rospy.get_param('hrl_manipulation_task/head/artag_buf_size')
 
         self.pos_buf  = cb.CircularBuffer(self.tag_buf_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.tag_buf_size, (4,))               
