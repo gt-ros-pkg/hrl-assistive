@@ -171,9 +171,9 @@ class armReachAction(mpcBaseAction):
 
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = \
-          [['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
-           ['MOVES', '[0.0, 0.0, -0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
-           ['MOVES', '[0.0, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
+          [['MOVES', '[0.0, -0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
+           ['MOVES', '[0.0, -0.02, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['MOVES', '[0.0, -0.02, -0.06, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
         self.motions['runFeeding']['right'] = \
           []
