@@ -38,7 +38,11 @@ import os, sys, copy
 import numpy as np
 import hrl_lib.util as ut
 from hrl_multimodal_anomaly_detection.hmm import util
+import PyKDL
+
+# visualization
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 class data_viz:
@@ -57,6 +61,25 @@ class data_viz:
         '''        
         self.record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
+
+    def setSpatialRF(self, cur_pos, goal_pos, r):
+
+        pos /= np.linalg.norm(pos)
+        
+        ang_cur    = np.arccos(cur_pos[1]) - np.pi/2.0
+        ang_goal   = np.arccos(goal_pos[1]) - np.pi/2.0
+        
+        ang_margin = 10.0
+
+        self.ang_min = None
+        self.ang_max = None
+        
+        if ang_goal > ang_cur: ang_max = ang_goal + ang_margin
+        else: ang_max = ang_cur + ang_margin
+
+        if ang_goal > ang_cur: ang_min = ang_goal - ang_margin
+        else: ang_min = ang_cur - ang_margin
+        
         
     def audio_test(self):
         
@@ -65,7 +88,6 @@ class data_viz:
         for fileName in failure_list:
             d = ut.load_pickle(fileName)
             print d.keys()
-
 
             time_max = np.amax(d['audio_time'])
             time_min = np.amin(d['audio_time'])
@@ -129,6 +151,96 @@ class data_viz:
 
             fig = plt.figure()            
 
+
+    def kinematics_test(self):
+        
+        success_list, failure_list = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
+
+        for fileName in failure_list:
+            d = ut.load_pickle(fileName)
+            print d.keys()
+
+
+            time_max = np.amax(d['kinematics_time'])
+            time_min = np.amin(d['kinematics_time'])
+
+            ee_pos   = d['kinematics_ee_pos']
+            x_max = np.amax(ee_pos[0,:])
+            x_min = np.amin(ee_pos[0,:])
+
+            y_max = np.amax(ee_pos[1,:])
+            y_min = np.amin(ee_pos[1,:])
+
+            z_max = np.amax(ee_pos[2,:])
+            z_min = np.amin(ee_pos[2,:])
+            
+            fig = plt.figure()            
+            ax  = fig.add_subplot(111, projection='3d')
+            ax.plot(ee_pos[0,:], ee_pos[1,:], ee_pos[2,:])
+            
+            plt.show()
+
+        # ------------------------------------------------------------
+        ## from sklearn.decomposition import PCA
+        ## pca = PCA(n_components=2)
+        ## res = pca.fit_transform(ee_pos.T)    
+        
+        ## fig = plt.figure()            
+        ## plt.plot(res[:,0], res[:,1])
+        ## plt.show()
+
+
+        
+    def reduce_cart(self):
+
+        x_range       = np.arange(0.4, 0.9, 0.1)
+        z_range       = np.arange(-0.4, 0.1, 0.1)
+        azimuth_range = np.arange(-90., 90., 2.) * np.pi / 180.0
+
+        cart_range = None
+        for ang in azimuth_range:
+            for x in x_range:
+                M     = PyKDL.Rotation.RPY(0,0,ang)
+                x_pos = PyKDL.Vector(x, 0., 0.)
+                new_x_pos = M*x_pos
+                new_x = np.array([[new_x_pos[0], new_x_pos[1], new_x_pos[2] ]]).T
+
+                if cart_range is None:
+                    cart_range = new_x
+                else:
+                    cart_range = np.hstack([cart_range, new_x])
+
+    
+        for h in z_range:
+            if h == 0.0: continue
+            cart_range = np.hstack([cart_range, cart_range+np.array([[0,0,h]]).T ])
+
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=2)
+        reduced_cart = pca.fit_transform(cart_range.T)
+        
+        traj1 = np.vstack([ np.arange(0.4, 0.9, 0.1), np.zeros((5)), np.zeros((5)) ]).T
+        reduced_traj1 = pca.transform(traj1)
+        traj2 = np.vstack([ np.arange(0.4, 0.9, 0.1)+0.11, np.zeros((5)), np.zeros((5))-0.1 ]).T
+        reduced_traj2 = pca.transform(traj2)
+        
+        
+        fig = plt.figure()            
+        ax1 = fig.add_subplot(211, projection='3d')
+        ax1.scatter(cart_range[0,:], cart_range[1,:], cart_range[2,:])
+
+        ax1.set_xlabel('X')
+        ax1.set_ylabel('Y')
+        ax1.set_zlabel('Z')
+
+        print traj1.shape, reduced_traj1.shape 
+        
+        ax2 = fig.add_subplot(212, projection='3d')
+        ## ax2.plot(reduced_traj1[:,0],reduced_traj1[:,1],'r')
+        ax2.plot(reduced_traj2[:,0],reduced_traj2[:,1],'b')
+        ## ax2.plot(reduced_cart,'b')
+        
+        plt.show()
             
 
 if __name__ == '__main__':
@@ -141,4 +253,5 @@ if __name__ == '__main__':
 
     l = data_viz(subject, task, verbose=verbose)
     ## l.audio_test()
-    l.ft_test()
+    ## l.kinematics_test()
+    ## l.reduce_cart()
