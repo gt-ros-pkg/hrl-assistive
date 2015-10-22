@@ -169,14 +169,17 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding']['right'] = \
           [['MOVEJ', '[-1.57, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0]]
 
-        self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = \
+        self.motions['runFeeding1'] = {}
+        self.motions['runFeeding1']['left'] = \
           [['MOVES', '[0.0, -0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
-           ['MOVES', '[0.0, -0.02, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['PAUSE', 2.0] 
+           ]
+
+        self.motions['runFeeding2'] = {}
+        self.motions['runFeeding2']['left'] = \
+          [['MOVES', '[0.0, -0.02, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
            ['MOVES', '[0.0, -0.02, -0.06, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
-        self.motions['runFeeding']['right'] = \
-          []
           
         rospy.loginfo("Parameters are loaded.")
 

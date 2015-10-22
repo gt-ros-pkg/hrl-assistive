@@ -28,56 +28,52 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
-# system library
-import time, sys
-import datetime
+# system
+import rospy
+import roslib
+roslib.load_manifest('hrl_anomaly_detection')
+import os, sys, copy
 
-# ROS library
-import rospy, roslib
-roslib.load_manifest('hrl_manipulation_task')
-
-# HRL library
-from hrl_srvs.srv import String_String
+# util
+import numpy as np
 import hrl_lib.util as ut
 
-if __name__ == '__main__':
+from scipy import interpolate
 
-    rospy.init_node('feed_client')
 
-    rospy.wait_for_service("/arm_reach_enable")
-    armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
-    armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False):
 
-    
-    ## Scooping -----------------------------------    
-    print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping")
-    print armReachActionRight("initScooping")
-    
-    #ut.get_keystroke('Hit a key to proceed next')        
-    print armReachActionLeft("getBowlPos")
-    print armReachActionLeft('lookAtBowl')
+    for idx, fileName in enumerate(fileNames):
+        if os.path.isdir(fileName):
+            continue
 
-    print "Running scooping!"
-    print armReachActionLeft("runScooping")
+        # sound
+        audio_time    = d['audio_time']
+        audio_azimuth = d['audio_azimuth']
+        audio_power   = d['audio_power']
 
-    ## Feeding -----------------------------------
-    print "Initializing left arm for feeding"
-    print armReachActionRight("initFeeding")
-    print armReachActionLeft("initFeeding")
+        # kinematics
+        kin_time = d['kinematics_time']
+        kin_pos  = d['kinematics_ee_pos'] # 3xN
 
-    print "Detect ar tag on the head"
-    print armReachActionLeft('lookAtMouth')
-    print armReachActionLeft("getHeadPos")
-    ut.get_keystroke('Hit a key to proceed next')        
+        # ft
+        ft_time        = d['ft_time']
+        ft_force_array = d['ft_force']
 
-    print "Running feeding!"
-    print armReachActionLeft("runFeeding1")
-    print armReachActionLeft("runFeeding2")
+        # vision
+        vision_time = d['vision_time']
+        vision_pos  = d['vision_pos']
+        vision_quat = d['vision_quat']
 
-    
-    ## t1 = datetime.datetime.now()
-    ## t2 = datetime.datetime.now()
-    ## t  = t2-t1
-    ## print "time delay: ", t.seconds
+        # pps
+        pps_skin_time  = d['pps_skin_time']
+        pps_skin_left  = d['pps_skin_left']
+        pps_skin_right = d['pps_skin_right']
+
+        
+        newTimes = np.linspace(0.01, audio_time[-1], downSampleSize)
+
+        forceInterp = interpolate.splrep(forceTimes, forces, s=0)
+                
+        
     

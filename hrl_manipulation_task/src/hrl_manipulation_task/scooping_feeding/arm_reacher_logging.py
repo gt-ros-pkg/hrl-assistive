@@ -80,11 +80,14 @@ def feeding(armReachActionLeft, armReachActionRight, log):
     print armReachActionLeft("getHeadPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 
+    print "Running feeding1"    
+    print armReachActionLeft("runFeeding1")
+    
     print "Start to log!"    
     log.log_start()
     
-    print "Running feeding!"
-    print armReachActionLeft("runFeeding")
+    print "Running feeding2"    
+    print armReachActionLeft("runFeeding2")
 
     print "Finish to log!"    
     log.close_log_file()
