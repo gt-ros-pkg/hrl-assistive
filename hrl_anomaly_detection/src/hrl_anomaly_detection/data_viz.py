@@ -39,6 +39,7 @@ import numpy as np
 import hrl_lib.util as ut
 import util
 import PyKDL
+import hrl_lib.quaternion as qt
 
 # visualization
 import matplotlib.pyplot as plt
@@ -137,8 +138,16 @@ class data_viz:
             audioPower   = d['audioPowerList'][idx]
             kinEEPos     = d['kinEEPosList'][idx]
             kinEEQuat    = d['kinEEQuatList'][idx]
+            
+            kinEEPos     = d['kinEEPosList'][idx]
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            
             ftForce      = d['ftForceList'][idx]
 
+            kinTargetPos  = d['kinTargetPosList'][idx]
+            kinTargetQuat = d['kinTargetQuatList'][idx]
+
+            
             # Unimoda feature - Audio --------------------------------------------
             unimodal_audioPower = []
             for time_idx in xrange(len(timeList)):
@@ -161,13 +170,18 @@ class data_viz:
             ## self.ft_disp(timeList, ftForce, ftForceLocal)
             
             # Crossmodal feature - relative dist, angle --------------------------
-            crossmodal_relativeDist = []
+            crossmodal_relativeDist = [ np.linalg.norm(kinTargetPos - kinEEPos, axis=0) ]
+            crossmodal_relativeAng = []
             for time_idx in xrange(len(timeList)):
+
+                startQuat = kinEEQuat[:,time_idx]
+                endQuat   = kinTargetQuat[:,time_idx]
                 
+                diff_ang = qt.quat_angle(startQuat, endQuat)
+                crossmodal_relativeAng.append( abs(diff_ang) )
             
             
-            
-            
+            self.relativeFeature_disp(timeList, crossmodal_relativeDist, crossmodal_relativeAng)
             
                     
             
@@ -251,6 +265,17 @@ class data_viz:
         
         plt.show()
 
+
+    def relativeFeature_disp(self, timeList, relativeDist, relativeAng):
+
+        fig = plt.figure()            
+        ax1 = fig.add_subplot(211)
+        ax1.plot(timeList, relativeDist)        
+        ax2 = fig.add_subplot(212)
+        ax2.plot(timeList, relativeAng)
+        plt.show()        
+        
+        
         
     def audio_test(self):
         

@@ -50,6 +50,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     data_dict['kinEEPosList']     = []
     data_dict['kinEEQuatList']    = []
     data_dict['ftForceList']      = []
+    data_dict['kinTargetPosList']  = []
+    data_dict['kinTargetQuatList'] = []
     
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
@@ -79,12 +81,20 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             kin_time = d['kinematics_time']
             kin_ee_pos  = d['kinematics_ee_pos'] # 3xN
             kin_ee_quat = d['kinematics_ee_quat'] # ?xN
+            kin_target_pos  = d['kinematics_target_pos']
+            kin_target_quat = d['kinematics_target_quat']
 
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
 
             ee_quat_array = interpolationQuatData(kin_time, kin_ee_quat, new_times)
             data_dict['kinEEQuatList'].append(ee_quat_array)                                         
+
+            target_pos_array = interpolationData(kin_time, kin_target_pos, new_times)
+            data_dict['kinTargetPosList'].append(target_pos_array)                                         
+
+            target_quat_array = interpolationQuatData(kin_time, kin_target_quat, new_times)
+            data_dict['kinTargetQuatList'].append(target_quat_array)                                         
             
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():

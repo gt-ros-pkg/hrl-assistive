@@ -139,7 +139,9 @@ class logger:
             data['kinematics_jnt_pos'] = self.kinematics.kinematics_jnt_pos
             data['kinematics_jnt_vel'] = self.kinematics.kinematics_jnt_vel
             data['kinematics_jnt_eff'] = self.kinematics.kinematics_jnt_eff
-
+            data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
+            data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat
+            
         if self.ft is not None:
             self.ft.cancel()
             data['ft_time']   = self.ft.time_data

@@ -295,9 +295,13 @@ class armReachAction(mpcBaseAction):
 
         # 2. add offset to called TF value. Make sure Orientation is up right. 
         ## Off set : 11 cm x direction, - 5 cm z direction. 
-        p = p + M*PyKDL.Vector(0.11, 0, 0.04)
-        M.DoRotZ(np.pi/2.0)        
-        ## RPY(np.pi, -np.py, 0.0)
+        pos_offset  = rospy.get_param('hrl_manipulation_task/target_pos_offset')        
+        orient_offset = rospy.get_param('hrl_manipulation_task/target_orient_offset')        
+        
+        p = p + M*PyKDL.Vector(pos_offset['x'], pos_offset['y'], pos_offset['z'])
+        M.DoRotX(orient_offset['rx'])
+        M.DoRotY(orient_offset['ry'])
+        M.DoRotZ(orient_offset['rz'])        
 
         # 4. (optional) publish pose for visualization
         ps = PoseStamped()
