@@ -83,8 +83,8 @@ class robot_kinematics(threading.Thread):
             self.kinematics_jnt_pos = None
             self.kinematics_jnt_vel = None
             self.kinematics_jnt_eff = None
-            self.Kinematics_target_pos = None
-            self.Kinematics_target_quat = None
+            self.kinematics_target_pos = None
+            self.kinematics_target_quat = None
             
     def initParams(self):
         '''
@@ -232,8 +232,8 @@ class robot_kinematics(threading.Thread):
                     self.kinematics_jnt_vel = np.zeros((len(jnt_vel),1))
                     self.kinematics_jnt_eff = jnt_eff
 
-                    self.Kinematics_target_pos  = target_pos
-                    self.Kinematics_target_quat = target_quat
+                    self.kinematics_target_pos  = target_pos
+                    self.kinematics_target_quat = target_quat
                     
                 else:
                     self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, ee_pos])
@@ -242,8 +242,8 @@ class robot_kinematics(threading.Thread):
                     self.kinematics_jnt_pos = np.hstack([self.kinematics_jnt_pos, jnt_pos])
                     self.kinematics_jnt_eff = np.hstack([self.kinematics_jnt_eff, jnt_eff])
 
-                    self.Kinematics_target_pos = np.hstack([self.Kinematics_target_pos, target_pos])
-                    self.Kinematics_target_quat= np.hstack([self.Kinematics_target_quat, target_quat])
+                    self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, target_pos])
+                    self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, target_quat])
                     
                 self.lock.release()
                 
@@ -265,8 +265,8 @@ class robot_kinematics(threading.Thread):
         self.kinematics_jnt_pos = None
         self.kinematics_jnt_vel = None
         self.kinematics_jnt_eff = None
-        self.Kinematics_target_pos = None
-        self.Kinematics_target_quat = None
+        self.kinematics_target_pos = None
+        self.kinematics_target_quat = None
 
         self.counter = 0
         self.counter_prev = 0

@@ -199,6 +199,7 @@ class logger:
         if self.pps_skin is not None: self.pps_skin = pps_skin()
 
         gc.collect()
+        rospy.sleep(1.0)
 
 
     def waitForReady(self):
