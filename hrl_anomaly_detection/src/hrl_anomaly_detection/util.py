@@ -75,7 +75,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
 
             interp = interpolate.splrep(audio_time, audio_power, s=0)
             data_dict['audioPowerList'].append(interpolate.splev(new_times, interp, der=0))
-
+            
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time = d['kinematics_time']
@@ -95,7 +95,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
 
             target_quat_array = interpolationQuatData(kin_time, kin_target_quat, new_times)
             data_dict['kinTargetQuatList'].append(target_quat_array)                                         
-            
+                        
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time        = d['ft_time']
@@ -123,7 +123,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
         
                 
     ## if isTrainingData:
-        
     return data_dict
         
     
@@ -172,12 +171,14 @@ def interpolationData(time_array, data_array, new_time_array):
     from scipy import interpolate
 
     n,m = np.shape(data_array)
+    if len(time_array) > m:
+        time_array = time_array[0:m]
 
     new_data_array = None    
     for i in xrange(n):
         interp = interpolate.splrep(time_array, data_array[i], s=0)
         interp_data = interpolate.splev(new_time_array, interp, der=0)
-
+        
         if new_data_array is None:
             new_data_array = interp_data
         else:
@@ -194,7 +195,9 @@ def interpolationQuatData(time_array, data_array, new_time_array):
     from scipy import interpolate
 
     n,m = np.shape(data_array)
-
+    if len(time_array) > m:
+        time_array = time_array[0:m]
+    
     new_data_array = None    
     
     if len(time_array) > len(new_time_array)*2.0:
@@ -205,13 +208,14 @@ def interpolationQuatData(time_array, data_array, new_time_array):
         idx_list = np.linspace(0, l-1, new_l)
 
         for idx in idx_list:
+            
             if new_data_array is None:
-                new_data_array = data_array[:,0]
+                new_data_array = data_array[:,idx]
             else:
-                new_data_array = np.hstack([new_data_array, data_array[:,idx]])        
+                new_data_array = np.vstack([new_data_array, data_array[:,idx]])        
     else:
         print "quaternion array interpolation is not implemented"
         sys.exit()
-
-    return new_data_array
+                    
+    return new_data_array.T
     

@@ -50,12 +50,13 @@ def scooping(armReachActionLeft, armReachActionRight, log):
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
     print armReachActionLeft("initScooping")
-    print armReachActionRight("initScooping")
     
     #ut.get_keystroke('Hit a key to proceed next')        
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
-
+    
+    print armReachActionRight("initScooping")
+    
     print "Start to log!"    
     log.log_start()
     

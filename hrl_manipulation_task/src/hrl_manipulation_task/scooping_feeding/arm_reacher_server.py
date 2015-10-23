@@ -149,17 +149,17 @@ class armReachAction(mpcBaseAction):
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0] ] 
+          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0],
+           ['MOVES', '[-0.04, 0.0, -0.1, 0, 0.7, 0]', 5, 'self.bowl_frame']] 
         self.motions['initScooping']['right'] = \
-          [#['MOVEJ', '[-0.845, 0.166, -1.628, -1.652, 0.04, -0.788, -1.718]', 5.0],
-           ['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
-           ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],
+          #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
+          #['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
            ['PAUSE', 2.0]]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.0, -0.1, 0, 0.7, 0]', 5, 'self.bowl_frame'],
-           ['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 5, 'self.bowl_frame'],
+          [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 5, 'self.bowl_frame'],
            ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 5, 'self.bowl_frame'],
            ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 5, 'self.bowl_frame'] ]
         self.motions['runScooping']['right'] = \

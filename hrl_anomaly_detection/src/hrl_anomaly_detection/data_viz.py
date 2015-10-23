@@ -170,7 +170,7 @@ class data_viz:
             ## self.ft_disp(timeList, ftForce, ftForceLocal)
             
             # Crossmodal feature - relative dist, angle --------------------------
-            crossmodal_relativeDist = [ np.linalg.norm(kinTargetPos - kinEEPos, axis=0) ]
+            crossmodal_relativeDist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
             crossmodal_relativeAng = []
             for time_idx in xrange(len(timeList)):
 
@@ -179,7 +179,6 @@ class data_viz:
                 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
                 crossmodal_relativeAng.append( abs(diff_ang) )
-            
             
             self.relativeFeature_disp(timeList, crossmodal_relativeDist, crossmodal_relativeAng)
             
