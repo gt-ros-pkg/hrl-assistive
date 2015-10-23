@@ -1,0 +1,68 @@
+(define (domain pick_and_place)
+ (:requirements :typing :conditional-effects)
+ (:types 
+  object
+  gripper
+  location
+ )
+
+ (:constants hand - gripper
+             target - object
+             start_loc - location
+             pick_loc - location
+             place_loc - location
+             elsewhere - location
+ )
+
+ (:predicates
+  (known ?l - location)
+  (grasping ?g - gripper ?o - object)
+  (at ?o - object ?l - location)
+  (near ?g - gripper ?l - location)
+ )
+
+ (:action move-arm
+  :parameters (?g - gripper ?l - location)
+  :precondition (and (known ?l))
+  :effect (and (forall (?loc - location) (not (near ?g ?loc)) )
+               (near ?g ?l)
+           )
+  )
+
+ (:action grab
+  :parameters (?g - gripper ?o - object ?l - location)
+  :precondition (and (known ?l)
+                     (at ?o ?l)
+                     (near ?g ?l)
+                     (forall (?obj - object) (not (grasping ?g ?obj)))
+                     (forall (?gr - gripper) (not (grasping ?gr ?o)))
+                )
+  :effect (and (grasping ?g ?o)
+               (forall (?loc - location)
+                 (not (at ?o ?loc))
+               )
+           )
+ )
+
+ (:action release
+  :parameters (?g - gripper ?o - object ?l - location)
+  :precondition (and (known ?l)
+                     (near ?g ?l)
+                     (grasping ?g ?o)
+                     (forall (?obj - object) (not (at ?obj ?l)))
+                 )
+  :effect (and (at ?o ?l)
+               (not (grasping ?g ?o))
+          )
+ )
+
+ (:action id-location
+  :parameters (?l - location)
+  :effect (known ?l)
+  )
+
+ (:action forget-location
+  :parameters (?l - location)
+  :effect (not (known ?l))
+  )
+)
