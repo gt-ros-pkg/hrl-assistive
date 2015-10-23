@@ -9,6 +9,8 @@ hrl_manipulation_task:
 
   # For kinematics perception
   end_effector_frame: l_gripper_spoon_frame
+  target_frames: 
+    - r_gripper_tool_frame
 
   joints:
     - l_shoulder_pan_joint

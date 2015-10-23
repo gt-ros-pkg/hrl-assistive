@@ -94,6 +94,8 @@ class robot_kinematics(threading.Thread):
         self.ee_frame    = rospy.get_param('/hrl_manipulation_task/end_effector_frame')
         self.joint_names = rospy.get_param('/hrl_manipulation_task/joints')
 
+        self.target_frames = rospy.get_param('/hrl_manipulation_task/target_frames')
+
         
     def initComms(self):
         '''
@@ -176,6 +178,23 @@ class robot_kinematics(threading.Thread):
                     
         return (self.ee_pos, self.ee_quat)
 
+
+    def getTargetFrames(self):
+       
+        for target_frame in self.target_frames
+            try:
+                self.tf_lstnr.waitForTransform(self.torso_frame, target_frame, rospy.Time(0), \
+                                               rospy.Duration(1.0))
+            except:
+                self.tf_lstnr.waitForTransform(self.torso_frame, target_frame, rospy.Time(0), \
+                                               rospy.Duration(1.0))
+
+            [pos, quat] = self.tf_lstnr.lookupTransform(self.torso_frame, target_frame, rospy.Time(0))  
+
+        return 
+
+            
+        
         
     def run(self):
         """Overloaded Thread.run, runs the update

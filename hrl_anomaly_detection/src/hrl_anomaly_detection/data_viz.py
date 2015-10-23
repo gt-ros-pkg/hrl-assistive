@@ -37,15 +37,18 @@ import os, sys, copy
 # util
 import numpy as np
 import hrl_lib.util as ut
-from hrl_multimodal_anomaly_detection.hmm import util
+import util
 import PyKDL
 
 # visualization
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from matplotlib import gridspec
 
 class data_viz:
+    azimuth_max = 90.0
+    azimuth_min = -90.0
+    
     def __init__(self, subject=None, task=None, verbose=False):
         rospy.loginfo('log data visualization..')
 
@@ -80,10 +83,6 @@ class data_viz:
 
     ##     if ang_goal > ang_cur: ang_min = ang_goal - ang_margin
     ##     else: ang_min = ang_cur - ang_margin
-
-
-    
-    
     
 
     def getAngularSpatialRF(self, cur_pos, dist_margin ):
@@ -106,39 +105,153 @@ class data_viz:
 
         success_list, failure_list = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
 
-        d = ut.load_pickle(failure_list[0])
-        
+        # -------------------------------------------------------------
+        # loading and time-sync
+        d = util.loadData(success_list)
 
+        force_array = None
+        for idx in xrange(len(d['timesList'])):
+            if force_array is None:
+                force_array = d['ftForceList'][idx]
+            else:
+                force_array = np.hstack([force_array, d['ftForceList'][idx] ])
 
-        init_time = d['init_time']
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=1)
+        res = pca.fit_transform( force_array.T )
 
-
-
-        # vision 
-
-
-        print len(audio_time), len(kin_time), len(ft_time)
-
-
-        audio_time[-1]=audio_time[0]
-        
-        
-        # extract everything
-
-        # interpolation
+        # -------------------------------------------------------------        
+        # loading and time-sync
+        d = util.loadData(failure_list)
 
         # extract local features
-        
-        n,m = ee_pos.shape
-        r   = 0.25
-        
-        ## for i in xrange(m):
-        ##     cur_pos = ee_pos[:,i].T
-        ##     ang_max, ang_min = self.getAngularSpatialRF(cur_pos, r)
+        r = 0.25
 
-            
-        
+        power_max   = np.amax(d['audioPowerList'])
+        power_min   = np.amin(d['audioPowerList'])
+
+        for idx in xrange(len(d['timesList'])):
+
+            timeList     = d['timesList'][idx]
+            audioAzimuth = d['audioAzimuthList'][idx]
+            audioPower   = d['audioPowerList'][idx]
+            kinEEPos     = d['kinEEPosList'][idx]
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            ftForce      = d['ftForceList'][idx]
+
+            # Unimoda feature - Audio --------------------------------------------
+            unimodal_audioPower = []
+            for time_idx in xrange(len(timeList)):
+                ang_max, ang_min = self.getAngularSpatialRF(kinEEPos[:,time_idx], r)
                 
+                if audioAzimuth[time_idx] > ang_min and audioAzimuth[time_idx] < ang_max:
+                    unimodal_audioPower.append(audioPower[time_idx])
+                else:
+                    unimodal_audioPower.append(power_min) # or append white noise?
+
+            ## self.audio_disp(timeList, audioAzimuth, audioPower, audioPowerLocal, \
+            ##                 power_min=power_min, power_max=power_max)
+                    
+            # Unimodal feature - Kinematics --------------------------------------
+            unimodal_kinVel = []
+            
+            # Unimodal feature - Force -------------------------------------------
+            # ftForceLocal = np.linalg.norm(ftForce, axis=0) #* np.sign(ftForce[2])
+            unimodal_ftForce = pca.transform(ftForce.T).T
+            ## self.ft_disp(timeList, ftForce, ftForceLocal)
+            
+            # Crossmodal feature - relative dist, angle --------------------------
+            crossmodal_relativeDist = []
+            for time_idx in xrange(len(timeList)):
+                
+            
+            
+            
+            
+            
+                    
+            
+    def audio_disp(self, timeList, audioAzimuth, audioPower, audioPowerLocal, \
+                   power_min=None, power_max=None):
+
+        if power_min is None: power_min = np.amin(audioPower)
+        if power_max is None: power_max = np.amax(audioPower)
+        
+        # visualization
+        azimuth_list    = np.arange(self.azimuth_min, self.azimuth_max, 1.0)
+        audioImage      = np.zeros( (len(timeList), len(azimuth_list)) )
+        audioImageLocal = np.zeros( (len(timeList), len(azimuth_list)) )
+        audioImage[0,0] = 1.0
+        audioImageLocal[0,0] = 1.0
+
+        for time_idx in xrange(len(timeList)):
+
+            azimuth_idx = min(range(len(azimuth_list)), key=lambda i: \
+                              abs(azimuth_list[i]-audioAzimuth[time_idx]))
+
+            p = audioPower[time_idx]
+            audioImage[time_idx][azimuth_idx] = (p - power_min)/(power_max - power_min)
+
+            p = audioPowerLocal[time_idx]
+            audioImageLocal[time_idx][azimuth_idx] = (p - power_min)/(power_max - power_min)
+
+
+
+        fig = plt.figure()            
+        # --------------------------------------------------
+        ax1 = fig.add_subplot(311)
+        ax1.imshow(audioImage.T)
+        ax1.set_aspect('auto')
+        ax1.set_ylabel('azimuth angle', fontsize=18)
+
+        y     = np.arange(0.0, len(azimuth_list), 30.0)
+        new_y = np.arange(self.azimuth_min, self.azimuth_max, 30.0)
+        plt.yticks(y,new_y)
+
+        # --------------------------------------------------
+        ax2 = fig.add_subplot(312)
+        ax2.imshow(audioImageLocal.T)
+        ax2.set_aspect('auto')
+        ax2.set_ylabel('azimuth angle', fontsize=18)
+
+        y     = np.arange(0.0, len(azimuth_list), 30.0)
+        new_y = np.arange(self.azimuth_min, self.azimuth_max, 30.0)
+        plt.yticks(y,new_y)
+
+        # --------------------------------------------------
+        ax3 = fig.add_subplot(313)
+        ax3.plot(timeList, audioPowerLocal)
+
+        plt.show()
+        
+
+    def ft_disp(self, timeList, ftForce, ftForceLocal):
+
+        fig = plt.figure()            
+        gs = gridspec.GridSpec(4, 2)
+        # --------------------------------------------------
+        ax1 = fig.add_subplot(gs[0,0])
+        ax1.plot(timeList, ftForce[0,:])        
+
+        ax2 = fig.add_subplot(gs[1,0])
+        ax2.plot(timeList, ftForce[1,:])        
+        
+        ax3 = fig.add_subplot(gs[2,0])
+        ax3.plot(timeList, ftForce[2,:])        
+
+        ax4 = fig.add_subplot(gs[3,0])
+        ax4.plot(timeList, np.linalg.norm(ftForce, axis=0) ) #*np.sign(ftForce[2]) )        
+
+        # --------------------------------------------------
+        ax5 = fig.add_subplot(gs[0,1])        
+        ax5.plot(timeList, ftForceLocal[0,:])
+
+        ## ax6 = fig.add_subplot(gs[1,1])        
+        ## ax6.plot(timeList, ftForceLocal[1,:])
+        
+        plt.show()
+
+        
     def audio_test(self):
         
         success_list, failure_list = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
@@ -150,14 +263,14 @@ class data_viz:
             time_max = np.amax(d['audio_time'])
             time_min = np.amin(d['audio_time'])
 
-            azimuth_max = 90.0
-            azimuth_min = -90.0
+            self.azimuth_max = 90.0
+            self.azimuth_min = -90.0
 
             power_max = np.amax(d['audio_power'])
             power_min = np.amin(d['audio_power'])
 
             time_list    = d['audio_time']
-            azimuth_list = np.arange(azimuth_min, azimuth_max, 1.0)
+            azimuth_list = np.arange(self.azimuth_min, self.azimuth_max, 1.0)
             
             audio_image = np.zeros( (len(time_list), len(azimuth_list)) )
 
@@ -178,7 +291,7 @@ class data_viz:
             ax1.set_ylabel('azimuth angle', fontsize=18)
 
             y     = np.arange(0.0, len(azimuth_list), 30.0)
-            new_y = np.arange(azimuth_min, azimuth_max, 30.0)
+            new_y = np.arange(self.azimuth_min, self.azimuth_max, 30.0)
             plt.yticks(y,new_y)
             #------------------------------------------------------------
 
