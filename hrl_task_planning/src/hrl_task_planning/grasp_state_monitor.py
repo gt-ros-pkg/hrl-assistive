@@ -87,7 +87,7 @@ class GraspPressureMonitor(object):
             self.gripper_cmd_pub.publish(Pr2GripperCommand(current_state - 0.0001, -1))
 
         delta = gs_msg.process_value_dot
-        if abs(delta) < 0.0015:
+        if abs(delta) < 0.0010:
             self.motion_state = "STEADY"
         elif delta < 0:
             self.motion_state = "CLOSING"
@@ -105,16 +105,21 @@ class GraspPressureMonitor(object):
         grasp_state = self.grasp_state
         if self.motion_state == "OPENING":
             grasp_state = False
+            print "RELEASE -- OPENING"
         elif self.motion_state == "STEADY":
             if self.pressure_state == "RISING":
                 grasp_state = self.grasp_state
             elif self.pressure_state == "FALLING":
                 grasp_state = False
+                print "RELEASE -- STEADY, FALLING PRESSURE"
         elif self.motion_state == "CLOSING":
             if self.pressure_state == "RISING":
                 grasp_state = True
+                print "GRASP -- CLOSING, RISING PRESSURE"
             else:
-                grasp_state = False
+#                grasp_state = False
+                grasp_state = self.grasp_state
+#                print "RELEASE -- CLOSING, NEUTRAL or FALLING PRESSURE"
         self.set_grasp_state(grasp_state)
 
 
