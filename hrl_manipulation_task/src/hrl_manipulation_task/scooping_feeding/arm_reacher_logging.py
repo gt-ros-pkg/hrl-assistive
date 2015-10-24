@@ -46,16 +46,17 @@ from hrl_manipulation_task.record_data import logger
 def scooping(armReachActionLeft, armReachActionRight, log):
 
     log.task = 'scooping'
+    log.initParams()
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping")
+    print armReachActionRight("initScooping")
     
     #ut.get_keystroke('Hit a key to proceed next')        
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
+    print armReachActionLeft("initScooping")
     
-    print armReachActionRight("initScooping")
     
     print "Start to log!"    
     log.log_start()
@@ -70,6 +71,7 @@ def scooping(armReachActionLeft, armReachActionRight, log):
 def feeding(armReachActionLeft, armReachActionRight, log):
 
     log.task = 'feeding'
+    log.initParams()
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
@@ -103,7 +105,7 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     log = logger(ft=True, audio=True, kinematics=True, vision=False, pps=False, \
-                 subject="gatsbii", task='scooping', verbose=False)
+                 subject="gatsbii", task='feeding', verbose=False)
 
     while not rospy.is_shutdown():
                  

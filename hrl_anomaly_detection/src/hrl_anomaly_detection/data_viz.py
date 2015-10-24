@@ -113,8 +113,6 @@ class data_viz:
         # extract local features
         r = 0.25
 
-        power_max   = np.amax(d['audioPowerList'])
-        power_min   = np.amin(d['audioPowerList'])
 
         for idx in xrange(len(d['timesList'])):
 
@@ -143,6 +141,8 @@ class data_viz:
                 else:
                     unimodal_audioPower.append(power_min) # or append white noise?
 
+            ## power_max   = np.amax(d['audioPowerList'])
+            ## power_min   = np.amin(d['audioPowerList'])
             ## self.audio_disp(timeList, audioAzimuth, audioPower, audioPowerLocal, \
             ##                 power_min=power_min, power_max=power_max)
                     
@@ -167,7 +167,7 @@ class data_viz:
             
             ## self.relativeFeature_disp(timeList, crossmodal_relativeDist, crossmodal_relativeAng)
             
-        return [forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], timesList
+        ## return [forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], timesList
                     
             
     def audio_disp(self, timeList, audioAzimuth, audioPower, audioPowerLocal, \

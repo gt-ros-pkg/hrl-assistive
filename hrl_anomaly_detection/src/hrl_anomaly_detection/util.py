@@ -40,6 +40,14 @@ import hrl_lib.util as ut
 
 from scipy import interpolate
 
+def extrapolateData(data, maxsize):
+    if len(np.shape(data[0])) > 1:     
+        # need to implement incremental extrapolation
+        return [x if len(x[0]) >= maxsize else x + [x[:,-1]]*(maxsize-len(x[0])) for x in data]
+    else:
+        # need to implement incremental extrapolation        
+        return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
+        
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False):
 
@@ -58,7 +66,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             continue
 
         d = ut.load_pickle(fileName)        
-        print d.keys()
+        ## print d.keys()
 
         kin_time = d['kinematics_time']
         new_times = np.linspace(0.01, kin_time[-1], downSampleSize)
@@ -120,11 +128,17 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             pps_skin_right = d['pps_skin_right']
 
         # ----------------------------------------------------------------------
-        
-                
-    ## if isTrainingData:
+                        
+    # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
+    if isTrainingData:
+        # Find the largest iteration
+        max_size = max([ len(x) for x in data_dict['timesList'] ])
+        # Extrapolate each time step
+        for key in data_dict.keys():
+            data_dict[key] = extrapolateData(data_dict[key], max_size)
+
     return data_dict
-        
+    
     
 def getSubjectFileList(root_path, subject_names, task_name):
     # List up recorded files
@@ -200,7 +214,7 @@ def interpolationQuatData(time_array, data_array, new_time_array):
     
     new_data_array = None    
     
-    if len(time_array) > len(new_time_array)*2.0:
+    if len(time_array) > len(new_time_array):
 
         l     = len(time_array)
         new_l = len(new_time_array)
@@ -214,8 +228,50 @@ def interpolationQuatData(time_array, data_array, new_time_array):
             else:
                 new_data_array = np.vstack([new_data_array, data_array[:,idx]])        
     else:
-        print "quaternion array interpolation is not implemented"
+        print "quaternion array extrapolation is not implemented"
         sys.exit()
                     
     return new_data_array.T
+
     
+def scaleData(data_dict, scale=10, data_min=None, data_max=None, verbose=False):
+
+    if data_dict == {}: return {}
+    
+    # Determine max and min values
+    if data_min is None or data_max is None:
+        data_min = {}
+        data_max = {}
+        for key in data_dict.keys():
+            if 'time' in key: continue
+            data_min[key] = np.min(data_dict[key])
+            data_max[key] = np.max(data_dict[key])
+            
+        if verbose:
+            print 'minValues', data_min
+            print 'maxValues', data_max
+
+    data_dict_scaled = {}
+    for key in data_dict.keys():
+        if 'time' in key: 
+            data_dict_scaled[key] = data_dict[key]
+        else:
+            data_dict_scaled[key] = (data_dict[key] - data_min[key])/(data_max[key]-data_min[key]) * scale
+        
+    return data_dict_scaled
+
+
+def getAngularSpatialRF(cur_pos, dist_margin ):
+
+    dist = np.linalg.norm(cur_pos)
+    ang_margin = np.arcsin(dist_margin/dist)
+
+    cur_pos /= np.linalg.norm(cur_pos)
+    ang_cur  = np.arccos(cur_pos[1]) - np.pi/2.0
+
+    ang_margin = 10.0 * np.pi/180.0
+
+    ang_max = ang_cur + ang_margin
+    ang_min = ang_cur - ang_margin
+
+    return ang_max, ang_min
