@@ -128,8 +128,8 @@ class armReachAction(mpcBaseAction):
         self.motions = {}
 
         self.motions['test'] = {}
-        self.motions['test']['left'] = \
-          [['MOVES', '[-0.04, 0.0, -0.05, 0, 0.7, 0]', 10, 'self.bowl_frame'],
+        self.motions['test']['right'] = \
+          [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
            ]
         
         ## Testing Motions ---------------------------------------------------------
@@ -154,7 +154,7 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping']['right'] = \
           [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
-          #['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
+           ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
            ['PAUSE', 2.0]]
           
         self.motions['runScooping'] = {}
@@ -177,14 +177,14 @@ class armReachAction(mpcBaseAction):
 
         self.motions['runFeeding1'] = {}
         self.motions['runFeeding1']['left'] = \
-          [['MOVES', '[0.0, -0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
+          [['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ['PAUSE', 2.0] 
            ]
 
         self.motions['runFeeding2'] = {}
         self.motions['runFeeding2']['left'] = \
-          [['MOVES', '[0.0, -0.02, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],
-           ['MOVES', '[0.0, -0.02, -0.06, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
+          [['MOVES', '[0.0, 0.02, 0.03, 0., 0., 0.]', 10., 'self.mouth_frame', 0.05],
+           ['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame', 0.05],                     
            ]
           
         rospy.loginfo("Parameters are loaded.")
