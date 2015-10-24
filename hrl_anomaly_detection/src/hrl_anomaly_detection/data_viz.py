@@ -46,6 +46,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
 
+
 class data_viz:
     azimuth_max = 90.0
     azimuth_min = -90.0
@@ -67,25 +68,6 @@ class data_viz:
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
 
         
-    ## def getSpatialRF(self, cur_pos, goal_pos, r):
-
-    ##     pos /= np.linalg.norm(pos)
-        
-    ##     ang_cur    = np.arccos(cur_pos[1]) - np.pi/2.0
-    ##     ang_goal   = np.arccos(goal_pos[1]) - np.pi/2.0
-        
-    ##     ang_margin = 10.0
-
-    ##     self.ang_min = None
-    ##     self.ang_max = None
-        
-    ##     if ang_goal > ang_cur: ang_max = ang_goal + ang_margin
-    ##     else: ang_max = ang_cur + ang_margin
-
-    ##     if ang_goal > ang_cur: ang_min = ang_goal - ang_margin
-    ##     else: ang_min = ang_cur - ang_margin
-    
-
     def getAngularSpatialRF(self, cur_pos, dist_margin ):
 
         dist = np.linalg.norm(cur_pos)
@@ -106,6 +88,9 @@ class data_viz:
 
         success_list, failure_list = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
 
+        # Divide it into training and test set
+        # -------------------------------------------------------------
+        
         # -------------------------------------------------------------
         # loading and time-sync
         d = util.loadData(success_list)
@@ -180,8 +165,9 @@ class data_viz:
                 diff_ang = qt.quat_angle(startQuat, endQuat)
                 crossmodal_relativeAng.append( abs(diff_ang) )
             
-            self.relativeFeature_disp(timeList, crossmodal_relativeDist, crossmodal_relativeAng)
+            ## self.relativeFeature_disp(timeList, crossmodal_relativeDist, crossmodal_relativeAng)
             
+        return [forcesTrueList, distancesTrueList, anglesTrueList, audioTrueList], timesList
                     
             
     def audio_disp(self, timeList, audioAzimuth, audioPower, audioPowerLocal, \
