@@ -22,21 +22,22 @@ from joblib import Parallel, delayed
 
 os.system("taskset -p 0xff %d" % os.getpid())
 
-class learning_hmm_multi_4d:
+class learning_hmm_multi_n:
     def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
                  cluster_type='time', verbose=False):
         self.ml = None
+        self.verbose = verbose
 
         ## Tunable parameters
-        self.nState = nState # the number of hidden states
-        self.nGaussian = nState
-        self.nEmissionDim = nEmissionDim
-        self.verbose = verbose
+        self.nState         = nState # the number of hidden states
+        self.nGaussian      = nState
+        self.nEmissionDim   = nEmissionDim
+        self.anomaly_offset = anomaly_offset
         
         ## Un-tunable parameters
         self.trans_type = 'left_right' # 'left_right' 'full'
-        self.A = None # transition matrix        
-        self.B = None # emission matrix
+        self.A  = None # transition matrix        
+        self.B  = None # emission matrix
         self.pi = None # Initial probabilities per state
         self.check_method = check_method # ['global', 'progress']
         self.cluster_type = cluster_type
@@ -51,7 +52,6 @@ class learning_hmm_multi_4d:
         self.std_coff = None
         self.km = None
 
-        self.anomaly_offset=anomaly_offset
 
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -59,11 +59,13 @@ class learning_hmm_multi_4d:
         # print 'HMM initialized for', self.check_method
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl='ml_temp_4d.pkl', use_pkl=False):
+            ml_pkl='ml_temp_n.pkl', use_pkl=False):
+        
         ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         if cov_mult is None:
             cov_mult = [1.0]*(self.nEmissionDim**2)
 
+        # Daehyung: What is the shape and type of input data?
         X = [np.array(data) for data in xData]
 
         if A is None:
@@ -76,6 +78,7 @@ class learning_hmm_multi_4d:
             # We should think about multivariate Gaussian pdf.  
 
             mus, cov = self.vectors_to_mean_cov(X, self.nState)
+
             for i in xrange(self.nEmissionDim):
                 for j in xrange(self.nEmissionDim):
                     cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
@@ -86,9 +89,9 @@ class learning_hmm_multi_4d:
                 print 'cov', cov
                 
             # Emission probability matrix
-            B = [0.0] * self.nState
+            B = [0] * self.nState
             for i in range(self.nState):
-                B[i] = [mu[i] for mu in mus]
+                B[i] = [[mu[i] for mu in mus]]
                 B[i].append(cov[i].flatten())
         if pi is None:
             # pi - initial probabilities per state 
@@ -456,8 +459,8 @@ class learning_hmm_multi_4d:
         index = 0
         m, n = np.shape(vecs[0])
         #print m,n
-        mus = [np.zeros(nState) for i in xrange(self.nEmissionDim)]
-        cov = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
+        mus  = [np.zeros(nState) for i in xrange(self.nEmissionDim)]
+        cov  = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
         DIVS = n/nState
 
         while index < nState:

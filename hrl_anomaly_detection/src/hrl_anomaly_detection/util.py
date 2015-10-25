@@ -60,13 +60,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     data_dict['ftForceList']      = []
     data_dict['kinTargetPosList']  = []
     data_dict['kinTargetQuatList'] = []
+    data_dict['visionPosList']     = []
+    data_dict['visionQuatList']    = []
     
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
 
         d = ut.load_pickle(fileName)        
-        ## print d.keys()
 
         kin_time = d['kinematics_time']
         new_times = np.linspace(0.01, kin_time[-1], downSampleSize)
@@ -103,7 +104,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
 
             target_quat_array = interpolationQuatData(kin_time, kin_target_quat, new_times)
             data_dict['kinTargetQuatList'].append(target_quat_array)                                         
-                        
+
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time        = d['ft_time']
@@ -119,7 +120,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             vision_quat = d['vision_quat']
 
             vision_pos_array  = interpolationData(vision_time, vision_pos, new_times)
+            data_dict['visionPosList'].append(vision_pos_array)                                         
+            
             vision_quat_array = interpolationQuatData(vision_time, vision_quat, new_times)
+            data_dict['visionQuatList'].append(vision_quat_array)                                         
             
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
@@ -135,6 +139,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
         max_size = max([ len(x) for x in data_dict['timesList'] ])
         # Extrapolate each time step
         for key in data_dict.keys():
+            if data_dict[key] == []: continue
             data_dict[key] = extrapolateData(data_dict[key], max_size)
 
     return data_dict
@@ -243,7 +248,8 @@ def scaleData(data_dict, scale=10, data_min=None, data_max=None, verbose=False):
         data_min = {}
         data_max = {}
         for key in data_dict.keys():
-            if 'time' in key: continue
+            if 'time' in key or 'Quat' in key: continue
+            if data_dict[key] == []: continue            
             data_min[key] = np.min(data_dict[key])
             data_max[key] = np.max(data_dict[key])
             
@@ -253,7 +259,8 @@ def scaleData(data_dict, scale=10, data_min=None, data_max=None, verbose=False):
 
     data_dict_scaled = {}
     for key in data_dict.keys():
-        if 'time' in key: 
+        if data_dict[key] == []: continue
+        if 'time' in key or 'Quat' in key: 
             data_dict_scaled[key] = data_dict[key]
         else:
             data_dict_scaled[key] = (data_dict[key] - data_min[key])/(data_max[key]-data_min[key]) * scale

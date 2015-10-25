@@ -104,7 +104,7 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=True, audio=True, kinematics=True, vision=False, pps=False, \
+    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=False, \
                  subject="gatsbii", task='feeding', verbose=False)
 
     while not rospy.is_shutdown():
