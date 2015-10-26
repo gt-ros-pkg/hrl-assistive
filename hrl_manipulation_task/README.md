@@ -58,7 +58,8 @@ To start data recording
     4) (Option) xxxx.py for visualization
     5) rosrun hrl_manipulation_task arm_reacher_logging.py
 
-    
+To calibrate vision offest (for mouth detection)
+    1) rosrun hrl_manipulation_task findMouth.py --renew    
 
 
 

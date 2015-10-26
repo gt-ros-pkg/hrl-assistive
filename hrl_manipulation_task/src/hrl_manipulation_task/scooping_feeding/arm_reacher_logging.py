@@ -46,16 +46,18 @@ from hrl_manipulation_task.record_data import logger
 def scooping(armReachActionLeft, armReachActionRight, log):
 
     log.task = 'scooping'
+    log.initParams()
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping")
     print armReachActionRight("initScooping")
     
     #ut.get_keystroke('Hit a key to proceed next')        
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
-
+    print armReachActionLeft("initScooping")
+    
+    
     print "Start to log!"    
     log.log_start()
     
@@ -69,6 +71,7 @@ def scooping(armReachActionLeft, armReachActionRight, log):
 def feeding(armReachActionLeft, armReachActionRight, log):
 
     log.task = 'feeding'
+    log.initParams()
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
@@ -80,11 +83,14 @@ def feeding(armReachActionLeft, armReachActionRight, log):
     print armReachActionLeft("getHeadPos")
     #ut.get_keystroke('Hit a key to proceed next')        
 
+    print "Running feeding1"    
+    print armReachActionLeft("runFeeding1")
+    
     print "Start to log!"    
     log.log_start()
     
-    print "Running feeding!"
-    print armReachActionLeft("runFeeding")
+    print "Running feeding2"    
+    print armReachActionLeft("runFeeding2")
 
     print "Finish to log!"    
     log.close_log_file()
@@ -98,8 +104,8 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=True, audio=True, kinematics=True, vision=False, pps=False, \
-                 subject="gatsbii", task='scooping', verbose=False)
+    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=False, \
+                 subject="gatsbii", task='feeding', verbose=False)
 
     while not rospy.is_shutdown():
                  

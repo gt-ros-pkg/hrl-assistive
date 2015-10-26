@@ -10,6 +10,16 @@ hrl_manipulation_task:
   # For kinematics perception
   end_effector_frame: l_gripper_spoon_frame
 
+  target_frame: r_gripper_tool_frame
+  target_pos_offset:
+    x: 0.11
+    y: 0 
+    z: 0.04
+  target_orient_offset:
+    rx: 0
+    ry: 0 
+    rz: 1.570795
+  
   joints:
     - l_shoulder_pan_joint
     - l_shoulder_lift_joint

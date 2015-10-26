@@ -76,7 +76,6 @@ class robot_kinematics(threading.Thread):
             self.jnt_velocities = None
             self.jnt_efforts    = None
 
-
             # Declare containers
             self.time_data = []
             self.kinematics_ee_pos  = None
@@ -84,7 +83,8 @@ class robot_kinematics(threading.Thread):
             self.kinematics_jnt_pos = None
             self.kinematics_jnt_vel = None
             self.kinematics_jnt_eff = None
-    
+            self.kinematics_target_pos = None
+            self.kinematics_target_quat = None
             
     def initParams(self):
         '''
@@ -93,6 +93,10 @@ class robot_kinematics(threading.Thread):
         self.torso_frame = 'torso_lift_link'
         self.ee_frame    = rospy.get_param('/hrl_manipulation_task/end_effector_frame')
         self.joint_names = rospy.get_param('/hrl_manipulation_task/joints')
+
+        self.target_frame = rospy.get_param('/hrl_manipulation_task/target_frame', None)
+        self.target_pos_offset    = rospy.get_param('hrl_manipulation_task/target_pos_offset', None)        
+        self.target_orient_offset = rospy.get_param('hrl_manipulation_task/target_orient_offset', None)        
 
         
     def initComms(self):
@@ -176,15 +180,43 @@ class robot_kinematics(threading.Thread):
                     
         return (self.ee_pos, self.ee_quat)
 
+
+    def getTargetFrame(self):
+
+        try:
+            self.tf_lstnr.waitForTransform(self.torso_frame, self.target_frame, rospy.Time(0), \
+                                           rospy.Duration(1.0))
+        except:
+            self.tf_lstnr.waitForTransform(self.torso_frame, self.target_frame, rospy.Time(0), \
+                                           rospy.Duration(1.0))
+
+        [pos, quat] = self.tf_lstnr.lookupTransform(self.torso_frame, self.target_frame, rospy.Time(0))  
+
+        p = PyKDL.Vector(pos[0], pos[1], pos[2])
+        M = PyKDL.Rotation.Quaternion(quat[0],quat[1],quat[2],quat[3])
+
+        p = p + M*PyKDL.Vector(self.target_pos_offset['x'], self.target_pos_offset['y'], \
+                               self.target_pos_offset['z'])
+        M.DoRotX(self.target_orient_offset['rx'])
+        M.DoRotY(self.target_orient_offset['ry'])
+        M.DoRotZ(self.target_orient_offset['rz'])        
+        
+        target_pos  = np.array( [[p[0], p[1], p[2]]] ).T
+        target_quat = np.array( [[ M.GetQuaternion()[0], M.GetQuaternion()[1],\
+                                   M.GetQuaternion()[2], M.GetQuaternion()[3] ]] ).T
+
+        return target_pos, target_quat
+        
         
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
         while not self.cancelled:
             if self.isReset:
-                ee_pos, ee_quat = self.getEEFrame()
+                ee_pos, ee_quat           = self.getEEFrame()
                 jnt_pos, jnt_vel, jnt_eff = self.return_joint_state()
-
+                target_pos, target_quat   = self.getTargetFrame()
+                
                 if self.counter > self.counter_prev:
                     self.counter_prev = self.counter
                 else:
@@ -199,6 +231,10 @@ class robot_kinematics(threading.Thread):
                     self.kinematics_jnt_pos = jnt_pos 
                     self.kinematics_jnt_vel = np.zeros((len(jnt_vel),1))
                     self.kinematics_jnt_eff = jnt_eff
+
+                    self.kinematics_target_pos  = target_pos
+                    self.kinematics_target_quat = target_quat
+                    
                 else:
                     self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, ee_pos])
                     self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, ee_quat])
@@ -206,6 +242,8 @@ class robot_kinematics(threading.Thread):
                     self.kinematics_jnt_pos = np.hstack([self.kinematics_jnt_pos, jnt_pos])
                     self.kinematics_jnt_eff = np.hstack([self.kinematics_jnt_eff, jnt_eff])
 
+                    self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, target_pos])
+                    self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, target_quat])
                     
                 self.lock.release()
                 
@@ -227,6 +265,8 @@ class robot_kinematics(threading.Thread):
         self.kinematics_jnt_pos = None
         self.kinematics_jnt_vel = None
         self.kinematics_jnt_eff = None
+        self.kinematics_target_pos = None
+        self.kinematics_target_quat = None
 
         self.counter = 0
         self.counter_prev = 0

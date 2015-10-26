@@ -48,6 +48,13 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
+    print armReachActionRight("initScooping")
+    print armReachActionLeft("initScooping")
+    print armReachActionLeft("getBowlPos")
+    print armReachActionLeft('lookAtBowl')
+    print armReachActionLeft("test")
+    sys.exit()
+    
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
@@ -62,17 +69,18 @@ if __name__ == '__main__':
     print armReachActionLeft("runScooping")
 
     ## Feeding -----------------------------------
-    #print "Initializing left arm for feeding"
-    #print armReachActionRight("initFeeding")
-    #print armReachActionLeft("initFeeding")
+    print "Initializing left arm for feeding"
+    print armReachActionRight("initFeeding")
+    print armReachActionLeft("initFeeding")
 
-    #print "Detect ar tag on the head"
-    #print armReachActionLeft('lookAtMouth')
-    #print armReachActionLeft("getHeadPos")
-    #ut.get_keystroke('Hit a key to proceed next')        
+    print "Detect ar tag on the head"
+    print armReachActionLeft('lookAtMouth')
+    print armReachActionLeft("getHeadPos")
+    ut.get_keystroke('Hit a key to proceed next')        
 
-    #print "Running feeding!"
-    #print armReachActionLeft("runFeeding")
+    print "Running feeding!"
+    print armReachActionLeft("runFeeding1")
+    print armReachActionLeft("runFeeding2")
 
     
     ## t1 = datetime.datetime.now()
