@@ -8,7 +8,7 @@ import smach
 SPA = ["succeeded", "preempted", "aborted"]
 
 
-def get_action_state(plan_step):
+def get_action_state(plan_step, domain, problem):
     if plan_step.name == 'PICK':
         def outcome_cb(outcomes):
             if 'aborted' in outcomes.itervalues():

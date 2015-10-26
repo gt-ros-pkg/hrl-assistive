@@ -61,7 +61,12 @@ class TaskSmacher(object):
                           rospy.get_name(), req.name, req.domain, e.message)
             return
 
-        state_machine = self.build_sm(solution, self.modules[req.domain].get_action_state)
+        if 'UNDO' in req.name.upper() and self.running_sm_threads[req.domain].is_alive():
+            next_state_req = self.running_sm_threads[req.domain].request
+        else:
+            next_state_req = None
+
+        state_machine = self.build_sm(solution, self.modules[req.domain].get_action_state, next_state_req)
 
         try:
             if self.running_sm_threads[req.domain].is_alive():
@@ -73,21 +78,25 @@ class TaskSmacher(object):
             pass
 
         self.solution_pub.publish(PDDLSolution(req.name, req.domain, solution.solved, solution.steps, solution.states))
-        self.running_sm_threads[req.domain] = StateMachineThread(state_machine, req.name)
+        self.running_sm_threads[req.domain] = StateMachineThread(state_machine, req)
         self.running_sm_threads[req.domain].start()
 
-    def build_sm(self, solution, get_state_fn):
+    def build_sm(self, solution, get_state_fn, next_task_request=None):
         plan = map(PlanStep.from_string, solution.steps)
         pddl_states = solution.states
 
         sm = smach.StateMachine(outcomes=SPA)
         sm.userdata.problem_name = solution.states[0].problem
+        sm.userdata.domain = solution.states[0].domain
         sm_states = []
         for i, step in enumerate(plan):
             sm_states.append(("_PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
-            sm_states.append((step.name + "+%d" % i, get_state_fn(step)))
-        sm_states.append(("_PDDL_STATE_PUB+FINAL", PDDLStatePublisherState(pddl_states[-1], self.state_pub, outcomes=SPA)));
-        sm_states.append(("_CLEANUP", CleanupState(outcomes=SPA, input_keys=["problem_name"])));
+            sm_states.append((step.name + "+%d" % i, get_state_fn(step, solution.states[0].domain, solution.states[0].problem)))
+        sm_states.append(("_PDDL_STATE_PUB+FINAL", PDDLStatePublisherState(pddl_states[-1], self.state_pub, outcomes=SPA)))
+        if next_task_request is None:
+            sm_states.append(("_CLEANUP", CleanupState(outcomes=SPA, input_keys=["problem_name"])))
+        else:
+            sm_states.append(("_NextTask", StartNewTaskState(next_task_request, outcomes=SPA))) # Keep old info if we're continuing on with this task...
         with sm:
             try:
                 for i, sm_state in enumerate(sm_states):
@@ -100,11 +109,12 @@ class TaskSmacher(object):
 
 
 class StateMachineThread(Thread):
-    def __init__(self, state_machine, problem_name):
-        super(StateMachineThread, self).__init__()
+    def __init__(self, state_machine, request, *args, **kwargs):
+        super(StateMachineThread, self).__init__(*args, **kwargs)
         self.state_machine = state_machine
-        self.problem_name = problem_name
-        self.sis = smach_ros.IntrospectionServer('smach_introspection', state_machine, problem_name)
+        self.problem_name = request.name
+        self.request = request
+        self.sis = smach_ros.IntrospectionServer('smach_introspection', state_machine, self.problem_name)
         self.daemon = True
 
     def run(self):
@@ -134,6 +144,21 @@ class PDDLStatePublisherState(smach.State):
 
     def execute(self, ud):
         self.publisher.publish(self.state)
+        if self.preempt_requested():
+            self.service_preempt()
+            return 'preempted'
+        return 'succeeded'
+
+
+class StartNewTaskState(smach.State):
+    def __init__(self, problem_msg, *args, **kwargs):
+        super(StartNewTaskState, self).__init__(*args, **kwargs)
+        self.request = problem_msg
+        self.problem_pub = rospy.Publisher("perform_task", PDDLProblem)
+        rospy.sleep(1)  # make sure subscribers can connect...
+
+    def execute(self, ud):
+        self.problem_pub.publish(self.request)
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'

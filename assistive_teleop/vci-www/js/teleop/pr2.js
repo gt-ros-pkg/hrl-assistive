@@ -27,6 +27,34 @@ var PR2GripperSensor = function (options) {
     var ros = options.ros;
     self.side = options.side;
     var state = 0.0;
+    var grasping = null;
+
+    // Subscribe to grasping (bool) state messages
+    var graspSub = new ROSLIB.Topic({
+        ros: ros,
+        name: '/grasping/'+self.side+'_gripper',
+        messageType: 'std_msgs/Bool'
+    });
+
+    self.getGrasping = function () {
+        return grasping;
+    };
+
+    self.setGrasping = function (grasp_state) {
+        grasping = grasp_state;    
+    };
+
+    var graspStateFromMsg = function (msg){
+        grasping = msg.data;
+    };
+    self.graspingCBList = [graspStateFromMsg];
+    var graspingCB = function (msg){
+        for (var i=0; i<self.graspingCBList.length; i++) {
+            self.graspingCBList[i](msg);
+        }
+    };
+    graspSub.subscribe(graspingCB);
+
 
     // Subscribe to state msgs
     var stateSub = new ROSLIB.Topic({

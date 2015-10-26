@@ -64,7 +64,7 @@ class UndoManager(object):
                 if state_msg.predicates == cmd['state']:
                     self.skill_current_states[state_msg.problem] = deepcopy(cmd)
                     self.command_deque.pop(i)
-                    rospy.loginfo("Recognized old state: %s" , state_msg.predicates)
+                    rospy.loginfo("Recognized old state: %s", state_msg.predicates)
                     return
         # Check for prior states of this skill
         with self.command_deque_lock:
@@ -189,7 +189,7 @@ class UndoSkills(object):
         negs = map(str, negs)
         goal.extend(negs)
         problem = PDDLProblem()
-        problem.name = '+'.join([cmd['name'],'undo'])
+        problem.name = '+'.join([cmd['name'], 'undo'])
         problem.domain = cmd['msg'].domain  # Grab the domain from the incoming state msg
         problem.init = current_state['state']
         problem.goal = goal
@@ -372,5 +372,5 @@ def main():
     manager.register_action(undo_move_cart_mpc_left)
     manager.register_action(undo_move_gripper_left)
     manager.register_action(undo_move_gripper_right)
-#    manager.register_skill_undoer(undo_planned_task_skills)
+    manager.register_skill_undoer(undo_planned_task_skills)
     rospy.spin()

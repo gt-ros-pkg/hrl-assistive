@@ -33,17 +33,58 @@ class PlanPreprocessor(object):
     def update_state(self, req):
         return req
 
+class PickAndPlacePreprocessor(PlanPreprocessor):
+    def __init__(self, domain):
+        super(PickAndPlacePreprocessor, self).__init__(domain)
+        self.gripper_grasp_state = {'right-gripper': None, 'left-gripper': None}
+        self.l_gripper_grasp_state_sub = rospy.Subscriber("/grasping/left_gripper", Bool, self.grasp_state_cb, "left-gripper")
+        self.r_gripper_grasp_state_sub = rospy.Subscriber("/grasping/right_gripper", Bool, self.grasp_state_cb, "right-gripper")
+        rospy.loginfo("[%s] PICK_AND_PLACE Plan Preprocessor Ready", rospy.get_name())
+
+    def grasp_state_cb(self, msg, gripper):
+        self.gripper_grasp_state[gripper] = msg.data
+
+    def update_request(self, req):
+        # Check for state
+        side = 'right' if 'RIGHT' in req.problem.name.upper() else 'left'
+        preds = []
+        # Update known locations
+        locations = ["pick_loc", "place_loc", "elsewhere"]
+        known_locations = [rospy.get_param("/%s/%s" % (req.problem.name, loc), None) for loc in locations]
+        known_locations = [loc for loc in known_locations if loc is not None]
+        preds.extend([pddl.Predicate("KNOWN", [loc]) for loc in known_locations])
+        # update grasp state (if grasping, we're grasping the target object)
+        grasp_state = self.gripper_grasp_state['-'.join([side, 'gripper'])]
+        if grasp_state is None:
+            raise rospy.ServiceException("[%s] Unknown grasp state. Cannot correctly formulate plan." % rospy.get_name())  # No idea, fail
+        elif grasp_state:
+            preds.append(pddl.Predicate("GRASPING", ['hand', 'target']))  # Grasping the target object
+        else:
+            preds.append(pddl.Predicate("AT", ['target', 'pick_loc']))  # No grasping, so target is at the pick location
+        req.problem.init.extend(map(str, preds))
+        unique_preds = []
+        for pred in req.problem.init:
+            if pred not in unique_preds:
+                unique_preds.append(pred)
+        req.problem.init = unique_preds
+
+        # Update Object list
+        # Check to see if objects are already established for this task
+        obj_list = rospy.get_param("/%s/objects" % req.problem.name, None)
+        if obj_list is None:
+            # If objects not established, add them as necessary
+            objs = [pddl.Object("target", "object")]  # default to one target object, not in any gripper
+            # Save relevant objects to param server for later calls to find
+            obj_list = map(str, objs)
+            rospy.set_param("/%s/objects" % req.problem.name, obj_list)
+        req.problem.objects.extend(obj_list)
+#        rospy.loginfo("[%s] Returning processed problem:\n%s", rospy.get_name(), req.problem)
+        return req.problem
+
 
 class MoveObjectPreprocessor(PlanPreprocessor):
     def __init__(self, domain):
         super(MoveObjectPreprocessor, self).__init__(domain)
-        self.gripper_grasp_state = {'right-gripper': None, 'left-gripper': None}
-        self.l_gripper_grasp_state_sub = rospy.Subscriber("/grasping/left_gripper", Bool, self.grasp_state_cb, "left-gripper")
-        self.r_gripper_grasp_state_sub = rospy.Subscriber("/grasping/right_gripper", Bool, self.grasp_state_cb, "right-gripper")
-        rospy.loginfo("[%s] MOVE_OBJECT Plan Preprocessor Ready", rospy.get_name())
-
-    def grasp_state_cb(self, msg, gripper):
-        self.gripper_grasp_state[gripper] = msg.data
 
     def update_request(self, req):
         # Check for state
@@ -85,4 +126,5 @@ class MoveObjectPreprocessor(PlanPreprocessor):
 def main():
     rospy.init_node('preprocess_problem')
     move_object_preprocessor = MoveObjectPreprocessor('move_object')
+    pick_and_place_preprocessor = PickAndPlacePreprocessor('pick_and_place')
     rospy.spin()

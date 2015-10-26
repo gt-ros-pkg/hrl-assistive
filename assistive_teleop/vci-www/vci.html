@@ -38,6 +38,7 @@
   <script type="text/javascript" src="js/tasks/ee_rotation.js"></script>
   <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
   <script type="text/javascript" src="js/tasks/move-object.js"></script>
+  <script type="text/javascript" src="js/tasks/pick-and-place.js"></script>
   <script type="text/javascript" src="js/tasks/id-location.js"></script>
   <script type="text/javascript" src="js/tasks/smach-display.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
@@ -101,6 +102,7 @@
         <button id="wristCCW" style="display:none">CCW</button>-->
 
         <!-- Right Arm Controls -->
+        <div class="pick-and-place r-arm-ctrl" style="display:none"></div>
         <div id="r-posrot-set" class="r-arm-ctrl posrot-set" style="display:none">
             <h4>Position/Rotation</h4>
             <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
@@ -110,6 +112,7 @@
         </div>
 
         <!-- Left Arm Controls -->
+        <div class="pick-and-place l-arm-ctrl" style="display:none"></div>
         <div id="l-posrot-set" class="l-arm-ctrl posrot-set" style="display:none">
             <h4>Position/Rotation</h4>
             <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
