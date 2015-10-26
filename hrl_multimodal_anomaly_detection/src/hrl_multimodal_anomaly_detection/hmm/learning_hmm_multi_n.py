@@ -59,9 +59,11 @@ class learning_hmm_multi_n:
         # print 'HMM initialized for', self.check_method
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl='ml_temp_n.pkl', use_pkl=False):
+            ml_pkl=None, use_pkl=False):
+
+        if ml_pkl is None:
+            ml_pkl = os.path.join(os.path.dirname(__file__), 'ml_temp_n.pkl')            
         
-        ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         if cov_mult is None:
             cov_mult = [1.0]*(self.nEmissionDim**2)
 
@@ -160,6 +162,7 @@ class learning_hmm_multi_n:
             # Get average loglikelihood threshold wrt progress
 
             if os.path.isfile(ml_pkl) and use_pkl:
+                if self.verbose: print 'Load detector parameters'
                 d = ut.load_pickle(ml_pkl)
                 self.l_statePosterior = d['state_post'] # time x state division
                 self.ll_mu            = d['ll_mu']

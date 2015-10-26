@@ -39,11 +39,14 @@ import gc
 import numpy as np
 
 # 
-from hrl_multimodal_anomaly_detection.hmm import util
+from hrl_anomaly_detection.hmm import util
 import hrl_lib.util as ut
+
+# msgs and srvs
+from hrl_manipulation_task.msg import MultiModality
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneResponse
 
-#
+# Sensors
 from sensor.kinect_audio import kinect_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
@@ -56,9 +59,9 @@ class logger:
                  subject=None, task=None, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
-        self.subject = subject
-        self.task    = task
-        self.verbose = verbose
+        self.subject  = subject
+        self.task     = task
+        self.verbose  = verbose
         
         self.initParams()
         
@@ -81,14 +84,18 @@ class logger:
 
         
     def initComms(self):
-
-        self.log_start_service = rospy.Service('/data_record/log_start', String_None, self.logStartCallback)
+        '''
+        Record data and publish raw data
+        '''        
+        self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
+        
+        ## self.log_start_service = rospy.Service('/data_record/log_start', String_None, self.logStartCallback)
 
         
-    def logStartCallback(self, msg):
-        if msg.data == True: self.log_start()            
-        else: self.close_log_file()            
-        return Bool_NoneResponse()
+    ## def logStartCallback(self, msg):
+    ##     if msg.data == True: self.log_start()            
+    ##     else: self.close_log_file()            
+    ##     return Bool_NoneResponse()
 
         
     def log_start(self):
@@ -238,7 +245,44 @@ class logger:
 
         self.close_log_file()
 
-    
+    def runDataPub(self):
+        '''
+        Publish collected data
+        '''
+        
+        rate = rospy.Rate(20) # 25Hz, nominally.
+        while not rospy.is_shutdown():
+
+            msg = MultiModality()
+            msg.header.stamp      = rospy.Time.now()
+            msg.audio_power       = self.audio.power
+            msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
+            msg.audio_head_joints = [self.audio.head_joints[0], self.audio.head_joints[1]]
+            msg.audio_cmd         = self.audio.recog_cmd
+
+            ee_pos, ee_quat           = self.kinematics.getEEFrame()
+            jnt_pos, jnt_vel, jnt_eff = self.kinematics.return_joint_state()
+            target_pos, target_quat   = self.kinematics.getTargetFrame()
+            
+            msg.kinematics_ee_pos  = np.squeeze(ee_pos.T).tolist()
+            msg.kinematics_ee_quat = np.squeeze(ee_quat.T).tolist()
+            msg.kinematics_jnt_pos = np.squeeze(jnt_pos.T).tolist()
+            msg.kinematics_jnt_vel = np.squeeze(jnt_vel.T).tolist()
+            msg.kinematics_jnt_eff = np.squeeze(jnt_eff.T).tolist()
+            msg.kinematics_target_pos  = np.squeeze(target_pos.T).tolist()
+            msg.kinematics_target_quat = np.squeeze(target_quat.T).tolist()
+
+            msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()
+            msg.ft_torque = np.squeeze(self.ft.torque_raw.T).tolist()
+
+            msg.vision_pos  = np.squeeze(self.vision.artag_pos.T).tolist()
+            msg.vision_quat = np.squeeze(self.vision.artag_quat.T).tolist()
+            
+            msg.pps_skin_left = np.squeeze(self.ft.force_raw.T).tolist()
+            msg.pps_skin_left = np.squeeze(self.ft.torque_raw.T).tolist()
+            
+            self.rawDataPub.Publish(msg)
+            rate.sleep()
         
                 
 if __name__ == '__main__':
@@ -248,9 +292,10 @@ if __name__ == '__main__':
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=True, \
+    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=False, \
                  subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
-    log.run()
+    ## log.run()
+    log.runDataPub()
     

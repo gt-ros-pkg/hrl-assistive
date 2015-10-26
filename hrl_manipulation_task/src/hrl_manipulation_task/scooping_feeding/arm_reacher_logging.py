@@ -56,8 +56,7 @@ def scooping(armReachActionLeft, armReachActionRight, log):
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping")
-    
-    
+        
     print "Start to log!"    
     log.log_start()
     
@@ -97,15 +96,22 @@ def feeding(armReachActionLeft, armReachActionRight, log):
     
     
 if __name__ == '__main__':
-
-    rospy.init_node('feed_client')
+    
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
+                 default=False, help='Continuously publish data.')
+    opt, args = p.parse_args()
+    
+    
+    rospy.init_node('arm_reach_client')
 
     rospy.wait_for_service("/arm_reach_enable")
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=False, \
-                 subject="gatsbii", task='feeding', verbose=False)
+                 subject="gatsbii", task='feeding', data_pub=opt.bDataPub, verbose=False)
 
     while not rospy.is_shutdown():
                  

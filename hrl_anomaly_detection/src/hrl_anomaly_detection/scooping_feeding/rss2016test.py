@@ -334,7 +334,172 @@ def updateMinMax(param_dict, feature_name, feature_array):
         
     
 
-def test(processed_data_path, task_name, nSet, feature_list, local_range, viz=False):
+def likelihoodOfSequences(processed_data_path, task_name, feature_list, local_range, \
+                          nSet=0, nState=10, threshold=-1.0, \
+                          useTrain=True, useNormalTest=True, useAbnormalTest=False,\
+                          useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                          renew=False, save_pdf=False, show_plot=True):
+
+    target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
+    if os.path.isfile(target_file) is not True: 
+        print "There is no saved data"
+        sys.exit()
+
+    data_dict = ut.load_pickle(target_file)
+
+    # training set
+    trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+
+    # test set
+    normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
+                                            param_dict=param_dict)        
+    abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
+                                              param_dict=param_dict)
+
+    print "======================================"
+    print "Training data: ", np.shape(trainingData)
+    print "Normal test data: ", np.shape(normalTestData)
+    print "Abnormal test data: ", np.shape(abnormalTestData)
+    print "======================================"
+
+    # training hmm
+    nEmissionDim = len(trainingData)
+    detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
+
+    ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=False)
+    ret = ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=not(renew))
+    ths = threshold
+    
+    if ret == 'Failure': 
+        print "-------------------------"
+        print "HMM returned failure!!   "
+        print "-------------------------"
+        return (-1,-1,-1,-1)
+    
+    if show_plot: fig = plt.figure()
+    min_logp = 0.0
+    max_logp = 0.0
+        
+    # training data
+    if useTrain:
+
+        log_ll = []
+        exp_log_ll = []        
+        count = 0
+        for i in xrange(len(trainingData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+            for j in range(2, len(trainingData[0][i])):
+
+                X = [x[i,:j] for x in trainingData]                
+                X_test = ml.convert_sequence(X)
+                try:
+                    logp = ml.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+                
+            # disp
+            if useTrain_color:
+                plt.plot(log_ll[i], label=str(i))
+                print i, " : ", trainFileList[i], log_ll[i][-1]                
+            else:
+                plt.plot(log_ll[i], 'b-')
+
+        if useTrain_color: 
+            plt.legend(loc=3,prop={'size':16})
+            
+        ## plt.plot(exp_log_ll[i], 'r-')            
+                                             
+    # normal test data
+    if useNormalTest:
+
+        log_ll = []
+        exp_log_ll = []        
+        count = 0
+        for i in xrange(len(normalTestData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+
+            for j in range(2, len(normalTestData[0][i])):
+                X = [x[i,:j] for x in normalTestData]                
+                X_test = ml.convert_sequence(X)
+                try:
+                    logp = ml.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+                ## exp_logp = ml.expLikelihoods(X_test, ths)
+                exp_logp = ml.expLikelihoods(X, ths)
+                exp_log_ll[i].append(exp_logp)
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+
+            # disp 
+            if useNormalTest_color:
+                print i, " : ", normalTestFileList[i]                
+                plt.plot(log_ll[i], label=str(i))
+            else:
+                plt.plot(log_ll[i], 'g-')
+
+            plt.plot(exp_log_ll[i], 'r*-')
+
+
+        if useNormalTest_color: 
+            plt.legend(loc=3,prop={'size':16})
+
+    # abnormal test data
+    if useAbnormalTest:
+        log_ll = []
+        exp_log_ll = []        
+        count = 0
+        for i in xrange(len(abnormalTestData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+
+            for j in range(2, len(abnormalTestData[0][i])):
+                X = [x[i,:j] for x in abnormalTestData]                
+                X_test = ml.convert_sequence(X)
+                try:
+                    logp = ml.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+            # disp 
+            plt.plot(log_ll[i], 'r-')
+            ## plt.plot(exp_log_ll[i], 'r*-')
+
+
+    plt.ylim([min_logp, max_logp])
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        if show_plot: plt.show()        
+
+    return
+
+        
+
+def test(processed_data_path, task_name, nSet, feature_list, local_range, \
+         nState=10,\
+         renew=False, viz=False):
 
     for i in xrange(nSet):        
         target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(i) )                    
@@ -366,14 +531,122 @@ def test(processed_data_path, task_name, nSet, feature_list, local_range, viz=Fa
                                        abnormalTestData=abnormalTestData)        
         
         # training hmm
-        nState = 5
         nEmissionDim = len(trainingData)
+        detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
                 
-        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim)
-        ml.fit(trainingData)
+        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=False)
 
+        print "Start to fit hmm"
+        ret = ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=renew)
+
+        if ret == 'Failure': 
+            print "-------------------------"
+            print "HMM returned failure!!   "
+            print "-------------------------"
+            return (-1,-1,-1,-1)
+
+
+        tp_l = []
+        fn_l = []
+        fp_l = []
+        tn_l = []
+        ths_l = []
+        
         # evaluation
+        ## threshold_list = -(np.logspace(-1.0, 1.5, nThres, endpoint=True)-1.0 )        
+        threshold_list = [-5.0]
+        for ths in threshold_list:        
+            tp, fn, tn, fp = onlineEvaluation(ml, normalTestData, abnormalTestData, c=ths, 
+                                              verbose=True)
+            if tp == -1:
+                tp_l.append(0)
+                fn_l.append(0)
+                fp_l.append(0)
+                tn_l.append(0)
+                ths_l.append(ths)
+            else:                       
+                tp_l.append(tp)
+                fn_l.append(fn)
+                fp_l.append(fp)
+                tn_l.append(tn)
+                ths_l.append(ths)
 
+        dd = {}
+        dd['fn_l']    = fn_l
+        dd['tn_l']    = tn_l
+        dd['tp_l']    = tp_l
+        dd['fp_l']    = fp_l
+        dd['ths_l']   = ths_l
+        print dd        
+
+        
+def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False):
+    truePos = 0
+    trueNeg = 0
+    falsePos = 0
+    falseNeg = 0
+
+    # positive is anomaly
+    # negative is non-anomaly
+    if verbose: print '\nBeginning anomaly testing for test set\n'
+
+    # for normal test data
+    if normalTestData != []:    
+        for i in xrange(len(normalTestData[0])):
+            if verbose: print 'Anomaly Error for test set ', i
+
+            for j in range(20, len(normalTestData[0][i])):
+                try:    
+                    anomaly, error = hmm.anomaly_check(normalTestData[:][i][:j], c)
+                except:
+                    print "anomaly_check failed: ", i, j
+                    ## return (-1,-1,-1,-1)
+                    falsePos += 1
+                    break
+
+                if np.isnan(error):
+                    print "anomaly check returned nan"
+                    falsePos += 1
+                    break
+                    ## return (-1,-1,-1,-1)
+
+                if verbose: print anomaly, error
+
+                # This is a successful nonanomalous attempt
+                if anomaly:
+                    falsePos += 1
+                    if verbose: print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
+                    error
+                    break
+                elif j == len(normalTestData[0][i]) - 1:
+                    trueNeg += 1
+                    break
+
+
+    # for abnormal test data
+    for i in xrange(len(abnormalTestData[0])):
+        if verbose: print 'Anomaly Error for test set ', i
+
+        for j in range(20, len(abnormalTestData[0][i])):
+            try:                    
+                anomaly, error = hmm.anomaly_check(abnormalTestData[:][i][:j], c)
+            except:
+                truePos += 1
+                break
+
+            if verbose: print anomaly, error
+                
+            if anomaly:
+                truePos += 1
+                break
+            elif j == len(abnormalTestData[0][i]) - 1:
+                falseNeg += 1
+                if verbose: print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
+                break
+
+    return truePos, falseNeg, trueNeg, falsePos
+
+        
 
 def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None):
 
@@ -477,9 +750,14 @@ if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-        
+
+    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
+                 default=False, help='Plot the change of likelihood.')
+    
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
 
     opt, args = p.parse_args()
 
@@ -505,5 +783,15 @@ if __name__ == '__main__':
     nSet         = 1
     local_range  = 0.25    
     viz          = False
-        
-    test(save_data_path, task, nSet, feature_list, local_range, viz=viz)
+    renew        = False
+
+    if opt.bLikelihoodPlot:
+        nState    = 10
+        threshold = 0.0
+        likelihoodOfSequences(save_data_path, task, feature_list, local_range, \
+                              nState=nState, threshold=threshold,\
+                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                              renew=renew, save_pdf=opt.bSavePdf)
+    else:
+        test(save_data_path, task, nSet, feature_list, local_range, renew=renew, viz=viz)
