@@ -39,7 +39,7 @@ import gc
 import numpy as np
 
 # 
-from hrl_anomaly_detection.hmm import util
+from hrl_anomaly_detection import util
 import hrl_lib.util as ut
 
 # msgs and srvs
@@ -216,19 +216,29 @@ class logger:
             rate.sleep()
 
             if self.audio is not None:
-                if self.audio.isReady() is False: continue
+                if self.audio.isReady() is False: 
+                    print "audio is not ready"
+                    continue
 
             if self.kinematics is not None:
-                if self.kinematics.isReady() is False: continue
+                if self.kinematics.isReady() is False: 
+                    print "kinematics is not ready"                    
+                    continue
 
             if self.ft is not None:
-                if self.ft.isReady() is False: continue
+                if self.ft.isReady() is False: 
+                    print "ft is not ready"                                        
+                    continue
 
             if self.vision is not None:
-                if self.vision.isReady() is False: continue
+                if self.vision.isReady() is False: 
+                    print "AR tag is not ready"                                        
+                    continue
 
             if self.pps_skin is not None:
-                if self.pps_skin.isReady() is False: continue
+                if self.pps_skin.isReady() is False: 
+                    print "pps is not ready"                                        
+                    continue
                 
             break
 
@@ -255,33 +265,40 @@ class logger:
 
             msg = MultiModality()
             msg.header.stamp      = rospy.Time.now()
-            msg.audio_power       = self.audio.power
-            msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
-            msg.audio_head_joints = [self.audio.head_joints[0], self.audio.head_joints[1]]
-            msg.audio_cmd         = self.audio.recog_cmd
 
-            ee_pos, ee_quat           = self.kinematics.getEEFrame()
-            jnt_pos, jnt_vel, jnt_eff = self.kinematics.return_joint_state()
-            target_pos, target_quat   = self.kinematics.getTargetFrame()
-            
-            msg.kinematics_ee_pos  = np.squeeze(ee_pos.T).tolist()
-            msg.kinematics_ee_quat = np.squeeze(ee_quat.T).tolist()
-            msg.kinematics_jnt_pos = np.squeeze(jnt_pos.T).tolist()
-            msg.kinematics_jnt_vel = np.squeeze(jnt_vel.T).tolist()
-            msg.kinematics_jnt_eff = np.squeeze(jnt_eff.T).tolist()
-            msg.kinematics_target_pos  = np.squeeze(target_pos.T).tolist()
-            msg.kinematics_target_quat = np.squeeze(target_quat.T).tolist()
+            if self.audio is not None:            
+                msg.audio_feature     = np.squeeze(self.audio.feature.T).tolist()
+                msg.audio_power       = self.audio.power
+                msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
+                msg.audio_head_joints = [self.audio.head_joints[0], self.audio.head_joints[1]]
+                msg.audio_cmd         = self.audio.recog_cmd if type(self.audio.recog_cmd)==str() else 'None'
 
-            msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()
-            msg.ft_torque = np.squeeze(self.ft.torque_raw.T).tolist()
+            if self.kinematics is not None:
+                ee_pos, ee_quat           = self.kinematics.getEEFrame()
+                jnt_pos, jnt_vel, jnt_eff = self.kinematics.return_joint_state()
+                target_pos, target_quat   = self.kinematics.getTargetFrame()
+            
+                msg.kinematics_ee_pos  = np.squeeze(ee_pos.T).tolist()
+                msg.kinematics_ee_quat = np.squeeze(ee_quat.T).tolist()
+                msg.kinematics_jnt_pos = np.squeeze(jnt_pos.T).tolist()
+                msg.kinematics_jnt_vel = np.squeeze(jnt_vel.T).tolist()
+                msg.kinematics_jnt_eff = np.squeeze(jnt_eff.T).tolist()
+                msg.kinematics_target_pos  = np.squeeze(target_pos.T).tolist()
+                msg.kinematics_target_quat = np.squeeze(target_quat.T).tolist()
 
-            msg.vision_pos  = np.squeeze(self.vision.artag_pos.T).tolist()
-            msg.vision_quat = np.squeeze(self.vision.artag_quat.T).tolist()
+            if self.ft is not None:
+                msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()
+                msg.ft_torque = np.squeeze(self.ft.torque_raw.T).tolist()
+
+            if self.vision is not None:
+                msg.vision_pos  = np.squeeze(self.vision.artag_pos.T).tolist()
+                msg.vision_quat = np.squeeze(self.vision.artag_quat.T).tolist()
             
-            msg.pps_skin_left = np.squeeze(self.ft.force_raw.T).tolist()
-            msg.pps_skin_left = np.squeeze(self.ft.torque_raw.T).tolist()
+            if self.pps_skin is not None:
+                msg.pps_skin_left  = np.squeeze(self.pps_skin.data_left.T).tolist()
+                msg.pps_skin_right = np.squeeze(self.pps_skin.data_right.T).tolist()
             
-            self.rawDataPub.Publish(msg)
+            self.rawDataPub.publish(msg)
             rate.sleep()
         
                 
