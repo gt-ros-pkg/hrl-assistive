@@ -4,11 +4,7 @@
     <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />    
     <rosparam command="load" file="$(arg ad_param)" />
 
-    <node pkg="hrl_anomaly_detection" type="anomaly_detector.py" name="scooping" output="screen">
-      <!--param name="tip_name" value="l_wrist_roll_link" /-->
-      <!--param name="root_name" value="torso_lift_link" /-->
-    </node>
-
+    <node name="scooping" pkg="hrl_anomaly_detection" type="anomaly_detector.py" output="screen" />
 
 </launch>
 

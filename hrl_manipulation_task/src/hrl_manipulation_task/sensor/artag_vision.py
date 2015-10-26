@@ -190,8 +190,6 @@ class artag_vision(threading.Thread):
                         self.vision_tag_pos = np.hstack([self.vision_tag_pos, self.artag_pos])
                         self.vision_tag_quat = np.hstack([self.vision_tag_quat, self.artag_quat])
 
-                    print len(self.time_data), np.shape(self.vision_tag_pos)
-
                     self.lock.release()
 
     def cancel(self):

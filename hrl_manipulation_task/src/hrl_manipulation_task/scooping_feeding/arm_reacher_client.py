@@ -49,10 +49,10 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     print armReachActionRight("initScooping")
-    print armReachActionLeft("initScooping")
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
-    print armReachActionLeft("test")
+    print armReachActionLeft("initScooping")
+    ## print armReachActionLeft("test")
     sys.exit()
     
     

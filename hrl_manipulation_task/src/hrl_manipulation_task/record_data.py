@@ -43,7 +43,7 @@ from hrl_anomaly_detection import util
 import hrl_lib.util as ut
 
 # msgs and srvs
-from hrl_manipulation_task.msg import MultiModality
+from hrl_anomaly_detection.msg import MultiModality
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneResponse
 
 # Sensors
@@ -56,11 +56,12 @@ from sensor.pps_skin import pps_skin
 
 class logger:
     def __init__(self, ft=False, audio=False, kinematics=False, vision=False, pps=False, \
-                 subject=None, task=None, verbose=False):
+                 subject=None, task=None, data_pub= False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject  = subject
         self.task     = task
+        self.data_pub = data_pub
         self.verbose  = verbose
         
         self.initParams()
@@ -73,6 +74,11 @@ class logger:
 
         self.waitForReady()
         self.initComms()
+
+        if self.data_pub:
+            t = threading.Thread(target=self.runDataPub)
+            t.setDaemon(True)
+            t.start()
         
     def initParams(self):
         '''
@@ -209,13 +215,13 @@ class logger:
         rospy.sleep(1.0)
 
 
-    def enableDetector(enableFlag):
-            
+    def enableDetector(self, enableFlag):
+        print "Wait anomaly detector service"
+        rospy.wait_for_service('anomaly_detector_enable/'+self.task)
         s   = rospy.ServiceProxy('anomaly_detector_enable/'+self.task, Bool_None)
         ret = s(enableFlag)
 
         
-
     def waitForReady(self):
 
         rate = rospy.Rate(20) # 25Hz, nominally.
@@ -273,10 +279,11 @@ class logger:
             msg = MultiModality()
             msg.header.stamp      = rospy.Time.now()
 
-            if self.audio is not None:            
-                msg.audio_feature     = np.squeeze(self.audio.feature.T).tolist()
-                msg.audio_power       = self.audio.power
-                msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
+            if self.audio is not None: 
+                if self.audio.feature is not None:           
+                    msg.audio_feature     = np.squeeze(self.audio.feature.T).tolist()
+                    msg.audio_power       = self.audio.power
+                    msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
                 msg.audio_head_joints = [self.audio.head_joints[0], self.audio.head_joints[1]]
                 msg.audio_cmd         = self.audio.recog_cmd if type(self.audio.recog_cmd)==str() else 'None'
 
@@ -298,8 +305,9 @@ class logger:
                 msg.ft_torque = np.squeeze(self.ft.torque_raw.T).tolist()
 
             if self.vision is not None:
-                msg.vision_pos  = np.squeeze(self.vision.artag_pos.T).tolist()
-                msg.vision_quat = np.squeeze(self.vision.artag_quat.T).tolist()
+                if self.vision.artag_pos is not None:
+                    msg.vision_pos  = np.squeeze(self.vision.artag_pos.T).tolist()
+                    msg.vision_quat = np.squeeze(self.vision.artag_quat.T).tolist()
             
             if self.pps_skin is not None:
                 msg.pps_skin_left  = np.squeeze(self.pps_skin.data_left.T).tolist()

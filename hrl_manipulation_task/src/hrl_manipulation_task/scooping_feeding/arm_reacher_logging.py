@@ -106,8 +106,7 @@ if __name__ == '__main__':
     p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
                  default=False, help='Continuously publish data.')
     opt, args = p.parse_args()
-    
-    
+
     rospy.init_node('arm_reach_client')
 
     rospy.wait_for_service("/arm_reach_enable")
@@ -118,19 +117,21 @@ if __name__ == '__main__':
                  subject="gatsbii", task='feeding', data_pub=opt.bDataPub, verbose=False)
 
     while not rospy.is_shutdown():
-                 
+
+        detection_flag = False
+        
         trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
-        detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
-        if detect == '1': detection_flag = True
-        else: detection_flag = False
+        if trial is '1' or trial is '2' or trial is '3':
+            detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
+            if detect == '1': detection_flag = True
             
-        if trial == '1':
-            scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
-        elif trial == '2':
-            feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
-        elif trial == '3':
-            scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
-            feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+            if trial == '1':
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+            elif trial == '2':
+                feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+            else:
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+                feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
         else:
             break
 

@@ -434,6 +434,7 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
             if verbose: print 'Anomaly Error for test set ', i
 
             for j in range(20, len(normalTestData[0][i])):
+
                 try:    
                     anomaly, error = hmm.anomaly_check(normalTestData[:][i][:j], c)
                 except:
