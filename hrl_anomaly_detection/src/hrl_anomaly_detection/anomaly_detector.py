@@ -33,12 +33,13 @@ import rospy
 import roslib
 roslib.load_manifest('hrl_anomaly_detection')
 import os, sys, copy
-import random
+import threading
 
 # util
 import numpy as np
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
+from sound_play.libsoundplay import SoundClient
 
 # learning
 from sklearn.decomposition import PCA
@@ -46,23 +47,39 @@ from hrl_multimodal_anomaly_detection.hmm import learning_hmm_multi_n as hmm
 
 # msg
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse
+from hrl_manipulation_task.msg import MultiModality
+from std_msgs.msg import String
 
 class anomaly_detector:
 
-    def __init__(self, verbose=False):
+    def __init__(self, task_name, feature_list, save_data_path, training_data_pkl, verbose=False):
+        rospy.init_node(task_name)
         rospy.loginfo('Initializing anomaly detector')
 
-        self.start_detector = False
+        self.task_name         = task_name
+        self.feature_list      = feature_list
+        self.save_data_path    = save_data_path
+        self.training_data_pkl = os.path.join(save_data_path, training_data_pkl)
+        self.count = 0
+
+        self.enable_detector = False
+        self.soundHandle = SoundClient()
+        
+        ## self.ad_thread = threading.Thread(target=self.run)
+        ## self.ad_thread.daemon = True
+        ## self.ad_thread.paused = True
         
         self.initParams()
         self.initComms()
+        self.initDetector()
+        self.reset()
 
     def initParams(self):
         '''
         Load feature list
         '''
-        
-        return
+        self.rf_radius = rospy.get_param('hrl_manipulation_task/receptive_field_radius')
+        self.nState    = 10
     
     def initComms(self):
         '''
@@ -72,32 +89,169 @@ class anomaly_detector:
         self.action_interruption_pub = rospy.Publisher('InterruptAction', String)
         
         # Subscriber
+        rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
         
         # Service
-        self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
-        
-        pass
+        self.detection_service = rospy.Service('anomaly_detector_enable/'+self.task_name, Bool_None, \
+                                               self.enablerCallback)
 
+    def initDetector(self):
+
+        if os.path.isfile(self.training_data_pkl) is not True: 
+            print "There is no saved data"
+            sys.exit()
+        
+        data_dict = ut.load_pickle(self.training_data_pkl)
+        trainingData, self.param_dict = extractLocalFeature(data_dict['trainData'], self.feature_list, \
+                                                            self.rf_radius)
+
+        # training hmm
+        self.nEmissionDim = len(trainingData)
+        detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')        
+        self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, verbose=False)
+        
+        ret = self.ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=True)
+
+        if ret == 'Failure': 
+            print "-------------------------"
+            print "HMM returned failure!!   "
+            print "-------------------------"
+            sys.exit()
+
+    
     def enablerCallback(self, msg):
 
         if msg.data is True: 
-            # Start detection thread
-            self.run()
+            self.enable_detector = True
         else:
             # Reset detector
-            self.reset()
-            
+            self.enable_detector = False
+            self.reset()            
         
         return Bool_NoneResponse()
 
+        
+    def rawDataCallback(self, msg):
+
+        self.audio_feature     = msg.audio_feature
+        self.audio_power       = msg.audio_power
+        self.audio_azimuth     = msg.audio_azimuth
+        self.audio_head_joints = msg.audio_head_joints
+        self.audio_cmd         = msg.audio_cmd
+
+        self.kinematics_ee_pos      = msg.kinematics_ee_pos
+        self.kinematics_ee_quat     = msg.kinematics_ee_quat
+        self.kinematics_jnt_pos     = msg.kinematics_jnt_pos
+        self.kinematics_jnt_vel     = msg.kinematics_jnt_vel
+        self.kinematics_jnt_eff     = msg.kinematics_jnt_eff
+        self.kinematics_target_pos  = msg.kinematics_target_pos
+        self.kinematics_target_quat = msg.kinematics_target_quat
+
+        self.ft_force  = msg.ft_force
+        self.ft_torque = msg.ft_torque
+
+        self.vision_pos  = msg.vision_pos
+        self.vision_quat = msg.vision_quat
+
+        self.pps_skin_left  = msg.pps_skin_left
+        self.pps_skin_right = msg.pps_skin_right
+        
+
+    def extractLocalFeature(self):
+
+        dataSample = None
+
+        # Unimoda feature - Audio --------------------------------------------        
+        if 'unimodal_audioPower' in self.feature_list:
+
+            ang_max, ang_min = getAngularSpatialRF(self.kinematics_ee_pos, self.rf_radius)
+
+            if self.audio_azimuth > ang_min and self.audio_azimuth < ang_max:
+                unimodal_audioPower = self.audio_power
+            else:
+                unimodal_audioPower = self.audio_power_noise                
+            
+            if dataSample is None: dataSample = np.array(unimodal_audioPower)
+            else: dataSample = np.vstack([dataSample, unimodal_audioPower])
+
+
+        # Unimodal feature - Kinematics --------------------------------------
+        if 'unimodal_kinVel' in self.feature_list:
+            print "not implemented"
+
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForce' in self.feature_list:
+
+            unimodal_ftForce = self.ftForce_pca.transform(self.ft_force)
+            if dataSample is None: dataSample = np.array(unimodal_ftForce)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce])
+
+        # Crossmodal feature - relative dist --------------------------
+        if 'crossmodal_targetRelativeDist' in feature_list:
+
+            crossmodal_targetRelativeDist = np.linalg.norm(np.array(self.kinematics_target_pos) - \
+                                                           np.array(self.kinematics_ee_pos))
+
+            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeDist])
+
+        # Crossmodal feature - relative angle --------------------------
+        if 'crossmodal_targetRelativeAng' in feature_list:                
+            
+            diff_ang = qt.quat_angle(self.kinematics_ee_quat, self.kinematics_target_quat)
+            crossmodal_targetRelativeAng = abs(diff_ang)
+
+            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeAng])
+
+        return dataSample
+            
+            
     def reset(self):
         '''
         Reset parameters
         '''
-        self.initParams()
+        self.dataList = []
+        
 
     def run(self):
         '''
         Run detector
-        '''
-        self.action_interruption_pub.publish('anomaly?')
+        '''            
+        self.count = 0
+        
+        rate = rospy.Rate(20) # 25Hz, nominally.
+        while not rospy.is_shutdown():
+
+            if enable_detector is False: return
+
+            # extract feature
+            self.dataList.append( self.extractLocalFeature() ) 
+
+            # Run anomaly checker
+            anomaly, error = self.ml.anomaly_check(self.dataList, self.threshold)
+            
+            # anomaly decision
+            if np.isnan(error): print "anomaly check returned nan"
+            elif anomaly: 
+                self.action_interruption_pub.publish(self.task_name+'_anomaly')
+                self.soundHandle.play(2)
+                
+            self.count += 1
+            
+            rate.sleep()
+
+        
+
+if __name__ == '__main__':
+        
+
+    task_name    = 'scooping'
+    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
+                    'crossmodal_targetRelativeAng']
+    save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
+    training_data_pkl = task_name+'_dataSet_0'
+    
+    ad = anomaly_detector(task_name, feature_list, save_data_path, training_data_pkl)
+    ## ad.run()
+    

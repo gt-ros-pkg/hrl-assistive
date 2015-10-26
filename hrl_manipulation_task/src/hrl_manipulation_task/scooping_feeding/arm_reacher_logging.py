@@ -43,7 +43,7 @@ import hrl_lib.util as ut
 from hrl_manipulation_task.record_data import logger
 
 
-def scooping(armReachActionLeft, armReachActionRight, log):
+def scooping(armReachActionLeft, armReachActionRight, log, detection_flag):
 
     log.task = 'scooping'
     log.initParams()
@@ -59,15 +59,17 @@ def scooping(armReachActionLeft, armReachActionRight, log):
         
     print "Start to log!"    
     log.log_start()
+    if detection_flag: log.enableDetector(True)
     
     print "Running scooping!"
     print armReachActionLeft("runScooping")
 
+    if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
 
     
-def feeding(armReachActionLeft, armReachActionRight, log):
+def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
 
     log.task = 'feeding'
     log.initParams()
@@ -87,10 +89,12 @@ def feeding(armReachActionLeft, armReachActionRight, log):
     
     print "Start to log!"    
     log.log_start()
+    if detection_flag: log.enableDetector(True)
     
     print "Running feeding2"    
     print armReachActionLeft("runFeeding2")
 
+    if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
     
@@ -115,14 +119,18 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
                  
-        flag = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
-        if flag == '1':
-            scooping(armReachActionLeft, armReachActionRight, log)
-        elif flag == '2':
-            feeding(armReachActionLeft, armReachActionRight, log)
-        elif flag == '3':
-            scooping(armReachActionLeft, armReachActionRight, log)
-            feeding(armReachActionLeft, armReachActionRight, log)
+        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
+        detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
+        if detect == '1': detection_flag = True
+        else: detection_flag = False
+            
+        if trial == '1':
+            scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+        elif trial == '2':
+            feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+        elif trial == '3':
+            scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+            feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
         else:
             break
 

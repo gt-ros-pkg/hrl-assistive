@@ -3,6 +3,7 @@ hrl_manipulation_task:
 
   # Common parameters
   arm: l
+  receptive_field_radius: 0.25
 
   # For auditory perception
   head_audio_frame: head_mount_link

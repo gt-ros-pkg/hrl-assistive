@@ -209,6 +209,13 @@ class logger:
         rospy.sleep(1.0)
 
 
+    def enableDetector(enableFlag):
+            
+        s   = rospy.ServiceProxy('anomaly_detector_enable/'+self.task, Bool_None)
+        ret = s(enableFlag)
+
+        
+
     def waitForReady(self):
 
         rate = rospy.Rate(20) # 25Hz, nominally.

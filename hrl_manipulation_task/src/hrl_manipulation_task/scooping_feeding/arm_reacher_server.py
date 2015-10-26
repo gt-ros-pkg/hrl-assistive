@@ -278,8 +278,10 @@ class armReachAction(mpcBaseAction):
         ## posStopL = Point()
         ## quatStopL = Quaternion()
 
-        ## # TODO: location should be replaced into the last scooping or feeding starts.
-        ## print "Moving left arm to safe position "
+        # TODO: location should be replaced into the last scooping or feeding starts.
+        print "Moving left arm to safe position "
+        self.parsingMovements(self.motions['initScooping'][self.arm])
+        
         ## if data.data == 'InterruptHead':
         ##     self.feeding([0])
         ##     self.setPostureGoal(self.lInitAngFeeding, 10)

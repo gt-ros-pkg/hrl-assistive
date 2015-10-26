@@ -13,9 +13,13 @@
     <depend package="rospy"/>
     <depend package="hrl_lib"/>
 
-    <depend package="geometry_msgs"/>"
+    <depend package="geometry_msgs"/>
+    <depend package="hrl_srvs"/>
 
     <depend package="hrl_multimodal_anomaly_detection"/>
+    <depend package="hrl_manipulation_task"/>
+
+    <depend package="sound_play"/>
 
     <!-- RViZ -->
     <!--depend package="interactive_markers"/-->
