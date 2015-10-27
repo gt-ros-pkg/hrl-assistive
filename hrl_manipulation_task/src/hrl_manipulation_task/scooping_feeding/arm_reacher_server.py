@@ -155,13 +155,14 @@ class armReachAction(mpcBaseAction):
           [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
            ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
-           ['PAUSE', 2.0]]
+           ['PAUSE', 1.0]]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
           [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 3, 'self.bowl_frame'],
            ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 4, 'self.bowl_frame'],
-           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'] ]
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'],
+           ['PAUSE', 2.0] ]
         self.motions['runScooping']['right'] = \
           []
         

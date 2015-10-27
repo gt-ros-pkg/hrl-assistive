@@ -701,14 +701,18 @@ def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None,
 
 def visualization_raw_data(data_dict, modality='ft', save_pdf=False):
 
-    for key in data_dict['trainData'].keys():
+    data_key = 'trainData'
+    file_key = 'trainFileList'
+    ## data_key = 'normalTestData'
+    ## file_key = 'normalTestFileList'
+    for key in data_dict[data_key].keys():
 
         if not('Pos' in key): continue
         
         print "key: ", key
         
-        dataList = data_dict['trainData'][key]
-        fileList = data_dict['trainFileList']
+        dataList = data_dict[data_key][key]
+        fileList = data_dict[file_key]
         
         if len(np.shape(dataList)) < 3: continue
         nSample, nDim, k = np.shape(dataList)
@@ -811,16 +815,16 @@ if __name__ == '__main__':
     if opt.bLikelihoodPlot:
         nState    = 15
         threshold = 0.0
-        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
+        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew)
         likelihoodOfSequences(save_data_path, task, feature_list, local_range, \
                               nState=nState, threshold=threshold,\
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               renew=renew, save_pdf=opt.bSavePdf)
-    if opt.bRawDataPlot:
+    elif opt.bRawDataPlot:
         target_data_set = 0
         
-        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
+        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew)
         raw_data_plot(task, raw_data_path, nSet=target_data_set)
                               
     else:
