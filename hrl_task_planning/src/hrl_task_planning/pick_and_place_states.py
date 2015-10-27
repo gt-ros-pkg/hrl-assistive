@@ -1,8 +1,10 @@
 import math
+import numpy as np
 import rospy
 from std_msgs.msg import Bool
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from tf import TransformListener
+from tf import transformations as tft
 import smach
 
 # pylint: disable=W0102
@@ -107,9 +109,8 @@ class MoveArmState(smach.State):
                 return 'aborted'
 
         # Try to get into position autonomously
-        self.mpc_pub.publish(goal_pose)
-        goal_pose.header.stamp = rospy.Time.now()
-        while not self.is_near(self.current_pose, goal_pose, threshold=0.1):
+#        self.mpc_pub.publish(goal_pose)
+        while not self.is_near(self.current_pose, goal_pose, threshold=0.18):
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'

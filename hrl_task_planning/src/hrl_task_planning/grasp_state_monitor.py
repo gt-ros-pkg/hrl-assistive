@@ -98,6 +98,8 @@ class GraspPressureMonitor(object):
 
     def set_grasp_state(self, state):
         if state != self.grasp_state:
+            msg = "Grasp" if state else "Release"
+            print "%s: %s" % (self.side, msg)
             self.state_pub.publish(state)
             self.grasp_state = state
 
@@ -105,17 +107,17 @@ class GraspPressureMonitor(object):
         grasp_state = self.grasp_state
         if self.motion_state == "OPENING":
             grasp_state = False
-            print "RELEASE -- OPENING"
+#            print "RELEASE -- OPENING"
         elif self.motion_state == "STEADY":
             if self.pressure_state == "RISING":
                 grasp_state = self.grasp_state
             elif self.pressure_state == "FALLING":
                 grasp_state = False
-                print "RELEASE -- STEADY, FALLING PRESSURE"
+#                print "RELEASE -- STEADY, FALLING PRESSURE"
         elif self.motion_state == "CLOSING":
             if self.pressure_state == "RISING":
                 grasp_state = True
-                print "GRASP -- CLOSING, RISING PRESSURE"
+#                print "GRASP -- CLOSING, RISING PRESSURE"
             else:
 #                grasp_state = False
                 grasp_state = self.grasp_state

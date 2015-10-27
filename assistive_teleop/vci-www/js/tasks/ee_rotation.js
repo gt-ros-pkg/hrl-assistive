@@ -4,6 +4,7 @@ RFH.EERotation = function (options) {
     self.arm = options.arm;
     self.tfClient = options.tfClient;
     self.eeDeltaCmd = options.eeDeltaCmdFn;
+    self.$viewer = $('#viewer-canvas')
     self.raycaster = new THREE.Raycaster();
     self.hoveredMesh = null;
     self.clickedMesh = null;
@@ -29,6 +30,23 @@ RFH.EERotation = function (options) {
         for (var dir in self.rotArrows) {
             self.rotArrows[dir].mesh.visible = true;
             self.rotArrows[dir].edges.visible = true;
+        }
+    };
+
+    self.setActive = function (bool) {
+        if (bool) {
+            self.$viewer.on('click.rot-ctrl', self.canvasClickCB);
+            self.$viewer.on('mousedown.rot-ctrl', self.canvasMousedownCB);
+            self.$viewer.on('mouseup.rot-ctrl', self.canvasMouseupCB);
+            self.$viewer.on('mousemove.rot-ctrl', self.canvasMouseMoveCB);
+            self.show();
+        } else {
+            self.$viewer.off('click.rot-ctrl');
+            self.$viewer.off('mousedown.rot-ctrl');
+            self.$viewer.off('mouseup.rot-ctrl');
+            self.$viewer.off('mousemove.rot-ctrl');
+            self.hide();
+
         }
     };
 
@@ -59,7 +77,6 @@ RFH.EERotation = function (options) {
             self.eeDeltaCmd(clickedMesh.cbArgs);
         }
     };
-    $('#viewer-canvas').on('click.rfh', self.canvasClickCB);
 
     self.canvasMousedownCB = function (event) {
         var clickedMesh = self.getMeshPointedAt(event);
@@ -68,7 +85,6 @@ RFH.EERotation = function (options) {
             self.clickedMesh = clickedMesh;
         }
     };
-    $('#viewer-canvas').on('mousedown.rfh', self.canvasMousedownCB);
 
     self.canvasMouseupCB = function (event) {
         var clickedMesh = self.getMeshPointedAt(event);
@@ -81,7 +97,6 @@ RFH.EERotation = function (options) {
             }
         }
     };
-    $('#viewer-canvas').on('mouseup.rfh', self.canvasMouseupCB);
 
     self.canvasMouseMoveCB = function (event) {
         var overMesh = self.getMeshPointedAt(event);
@@ -101,7 +116,6 @@ RFH.EERotation = function (options) {
             }
         }
     };
-    $('#viewer-canvas').on('mousemove.rfh', self.canvasMouseMoveCB);
 
     self.rotArrowLoader = new THREE.ColladaLoader();
     var arrowOnLoad = function (collada) {

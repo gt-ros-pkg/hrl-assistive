@@ -51,6 +51,8 @@ RFH.CartesianEEControl = function (options) {
     self.gripper.graspingCBList.push(updatePickPlaceButton);
 
     var pickPlaceButtonCB = function (event) {
+//        RFH.taskMenu.tasks.idLocationTask.offset = {position:{x:0.5, y:0, z:0},
+//                                                    rotation:{x:0, y:Math.PI, z:0}};
         RFH.taskMenu.tasks.pick_and_place.publishPickAndPlace(self.side);
     };
     self.$pickAndPlaceButton.on('click.pickandplace', pickPlaceButtonCB);
@@ -512,13 +514,13 @@ RFH.CartesianEEControl = function (options) {
     self.setRotationCtrls = function (e) {
         $('#armCtrlContainer').hide();
         $('#viewer-canvas').show();
-        self.rotationControl.show();
+        self.rotationControl.setActive(true);
         $(window).resize(); // Trigger canvas to update size TODO: unreliable, inconsistent behavior -- Fix
     };
 
     self.setPositionCtrls = function (e) {
         $('#viewer-canvas').hide();
-        self.rotationControl.hide();
+        self.rotationControl.setActive(false);
         $('#armCtrlContainer').show();
         $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate);
         $('#ctrl-ring').on('mousedown.rfh', self.ctrlRingActivate);
