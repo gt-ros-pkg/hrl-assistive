@@ -355,34 +355,32 @@ def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, 
 
         for idx, subject_name in enumerate(subject_names):
 
-            print method, " : ", subject_name        
-
             ## For parallel computing
             # save file name
-            res_file = task_name+'_'+subject_name+'_'+method+'.pkl'
+            res_file        = task_name+'_'+subject_name+'_'+method+'.pkl'
             mutex_file_part = 'running_'+task_name+'_'+subject_name+'_'+method
 
-            res_file = os.path.join(method_path, res_file)
+            res_file        = os.path.join(method_path, res_file)
             mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
             mutex_file      = os.path.join(method_path, mutex_file_full)
 
             if os.path.isfile(res_file): 
                 count += 1            
                 continue
-            elif hcu.is_file(method_path, mutex_file_part): 
+            elif hcu.is_file(method_path, mutex_file_part) and \
+              not hcu.is_file(method_path, mutex_file_part+'_'+socket.gethostname() ): 
+                print "Mutex file exists"
                 continue
             ## elif os.path.isfile(mutex_file): continue
             os.system('touch '+mutex_file)
-            
+
             preprocessData(subject_names, task_name, processed_data_path, processed_data_path, \
                            renew=data_renew)
-
-            print "aaaaaaaaaaaaaaaaaaaaaa"
 
             (truePos, falseNeg, trueNeg, falsePos)\
               = evaluation(task_name, processed_data_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
                            anomaly_offset=anomaly_offset, check_method=method,\
-                           hmm_renew=True, verbose=True)
+                           hmm_renew=True, viz=True, verbose=True)
 
 
             truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
@@ -430,7 +428,7 @@ def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, 
             
             
 def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0,\
-               check_method='progress', hmm_renew=False, verbose=False):
+               check_method='progress', hmm_renew=False, save_pdf=False, viz=False, verbose=False):
 
     tot_truePos = 0
     tot_falseNeg = 0
@@ -444,7 +442,7 @@ def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, 
             sys.exit()
 
         data_dict = ut.load_pickle(target_file)
-        ## if viz: visualization_raw_data(data_dict)
+        ## if viz: visualization_raw_data(data_dict, save_pdf=save_pdf)
 
         # training set
         trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
@@ -463,7 +461,7 @@ def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, 
 
         if viz: visualization_hmm_data(feature_list, trainingData=trainingData, \
                                        normalTestData=normalTestData,\
-                                       abnormalTestData=abnormalTestData)        
+                                       abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
 
         # training hmm
         nEmissionDim = len(trainingData)
@@ -639,7 +637,7 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
 
         
 
-def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None):
+def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None, save_pdf=False):
 
     if trainingData is not None:
         nDimension = len(trainingData)
@@ -657,21 +655,23 @@ def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None,
         ax = fig.add_subplot(100*nDimension+10+(i+1))
         if trainingData is not None:
             ax.plot(np.array(trainingData[i]).T, 'b')
-        elif normalTestData is not None:
-            ax.plot(np.array(normalTestData[i]).T, 'k')
+        ## elif normalTestData is not None:
+        ##     ax.plot(np.array(normalTestData[i]).T, 'k')
         ## elif abnormalTestData is not None:
         ##     ax.plot(abnormalTestData[i], 'r')
 
         ax.set_title(feature_list[i])
 
-    fig.savefig('test.pdf')
-    fig.savefig('test.png')
-    os.system('cp test.p* ~/Dropbox/HRL/')        
-    ## plt.show()
-    sys.exit()
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
+    #sys.exit()
 
 
-def visualization_raw_data(data_dict, modality='ft'):
+def visualization_raw_data(data_dict, modality='ft', save_pdf=False):
 
     ## dataList = data_dict['trainData']['ftForceList']
     ## dataList = data_dict['trainData']['kinTargetPosList']
@@ -699,7 +699,7 @@ def visualization_raw_data(data_dict, modality='ft'):
     
     for idx, data in enumerate(dataList):
 
-        d_list.append( np.mean(data, axis=0) )
+        d_list.append( np.linalg.norm(data, axis=0) )
         f_list.append( fileList[idx].split('/')[-1] )
 
         if idx%10 == 9:
@@ -711,10 +711,13 @@ def visualization_raw_data(data_dict, modality='ft'):
                 ax1.plot(d_list[j], label=f_list[j])
                 
             plt.legend(loc=3,prop={'size':8})
+            ax1.set_ylim([0.0, 2.0])
 
-            fig.savefig('test'+str(count)+'.pdf')
-            fig.savefig('test'+str(count)+'.png')
-            os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+            if save_pdf:
+                fig.savefig('test'+str(count)+'.pdf')
+                fig.savefig('test'+str(count)+'.png')
+                os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+                
             d_list = []
             f_list = []
             count += 1
@@ -727,13 +730,13 @@ def visualization_raw_data(data_dict, modality='ft'):
         ax1.plot(d_list[j], label=f_list[j])
 
     plt.legend(loc=3,prop={'size':8})
-
-    fig.savefig('test'+str(count)+'.pdf')
-    fig.savefig('test'+str(count)+'.png')
-    os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
-            
-    ## plt.show()
-    sys.exit()
+    ax1.set_ylim([0.0, 2.0])
+    if save_pdf:
+        fig.savefig('test'+str(count)+'.pdf')
+        fig.savefig('test'+str(count)+'.png')
+        os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
 
     
 
@@ -780,7 +783,7 @@ if __name__ == '__main__':
     renew        = False
 
     if opt.bLikelihoodPlot:
-        nState    = 10
+        nState    = 15
         threshold = 0.0
         preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
         likelihoodOfSequences(save_data_path, task, feature_list, local_range, \

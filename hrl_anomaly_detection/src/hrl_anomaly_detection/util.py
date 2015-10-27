@@ -71,6 +71,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
         if os.path.isdir(fileName):
             continue
 
+        print fileName
         d = ut.load_pickle(fileName)        
 
         kin_time = d['kinematics_time']
@@ -128,7 +129,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             
             vision_quat_array = interpolationQuatData(vision_time, vision_quat, new_times)
             data_dict['visionQuatList'].append(vision_quat_array)                                         
-            
+
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
             pps_skin_time  = d['pps_skin_time']
@@ -211,7 +212,8 @@ def interpolationData(time_array, data_array, new_time_array):
     
 def interpolationQuatData(time_array, data_array, new_time_array):
     '''
-    We have to use SLERP, but I cound not find a good library for quaternion array.
+    We have to use SLERP for start-goal quaternion interpolation.
+    But, I cound not find any good library for quaternion array interpolation.
     time_array: N - length array
     data_array: 4 x N - length array
     '''
@@ -222,24 +224,20 @@ def interpolationQuatData(time_array, data_array, new_time_array):
         time_array = time_array[0:m]
     
     new_data_array = None    
-    
-    if len(time_array) > len(new_time_array):
 
-        l     = len(time_array)
-        new_l = len(new_time_array)
+    l     = len(time_array)
+    new_l = len(new_time_array)
 
-        idx_list = np.linspace(0, l-1, new_l)
+    idx_list = np.linspace(0, l-1, new_l)
 
-        for idx in idx_list:
-            
-            if new_data_array is None:
-                new_data_array = data_array[:,idx]
-            else:
-                new_data_array = np.vstack([new_data_array, data_array[:,idx]])        
-    else:
-        print "quaternion array extrapolation is not implemented"
-        sys.exit()
-                    
+    for idx in idx_list:
+        if new_data_array is None:
+            new_data_array = qt.slerp( data_array[:,int(idx)], data_array[:,int(np.ceil(idx))], idx-int(idx) )
+        else:
+            new_data_array = np.vstack([new_data_array, 
+                                        qt.slerp( data_array[:,int(idx)], data_array[:,int(np.ceil(idx))], \
+                                                  idx-int(idx) )])                            
+                                                  
     return new_data_array.T
 
     
