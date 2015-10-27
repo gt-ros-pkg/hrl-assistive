@@ -41,7 +41,6 @@ import numpy as np
 import PyKDL
 
 # ROS message
-import tf
 from std_msgs.msg import Bool, Empty, Int32, Int64, Float32, Float64, String
 from sensor_msgs.msg import JointState
 
@@ -129,6 +128,7 @@ class robot_kinematics(threading.Thread):
         M = PyKDL.Rotation.RPY(self.sub_ee_orient_offset['rx'], self.sub_ee_orient_offset['ry'], \
                                self.sub_ee_orient_offset['rz'])
         self.sub_offset = PyKDL.Frame(M,p)
+
         
         
         
@@ -184,9 +184,9 @@ class robot_kinematics(threading.Thread):
                 self.lock.release()
                 return
 
-            sub_positions.append(sub_position)
-            sub_velocities.append(sub_velocity)
-            sub_efforts.append(sub_effort)
+            sub_positions.append(position)
+            sub_velocities.append(velocity)
+            sub_efforts.append(effort)
 
         self.lock.acquire()
         
@@ -198,8 +198,8 @@ class robot_kinematics(threading.Thread):
         self.sub_jnt_velocities = np.array([sub_velocities]).T
         self.sub_jnt_efforts    = np.array([sub_efforts]).T
 
-        self.ee_pos, self.ee_quat         = getEEFrame(main_positions)
-        self.target_pos, self.target_quat = getTargetFrame(sub_positions)
+        self.ee_pos, self.ee_quat         = self.getEEFrame(main_positions)
+        self.target_pos, self.target_quat = self.getTargetFrame(sub_positions)
                 
         self.counter += 1
         self.lock.release()

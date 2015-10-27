@@ -303,8 +303,8 @@ class armReachAction(mpcBaseAction):
 
         # 2. add offset to called TF value. Make sure Orientation is up right. 
         ## Off set : 11 cm x direction, - 5 cm z direction. 
-        pos_offset  = rospy.get_param('hrl_manipulation_task/target_pos_offset')        
-        orient_offset = rospy.get_param('hrl_manipulation_task/target_orient_offset')        
+        pos_offset  = rospy.get_param('hrl_manipulation_task/sub_ee_pos_offset')        
+        orient_offset = rospy.get_param('hrl_manipulation_task/sub_ee_orient_offset')        
 
         p = p + M*PyKDL.Vector(pos_offset['x'], pos_offset['y'], pos_offset['z'])
         M.DoRotX(orient_offset['rx'])

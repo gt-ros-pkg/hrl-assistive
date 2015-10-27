@@ -284,21 +284,17 @@ class logger:
                     msg.audio_feature     = np.squeeze(self.audio.feature.T).tolist()
                     msg.audio_power       = self.audio.power
                     msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
-                msg.audio_head_joints = [self.audio.head_joints[0], self.audio.head_joints[1]]
-                msg.audio_cmd         = self.audio.recog_cmd if type(self.audio.recog_cmd)==str() else 'None'
+                msg.audio_head_joints     = [self.audio.head_joints[0], self.audio.head_joints[1]]
+                msg.audio_cmd             = self.audio.recog_cmd if type(self.audio.recog_cmd)==str() else 'None'
 
             if self.kinematics is not None:
-                ee_pos, ee_quat           = self.kinematics.getEEFrame()
-                jnt_pos, jnt_vel, jnt_eff = self.kinematics.return_joint_state()
-                target_pos, target_quat   = self.kinematics.getTargetFrame()
-            
-                msg.kinematics_ee_pos  = np.squeeze(ee_pos.T).tolist()
-                msg.kinematics_ee_quat = np.squeeze(ee_quat.T).tolist()
-                msg.kinematics_jnt_pos = np.squeeze(jnt_pos.T).tolist()
-                msg.kinematics_jnt_vel = np.squeeze(jnt_vel.T).tolist()
-                msg.kinematics_jnt_eff = np.squeeze(jnt_eff.T).tolist()
-                msg.kinematics_target_pos  = np.squeeze(target_pos.T).tolist()
-                msg.kinematics_target_quat = np.squeeze(target_quat.T).tolist()
+                msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
+                msg.kinematics_ee_quat = np.squeeze(self.kinematics.ee_quat.T).tolist()
+                msg.kinematics_jnt_pos = np.squeeze(self.kinematics.main_jnt_positions.T).tolist()
+                msg.kinematics_jnt_vel = np.squeeze(self.kinematics.main_jnt_velocities.T).tolist()
+                msg.kinematics_jnt_eff = np.squeeze(self.kinematics.main_jnt_efforts.T).tolist()
+                msg.kinematics_target_pos  = np.squeeze(self.kinematics.target_pos.T).tolist()
+                msg.kinematics_target_quat = np.squeeze(self.kinematics.target_quat.T).tolist()
 
             if self.ft is not None:
                 msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()
@@ -320,7 +316,7 @@ class logger:
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task    = '10'
+    task    = 'test'
     verbose = True
 
     rospy.init_node('record_data')
@@ -328,6 +324,6 @@ if __name__ == '__main__':
                  subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
-    ## log.run()
-    log.runDataPub()
+    log.run()
+    ## log.runDataPub()
     
