@@ -47,6 +47,34 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
 
 
+def ft_disp(timeList, ftForce, ftForceLocal=None):
+
+    fig = plt.figure()            
+    gs = gridspec.GridSpec(4, 2)
+    # --------------------------------------------------
+    ax1 = fig.add_subplot(gs[0,0])
+    ax1.plot(timeList, ftForce[0,:])        
+
+    ax2 = fig.add_subplot(gs[1,0])
+    ax2.plot(timeList, ftForce[1,:])        
+
+    ax3 = fig.add_subplot(gs[2,0])
+    ax3.plot(timeList, ftForce[2,:])        
+
+    ax4 = fig.add_subplot(gs[3,0])
+    ax4.plot(timeList, np.linalg.norm(ftForce, axis=0) ) #*np.sign(ftForce[2]) )        
+
+    # --------------------------------------------------
+    ax5 = fig.add_subplot(gs[0,1])        
+    if ftForceLocal is not None: ax5.plot(timeList, ftForceLocal[0,:])
+
+    ## ax6 = fig.add_subplot(gs[1,1])        
+    ## ax6.plot(timeList, ftForceLocal[1,:])
+
+    plt.show()
+
+
+
 class data_viz:
     azimuth_max = 90.0
     azimuth_min = -90.0
@@ -224,31 +252,6 @@ class data_viz:
         plt.show()
         
 
-    def ft_disp(self, timeList, ftForce, ftForceLocal):
-
-        fig = plt.figure()            
-        gs = gridspec.GridSpec(4, 2)
-        # --------------------------------------------------
-        ax1 = fig.add_subplot(gs[0,0])
-        ax1.plot(timeList, ftForce[0,:])        
-
-        ax2 = fig.add_subplot(gs[1,0])
-        ax2.plot(timeList, ftForce[1,:])        
-        
-        ax3 = fig.add_subplot(gs[2,0])
-        ax3.plot(timeList, ftForce[2,:])        
-
-        ax4 = fig.add_subplot(gs[3,0])
-        ax4.plot(timeList, np.linalg.norm(ftForce, axis=0) ) #*np.sign(ftForce[2]) )        
-
-        # --------------------------------------------------
-        ax5 = fig.add_subplot(gs[0,1])        
-        ax5.plot(timeList, ftForceLocal[0,:])
-
-        ## ax6 = fig.add_subplot(gs[1,1])        
-        ## ax6.plot(timeList, ftForceLocal[1,:])
-        
-        plt.show()
 
 
     def relativeFeature_disp(self, timeList, relativeDist, relativeAng):

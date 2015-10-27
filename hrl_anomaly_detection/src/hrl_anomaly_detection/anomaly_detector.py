@@ -51,8 +51,11 @@ from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String
 
 # viz
+import matplotlib
 import matplotlib.pyplot as plt
-
+## matplotlib.interactive(True)
+## matplotlib.use('TkAgg')
+## import pylab
 
 class anomaly_detector:
 
@@ -73,10 +76,11 @@ class anomaly_detector:
 
         # visualization
         if self.online_raw_viz: 
-            self.fig = plt.figure()
-            plt.ion()
-            plt.show()
+            ## plt.ion()
+            self.fig = plt.figure(1)
+            ## pylab.hold(False)
             self.plot_data = {}
+            self.plot_len = 22000
         
         self.initParams()
         self.initComms()
@@ -88,7 +92,7 @@ class anomaly_detector:
         Load feature list
         '''
         self.rf_radius = rospy.get_param('hrl_manipulation_task/receptive_field_radius')
-        self.nState    = 10
+        self.nState    = 15
         self.threshold = -5.0
     
     def initComms(self):
@@ -112,15 +116,15 @@ class anomaly_detector:
             sys.exit()
         
         data_dict = ut.load_pickle(self.training_data_pkl)
-        trainingData, self.param_dict = extractLocalFeature(data_dict['trainData'], self.feature_list, \
+        self.trainingData, self.param_dict = extractLocalFeature(data_dict['trainData'], self.feature_list, \
                                                             self.rf_radius)
 
         # training hmm
-        self.nEmissionDim = len(trainingData)
+        self.nEmissionDim = len(self.trainingData)
         detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')        
         self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, verbose=False)
         
-        ret = self.ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=True)
+        ret = self.ml.fit(self.trainingData, ml_pkl=detection_param_pkl, use_pkl=True)
 
         if ret == 'Failure': 
             print "-------------------------"
@@ -216,12 +220,9 @@ class anomaly_detector:
             dataSample.append( crossmodal_targetRelativeAng )
 
         # Scaling ------------------------------------------------------------
-        scaled_features = []
-        for i, feature in enumerate(dataSample):
-            scaled_features.append( ( feature - self.param_dict['feature_min'][i] )\
-                                    /( self.param_dict['feature_max'][i] - self.param_dict['feature_min'][i]) )
-        
-        
+        scaled_features = (np.array(dataSample) - np.array(self.param_dict['feature_min']) )\
+          /( np.array(self.param_dict['feature_max']) - np.array(self.param_dict['feature_min']) ) 
+
         return scaled_features
             
             
@@ -258,26 +259,29 @@ class anomaly_detector:
                     self.plot_data.setdefault(i, [])
                     self.plot_data[i].append(self.dataList[-1][i])
                     
-                if self.count % 10 == 0:
-                    
-                    for i in xrange(len(self.plot_data.keys())):
-                        if i == 0: plt.ioff()
-                        else: plt.ion()
-                        self.fig.add_subplot( len(self.plot_data.keys())*100+10+(i+1) )
-                        plt.plot(self.plot_data[i])
-                    plt.draw()
+                if self.count % 50 == 0:
+
+                    for i in xrange(len(self.dataList[-1])):
+                        ax = self.fig.add_subplot( len(self.plot_data.keys())*100+10+(i+1) )
+                        ax.plot(self.plot_data[i], 'r')
+                        
+                if self.count > 300: 
+                    for i, feature_name in enumerate(feature_list):
+                        ax = self.fig.add_subplot( len(self.plot_data.keys())*100+10+(i+1) )
+                        ax.plot(np.array(self.trainingData[i]).T, 'b')                        
+                    plt.show()
             
             # Run anomaly checker
-            ## anomaly, error = self.ml.anomaly_check(np.array(self.dataList).T, self.threshold)
-            ## print "anomaly check : ", anomaly, " " , error
+            anomaly, error = self.ml.anomaly_check(np.array(self.dataList).T, self.threshold)
+            print "anomaly check : ", anomaly, " " , error
             
             # anomaly decision
-            ## if np.isnan(error): print "anomaly check returned nan"
-            ## elif anomaly: 
-            ##     self.action_interruption_pub.publish(self.task_name+'_anomaly')
-            ##     self.soundHandle.play(2)
-            ##     self.enable_detector = False
-            ##     self.reset()                           
+            if np.isnan(error): print "anomaly check returned nan"
+            elif anomaly: 
+                self.action_interruption_pub.publish(self.task_name+'_anomaly')
+                self.soundHandle.play(2)
+                self.enable_detector = False
+                self.reset()                           
                 
             
             rate.sleep()

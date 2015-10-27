@@ -633,4 +633,5 @@ if __name__ == '__main__':
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               renew=renew, save_pdf=opt.bSavePdf)
     else:
+        nState    = 15        
         test(save_data_path, task, nSet, feature_list, local_range, renew=renew, viz=viz)

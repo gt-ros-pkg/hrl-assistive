@@ -42,6 +42,8 @@ import hrl_lib.quaternion as qt
 from scipy import interpolate
 from sklearn.decomposition import PCA
 
+import data_viz
+
 def extrapolateData(data, maxsize):
     if len(np.shape(data[0])) > 1:     
         # need to implement incremental extrapolation
@@ -360,7 +362,8 @@ def extractLocalFeature(d, feature_list, local_range, param_dict=None, verbose=F
             
             # ftForceLocal = np.linalg.norm(ftForce, axis=0) #* np.sign(ftForce[2])
             unimodal_ftForce = ftForce_pca.transform(ftForce.T).T
-            ## self.ft_disp(timeList, ftForce, ftForceLocal)
+            ## data_viz.ft_disp(timeList, ftForce, unimodal_ftForce)
+            ## sys.exit()
 
             if dataSample is None: dataSample = np.array(unimodal_ftForce)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce])
@@ -446,4 +449,10 @@ def extractLocalFeature(d, feature_list, local_range, param_dict=None, verbose=F
         scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
                                 /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
+    ## import matplotlib.pyplot as plt
+    ## plt.figure()
+    ## plt.plot(np.array(scaled_features[0]).T)
+    ## plt.show()
+    ## sys.exit()
+                                
     return scaled_features, param_dict
