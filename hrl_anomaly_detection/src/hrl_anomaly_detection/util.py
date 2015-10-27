@@ -67,7 +67,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     data_dict['kinTargetQuatList'] = []
     data_dict['visionPosList']     = []
     data_dict['visionQuatList']    = []
-    
+
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
@@ -75,10 +78,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
         print fileName
         d = ut.load_pickle(fileName)        
 
-        kin_time = d['kinematics_time']
-        new_times = np.linspace(0.01, kin_time[-1], downSampleSize)
+        max_time = 0
+        for key in d.keys():
+            if 'time' in key and 'init' not in key:
+                feature_time = d[key]
+                if max_time < feature_time[-1]: max_time = feature_time[-1]
+        new_times = np.linspace(0.01, max_time, downSampleSize)
         data_dict['timesList'].append(new_times)
-        
+
         # sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
             audio_time    = d['audio_time']
@@ -100,6 +107,12 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
 
+            ax = fig.add_subplot(212)
+            if len(kin_time) > len(kin_ee_pos[2]):
+                ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
+            else:
+                ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
+            
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
 
@@ -120,6 +133,13 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             ft_time        = d['ft_time']
             ft_force_array = d['ft_force']
 
+            ax = fig.add_subplot(211)
+            if len(ft_time) > len(ft_force_array[2]):
+                ax.plot(ft_time[:len(ft_force_array[2])], ft_force_array[2])
+            else:
+                ax.plot(ft_time, ft_force_array[2][:len(ft_time)])
+            
+            
             force_array = interpolationData(ft_time, ft_force_array, new_times)
             data_dict['ftForceList'].append(force_array)                                         
             
@@ -142,7 +162,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             pps_skin_right = d['pps_skin_right']
 
         # ----------------------------------------------------------------------
-                        
+
+    plt.show()
+        
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
         # Find the largest iteration
