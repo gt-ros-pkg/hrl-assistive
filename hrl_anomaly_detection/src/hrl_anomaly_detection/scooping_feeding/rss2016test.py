@@ -424,9 +424,7 @@ def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, 
     else:
         return
                 
-                           
-            
-            
+
 def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0,\
                check_method='progress', hmm_renew=False, save_pdf=False, viz=False, verbose=False):
 
@@ -442,7 +440,7 @@ def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, 
             sys.exit()
 
         data_dict = ut.load_pickle(target_file)
-        ## if viz: visualization_raw_data(data_dict, save_pdf=save_pdf)
+        if viz: visualization_raw_data(data_dict, save_pdf=save_pdf)
 
         # training set
         trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
@@ -636,6 +634,36 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
     return truePos, falseNeg, trueNeg, falsePos
 
         
+def raw_data_plot(task_name, processed_data_path, nSet=1, save_pdf=False):    
+
+    target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
+    if os.path.isfile(target_file) is not True: 
+        print "There is no saved data"
+        sys.exit()
+
+    data_dict = ut.load_pickle(target_file)
+    visualization_raw_data(data_dict, save_pdf=save_pdf)
+
+    # training set
+    trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+
+    # test set
+    normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
+                                            param_dict=param_dict)        
+    abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
+                                            param_dict=param_dict)
+
+    print "======================================"
+    print "Training data: ", np.shape(trainingData)
+    print "Normal test data: ", np.shape(normalTestData)
+    print "Abnormal test data: ", np.shape(abnormalTestData)
+    print "======================================"
+
+    visualization_hmm_data(feature_list, trainingData=trainingData, \
+                           normalTestData=normalTestData,\
+                           abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
+    
+            
 
 def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None, save_pdf=False):
 
@@ -673,72 +701,68 @@ def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None,
 
 def visualization_raw_data(data_dict, modality='ft', save_pdf=False):
 
-    ## dataList = data_dict['trainData']['ftForceList']
-    ## dataList = data_dict['trainData']['kinTargetPosList']
-    dataList = data_dict['trainData']['kinEEPosList']
-    dataList = data_dict['trainData']['kinEEQuatList']
+    for key in data_dict['trainData'].keys():
 
-    fileList = data_dict['trainFileList']
-    
-    
-    ## # Converting data structure
-    ## nSample      = len(dataList)
-    ## nEmissionDim = len(dataList[0])
-    ## features     = []
-    ## for i in xrange(nEmissionDim):
-    ##     feature  = []
+        if not('Pos' in key): continue
+        
+        print "key: ", key
+        
+        dataList = data_dict['trainData'][key]
+        fileList = data_dict['trainFileList']
+        
+        if len(np.shape(dataList)) < 3: continue
+        nSample, nDim, k = np.shape(dataList)
 
-    ##     for j in xrange(nSample):
-    ##         feature.append(dataList[j][i,:])
+        fig = plt.figure()            
+        for i in xrange(nDim):
+            ax = fig.add_subplot(nDim*100+10+i)
 
-    ##     features.append( feature )
+            for j in xrange(nSample):
+                fileName = fileList[j].split('/')[-1] 
+                ax.plot(dataList[j][i,:], label=fileName)
 
-    count = 0
-    d_list = []
-    f_list = []
-    
-    for idx, data in enumerate(dataList):
+        ## plt.legend(loc=3,prop={'size':8})
+        ## ax1.set_ylim([0.0, 2.0])
+        if save_pdf:
+            fig.savefig('test'+str(count)+'.pdf')
+            fig.savefig('test'+str(count)+'.png')
+            os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+        else:
+            plt.show()
 
-        d_list.append( np.linalg.norm(data, axis=0) )
-        f_list.append( fileList[idx].split('/')[-1] )
 
-        if idx%10 == 9:
-                
-            fig = plt.figure()            
-            ax1 = fig.add_subplot(111)
+        ## count = 0
+        ## d_list = []
+        ## f_list = []
 
-            for j, d in enumerate(d_list):
-                ax1.plot(d_list[j], label=f_list[j])
-                
-            plt.legend(loc=3,prop={'size':8})
-            ax1.set_ylim([0.0, 2.0])
+        ## for idx, data in enumerate(dataList):
 
-            if save_pdf:
-                fig.savefig('test'+str(count)+'.pdf')
-                fig.savefig('test'+str(count)+'.png')
-                os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
-                
-            d_list = []
-            f_list = []
-            count += 1
+        ##     d_list.append( np.linalg.norm(data, axis=0) )
+        ##     f_list.append( fileList[idx].split('/')[-1] )
+
+        ##     if idx%10 == 9:
+
+        ##         fig = plt.figure()            
+        ##         ax1 = fig.add_subplot(111)
+
+        ##         for j, d in enumerate(d_list):
+        ##             ax1.plot(d_list[j], label=f_list[j])
+
+        ##         plt.legend(loc=3,prop={'size':8})
+        ##         ## ax1.set_ylim([0.0, 2.0])
+
+        ##         if save_pdf:
+        ##             fig.savefig('test'+str(count)+'.pdf')
+        ##             fig.savefig('test'+str(count)+'.png')
+        ##             os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+        ##         else:
+        ##             plt.show()
+
+        ##         d_list = []
+        ##         f_list = []
+        ##         count += 1
+
             
-
-    fig = plt.figure()            
-    ax1 = fig.add_subplot(111)
-
-    for j, d in enumerate(d_list):
-        ax1.plot(d_list[j], label=f_list[j])
-
-    plt.legend(loc=3,prop={'size':8})
-    ax1.set_ylim([0.0, 2.0])
-    if save_pdf:
-        fig.savefig('test'+str(count)+'.pdf')
-        fig.savefig('test'+str(count)+'.png')
-        os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
-    else:
-        plt.show()
-
-    
 
 if __name__ == '__main__':
 
@@ -751,6 +775,8 @@ if __name__ == '__main__':
 
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
     
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
@@ -791,6 +817,12 @@ if __name__ == '__main__':
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               renew=renew, save_pdf=opt.bSavePdf)
+    if opt.bRawDataPlot:
+        target_data_set = 0
+        
+        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
+        raw_data_plot(task, raw_data_path, nSet=target_data_set)
+                              
     else:
         nState         = 15 
         cov_mult       = 3.0       

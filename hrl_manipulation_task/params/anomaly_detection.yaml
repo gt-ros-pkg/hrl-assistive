@@ -11,17 +11,16 @@ hrl_manipulation_task:
   # For kinematics perception
   end_effector_frame: l_gripper_spoon_frame
 
-  target_frame: r_gripper_tool_frame
-  target_pos_offset:
-    x: 0.11
-    y: 0 
-    z: 0.04
-  target_orient_offset:
+  main_ee_frame: l_gripper_tool_frame
+  main_ee_pos_offset:
+    x: 0.00635
+    y: 0.031 
+    z: 0.2032
+  main_ee_orient_offset:
     rx: 0
     ry: 0 
-    rz: 1.570795
-  
-  joints:
+    rz: -1.5707
+  main_joints:
     - l_shoulder_pan_joint
     - l_shoulder_lift_joint
     - l_upper_arm_roll_joint
@@ -29,6 +28,25 @@ hrl_manipulation_task:
     - l_forearm_roll_joint
     - l_wrist_flex_joint
     - l_wrist_roll_joint
+  
+
+  sub_ee_frame: r_gripper_tool_frame
+  sub_ee_pos_offset:
+    x: 0.11
+    y: 0 
+    z: 0.04
+  sub_ee_orient_offset:
+    rx: 0
+    ry: 0 
+    rz: 1.570795  
+  sub_joints:
+    - r_shoulder_pan_joint
+    - r_shoulder_lift_joint
+    - r_upper_arm_roll_joint
+    - r_elbow_flex_joint
+    - r_forearm_roll_joint
+    - r_wrist_flex_joint
+    - r_wrist_roll_joint
 
   # For visual perception
   head:

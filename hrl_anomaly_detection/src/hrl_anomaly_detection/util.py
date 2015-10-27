@@ -61,6 +61,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     data_dict['audioPowerList']   = []    
     data_dict['kinEEPosList']     = []
     data_dict['kinEEQuatList']    = []
+    data_dict['kinJntPosList']    = []
     data_dict['ftForceList']      = []
     data_dict['kinTargetPosList']  = []
     data_dict['kinTargetQuatList'] = []
@@ -97,6 +98,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             kin_ee_quat = d['kinematics_ee_quat'] # ?xN
             kin_target_pos  = d['kinematics_target_pos']
             kin_target_quat = d['kinematics_target_quat']
+            kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
 
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
@@ -110,6 +112,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             target_quat_array = interpolationQuatData(kin_time, kin_target_quat, new_times)
             data_dict['kinTargetQuatList'].append(target_quat_array)                                         
 
+            jnt_pos_array = interpolationData(kin_time, kin_jnt_pos, new_times)
+            data_dict['kinJntPosList'].append(jnt_pos_array)                                         
+            
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time        = d['ft_time']
