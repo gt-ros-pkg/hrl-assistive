@@ -93,7 +93,7 @@ class anomaly_detector:
         '''
         self.rf_radius = rospy.get_param('hrl_manipulation_task/receptive_field_radius')
         self.nState    = 15
-        self.threshold = -5.0
+        self.threshold = -15.0
     
     def initComms(self):
         '''
@@ -239,7 +239,7 @@ class anomaly_detector:
         '''            
         rospy.loginfo("Start to run anomaly detection: "+self.task_name)
         self.count = 0
-        self.enable_detector = True
+        ## self.enable_detector = True
         
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
@@ -251,7 +251,7 @@ class anomaly_detector:
             self.dataList.append( self.extractLocalFeature() ) 
 
             if len(np.shape(self.dataList)) == 1: continue
-            if np.shape(self.dataList)[0] < 100: continue
+            if np.shape(self.dataList)[0] < 10: continue
 
             # visualization
             if self.online_raw_viz: 
@@ -265,7 +265,7 @@ class anomaly_detector:
                         ax = self.fig.add_subplot( len(self.plot_data.keys())*100+10+(i+1) )
                         ax.plot(self.plot_data[i], 'r')
                         
-                if self.count > 300: 
+                if self.count > 280: 
                     for i, feature_name in enumerate(feature_list):
                         ax = self.fig.add_subplot( len(self.plot_data.keys())*100+10+(i+1) )
                         ax.plot(np.array(self.trainingData[i]).T, 'b')                        
@@ -273,11 +273,11 @@ class anomaly_detector:
             
             # Run anomaly checker
             anomaly, error = self.ml.anomaly_check(np.array(self.dataList).T, self.threshold)
-            print "anomaly check : ", anomaly, " " , error
-            
+            print "anomaly check : ", anomaly, " " , error, " dat shape: ", np.array(self.dataList).T.shape
+
             # anomaly decision
             if np.isnan(error): print "anomaly check returned nan"
-            elif anomaly: 
+            elif anomaly and self.count < 200: 
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.soundHandle.play(2)
                 self.enable_detector = False

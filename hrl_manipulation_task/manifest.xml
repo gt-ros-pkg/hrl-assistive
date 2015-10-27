@@ -15,8 +15,8 @@
   <depend package="tf"/>
   <depend package="tf_conversions"/>
 
-  <!--depend package="ar_track_alvar"/-->
-  <!--depend package="hark_msgs"/-->
+  <depend package="ar_track_alvar"/>
+  <depend package="hark_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="pr2_msgs"/>
   <depend package="visualization_msgs"/>

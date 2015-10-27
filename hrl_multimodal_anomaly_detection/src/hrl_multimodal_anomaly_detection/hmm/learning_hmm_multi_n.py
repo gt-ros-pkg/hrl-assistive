@@ -589,6 +589,8 @@ class learning_hmm_multi_n:
             # Find the best posterior distribution
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
+            ## print "Min index: ", min_index, " logp: ", logp, " ths_mult: ", ths_mult
+
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
             else:

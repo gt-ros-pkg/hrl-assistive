@@ -34,12 +34,14 @@ import roslib
 roslib.load_manifest('hrl_anomaly_detection')
 import os, sys, copy
 import random
+import socket
 
 # util
 import numpy as np
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 import PyKDL
+import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 
 # learning
 from hrl_multimodal_anomaly_detection.hmm import learning_hmm_multi_n as hmm
@@ -335,9 +337,105 @@ def likelihoodOfSequences(processed_data_path, task_name, feature_list, local_ra
 
         
 
-def test(processed_data_path, task_name, nSet, feature_list, local_range, \
-         nState=10,\
-         renew=False, viz=False):
+def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, \
+                   processed_data_path, \
+                   nState=10, cov_mult=1.0, anomaly_offset=0.0, local_range=0.25,\
+                   data_renew=False, hmm_renew=False, save_pdf=False, viz=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+
+    count = 0
+    for method in check_methods:        
+
+        # Check the existance of workspace
+        method_path = os.path.join(processed_data_path, task_name, method)
+        if os.path.isdir(method_path) == False:
+            os.system('mkdir -p '+method_path)
+
+        for idx, subject_name in enumerate(subject_names):
+
+            print method, " : ", subject_name        
+
+            ## For parallel computing
+            # save file name
+            res_file = task_name+'_'+subject_name+'_'+method+'.pkl'
+            mutex_file_part = 'running_'+task_name+'_'+subject_name+'_'+method
+
+            res_file = os.path.join(method_path, res_file)
+            mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+            mutex_file      = os.path.join(method_path, mutex_file_full)
+
+            if os.path.isfile(res_file): 
+                count += 1            
+                continue
+            elif hcu.is_file(method_path, mutex_file_part): 
+                continue
+            ## elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
+            
+            preprocessData(subject_names, task_name, processed_data_path, processed_data_path, \
+                           renew=data_renew)
+
+            print "aaaaaaaaaaaaaaaaaaaaaa"
+
+            (truePos, falseNeg, trueNeg, falsePos)\
+              = evaluation(task_name, processed_data_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
+                           anomaly_offset=anomaly_offset, check_method=method,\
+                           hmm_renew=True, verbose=True)
+
+
+            truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
+            if trueNeg == 0 and falsePos == 0:            
+                trueNegativeRate = "Not available"
+            else:
+                trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+                
+            print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+                           
+            if truePos!=-1 :                 
+                d = {}
+                d['subject'] = subject_name
+                d['tp'] = truePos
+                d['fn'] = falseNeg
+                d['tn'] = trueNeg
+                d['fp'] = falsePos
+                d['nSet'] = nSet
+
+                try:
+                    ut.save_pickle(d,res_file)        
+                except:
+                    print "There is already the targeted pkl file"
+            else:
+                target_file = os.path.join(data_target_path, task_name+'_dataSet_%d_eval_'+str(idx) ) 
+                for j in xrange(nSet):
+                    os.system('rm '+target_file % j)
+                
+
+            os.system('rm '+mutex_file)
+            print "-----------------------------------------------"
+
+            if truePos==-1: 
+                print "truePos is -1"
+                sys.exit()
+
+    if count == len(check_methods)*len(subject_names):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
+    else:
+        return
+                
+                           
+            
+            
+def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0,\
+               check_method='progress', hmm_renew=False, verbose=False):
+
+    tot_truePos = 0
+    tot_falseNeg = 0
+    tot_trueNeg = 0 
+    tot_falsePos = 0
 
     for i in xrange(nSet):        
         target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(i) )                    
@@ -350,7 +448,7 @@ def test(processed_data_path, task_name, nSet, feature_list, local_range, \
 
         # training set
         trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
-        
+
         # test set
         normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
                                                 param_dict=param_dict)        
@@ -363,15 +461,14 @@ def test(processed_data_path, task_name, nSet, feature_list, local_range, \
         print "Abnormal test data: ", np.shape(abnormalTestData)
         print "======================================"
 
-
         if viz: visualization_hmm_data(feature_list, trainingData=trainingData, \
                                        normalTestData=normalTestData,\
                                        abnormalTestData=abnormalTestData)        
-        
+
         # training hmm
         nEmissionDim = len(trainingData)
         detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
-                
+
         ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=False)
 
         print "Start to fit hmm"
@@ -384,40 +481,95 @@ def test(processed_data_path, task_name, nSet, feature_list, local_range, \
             return (-1,-1,-1,-1)
 
 
-        tp_l = []
-        fn_l = []
-        fp_l = []
-        tn_l = []
-        ths_l = []
+        minThresholds = None                  
+        if hmm_renew:
+            minThresholds1 = tuneSensitivityGain(ml, trainingData, method=check_method, verbose=verbose)
+            ## minThresholds2 = tuneSensitivityGain(ml, thresTestData, method=check_method, verbose=verbose)
+            minThresholds = minThresholds1
+
+            if type(minThresholds) == list or type(minThresholds) == np.ndarray:
+                for i in xrange(len(minThresholds1)):
+                    if minThresholds1[i] < minThresholds2[i]:
+                        minThresholds[i] = minThresholds1[i]
+            else:
+                if minThresholds1 < minThresholds2:
+                    minThresholds = minThresholds1
+
+            d = ut.load_pickle(detection_param_pkl)
+            if d is None: d = {}
+            d['minThresholds'] = minThresholds                
+            ut.save_pickle(d, detection_param_pkl)                
+        else:
+            d = ut.load_pickle(detection_param_pkl)
+            minThresholds = d['minThresholds']
+            
+
+        truePos, falseNeg, trueNeg, falsePos = \
+          onlineEvaluation(ml, normalTestData, abnormalTestData, c=minThresholds, verbose=True)
+        if truePos == -1: 
+            print "Error with task ", task_name
+            print "Error with nSet ", i
+            print "Error with crossEval ID: ", crossEvalID
+            return (-1,-1,-1,-1)
+
+        tot_truePos += truePos
+        tot_falseNeg += falseNeg
+        tot_trueNeg += trueNeg 
+        tot_falsePos += falsePos
+            
+    truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
+    if tot_trueNeg == 0 and tot_falsePos == 0:
+        trueNegativeRate = "not available"
+    else:
+        trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+    print "------------------------------------------------"
+    print "Total set of data: ", nSet
+    print "------------------------------------------------"
+    print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+    print "------------------------------------------------"
+
+    return (tot_truePos, tot_falseNeg, tot_trueNeg, tot_falsePos)
         
-        # evaluation
+        ## tp_l = []
+        ## fn_l = []
+        ## fp_l = []
+        ## tn_l = []
+        ## ths_l = []
+
+        ## # evaluation
         ## threshold_list = -(np.logspace(-1.0, 1.5, nThres, endpoint=True)-1.0 )        
-        threshold_list = [-5.0]
-        for ths in threshold_list:        
-            tp, fn, tn, fp = onlineEvaluation(ml, normalTestData, abnormalTestData, c=ths, 
-                                              verbose=True)
-            if tp == -1:
-                tp_l.append(0)
-                fn_l.append(0)
-                fp_l.append(0)
-                tn_l.append(0)
-                ths_l.append(ths)
-            else:                       
-                tp_l.append(tp)
-                fn_l.append(fn)
-                fp_l.append(fp)
-                tn_l.append(tn)
-                ths_l.append(ths)
+        ## ## threshold_list = [-5.0]
+        ## for ths in threshold_list:        
+        ##     tp, fn, tn, fp = onlineEvaluation(ml, normalTestData, abnormalTestData, c=ths, 
+        ##                                       verbose=True)
+        ##     if tp == -1:
+        ##         tp_l.append(0)
+        ##         fn_l.append(0)
+        ##         fp_l.append(0)
+        ##         tn_l.append(0)
+        ##         ths_l.append(ths)
+        ##     else:                       
+        ##         tp_l.append(tp)
+        ##         fn_l.append(fn)
+        ##         fp_l.append(fp)
+        ##         tn_l.append(tn)
+        ##         ths_l.append(ths)
 
-        dd = {}
-        dd['fn_l']    = fn_l
-        dd['tn_l']    = tn_l
-        dd['tp_l']    = tp_l
-        dd['fp_l']    = fp_l
-        dd['ths_l']   = ths_l
-        print dd        
+        ## dd = {}
+        ## dd['fn_l']    = fn_l
+        ## dd['tn_l']    = tn_l
+        ## dd['tp_l']    = tp_l
+        ## dd['fp_l']    = fp_l
+        ## dd['ths_l']   = ths_l
 
-        
+        ## try:
+        ##     ut.save_pickle(dd,res_file)        
+        ## except:
+        ##     print "There is the targeted pkl file"
+
+    
+    
+                
 def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False):
     truePos = 0
     trueNeg = 0
@@ -589,6 +741,10 @@ if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
+    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
+                 default=False, help='Renew HMM parameters.')
 
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
@@ -616,7 +772,6 @@ if __name__ == '__main__':
     ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagRelativeDist', \
     ##                 'crossmodal_artagRelativeAng']
     
-    preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
 
     # Dectection TEST 
     nSet         = 1
@@ -627,11 +782,18 @@ if __name__ == '__main__':
     if opt.bLikelihoodPlot:
         nState    = 10
         threshold = 0.0
+        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
         likelihoodOfSequences(save_data_path, task, feature_list, local_range, \
                               nState=nState, threshold=threshold,\
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               renew=renew, save_pdf=opt.bSavePdf)
     else:
-        nState    = 15        
-        test(save_data_path, task, nSet, feature_list, local_range, renew=renew, viz=viz)
+        nState         = 15 
+        cov_mult       = 3.0       
+        anomaly_offset = 0.0        
+        check_methods = ['progress']
+        evaluation_all([subject], task, check_methods, feature_list, nSet,\
+                       save_data_path, \
+                       nState=nState, cov_mult=cov_mult, anomaly_offset=anomaly_offset, local_range=local_range,\
+                       data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, viz=viz)
