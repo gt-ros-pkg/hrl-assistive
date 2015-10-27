@@ -159,9 +159,9 @@ class armReachAction(mpcBaseAction):
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 5, 'self.bowl_frame'],
-           ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 5, 'self.bowl_frame'],
-           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 5, 'self.bowl_frame'] ]
+          [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 4, 'self.bowl_frame'],
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'] ]
         self.motions['runScooping']['right'] = \
           []
         
