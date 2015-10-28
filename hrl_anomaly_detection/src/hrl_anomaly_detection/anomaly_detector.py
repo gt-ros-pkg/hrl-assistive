@@ -92,8 +92,8 @@ class anomaly_detector:
         Load feature list
         '''
         self.rf_radius = rospy.get_param('hrl_manipulation_task/receptive_field_radius')
-        self.nState    = 15
-        self.threshold = -15.0
+        self.nState    = 10
+        self.threshold = -20.0
     
     def initComms(self):
         '''
@@ -292,8 +292,9 @@ if __name__ == '__main__':
         
 
     task_name    = 'scooping'
-    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
-                    'crossmodal_targetRelativeAng']
+    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist']
+    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
+    ##                 'crossmodal_targetRelativeAng']
     save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
     training_data_pkl = task_name+'_dataSet_0'
 

@@ -109,20 +109,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
 
-            if raw_viz:
-                ax = fig.add_subplot(312)
-                if len(kin_time) > len(kin_ee_pos[2]):
-                    ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
-                else:
-                    ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
-
-                ax = fig.add_subplot(313)
-                if len(kin_time) > len(kin_jnt_pos[2]):
-                    ax.plot(kin_time[:len(kin_jnt_pos[2])], kin_jnt_pos[2])
-                else:
-                    ax.plot(kin_time, kin_jnt_pos[2][:len(kin_time)])
-                    
-            
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
 
@@ -137,29 +123,52 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
 
             jnt_pos_array = interpolationData(kin_time, kin_jnt_pos, new_times)
             data_dict['kinJntPosList'].append(jnt_pos_array)                                         
+
+            if raw_viz:
+                ax = fig.add_subplot(312)
+                if len(kin_time) > len(kin_ee_pos[2]):
+                    ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
+                else:
+                    ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
+
+                ax = fig.add_subplot(313)
+                if len(kin_time) > len(kin_jnt_pos[2]):
+                    ax.plot(kin_time[:len(kin_jnt_pos[2])], kin_jnt_pos[2])
+                else:
+                    ax.plot(kin_time, kin_jnt_pos[2][:len(kin_time)])
+            elif interp_viz:
+                ax = fig.add_subplot(312)
+                ax.plot(new_times, ee_pos_array[2])
+                ax = fig.add_subplot(313)
+                ax.plot(new_times, jnt_pos_array[2])
+                    
+            
             
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time        = d['ft_time']
             ft_force_array = d['ft_force']
 
+            force_array = interpolationData(ft_time, ft_force_array, new_times)
+            data_dict['ftForceList'].append(force_array)                                         
+            
             if raw_viz:
                 ax = fig.add_subplot(311)
                 if len(ft_time) > len(ft_force_array[2]):
                     ax.plot(ft_time[:len(ft_force_array[2])], ft_force_array[2])
                 else:
                     ax.plot(ft_time, ft_force_array[2][:len(ft_time)])           
-
-                print kin_time[0], kin_time[-1], ft_time[0], ft_time[-1]
-                print np.shape(kin_time), np.shape(ft_time)
-                plt.show()
-                fig = plt.figure()
+                ## plt.show()
+                ## fig = plt.figure()
+                
             ## if idx > 10: break
+            elif interp_viz:
+                ax = fig.add_subplot(311)
+                ax.plot(new_times, force_array[2])
+                ## plt.show()
+                ## fig = plt.figure()
                 
                     
-            force_array = interpolationData(ft_time, ft_force_array, new_times)
-            data_dict['ftForceList'].append(force_array)                                         
-            
         # vision ---------------------------------------------------------------
         if 'vision_time' in d.keys():
             vision_time = d['vision_time']

@@ -340,7 +340,7 @@ def likelihoodOfSequences(processed_data_path, task_name, feature_list, local_ra
         
 
 def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, \
-                   processed_data_path, \
+                   processed_data_path, downSampleSize=100, \
                    nState=10, cov_mult=1.0, anomaly_offset=0.0, local_range=0.25,\
                    data_renew=False, hmm_renew=False, save_pdf=False, viz=False):
 
@@ -377,12 +377,12 @@ def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, 
             os.system('touch '+mutex_file)
 
             preprocessData(subject_names, task_name, processed_data_path, processed_data_path, \
-                           renew=data_renew)
+                           renew=data_renew, downSampleSize=downSampleSize)
 
             (truePos, falseNeg, trueNeg, falsePos)\
               = evaluation(task_name, processed_data_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
                            anomaly_offset=anomaly_offset, check_method=method,\
-                           hmm_renew=True, viz=True, verbose=True)
+                           hmm_renew=hmm_renew, viz=False, verbose=True)
 
 
             truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
@@ -407,7 +407,7 @@ def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, 
                 except:
                     print "There is already the targeted pkl file"
             else:
-                target_file = os.path.join(data_target_path, task_name+'_dataSet_%d_eval_'+str(idx) ) 
+                target_file = os.path.join(method_path, task_name+'_dataSet_%d_eval_'+str(idx) ) 
                 for j in xrange(nSet):
                     os.system('rm '+target_file % j)
                 
@@ -459,18 +459,19 @@ def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, 
         print "Abnormal test data: ", np.shape(abnormalTestData)
         print "======================================"
 
-        if viz: visualization_hmm_data(feature_list, trainingData=trainingData, \
-                                       normalTestData=normalTestData,\
-                                       abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
+        if True: visualization_hmm_data(feature_list, trainingData=trainingData, \
+                                        normalTestData=normalTestData,\
+                                        abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
 
         # training hmm
         nEmissionDim = len(trainingData)
         detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
 
-        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=False)
+        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=True)
 
-        print "Start to fit hmm"
-        ret = ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=renew)
+        print "Start to fit hmm", np.shape(trainingData)
+        ret = ml.fit(trainingData, cov_mult=[cov_mult]*nEmissionDim**2, ml_pkl=detection_param_pkl, \
+                     use_pkl=hmm_renew)
 
         if ret == 'Failure': 
             print "-------------------------"
@@ -479,28 +480,28 @@ def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, 
             return (-1,-1,-1,-1)
 
 
-        minThresholds = None                  
-        if hmm_renew:
-            minThresholds1 = tuneSensitivityGain(ml, trainingData, method=check_method, verbose=verbose)
-            ## minThresholds2 = tuneSensitivityGain(ml, thresTestData, method=check_method, verbose=verbose)
-            minThresholds = minThresholds1
+        ## minThresholds = None                  
+        ## if hmm_renew:
+        ##     minThresholds1 = tuneSensitivityGain(ml, trainingData, method=check_method, verbose=verbose)
+        ##     ## minThresholds2 = tuneSensitivityGain(ml, thresTestData, method=check_method, verbose=verbose)
+        ##     minThresholds = minThresholds1
 
-            if type(minThresholds) == list or type(minThresholds) == np.ndarray:
-                for i in xrange(len(minThresholds1)):
-                    if minThresholds1[i] < minThresholds2[i]:
-                        minThresholds[i] = minThresholds1[i]
-            else:
-                if minThresholds1 < minThresholds2:
-                    minThresholds = minThresholds1
+        ##     if type(minThresholds) == list or type(minThresholds) == np.ndarray:
+        ##         for i in xrange(len(minThresholds1)):
+        ##             if minThresholds1[i] < minThresholds2[i]:
+        ##                 minThresholds[i] = minThresholds1[i]
+        ##     else:
+        ##         if minThresholds1 < minThresholds2:
+        ##             minThresholds = minThresholds1
 
-            d = ut.load_pickle(detection_param_pkl)
-            if d is None: d = {}
-            d['minThresholds'] = minThresholds                
-            ut.save_pickle(d, detection_param_pkl)                
-        else:
-            d = ut.load_pickle(detection_param_pkl)
-            minThresholds = d['minThresholds']
-            
+        ##     d = ut.load_pickle(detection_param_pkl)
+        ##     if d is None: d = {}
+        ##     d['minThresholds'] = minThresholds                
+        ##     ut.save_pickle(d, detection_param_pkl)                
+        ## else:
+        ##     d = ut.load_pickle(detection_param_pkl)
+        ##     minThresholds = d['minThresholds']
+        minThresholds=-5.0
 
         truePos, falseNeg, trueNeg, falsePos = \
           onlineEvaluation(ml, normalTestData, abnormalTestData, c=minThresholds, verbose=True)
@@ -599,7 +600,7 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
                     break
                     ## return (-1,-1,-1,-1)
 
-                if verbose: print anomaly, error
+                if verbose: print "Normal: ", j, " => ", anomaly, error
 
                 # This is a successful nonanomalous attempt
                 if anomaly:
@@ -799,8 +800,9 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     subject = 'gatsbii'
     task    = 'scooping'    
-    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
-                    'crossmodal_targetRelativeAng']
+    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
+    ##                 'crossmodal_targetRelativeAng']
+    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist']
 
     ## subject = 'gatsbii'
     ## task    = 'feeding' 
@@ -813,11 +815,13 @@ if __name__ == '__main__':
     local_range  = 0.25    
     viz          = False
     renew        = False
+    downSampleSize=100
 
     if opt.bLikelihoodPlot:
         nState    = 15
         threshold = 0.0
-        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew)
+        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew, \
+                       downSampleSize=downSampleSize)
         likelihoodOfSequences(save_data_path, task, feature_list, local_range, \
                               nState=nState, threshold=threshold,\
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
@@ -825,18 +829,18 @@ if __name__ == '__main__':
                               renew=renew, save_pdf=opt.bSavePdf)
     elif opt.bRawDataPlot:
         target_data_set = 0
-        raw_plot    = True
-        interp_plot = False
+        raw_plot    = False
+        interp_plot = True
         
         preprocessData([subject], task, raw_data_path, save_data_path, raw_viz=raw_plot, interp_viz=interp_plot,\
-                       renew=opt.bDataRenew)
+                       renew=opt.bDataRenew, downSampleSize=downSampleSize)
                               
     else:
-        nState         = 15 
-        cov_mult       = 3.0       
-        anomaly_offset = 0.0        
+        nState         = 10
+        cov_mult       = 5.0       
+        anomaly_offset = -20.0        
         check_methods = ['progress']
         evaluation_all([subject], task, check_methods, feature_list, nSet,\
-                       save_data_path, \
+                       save_data_path, downSampleSize=downSampleSize, \
                        nState=nState, cov_mult=cov_mult, anomaly_offset=anomaly_offset, local_range=local_range,\
                        data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, viz=viz)
