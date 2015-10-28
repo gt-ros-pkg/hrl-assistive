@@ -240,7 +240,8 @@ class robot_kinematics(threading.Thread):
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
-        while not self.cancelled:
+        rate = rospy.Rate(20)
+        while not self.cancelled and not rospy.is_shutdown():
             if self.isReset:
                 
                 if self.counter > self.counter_prev:
@@ -273,6 +274,7 @@ class robot_kinematics(threading.Thread):
                     self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
                     
                 self.lock.release()
+            rate.sleep()
                 
                 
     def cancel(self):

@@ -95,6 +95,7 @@ class tool_ft(threading.Thread):
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
+        rate = rospy.Rate(20)
         while not self.cancelled:
             if self.isReset:
 
@@ -112,6 +113,7 @@ class tool_ft(threading.Thread):
                         self.torque_array = np.hstack([self.torque_array, self.torque_raw])
                                         
                     self.lock.release()
+            rate.sleep()
 
     def cancel(self):
         """End this timer thread"""

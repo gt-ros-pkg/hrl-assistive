@@ -99,7 +99,8 @@ class pps_skin(threading.Thread):
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
-        while not self.cancelled:
+        rate = rospy.Rate(20)
+        while not self.cancelled and not rospy.is_shutdown():
             if self.isReset:
 
                 if self.counter > self.counter_prev:
@@ -116,6 +117,8 @@ class pps_skin(threading.Thread):
                         self.pps_skin_right = np.hstack([self.pps_skin_right, self.data_right])
                                         
                     self.lock.release()
+            rate.sleep()
+                    
 
     def cancel(self):
         """End this timer thread"""
