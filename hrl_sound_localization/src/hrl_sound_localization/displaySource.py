@@ -131,9 +131,9 @@ class displaySource():
         if self.enable_recog:    rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
 
         # drawing
-        self.source_viz_all = ds.SceneDraw("hark/source_viz_all", "/world")
-        self.source_viz_cen = ds.SceneDraw("hark/source_viz_cen", "/world")
-        self.source_viz_cmd = ds.SceneDraw("hark/source_viz_cmd", "/world")
+        self.source_viz_all = ds.SceneDraw("hark/source_viz_all", self.head_frame)
+        self.source_viz_cen = ds.SceneDraw("hark/source_viz_cen", self.head_frame)
+        self.source_viz_cmd = ds.SceneDraw("hark/source_viz_cmd", self.head_frame)
 
         # tf
         ## try:
@@ -534,14 +534,14 @@ class displaySource():
                          "torso_lift_link",
                          "world")
         
-
+                
     def run(self):
         '''
         Update the visualization data and publish it.
         '''
-        rt = rospy.Rate(20)
+        rt = rospy.Rate(10)
         while not rospy.is_shutdown():
-            self.tfBroadcaster()
+            ## self.tfBroadcaster()
             if self.enable_info_all: self.draw_sources_all(10)
             if self.enable_info_cen: self.draw_sources_cen(20)
             if self.enable_recog:    self.draw_sources_cmd(30)

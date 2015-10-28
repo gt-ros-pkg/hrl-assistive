@@ -92,8 +92,9 @@ class anomaly_detector:
         Load feature list
         '''
         self.rf_radius = rospy.get_param('hrl_manipulation_task/receptive_field_radius')
-        self.nState    = 10
-        self.threshold = -20.0
+        self.nState    = 15
+        self.cov_mult  = 1.0
+        self.threshold = -200.0
     
     def initComms(self):
         '''
@@ -122,9 +123,9 @@ class anomaly_detector:
         # training hmm
         self.nEmissionDim = len(self.trainingData)
         detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')        
-        self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, verbose=False)
+        self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, check_method='progress', verbose=False)
         
-        ret = self.ml.fit(self.trainingData, ml_pkl=detection_param_pkl, use_pkl=True)
+        ret = self.ml.fit(self.trainingData, cov_mult=[self.cov_mult]*self.nEmissionDim**2, ml_pkl=detection_param_pkl, use_pkl=True)
 
         if ret == 'Failure': 
             print "-------------------------"
@@ -276,8 +277,9 @@ class anomaly_detector:
             print "anomaly check : ", anomaly, " " , error, " dat shape: ", np.array(self.dataList).T.shape
 
             # anomaly decision
-            if np.isnan(error): print "anomaly check returned nan"
-            elif anomaly and self.count < 200: 
+            ## if np.isnan(error): continue #print "anomaly check returned nan"
+            if anomaly or np.isnan(error) or np.isinf(error): 
+                print "anoooooooooooooooooooooomaly"
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.soundHandle.play(2)
                 self.enable_detector = False
@@ -298,6 +300,6 @@ if __name__ == '__main__':
     save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
     training_data_pkl = task_name+'_dataSet_0'
 
-    ad = anomaly_detector(task_name, feature_list, save_data_path, training_data_pkl, online_raw_viz=True)
+    ad = anomaly_detector(task_name, feature_list, save_data_path, training_data_pkl, online_raw_viz=False)
     ad.run()
     

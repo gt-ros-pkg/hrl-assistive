@@ -23,4 +23,17 @@ float64[] vision_quat
 float64[] pps_skin_left
 float64[] pps_skin_right
 
+float64[] fabric_skin_centers_x
+float64[] fabric_skin_centers_y
+float64[] fabric_skin_centers_z
+float64[] fabric_skin_normals_x
+float64[] fabric_skin_normals_y
+float64[] fabric_skin_normals_z
+float64[] fabric_skin_values_x
+float64[] fabric_skin_values_y
+float64[] fabric_skin_values_z
+
+
+
+
 

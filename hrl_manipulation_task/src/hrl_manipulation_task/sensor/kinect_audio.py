@@ -152,7 +152,7 @@ class kinect_audio(threading.Thread):
         
         while not self.cancelled:
             if self.isReset:
-                self.time_data.append(rospy.get_time() - self.init_time)
+                self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
 
                 with self.src_feature_lock:                
                     if self.audio_feature is None: self.audio_feature = self.feature

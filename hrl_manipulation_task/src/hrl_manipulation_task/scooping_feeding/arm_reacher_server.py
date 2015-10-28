@@ -162,7 +162,7 @@ class armReachAction(mpcBaseAction):
           [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 3, 'self.bowl_frame'],
            ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 4, 'self.bowl_frame'],
            ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'],
-           ['PAUSE', 4.0] ]
+           ['PAUSE', 2.0] ]
         self.motions['runScooping']['right'] = \
           []
         
