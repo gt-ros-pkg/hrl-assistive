@@ -55,7 +55,7 @@ from matplotlib import gridspec
 
 def preprocessData(subject_names, task_name, raw_data_path, processed_data_path, nSet=1, \
                    folding_ratio=0.8, downSampleSize=200,\
-                   renew=False, verbose=False):
+                   raw_viz=False, interp_viz=False, renew=False, verbose=False):
 
     # Check if there is already scaled data
     for i in xrange(nSet):        
@@ -74,8 +74,10 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
         sys.exit()
 
     # loading and time-sync
-    data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
-    
+    data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize,\
+                         raw_viz=raw_viz, interp_viz=interp_viz)
+    ## interp_data_plot(task, raw_data_path, nSet=target_data_set)
+
     data_min = {}
     data_max = {}
     for key in data_dict.keys():
@@ -634,7 +636,7 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
     return truePos, falseNeg, trueNeg, falsePos
 
         
-def raw_data_plot(task_name, processed_data_path, nSet=1, save_pdf=False):    
+def interp_data_plot(task_name, processed_data_path, nSet=1, save_pdf=False):    
 
     target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
     if os.path.isfile(target_file) is not True: 
@@ -823,9 +825,11 @@ if __name__ == '__main__':
                               renew=renew, save_pdf=opt.bSavePdf)
     elif opt.bRawDataPlot:
         target_data_set = 0
+        raw_plot    = True
+        interp_plot = False
         
-        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew)
-        raw_data_plot(task, raw_data_path, nSet=target_data_set)
+        preprocessData([subject], task, raw_data_path, save_data_path, raw_viz=raw_plot, interp_viz=interp_plot,\
+                       renew=opt.bDataRenew)
                               
     else:
         nState         = 15 

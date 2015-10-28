@@ -42,6 +42,7 @@ import hrl_lib.quaternion as qt
 from scipy import interpolate
 from sklearn.decomposition import PCA
 
+import matplotlib.pyplot as plt
 import data_viz
 
 def extrapolateData(data, maxsize):
@@ -53,7 +54,8 @@ def extrapolateData(data, maxsize):
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
-def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False):
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False, interp_viz=False, \
+             verbose=False):
 
     data_dict = {}
     data_dict['timesList']        = []
@@ -68,8 +70,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     data_dict['visionPosList']     = []
     data_dict['visionQuatList']    = []
 
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
+    
+    if raw_viz or interp_viz: fig = plt.figure()
 
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
@@ -107,11 +109,19 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
 
-            ax = fig.add_subplot(212)
-            if len(kin_time) > len(kin_ee_pos[2]):
-                ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
-            else:
-                ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
+            if raw_viz:
+                ax = fig.add_subplot(312)
+                if len(kin_time) > len(kin_ee_pos[2]):
+                    ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
+                else:
+                    ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
+
+                ax = fig.add_subplot(313)
+                if len(kin_time) > len(kin_jnt_pos[2]):
+                    ax.plot(kin_time[:len(kin_jnt_pos[2])], kin_jnt_pos[2])
+                else:
+                    ax.plot(kin_time, kin_jnt_pos[2][:len(kin_time)])
+                    
             
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
@@ -133,13 +143,20 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             ft_time        = d['ft_time']
             ft_force_array = d['ft_force']
 
-            ax = fig.add_subplot(211)
-            if len(ft_time) > len(ft_force_array[2]):
-                ax.plot(ft_time[:len(ft_force_array[2])], ft_force_array[2])
-            else:
-                ax.plot(ft_time, ft_force_array[2][:len(ft_time)])
-            
-            
+            if raw_viz:
+                ax = fig.add_subplot(311)
+                if len(ft_time) > len(ft_force_array[2]):
+                    ax.plot(ft_time[:len(ft_force_array[2])], ft_force_array[2])
+                else:
+                    ax.plot(ft_time, ft_force_array[2][:len(ft_time)])           
+
+                print kin_time[0], kin_time[-1], ft_time[0], ft_time[-1]
+                print np.shape(kin_time), np.shape(ft_time)
+                plt.show()
+                fig = plt.figure()
+            ## if idx > 10: break
+                
+                    
             force_array = interpolationData(ft_time, ft_force_array, new_times)
             data_dict['ftForceList'].append(force_array)                                         
             
@@ -163,7 +180,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
 
         # ----------------------------------------------------------------------
 
-    plt.show()
+    if raw_viz or interp_viz: plt.show()
         
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
