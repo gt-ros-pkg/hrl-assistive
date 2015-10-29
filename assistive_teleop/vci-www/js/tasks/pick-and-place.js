@@ -30,7 +30,7 @@ RFH.PickAndPlace = function (options) {
     self.publishPickAndPlace = function (side) {
         self.side = side; // Save most recently requested side here
         var msg = self.ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'pick_and_place_'+side+'_'+ new Date().getTime().toString();
+        msg.name = 'pick_and_place_'+side+'-'+ new Date().getTime().toString();
         msg.domain = 'pick_and_place';
         self.taskPublisher.publish(msg);
     };

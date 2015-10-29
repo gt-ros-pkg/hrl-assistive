@@ -93,71 +93,87 @@
     width: 0px;
     cursor: pointer;
     pointer-events:none;
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+    border-bottom: 20px solid rgba(76, 48, 19, 0.87);
 }
 
-#ctrl-ring.default > .arrow.left{
-    top: calc(50% - 10px);
-    left: 5%;
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-right: 20px solid rgba(76, 48, 19, 0.87);
-}
-
-#ctrl-ring.active > .arrow.left{
-    top: calc(50% - 10px);
-    left: 5%;
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-right: 20px solid rgba(0, 116, 199, 0.5);
-}
-
-#ctrl-ring.default > .arrow.right{
-    top: calc(50% - 10px);
-    right: 5%;
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-left: 20px solid rgba(76, 48, 19, 0.87);
-}
-
-#ctrl-ring.active > .arrow.right{
-    top: calc(50% - 10px);
-    right: 5%;
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-left: 20px solid rgba(0, 116, 199, 0.5);
-}
-
-#ctrl-ring.default > .arrow.up{
-    top: 5%;
-    left: calc(50% - 15px);
+#ctrl-ring > .arrow.big{
     border-right: 15px solid transparent;
     border-left: 15px solid transparent;
     border-bottom: 30px solid rgba(76, 48, 19, 0.87);
 }
+#ctrl-ring > .arrow.small{
+    border-right: 8px solid transparent;
+    border-left: 8px solid transparent;
+    border-bottom: 10px solid rgba(76, 48, 19, 0.87);
+}
 
-#ctrl-ring.active > .arrow.up{
-    top: 5%;
-    left: calc(50% - 15px);
-    border-right: 15px solid transparent;
-    border-left: 15px solid transparent;
+#ctrl-ring:hover > .arrow{
+    border-bottom: 20px solid rgba(69, 60, 20, 0.75);
+}
+
+#ctrl-ring:hover > .arrow.big{
+    border-bottom: 30px solid rgba(69, 60, 20, 0.75);
+}
+
+#ctrl-ring:hover > .arrow.small{
+    border-bottom: 10px solid rgba(69, 60, 20, 0.75);
+}
+
+#ctrl-ring.active > .arrow{
+    border-bottom: 20px solid rgba(0, 116, 199, 0.5);
+}
+
+#ctrl-ring.active > .arrow.big{
     border-bottom: 30px solid rgba(0, 116, 199, 0.5);
 }
 
-#ctrl-ring.default > .arrow.down{
-    bottom: 5%;
-    left: calc(50% - 15px);
-    border-right: 10px solid transparent;
-    border-left: 10px solid transparent;
-    border-top: 20px solid rgba(76, 48, 19, 0.87);
+#ctrl-ring.active > .arrow.small{
+    border-bottom: 10px solid rgba(0, 116, 199, 0.5);
 }
 
-#ctrl-ring.active > .arrow.down{
+#ctrl-ring > .arrow.n{
+    transform: rotateZ(0deg);
+    top: 5%;
+    left: calc(50% - 15px);
+}
+#ctrl-ring > .arrow.ne{
+    transform: rotateZ(45deg);
+    top: 18%;
+    right: 18%
+}
+#ctrl-ring > .arrow.e{
+    transform: rotateZ(90deg);
+    top: calc(50% - 10px);
+    right: 5%;
+}
+#ctrl-ring > .arrow.se{
+    transform: rotateZ(135deg);
+    bottom: 18%;
+    right: 18%;
+}
+#ctrl-ring > .arrow.s{
+    transform: rotateZ(180deg);
     bottom: 5%;
     left: calc(50% - 15px);
-    border-right: 10px solid transparent;
-    border-left: 10px solid transparent;
-    border-top: 20px solid rgba(0, 116, 199, 0.5);
 }
+#ctrl-ring > .arrow.sw{
+    transform: rotateZ(225deg);
+    bottom: 18%;
+    left: 18%;
+}
+#ctrl-ring > .arrow.w{
+    transform: rotateZ(270deg);
+    top: calc(50% - 10px);
+    left: 5%;
+}
+#ctrl-ring > .arrow.nw{
+    transform: rotateZ(315deg);
+    top: 18%;
+    left: 18%;
+}
+
 
 #armCtrlContainer > .center{
     position:absolute;

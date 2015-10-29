@@ -298,10 +298,9 @@ var PR2Head = function (options) {
         // Don't register head tracking the hand with undo...
         var disableUndoReq = new ROSLIB.ServiceRequest({set_active:false});
         undoToggleService.callService(disableUndoReq, function(){});
-        // Start looking now
-        self.pointHead(x, y, z, frame);
-        // Re-send goal regularly
-        trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500);
+        self.pointHead(x, y, z, frame); // Start looking now
+        trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500); // Re-send goal regularly
+        console.log("Beginning Head tracking of ", frame);
     };
 
     self.stopTracking = function () {
@@ -310,6 +309,7 @@ var PR2Head = function (options) {
         // Re-enable undo recording of head movements
         var enableUndoReq = new ROSLIB.ServiceRequest({set_active:true});
         undoToggleService.callService(enableUndoReq, function(){});
+        console.log("Ending Head tracking");
     };
 };
 

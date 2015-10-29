@@ -84,19 +84,19 @@ class TaskSmacher(object):
     def build_sm(self, solution, get_state_fn, next_task_request=None):
         plan = map(PlanStep.from_string, solution.steps)
         pddl_states = solution.states
+        domain = solution.states[0].domain
+        problem = solution.states[0].problem.split('+')[0]
 
         sm = smach.StateMachine(outcomes=SPA)
-        sm.userdata.problem_name = solution.states[0].problem
-        sm.userdata.domain = solution.states[0].domain
         sm_states = []
         for i, step in enumerate(plan):
             sm_states.append(("_PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
-            sm_states.append((step.name + "+%d" % i, get_state_fn(step, solution.states[0].domain, solution.states[0].problem)))
+            sm_states.append((step.name + "+%d" % i, get_state_fn(step, domain, problem)))
         sm_states.append(("_PDDL_STATE_PUB+FINAL", PDDLStatePublisherState(pddl_states[-1], self.state_pub, outcomes=SPA)))
         if next_task_request is None:
-            sm_states.append(("_CLEANUP", CleanupState(outcomes=SPA, input_keys=["problem_name"])))
+            sm_states.append(("_CLEANUP", CleanupState(problem=problem, outcomes=SPA, input_keys=["problem_name"])))
         else:
-            sm_states.append(("_NextTask", StartNewTaskState(next_task_request, outcomes=SPA))) # Keep old info if we're continuing on with this task...
+            sm_states.append(("_NextTask", StartNewTaskState(next_task_request, outcomes=SPA)))  # Keep old info if we're continuing on with this task...
         with sm:
             try:
                 for i, sm_state in enumerate(sm_states):
@@ -104,7 +104,7 @@ class TaskSmacher(object):
                     # print "State: %s --> Next State: %s" % (sm_state, next_sm_state)
                     sm.add(sm_state[0], sm_state[1], transitions={'succeeded': next_sm_state[0]})
             except IndexError:
-                sm.add(sm_states[-1][0], sm_states[-1][1])
+                sm.add(sm_states[-1][0], sm_states[-1][1], transitions={'succeeded': 'succeeded'})
         return sm
 
 
@@ -128,11 +128,15 @@ class StateMachineThread(Thread):
 
 
 class CleanupState(smach.State):
+    def __init__(self, problem, *args, **kwargs):
+        super(CleanupState, self).__init__(*args, **kwargs)
+        self.problem = problem
+
     def execute(self, ud):
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
-        rospy.delete_param(ud.problem_name)
+        rospy.delete_param(self.problem)
         return 'succeeded'
 
 

@@ -4,14 +4,14 @@ RFH.IdLocation = function(options) {
     self.ros = options.ros;
     self.name = options.name || 'idLocationTask';
     self.container = options.container;
-    self.offset = {position:{x:0, y:0, z:0},
+    var offset = {position:{x:0, y:0, z:0},
                    rotation:{x:0, y:0, z:0}};
     self.pixel23d = new RFH.Pixel23DClient({
         ros: self.ros,
         cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
     });
-//#    self.buttonText = 'ID_Location';
-//    self.buttonClass = 'id-location-button';
+//    self.buttonText = 'ID_Location';
+ //   self.buttonClass = 'id-location-button';
     self.$edges = $('.map-look');
     self.$image = $('#mjpeg-image');
 
@@ -23,9 +23,25 @@ RFH.IdLocation = function(options) {
     });
     self.posePublisher.advertise();
 
+    self.getOffset = function () {
+        return offset;
+    };
+
+    self.setOffset = function (new_offset) {
+        offset.position.x = new_offset.position.x || offset.position.x;
+        offset.position.y = new_offset.position.y || offset.position.y;
+        offset.position.z = new_offset.position.z || offset.position.z;
+        offset.rotation.x = new_offset.rotation.x || offset.rotation.x;
+        offset.rotation.y = new_offset.rotation.y || offset.rotation.y;
+        offset.rotation.z = new_offset.rotation.z || offset.rotation.z;
+        offset.rotation.w = new_offset.rotation.w || offset.rotation.w;
+    };
+
     self.poseCB = function(pose_msg) {
+        console.log("Original Pose msg: ", pose_msg);
         self.$image.removeClass('cursor-wait');
-//        pose_msg.pose = applyOffset(pose_msg.pose);
+        pose_msg.pose = applyOffset(pose_msg.pose);
+        console.log("Moidified msg: ", pose_msg);
         self.posePublisher.publish(pose_msg);
         console.log("Pixel23D Returned");
     };
@@ -61,19 +77,23 @@ RFH.IdLocation = function(options) {
                                         pose.orientation.z,
                                         pose.orientation.w);
         var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
-        var offset = new THREE.Vector3(self.offset.position.x, self.offset.position.y, self.offset.position.z); //Get to x dist from point along normal
-        offset.applyMatrix4(poseRotMat);
-        var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(self.offset.rotation.x, self.offset.rotation.y, self.offset.rotation.z));
+        var offsetVec = new THREE.Vector3(offset.position.x, 
+                                       offset.position.y,
+                                       offset.position.z); //Get to x dist from point along normal
+        offsetVec.applyMatrix4(poseRotMat);
+        var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(offset.rotation.x,
+                                                                                  offset.rotation.y,
+                                                                                  offset.rotation.z));
         poseRotMat.multiply(desRotMat);
-        poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offset.x,
-                                                 pose.position.y + offset.y,
-                                                 pose.position.z + offset.z));
+        poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offsetVec.x,
+                                                 pose.position.y + offsetVec.y,
+                                                 pose.position.z + offsetVec.z));
         var trans = new THREE.Matrix4();
         var scale = new THREE.Vector3();
         poseRotMat.decompose(trans, quat, scale);
-        pose.position.x = trans[0];
-        pose.position.y = trans[1];
-        pose.position.z = trans[2];
+        pose.position.x = trans.x;
+        pose.position.y = trans.y;
+        pose.position.z = trans.z;
         pose.orientation.x = quat.x;
         pose.orientation.y = quat.y;
         pose.orientation.z = quat.z;

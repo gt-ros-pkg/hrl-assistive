@@ -65,11 +65,11 @@ def get_action_state(plan_step, domain, problem):
 
 
 class MoveArmState(smach.State):
-    def __init__(self, location_name, side, problem_name, outcomes=SPA, input_keys=[], output_keys=[]):
+    def __init__(self, location_name, side, problem, outcomes=SPA, input_keys=[], output_keys=[]):
         super(MoveArmState, self).__init__(outcomes=outcomes, input_keys=input_keys, output_keys=output_keys)
         self.location_name = location_name
         self.side = side
-        self.problem_name = problem_name
+        self.problem = problem
         self.current_pose = None
         self.tfl = TransformListener()
         self.mpc_pub = rospy.Publisher("/%s_arm/haptic_mpc/goal_pose" % self.side, PoseStamped)
@@ -80,19 +80,16 @@ class MoveArmState(smach.State):
 
     @staticmethod
     def is_near(current_pose, goal_pose, threshold=0.1):
-        print current_pose.header.frame_id
-        print goal_pose.header.frame_id
         dx = current_pose.pose.position.x - goal_pose.pose.position.x
         dy = current_pose.pose.position.y - goal_pose.pose.position.y
         dz = current_pose.pose.position.z - goal_pose.pose.position.z
         dist = math.sqrt((dx*dx) + (dy*dy) + (dz*dz))
-        print dist
         return dist < threshold
 
     def execute(self, ud):
         self.running = True
         try:
-            goal_pose_dict = rospy.get_param('/%s/%s' % (self.problem_name, self.location_name))
+            goal_pose_dict = rospy.get_param('/%s/%s' % (self.problem, self.location_name))
             goal_pose = _dict_to_pose_stamped(goal_pose_dict)
         except KeyError:
             print "Move Arm Cannot find location %s on parameter server" % self.location_name
@@ -110,6 +107,7 @@ class MoveArmState(smach.State):
 
         # Try to get into position autonomously
 #        self.mpc_pub.publish(goal_pose)
+        # Wait to get into position one way or another...
         while not self.is_near(self.current_pose, goal_pose, threshold=0.18):
             if self.preempt_requested():
                 self.service_preempt()
@@ -119,10 +117,10 @@ class MoveArmState(smach.State):
 
 
 class IDLocationState(smach.State):
-    def __init__(self, topic, location_name, problem_name, outcomes=SPA, input_keys=[], output_keys=[]):
+    def __init__(self, topic, location_name, problem, outcomes=SPA, input_keys=[], output_keys=[]):
         super(IDLocationState, self).__init__(outcomes=outcomes, input_keys=input_keys, output_keys=output_keys)
         self.location_name = location_name
-        self.problem_name = problem_name
+        self.problem = problem
         self.running = False
         self.pose = None
         self.sub = rospy.Subscriber(topic, PoseStamped, self.pose_cb)
@@ -135,7 +133,7 @@ class IDLocationState(smach.State):
         print "Running ID Location for %s" % self.location_name
         self.running = True
         try:
-            self.pose = rospy.get_param("/%s/%s" % (self.problem_name, self.location_name))
+            self.pose = rospy.get_param("/%s/%s" % (self.problem, self.location_name))
             return 'succeeded'
         except KeyError:
             pass
@@ -147,19 +145,19 @@ class IDLocationState(smach.State):
             return 'preempted'
         if self.pose:
             pose_dict = _pose_stamped_to_dict(self.pose)
-            rospy.set_param("/%s/%s" % (self.problem_name, self.location_name), pose_dict)
+            rospy.set_param("/%s/%s" % (self.problem, self.location_name), pose_dict)
             return 'succeeded'
 
 
 class ForgetLocationState(smach.State):
-    def __init__(self, location_name, problem_name, outcomes=SPA, input_keys=[], output_keys=[]):
+    def __init__(self, location_name, problem, outcomes=SPA, input_keys=[], output_keys=[]):
         super(ForgetLocationState, self).__init__(outcomes=outcomes, input_keys=input_keys, output_keys=output_keys)
         self.location_name = location_name
-        self.problem_name = problem_name
+        self.problem = problem
 
     def execute(self, ud):
         print "Running Forget Location (%s)" % self.location_name
-        param = "/%s/%s" % (self.problem_name, self.location_name)
+        param = "/%s/%s" % (self.problem, self.location_name)
         try:
             rospy.delete_param(param)
         except KeyError:
