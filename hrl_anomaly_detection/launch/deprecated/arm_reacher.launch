@@ -1,0 +1,25 @@
+<launch>
+
+    <!-- load planning -->
+    <!--include file="$(find move_arm_tutorials2)/launch/ompl_planning.launch"/-->
+  
+    <!-- load move_arm -->
+    <!--include file="$(find pr2_arm_navigation_config)/launch/pr2_planning_environment.launch" /-->  
+    <!--include file="$(find pr2_arm_navigation_actions)/launch/move_right_arm.launch"/-->
+    <!--include file="$(find planning_environment)/launch/environment_server.launch"/-->
+
+    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
+      <param name="tip_name" value="r_gripper_tool_frame" />
+      <param name="root_name" value="torso_lift_link" />
+    </node>
+
+    <group ns="right" >
+      
+      <rosparam command="load" file="$(find hrl_anomaly_detection)/params/mpc_params_pr2.yaml" />
+      <rosparam command="load" file="$(find hrl_anomaly_detection)/params/pr2_config_params_r.yaml" />
+
+      <node name="arm_server" pkg="hrl_anomaly_detection" type="arm_reacher_adl_server.py" args="" output="screen"/>
+
+    </group>
+
+</launch>
