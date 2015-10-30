@@ -21,6 +21,7 @@
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
       <param name="port" type="int" value="$(arg ws_port)" />
+      <param name="binary_encoder" type="str" value="bson" />
   </node>
   <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
   <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath vci-www"/>
@@ -39,6 +40,8 @@
       <param name="normal_radius" type="double" value="0.035" />
       <param name="use_closest_pixel"  value="true"/>
   </node>
+
+  <node name="smach_status_clean_relay" pkg="assistive_teleop" type="smach_status_relay" output="screen" />
 
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 

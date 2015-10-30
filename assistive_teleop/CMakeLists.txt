@@ -30,6 +30,7 @@ catkin_install_python(PROGRAMS
     scripts/ik_move
     scripts/speech_intermediary
     scripts/moveit_relay
+    scripts/smach_status_relay
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/

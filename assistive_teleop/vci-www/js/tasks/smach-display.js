@@ -15,16 +15,13 @@ RFH.Smach = function(options) {
 
     var smachStructureCB = function (scs_msg) {
         if (scs_msg.path.indexOf('/') >= 0) return; // Ignore non-base structures
-        if (self.smach_tasks[scs_msg.path].steps !== undefined) {
-            return; // We've already got this one...
-        } else {
         if (!self.smach_tasks[scs_msg.path]) {
             self.smach_tasks[scs_msg.path] = {};
         }
+        if (self.smach_tasks[scs_msg.path].steps !== undefined) return; // We've already got this one...
         var chain = getStateChain(scs_msg.outcomes_from, scs_msg.outcomes_to, scs_msg.internal_outcomes);
         self.smach_tasks[scs_msg.path].steps = filterStateChain(chain);
         self.display.displaySmachStates(self.smach_tasks[scs_msg.path].steps);
-        }
     };
 
     var getStateChain = function (from_states, to_states, transitions) {
@@ -70,7 +67,7 @@ RFH.Smach = function(options) {
 
     var smachContainerStatusCB = function (status_msg) {
         if (status_msg.path.indexOf('/') >= 0) return; // Ignore non-base structures
-        if (!self.smach_tasks[status_msg.path]) return; // Wait until we know the structure...
+        if (!self.smach_tasks[status_msg.path].steps) return; // Wait until we know the structure...
         if (!self.smach_tasks[status_msg.path].interfaceTasks) return; // Wait until we know the interface task data
         if (self.activeState !== status_msg.active_states[0]) {
             self.activeState = status_msg.active_states[0]; // There can be only one...
@@ -86,9 +83,9 @@ RFH.Smach = function(options) {
 
     var smachContainerStatusSub = new ROSLIB.Topic({
         ros: ros,
-        name: "/smach_introspection/smach/container_status",
+        name: "/smach_introspection/smach/container_status_cleaned",
         type: "smach_msgs/SmachContainerStatus",
-        compression: 'png'
+//        compression: 'png'
     });
     smachContainerStatusSub.subscribe(smachContainerStatusCB);
 
