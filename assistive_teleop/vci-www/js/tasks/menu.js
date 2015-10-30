@@ -4,6 +4,7 @@ RFH.TaskMenu = function (divId) {
     self.div = $('#'+divId);
     self.tasks = {};
     self.activeTask = null;
+    self.defaultTaskName = null;
 
     self.addTask = function (taskObject) {
         self.tasks[taskObject.name] = taskObject;
@@ -26,7 +27,7 @@ RFH.TaskMenu = function (divId) {
     self.buttonCB = function (taskObject) {
         var newTask;
         if (taskObject === self.activeTask) {
-            newTask = self.defaultTask;
+            newTask = self.defaultTaskName;
         } else {
             newTask = taskObject.name;
         }
@@ -38,7 +39,7 @@ RFH.TaskMenu = function (divId) {
         if (self.activeTask !== null) {
             self.stopActiveTask();
         }
-        var taskObject = self.tasks[taskName];
+        var taskObject = self.tasks[taskName] || self.tasks[self.defaultTaskName];
         taskObject.start();
         if (taskObject.buttonText) {
             $('#'+taskObject.buttonText).prop('checked', true).button('refresh');
@@ -73,7 +74,12 @@ RFH.initTaskMenu = function (divId) {
                                        div: 'video-main',
                                        head: RFH.pr2.head,
                                        camera: RFH.mjpeg.cameraModel}));
-    RFH.taskMenu.defaultTask = 'lookingTask';
+    RFH.taskMenu.defaultTaskName = 'lookingTask';
+
+    RFH.taskMenu.addTask(new RFH.Torso({containerDiv: 'video-main',
+                                        sliderDiv: 'torsoSlider',
+                                        torso: RFH.pr2.torso}));
+
 
     RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
                                                      div: 'video-main',
@@ -87,10 +93,6 @@ RFH.initTaskMenu = function (divId) {
                                                      tfClient: RFH.tfClient,
                                                      camera: RFH.mjpeg.cameraModel}));
 
-    RFH.taskMenu.addTask(new RFH.Torso({containerDiv: 'video-main',
-                                        sliderDiv: 'torsoSlider',
-                                        torso: RFH.pr2.torso}));
-
     RFH.taskMenu.addTask(new RFH.Drive({ros: RFH.ros, 
                                        targetDiv: 'mjpeg-image',
                                        camera: RFH.mjpeg.cameraModel,
@@ -101,6 +103,5 @@ RFH.initTaskMenu = function (divId) {
     RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros}));
                                     
     // Start looking task by default
-    RFH.taskMenu.tasks.lookingTask.start();
-    RFH.taskMenu.activeTask = RFH.taskMenu.tasks.lookingTask;
+    $('#'+RFH.taskMenu.tasks.lookingTask.buttonText).click();
 };

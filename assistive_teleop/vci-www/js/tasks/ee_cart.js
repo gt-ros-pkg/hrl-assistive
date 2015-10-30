@@ -168,7 +168,9 @@ RFH.CartesianEEControl = function (options) {
     };
 
     /// GRIPPER SLIDER CONTROLS ///
+    var gripperZeroOffset = self.side[0] == 'r' ? -0.00063 : 0.0013;
     self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
+                                                  zeroOffset: gripperZeroOffset,
                                                   divId: self.side[0] +'GripperCtrlContainer'});
 
     self.rotationControl = new RFH.EERotation({'tfClient': self.tfClient,

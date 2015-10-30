@@ -3,6 +3,7 @@ RFH.Look = function (options) {
     var self = this;
     self.name = options.name || 'lookingTask';
     self.ros = options.ros;
+    self.buttonText = "Look";
     var imageDivId = options.imageDivId || 'mjpeg-image';
     self.imageDiv = $("#" + imageDivId);
     self.mapLookDivs = $(".map-look");
