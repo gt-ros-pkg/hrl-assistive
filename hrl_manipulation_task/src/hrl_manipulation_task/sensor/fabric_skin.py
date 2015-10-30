@@ -56,27 +56,18 @@ class fabric_skin(threading.Thread):
 
         # instant data
         self.link_names = None
-        self.centers_x = None
-        self.centers_y = None
-        self.centers_z = None
-        self.normals_x = None
-        self.normals_y = None
-        self.normals_z = None
-        self.values_x  = None
-        self.values_y  = None
-        self.values_z  = None
+        self.centers_x  = None
+        self.centers_y  = None
+        self.centers_z  = None
+        self.normals_x  = None
+        self.normals_y  = None
+        self.normals_z  = None
+        self.values_x   = None
+        self.values_y   = None
+        self.values_z   = None
         
         # Declare containers        
         self.time_data = []
-        self.centers_x = None
-        self.centers_y = None
-        self.centers_z = None
-        self.normals_x = None
-        self.normals_y = None
-        self.normals_z = None
-        self.values_x  = None
-        self.values_y  = None
-        self.values_z  = None
 
         self.lock = threading.Lock()        
 
@@ -103,40 +94,61 @@ class fabric_skin(threading.Thread):
             
     def robotStateCallback(self, msg):
         with self.lock:
-            self.skins = copy.copy(msg.skins)
             self.counter += 1
 
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
-        while not self.cancelled:
-            if self.isReset:
+            self.centers_x = []
+            self.centers_y = []
+            self.centers_z = []
+            self.normals_x = []
+            self.normals_y = []
+            self.normals_z = []
+            self.values_x  = []
+            self.values_y  = []
+            self.values_z  = []
+            
+            for ta_msg in msg.skins:
+                self.centers_x += ta_msg.centers_x
+                self.centers_y += ta_msg.centers_y
+                self.centers_z += ta_msg.centers_z
+                self.normals_x += ta_msg.normals_x
+                self.normals_y += ta_msg.normals_y
+                self.normals_z += ta_msg.normals_z
+                self.values_x  += ta_msg.values_x
+                self.values_y  += ta_msg.values_y
+                self.values_z  += ta_msg.values_z
+                    
 
-                if self.counter > self.counter_prev:
-                    self.counter_prev = self.counter
+    ## def run(self):
+    ##     """Overloaded Thread.run, runs the update
+    ##     method once per every xx milliseconds."""
+    ##     while not self.cancelled:
+    ##         if self.isReset:
 
-                    self.lock.acquire()                           
-                    l = self.l_fingertip
-                    r = self.r_fingertip 
+    ##             if self.counter > self.counter_prev:
+    ##                 self.counter_prev = self.counter
 
-                    #front, bottom, top is order of taxels
-                    data_left = np.array([[l[3]+l[4], l[5]+l[6], l[1]+l[2]]]).T
-                    data_right = np.array([[r[3]+r[4], r[1]+r[2], r[5]+r[6]]]).T
+    ##                 self.lock.acquire()                           
+    ##                 l = self.l_fingertip
+    ##                 r = self.r_fingertip 
 
-                    self.time_data.append(rospy.get_time() - self.init_time)
-                    if self.fabric_skin_left is None:
-                        self.fabric_skin_left  = data_left
-                        self.fabric_skin_right = data_right
-                    else:
-                        self.fabric_skin_left  = np.hstack([self.fabric_skin_left, data_left])
-                        self.fabric_skin_right = np.hstack([self.fabric_skin_right, data_right])
+    ##                 #front, bottom, top is order of taxels
+    ##                 data_left = np.array([[l[3]+l[4], l[5]+l[6], l[1]+l[2]]]).T
+    ##                 data_right = np.array([[r[3]+r[4], r[1]+r[2], r[5]+r[6]]]).T
+
+    ##                 self.time_data.append(rospy.get_time() - self.init_time)
+    ##                 if self.fabric_skin_left is None:
+    ##                     self.fabric_skin_left  = data_left
+    ##                     self.fabric_skin_right = data_right
+    ##                 else:
+    ##                     self.fabric_skin_left  = np.hstack([self.fabric_skin_left, data_left])
+    ##                     self.fabric_skin_right = np.hstack([self.fabric_skin_right, data_right])
                                         
-                    self.lock.release()
+    ##                 self.lock.release()
 
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
+    ## def cancel(self):
+    ##     """End this timer thread"""
+    ##     self.cancelled = True
+    ##     self.isReset = False
 
     def reset(self, init_time):
         self.init_time = init_time
@@ -144,15 +156,13 @@ class fabric_skin(threading.Thread):
 
         # Reset containers
         self.time_data    = []
-        self.fabric_skin_left  = None
-        self.fabric_skin_right = None
 
         self.counter = 0
         self.counter_prev = 0
         
 
     def isReady(self):
-        if self.l_fingertip is not None and self.r_fingertip is not None:
+        if self.centers_x is not None:
           return True
         else:
           return False

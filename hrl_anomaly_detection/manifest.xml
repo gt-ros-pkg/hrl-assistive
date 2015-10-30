@@ -13,9 +13,15 @@
     <depend package="rospy"/>
     <depend package="hrl_lib"/>
 
-    <depend package="geometry_msgs"/>"
+    <depend package="geometry_msgs"/>
+    <depend package="hrl_srvs"/>
+    <depend package="std_msgs"/>
 
+    <depend package="sound_play"/>
+
+    <!-- it's for hmm, but it will be removed -->
     <depend package="hrl_multimodal_anomaly_detection"/>
+
 
     <!-- RViZ -->
     <!--depend package="interactive_markers"/-->

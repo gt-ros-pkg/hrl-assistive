@@ -174,7 +174,8 @@ class artag_vision(threading.Thread):
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every xx milliseconds."""
-        while not self.cancelled:
+        rate = rospy.Rate(20)
+        while not self.cancelled and not rospy.is_shutdown():
             if self.isReset:
 
                 if self.counter > self.counter_prev:
@@ -190,9 +191,8 @@ class artag_vision(threading.Thread):
                         self.vision_tag_pos = np.hstack([self.vision_tag_pos, self.artag_pos])
                         self.vision_tag_quat = np.hstack([self.vision_tag_quat, self.artag_quat])
 
-                    print len(self.time_data), np.shape(self.vision_tag_pos)
-
                     self.lock.release()
+            rate.sleep()
 
     def cancel(self):
         """End this timer thread"""

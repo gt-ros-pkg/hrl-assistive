@@ -59,9 +59,11 @@ class learning_hmm_multi_n:
         # print 'HMM initialized for', self.check_method
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl='ml_temp_n.pkl', use_pkl=False):
+            ml_pkl=None, use_pkl=False):
+
+        if ml_pkl is None:
+            ml_pkl = os.path.join(os.path.dirname(__file__), 'ml_temp_n.pkl')            
         
-        ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
         if cov_mult is None:
             cov_mult = [1.0]*(self.nEmissionDim**2)
 
@@ -160,6 +162,7 @@ class learning_hmm_multi_n:
             # Get average loglikelihood threshold wrt progress
 
             if os.path.isfile(ml_pkl) and use_pkl:
+                if self.verbose: print 'Load detector parameters'
                 d = ut.load_pickle(ml_pkl)
                 self.l_statePosterior = d['state_post'] # time x state division
                 self.ll_mu            = d['ll_mu']
@@ -585,6 +588,8 @@ class learning_hmm_multi_n:
 
             # Find the best posterior distribution
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
+
+            print "Min index: ", min_index, " logp: ", logp, " ths_mult: ", ths_mult
 
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])

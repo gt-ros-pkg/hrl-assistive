@@ -59,6 +59,7 @@ class kinect_audio(threading.Thread):
         self.init_time = 0.0        
         self.power = None
         self.azimuth = None
+        self.base_azimuth = None
         self.feature = None
         self.recog_cmd = None
         self.head_joints = None
@@ -142,11 +143,60 @@ class kinect_audio(threading.Thread):
 
     def headStateCallback(self, msg):
         with self.head_state_lock:
-            self.head_joints = msg.actual.positions
+            self.head_joints  = msg.actual.positions
+            self.base_azimuth = self.head_joints[0] * 180.0/np.pi
+            
+    def run(self):
+        """Overloaded Thread.run, runs the update
+        method once per every xx milliseconds."""
+        
+        while not self.cancelled:
+            if self.isReset:
+                self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
 
-    def getHeadFrame(self):
+                with self.src_feature_lock:                
+                    if self.audio_feature is None: self.audio_feature = self.feature
+                    else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
+                    self.audio_power.append(self.power)
+                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+                    self.audio_head_joints = self.head_joints
 
-        self.base_azimuth = self.head_joints[0] * 180.0/np.pi
+                with self.recog_cmd_lock:                    
+                    self.audio_cmd.append(self.recog_cmd)
+
+        
+    def cancel(self):
+        """End this timer thread"""
+        self.cancelled = True
+        self.isReset = False
+
+
+    def reset(self, init_time):
+        self.init_time = init_time
+
+        # Reset containers
+        self.time_data = []
+        self.audio_feature = None
+        self.audio_power   = []        
+        self.audio_azimuth = []
+        self.audio_cmd     = []
+        self.audio_head_joints = None
+        
+        self.isReset = True
+
+        
+    def isReady(self):
+        if self.azimuth is not None and self.power is not None and \
+          self.feature is not None and self.head_joints is not None:
+          return True
+        else:
+          return False
+
+
+
+
+
+    ## def getHeadFrame(self):
         
         ## try:
         ##     self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
@@ -175,53 +225,6 @@ class kinect_audio(threading.Thread):
         ## else: sign = 1.0
         
         ## self.base_azimuth = np.arccos(PyKDL.dot(head_dir, x)) * sign * 180.0/np.pi
-        if self.verbose: print "Computed head azimuth: ", self.base_azimuth
-
-            
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
-        self.getHeadFrame()
-        
-        while not self.cancelled:
-            if self.isReset:
-                self.time_data.append(rospy.get_time() - self.init_time)
-
-                with self.src_feature_lock:                
-                    if self.audio_feature is None: self.audio_feature = self.feature
-                    else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
-                    self.audio_power.append(self.power)
-                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
-                    self.audio_head_joints = self.head_joints
-
-                with self.recog_cmd_lock:                    
-                    self.audio_cmd.append(self.recog_cmd)
+        ## if self.verbose: print "Computed head azimuth: ", self.base_azimuth
 
         
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
-
-
-    def reset(self, init_time):
-        self.getHeadFrame()
-        self.init_time = init_time
-
-        # Reset containers
-        self.time_data = []
-        self.audio_feature = None
-        self.audio_power   = []        
-        self.audio_azimuth = []
-        self.audio_cmd     = []
-        self.audio_head_joints = None
-        
-        self.isReset = True
-
-        
-    def isReady(self):
-        if self.azimuth is not None and self.power is not None and \
-          self.feature is not None and self.head_joints is not None:
-          return True
-        else:
-          return False

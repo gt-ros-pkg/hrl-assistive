@@ -34,16 +34,16 @@ import roslib
 roslib.load_manifest('hrl_anomaly_detection')
 import os, sys, copy
 import random
+import socket
 
 # util
 import numpy as np
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 import PyKDL
-import hrl_lib.quaternion as qt
+import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 
 # learning
-from sklearn.decomposition import PCA
 from hrl_multimodal_anomaly_detection.hmm import learning_hmm_multi_n as hmm
 
 # visualization
@@ -55,7 +55,7 @@ from matplotlib import gridspec
 
 def preprocessData(subject_names, task_name, raw_data_path, processed_data_path, nSet=1, \
                    folding_ratio=0.8, downSampleSize=200,\
-                   renew=False, verbose=False):
+                   raw_viz=False, interp_viz=False, renew=False, verbose=False):
 
     # Check if there is already scaled data
     for i in xrange(nSet):        
@@ -74,8 +74,10 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
         sys.exit()
 
     # loading and time-sync
-    data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
-    
+    data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize,\
+                         raw_viz=raw_viz, interp_viz=interp_viz)
+    ## interp_data_plot(task, raw_data_path, nSet=target_data_set)
+
     data_min = {}
     data_max = {}
     for key in data_dict.keys():
@@ -157,166 +159,6 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
         
 
         
-def extractLocalFeature(d, feature_list, local_range, param_dict=None, verbose=False):
-
-    if param_dict is None:
-        isTrainingData=True
-        param_dict = {}
-
-        if 'unimodal_audioPower' in feature_list:
-            power_max   = np.amax(d['audioPowerList'])
-            power_min   = np.amin(d['audioPowerList'])
-            param_dict['unimodal_audioPower_power_min'] = power_min
-            
-        if 'unimodal_ftForce' in feature_list:
-            force_array = None
-            for idx in xrange(len(d['ftForceList'])):
-                if force_array is None:
-                    force_array = d['ftForceList'][idx]
-                else:
-                    force_array = np.hstack([force_array, d['ftForceList'][idx] ])
-
-            ftForce_pca = PCA(n_components=1)
-            res = ftForce_pca.fit_transform( force_array.T )
-            param_dict['unimodal_ftForce_pca'] = ftForce_pca
-    else:
-        isTrainingData=False
-        if 'unimodal_audioPower' in feature_list:
-            power_min   = param_dict['unimodal_audioPower_power_min']
-        
-        if 'unimodal_ftForce' in feature_list:
-            ftForce_pca = param_dict['unimodal_ftForce_pca']
-
-    # -------------------------------------------------------------        
-
-    # extract local features
-    dataList   = []
-    for idx in xrange(len(d['timesList'])):
-
-        timeList     = d['timesList'][idx]
-        dataSample = None
-
-        # Unimoda feature - Audio --------------------------------------------
-        if 'unimodal_audioPower' in feature_list:
-            audioAzimuth = d['audioAzimuthList'][idx]
-            audioPower   = d['audioPowerList'][idx]
-            kinEEPos     = d['kinEEPosList'][idx]
-            
-            unimodal_audioPower = []
-            for time_idx in xrange(len(timeList)):
-                ang_max, ang_min = getAngularSpatialRF(kinEEPos[:,time_idx], local_range)
-
-                if audioAzimuth[time_idx] > ang_min and audioAzimuth[time_idx] < ang_max:
-                    unimodal_audioPower.append(audioPower[time_idx])
-                else:
-                    unimodal_audioPower.append(power_min) # or append white noise?
-
-            if dataSample is None: dataSample = np.array(unimodal_audioPower)
-            else: dataSample = np.vstack([dataSample, unimodal_audioPower])
-
-            ## updateMinMax(param_dict, 'unimodal_audioPower', unimodal_audioPower)                
-            ## self.audio_disp(timeList, audioAzimuth, audioPower, audioPowerLocal, \
-            ##                 power_min=power_min, power_max=power_max)
-
-        # Unimodal feature - Kinematics --------------------------------------
-        if 'unimodal_kinVel' in feature_list:
-            unimodal_kinVel = []
-            if dataSample is None: dataSample = np.array(unimodal_kinVel)
-            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
-
-        # Unimodal feature - Force -------------------------------------------
-        if 'unimodal_ftForce' in feature_list:
-            ftForce      = d['ftForceList'][idx]
-            
-            # ftForceLocal = np.linalg.norm(ftForce, axis=0) #* np.sign(ftForce[2])
-            unimodal_ftForce = ftForce_pca.transform(ftForce.T).T
-            ## self.ft_disp(timeList, ftForce, ftForceLocal)
-
-            if dataSample is None: dataSample = np.array(unimodal_ftForce)
-            else: dataSample = np.vstack([dataSample, unimodal_ftForce])
-                        
-        # Crossmodal feature - relative dist --------------------------
-        if 'crossmodal_targetRelativeDist' in feature_list:
-            kinEEPos     = d['kinEEPosList'][idx]
-            kinTargetPos  = d['kinTargetPosList'][idx]
-            
-            crossmodal_targetRelativeDist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-
-            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeDist])
-
-        # Crossmodal feature - relative angle --------------------------
-        if 'crossmodal_targetRelativeAng' in feature_list:                
-            kinEEQuat    = d['kinEEQuatList'][idx]
-            kinTargetQuat = d['kinTargetQuatList'][idx]
-            
-            crossmodal_targetRelativeAng = []
-            for time_idx in xrange(len(timeList)):
-
-                startQuat = kinEEQuat[:,time_idx]
-                endQuat   = kinTargetQuat[:,time_idx]
-
-                diff_ang = qt.quat_angle(startQuat, endQuat)
-                crossmodal_targetRelativeAng.append( abs(diff_ang) )
-
-            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeAng)
-            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeAng])
-
-        # Crossmodal feature - vision relative dist --------------------------
-        if 'crossmodal_artagRelativeDist' in feature_list:
-            kinEEPos  = d['kinEEPosList'][idx]
-            visionPos = d['visionPosList'][idx]
-            
-            crossmodal_artagRelativeDist = np.linalg.norm(visionPos - kinEEPos, axis=0)
-
-            if dataSample is None: dataSample = np.array(crossmodal_artagRelativeDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeDist])
-
-        # Crossmodal feature - vision relative angle --------------------------
-        if 'crossmodal_artagRelativeAng' in feature_list:                
-            kinEEQuat    = d['kinEEQuatList'][idx]
-            visionQuat = d['visionQuatList'][idx]
-            
-            crossmodal_artagRelativeAng = []
-            for time_idx in xrange(len(timeList)):
-
-                startQuat = kinEEQuat[:,time_idx]
-                endQuat   = visionQuat[:,time_idx]
-
-                diff_ang = qt.quat_angle(startQuat, endQuat)
-                crossmodal_artagRelativeAng.append( abs(diff_ang) )
-
-            if dataSample is None: dataSample = np.array(crossmodal_artagRelativeAng)
-            else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeAng])
-
-        # ----------------------------------------------------------------
-        dataList.append(dataSample)
-
-        
-    # Converting data structure
-    nSample      = len(dataList)
-    nEmissionDim = len(dataList[0])
-    features     = []
-    for i in xrange(nEmissionDim):
-        feature  = []
-
-        for j in xrange(nSample):
-            feature.append(dataList[j][i,:])
-
-        features.append( feature )
-
-
-    # Scaling ------------------------------------------------------------
-    if isTrainingData:
-        param_dict['feature_max'] = [ np.max(x) for x in features ]
-        param_dict['feature_min'] = [ np.min(x) for x in features ]
-        
-    scaled_features = []
-    for i, feature in enumerate(features):
-        scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
-                                /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
-
-    return scaled_features, param_dict
 
 
 def updateMinMax(param_dict, feature_name, feature_array):
@@ -334,7 +176,264 @@ def updateMinMax(param_dict, feature_name, feature_array):
         
     
 
-def test(processed_data_path, task_name, nSet, feature_list, local_range, viz=False):
+def likelihoodOfSequences(processed_data_path, task_name, feature_list, local_range, \
+                          nSet=0, nState=10, threshold=-1.0, \
+                          useTrain=True, useNormalTest=True, useAbnormalTest=False,\
+                          useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                          renew=False, save_pdf=False, show_plot=True):
+
+    target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
+    if os.path.isfile(target_file) is not True: 
+        print "There is no saved data"
+        sys.exit()
+
+    data_dict = ut.load_pickle(target_file)
+
+    # training set
+    trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+
+    # test set
+    normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
+                                            param_dict=param_dict)        
+    abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
+                                              param_dict=param_dict)
+
+    print "======================================"
+    print "Training data: ", np.shape(trainingData)
+    print "Normal test data: ", np.shape(normalTestData)
+    print "Abnormal test data: ", np.shape(abnormalTestData)
+    print "======================================"
+
+    # training hmm
+    nEmissionDim = len(trainingData)
+    detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
+
+    ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=False)
+    ret = ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=not(renew))
+    ths = threshold
+    
+    if ret == 'Failure': 
+        print "-------------------------"
+        print "HMM returned failure!!   "
+        print "-------------------------"
+        return (-1,-1,-1,-1)
+    
+    if show_plot: fig = plt.figure()
+    min_logp = 0.0
+    max_logp = 0.0
+        
+    # training data
+    if useTrain:
+
+        log_ll = []
+        exp_log_ll = []        
+        count = 0
+        for i in xrange(len(trainingData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+            for j in range(2, len(trainingData[0][i])):
+
+                X = [x[i,:j] for x in trainingData]                
+                X_test = ml.convert_sequence(X)
+                try:
+                    logp = ml.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+                
+            # disp
+            if useTrain_color:
+                plt.plot(log_ll[i], label=str(i))
+                print i, " : ", trainFileList[i], log_ll[i][-1]                
+            else:
+                plt.plot(log_ll[i], 'b-')
+
+        if useTrain_color: 
+            plt.legend(loc=3,prop={'size':16})
+            
+        ## plt.plot(exp_log_ll[i], 'r-')            
+                                             
+    # normal test data
+    if useNormalTest:
+
+        log_ll = []
+        exp_log_ll = []        
+        count = 0
+        for i in xrange(len(normalTestData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+
+            for j in range(2, len(normalTestData[0][i])):
+                X = [x[i,:j] for x in normalTestData]                
+                X_test = ml.convert_sequence(X)
+                try:
+                    logp = ml.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+                ## exp_logp = ml.expLikelihoods(X_test, ths)
+                exp_logp = ml.expLikelihoods(X, ths)
+                exp_log_ll[i].append(exp_logp)
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+
+            # disp 
+            if useNormalTest_color:
+                print i, " : ", normalTestFileList[i]                
+                plt.plot(log_ll[i], label=str(i))
+            else:
+                plt.plot(log_ll[i], 'g-')
+
+            plt.plot(exp_log_ll[i], 'r*-')
+
+
+        if useNormalTest_color: 
+            plt.legend(loc=3,prop={'size':16})
+
+    # abnormal test data
+    if useAbnormalTest:
+        log_ll = []
+        exp_log_ll = []        
+        count = 0
+        for i in xrange(len(abnormalTestData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+
+            for j in range(2, len(abnormalTestData[0][i])):
+                X = [x[i,:j] for x in abnormalTestData]                
+                X_test = ml.convert_sequence(X)
+                try:
+                    logp = ml.loglikelihood(X_test)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+            # disp 
+            plt.plot(log_ll[i], 'r-')
+            ## plt.plot(exp_log_ll[i], 'r*-')
+
+
+    plt.ylim([min_logp, max_logp])
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        if show_plot: plt.show()        
+
+    return
+
+        
+
+def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, \
+                   processed_data_path, downSampleSize=100, \
+                   nState=10, cov_mult=1.0, anomaly_offset=0.0, local_range=0.25,\
+                   data_renew=False, hmm_renew=False, save_pdf=False, viz=False):
+
+    # For parallel computing
+    strMachine = socket.gethostname()+"_"+str(os.getpid())    
+
+    count = 0
+    for method in check_methods:        
+
+        # Check the existance of workspace
+        method_path = os.path.join(processed_data_path, task_name, method)
+        if os.path.isdir(method_path) == False:
+            os.system('mkdir -p '+method_path)
+
+        for idx, subject_name in enumerate(subject_names):
+
+            ## For parallel computing
+            # save file name
+            res_file        = task_name+'_'+subject_name+'_'+method+'.pkl'
+            mutex_file_part = 'running_'+task_name+'_'+subject_name+'_'+method
+
+            res_file        = os.path.join(method_path, res_file)
+            mutex_file_full = mutex_file_part+'_'+strMachine+'.txt'
+            mutex_file      = os.path.join(method_path, mutex_file_full)
+
+            if os.path.isfile(res_file): 
+                count += 1            
+                continue
+            elif hcu.is_file(method_path, mutex_file_part) and \
+              not hcu.is_file(method_path, mutex_file_part+'_'+socket.gethostname() ): 
+                print "Mutex file exists"
+                continue
+            ## elif os.path.isfile(mutex_file): continue
+            os.system('touch '+mutex_file)
+
+            preprocessData(subject_names, task_name, processed_data_path, processed_data_path, \
+                           renew=data_renew, downSampleSize=downSampleSize)
+
+            (truePos, falseNeg, trueNeg, falsePos)\
+              = evaluation(task_name, processed_data_path, nSet=nSet, nState=nState, cov_mult=cov_mult,\
+                           anomaly_offset=anomaly_offset, check_method=method,\
+                           hmm_renew=hmm_renew, viz=False, verbose=True)
+
+
+            truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
+            if trueNeg == 0 and falsePos == 0:            
+                trueNegativeRate = "Not available"
+            else:
+                trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
+                
+            print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+                           
+            if truePos!=-1 :                 
+                d = {}
+                d['subject'] = subject_name
+                d['tp'] = truePos
+                d['fn'] = falseNeg
+                d['tn'] = trueNeg
+                d['fp'] = falsePos
+                d['nSet'] = nSet
+
+                try:
+                    ut.save_pickle(d,res_file)        
+                except:
+                    print "There is already the targeted pkl file"
+            else:
+                target_file = os.path.join(method_path, task_name+'_dataSet_%d_eval_'+str(idx) ) 
+                for j in xrange(nSet):
+                    os.system('rm '+target_file % j)
+                
+
+            os.system('rm '+mutex_file)
+            print "-----------------------------------------------"
+
+            if truePos==-1: 
+                print "truePos is -1"
+                sys.exit()
+
+    if count == len(check_methods)*len(subject_names):
+        print "#############################################################################"
+        print "All file exist ", count
+        print "#############################################################################"        
+    else:
+        return
+                
+
+def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, anomaly_offset=0.0,\
+               check_method='progress', hmm_renew=False, save_pdf=False, viz=False, verbose=False):
+
+    tot_truePos = 0
+    tot_falseNeg = 0
+    tot_trueNeg = 0 
+    tot_falsePos = 0
 
     for i in xrange(nSet):        
         target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(i) )                    
@@ -343,11 +442,11 @@ def test(processed_data_path, task_name, nSet, feature_list, local_range, viz=Fa
             sys.exit()
 
         data_dict = ut.load_pickle(target_file)
-        ## if viz: visualization_raw_data(data_dict)
+        if viz: visualization_raw_data(data_dict, save_pdf=save_pdf)
 
         # training set
         trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
-        
+
         # test set
         normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
                                                 param_dict=param_dict)        
@@ -360,22 +459,216 @@ def test(processed_data_path, task_name, nSet, feature_list, local_range, viz=Fa
         print "Abnormal test data: ", np.shape(abnormalTestData)
         print "======================================"
 
+        if True: visualization_hmm_data(feature_list, trainingData=trainingData, \
+                                        normalTestData=normalTestData,\
+                                        abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
 
-        if viz: visualization_hmm_data(feature_list, trainingData=trainingData, \
-                                       normalTestData=normalTestData,\
-                                       abnormalTestData=abnormalTestData)        
-        
         # training hmm
-        nState = 5
         nEmissionDim = len(trainingData)
+        detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
+
+        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=True)
+
+        print "Start to fit hmm", np.shape(trainingData)
+        ret = ml.fit(trainingData, cov_mult=[cov_mult]*nEmissionDim**2, ml_pkl=detection_param_pkl, \
+                     use_pkl=hmm_renew)
+
+        if ret == 'Failure': 
+            print "-------------------------"
+            print "HMM returned failure!!   "
+            print "-------------------------"
+            return (-1,-1,-1,-1)
+
+
+        ## minThresholds = None                  
+        ## if hmm_renew:
+        ##     minThresholds1 = tuneSensitivityGain(ml, trainingData, method=check_method, verbose=verbose)
+        ##     ## minThresholds2 = tuneSensitivityGain(ml, thresTestData, method=check_method, verbose=verbose)
+        ##     minThresholds = minThresholds1
+
+        ##     if type(minThresholds) == list or type(minThresholds) == np.ndarray:
+        ##         for i in xrange(len(minThresholds1)):
+        ##             if minThresholds1[i] < minThresholds2[i]:
+        ##                 minThresholds[i] = minThresholds1[i]
+        ##     else:
+        ##         if minThresholds1 < minThresholds2:
+        ##             minThresholds = minThresholds1
+
+        ##     d = ut.load_pickle(detection_param_pkl)
+        ##     if d is None: d = {}
+        ##     d['minThresholds'] = minThresholds                
+        ##     ut.save_pickle(d, detection_param_pkl)                
+        ## else:
+        ##     d = ut.load_pickle(detection_param_pkl)
+        ##     minThresholds = d['minThresholds']
+        minThresholds=-5.0
+
+        truePos, falseNeg, trueNeg, falsePos = \
+          onlineEvaluation(ml, normalTestData, abnormalTestData, c=minThresholds, verbose=True)
+        if truePos == -1: 
+            print "Error with task ", task_name
+            print "Error with nSet ", i
+            print "Error with crossEval ID: ", crossEvalID
+            return (-1,-1,-1,-1)
+
+        tot_truePos += truePos
+        tot_falseNeg += falseNeg
+        tot_trueNeg += trueNeg 
+        tot_falsePos += falsePos
+            
+    truePositiveRate = float(tot_truePos) / float(tot_truePos + tot_falseNeg) * 100.0
+    if tot_trueNeg == 0 and tot_falsePos == 0:
+        trueNegativeRate = "not available"
+    else:
+        trueNegativeRate = float(tot_trueNeg) / float(tot_trueNeg + tot_falsePos) * 100.0
+    print "------------------------------------------------"
+    print "Total set of data: ", nSet
+    print "------------------------------------------------"
+    print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+    print "------------------------------------------------"
+
+    return (tot_truePos, tot_falseNeg, tot_trueNeg, tot_falsePos)
+        
+        ## tp_l = []
+        ## fn_l = []
+        ## fp_l = []
+        ## tn_l = []
+        ## ths_l = []
+
+        ## # evaluation
+        ## threshold_list = -(np.logspace(-1.0, 1.5, nThres, endpoint=True)-1.0 )        
+        ## ## threshold_list = [-5.0]
+        ## for ths in threshold_list:        
+        ##     tp, fn, tn, fp = onlineEvaluation(ml, normalTestData, abnormalTestData, c=ths, 
+        ##                                       verbose=True)
+        ##     if tp == -1:
+        ##         tp_l.append(0)
+        ##         fn_l.append(0)
+        ##         fp_l.append(0)
+        ##         tn_l.append(0)
+        ##         ths_l.append(ths)
+        ##     else:                       
+        ##         tp_l.append(tp)
+        ##         fn_l.append(fn)
+        ##         fp_l.append(fp)
+        ##         tn_l.append(tn)
+        ##         ths_l.append(ths)
+
+        ## dd = {}
+        ## dd['fn_l']    = fn_l
+        ## dd['tn_l']    = tn_l
+        ## dd['tp_l']    = tp_l
+        ## dd['fp_l']    = fp_l
+        ## dd['ths_l']   = ths_l
+
+        ## try:
+        ##     ut.save_pickle(dd,res_file)        
+        ## except:
+        ##     print "There is the targeted pkl file"
+
+    
+    
                 
-        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim)
-        ml.fit(trainingData)
+def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False):
+    truePos = 0
+    trueNeg = 0
+    falsePos = 0
+    falseNeg = 0
 
-        # evaluation
+    # positive is anomaly
+    # negative is non-anomaly
+    if verbose: print '\nBeginning anomaly testing for test set\n'
+
+    # for normal test data
+    if normalTestData != []:    
+        for i in xrange(len(normalTestData[0])):
+            if verbose: print 'Anomaly Error for test set ', i
+
+            for j in range(20, len(normalTestData[0][i])):
+
+                try:    
+                    anomaly, error = hmm.anomaly_check(normalTestData[:][i][:j], c)
+                except:
+                    print "anomaly_check failed: ", i, j
+                    ## return (-1,-1,-1,-1)
+                    falsePos += 1
+                    break
+
+                if np.isnan(error):
+                    print "anomaly check returned nan"
+                    falsePos += 1
+                    break
+                    ## return (-1,-1,-1,-1)
+
+                if verbose: print "Normal: ", j, " => ", anomaly, error
+
+                # This is a successful nonanomalous attempt
+                if anomaly:
+                    falsePos += 1
+                    if verbose: print 'Success Test', i,',',j, ' in ',len(normalTestData[0][i]), ' |', anomaly, 
+                    error
+                    break
+                elif j == len(normalTestData[0][i]) - 1:
+                    trueNeg += 1
+                    break
 
 
-def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None):
+    # for abnormal test data
+    for i in xrange(len(abnormalTestData[0])):
+        if verbose: print 'Anomaly Error for test set ', i
+
+        for j in range(20, len(abnormalTestData[0][i])):
+            try:                    
+                anomaly, error = hmm.anomaly_check(abnormalTestData[:][i][:j], c)
+            except:
+                truePos += 1
+                break
+
+            if verbose: print anomaly, error
+                
+            if anomaly:
+                truePos += 1
+                break
+            elif j == len(abnormalTestData[0][i]) - 1:
+                falseNeg += 1
+                if verbose: print 'Failure Test', i,',',j, ' in ',len(abnormalTestData[0][i]), ' |', anomaly, error
+                break
+
+    return truePos, falseNeg, trueNeg, falsePos
+
+        
+def interp_data_plot(task_name, processed_data_path, nSet=1, save_pdf=False):    
+
+    target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
+    if os.path.isfile(target_file) is not True: 
+        print "There is no saved data"
+        sys.exit()
+
+    data_dict = ut.load_pickle(target_file)
+    visualization_raw_data(data_dict, save_pdf=save_pdf)
+
+    # training set
+    trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+
+    # test set
+    normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
+                                            param_dict=param_dict)        
+    abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
+                                            param_dict=param_dict)
+
+    print "======================================"
+    print "Training data: ", np.shape(trainingData)
+    print "Normal test data: ", np.shape(normalTestData)
+    print "Abnormal test data: ", np.shape(abnormalTestData)
+    print "======================================"
+
+    visualization_hmm_data(feature_list, trainingData=trainingData, \
+                           normalTestData=normalTestData,\
+                           abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
+    
+            
+
+def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None, save_pdf=False):
 
     if trainingData is not None:
         nDimension = len(trainingData)
@@ -393,93 +686,109 @@ def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None,
         ax = fig.add_subplot(100*nDimension+10+(i+1))
         if trainingData is not None:
             ax.plot(np.array(trainingData[i]).T, 'b')
-        elif normalTestData is not None:
-            ax.plot(np.array(normalTestData[i]).T, 'k')
+        ## elif normalTestData is not None:
+        ##     ax.plot(np.array(normalTestData[i]).T, 'k')
         ## elif abnormalTestData is not None:
         ##     ax.plot(abnormalTestData[i], 'r')
 
         ax.set_title(feature_list[i])
 
-    fig.savefig('test.pdf')
-    fig.savefig('test.png')
-    os.system('cp test.p* ~/Dropbox/HRL/')        
-    ## plt.show()
-    sys.exit()
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
+    #sys.exit()
 
 
-def visualization_raw_data(data_dict, modality='ft'):
+def visualization_raw_data(data_dict, modality='ft', save_pdf=False):
 
-    ## dataList = data_dict['trainData']['ftForceList']
-    ## dataList = data_dict['trainData']['kinTargetPosList']
-    dataList = data_dict['trainData']['kinEEPosList']
-    dataList = data_dict['trainData']['kinEEQuatList']
+    data_key = 'trainData'
+    file_key = 'trainFileList'
+    ## data_key = 'normalTestData'
+    ## file_key = 'normalTestFileList'
+    for key in data_dict[data_key].keys():
 
-    fileList = data_dict['trainFileList']
-    
-    
-    ## # Converting data structure
-    ## nSample      = len(dataList)
-    ## nEmissionDim = len(dataList[0])
-    ## features     = []
-    ## for i in xrange(nEmissionDim):
-    ##     feature  = []
+        if not('Pos' in key): continue
+        
+        print "key: ", key
+        
+        dataList = data_dict[data_key][key]
+        fileList = data_dict[file_key]
+        
+        if len(np.shape(dataList)) < 3: continue
+        nSample, nDim, k = np.shape(dataList)
 
-    ##     for j in xrange(nSample):
-    ##         feature.append(dataList[j][i,:])
+        fig = plt.figure()            
+        for i in xrange(nDim):
+            ax = fig.add_subplot(nDim*100+10+i)
 
-    ##     features.append( feature )
+            for j in xrange(nSample):
+                fileName = fileList[j].split('/')[-1] 
+                ax.plot(dataList[j][i,:], label=fileName)
 
-    count = 0
-    d_list = []
-    f_list = []
-    
-    for idx, data in enumerate(dataList):
-
-        d_list.append( np.mean(data, axis=0) )
-        f_list.append( fileList[idx].split('/')[-1] )
-
-        if idx%10 == 9:
-                
-            fig = plt.figure()            
-            ax1 = fig.add_subplot(111)
-
-            for j, d in enumerate(d_list):
-                ax1.plot(d_list[j], label=f_list[j])
-                
-            plt.legend(loc=3,prop={'size':8})
-
+        ## plt.legend(loc=3,prop={'size':8})
+        ## ax1.set_ylim([0.0, 2.0])
+        if save_pdf:
             fig.savefig('test'+str(count)+'.pdf')
             fig.savefig('test'+str(count)+'.png')
             os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
-            d_list = []
-            f_list = []
-            count += 1
+        else:
+            plt.show()
+
+
+        ## count = 0
+        ## d_list = []
+        ## f_list = []
+
+        ## for idx, data in enumerate(dataList):
+
+        ##     d_list.append( np.linalg.norm(data, axis=0) )
+        ##     f_list.append( fileList[idx].split('/')[-1] )
+
+        ##     if idx%10 == 9:
+
+        ##         fig = plt.figure()            
+        ##         ax1 = fig.add_subplot(111)
+
+        ##         for j, d in enumerate(d_list):
+        ##             ax1.plot(d_list[j], label=f_list[j])
+
+        ##         plt.legend(loc=3,prop={'size':8})
+        ##         ## ax1.set_ylim([0.0, 2.0])
+
+        ##         if save_pdf:
+        ##             fig.savefig('test'+str(count)+'.pdf')
+        ##             fig.savefig('test'+str(count)+'.png')
+        ##             os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+        ##         else:
+        ##             plt.show()
+
+        ##         d_list = []
+        ##         f_list = []
+        ##         count += 1
+
             
-
-    fig = plt.figure()            
-    ax1 = fig.add_subplot(111)
-
-    for j, d in enumerate(d_list):
-        ax1.plot(d_list[j], label=f_list[j])
-
-    plt.legend(loc=3,prop={'size':8})
-
-    fig.savefig('test'+str(count)+'.pdf')
-    fig.savefig('test'+str(count)+'.png')
-    os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
-            
-    ## plt.show()
-    sys.exit()
-
-    
 
 if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-        
+    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
+                 default=False, help='Renew HMM parameters.')
+
+    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
+                 default=False, help='Plot the change of likelihood.')
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
+    
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
 
     opt, args = p.parse_args()
 
@@ -491,19 +800,47 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     subject = 'gatsbii'
     task    = 'scooping'    
-    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
-                    'crossmodal_targetRelativeAng']
+    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
+    ##                 'crossmodal_targetRelativeAng']
+    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist']
 
     ## subject = 'gatsbii'
     ## task    = 'feeding' 
     ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagRelativeDist', \
     ##                 'crossmodal_artagRelativeAng']
     
-    preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bRenew)
 
     # Dectection TEST 
     nSet         = 1
     local_range  = 0.25    
     viz          = False
+    renew        = False
+    downSampleSize=100
+
+    if opt.bLikelihoodPlot:
+        nState    = 15
+        threshold = 0.0
+        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew, \
+                       downSampleSize=downSampleSize)
+        likelihoodOfSequences(save_data_path, task, feature_list, local_range, \
+                              nState=nState, threshold=threshold,\
+                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                              renew=renew, save_pdf=opt.bSavePdf)
+    elif opt.bRawDataPlot:
+        target_data_set = 0
+        raw_plot    = False
+        interp_plot = True
         
-    test(save_data_path, task, nSet, feature_list, local_range, viz=viz)
+        preprocessData([subject], task, raw_data_path, save_data_path, raw_viz=raw_plot, interp_viz=interp_plot,\
+                       renew=opt.bDataRenew, downSampleSize=downSampleSize)
+                              
+    else:
+        nState         = 10
+        cov_mult       = 5.0       
+        anomaly_offset = -20.0        
+        check_methods = ['progress']
+        evaluation_all([subject], task, check_methods, feature_list, nSet,\
+                       save_data_path, downSampleSize=downSampleSize, \
+                       nState=nState, cov_mult=cov_mult, anomaly_offset=anomaly_offset, local_range=local_range,\
+                       data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, viz=viz)

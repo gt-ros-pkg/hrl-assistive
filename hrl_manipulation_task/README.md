@@ -56,7 +56,9 @@ To start data recording
        Please check F/T sensor, Kinect, Audio device before running this launch file.
     3) roslaunch hrl_manipulation_task arm_reacher_all.launch
     4) (Option) xxxx.py for visualization
-    5) rosrun hrl_manipulation_task arm_reacher_logging.py
+    5.1) (only data recording) rosrun hrl_manipulation_task arm_reacher_logging.py
+    5.1) (with anomaly detection) rosrun hrl_manipulation_task arm_reacher_logging.py --dp
+       
 
 To calibrate vision offest (for mouth detection)
     1) rosrun hrl_manipulation_task findMouth.py --renew    

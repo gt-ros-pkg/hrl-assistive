@@ -37,8 +37,13 @@ import os, sys, copy
 # util
 import numpy as np
 import hrl_lib.util as ut
+import hrl_lib.quaternion as qt
 
 from scipy import interpolate
+from sklearn.decomposition import PCA
+
+import matplotlib.pyplot as plt
+import data_viz
 
 def extrapolateData(data, maxsize):
     if len(np.shape(data[0])) > 1:     
@@ -49,7 +54,8 @@ def extrapolateData(data, maxsize):
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
-def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False):
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False, interp_viz=False, \
+             verbose=False):
 
     data_dict = {}
     data_dict['timesList']        = []
@@ -57,22 +63,31 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
     data_dict['audioPowerList']   = []    
     data_dict['kinEEPosList']     = []
     data_dict['kinEEQuatList']    = []
+    data_dict['kinJntPosList']    = []
     data_dict['ftForceList']      = []
     data_dict['kinTargetPosList']  = []
     data_dict['kinTargetQuatList'] = []
     data_dict['visionPosList']     = []
     data_dict['visionQuatList']    = []
+
     
+    if raw_viz or interp_viz: fig = plt.figure()
+
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
 
+        print fileName
         d = ut.load_pickle(fileName)        
 
-        kin_time = d['kinematics_time']
-        new_times = np.linspace(0.01, kin_time[-1], downSampleSize)
+        max_time = 0
+        for key in d.keys():
+            if 'time' in key and 'init' not in key:
+                feature_time = d[key]
+                if max_time < feature_time[-1]: max_time = feature_time[-1]
+        new_times = np.linspace(0.01, max_time, downSampleSize)
         data_dict['timesList'].append(new_times)
-        
+
         # sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
             audio_time    = d['audio_time']
@@ -92,6 +107,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             kin_ee_quat = d['kinematics_ee_quat'] # ?xN
             kin_target_pos  = d['kinematics_target_pos']
             kin_target_quat = d['kinematics_target_quat']
+            kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
 
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
@@ -105,6 +121,29 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             target_quat_array = interpolationQuatData(kin_time, kin_target_quat, new_times)
             data_dict['kinTargetQuatList'].append(target_quat_array)                                         
 
+            jnt_pos_array = interpolationData(kin_time, kin_jnt_pos, new_times)
+            data_dict['kinJntPosList'].append(jnt_pos_array)                                         
+
+            if raw_viz:
+                ax = fig.add_subplot(312)
+                if len(kin_time) > len(kin_ee_pos[2]):
+                    ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
+                else:
+                    ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
+
+                ax = fig.add_subplot(313)
+                if len(kin_time) > len(kin_jnt_pos[2]):
+                    ax.plot(kin_time[:len(kin_jnt_pos[2])], kin_jnt_pos[2])
+                else:
+                    ax.plot(kin_time, kin_jnt_pos[2][:len(kin_time)])
+            elif interp_viz:
+                ax = fig.add_subplot(312)
+                ax.plot(new_times, ee_pos_array[2])
+                ax = fig.add_subplot(313)
+                ax.plot(new_times, jnt_pos_array[2])
+                    
+            
+            
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time        = d['ft_time']
@@ -113,6 +152,23 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             force_array = interpolationData(ft_time, ft_force_array, new_times)
             data_dict['ftForceList'].append(force_array)                                         
             
+            if raw_viz:
+                ax = fig.add_subplot(311)
+                if len(ft_time) > len(ft_force_array[2]):
+                    ax.plot(ft_time[:len(ft_force_array[2])], ft_force_array[2])
+                else:
+                    ax.plot(ft_time, ft_force_array[2][:len(ft_time)])           
+                ## plt.show()
+                ## fig = plt.figure()
+                
+            ## if idx > 10: break
+            elif interp_viz:
+                ax = fig.add_subplot(311)
+                ax.plot(new_times, force_array[2])
+                ## plt.show()
+                ## fig = plt.figure()
+                
+                    
         # vision ---------------------------------------------------------------
         if 'vision_time' in d.keys():
             vision_time = d['vision_time']
@@ -124,7 +180,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             
             vision_quat_array = interpolationQuatData(vision_time, vision_quat, new_times)
             data_dict['visionQuatList'].append(vision_quat_array)                                         
-            
+
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
             pps_skin_time  = d['pps_skin_time']
@@ -132,7 +188,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False)
             pps_skin_right = d['pps_skin_right']
 
         # ----------------------------------------------------------------------
-                        
+
+    if raw_viz or interp_viz: plt.show()
+        
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
         # Find the largest iteration
@@ -207,7 +265,8 @@ def interpolationData(time_array, data_array, new_time_array):
     
 def interpolationQuatData(time_array, data_array, new_time_array):
     '''
-    We have to use SLERP, but I cound not find a good library for quaternion array.
+    We have to use SLERP for start-goal quaternion interpolation.
+    But, I cound not find any good library for quaternion array interpolation.
     time_array: N - length array
     data_array: 4 x N - length array
     '''
@@ -218,24 +277,20 @@ def interpolationQuatData(time_array, data_array, new_time_array):
         time_array = time_array[0:m]
     
     new_data_array = None    
-    
-    if len(time_array) > len(new_time_array):
 
-        l     = len(time_array)
-        new_l = len(new_time_array)
+    l     = len(time_array)
+    new_l = len(new_time_array)
 
-        idx_list = np.linspace(0, l-1, new_l)
+    idx_list = np.linspace(0, l-1, new_l)
 
-        for idx in idx_list:
-            
-            if new_data_array is None:
-                new_data_array = data_array[:,idx]
-            else:
-                new_data_array = np.vstack([new_data_array, data_array[:,idx]])        
-    else:
-        print "quaternion array extrapolation is not implemented"
-        sys.exit()
-                    
+    for idx in idx_list:
+        if new_data_array is None:
+            new_data_array = qt.slerp( data_array[:,int(idx)], data_array[:,int(np.ceil(idx))], idx-int(idx) )
+        else:
+            new_data_array = np.vstack([new_data_array, 
+                                        qt.slerp( data_array[:,int(idx)], data_array[:,int(np.ceil(idx))], \
+                                                  idx-int(idx) )])                            
+                                                  
     return new_data_array.T
 
     
@@ -282,3 +337,173 @@ def getAngularSpatialRF(cur_pos, dist_margin ):
     ang_min = ang_cur - ang_margin
 
     return ang_max, ang_min
+
+
+
+def extractLocalFeature(d, feature_list, local_range, param_dict=None, verbose=False):
+
+    if param_dict is None:
+        isTrainingData=True
+        param_dict = {}
+
+        if 'unimodal_audioPower' in feature_list:
+            power_max   = np.amax(d['audioPowerList'])
+            power_min   = np.amin(d['audioPowerList'])
+            param_dict['unimodal_audioPower_power_min'] = power_min
+            
+        if 'unimodal_ftForce' in feature_list:
+            force_array = None
+            for idx in xrange(len(d['ftForceList'])):
+                if force_array is None:
+                    force_array = d['ftForceList'][idx]
+                else:
+                    force_array = np.hstack([force_array, d['ftForceList'][idx] ])
+
+            ftForce_pca = PCA(n_components=1)
+            res = ftForce_pca.fit_transform( force_array.T )
+            param_dict['unimodal_ftForce_pca'] = ftForce_pca
+    else:
+        isTrainingData=False
+        if 'unimodal_audioPower' in feature_list:
+            power_min   = param_dict['unimodal_audioPower_power_min']
+        
+        if 'unimodal_ftForce' in feature_list:
+            ftForce_pca = param_dict['unimodal_ftForce_pca']
+
+    # -------------------------------------------------------------        
+
+    # extract local features
+    dataList   = []
+    for idx in xrange(len(d['timesList'])):
+
+        timeList     = d['timesList'][idx]
+        dataSample = None
+
+        # Unimoda feature - Audio --------------------------------------------
+        if 'unimodal_audioPower' in feature_list:
+            audioAzimuth = d['audioAzimuthList'][idx]
+            audioPower   = d['audioPowerList'][idx]
+            kinEEPos     = d['kinEEPosList'][idx]
+            
+            unimodal_audioPower = []
+            for time_idx in xrange(len(timeList)):
+                ang_max, ang_min = getAngularSpatialRF(kinEEPos[:,time_idx], local_range)
+
+                if audioAzimuth[time_idx] > ang_min and audioAzimuth[time_idx] < ang_max:
+                    unimodal_audioPower.append(audioPower[time_idx])
+                else:
+                    unimodal_audioPower.append(power_min) # or append white noise?
+
+            if dataSample is None: dataSample = np.array(unimodal_audioPower)
+            else: dataSample = np.vstack([dataSample, unimodal_audioPower])
+
+            ## updateMinMax(param_dict, 'unimodal_audioPower', unimodal_audioPower)                
+            ## self.audio_disp(timeList, audioAzimuth, audioPower, audioPowerLocal, \
+            ##                 power_min=power_min, power_max=power_max)
+
+        # Unimodal feature - Kinematics --------------------------------------
+        if 'unimodal_kinVel' in feature_list:
+            unimodal_kinVel = []
+            if dataSample is None: dataSample = np.array(unimodal_kinVel)
+            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
+
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForce' in feature_list:
+            ftForce      = d['ftForceList'][idx]
+            
+            # ftForceLocal = np.linalg.norm(ftForce, axis=0) #* np.sign(ftForce[2])
+            unimodal_ftForce = ftForce_pca.transform(ftForce.T).T
+            ## data_viz.ft_disp(timeList, ftForce, unimodal_ftForce)
+            ## sys.exit()
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce])
+                        
+        # Crossmodal feature - relative dist --------------------------
+        if 'crossmodal_targetRelativeDist' in feature_list:
+            kinEEPos     = d['kinEEPosList'][idx]
+            kinTargetPos  = d['kinTargetPosList'][idx]
+            
+            crossmodal_targetRelativeDist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
+
+            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeDist])
+
+        # Crossmodal feature - relative angle --------------------------
+        if 'crossmodal_targetRelativeAng' in feature_list:                
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            kinTargetQuat = d['kinTargetQuatList'][idx]
+            
+            crossmodal_targetRelativeAng = []
+            for time_idx in xrange(len(timeList)):
+
+                startQuat = kinEEQuat[:,time_idx]
+                endQuat   = kinTargetQuat[:,time_idx]
+
+                diff_ang = qt.quat_angle(startQuat, endQuat)
+                crossmodal_targetRelativeAng.append( abs(diff_ang) )
+
+            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeAng])
+
+        # Crossmodal feature - vision relative dist --------------------------
+        if 'crossmodal_artagRelativeDist' in feature_list:
+            kinEEPos  = d['kinEEPosList'][idx]
+            visionPos = d['visionPosList'][idx]
+            
+            crossmodal_artagRelativeDist = np.linalg.norm(visionPos - kinEEPos, axis=0)
+
+            if dataSample is None: dataSample = np.array(crossmodal_artagRelativeDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeDist])
+
+        # Crossmodal feature - vision relative angle --------------------------
+        if 'crossmodal_artagRelativeAng' in feature_list:                
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            visionQuat = d['visionQuatList'][idx]
+            
+            crossmodal_artagRelativeAng = []
+            for time_idx in xrange(len(timeList)):
+
+                startQuat = kinEEQuat[:,time_idx]
+                endQuat   = visionQuat[:,time_idx]
+
+                diff_ang = qt.quat_angle(startQuat, endQuat)
+                crossmodal_artagRelativeAng.append( abs(diff_ang) )
+
+            if dataSample is None: dataSample = np.array(crossmodal_artagRelativeAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeAng])
+
+        # ----------------------------------------------------------------
+        dataList.append(dataSample)
+
+        
+    # Converting data structure
+    nSample      = len(dataList)
+    nEmissionDim = len(dataList[0])
+    features     = []
+    for i in xrange(nEmissionDim):
+        feature  = []
+
+        for j in xrange(nSample):
+            feature.append(dataList[j][i,:])
+
+        features.append( feature )
+
+
+    # Scaling ------------------------------------------------------------
+    if isTrainingData:
+        param_dict['feature_max'] = [ np.max(x) for x in features ]
+        param_dict['feature_min'] = [ np.min(x) for x in features ]
+        
+    scaled_features = []
+    for i, feature in enumerate(features):
+        scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
+                                /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+
+    ## import matplotlib.pyplot as plt
+    ## plt.figure()
+    ## plt.plot(np.array(scaled_features[0]).T)
+    ## plt.show()
+    ## sys.exit()
+                                
+    return scaled_features, param_dict

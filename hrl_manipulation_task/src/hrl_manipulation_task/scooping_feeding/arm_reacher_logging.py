@@ -43,7 +43,7 @@ import hrl_lib.util as ut
 from hrl_manipulation_task.record_data import logger
 
 
-def scooping(armReachActionLeft, armReachActionRight, log):
+def scooping(armReachActionLeft, armReachActionRight, log, detection_flag):
 
     log.task = 'scooping'
     log.initParams()
@@ -56,19 +56,20 @@ def scooping(armReachActionLeft, armReachActionRight, log):
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping")
-    
-    
+        
     print "Start to log!"    
     log.log_start()
+    if detection_flag: log.enableDetector(True)
     
     print "Running scooping!"
     print armReachActionLeft("runScooping")
 
+    if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
 
     
-def feeding(armReachActionLeft, armReachActionRight, log):
+def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
 
     log.task = 'feeding'
     log.initParams()
@@ -88,38 +89,60 @@ def feeding(armReachActionLeft, armReachActionRight, log):
     
     print "Start to log!"    
     log.log_start()
+    if detection_flag: log.enableDetector(True)
     
     print "Running feeding2"    
     print armReachActionLeft("runFeeding2")
 
+    if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
     
     
 if __name__ == '__main__':
+    
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
+                 default=False, help='Continuously publish data.')
+    opt, args = p.parse_args()
 
-    rospy.init_node('feed_client')
+    rospy.init_node('arm_reach_client')
 
     rospy.wait_for_service("/arm_reach_enable")
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=False, \
-                 subject="gatsbii", task='feeding', verbose=False)
+    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=True, skin=True, \
+                 subject="gatsbii", task='feeding', data_pub=opt.bDataPub, verbose=False)
 
-    while not rospy.is_shutdown():
+    last_trial  = '4'
+    last_detect = '2'
                  
-        flag = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
-        if flag == '1':
-            scooping(armReachActionLeft, armReachActionRight, log)
-        elif flag == '2':
-            feeding(armReachActionLeft, armReachActionRight, log)
-        elif flag == '3':
-            scooping(armReachActionLeft, armReachActionRight, log)
-            feeding(armReachActionLeft, armReachActionRight, log)
+    while not rospy.is_shutdown():
+
+        detection_flag = False
+        
+        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
+        if trial=='': trial=last_trial
+            
+        if trial is '1' or trial is '2' or trial is '3':
+            detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
+            if detect == '': detect=last_detect
+            if detect == '1': detection_flag = True
+            
+            if trial == '1':
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+            elif trial == '2':
+                feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+            else:
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+                feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
         else:
             break
 
+        last_trial  = trial
+        last_detect = detect
     
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()

@@ -155,13 +155,14 @@ class armReachAction(mpcBaseAction):
           [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
            ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
-           ['PAUSE', 2.0]]
+           ['PAUSE', 1.0]]
           
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 5, 'self.bowl_frame'],
-           ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 5, 'self.bowl_frame'],
-           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 5, 'self.bowl_frame'] ]
+          [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 4, 'self.bowl_frame'],
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'],
+           ['PAUSE', 2.0] ]
         self.motions['runScooping']['right'] = \
           []
         
@@ -278,8 +279,10 @@ class armReachAction(mpcBaseAction):
         ## posStopL = Point()
         ## quatStopL = Quaternion()
 
-        ## # TODO: location should be replaced into the last scooping or feeding starts.
-        ## print "Moving left arm to safe position "
+        # TODO: location should be replaced into the last scooping or feeding starts.
+        print "Moving left arm to safe position "
+        self.parsingMovements(self.motions['initScooping'][self.arm])
+        
         ## if data.data == 'InterruptHead':
         ##     self.feeding([0])
         ##     self.setPostureGoal(self.lInitAngFeeding, 10)
@@ -301,8 +304,8 @@ class armReachAction(mpcBaseAction):
 
         # 2. add offset to called TF value. Make sure Orientation is up right. 
         ## Off set : 11 cm x direction, - 5 cm z direction. 
-        pos_offset  = rospy.get_param('hrl_manipulation_task/target_pos_offset')        
-        orient_offset = rospy.get_param('hrl_manipulation_task/target_orient_offset')        
+        pos_offset  = rospy.get_param('hrl_manipulation_task/sub_ee_pos_offset')        
+        orient_offset = rospy.get_param('hrl_manipulation_task/sub_ee_orient_offset')        
 
         p = p + M*PyKDL.Vector(pos_offset['x'], pos_offset['y'], pos_offset['z'])
         M.DoRotX(orient_offset['rx'])
