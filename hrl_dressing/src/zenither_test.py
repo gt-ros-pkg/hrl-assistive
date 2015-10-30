@@ -41,6 +41,11 @@ def calibrate(z):
     print 'Calibration Over'
     pos = z.get_position_meters()
     print 'Current position is: ', pos
+    st = 0.9
+    z.move_position(st)
+    rospy.sleep(5.0)
+    print 'Current position is: ', pos
+    print 'Movement Over'
     #go_pos = 0.1
     #print 'Going to position: ', go_pos
     #print '__________________________'

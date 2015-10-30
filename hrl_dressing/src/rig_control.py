@@ -24,7 +24,7 @@ import matplotlib.patches as patches
 
 
 class RigControl(object):
-    def __init__(self, mode='autorun', plot=False, num=None, vel=None):
+    def __init__(self, mode='autorun', plot=False, num=None, vel=None, subj=None, height=None):
         # print 'Initializing Sleeve Rig'
         self.total_start_time = rospy.Time.now()
         rospy.loginfo('Initializing Sleeve Rig')
@@ -32,14 +32,22 @@ class RigControl(object):
         self.mode = mode
         self.plot = plot
 
-        if vel == None:
+        if vel is None:
             self.test_vel = 0.1
         else:
             self.test_vel = vel
-        if num == None:
+        if num is None:
             self.number_trials = 1
         else:
             self.number_trials = num
+        if subj is None:
+            self.subject = 'test_subject'
+        else:
+            self.subject = subj
+        if height is None:
+            self.height = 'height0'
+        else:
+            self.height = height
         self.position_profile_generation = False
 
         rospack = rospkg.RosPack()
@@ -87,6 +95,7 @@ class RigControl(object):
     def initialize_zenither(self, mode):
         # print 'Initializing Zenither'
         rospy.loginfo('Initializing Zenither')
+
         self.z = zenither.Zenither(robot='test_rig')
 
         self.time_since_last_cb = rospy.Time.now()
@@ -246,29 +255,30 @@ class RigControl(object):
     def repeated_movements(self):
         # self.position_file = open(''.join([self.pkg_path, '/data/position_combined_0_15mps', '.log']), 'w')
         # self.position_file.write('Time(s) Pos(m) \n')
-        for i in xrange(self.number_trials):
-            self.pulling = False
-            # self.ft_sleeve_biased = False
-            rospy.sleep(0.6)
-            reset_pos = 0.9
-            reset_vel = 0.1
-            reset_acc = 0.1
-            self.zenither_move(reset_pos, reset_vel, reset_acc)
-            print 'Moving to initial position: ', reset_pos
+        self.pulling = False
+        # self.ft_sleeve_biased = False
+        rospy.sleep(0.6)
+        reset_pos = 0.9
+        reset_vel = 0.1
+        reset_acc = 0.1
+        self.zenither_move(reset_pos, reset_vel, reset_acc)
+        print 'Moving to initial position: ', reset_pos
+        pos = self.z.get_position_meters()
+        print 'Current position is: ', pos
+        start_move_time = rospy.Time.now()
+        rospy.sleep(1.0)
+        new_pos = self.z.get_position_meters()
+        # print 'Current position is: ', new_pos
+        while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
             pos = self.z.get_position_meters()
-            print 'Current position is: ', pos
-            start_move_time = rospy.Time.now()
-            rospy.sleep(1.0)
+            rospy.sleep(0.5)
             new_pos = self.z.get_position_meters()
             # print 'Current position is: ', new_pos
-            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
-                pos = self.z.get_position_meters()
-                rospy.sleep(0.5)
-                new_pos = self.z.get_position_meters()
-                # print 'Current position is: ', new_pos
-            self.zenither_pose = self.z.get_position_meters()
-            print 'Current position is: ', self.zenither_pose
-            rospy.sleep(2.0)
+        self.zenither_pose = self.z.get_position_meters()
+        print 'Current position is: ', self.zenither_pose
+        rospy.sleep(2.0)
+        self.test_vel = 0.1
+        for i in xrange(self.number_trials):
             test_pos = 0.05
             test_vel = self.test_vel
             test_acc = 1.0
@@ -283,7 +293,7 @@ class RigControl(object):
             if self.position_profile_generation:
                 self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
                                                   self.zenither_pose]))
-            rospy.sleep(2.0)
+            rospy.sleep(4.0)
             self.zenither_move(test_pos, test_vel, test_acc)
 
             start_move_time = rospy.Time.now()
@@ -319,7 +329,106 @@ class RigControl(object):
             self.pulling = False
             rospy.sleep(1.5)
             # rospy.loginfo('Resetting...')
+            print 'Finished trial ', i+1, 'at velocity', self.test_vel
             print 'Resetting...'
+            self.pulling = False
+            # self.ft_sleeve_biased = False
+            rospy.sleep(0.6)
+            reset_pos = 0.9
+            reset_vel = 0.1
+            reset_acc = 0.1
+            self.zenither_move(reset_pos, reset_vel, reset_acc)
+            print 'Moving to initial position: ', reset_pos
+            pos = self.z.get_position_meters()
+            print 'Current position is: ', pos
+            start_move_time = rospy.Time.now()
+            rospy.sleep(1.0)
+            new_pos = self.z.get_position_meters()
+            # print 'Current position is: ', new_pos
+            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
+                pos = self.z.get_position_meters()
+                rospy.sleep(0.5)
+                new_pos = self.z.get_position_meters()
+                # print 'Current position is: ', new_pos
+            self.zenither_pose = self.z.get_position_meters()
+            print 'Current position is: ', self.zenither_pose
+            rospy.sleep(4.0)
+        self.test_vel = 0.15
+        for i in xrange(self.number_trials):
+            test_pos = 0.05
+            test_vel = self.test_vel
+            test_acc = 1.0
+            self.ft_sleeve_biased = False
+            rospy.sleep(0.5)
+            print 'Moving to goal position: ', test_pos
+            self.pulling = True
+            self.start_recording_data(i)
+            t = rospy.Time.now() - self.start_record_time
+            self.zenither_pose = self.z.get_position_meters()
+            # t = rospy.Time.now() - self.start_record_time
+            if self.position_profile_generation:
+                self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
+                                                  self.zenither_pose]))
+            rospy.sleep(4.0)
+            self.zenither_move(test_pos, test_vel, test_acc)
+
+            start_move_time = rospy.Time.now()
+            # rospy.sleep(15.0)
+            if self.position_profile_generation:
+                rospy.sleep(0.05*i)
+                for j in xrange(8):
+                    t = rospy.Time.now() - self.start_record_time
+                    self.zenither_pose = self.z.get_position_meters()
+                    # t = rospy.Time.now() - self.start_record_time
+                    self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
+                                                      self.zenither_pose]))
+                    rospy.sleep(1.0)
+            else:
+                if self.test_vel==0.1:
+                    rospy.sleep(9.2)
+                elif self.test_vel==0.15:
+                    rospy.sleep(6.2)
+            self.zenither_pose = self.z.get_position_meters()
+            pos = self.zenither_pose
+            rospy.sleep(1.0)
+            self.zenither_pose = self.z.get_position_meters()
+            new_pos = self.zenither_pose
+            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 15.0:
+                pos = new_pos
+                rospy.sleep(1.0)
+                self.zenither_pose = self.z.get_position_meters()
+                new_pos = self.zenither_pose
+            # rospy.loginfo('Final position is: ', self.z.get_position_meters())
+            print 'Final position is: ', self.z.get_position_meters()
+            self.z.estop()
+            self.stop_recording_data(i)
+            self.pulling = False
+            rospy.sleep(1.5)
+            # rospy.loginfo('Resetting...')
+            print 'Finished trial ', i+1, 'at velocity', self.test_vel
+            print 'Resetting...'
+            self.pulling = False
+            # self.ft_sleeve_biased = False
+            rospy.sleep(0.6)
+            reset_pos = 0.9
+            reset_vel = 0.1
+            reset_acc = 0.1
+            self.zenither_move(reset_pos, reset_vel, reset_acc)
+            print 'Moving to initial position: ', reset_pos
+            pos = self.z.get_position_meters()
+            print 'Current position is: ', pos
+            start_move_time = rospy.Time.now()
+            rospy.sleep(1.0)
+            new_pos = self.z.get_position_meters()
+            # print 'Current position is: ', new_pos
+            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
+                pos = self.z.get_position_meters()
+                rospy.sleep(0.5)
+                new_pos = self.z.get_position_meters()
+                # print 'Current position is: ', new_pos
+            self.zenither_pose = self.z.get_position_meters()
+            print 'Current position is: ', self.zenither_pose
+            rospy.sleep(4.0)
         # rospy.loginfo('Movement complete!')
         if self.position_profile_generation:
             self.position_file.close()
@@ -343,7 +452,7 @@ class RigControl(object):
             return None
         for class_num in xrange(len(input_classes)):
             i = 0
-            while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
+            while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/',str(self.test_vel),'mps/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
                 ft_threshold_was_exceeded = False
                 print ''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])
                 current_data = load_pickle(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
@@ -377,10 +486,10 @@ class RigControl(object):
                                                    (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
                             j[1] = new_position
                 save_number = 0
-                while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/for_tapo/', str(self.test_vel),'mps/', '/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl'])):
+                while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/formatted/', str(self.test_vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl'])):
                     save_number += 1
                 print 'Saving with number', save_number
-                save_pickle(current_data, ''.join([self.pkg_path, '/data/', subject, '/for_tapo/', str(self.test_vel),'mps/', '/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl']))
+                save_pickle(current_data, ''.join([self.pkg_path, '/data/', subject, '/formatted/', str(self.test_vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl']))
                 i += 1
         print 'Done editing files!'
         if self.plot:
@@ -405,7 +514,7 @@ class RigControl(object):
         fig2 = plt.figure(2)
         ax2 = fig2.add_subplot(111)
         ax2.set_xlim(0, 17)
-        ax2.set_ylim(-1.0, 1.0)
+        ax2.set_ylim(-10.0, 3.0)
         ax2.set_xlabel('Time (s)')
         ax2.set_ylabel('Force_x (N)')
         X2 = my_data[:, 0]
@@ -414,7 +523,7 @@ class RigControl(object):
         fig3 = plt.figure(3)
         ax3 = fig3.add_subplot(111)
         ax3.set_xlim(0, .86)
-        ax3.set_ylim(-1.0, 1.0)
+        ax3.set_ylim(-10.0, 3.0)
         ax3.set_xlabel('Position (m)')
         ax3.set_ylabel('Force_x (N)')
         X3 = my_data[:, 1]
@@ -423,7 +532,7 @@ class RigControl(object):
         fig4 = plt.figure(4)
         ax4 = fig4.add_subplot(111)
         ax4.set_xlim(0, .86)
-        ax4.set_ylim(-1.0, 1.0)
+        ax4.set_ylim(-10.0, 3.0)
         ax4.set_xlabel('Position (m)')
         ax4.set_ylabel('Force_z (N)')
         X4 = my_data[:, 1]
@@ -435,7 +544,7 @@ class RigControl(object):
         self.array_to_save = np.zeros([3000, 5])
         self.array_line = 0
         # self.arm_file = open(''.join([self.pkg_path, '/data/ft_arm_', str(num), '.log']), 'w')
-        self.sleeve_file = open(''.join([self.pkg_path, '/data/ft_sleeve_', str(num), '.log']), 'w')
+        self.sleeve_file = open(''.join([self.pkg_path, '/data/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.log']), 'w')
         # self.arm_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
         self.sleeve_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
         # self.position_file = open(''.join([self.pkg_path, '/data/position_', str(num), '.log']), 'w')
@@ -447,7 +556,7 @@ class RigControl(object):
         # self.arm_file.close()
         self.sleeve_file.close()
         # self.position_file.close()
-        save_pickle(self.array_to_save, ''.join([self.pkg_path, '/data/ft_sleeve_', str(num), '.pkl']))
+        save_pickle(self.array_to_save, ''.join([self.pkg_path, '/data/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.pkl']))
         # self.array_to_save = np.zeros([1000, 5])
         # self.array_line = 0
 
@@ -472,24 +581,32 @@ if __name__ == "__main__":
                  help='pkl saved by test_sine.')
 
     opt, args = p.parse_args()
-    # mode == 'autorun'
+    # mode = 'autorun'
     mode = None
     plot = True
-    num = 4
+    # plot = False
+    num = 5
     vel = 0.1
-    rc = RigControl(mode=mode, plot=plot, num=num, vel=vel)
+    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'tapo_test_data','wenhao_test_data', 'test_subj']
+    subject = subject_options[5]
+    height_options = ['height0', 'height1', 'height2', 'height3', 'height4', 'height5']
+    height = height_options[3]
+    rc = RigControl(mode=mode, plot=plot, num=num, vel=vel, subj=subject, height=height)
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_dressing')
-    file_name = ''.join([pkg_path, '/data/', subject, '/for_tapo/', str(self.test_vel),'mps/', '/', output_classification[0], '/force_profile_', str(save_number), '.pkl']))
 
-    subject = ['wenhao_test_data', 'test_subj', 'subject0', 'subject1', 'subject2', 'subject3', 'subject4']
+    save_number = 0
 
-    input_classification = ['183mm_height_missed_sleeve', '222mm_height_caught',
-                            '222mm_height_missed_sleeve', '408mm_height_high', '325mm_height_good']
-    output_classification = ['missed', 'caught', 'missed', 'high', 'good']
+    # input_classification = ['183mm_height_missed_sleeve', '222mm_height_caught',
+    #                         '222mm_height_missed_sleeve', '408mm_height_high', '325mm_height_good']
+    # input_classification = ['missed', 'high', 'caught_forearm', 'caught']
+    # output_classification = ['missed', 'high', 'caught', 'caught']
+    # output_classification = ['missed', 'caught', 'missed', 'high', 'good']
 
+    # file_name = ''.join([pkg_path, '/data/', subject, '/formatted/', str(vel),'mps/', output_classification[2], '/force_profile_', str(save_number), '.pkl'])
+    # rc.load_and_plot(file_name)
     # rc.set_position_data_from_saved_movement_profile('wenhao_test_data/183mm_height_missed_sleeve')
-    rc.set_position_data_from_saved_movement_profile(subject[1], input_classification, output_classification)
+    # rc.set_position_data_from_saved_movement_profile(subject, input_classification, output_classification)
     # rc.set_position_data_from_saved_movement_profile('wenhao_test_data/222mm_height_missed_sleeve')
     # rc.set_position_data_from_saved_movement_profile('wenhao_test_data/408mm_height_high')
     # rc.set_position_data_from_saved_movement_profile('wenhao_test_data/325mm_height_good')
