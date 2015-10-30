@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import rospy
-import roslib
-roslib.load_manifest('hrl_manipulation_task')
+import rospy, roslib
 import numpy as np
 import os, threading, copy
 

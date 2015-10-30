@@ -29,9 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
-import roslib
-roslib.load_manifest('hrl_anomaly_detection')
+import rospy, roslib
 import os, sys, copy
 
 # util

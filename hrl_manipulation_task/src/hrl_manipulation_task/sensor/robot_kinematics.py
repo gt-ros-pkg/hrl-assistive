@@ -29,9 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
-import roslib
-roslib.load_manifest('hrl_manipulation_task')
+import rospy, roslib
 import os, threading, copy
 
 from pykdl_utils.kdl_kinematics import create_kdl_kin

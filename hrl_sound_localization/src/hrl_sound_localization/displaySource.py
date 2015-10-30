@@ -111,6 +111,7 @@ class displaySource():
 
         self.initComms()
         ## self.initParams()
+        print "Initialized display source class"
 
 
     def initComms(self):
@@ -126,9 +127,9 @@ class displaySource():
         if self.enable_recog:    rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
 
         # drawing
-        self.source_viz_all = ds.SceneDraw("hark/source_viz_all", "/world")
-        self.source_viz_cen = ds.SceneDraw("hark/source_viz_cen", "/world")
-        self.source_viz_cmd = ds.SceneDraw("hark/source_viz_cmd", "/world")
+        self.source_viz_all = ds.SceneDraw("hark/source_viz_all", self.head_frame)
+        self.source_viz_cen = ds.SceneDraw("hark/source_viz_cen", self.head_frame)
+        self.source_viz_cmd = ds.SceneDraw("hark/source_viz_cmd", self.head_frame)
 
         # tf
         ## try:
@@ -299,8 +300,8 @@ class displaySource():
                                          [0.1, 0.1, 0.1],
                                          self.src_color_all, 
                                          start_id+i,
-                                         self.source_viz_all.Marker.SPHERE,
-                                         action=2)
+                                         self.source_viz_all.Marker.SPHERE)
+                                         ## action=2)
             
         self.src_info_all_lock.acquire()
         for i in xrange(self.exist_info_num_all):
@@ -536,7 +537,7 @@ class displaySource():
         '''
         rt = rospy.Rate(20)
         while not rospy.is_shutdown():
-            self.tfBroadcaster()
+            ## self.tfBroadcaster()
             if self.enable_info_all: self.draw_sources_all(10)
             if self.enable_info_cen: self.draw_sources_cen(20)
             if self.enable_recog:    self.draw_sources_cmd(30)
@@ -554,7 +555,7 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
 
-    enable_info_all = False
+    enable_info_all = True
     enable_info_cen = False
     enable_fft_cen  = False
     enable_feature_cen  = True

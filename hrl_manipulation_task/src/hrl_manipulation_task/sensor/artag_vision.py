@@ -29,9 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
-import roslib
-roslib.load_manifest('hrl_manipulation_task')
+import rospy, roslib
 import os, threading, copy
 
 # util
@@ -41,7 +39,7 @@ import hrl_lib.quaternion as qt
 from tf_conversions import posemath
 
 # msg
-from ar_track_alvar.msg import AlvarMarkers
+from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 class artag_vision(threading.Thread):

@@ -29,9 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
-import roslib
-roslib.load_manifest('hrl_manipulation_task')
+import rospy, roslib
 import os, sys, threading, copy
 import gc
 
@@ -392,7 +390,7 @@ if __name__ == '__main__':
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=False, skin=True,\
+    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=False,\
                  subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
