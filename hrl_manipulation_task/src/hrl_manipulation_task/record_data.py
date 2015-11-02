@@ -109,49 +109,50 @@ class logger:
         self.data = {}
         self.data['init_time'] = self.init_time
 
-
-        if self.audio is not None:
-            self.audio.reset(self.init_time)
-            self.audio.enable_log = True
-        if self.kinematics is not None:
-            self.kinematics.reset(self.init_time)
-            self.kinematics.enable_log = True
+        ## # logging by callback
+        ## if self.audio is not None:
+        ##     self.audio.reset(self.init_time)
+        ##     self.audio.enable_log = True
+        ## if self.kinematics is not None:
+        ##     self.kinematics.reset(self.init_time)
+        ##     self.kinematics.enable_log = True
             
         ## if self.ft is not None:
         ## if self.vision is not None:
         ## if self.pps_skin is not None:
         ## if self.fabric_skin is not None:
 
-        ## # # logging by thread
-        ## self.enable_log_thread = True
-        ## self.logger = threading.Thread(target=self.runDataLogger)
-        ## self.logger.setDaemon(True)
-        ## self.logger.start()
+        # logging by thread
+        self.enable_log_thread = True
+        self.logger = threading.Thread(target=self.runDataLogger)
+        self.logger.setDaemon(True)
+        self.logger.start()
                     
     def close_log_file(self):
 
-        # disable logging
-        if self.audio is not None: self.audio.enable_log = False
-        if self.kinematics is not None: self.kinematics.enable_log = False
+        ## # logging by callback
+        ## # disable logging
+        ## if self.audio is not None: self.audio.enable_log = False
+        ## if self.kinematics is not None: self.kinematics.enable_log = False
         
-        # log into data
-        if self.audio is not None: 
-            self.data['audio_time']    = self.audio.time_data            
-            self.data['audio_azimuth'] = self.audio.audio_azimuth
-            self.data['audio_power']   = self.audio.audio_power
+        ## # log into data
+        ## if self.audio is not None: 
+        ##     self.data['audio_time']    = self.audio.time_data            
+        ##     self.data['audio_azimuth'] = self.audio.audio_azimuth
+        ##     self.data['audio_power']   = self.audio.audio_power
         
-        if self.kinematics is not None:
-            self.data['kinematics_time']        = self.kinematics.time_data
-            self.data['kinematics_ee_pos']      = self.kinematics.kinematics_ee_pos
-            self.data['kinematics_ee_quat']     = self.kinematics.kinematics_ee_quat
-            self.data['kinematics_jnt_pos']     = self.kinematics.kinematics_main_jnt_pos
-            self.data['kinematics_jnt_vel']     = self.kinematics.kinematics_main_jnt_vel
-            self.data['kinematics_jnt_eff']     = self.kinematics.kinematics_main_jnt_eff
-            self.data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
-            self.data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat                    
+        ## if self.kinematics is not None:
+        ##     self.data['kinematics_time']        = self.kinematics.time_data
+        ##     self.data['kinematics_ee_pos']      = self.kinematics.kinematics_ee_pos
+        ##     self.data['kinematics_ee_quat']     = self.kinematics.kinematics_ee_quat
+        ##     self.data['kinematics_jnt_pos']     = self.kinematics.kinematics_main_jnt_pos
+        ##     self.data['kinematics_jnt_vel']     = self.kinematics.kinematics_main_jnt_vel
+        ##     self.data['kinematics_jnt_eff']     = self.kinematics.kinematics_main_jnt_eff
+        ##     self.data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
+        ##     self.data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat                    
 
-        ## # logging by thread 
-        ## self.enable_log_thread = False
+        # logging by thread 
+        self.enable_log_thread = False
 
 
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
@@ -332,7 +333,7 @@ class logger:
         Publish collected data
         '''
         
-        rate = rospy.Rate(50) # 25Hz, nominally.
+        rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
 
             if self.audio is not None: 

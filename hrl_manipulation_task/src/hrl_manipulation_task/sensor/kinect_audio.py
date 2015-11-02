@@ -88,8 +88,10 @@ class kinect_audio(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "Kinect Audio>> Initialized pusblishers and subscribers"
-        rospy.Subscriber('HarkSrcFeature/all', HarkSrcFeature, \
-                         self.harkSrcFeatureCallback)
+        ## rospy.Subscriber('HarkSrcFeature/all', HarkSrcFeature, \
+        ##                  self.harkSrcFeatureCallback)
+        rospy.Subscriber('HarkSource/all', HarkSource, \
+                         self.harkSourceCallback)
         rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
 
         rospy.Subscriber('/head_traj_controller/state', JointTrajectoryControllerState, self.headStateCallback)
@@ -146,6 +148,43 @@ class kinect_audio(threading.Thread):
                     self.audio_cmd.append(self.recog_cmd) # lock??
                 
 
+    def harkSourceCallback(self, msg):
+        '''
+        Get MFCC features from hark. 
+        '''
+        with self.src_feature_lock:
+            self.count_feature     = msg.count
+            self.exist_feature_num = msg.exist_src_num
+            self.src_feature       = msg.src
+            time_stamp             = msg.header.stamp
+
+            if self.exist_feature_num > 1:
+                if self.verbose: print "Too many number of sound sources!!"
+            
+            if self.exist_feature_num == 1:
+                # select only first one since there is only single source
+                i = 0
+                
+                # save data
+                src_id = self.src_feature[i].id
+
+                # Force to use single source id
+                src_id = 0
+
+                self.power   = self.src_feature[i].power #float32
+                self.azimuth = self.src_feature[i].azimuth #float32
+                ## self.length  = self.src_feature[i].length
+                ## self.feature = np.array([self.src_feature[i].featuredata]).T #float32 list
+
+                if self.enable_log == True:
+                    self.time_data.append(time_stamp.to_sec() - self.init_time)
+
+                    ## if self.audio_feature is None: self.audio_feature = self.feature
+                    ## else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
+                    self.audio_power.append(self.power)
+                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+                    self.audio_head_joints = self.head_joints
+                    self.audio_cmd.append(self.recog_cmd) # lock??
         
 
     def harkCmdCallback(self, msg):
@@ -202,7 +241,7 @@ class kinect_audio(threading.Thread):
         
     def isReady(self):
         if self.azimuth is not None and self.power is not None and \
-          self.feature is not None and self.head_joints is not None:
+          self.head_joints is not None:
           return True
         else:
           return False

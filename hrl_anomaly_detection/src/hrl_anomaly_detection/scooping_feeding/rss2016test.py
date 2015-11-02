@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-matplotlib.use('Agg')
+## matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -650,7 +650,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     success_data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
     raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                downSampleSize=downSampleSize,\
-                                               raw_viz=raw_viz, interp_viz=interp_viz, save_pdf=save_pdf,
+                                               ## raw_viz=raw_viz, interp_viz=interp_viz, save_pdf=save_pdf,
                                                renew=data_renew, save_pkl=success_data_pkl)
 
     if raw_viz: target_dict = raw_data_dict
@@ -678,14 +678,23 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 time_list = target_dict['kinTimesList']
                 data_list = target_dict['kinEEPosList']
 
+                # distance
+                new_data_list = []
+                for d in data_list:
+                    new_data_list.append( np.linalg.norm(d, axis=0) )
+                data_list = new_data_list
+
             combined_time_list = []
             for t in time_list:
                 temp = np.array(t[1:])-np.array(t[:-1])
                 combined_time_list += ([0.0]  + list(temp) )
-            print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list), np.max(combined_time_list), len(combined_time_list)
+                
+            print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list),\
+              np.max(combined_time_list), len(combined_time_list)            
 
 
             ax = fig.add_subplot(nPlot*100+10+count)
+            ## ax.plot(combined_time_list, label=modality)
 
             for i in xrange(len(time_list)):
 
