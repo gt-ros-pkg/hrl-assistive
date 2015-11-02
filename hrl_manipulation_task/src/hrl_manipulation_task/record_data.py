@@ -94,14 +94,6 @@ class logger:
         Record data and publish raw data
         '''        
         self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
-        
-        ## self.log_start_service = rospy.Service('/data_record/log_start', String_None, self.logStartCallback)
-
-        
-    ## def logStartCallback(self, msg):
-    ##     if msg.data == True: self.log_start()            
-    ##     else: self.close_log_file()            
-    ##     return Bool_NoneResponse()
 
         
     def log_start(self):
@@ -338,17 +330,17 @@ class logger:
 
             if self.audio is not None: 
                 if 'audio_time' not in self.data.keys():
-                    self.data['audio_time']    = [rospy.get_rostime().to_sec()-self.init_time]
-                    self.data['audio_azimuth'] = [self.audio.azimuth+self.audio.base_azimuth]
+                    self.data['audio_time']    = [self.audio.time]
+                    self.data['audio_azimuth'] = [self.audio.azimuth]
                     self.data['audio_power']   = [self.audio.power]
                 else:
-                    self.data['audio_time'].append(rospy.get_rostime().to_sec()-self.init_time)
-                    self.data['audio_azimuth'].append(self.audio.azimuth+self.audio.base_azimuth)
+                    self.data['audio_time'].append(self.audio.time)
+                    self.data['audio_azimuth'].append(self.audio.azimuth)
                     self.data['audio_power'].append(self.audio.power)
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
-                    self.data['kinematics_time'] = [rospy.get_rostime().to_sec()-self.init_time]
+                    self.data['kinematics_time'] = [self.Kinematics.time]
                     self.data['kinematics_ee_pos'] = self.kinematics.ee_pos
                     self.data['kinematics_ee_quat'] = self.kinematics.ee_quat
                     self.data['kinematics_jnt_pos'] = self.kinematics.main_jnt_positions
@@ -357,7 +349,7 @@ class logger:
                     self.data['kinematics_target_pos']  = self.kinematics.target_pos
                     self.data['kinematics_target_quat'] = self.kinematics.target_quat                    
                 else:
-                    self.data['kinematics_time'].append(rospy.get_rostime().to_sec()-self.init_time)
+                    self.data['kinematics_time'].append(self.Kinematics.time)
                     self.data['kinematics_ee_pos'] = np.hstack([self.data['kinematics_ee_pos'], \
                                                            self.kinematics.ee_pos]) 
                     self.data['kinematics_ee_quat'] = np.hstack([self.data['kinematics_ee_quat'], \

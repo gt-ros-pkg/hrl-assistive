@@ -59,6 +59,7 @@ class kinect_audio(threading.Thread):
         self.init_time = 0.0
 
         # instant data
+        self.time  = None
         self.power = None
         self.azimuth = None
         self.base_azimuth = None
@@ -90,10 +91,8 @@ class kinect_audio(threading.Thread):
         if self.verbose: print "Kinect Audio>> Initialized pusblishers and subscribers"
         ## rospy.Subscriber('HarkSrcFeature/all', HarkSrcFeature, \
         ##                  self.harkSrcFeatureCallback)
-        rospy.Subscriber('HarkSource/all', HarkSource, \
-                         self.harkSourceCallback)
+        rospy.Subscriber('HarkSource/all', HarkSource, self.harkSourceCallback)
         rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
-
         rospy.Subscriber('/head_traj_controller/state', JointTrajectoryControllerState, self.headStateCallback)
         
 
@@ -102,7 +101,6 @@ class kinect_audio(threading.Thread):
         Get parameters
         '''
         self.torso_frame = 'torso_lift_link'
-        ## self.head_frame = rospy.get_param('/hrl_manipulation_task/head_audio_frame')
         
 
     def harkSrcFeatureCallback(self, msg):
@@ -132,18 +130,19 @@ class kinect_audio(threading.Thread):
                 ##     self.src_feature_cen[i]
                 if len(self.src_feature[i].featuredata) < 1: return
 
+                self.time    = time_stamp.to_sec() - self.init_time
                 self.power   = self.src_feature[i].power #float32
-                self.azimuth = self.src_feature[i].azimuth #float32
+                self.azimuth = self.src_feature[i].azimuth + self.base_azimuth #float32
                 self.length  = self.src_feature[i].length
                 self.feature = np.array([self.src_feature[i].featuredata]).T #float32 list
 
                 if self.enable_log == True:
-                    self.time_data.append(time_stamp.to_sec() - self.init_time)
+                    self.time_data.append(self.time)
 
                     if self.audio_feature is None: self.audio_feature = self.feature
                     else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
                     self.audio_power.append(self.power)
-                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+                    self.audio_azimuth.append(self.azimuth)
                     self.audio_head_joints = self.head_joints
                     self.audio_cmd.append(self.recog_cmd) # lock??
                 
@@ -171,18 +170,19 @@ class kinect_audio(threading.Thread):
                 # Force to use single source id
                 src_id = 0
 
+                self.time    = time_stamp.to_sec() - self.init_time
                 self.power   = self.src_feature[i].power #float32
-                self.azimuth = self.src_feature[i].azimuth #float32
+                self.azimuth = self.src_feature[i].azimuth+self.base_azimuth #float32
                 ## self.length  = self.src_feature[i].length
                 ## self.feature = np.array([self.src_feature[i].featuredata]).T #float32 list
 
                 if self.enable_log == True:
-                    self.time_data.append(time_stamp.to_sec() - self.init_time)
+                    self.time_data.append(self.time)
 
                     ## if self.audio_feature is None: self.audio_feature = self.feature
                     ## else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
                     self.audio_power.append(self.power)
-                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+                    self.audio_azimuth.append(self.azimuth)
                     self.audio_head_joints = self.head_joints
                     self.audio_cmd.append(self.recog_cmd) # lock??
         
@@ -250,35 +250,5 @@ class kinect_audio(threading.Thread):
 
 
 
-    ## def getHeadFrame(self):
-        
-        ## try:
-        ##     self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
-        ##                                    rospy.Duration(5.0))
-        ## except:
-        ##     self.tf_lstnr.waitForTransform(self.torso_frame, self.head_frame, rospy.Time(0), \
-        ##                                    rospy.Duration(5.0))
-                                           
-        ## [self.head_pos, self.head_orient_quat] = \
-        ##   self.tf_lstnr.lookupTransform(self.torso_frame, self.head_frame, rospy.Time(0))  
-
-
-        ## rot = PyKDL.Rotation.Quaternion(self.head_orient_quat[0], 
-        ##                                 self.head_orient_quat[1], 
-        ##                                 self.head_orient_quat[2], 
-        ##                                 self.head_orient_quat[3])        
-
-        ## cur_x   = rot.UnitX()
-        ## x = PyKDL.Vector(1.0, 0.0, 0.0)
-        ## y = PyKDL.Vector(0.0, 1.0, 0.0)
-        
-        ## head_dir = PyKDL.Vector(PyKDL.dot(cur_x,x), PyKDL.dot(cur_x,y), 0.0)
-        ## head_dir.Normalize()
-
-        ## if (head_dir * x).z() > 0.0: sign = -1.0
-        ## else: sign = 1.0
-        
-        ## self.base_azimuth = np.arccos(PyKDL.dot(head_dir, x)) * sign * 180.0/np.pi
-        ## if self.verbose: print "Computed head azimuth: ", self.base_azimuth
 
         

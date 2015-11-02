@@ -68,6 +68,7 @@ class robot_kinematics(threading.Thread):
             self.enable_log = False
             
             # instant data
+            self.time = None
             self.main_jnt_positions = None
             self.main_jnt_velocities = None
             self.main_jnt_efforts   = None
@@ -192,6 +193,7 @@ class robot_kinematics(threading.Thread):
 
         self.lock.acquire()
         
+        self.time                = time_stamp.to_sec() - self.init_time
         self.main_jnt_positions  = np.array([main_positions]).T
         self.main_jnt_velocities = np.array([main_velocities]).T
         self.main_jnt_efforts    = np.array([main_efforts]).T
@@ -204,7 +206,7 @@ class robot_kinematics(threading.Thread):
         self.target_pos, self.target_quat = self.getTargetFrame(sub_positions)
 
         if self.enable_log:
-            self.time_data.append(time_stamp.to_sec() - self.init_time)
+            self.time_data.append(self.time)
 
             if self.kinematics_ee_pos is None:
                 self.kinematics_ee_pos  = self.ee_pos
