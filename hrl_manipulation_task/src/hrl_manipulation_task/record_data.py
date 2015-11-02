@@ -108,14 +108,51 @@ class logger:
         self.init_time = rospy.get_rostime().to_sec()
         self.data = {}
         self.data['init_time'] = self.init_time
-        self.enable_log_thread = True
-        
-        self.logger = threading.Thread(target=self.runDataLogger)
-        self.logger.setDaemon(True)
-        self.logger.start()
+
+
+        if self.audio is not None:
+            self.audio.reset(self.init_time)
+            self.audio.enable_log = True
+        if self.kinematics is not None:
+            self.kinematics.reset(self.init_time)
+            self.kinematics.enable_log = True
+            
+        ## if self.ft is not None:
+        ## if self.vision is not None:
+        ## if self.pps_skin is not None:
+        ## if self.fabric_skin is not None:
+
+        ## # # logging by thread
+        ## self.enable_log_thread = True
+        ## self.logger = threading.Thread(target=self.runDataLogger)
+        ## self.logger.setDaemon(True)
+        ## self.logger.start()
                     
     def close_log_file(self):
-        self.enable_log_thread = False
+
+        # disable logging
+        if self.audio is not None: self.audio.enable_log = False
+        if self.kinematics is not None: self.kinematics.enable_log = False
+        
+        # log into data
+        if self.audio is not None: 
+            self.data['audio_time']    = self.audio.time_data            
+            self.data['audio_azimuth'] = self.audio.audio_azimuth
+            self.data['audio_power']   = self.audio.audio_power
+        
+        if self.kinematics is not None:
+            self.data['kinematics_time']        = self.kinematics.time_data
+            self.data['kinematics_ee_pos']      = self.kinematics.kinematics_ee_pos
+            self.data['kinematics_ee_quat']     = self.kinematics.kinematics_ee_quat
+            self.data['kinematics_jnt_pos']     = self.kinematics.kinematics_main_jnt_pos
+            self.data['kinematics_jnt_vel']     = self.kinematics.kinematics_main_jnt_vel
+            self.data['kinematics_jnt_eff']     = self.kinematics.kinematics_main_jnt_eff
+            self.data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
+            self.data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat                    
+
+        ## # logging by thread 
+        ## self.enable_log_thread = False
+
 
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
         if flag == '1':   status = 'success'
@@ -148,13 +185,6 @@ class logger:
             print 'Saving to', fileName
             ut.save_pickle(self.data, fileName)
 
-        # Reinitialize all sensors
-        ## if self.audio is not None: self.audio = kinect_audio()
-        ## if self.kinematics is not None: self.kinematics = robot_kinematics() #.initVars() #
-        ## if self.ft is not None: self.ft = tool_ft()
-        ## if self.vision is not None: self.vision = artag_vision()
-        ## if self.pps_skin is not None: self.pps_skin = pps_skin()
-
         gc.collect()
         rospy.sleep(1.0)
 
@@ -168,38 +198,56 @@ class logger:
         
     def waitForReady(self):
 
+        print "-------------------------------------"
+        print "Wait for sensor ready"
+        print "-------------------------------------"
+
+        print self.audio.isReady()
+        
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
             rate.sleep()
 
             if self.audio is not None:
-                if self.audio.isReady() is False: 
+                if self.audio.isReady() is False:
+                    print "-------------------------------------"
                     print "audio is not ready"
+                    print "-------------------------------------"
                     continue
 
             if self.kinematics is not None:
                 if self.kinematics.isReady() is False: 
+                    print "-------------------------------------"
                     print "kinematics is not ready"                    
+                    print "-------------------------------------"
                     continue
 
             if self.ft is not None:
                 if self.ft.isReady() is False: 
+                    print "-------------------------------------"
                     print "ft is not ready"                                        
+                    print "-------------------------------------"
                     continue
 
             if self.vision is not None:
                 if self.vision.isReady() is False: 
+                    print "-------------------------------------"
                     print "AR tag is not ready"                                        
+                    print "-------------------------------------"
                     continue
 
             if self.pps_skin is not None:
                 if self.pps_skin.isReady() is False: 
+                    print "-------------------------------------"
                     print "pps is not ready"                                        
+                    print "-------------------------------------"
                     continue
 
             if self.fabric_skin is not None:
                 if self.fabric_skin.isReady() is False: 
+                    print "-------------------------------------"
                     print "fabric skin is not ready"                                        
+                    print "-------------------------------------"
                     continue
                 
             break
@@ -211,8 +259,12 @@ class logger:
 
         self.log_start()
 
+        count = 0
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
+            count += 1
+            print count
+            if count > 100: break
             rate.sleep()
 
         self.close_log_file()
@@ -239,7 +291,7 @@ class logger:
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
                 msg.kinematics_ee_quat = np.squeeze(self.kinematics.ee_quat.T).tolist()
-                msg.kinematics_jnt_pos = np.squeeze(self.kinematics.main_jnt_positions.T).tolist()
+                msg.kinematics_jnt_pos = np.squeeze(self.kinematics.main148_jnt_positions.T).tolist()
                 msg.kinematics_jnt_vel = np.squeeze(self.kinematics.main_jnt_velocities.T).tolist()
                 msg.kinematics_jnt_eff = np.squeeze(self.kinematics.main_jnt_efforts.T).tolist()
                 msg.kinematics_target_pos  = np.squeeze(self.kinematics.target_pos.T).tolist()
@@ -394,6 +446,6 @@ if __name__ == '__main__':
                  subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
-    ## log.run()
-    log.runDataPub()
+    log.run()
+    ## log.runDataPub()
     

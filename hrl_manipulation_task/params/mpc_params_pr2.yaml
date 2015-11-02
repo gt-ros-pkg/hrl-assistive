@@ -21,7 +21,7 @@ haptic_mpc:
 
     #If within the deadzone (requires both if pos and ort weights > 0), do nothing.
     deadzone_distance: 0.01 # distance to goal in metres
-    deadzone_angle: 10.0 # degrees to goal
+    deadzone_angle: 5.0 # degrees to goal
 
     # If the difference between desired angles and current angles exceeds this for any joint angle, reset goal to current angles
     # hard reset to this limit if exceeded

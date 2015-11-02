@@ -65,6 +65,9 @@ class robot_kinematics(threading.Thread):
             self.counter = 0
             self.counter_prev = 0
 
+            self.enable_log = False
+            
+            # instant data
             self.main_jnt_positions = None
             self.main_jnt_velocities = None
             self.main_jnt_efforts   = None
@@ -82,9 +85,9 @@ class robot_kinematics(threading.Thread):
             self.time_data = []
             self.kinematics_ee_pos  = None
             self.kinematics_ee_quat = None
-            self.kinematics_jnt_pos = None
-            self.kinematics_jnt_vel = None
-            self.kinematics_jnt_eff = None
+            self.kinematics_main_jnt_pos = None
+            self.kinematics_main_jnt_vel = None
+            self.kinematics_main_jnt_eff = None
             self.kinematics_target_pos = None
             self.kinematics_target_quat = None
             
@@ -139,6 +142,7 @@ class robot_kinematics(threading.Thread):
 
     #callback function: when a joint_states message arrives, save the values
     def joint_states_callback(self, msg):
+        time_stamp   = msg.header.stamp
         jnt_name     = msg.name
         jnt_position = msg.position
         jnt_velocity = msg.velocity
@@ -198,6 +202,31 @@ class robot_kinematics(threading.Thread):
 
         self.ee_pos, self.ee_quat         = self.getEEFrame(main_positions)
         self.target_pos, self.target_quat = self.getTargetFrame(sub_positions)
+
+        if self.enable_log:
+            self.time_data.append(time_stamp.to_sec() - self.init_time)
+
+            if self.kinematics_ee_pos is None:
+                self.kinematics_ee_pos  = self.ee_pos
+                self.kinematics_ee_quat = self.ee_quat
+                self.kinematics_main_jnt_pos = self.main_jnt_positions 
+                self.kinematics_main_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
+                self.kinematics_main_jnt_eff = self.main_jnt_efforts
+
+                self.kinematics_target_pos  = self.target_pos
+                self.kinematics_target_quat = self.target_quat
+
+            else:
+                self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, self.ee_pos])
+                self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, self.ee_quat])
+                self.kinematics_main_jnt_vel = np.hstack([self.kinematics_main_jnt_vel, \
+                                                          self.kinematics_main_jnt_pos - \
+                                                          self.kinematics_main_jnt_pos[:,-1:] ]) #delta
+                self.kinematics_main_jnt_pos = np.hstack([self.kinematics_main_jnt_pos, self.main_jnt_positions])
+                self.kinematics_main_jnt_eff = np.hstack([self.kinematics_main_jnt_eff, self.main_jnt_efforts])
+
+                self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, self.target_pos])
+                self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
                 
         self.counter += 1
         self.lock.release()
@@ -247,15 +276,15 @@ class robot_kinematics(threading.Thread):
                 else:
                     continue
                 
-                self.time_data.append(rospy.get_time() - self.init_time)
+                self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
                 self.lock.acquire()
                 
                 if self.kinematics_ee_pos is None:
                     self.kinematics_ee_pos  = self.ee_pos
                     self.kinematics_ee_quat = self.ee_quat
-                    self.kinematics_jnt_pos = self.main_jnt_positions 
-                    self.kinematics_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
-                    self.kinematics_jnt_eff = self.main_jnt_efforts
+                    self.kinematics_main_jnt_pos = self.main_jnt_positions 
+                    self.kinematics_main_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
+                    self.kinematics_main_jnt_eff = self.main_jnt_efforts
 
                     self.kinematics_target_pos  = self.target_pos
                     self.kinematics_target_quat = self.target_quat
@@ -263,10 +292,10 @@ class robot_kinematics(threading.Thread):
                 else:
                     self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, self.ee_pos])
                     self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, self.ee_quat])
-                    self.kinematics_jnt_vel = np.hstack([self.kinematics_jnt_vel, self.kinematics_jnt_pos - \
-                                                         self.kinematics_jnt_pos[:,-1:] ]) #delta
-                    self.kinematics_jnt_pos = np.hstack([self.kinematics_jnt_pos, self.main_jnt_positions])
-                    self.kinematics_jnt_eff = np.hstack([self.kinematics_jnt_eff, self.main_jnt_efforts])
+                    self.kinematics_main_jnt_vel = np.hstack([self.kinematics_main_jnt_vel, self.kinematics_main_jnt_pos - \
+                                                         self.kinematics_main_jnt_pos[:,-1:] ]) #delta
+                    self.kinematics_main_jnt_pos = np.hstack([self.kinematics_main_jnt_pos, self.main_jnt_positions])
+                    self.kinematics_main_jnt_eff = np.hstack([self.kinematics_main_jnt_eff, self.main_jnt_efforts])
 
                     self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, self.target_pos])
                     self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
@@ -289,9 +318,9 @@ class robot_kinematics(threading.Thread):
         self.time_data = []
         self.kinematics_ee_pos  = None
         self.kinematics_ee_quat = None
-        self.kinematics_jnt_pos = None
-        self.kinematics_jnt_vel = None
-        self.kinematics_jnt_eff = None
+        self.kinematics_main_jnt_pos = None
+        self.kinematics_main_jnt_vel = None
+        self.kinematics_main_jnt_eff = None
         self.kinematics_target_pos = None
         self.kinematics_target_quat = None
 

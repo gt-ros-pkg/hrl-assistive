@@ -34,7 +34,6 @@ import numpy as np
 
 # ROS
 import rospy, roslib
-roslib.load_manifest('hrl_manipulation_task')
 import PyKDL
 from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import String

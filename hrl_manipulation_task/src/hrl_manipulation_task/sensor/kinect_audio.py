@@ -54,7 +54,11 @@ class kinect_audio(threading.Thread):
         self.isReset = False
         self.verbose = verbose
 
-        self.init_time = 0.0        
+        
+        self.enable_log = False
+        self.init_time = 0.0
+
+        # instant data
         self.power = None
         self.azimuth = None
         self.base_azimuth = None
@@ -73,7 +77,7 @@ class kinect_audio(threading.Thread):
         self.src_feature_lock = threading.RLock()
         self.recog_cmd_lock = threading.RLock()
         self.head_state_lock = threading.RLock()
-        
+
         self.initParams()
         self.initComms()
 
@@ -107,6 +111,10 @@ class kinect_audio(threading.Thread):
             self.count_feature     = msg.count
             self.exist_feature_num = msg.exist_src_num
             self.src_feature       = msg.src
+            time_stamp             = msg.header.stamp
+
+            if self.exist_feature_num > 1:
+                if self.verbose: print "Too many number of sound sources!!"
             
             if self.exist_feature_num == 1:
                 # select only first one since there is only single source
@@ -127,8 +135,17 @@ class kinect_audio(threading.Thread):
                 self.length  = self.src_feature[i].length
                 self.feature = np.array([self.src_feature[i].featuredata]).T #float32 list
 
-            if self.exist_feature_num > 1:
-                if self.verbose: print "Too many number of sound sources!!"
+                if self.enable_log == True:
+                    self.time_data.append(time_stamp.to_sec() - self.init_time)
+
+                    if self.audio_feature is None: self.audio_feature = self.feature
+                    else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
+                    self.audio_power.append(self.power)
+                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+                    self.audio_head_joints = self.head_joints
+                    self.audio_cmd.append(self.recog_cmd) # lock??
+                
+
         
 
     def harkCmdCallback(self, msg):

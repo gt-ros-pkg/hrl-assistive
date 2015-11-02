@@ -40,6 +40,8 @@ import hrl_lib.quaternion as qt
 from scipy import interpolate
 from sklearn.decomposition import PCA
 
+import matplotlib
+## matplotlib.use('pdf')
 import matplotlib.pyplot as plt
 import data_viz
 
@@ -53,7 +55,32 @@ def extrapolateData(data, maxsize):
         
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False, interp_viz=False, \
-             verbose=False):
+             verbose=False, save_pdf=False, renew=True, save_pkl=None):
+
+    if save_pkl is not None:
+        if os.path.isfile(save_pkl+'_raw.pkl') is True and os.path.isfile(save_pkl+'_interp.pkl') is True \
+          and renew is not True:
+            raw_data_dict = ut.load_pickle(save_pkl+'_raw.pkl')
+            data_dict = ut.load_pickle(save_pkl+'_interp.pkl')
+            return raw_data_dict, data_dict
+
+    raw_data_dict = {}
+    raw_data_dict['timesList']        = []
+    raw_data_dict['audioTimesList']   = []        
+    raw_data_dict['audioAzimuthList'] = []    
+    raw_data_dict['audioPowerList']   = []    
+    raw_data_dict['kinTimesList']     = []
+    raw_data_dict['kinEEPosList']     = []
+    raw_data_dict['kinEEQuatList']    = []
+    raw_data_dict['kinJntPosList']    = []
+    raw_data_dict['ftTimesList']      = []
+    raw_data_dict['ftForceList']      = []
+    raw_data_dict['kinTargetPosList']  = []
+    raw_data_dict['kinTargetQuatList'] = []
+    raw_data_dict['visionTimesList']   = []
+    raw_data_dict['visionPosList']     = []
+    raw_data_dict['visionQuatList']    = []
+
 
     data_dict = {}
     data_dict['timesList']        = []
@@ -92,6 +119,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             audio_azimuth = d['audio_azimuth']
             audio_power   = d['audio_power']
 
+            raw_data_dict['audioTimesList'].append(audio_time)
+            raw_data_dict['audioAzimuthList'].append(audio_azimuth)
+            raw_data_dict['audioPowerList'].append(audio_power)
+
             interp = interpolate.splrep(audio_time, audio_azimuth, s=0)
             data_dict['audioAzimuthList'].append(interpolate.splev(new_times, interp, der=0))
 
@@ -107,6 +138,13 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
 
+            raw_data_dict['kinTimesList'].append(kin_time)
+            raw_data_dict['kinEEPosList'].append(kin_ee_pos)
+            raw_data_dict['kinEEQuatList'].append(kin_ee_quat)
+            raw_data_dict['kinTargetPosList'].append(kin_target_pos)
+            raw_data_dict['kinTargetQuatList'].append(kin_target_quat)
+            raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
+                    
             ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
             data_dict['kinEEPosList'].append(ee_pos_array)                                         
 
@@ -187,7 +225,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
 
         # ----------------------------------------------------------------------
 
-    if raw_viz or interp_viz: plt.show()
+    if raw_viz or interp_viz:
+        if save_pdf is False:
+            plt.show()
+        else:
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('mv test.p* ~/Dropbox/HRL/')
+            
         
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
@@ -198,7 +243,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             if data_dict[key] == []: continue
             data_dict[key] = extrapolateData(data_dict[key], max_size)
 
-    return data_dict
+    if save_pkl is not None:
+        ut.save_pickle(raw_data_dict, save_pkl+'_raw.pkl')
+        ut.save_pickle(data_dict, save_pkl+'_interp.pkl')
+
+    return raw_data_dict, data_dict
     
     
 def getSubjectFileList(root_path, subject_names, task_name):

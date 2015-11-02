@@ -29,12 +29,17 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
-import roslib
-roslib.load_manifest('hrl_anomaly_detection')
+import rospy, roslib
 import os, sys, copy
 import random
 import socket
+
+# visualization
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
 
 # util
 import numpy as np
@@ -44,18 +49,14 @@ import PyKDL
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 
 # learning
-from hrl_multimodal_anomaly_detection.hmm import learning_hmm_multi_n as hmm
+from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
 
-# visualization
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import gridspec
 
 
 
 def preprocessData(subject_names, task_name, raw_data_path, processed_data_path, nSet=1, \
                    folding_ratio=0.8, downSampleSize=200,\
-                   raw_viz=False, interp_viz=False, renew=False, verbose=False):
+                   raw_viz=False, interp_viz=False, renew=False, verbose=False, save_pdf=False):
 
     # Check if there is already scaled data
     for i in xrange(nSet):        
@@ -74,9 +75,8 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
         sys.exit()
 
     # loading and time-sync
-    data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize,\
-                         raw_viz=raw_viz, interp_viz=interp_viz)
-    ## interp_data_plot(task, raw_data_path, nSet=target_data_set)
+    _, data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize,\
+                            raw_viz=raw_viz, interp_viz=interp_viz, save_pdf=save_pdf)
 
     data_min = {}
     data_max = {}
@@ -102,16 +102,16 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
 
         # get training data
         trainFileList = [success_list[x] for x in train_idx]
-        trainData = loadData(trainFileList, isTrainingData=True, \
-                             downSampleSize=downSampleSize)
+        _, trainData = loadData(trainFileList, isTrainingData=True, \
+                                downSampleSize=downSampleSize)
 
         # get test data
         if nTest != 0:        
             normalTestFileList = [success_list[x] for x in success_test_idx]
-            normalTestData = loadData([success_list[x] for x in success_test_idx], 
+            _, normalTestData = loadData([success_list[x] for x in success_test_idx], 
                                                           isTrainingData=False, downSampleSize=downSampleSize)
             abnormalTestFileList = [failure_list[x] for x in failure_test_idx]
-            abnormalTestData = loadData([failure_list[x] for x in failure_test_idx], \
+            _, abnormalTestData = loadData([failure_list[x] for x in failure_test_idx], \
                                         isTrainingData=False, downSampleSize=downSampleSize)
 
         # scaling data
@@ -637,34 +637,94 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
     return truePos, falseNeg, trueNeg, falsePos
 
         
-def interp_data_plot(task_name, processed_data_path, nSet=1, save_pdf=False):    
+def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
+              nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
+              raw_viz=False, interp_viz=False, save_pdf=False, \
+              ## trainingData=True, normalTestData=False, abnormalTestData=False,\
+              modality_list=['kinEEPosList', 'audioPowerList'], data_renew=False):    
 
-    target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
-    if os.path.isfile(target_file) is not True: 
-        print "There is no saved data"
-        sys.exit()
 
-    data_dict = ut.load_pickle(target_file)
-    visualization_raw_data(data_dict, save_pdf=save_pdf)
+    success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+    
+    # loading and time-sync
+    success_data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
+    raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
+                                               downSampleSize=downSampleSize,\
+                                               raw_viz=raw_viz, interp_viz=interp_viz, save_pdf=save_pdf,
+                                               renew=data_renew, save_pkl=success_data_pkl)
 
-    # training set
-    trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+    if raw_viz: target_dict = raw_data_dict
+    else: target_dict = data_dict
+            
+    ## target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
+    ## if os.path.isfile(target_file) is not True: 
+    ##     print "There is no saved data"
+    ##     sys.exit()
+    ## data_dict = ut.load_pickle(target_file)
+    
+    fig = plt.figure()
 
-    # test set
-    normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
-                                            param_dict=param_dict)        
-    abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
-                                            param_dict=param_dict)
+    if raw_viz:
+        count    = 0
+        nPlot = len(modality_list)
+        for modality in modality_list:
+            count +=1
+            
+            if 'audio' in modality:
+                time_list = target_dict['audioTimesList']
+                data_list = target_dict['audioPowerList']
 
-    print "======================================"
-    print "Training data: ", np.shape(trainingData)
-    print "Normal test data: ", np.shape(normalTestData)
-    print "Abnormal test data: ", np.shape(abnormalTestData)
-    print "======================================"
+            if 'kinematics' in modality:
+                time_list = target_dict['kinTimesList']
+                data_list = target_dict['kinEEPosList']
 
-    visualization_hmm_data(feature_list, trainingData=trainingData, \
-                           normalTestData=normalTestData,\
-                           abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
+            combined_time_list = []
+            for t in time_list:
+                temp = np.array(t[1:])-np.array(t[:-1])
+                combined_time_list += ([0.0]  + list(temp) )
+            print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list), np.max(combined_time_list), len(combined_time_list)
+
+
+            ax = fig.add_subplot(nPlot*100+10+count)
+
+            for i in xrange(len(time_list)):
+
+                if len(time_list[i]) > len(data_list[i]):
+                    ax.plot(time_list[i][:len(data_list[i])], data_list[i])
+                else:
+                    ax.plot(time_list[i], data_list[i][:len(time_list[i])])
+                            
+    else:
+        
+        count    = 0
+                
+            
+    if save_pdf is False:
+        plt.show()
+    else:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('mv test.p* ~/Dropbox/HRL/')
+
+
+    ## # training set
+    ## trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+
+    ## # test set
+    ## normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
+    ##                                         param_dict=param_dict)        
+    ## abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
+    ##                                         param_dict=param_dict)
+
+    ## print "======================================"
+    ## print "Training data: ", np.shape(trainingData)
+    ## print "Normal test data: ", np.shape(normalTestData)
+    ## print "Abnormal test data: ", np.shape(abnormalTestData)
+    ## print "======================================"
+
+    ## visualization_hmm_data(feature_list, trainingData=trainingData, \
+    ##                        normalTestData=normalTestData,\
+    ##                        abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
     
             
 
@@ -784,6 +844,8 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
+    p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
+                 default=False, help='Plot raw data.')
     
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
@@ -827,13 +889,15 @@ if __name__ == '__main__':
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               renew=renew, save_pdf=opt.bSavePdf)
-    elif opt.bRawDataPlot:
+                              
+    elif opt.bRawDataPlot or opt.bInterpDataPlot:
         target_data_set = 0
-        raw_plot    = False
-        interp_plot = True
+        modality_list   = ['kinematics', 'audio']
         
-        preprocessData([subject], task, raw_data_path, save_data_path, raw_viz=raw_plot, interp_viz=interp_plot,\
-                       renew=opt.bDataRenew, downSampleSize=downSampleSize)
+        data_plot([subject], task, raw_data_path, save_data_path,\
+                  nSet=target_data_set, downSampleSize=downSampleSize, \
+                  raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,
+                  modality_list=modality_list, data_renew=opt.bDataRenew)
                               
     else:
         nState         = 10
