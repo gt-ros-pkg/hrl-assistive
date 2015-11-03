@@ -340,7 +340,7 @@ class logger:
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
-                    self.data['kinematics_time'] = [self.Kinematics.time]
+                    self.data['kinematics_time'] = [self.kinematics.time]
                     self.data['kinematics_ee_pos'] = self.kinematics.ee_pos
                     self.data['kinematics_ee_quat'] = self.kinematics.ee_quat
                     self.data['kinematics_jnt_pos'] = self.kinematics.main_jnt_positions
@@ -349,7 +349,7 @@ class logger:
                     self.data['kinematics_target_pos']  = self.kinematics.target_pos
                     self.data['kinematics_target_quat'] = self.kinematics.target_quat                    
                 else:
-                    self.data['kinematics_time'].append(self.Kinematics.time)
+                    self.data['kinematics_time'].append(self.kinematics.time)
                     self.data['kinematics_ee_pos'] = np.hstack([self.data['kinematics_ee_pos'], \
                                                            self.kinematics.ee_pos]) 
                     self.data['kinematics_ee_quat'] = np.hstack([self.data['kinematics_ee_quat'], \
