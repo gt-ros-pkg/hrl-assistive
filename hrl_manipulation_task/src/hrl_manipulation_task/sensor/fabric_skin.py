@@ -97,7 +97,7 @@ class fabric_skin(threading.Thread):
         with self.lock:
             self.counter += 1
 
-            self.time = time_stamp.to_sec() - self.init_time
+            self.time = time_stamp.to_sec() #- self.init_time
             self.centers_x = []
             self.centers_y = []
             self.centers_z = []

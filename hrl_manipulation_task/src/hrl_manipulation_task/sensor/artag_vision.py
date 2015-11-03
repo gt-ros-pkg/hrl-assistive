@@ -165,7 +165,7 @@ class artag_vision(threading.Thread):
                         q = np.median(quaternions, axis=0)
                         q = qt.quat_normal(q)
                         
-                    self.time       = time_stamp.to_sec() - self.init_time
+                    self.time       = time_stamp.to_sec() #- self.init_time
                     self.artag_pos  = p.reshape(3,1)
                     self.artag_quat = q.reshape(4,1)
                     self.counter += 1

@@ -93,7 +93,7 @@ class pps_skin(threading.Thread):
             r = copy.copy(msg.r_finger_tip)
 
             #front, bottom, top is order of taxels
-            self.time       = time_stamp.to_sec() - self.init_time            
+            self.time       = time_stamp.to_sec() #- self.init_time            
             self.data_left  = np.array([[l[3]+l[4], l[5]+l[6], l[1]+l[2]]]).T
             self.data_right = np.array([[r[3]+r[4], r[1]+r[2], r[5]+r[6]]]).T
             self.counter += 1

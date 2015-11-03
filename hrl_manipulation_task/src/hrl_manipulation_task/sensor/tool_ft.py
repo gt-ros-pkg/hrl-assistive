@@ -86,7 +86,7 @@ class tool_ft(threading.Thread):
         time_stamp = msg.header.stamp
 
         self.lock.acquire()
-        self.time       = time_stamp.to_sec() - self.init_time
+        self.time       = time_stamp.to_sec() #- self.init_time
         self.force_raw  = np.array([[msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z]]).T
         self.torque_raw = np.array([[msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z]]).T
         self.counter += 1
