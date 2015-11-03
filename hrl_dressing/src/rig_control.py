@@ -439,106 +439,115 @@ class RigControl(object):
     def set_position_data_from_saved_movement_profile(self, subject, input_classes, output_classes):
         print 'Now editing files to insert position data.'
         position_profile = None
-        if self.test_vel == 0.1:
-            print ''.join([self.pkg_path, '/data/position_profiles/position_combined_0_1mps.pkl'])
-            position_profile = load_pickle(''.join([self.pkg_path, '/data/position_profiles/position_combined_0_1mps.pkl']))
-            print 'Position profile loaded!'
-        elif self.test_vel == 0.15:
-            position_profile = load_pickle(''.join([self.pkg_path, '/data/position_profiles/position_combined_0_15mps.pkl']))
-            print ''.join([self.pkg_path, '/data/position_profiles/position_combined_0_15mps.pkl'])
-            print 'Position profile loaded!'
-        else:
-            print 'There is no saved position profile for this velocity! Something has gone wrong!'
-            return None
-        for class_num in xrange(len(input_classes)):
-            i = 0
-            while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/',str(self.test_vel),'mps/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
-                ft_threshold_was_exceeded = False
-                print ''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])
-                current_data = load_pickle(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
+        for vel in [0.1, 0.15]:
+            if vel == 0.1:
+                print ''.join([self.pkg_path, '/data/position_profiles/position_combined_0_1mps.pkl'])
+                position_profile = load_pickle(''.join([self.pkg_path, '/data/position_profiles/position_combined_0_1mps.pkl']))
+                print 'Position profile loaded!'
+            elif vel == 0.15:
+                position_profile = load_pickle(''.join([self.pkg_path, '/data/position_profiles/position_combined_0_15mps.pkl']))
+                print ''.join([self.pkg_path, '/data/position_profiles/position_combined_0_15mps.pkl'])
+                print 'Position profile loaded!'
+            else:
+                print 'There is no saved position profile for this velocity! Something has gone wrong!'
+                return None
+            for class_num in xrange(len(input_classes)):
+                i = 0
+                while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/',str(vel),'mps/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
+                    ft_threshold_was_exceeded = False
+                    print ''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])
+                    # current_data = np.array([map(float,line.strip().split()) for line in open(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.log']))])
+                    current_data = load_pickle(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
 
-                # if np.max(current_data[:, 2]) >= 10. or np.max(current_data[:, 3]) >= 10. \
-                #         or np.max(current_data[:, 4]) >= 10.:
-                #     ft_threshold_was_exceeded = True
+                    # if np.max(current_data[:, 2]) >= 10. or np.max(current_data[:, 3]) >= 10. \
+                    #         or np.max(current_data[:, 4]) >= 10.:
+                    #     ft_threshold_was_exceeded = True
 
-                for j in current_data:
-                    j[2] = -j[2]
-                    j[3] = -j[3]
-                    j[4] = -j[4]
-                    if j[0] < 0.5:
-                        j[1] = 0
-                    else:
-                        if np.max(np.abs(j[2:])) > 10. and not ft_threshold_was_exceeded:
-                            time_of_stop = j[0]
-                            ft_threshold_was_exceeded = True
-                            for k in xrange(len(position_profile)-1):
-                                if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
-                                    position_of_stop = position_profile[k, 1] + \
+                    for j in current_data:
+                        j[2] = -j[2]
+                        j[3] = -j[3]
+                        j[4] = -j[4]
+                        if j[0] < 0.5:
+                            j[1] = 0
+                        else:
+                            if np.max(np.abs(j[2:])) > 10. and not ft_threshold_was_exceeded:
+                                time_of_stop = j[0]
+                                ft_threshold_was_exceeded = True
+                                for k in xrange(len(position_profile)-1):
+                                    if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
+                                        position_of_stop = position_profile[k, 1] + \
+                                                           (position_profile[k+1, 1] - position_profile[k, 1]) * \
+                                                           (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
+                            if ft_threshold_was_exceeded:
+                                j[1] = position_of_stop
+                            else:
+                                for k in xrange(len(position_profile)-1):
+                                    if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
+                                        new_position = position_profile[k, 1] + \
                                                        (position_profile[k+1, 1] - position_profile[k, 1]) * \
                                                        (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
-                        if ft_threshold_was_exceeded:
-                            j[1] = position_of_stop
-                        else:
-                            for k in xrange(len(position_profile)-1):
-                                if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
-                                    new_position = position_profile[k, 1] + \
-                                                   (position_profile[k+1, 1] - position_profile[k, 1]) * \
-                                                   (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
-                            j[1] = new_position
-                save_number = 0
-                while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/formatted/', str(self.test_vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl'])):
-                    save_number += 1
-                print 'Saving with number', save_number
-                save_pickle(current_data, ''.join([self.pkg_path, '/data/', subject, '/formatted/', str(self.test_vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl']))
-                i += 1
+                                j[1] = new_position
+                    save_number = 0
+                    while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/formatted/', str(vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl'])):
+                        save_number += 1
+                    print 'Saving with number', save_number
+                    save_pickle(current_data, ''.join([self.pkg_path, '/data/', subject, '/formatted/', str(vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl']))
+                    i += 1
         print 'Done editing files!'
-        if self.plot:
-            self.plot_data(current_data)
+        # if self.plot:
+        #     self.plot_data(current_data)
 
-    def load_and_plot(self, file_path):
+    def load_and_plot(self, file_path, label):
         loaded_data = load_pickle(file_path)
-        self.plot_data(loaded_data)
+        self.plot_data(loaded_data, label)
         print 'Plotted!'
 
 
-    def plot_data(self, my_data):
+    def plot_data(self, my_data, label):
         fig1 = plt.figure(1)
         ax1 = fig1.add_subplot(111)
         ax1.set_xlabel('Time (s)')
         ax1.set_ylabel('Position (m)')
-        ax1.set_xlim(0, 17)
+        ax1.set_title(''.join(['Position vs Time for: ', label, ' type']))
+        ax1.set_xlim(-0.5, 17)
         ax1.set_ylim(0, .86)
         X1 = my_data[:, 0]
         Y1 = my_data[:, 1]
         surf = ax1.scatter(X1, Y1, color="red", s=1, alpha=1)
         fig2 = plt.figure(2)
         ax2 = fig2.add_subplot(111)
-        ax2.set_xlim(0, 17)
-        ax2.set_ylim(-10.0, 3.0)
+        ax2.set_xlim(0., 17)
+        ax2.set_ylim(-1.0, 1.0)
         ax2.set_xlabel('Time (s)')
         ax2.set_ylabel('Force_x (N)')
+        ax2.set_title(''.join(['Force in direction of movement vs Time for: ', label, ' type']))
         X2 = my_data[:, 0]
         Y2 = my_data[:, 2]
-        surf = ax2.scatter(X2, Y2, s=1, alpha=1)
+        surf = ax2.plot(X2, Y2, color="blue", alpha=1)
         fig3 = plt.figure(3)
         ax3 = fig3.add_subplot(111)
-        ax3.set_xlim(0, .86)
-        ax3.set_ylim(-10.0, 3.0)
+        ax3.set_xlim(0., .4)
+        ax3.set_ylim(-1.0, 1.0)
         ax3.set_xlabel('Position (m)')
         ax3.set_ylabel('Force_x (N)')
+        ax3.set_title(''.join(['Force in direction of movement vs Position for: ', label, ' type']))
         X3 = my_data[:, 1]
         Y3 = my_data[:, 2]
-        surf = ax3.scatter(X3, Y3, s=1, alpha=1)
+        surf = ax3.plot(X3, Y3, color="blue", alpha=1)
         fig4 = plt.figure(4)
         ax4 = fig4.add_subplot(111)
-        ax4.set_xlim(0, .86)
-        ax4.set_ylim(-10.0, 3.0)
+        ax4.set_xlim(0, .4)
+        ax4.set_ylim(-1.0, 1.0)
         ax4.set_xlabel('Position (m)')
         ax4.set_ylabel('Force_z (N)')
+        ax4.set_title(''.join(['Force in upward direction vs Position for: ', label, ' type']))
         X4 = my_data[:, 1]
         Y4 = my_data[:, 4]
-        surf = ax4.scatter(X4, Y4, s=1, alpha=1)
-        plt.show()
+        surf = ax4.plot(X4, Y4, color="green", alpha=1)
+        fig5 = plt.figure(5)
+        ax5 = fig5.add_subplot(111)
+        surf = ax5.plot(Y3)
+
 
     def start_recording_data(self, num):
         self.array_to_save = np.zeros([3000, 5])
@@ -546,7 +555,7 @@ class RigControl(object):
         # self.arm_file = open(''.join([self.pkg_path, '/data/ft_arm_', str(num), '.log']), 'w')
         self.sleeve_file = open(''.join([self.pkg_path, '/data/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.log']), 'w')
         # self.arm_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
-        self.sleeve_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
+        # self.sleeve_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
         # self.position_file = open(''.join([self.pkg_path, '/data/position_', str(num), '.log']), 'w')
         self.start_record_time = rospy.Time.now()
         self.recording = True
@@ -587,24 +596,42 @@ if __name__ == "__main__":
     # plot = False
     num = 5
     vel = 0.1
-    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'tapo_test_data','wenhao_test_data', 'test_subj']
-    subject = subject_options[5]
+    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'tapo_test_data','wenhao_test_data', 'test_subj']
+    subject = subject_options[7]
     height_options = ['height0', 'height1', 'height2', 'height3', 'height4', 'height5']
-    height = height_options[3]
+    height = height_options[0]
     rc = RigControl(mode=mode, plot=plot, num=num, vel=vel, subj=subject, height=height)
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_dressing')
+    data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
 
     save_number = 0
 
     # input_classification = ['183mm_height_missed_sleeve', '222mm_height_caught',
     #                         '222mm_height_missed_sleeve', '408mm_height_high', '325mm_height_good']
     # input_classification = ['missed', 'high', 'caught_forearm', 'caught']
-    # output_classification = ['missed', 'high', 'caught', 'caught']
     # output_classification = ['missed', 'caught', 'missed', 'high', 'good']
 
-    # file_name = ''.join([pkg_path, '/data/', subject, '/formatted/', str(vel),'mps/', output_classification[2], '/force_profile_', str(save_number), '.pkl'])
-    # rc.load_and_plot(file_name)
+    # '''
+    output_classification = ['missed', 'good', 'caught_fist', 'caught_other']
+    label = output_classification[0]
+    # force_file_list = os.listdir(''.join([self.data_path, '/',subject, '/auto_labeled/', vel_folder, '/', result, '/']))
+    for i in xrange(4):
+
+        save_number = i
+        vel = 0.1
+        file_name = ''.join([data_path, '/', subject, '/time_warped_auto/', str(vel),'mps/', label, '/force_profile_', str(save_number), '.pkl'])
+        rc.load_and_plot(file_name, label)
+        vel = 0.15
+        file_name = ''.join([data_path, '/', subject, '/time_warped_auto/', str(vel),'mps/', label, '/force_profile_', str(save_number), '.pkl'])
+        rc.load_and_plot(file_name, label)
+    plt.show()
+    # '''
+
+
+
+    # file_name = ''.join([data_path, '/', subject, '/', str(vel),'mps/', output_classification[1], '/force_profile_', str(save_number), '.pkl'])
+
     # rc.set_position_data_from_saved_movement_profile('wenhao_test_data/183mm_height_missed_sleeve')
     # rc.set_position_data_from_saved_movement_profile(subject, input_classification, output_classification)
     # rc.set_position_data_from_saved_movement_profile('wenhao_test_data/222mm_height_missed_sleeve')
