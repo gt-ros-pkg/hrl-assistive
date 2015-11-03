@@ -53,6 +53,7 @@ class fabric_skin(threading.Thread):
         self.counter_prev = 0
 
         # instant data
+        self.time       = None
         self.link_names = None
         self.centers_x  = None
         self.centers_y  = None
@@ -91,9 +92,12 @@ class fabric_skin(threading.Thread):
 
             
     def robotStateCallback(self, msg):
+        time_stamp = msg.header.stamp
+        
         with self.lock:
             self.counter += 1
 
+            self.time = time_stamp.to_sec() - self.init_time
             self.centers_x = []
             self.centers_y = []
             self.centers_z = []

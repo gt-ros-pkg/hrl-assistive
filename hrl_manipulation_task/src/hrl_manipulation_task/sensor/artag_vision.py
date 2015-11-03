@@ -57,6 +57,7 @@ class artag_vision(threading.Thread):
         self.counter_prev = 0
         
         # instant data
+        self.time       = None
         self.artag_pos  = None
         self.artag_quat = None
         
@@ -110,8 +111,9 @@ class artag_vision(threading.Thread):
         
     def arTagCallback(self, msg):
 
-        markers = msg.markers
-        tag_flag  = False
+        time_stamp = msg.header.stamp
+        markers    = msg.markers
+        tag_flag   = False
 
         with self.lock:
             for i in xrange(len(markers)):
@@ -162,6 +164,7 @@ class artag_vision(threading.Thread):
                         q = np.median(quaternions, axis=0)
                         q = qt.quat_normal(q)
                         
+                    self.time       = time_stamp.to_sec() - self.init_time
                     self.artag_pos  = p.reshape(3,1)
                     self.artag_quat = q.reshape(4,1)
                     self.counter += 1
@@ -169,33 +172,33 @@ class artag_vision(threading.Thread):
                     if self.viz: self.pubARtag(p,q)
                         
         
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
-        rate = rospy.Rate(20)
-        while not self.cancelled and not rospy.is_shutdown():
-            if self.isReset:
+    ## def run(self):
+    ##     """Overloaded Thread.run, runs the update
+    ##     method once per every xx milliseconds."""
+    ##     rate = rospy.Rate(20)
+    ##     while not self.cancelled and not rospy.is_shutdown():
+    ##         if self.isReset:
 
-                if self.counter > self.counter_prev:
-                    self.counter_prev = self.counter
+    ##             if self.counter > self.counter_prev:
+    ##                 self.counter_prev = self.counter
 
-                    self.lock.acquire()                            
+    ##                 self.lock.acquire()                            
                     
-                    self.time_data.append(rospy.get_time() - self.init_time)
-                    if self.vision_tag_pos is None:
-                        self.vision_tag_pos = self.artag_pos
-                        self.vision_tag_quat = self.artag_quat
-                    else:
-                        self.vision_tag_pos = np.hstack([self.vision_tag_pos, self.artag_pos])
-                        self.vision_tag_quat = np.hstack([self.vision_tag_quat, self.artag_quat])
+    ##                 self.time_data.append(rospy.get_time() - self.init_time)
+    ##                 if self.vision_tag_pos is None:
+    ##                     self.vision_tag_pos = self.artag_pos
+    ##                     self.vision_tag_quat = self.artag_quat
+    ##                 else:
+    ##                     self.vision_tag_pos = np.hstack([self.vision_tag_pos, self.artag_pos])
+    ##                     self.vision_tag_quat = np.hstack([self.vision_tag_quat, self.artag_quat])
 
-                    self.lock.release()
-            rate.sleep()
+    ##                 self.lock.release()
+    ##         rate.sleep()
 
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
+    ## def cancel(self):
+    ##     """End this timer thread"""
+    ##     self.cancelled = True
+    ##     self.isReset = False
 
     def reset(self, init_time):
         self.init_time = init_time

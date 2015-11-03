@@ -75,9 +75,8 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
         sys.exit()
 
     # loading and time-sync
-    _, data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize,\
-                            raw_viz=raw_viz, interp_viz=interp_viz, save_pdf=save_pdf)
-
+    _, data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
+    
     data_min = {}
     data_max = {}
     for key in data_dict.keys():
@@ -650,7 +649,6 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     success_data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
     raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                downSampleSize=downSampleSize,\
-                                               ## raw_viz=raw_viz, interp_viz=interp_viz, save_pdf=save_pdf,
                                                renew=data_renew, save_pkl=success_data_pkl)
 
     if raw_viz: target_dict = raw_data_dict
@@ -661,12 +659,12 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     ##     print "There is no saved data"
     ##     sys.exit()
     ## data_dict = ut.load_pickle(target_file)
+    count    = 0
+    nPlot = len(modality_list)
     
     fig = plt.figure()
 
     if raw_viz:
-        count    = 0
-        nPlot = len(modality_list)
         for modality in modality_list:
             count +=1
             

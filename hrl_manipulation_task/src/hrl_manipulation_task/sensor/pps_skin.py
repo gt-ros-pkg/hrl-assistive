@@ -54,6 +54,7 @@ class pps_skin(threading.Thread):
 
 
         # instant data
+        self.time       = None
         self.data_left  = None
         self.data_right = None
         
@@ -85,43 +86,47 @@ class pps_skin(threading.Thread):
 
             
     def ppsCallback(self, msg):
+        time_stamp = msg.header.stamp
+        
         with self.lock:
             l = copy.copy(msg.l_finger_tip)
             r = copy.copy(msg.r_finger_tip)
 
             #front, bottom, top is order of taxels
-            self.data_left = np.array([[l[3]+l[4], l[5]+l[6], l[1]+l[2]]]).T
+            self.time       = time_stamp.to_sec() - self.init_time            
+            self.data_left  = np.array([[l[3]+l[4], l[5]+l[6], l[1]+l[2]]]).T
             self.data_right = np.array([[r[3]+r[4], r[1]+r[2], r[5]+r[6]]]).T
             self.counter += 1
 
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
-        rate = rospy.Rate(20)
-        while not self.cancelled and not rospy.is_shutdown():
-            if self.isReset:
 
-                if self.counter > self.counter_prev:
-                    self.counter_prev = self.counter
+    ## def run(self):
+    ##     """Overloaded Thread.run, runs the update
+    ##     method once per every xx milliseconds."""
+    ##     rate = rospy.Rate(20)
+    ##     while not self.cancelled and not rospy.is_shutdown():
+    ##         if self.isReset:
 
-                    self.lock.acquire()                           
+    ##             if self.counter > self.counter_prev:
+    ##                 self.counter_prev = self.counter
 
-                    self.time_data.append(rospy.get_time() - self.init_time)
-                    if self.pps_skin_left is None:
-                        self.pps_skin_left  = self.data_left
-                        self.pps_skin_right = self.data_right
-                    else:
-                        self.pps_skin_left  = np.hstack([self.pps_skin_left, self.data_left])
-                        self.pps_skin_right = np.hstack([self.pps_skin_right, self.data_right])
+    ##                 self.lock.acquire()                           
+
+    ##                 self.time_data.append(rospy.get_time() - self.init_time)
+    ##                 if self.pps_skin_left is None:
+    ##                     self.pps_skin_left  = self.data_left
+    ##                     self.pps_skin_right = self.data_right
+    ##                 else:
+    ##                     self.pps_skin_left  = np.hstack([self.pps_skin_left, self.data_left])
+    ##                     self.pps_skin_right = np.hstack([self.pps_skin_right, self.data_right])
                                         
-                    self.lock.release()
-            rate.sleep()
+    ##                 self.lock.release()
+    ##         rate.sleep()
                     
 
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
+    ## def cancel(self):
+    ##     """End this timer thread"""
+    ##     self.cancelled = True
+    ##     self.isReset = False
 
     def reset(self, init_time):
         self.init_time = init_time

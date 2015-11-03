@@ -40,10 +40,10 @@ import hrl_lib.quaternion as qt
 from scipy import interpolate
 from sklearn.decomposition import PCA
 
-import matplotlib
+## import matplotlib
 ## matplotlib.use('pdf')
-import matplotlib.pyplot as plt
-import data_viz
+## import matplotlib.pyplot as plt
+## import data_viz
 
 def extrapolateData(data, maxsize):
     if len(np.shape(data[0])) > 1:     
@@ -54,8 +54,8 @@ def extrapolateData(data, maxsize):
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
-def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False, interp_viz=False, \
-             verbose=False, save_pdf=False, renew=True, save_pkl=None):
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
+             verbose=False, renew=True, save_pkl=None):
 
     if save_pkl is not None:
         if os.path.isfile(save_pkl+'_raw.pkl') is True and os.path.isfile(save_pkl+'_interp.pkl') is True \
@@ -64,40 +64,22 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             data_dict = ut.load_pickle(save_pkl+'_interp.pkl')
             return raw_data_dict, data_dict
 
+    key_list = ['timesList',\
+                'audioTimesList', 'audioAzimuthList', 'audioPowerList'],\
+                'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
+                'kinTargetQuatList', \
+                'ftTimesList', 'ftForceList', \
+                'visionTimesList', 'visionPosList', 'visionQuatList', \
+                'fabricTimesList',\
+                ]
+
     raw_data_dict = {}
-    raw_data_dict['timesList']        = []
-    raw_data_dict['audioTimesList']   = []        
-    raw_data_dict['audioAzimuthList'] = []    
-    raw_data_dict['audioPowerList']   = []    
-    raw_data_dict['kinTimesList']     = []
-    raw_data_dict['kinEEPosList']     = []
-    raw_data_dict['kinEEQuatList']    = []
-    raw_data_dict['kinJntPosList']    = []
-    raw_data_dict['ftTimesList']      = []
-    raw_data_dict['ftForceList']      = []
-    raw_data_dict['kinTargetPosList']  = []
-    raw_data_dict['kinTargetQuatList'] = []
-    raw_data_dict['visionTimesList']   = []
-    raw_data_dict['visionPosList']     = []
-    raw_data_dict['visionQuatList']    = []
-
-
     data_dict = {}
-    data_dict['timesList']        = []
-    data_dict['audioAzimuthList'] = []    
-    data_dict['audioPowerList']   = []    
-    data_dict['kinEEPosList']     = []
-    data_dict['kinEEQuatList']    = []
-    data_dict['kinJntPosList']    = []
-    data_dict['ftForceList']      = []
-    data_dict['kinTargetPosList']  = []
-    data_dict['kinTargetQuatList'] = []
-    data_dict['visionPosList']     = []
-    data_dict['visionQuatList']    = []
+    for key in key_list:
+        raw_data_dict[key] = []
+        data_dict[key]     = []
 
     
-    if raw_viz or interp_viz: fig = plt.figure()
-
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
@@ -160,56 +142,28 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             jnt_pos_array = interpolationData(kin_time, kin_jnt_pos, new_times)
             data_dict['kinJntPosList'].append(jnt_pos_array)                                         
 
-            if raw_viz:
-                ax = fig.add_subplot(312)
-                if len(kin_time) > len(kin_ee_pos[2]):
-                    ax.plot(kin_time[:len(kin_ee_pos[2])], kin_ee_pos[2])
-                else:
-                    ax.plot(kin_time, kin_ee_pos[2][:len(kin_time)])
 
-                ax = fig.add_subplot(313)
-                if len(kin_time) > len(kin_jnt_pos[2]):
-                    ax.plot(kin_time[:len(kin_jnt_pos[2])], kin_jnt_pos[2])
-                else:
-                    ax.plot(kin_time, kin_jnt_pos[2][:len(kin_time)])
-            elif interp_viz:
-                ax = fig.add_subplot(312)
-                ax.plot(new_times, ee_pos_array[2])
-                ax = fig.add_subplot(313)
-                ax.plot(new_times, jnt_pos_array[2])
-                    
-            
-            
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time        = d['ft_time']
             ft_force_array = d['ft_force']
 
+            raw_data_dict['ftTimesList'].append(ft_time)
+            raw_data_dict['ftForceList'].append(ft_force_array)
+
             force_array = interpolationData(ft_time, ft_force_array, new_times)
             data_dict['ftForceList'].append(force_array)                                         
             
-            if raw_viz:
-                ax = fig.add_subplot(311)
-                if len(ft_time) > len(ft_force_array[2]):
-                    ax.plot(ft_time[:len(ft_force_array[2])], ft_force_array[2])
-                else:
-                    ax.plot(ft_time, ft_force_array[2][:len(ft_time)])           
-                ## plt.show()
-                ## fig = plt.figure()
-                
-            ## if idx > 10: break
-            elif interp_viz:
-                ax = fig.add_subplot(311)
-                ax.plot(new_times, force_array[2])
-                ## plt.show()
-                ## fig = plt.figure()
-                
                     
         # vision ---------------------------------------------------------------
         if 'vision_time' in d.keys():
             vision_time = d['vision_time']
             vision_pos  = d['vision_pos']
             vision_quat = d['vision_quat']
+
+            raw_data_dict['visionTimesList'].append(vision_time)
+            raw_data_dict['visionPosList'].append(vision_pos)
+            raw_data_dict['visionQuatList'].append(vision_quat)
 
             vision_pos_array  = interpolationData(vision_time, vision_pos, new_times)
             data_dict['visionPosList'].append(vision_pos_array)                                         
@@ -223,17 +177,23 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, raw_viz=False,
             pps_skin_left  = d['pps_skin_left']
             pps_skin_right = d['pps_skin_right']
 
+        # fabric skin ------------------------------------------------------------------
+        if 'fabric_skin_time' in d.keys():
+            fabric_skin_time      = d['fabric_skin_time']
+            fabric_skin_centers_x = d['fabric_skin_centers_x']
+            fabric_skin_centers_y = d['fabric_skin_centers_y']
+            fabric_skin_centers_z = d['fabric_skin_centers_z']
+            fabric_skin_normals_x = d['fabric_skin_normals_x']
+            fabric_skin_normals_y = d['fabric_skin_normals_y']
+            fabric_skin_normals_z = d['fabric_skin_normals_z']
+            fabric_skin_values_x  = d['fabric_skin_values_x']
+            fabric_skin_values_y  = d['fabric_skin_values_y']
+            fabric_skin_values_z  = d['fabric_skin_values_z']
+
+            # time weighted sum?
+            
         # ----------------------------------------------------------------------
 
-    if raw_viz or interp_viz:
-        if save_pdf is False:
-            plt.show()
-        else:
-            fig.savefig('test.pdf')
-            fig.savefig('test.png')
-            os.system('mv test.p* ~/Dropbox/HRL/')
-            
-        
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
         # Find the largest iteration

@@ -266,50 +266,50 @@ class robot_kinematics(threading.Thread):
         return ee_pos, ee_quat
 
                 
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
-        rate = rospy.Rate(20)
-        while not self.cancelled and not rospy.is_shutdown():
-            if self.isReset:
+    ## def run(self):
+    ##     """Overloaded Thread.run, runs the update
+    ##     method once per every xx milliseconds."""
+    ##     rate = rospy.Rate(20)
+    ##     while not self.cancelled and not rospy.is_shutdown():
+    ##         if self.isReset:
                 
-                if self.counter > self.counter_prev:
-                    self.counter_prev = self.counter
-                else:
-                    continue
+    ##             if self.counter > self.counter_prev:
+    ##                 self.counter_prev = self.counter
+    ##             else:
+    ##                 continue
                 
-                self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
-                self.lock.acquire()
+    ##             self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
+    ##             self.lock.acquire()
                 
-                if self.kinematics_ee_pos is None:
-                    self.kinematics_ee_pos  = self.ee_pos
-                    self.kinematics_ee_quat = self.ee_quat
-                    self.kinematics_main_jnt_pos = self.main_jnt_positions 
-                    self.kinematics_main_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
-                    self.kinematics_main_jnt_eff = self.main_jnt_efforts
+    ##             if self.kinematics_ee_pos is None:
+    ##                 self.kinematics_ee_pos  = self.ee_pos
+    ##                 self.kinematics_ee_quat = self.ee_quat
+    ##                 self.kinematics_main_jnt_pos = self.main_jnt_positions 
+    ##                 self.kinematics_main_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
+    ##                 self.kinematics_main_jnt_eff = self.main_jnt_efforts
 
-                    self.kinematics_target_pos  = self.target_pos
-                    self.kinematics_target_quat = self.target_quat
+    ##                 self.kinematics_target_pos  = self.target_pos
+    ##                 self.kinematics_target_quat = self.target_quat
                     
-                else:
-                    self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, self.ee_pos])
-                    self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, self.ee_quat])
-                    self.kinematics_main_jnt_vel = np.hstack([self.kinematics_main_jnt_vel, self.kinematics_main_jnt_pos - \
-                                                         self.kinematics_main_jnt_pos[:,-1:] ]) #delta
-                    self.kinematics_main_jnt_pos = np.hstack([self.kinematics_main_jnt_pos, self.main_jnt_positions])
-                    self.kinematics_main_jnt_eff = np.hstack([self.kinematics_main_jnt_eff, self.main_jnt_efforts])
+    ##             else:
+    ##                 self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, self.ee_pos])
+    ##                 self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, self.ee_quat])
+    ##                 self.kinematics_main_jnt_vel = np.hstack([self.kinematics_main_jnt_vel, self.kinematics_main_jnt_pos - \
+    ##                                                      self.kinematics_main_jnt_pos[:,-1:] ]) #delta
+    ##                 self.kinematics_main_jnt_pos = np.hstack([self.kinematics_main_jnt_pos, self.main_jnt_positions])
+    ##                 self.kinematics_main_jnt_eff = np.hstack([self.kinematics_main_jnt_eff, self.main_jnt_efforts])
 
-                    self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, self.target_pos])
-                    self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
+    ##                 self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, self.target_pos])
+    ##                 self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
                     
-                self.lock.release()
-            rate.sleep()
+    ##             self.lock.release()
+    ##         rate.sleep()
                 
                 
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
+    ## def cancel(self):
+    ##     """End this timer thread"""
+    ##     self.cancelled = True
+    ##     self.isReset = False
 
 
     def reset(self, init_time):

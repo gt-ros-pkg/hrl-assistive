@@ -340,7 +340,7 @@ class logger:
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
-                    self.data['kinematics_time'] = [self.Kinematics.time]
+                    self.data['kinematics_time'] = [self.kinematics.time]
                     self.data['kinematics_ee_pos'] = self.kinematics.ee_pos
                     self.data['kinematics_ee_quat'] = self.kinematics.ee_quat
                     self.data['kinematics_jnt_pos'] = self.kinematics.main_jnt_positions
@@ -349,7 +349,7 @@ class logger:
                     self.data['kinematics_target_pos']  = self.kinematics.target_pos
                     self.data['kinematics_target_quat'] = self.kinematics.target_quat                    
                 else:
-                    self.data['kinematics_time'].append(self.Kinematics.time)
+                    self.data['kinematics_time'].append(self.kinematics.time)
                     self.data['kinematics_ee_pos'] = np.hstack([self.data['kinematics_ee_pos'], \
                                                            self.kinematics.ee_pos]) 
                     self.data['kinematics_ee_quat'] = np.hstack([self.data['kinematics_ee_quat'], \
@@ -367,31 +367,31 @@ class logger:
                 
             if self.ft is not None:
                 if 'ft_time' not in self.data.keys():
-                    self.data['ft_time']   = [rospy.get_rostime().to_sec()-self.init_time]
+                    self.data['ft_time']   = [self.ft.time]
                     self.data['ft_force']  = self.ft.force_raw
                     self.data['ft_torque'] = self.ft.torque_raw
                 else:                    
-                    self.data['ft_time'].append(rospy.get_rostime().to_sec()-self.init_time)
+                    self.data['ft_time'].append(self.ft.time)
                     self.data['ft_force']  = np.hstack([self.data['ft_force'], self.ft.force_raw])
                     self.data['ft_torque'] = np.hstack([self.data['ft_torque'], self.ft.torque_raw])
                     
             if self.vision is not None:
                 if 'vision_time' not in self.data.keys():
-                    self.data['vision_time'] = [rospy.get_rostime().to_sec()-self.init_time]
+                    self.data['vision_time'] = [self.vision.time]
                     self.data['vision_pos']  = self.vision.artag_pos
                     self.data['vision_quat'] = self.vision.artag_quat
                 else:                    
-                    self.data['vision_time'].append(rospy.get_rostime().to_sec()-self.init_time)
+                    self.data['vision_time'].append(self.vision.time)
                     self.data['vision_pos']  = np.hstack([self.data['vision_pos'], self.vision.artag_pos])
                     self.data['vision_quat'] = np.hstack([self.data['vision_quat'], self.vision.artag_quat])
                                 
             if self.pps_skin is not None:
                 if 'pps_skin_time' not in self.data.keys():
-                    self.data['pps_skin_time']  = [rospy.get_rostime().to_sec()-self.init_time]
+                    self.data['pps_skin_time']  = [self.pps_skin.time]
                     self.data['pps_skin_left']  = self.pps_skin.data_left
                     self.data['pps_skin_right'] = self.pps_skin.data_right
                 else:                    
-                    self.data['pps_skin_time'].append(rospy.get_rostime().to_sec()-self.init_time)
+                    self.data['pps_skin_time'].append(self.pps_skin.time)
                     self.data['pps_skin_left']  = np.hstack([self.data['pps_skin_left'], \
                                                              self.pps_skin.data_left])
                     self.data['pps_skin_right'] = np.hstack([self.data['pps_skin_right'], \
@@ -399,7 +399,7 @@ class logger:
 
             if self.fabric_skin is not None:
                 if 'fabric_skin_time' not in self.data.keys():
-                    self.data['fabric_skin_time'] = [rospy.get_rostime().to_sec()-self.init_time]
+                    self.data['fabric_skin_time'] = [self.fabric_skin.time]
                     self.data['fabric_skin_centers_x'] = []
                     self.data['fabric_skin_centers_y'] = []
                     self.data['fabric_skin_centers_z'] = []
@@ -410,7 +410,7 @@ class logger:
                     self.data['fabric_skin_values_y'] = []
                     self.data['fabric_skin_values_z'] = []
                 else:                    
-                    self.data['fabric_skin_time'].append(rospy.get_rostime().to_sec()-self.init_time)
+                    self.data['fabric_skin_time'].append(self.fabric_skin.time)
                 self.data['fabric_skin_centers_x'] += self.fabric_skin.centers_x
                 self.data['fabric_skin_centers_y'] += self.fabric_skin.centers_y
                 self.data['fabric_skin_centers_z'] += self.fabric_skin.centers_z

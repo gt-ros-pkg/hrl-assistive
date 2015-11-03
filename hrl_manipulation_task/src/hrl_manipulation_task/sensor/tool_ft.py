@@ -52,7 +52,8 @@ class tool_ft(threading.Thread):
         self.counter = 0
         self.counter_prev = 0
 
-        self.force_raw = None
+        self.time       = None
+        self.force_raw  = None
         self.torque_raw = None
 
         # Declare containers        
@@ -82,41 +83,43 @@ class tool_ft(threading.Thread):
         return
 
     def force_raw_cb(self, msg):
-        # self.time = msg.header.stamp.to_time()
-        self.lock.acquire()        
-        self.force_raw = np.array([[msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z]]).T
+        time_stamp = msg.header.stamp
+
+        self.lock.acquire()
+        self.time       = time_stamp.to_sec() - self.init_time
+        self.force_raw  = np.array([[msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z]]).T
         self.torque_raw = np.array([[msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z]]).T
         self.counter += 1
         self.lock.release()
 
         
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
-        rate = rospy.Rate(20)
-        while not self.cancelled:
-            if self.isReset:
+    ## def run(self):
+    ##     """Overloaded Thread.run, runs the update
+    ##     method once per every xx milliseconds."""
+    ##     rate = rospy.Rate(20)
+    ##     while not self.cancelled:
+    ##         if self.isReset:
 
-                if self.counter > self.counter_prev:
-                    self.counter_prev = self.counter
+    ##             if self.counter > self.counter_prev:
+    ##                 self.counter_prev = self.counter
 
-                    self.lock.acquire()                            
+    ##                 self.lock.acquire()                            
                     
-                    self.time_data.append(rospy.get_time() - self.init_time)
-                    if self.force_array is None:
-                        self.force_array  = self.force_raw
-                        self.torque_array = self.torque_raw
-                    else:
-                        self.force_array = np.hstack([self.force_array, self.force_raw])
-                        self.torque_array = np.hstack([self.torque_array, self.torque_raw])
+    ##                 self.time_data.append(rospy.get_time() - self.init_time)
+    ##                 if self.force_array is None:
+    ##                     self.force_array  = self.force_raw
+    ##                     self.torque_array = self.torque_raw
+    ##                 else:
+    ##                     self.force_array = np.hstack([self.force_array, self.force_raw])
+    ##                     self.torque_array = np.hstack([self.torque_array, self.torque_raw])
                                         
-                    self.lock.release()
-            rate.sleep()
+    ##                 self.lock.release()
+    ##         rate.sleep()
 
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
+    ## def cancel(self):
+    ##     """End this timer thread"""
+    ##     self.cancelled = True
+    ##     self.isReset = False
 
     def reset(self, init_time):
         self.init_time = init_time
