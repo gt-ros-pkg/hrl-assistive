@@ -21,7 +21,6 @@ RFH.Smach = function(options) {
         if (self.smach_tasks[scs_msg.path].steps !== undefined) return; // We've already got this one...
         var chain = getStateChain(scs_msg.outcomes_from, scs_msg.outcomes_to, scs_msg.internal_outcomes);
         self.smach_tasks[scs_msg.path].steps = filterStateChain(chain);
-        self.display.displaySmachStates(self.smach_tasks[scs_msg.path].steps);
     };
 
     var getStateChain = function (from_states, to_states, transitions) {
@@ -85,7 +84,6 @@ RFH.Smach = function(options) {
         ros: ros,
         name: "/smach_introspection/smach/container_status_cleaned",
         type: "smach_msgs/SmachContainerStatus",
-//        compression: 'png'
     });
     smachContainerStatusSub.subscribe(smachContainerStatusCB);
 
@@ -93,6 +91,8 @@ RFH.Smach = function(options) {
         self.display.empty(); // Out with the old
         var actions = self.parseActions(msg.actions);
         var interfaceTasks = self.getInterfaceTasks(msg.domain, actions);
+        var taskLabels = self.getTaskLabels(msg.domain, actions);
+        self.display.displaySmachStates(taskLabels);
         if (!self.smach_tasks[msg.problem]) {
             self.smach_tasks[msg.problem] = {};
         }
@@ -130,47 +130,20 @@ RFH.Smach = function(options) {
         return taskNames;
     };
 
+    self.getTaskLabels = function (domain, actions) {
+        var task = RFH.taskMenu.tasks[domain];
+        var taskLabels = [];
+        for (var i=0; i < actions.length; i += 1) {
+            taskLabels.push(task.getActionLabel(actions[i]));
+        }
+        return taskLabels;
+    };
+
     self.smachStatusSubscriber = new ROSLIB.Topic({
         ros: ros,
         name: "/task_state",
         type: "hrl_task_planning/PDDLState"
     });
-
-
-    var matchingStateIndex = function(state_msg) {
-        var problem_states = self.smach_tasks[state_msg.problem].states;
-        for (var idx in problem_states) {
-            if (problem_states[idx].predicates.length === state_msg.predicates.length) {
-                for (var i = 0; i < state_msg.predicates.length; i += 1) {
-                    if (problem_states[idx].predicates[i] == state_msg.predicates[i]) {
-                        return idx;
-                    }
-                }
-                continue;
-            }
-        }
-        return -1; // No match found...
-    };
-    
-    var pddlStateCB = function(state_msg) {
-        var idx = matchingStateIndex(state_msg);
-        if (idx == self.smach_tasks[state_msg.problem].states.length-2) { // -1 for initial state on states list, -1 for index vs length diff.
-            self.display.empty();
-        } else if (idx >= 0) {
-            //self.display.setActive(idx); // Update Display
-            //RFH.taskMenu.startTask(self.smach_tasks[state_msg.problem].interfaceTasks[idx]); // Start corresponding task
-        }
-    };
-    self.smachStatusCBList = [pddlStateCB];
-
-    self.smachStatusCB = function (msg) {
-        for (var i=0; i < self.smachStatusCBList.length; i += 1) {
-            self.smachStatusCBList[i](msg);
-        }
-    };
-    self.smachStatusSubscriber.subscribe(self.smachStatusCB);
-
-
 };
 
 
@@ -185,7 +158,6 @@ RFH.SmachDisplay = function(options) {
     };
 
     self.displaySmachStates = function(stringList) {
-        self.empty();
         for (var i = 0; i < stringList.length; i += 1) {
             self.$container.append($('<div>', {
                 class: "smach-state incomplete",

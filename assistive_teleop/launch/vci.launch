@@ -67,6 +67,7 @@
     <arg name="skin" value="fabric"/>
     <arg name="namespace" value="left_arm"/>
     <arg name="rviz_teleop" value="true"/>
+    <arg name="verbose" value="true"/>
   </include>
 
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
@@ -74,6 +75,7 @@
     <arg name="skin" value="none"/>
     <arg name="namespace" value="right_arm"/>
     <arg name="rviz_teleop" value="true"/>
+    <arg name="verbose" value="true"/>
   </include>
 
   <!-- Throttling nodes for robot state 

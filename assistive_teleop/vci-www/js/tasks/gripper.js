@@ -20,9 +20,23 @@ RFH.GripperDisplay = function (options) {
     self.hide(); // Hide on init
 
     $grabButton.on('click', function () { gripper.grab(); });
-    $releaseButton.on('click', function() { gripper.release(); });
 
-    
+    var releaseOnContactCB = function (event) {
+        if ($releaseButton.prop('checked')) {
+            gripper.releaseOnContact();
+        } else {
+            gripper.cancelReleaseOnContact();
+        }
+    };
+    $releaseButton.on('click', releaseOnContactCB );
+   
+    var updateReleaseOnContact = function (msg) {
+        if (!msg.data) {
+           $releaseButton.prop('checked', false).button('refresh'); 
+        }
+    };
+    gripper.graspingCBList.push(updateReleaseOnContact);
+
     // Set up slider display
     $gripperSlider.css({"background":"rgba(50,50,50,0.72)" });
     $gripperSlider.find('.ui-slider-range').css({"background":"rgba(22,22,22,0.9)",

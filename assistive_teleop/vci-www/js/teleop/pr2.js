@@ -55,7 +55,6 @@ var PR2GripperSensor = function (options) {
     };
     graspSub.subscribe(graspingCB);
 
-
     // Subscribe to state msgs
     var stateSub = new ROSLIB.Topic({
         ros: ros,
@@ -127,7 +126,7 @@ var PR2GripperSensor = function (options) {
     });
 
     ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
-    self.release = function () {
+    self.releaseOnContact = function () {
         var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
         msg.command.event.trigger_conditions = 2; // Slip OR finger contact OR accelerometer
         msg.command.event.acceleration_trigger_magnitude = 4.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
@@ -137,6 +136,10 @@ var PR2GripperSensor = function (options) {
             goalMessage: msg
         });
         goal.send();
+    };
+
+    self.cancelReleaseOnContact = function () {
+        releaseActionClient.cancel();
     };
 
 };

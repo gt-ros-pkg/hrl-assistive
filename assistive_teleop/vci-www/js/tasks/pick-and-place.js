@@ -27,6 +27,43 @@ RFH.PickAndPlace = function (options) {
         }
     };
 
+    self.getActionLabel = function (action) {
+        var loc;
+        switch (action.name){
+            case 'ID-LOCATION':
+                if (action.args[0].indexOf('PICK') >= 0) {
+                    loc = 'Pickup';
+                } else if (action.args[0].indexOf('PLACE') >= 0) {
+                    loc = 'Place';
+                } else {
+                    loc = 'Empty';
+                }
+                return "Indicate %loc Location".replace('%loc', loc);
+            case 'FORGET-LOCATION':
+                if (action.args[0].indexOf('PICK') >= 0) {
+                    loc = 'Pickup';
+                } else if (action.args[0].indexOf('PLACE') >= 0) {
+                    loc = 'Place';
+                } else {
+                    loc = 'Empty';
+                }
+                return "Clear Saved %loc Location".replace('%loc', loc);
+            case 'MOVE-ARM':
+                if (action.args[1].indexOf('PICK') >= 0) {
+                    loc = 'Pickup';
+                } else if (action.args[1].indexOf('PLACE') >= 0) {
+                    loc = 'Place';
+                } else {
+                    loc = 'Empty';
+                }
+                return "Approach %loc Location".replace('%loc', loc);
+            case "GRAB":
+                return "Grab Item";
+            case 'RELEASE':
+                return "Set Item Down";
+        }
+    };
+
     self.publishPickAndPlace = function (side) {
         self.side = side; // Save most recently requested side here
         var msg = self.ros.composeMsg('hrl_task_planning/PDDLProblem');
