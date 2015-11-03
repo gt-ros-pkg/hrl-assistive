@@ -112,7 +112,7 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=True, \
+    log = logger(ft=True, audio=True, kinematics=True, vision=False, pps=True, skin=True, \
                  subject="gatsbii", task='scooping', data_pub=opt.bDataPub, verbose=False)
 
     last_trial  = '4'

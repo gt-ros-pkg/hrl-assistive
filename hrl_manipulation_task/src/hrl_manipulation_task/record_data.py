@@ -48,7 +48,7 @@ from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneR
 from sensor.kinect_audio import kinect_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
-## from sensor.artag_vision import artag_vision
+from sensor.artag_vision import artag_vision
 from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 

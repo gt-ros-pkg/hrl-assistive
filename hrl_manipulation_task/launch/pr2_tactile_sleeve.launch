@@ -1,7 +1,7 @@
 <launch>
 
     <!-- must specify on command line r or l -->
-    <arg name="arm_to_use"/>
+    <arg name="arm"/>
 
     <!-- slope for the calibration line -->
     <arg name="gripper_slope" default="200.0"/> <!--18." /> -->
@@ -21,12 +21,12 @@
 
     <node name="gripper_and_forearm_taxels_driver" pkg="hrl_fabric_based_tactile_sensor"
         type="pr2_tactile_sleeve_gripper_and_forearm_driver_node.py" output='screen'
-        args='--arm_to_use=$(arg arm_to_use)' >
+        args='--arm=$(arg arm)' >
     </node>
 
     <node name="upperarm_taxels_driver" pkg="hrl_fabric_based_tactile_sensor"
         type="pr2_tactile_sleeve_upperarm_driver_node.py" output='screen'
-        args='--arm_to_use=$(arg arm_to_use)' >
+        args='--arm=$(arg arm)' >
     </node>
 
 <!-- survy -->
