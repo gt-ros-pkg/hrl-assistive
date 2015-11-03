@@ -65,26 +65,25 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             return raw_data_dict, data_dict
 
     key_list = ['timesList',\
-                'audioTimesList', 'audioAzimuthList', 'audioPowerList'],\
+                'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', \
                 'ftTimesList', 'ftForceList', \
                 'visionTimesList', 'visionPosList', 'visionQuatList', \
-                'fabricTimesList',\
-                ]
+                'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
+                'fabricTimesList', 'fabricCenterList', 'fabricNormalList', 'fabricValueList' ]
 
     raw_data_dict = {}
     data_dict = {}
     for key in key_list:
         raw_data_dict[key] = []
         data_dict[key]     = []
-
     
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
 
-        print fileName
+        if verbose: print fileName
         d = ut.load_pickle(fileName)        
 
         max_time = 0
@@ -171,11 +170,22 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             vision_quat_array = interpolationQuatData(vision_time, vision_quat, new_times)
             data_dict['visionQuatList'].append(vision_quat_array)                                         
 
+
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
             pps_skin_time  = d['pps_skin_time']
             pps_skin_left  = d['pps_skin_left']
             pps_skin_right = d['pps_skin_right']
+
+            raw_data_dict['ppsTimesList'].append(pps_skin_time)
+            raw_data_dict['ppsLeftList'].append(pps_skin_left)
+            raw_data_dict['ppsRightList'].append(pps_skin_right)
+
+            left_array = interpolationData(pps_skin_time, pps_skin_left, new_times)
+            data_dict['ppsLeftList'].append(left_array)
+            right_array = interpolationData(pps_skin_time, pps_skin_right, new_times)
+            data_dict['ppsRightList'].append(right_array)
+
 
         # fabric skin ------------------------------------------------------------------
         if 'fabric_skin_time' in d.keys():
@@ -191,6 +201,27 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             fabric_skin_values_z  = d['fabric_skin_values_z']
 
             # time weighted sum?
+            raw_data_dict['fabricTimesList'].append(fabric_skin_time)
+            raw_data_dict['fabricCenterList'].append([fabric_skin_centers_x,\
+                                                      fabric_skin_centers_y,\
+                                                      fabric_skin_centers_z])
+            raw_data_dict['fabricNormalList'].append([fabric_skin_normals_x,\
+                                                      fabric_skin_normals_y,\
+                                                      fabric_skin_normals_z])
+            raw_data_dict['fabricValueList'].append([fabric_skin_values_x,\
+                                                     fabric_skin_values_y,\
+                                                     fabric_skin_values_z])
+
+            # skin interpolation
+            center_array, normal_array, value_array \
+              = interpolationSkinData(fabric_skin_time, raw_data_dict['fabricCenterList'][-1],\
+                                      raw_data_dict['fabricNormalList'][-1],\
+                                      raw_data_dict['fabricValueList'][-1], new_times )
+                
+            data_dict['fabricCenterList'].append(center_array)
+            data_dict['fabricNormalList'].append(normal_array)
+            data_dict['fabricValueList'].append(value_array)
+
             
         # ----------------------------------------------------------------------
 
@@ -300,6 +331,108 @@ def interpolationQuatData(time_array, data_array, new_time_array):
                                                   
     return new_data_array.T
 
+def interpolationSkinData(time_array, center_array, normal_array, value_array, new_time_array):
+    '''
+    Interpolate haptic msg
+    '''
+    from scipy import interpolate
+
+    new_c_arr = []
+    new_n_arr = []
+    new_v_arr = []
+
+    ths   = 0.025 
+    l     = len(time_array)
+    new_l = len(new_time_array)
+
+    idx_list = np.linspace(0, l-1, new_l)
+    for idx in idx_list:
+        w1 = idx-int(idx)
+        w2 = 1.0 - w1
+
+        idx1 = int(idx)
+        idx2 = int(idx)+1
+        
+        c1 = center_array[idx1]
+        c2 = center_array[idx2]
+        n1 = normal_array[idx1]
+        n2 = normal_array[idx2]
+        v1 = value_array[idx1]
+        v2 = value_array[idx2]
+
+        print c1
+        if c1[0] == []:
+
+            if c2[0] == []:
+                c = []
+                n = []
+                v = []
+            else:
+                c = c2 #w2*np.array(c2)
+                n = n2 #w2*np.array(n2)
+                v = v2 #w2*np.array(v2)
+        else:
+
+            if c2[0] == []:
+                c = c1 #w1*np.array(c1)
+                n = n1 #w1*np.array(n1)
+                v = v1 #w1*np.array(v1)
+            else:
+                c1 = np.array(c1)
+                c2 = np.array(c2)
+
+                c = None
+                n = None
+                v = None
+                close_idxes = []
+                for i in xrange(len(c1[0])):
+                    close_idx = None
+                    for j in xrange(len(c2[0])):
+                        if np.linalg.norm(c1[:,i] - c2[:,j]) < threshold:
+                            close_idx = j
+                            close_idxes.append(j)
+                            break
+
+                    if close_idx is None:                        
+                        if c is None:
+                            c = c1[:,i]
+                            n = n1[:,i]
+                            v = v1[:,i]
+                        else:
+                            c = np.hstack([c, c1[:,i]])
+                            n = np.hstack([n, n1[:,i]])
+                            v = np.hstack([v, v1[:,i]])
+                    else:
+                        if c is None:                        
+                            c = w1*c1[:,i] + w2*c2[:,close_idx]
+                            n = w1*n1[:,i] + w2*n2[:,close_idx]
+                            v = w1*v1[:,i] + w2*v2[:,close_idx]
+                        else:
+                            c = np.hstack([c, w1*c1[:,i] + w2*c2[:,close_idx]])
+                            n = np.hstack([n, w1*n1[:,i] + w2*n2[:,close_idx]])
+                            v = np.hstack([v, w1*v1[:,i] + w2*v2[:,close_idx]])
+
+                if len(close_idxes) < len(c2[0]):
+                    for i in xrange(len(c2[0])):
+                        if i not in close_idxes:
+                            if c is None:
+                                c = c2[:,i]
+                                n = n2[:,i]
+                                v = v2[:,i]
+                            else:
+                                c = np.hstack([c, c2[:,i]])
+                                n = np.hstack([n, n2[:,i]])
+                                v = np.hstack([v, v2[:,i]])
+                          
+                c = c.tolist()
+                n = n.tolist()
+                v - v.tolist()
+                
+        new_c_arr.append(c)
+        new_n_arr.append(n)
+        new_v_arr.append(v)
+            
+    return new_c_arr, new_n_arr, new_v_arr
     
 def scaleData(data_dict, scale=10, data_min=None, data_max=None, verbose=False):
 

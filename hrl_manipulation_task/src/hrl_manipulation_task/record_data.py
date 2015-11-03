@@ -400,26 +400,26 @@ class logger:
             if self.fabric_skin is not None:
                 if 'fabric_skin_time' not in self.data.keys():
                     self.data['fabric_skin_time'] = [self.fabric_skin.time]
-                    self.data['fabric_skin_centers_x'] = []
-                    self.data['fabric_skin_centers_y'] = []
-                    self.data['fabric_skin_centers_z'] = []
-                    self.data['fabric_skin_normals_x'] = []
-                    self.data['fabric_skin_normals_y'] = []
-                    self.data['fabric_skin_normals_z'] = []
-                    self.data['fabric_skin_values_x'] = []
-                    self.data['fabric_skin_values_y'] = []
-                    self.data['fabric_skin_values_z'] = []
+                    self.data['fabric_skin_centers_x'] = [self.fabric_skin.centers_x]
+                    self.data['fabric_skin_centers_y'] = [self.fabric_skin.centers_y]
+                    self.data['fabric_skin_centers_z'] = [self.fabric_skin.centers_z]
+                    self.data['fabric_skin_normals_x'] = [self.fabric_skin.normals_x]
+                    self.data['fabric_skin_normals_y'] = [self.fabric_skin.normals_y]
+                    self.data['fabric_skin_normals_z'] = [self.fabric_skin.normals_z]
+                    self.data['fabric_skin_values_x'] = [self.fabric_skin.values_x]
+                    self.data['fabric_skin_values_y'] = [self.fabric_skin.values_y]
+                    self.data['fabric_skin_values_z'] = [self.fabric_skin.values_z]
                 else:                    
                     self.data['fabric_skin_time'].append(self.fabric_skin.time)
-                self.data['fabric_skin_centers_x'] += self.fabric_skin.centers_x
-                self.data['fabric_skin_centers_y'] += self.fabric_skin.centers_y
-                self.data['fabric_skin_centers_z'] += self.fabric_skin.centers_z
-                self.data['fabric_skin_normals_x'] += self.fabric_skin.normals_x
-                self.data['fabric_skin_normals_y'] += self.fabric_skin.normals_y
-                self.data['fabric_skin_normals_z'] += self.fabric_skin.normals_z
-                self.data['fabric_skin_values_x'] += self.fabric_skin.values_x
-                self.data['fabric_skin_values_y'] += self.fabric_skin.values_y
-                self.data['fabric_skin_values_z'] += self.fabric_skin.values_z
+                    self.data['fabric_skin_centers_x'].append(self.fabric_skin.centers_x)
+                    self.data['fabric_skin_centers_y'].append(self.fabric_skin.centers_y)
+                    self.data['fabric_skin_centers_z'].append(self.fabric_skin.centers_z)
+                    self.data['fabric_skin_normals_x'].append(self.fabric_skin.normals_x)
+                    self.data['fabric_skin_normals_y'].append(self.fabric_skin.normals_y)
+                    self.data['fabric_skin_normals_z'].append(self.fabric_skin.normals_z)
+                    self.data['fabric_skin_values_x'].append(self.fabric_skin.values_x)
+                    self.data['fabric_skin_values_y'].append(self.fabric_skin.values_y)
+                    self.data['fabric_skin_values_z'].append(self.fabric_skin.values_z)
                     
                                                              
             if self.enable_log_thread == False: break

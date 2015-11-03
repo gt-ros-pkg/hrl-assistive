@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-## matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -652,7 +652,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                renew=data_renew, save_pkl=success_data_pkl)
 
     if raw_viz: target_dict = raw_data_dict
-    else: target_dict = data_dict
+    else: target_dict = interp_data_dict
             
     ## target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
     ## if os.path.isfile(target_file) is not True: 
@@ -664,46 +664,73 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     
     fig = plt.figure()
 
-    if raw_viz:
-        for modality in modality_list:
-            count +=1
+    for modality in modality_list:
+        count +=1
+
+        if 'audio' in modality:
+            time_list = target_dict['audioTimesList']
+            data_list = target_dict['audioPowerList']
+
+        if 'kinematics' in modality:
+            time_list = target_dict['kinTimesList']
+            data_list = target_dict['kinEEPosList']
+
+            # distance
+            new_data_list = []
+            for d in data_list:
+                new_data_list.append( np.linalg.norm(d, axis=0) )
+            data_list = new_data_list
+
+        if 'ft' in modality:
+            time_list = target_dict['ftTimesList']
+            data_list = target_dict['ftForceList']
+
+            # distance
+            new_data_list = []
+            for d in data_list:
+                new_data_list.append( np.linalg.norm(d, axis=0) )
+            data_list = new_data_list
+
+        if 'vision' in modality:
+            time_list = target_dict['visionTimesList']
+            data_list = target_dict['visionPosList']
             
-            if 'audio' in modality:
-                time_list = target_dict['audioTimesList']
-                data_list = target_dict['audioPowerList']
+            # distance
+            new_data_list = []
+            for d in data_list:
+                new_data_list.append( np.linalg.norm(d, axis=0) )
+            data_list = new_data_list
 
-            if 'kinematics' in modality:
-                time_list = target_dict['kinTimesList']
-                data_list = target_dict['kinEEPosList']
+        if 'pps' in modality:
+            time_list = target_dict['ppsTimesList']
+            data_list = target_dict['ppsLeftList'] #target_dict['ppsRightList']
+            print "not implemented pps senser visualization"
+            sys.exit()
 
-                # distance
-                new_data_list = []
-                for d in data_list:
-                    new_data_list.append( np.linalg.norm(d, axis=0) )
-                data_list = new_data_list
+        if 'fabric' in modality:
+            time_list = target_dict['fabricTimesList']
+            data_list = target_dict['fabricCenterList']
+            print "not implemented pps senser visualization"
+            sys.exit()
+            
 
-            combined_time_list = []
-            for t in time_list:
-                temp = np.array(t[1:])-np.array(t[:-1])
-                combined_time_list += ([0.0]  + list(temp) )
-                
-            print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list),\
-              np.max(combined_time_list), len(combined_time_list)            
+        combined_time_list = []
+        for t in time_list:
+            temp = np.array(t[1:])-np.array(t[:-1])
+            combined_time_list += ([0.0]  + list(temp) )
+
+        print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list),\
+          np.max(combined_time_list), len(combined_time_list)            
 
 
-            ax = fig.add_subplot(nPlot*100+10+count)
-            ## ax.plot(combined_time_list, label=modality)
+        ax = fig.add_subplot(nPlot*100+10+count)
+        ## ax.plot(combined_time_list, label=modality)
 
-            for i in xrange(len(time_list)):
-
-                if len(time_list[i]) > len(data_list[i]):
-                    ax.plot(time_list[i][:len(data_list[i])], data_list[i])
-                else:
-                    ax.plot(time_list[i], data_list[i][:len(time_list[i])])
-                            
-    else:
-        
-        count    = 0
+        for i in xrange(len(time_list)):
+            if len(time_list[i]) > len(data_list[i]):
+                ax.plot(time_list[i][:len(data_list[i])], data_list[i])
+            else:
+                ax.plot(time_list[i], data_list[i][:len(time_list[i])])
                 
             
     if save_pdf is False:
