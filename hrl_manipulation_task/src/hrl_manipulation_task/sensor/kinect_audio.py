@@ -130,7 +130,7 @@ class kinect_audio(threading.Thread):
                 ##     self.src_feature_cen[i]
                 if len(self.src_feature[i].featuredata) < 1: return
 
-                self.time    = time_stamp.to_sec() - self.init_time
+                self.time    = time_stamp.to_sec() #- self.init_time
                 self.power   = self.src_feature[i].power #float32
                 self.azimuth = self.src_feature[i].azimuth + self.base_azimuth #float32
                 self.length  = self.src_feature[i].length
@@ -200,29 +200,29 @@ class kinect_audio(threading.Thread):
             self.head_joints  = msg.actual.positions
             self.base_azimuth = self.head_joints[0] * 180.0/np.pi
             
-    def run(self):
-        """Overloaded Thread.run, runs the update
-        method once per every xx milliseconds."""
+    ## def run(self):
+    ##     """Overloaded Thread.run, runs the update
+    ##     method once per every xx milliseconds."""
         
-        while not self.cancelled:
-            if self.isReset:
-                self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
+    ##     while not self.cancelled:
+    ##         if self.isReset:
+    ##             self.time_data.append(rospy.get_rostime().to_sec() - self.init_time)
 
-                with self.src_feature_lock:                
-                    if self.audio_feature is None: self.audio_feature = self.feature
-                    else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
-                    self.audio_power.append(self.power)
-                    self.audio_azimuth.append(self.azimuth+self.base_azimuth)
-                    self.audio_head_joints = self.head_joints
+    ##             with self.src_feature_lock:                
+    ##                 if self.audio_feature is None: self.audio_feature = self.feature
+    ##                 else: self.audio_feature = np.hstack([ self.audio_feature, self.feature ])
+    ##                 self.audio_power.append(self.power)
+    ##                 self.audio_azimuth.append(self.azimuth+self.base_azimuth)
+    ##                 self.audio_head_joints = self.head_joints
 
-                with self.recog_cmd_lock:                    
-                    self.audio_cmd.append(self.recog_cmd)
+    ##             with self.recog_cmd_lock:                    
+    ##                 self.audio_cmd.append(self.recog_cmd)
 
         
-    def cancel(self):
-        """End this timer thread"""
-        self.cancelled = True
-        self.isReset = False
+    ## def cancel(self):
+    ##     """End this timer thread"""
+    ##     self.cancelled = True
+    ##     self.isReset = False
 
 
     def reset(self, init_time):

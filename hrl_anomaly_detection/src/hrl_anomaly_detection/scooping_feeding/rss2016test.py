@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-matplotlib.use('Agg')
+## matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -712,25 +712,29 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
             data_list = target_dict['fabricCenterList']
             print "not implemented pps senser visualization"
             sys.exit()
+
             
-
-        combined_time_list = []
-        for t in time_list:
-            temp = np.array(t[1:])-np.array(t[:-1])
-            combined_time_list += ([0.0]  + list(temp) )
-
-        print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list),\
-          np.max(combined_time_list), len(combined_time_list)            
-
-
         ax = fig.add_subplot(nPlot*100+10+count)
-        ## ax.plot(combined_time_list, label=modality)
 
-        for i in xrange(len(time_list)):
-            if len(time_list[i]) > len(data_list[i]):
-                ax.plot(time_list[i][:len(data_list[i])], data_list[i])
-            else:
-                ax.plot(time_list[i], data_list[i][:len(time_list[i])])
+        if raw_viz:
+            combined_time_list = []
+            for t in time_list:
+                temp = np.array(t[1:])-np.array(t[:-1])
+                combined_time_list += ([0.0]  + list(temp) )
+
+            print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list),\
+              np.max(combined_time_list), len(combined_time_list)            
+            ## ax.plot(combined_time_list, label=modality)
+
+            for i in xrange(len(time_list)):
+                if len(time_list[i]) > len(data_list[i]):
+                    ax.plot(time_list[i][:len(data_list[i])], data_list[i])
+                else:
+                    ax.plot(time_list[i], data_list[i][:len(time_list[i])])
+        else:
+            for i in xrange(len(data_list)):
+                for j in xrange(len(data_list[i])):
+                    ax.scatter([j], data_list[i][j])
                 
             
     if save_pdf is False:

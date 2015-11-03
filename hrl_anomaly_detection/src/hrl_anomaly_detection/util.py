@@ -40,9 +40,9 @@ import hrl_lib.quaternion as qt
 from scipy import interpolate
 from sklearn.decomposition import PCA
 
-## import matplotlib
+import matplotlib
 ## matplotlib.use('pdf')
-## import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 ## import data_viz
 
 def extrapolateData(data, maxsize):
@@ -85,18 +85,19 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
 
         if verbose: print fileName
         d = ut.load_pickle(fileName)        
+        init_time = d['init_time']
 
         max_time = 0
         for key in d.keys():
             if 'time' in key and 'init' not in key:
                 feature_time = d[key]
-                if max_time < feature_time[-1]: max_time = feature_time[-1]
+                if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
         new_times = np.linspace(0.01, max_time, downSampleSize)
         data_dict['timesList'].append(new_times)
 
         # sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
-            audio_time    = d['audio_time']
+            audio_time    = (np.array(d['audio_time']) - init_time).tolist()
             audio_azimuth = d['audio_azimuth']
             audio_power   = d['audio_power']
 
@@ -104,20 +105,18 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             raw_data_dict['audioAzimuthList'].append(audio_azimuth)
             raw_data_dict['audioPowerList'].append(audio_power)
 
-            interp = interpolate.splrep(audio_time, audio_azimuth, s=0)
-            data_dict['audioAzimuthList'].append(interpolate.splev(new_times, interp, der=0))
+            data_dict['audioAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
+            data_dict['audioPowerList'].append(interpolationData(audio_time, audio_power, new_times))
 
-            interp = interpolate.splrep(audio_time, audio_power, s=0)
-            data_dict['audioPowerList'].append(interpolate.splev(new_times, interp, der=0))
-            
+
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
-            kin_time = d['kinematics_time']
-            kin_ee_pos  = d['kinematics_ee_pos'] # 3xN
-            kin_ee_quat = d['kinematics_ee_quat'] # ?xN
+            kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
+            kin_ee_pos      = d['kinematics_ee_pos'] # 3xN
+            kin_ee_quat     = d['kinematics_ee_quat'] # ?xN
             kin_target_pos  = d['kinematics_target_pos']
             kin_target_quat = d['kinematics_target_quat']
-            kin_jnt_pos  = d['kinematics_jnt_pos'] # 7xN
+            kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
 
             raw_data_dict['kinTimesList'].append(kin_time)
             raw_data_dict['kinEEPosList'].append(kin_ee_pos)
@@ -126,25 +125,16 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             raw_data_dict['kinTargetQuatList'].append(kin_target_quat)
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
                     
-            ee_pos_array = interpolationData(kin_time, kin_ee_pos, new_times)
-            data_dict['kinEEPosList'].append(ee_pos_array)                                         
-
-            ee_quat_array = interpolationQuatData(kin_time, kin_ee_quat, new_times)
-            data_dict['kinEEQuatList'].append(ee_quat_array)                                         
-
-            target_pos_array = interpolationData(kin_time, kin_target_pos, new_times)
-            data_dict['kinTargetPosList'].append(target_pos_array)                                         
-
-            target_quat_array = interpolationQuatData(kin_time, kin_target_quat, new_times)
-            data_dict['kinTargetQuatList'].append(target_quat_array)                                         
-
-            jnt_pos_array = interpolationData(kin_time, kin_jnt_pos, new_times)
-            data_dict['kinJntPosList'].append(jnt_pos_array)                                         
-
+            data_dict['kinEEPosList'].append(interpolationData(kin_time, kin_ee_pos, new_times))
+            data_dict['kinEEQuatList'].append(interpolationData(kin_time, kin_ee_quat, new_times))
+            data_dict['kinTargetPosList'].append(interpolationData(kin_time, kin_target_pos, new_times))
+            data_dict['kinTargetQuatList'].append(interpolationData(kin_time, kin_target_quat, new_times))
+            data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
+            
 
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
-            ft_time        = d['ft_time']
+            ft_time        = (np.array(d['ft_time']) - init_time).tolist()
             ft_force_array = d['ft_force']
 
             raw_data_dict['ftTimesList'].append(ft_time)
@@ -156,7 +146,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
                     
         # vision ---------------------------------------------------------------
         if 'vision_time' in d.keys():
-            vision_time = d['vision_time']
+            vision_time = (np.array(d['vision_time']) - init_time).tolist()
             vision_pos  = d['vision_pos']
             vision_quat = d['vision_quat']
 
@@ -173,7 +163,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
 
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
-            pps_skin_time  = d['pps_skin_time']
+            pps_skin_time  = (np.array(d['pps_skin_time']) - init_time).tolist()
             pps_skin_left  = d['pps_skin_left']
             pps_skin_right = d['pps_skin_right']
 
@@ -189,7 +179,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
 
         # fabric skin ------------------------------------------------------------------
         if 'fabric_skin_time' in d.keys():
-            fabric_skin_time      = d['fabric_skin_time']
+            fabric_skin_time      = (np.array(d['fabric_skin_time']) - init_time).tolist()
             fabric_skin_centers_x = d['fabric_skin_centers_x']
             fabric_skin_centers_y = d['fabric_skin_centers_y']
             fabric_skin_centers_z = d['fabric_skin_centers_z']
@@ -211,10 +201,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             raw_data_dict['fabricValueList'].append([fabric_skin_values_x,\
                                                      fabric_skin_values_y,\
                                                      fabric_skin_values_z])
-
+                                                     
             # skin interpolation
             center_array, normal_array, value_array \
-              = interpolationSkinData(fabric_skin_time, raw_data_dict['fabricCenterList'][-1],\
+              = interpolationSkinData(fabric_skin_time, \
+                                      raw_data_dict['fabricCenterList'][-1],\
                                       raw_data_dict['fabricNormalList'][-1],\
                                       raw_data_dict['fabricValueList'][-1], new_times )
                 
@@ -285,9 +276,24 @@ def interpolationData(time_array, data_array, new_time_array):
 
     from scipy import interpolate
 
+    if len(np.shape(data_array)) == 1: data_array = np.array([data_array])
+
     n,m = np.shape(data_array)
     if len(time_array) > m:
         time_array = time_array[0:m]
+
+    print np.shape(data_array), np.shape(time_array)
+
+    # remove repeated data
+    temp_time_array = [time_array[0]]
+    temp_data_array = data_array[:,0:1]
+    for i in xrange(1, len(time_array)):
+        if time_array[i-1] != time_array[i]:
+            temp_time_array.append(time_array[i])
+            temp_data_array = np.hstack([temp_data_array, data_array[:,i:i+1]])
+
+    time_array = temp_time_array
+    data_array = temp_data_array
 
     new_data_array = None    
     for i in xrange(n):
@@ -345,42 +351,47 @@ def interpolationSkinData(time_array, center_array, normal_array, value_array, n
     l     = len(time_array)
     new_l = len(new_time_array)
 
-    idx_list = np.linspace(0, l-1, new_l)
+    if l == 0 or len(center_array[0]) == 0: return [],[],[]
+
+    if len(np.array(center_array[0]).flatten()) == 0: return [],[],[]
+
+    idx_list = np.linspace(0, l-2, new_l)
     for idx in idx_list:
         w1 = idx-int(idx)
         w2 = 1.0 - w1
 
         idx1 = int(idx)
         idx2 = int(idx)+1
-        
-        c1 = center_array[idx1]
-        c2 = center_array[idx2]
-        n1 = normal_array[idx1]
-        n2 = normal_array[idx2]
-        v1 = value_array[idx1]
-        v2 = value_array[idx2]
 
-        print c1
-        if c1[0] == []:
+        c1 = np.array(center_array)[:,idx1]
+        c2 = np.array(center_array)[:,idx2]
+        n1 = np.array(normal_array)[:,idx1]
+        n2 = np.array(normal_array)[:,idx2]
+        v1 = np.array(value_array)[:,idx1]
+        v2 = np.array(value_array)[:,idx2]      
 
+        if c1[0] == []:            
             if c2[0] == []:
                 c = []
                 n = []
                 v = []
             else:
-                c = c2 #w2*np.array(c2)
-                n = n2 #w2*np.array(n2)
-                v = v2 #w2*np.array(v2)
+                c = c2.tolist() #w2*np.array(c2)
+                n = n2.tolist() #w2*np.array(n2)
+                v = v2.tolist() #w2*np.array(v2)
         else:
-
             if c2[0] == []:
-                c = c1 #w1*np.array(c1)
-                n = n1 #w1*np.array(n1)
-                v = v1 #w1*np.array(v1)
+                c = c1.tolist() #w1*np.array(c1)
+                n = n1.tolist() #w1*np.array(n1)
+                v = v1.tolist() #w1*np.array(v1)
             else:
-                c1 = np.array(c1)
-                c2 = np.array(c2)
-
+                c1 = np.array(c1.tolist())
+                c2 = np.array(c2.tolist())
+                n1 = np.array(n1.tolist())
+                n2 = np.array(n2.tolist())
+                v1 = np.array(v1.tolist())
+                v2 = np.array(v2.tolist())
+                
                 c = None
                 n = None
                 v = None
@@ -388,41 +399,41 @@ def interpolationSkinData(time_array, center_array, normal_array, value_array, n
                 for i in xrange(len(c1[0])):
                     close_idx = None
                     for j in xrange(len(c2[0])):
-                        if np.linalg.norm(c1[:,i] - c2[:,j]) < threshold:
+                        if np.linalg.norm(c1[:,i] - c2[:,j]) < ths:
                             close_idx = j
                             close_idxes.append(j)
                             break
 
                     if close_idx is None:                        
                         if c is None:
-                            c = c1[:,i]
-                            n = n1[:,i]
-                            v = v1[:,i]
+                            c = c1[:,i:i+1]
+                            n = n1[:,i:i+1]
+                            v = v1[:,i:i+1]
                         else:
-                            c = np.hstack([c, c1[:,i]])
-                            n = np.hstack([n, n1[:,i]])
-                            v = np.hstack([v, v1[:,i]])
+                            c = np.hstack([c, c1[:,i:i+1]])
+                            n = np.hstack([n, n1[:,i:i+1]])
+                            v = np.hstack([v, v1[:,i:i+1]])
                     else:
                         if c is None:                        
-                            c = w1*c1[:,i] + w2*c2[:,close_idx]
-                            n = w1*n1[:,i] + w2*n2[:,close_idx]
-                            v = w1*v1[:,i] + w2*v2[:,close_idx]
+                            c = w1*c1[:,i:i+1] + w2*c2[:,close_idx:close_idx+1]
+                            n = w1*n1[:,i:i+1] + w2*n2[:,close_idx:close_idx+1]
+                            v = w1*v1[:,i:i+1] + w2*v2[:,close_idx:close_idx+1]
                         else:
-                            c = np.hstack([c, w1*c1[:,i] + w2*c2[:,close_idx]])
-                            n = np.hstack([n, w1*n1[:,i] + w2*n2[:,close_idx]])
-                            v = np.hstack([v, w1*v1[:,i] + w2*v2[:,close_idx]])
+                            c = np.hstack([c, w1*c1[:,i:i+1] + w2*c2[:,close_idx:close_idx+1]])
+                            n = np.hstack([n, w1*n1[:,i:i+1] + w2*n2[:,close_idx:close_idx+1]])
+                            v = np.hstack([v, w1*v1[:,i:i+1] + w2*v2[:,close_idx:close_idx+1]])
 
                 if len(close_idxes) < len(c2[0]):
                     for i in xrange(len(c2[0])):
                         if i not in close_idxes:
                             if c is None:
-                                c = c2[:,i]
-                                n = n2[:,i]
-                                v = v2[:,i]
+                                c = c2[:,i:i+1]
+                                n = n2[:,i:i+1]
+                                v = v2[:,i:i+1]
                             else:
-                                c = np.hstack([c, c2[:,i]])
-                                n = np.hstack([n, n2[:,i]])
-                                v = np.hstack([v, v2[:,i]])
+                                c = np.hstack([c, c2[:,i:i+1]])
+                                n = np.hstack([n, n2[:,i:i+1]])
+                                v = np.hstack([v, v2[:,i:i+1]])
                           
                 c = c.tolist()
                 n = n.tolist()

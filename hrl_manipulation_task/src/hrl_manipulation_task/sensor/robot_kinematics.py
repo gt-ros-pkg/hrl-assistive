@@ -193,7 +193,7 @@ class robot_kinematics(threading.Thread):
 
         self.lock.acquire()
         
-        self.time                = time_stamp.to_sec() - self.init_time
+        self.time                = time_stamp.to_sec() #- self.init_time
         self.main_jnt_positions  = np.array([main_positions]).T
         self.main_jnt_velocities = np.array([main_velocities]).T
         self.main_jnt_efforts    = np.array([main_efforts]).T

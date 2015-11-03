@@ -48,7 +48,7 @@ from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneR
 from sensor.kinect_audio import kinect_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
-from sensor.artag_vision import artag_vision
+## from sensor.artag_vision import artag_vision
 from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 
@@ -101,18 +101,21 @@ class logger:
         self.data = {}
         self.data['init_time'] = self.init_time
 
-        ## # logging by callback
+        ## ## Reset time
         ## if self.audio is not None:
-        ##     self.audio.reset(self.init_time)
-        ##     self.audio.enable_log = True
+        ##     self.audio.reset(self.init_time)            
+        ##     ## self.audio.enable_log = True # logging by callback
         ## if self.kinematics is not None:
         ##     self.kinematics.reset(self.init_time)
-        ##     self.kinematics.enable_log = True
-            
+        ##     ## self.kinematics.enable_log = True # logging by callback            
         ## if self.ft is not None:
+        ##     self.ft.reset(self.init_time)
         ## if self.vision is not None:
+        ##     self.vision.reset(self.init_time)
         ## if self.pps_skin is not None:
+        ##     self.pps_skin.reset(self.init_time)
         ## if self.fabric_skin is not None:
+        ##     self.fabric_skin.reset(self.init_time)
 
         # logging by thread
         self.enable_log_thread = True
@@ -420,7 +423,7 @@ class logger:
                     self.data['fabric_skin_values_x'].append(self.fabric_skin.values_x)
                     self.data['fabric_skin_values_y'].append(self.fabric_skin.values_y)
                     self.data['fabric_skin_values_z'].append(self.fabric_skin.values_z)
-
+                    
             if self.enable_log_thread == False: break
             rate.sleep()
         
