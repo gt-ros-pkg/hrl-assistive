@@ -43,7 +43,7 @@ import actionlib
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath 
-from hrl_srvs.srv import None_Bool, None_BoolResponse, Int_Int, String_String
+from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -190,10 +190,10 @@ class armReachAction(mpcBaseAction):
         rospy.loginfo("Parameters are loaded.")
 
     def serverCallback(self, req):
-        req = req.data
+        task = req.data
         self.stop_motion = False
 
-        if req == "getBowlPos":
+        if task == "getBowlPos":
             if self.bowl_frame_kinect is not None:
                 self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)
                 return "Chose kinect bowl position"
@@ -203,22 +203,22 @@ class armReachAction(mpcBaseAction):
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
-        elif req == "getHeadPos":
+        elif task == "getHeadPos":
             if self.mouth_frame_kinect is not None:
                 self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
                 return "Chose kinect head position"
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
-        elif req == "lookAtBowl":
+        elif task == "lookAtBowl":
             self.lookAt(self.bowl_frame)
             return "Completed to move head"
-        elif req == "lookAtMouth":
+        elif task == "lookAtMouth":
             self.lookAt(self.mouth_frame, tag_base='head')                            
             return "Completed to move head"
         else:
-            self.parsingMovements(self.motions[req][self.arm])
-            return "Completed to execute "+req 
+            self.parsingMovements(self.motions[task][self.arm])
+            return "Completed to execute "+task 
         
                 
     def bowlPoseCallback(self, data):
