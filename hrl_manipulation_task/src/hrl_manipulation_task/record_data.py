@@ -420,8 +420,7 @@ class logger:
                     self.data['fabric_skin_values_x'].append(self.fabric_skin.values_x)
                     self.data['fabric_skin_values_y'].append(self.fabric_skin.values_y)
                     self.data['fabric_skin_values_z'].append(self.fabric_skin.values_z)
-                    
-                                                             
+
             if self.enable_log_thread == False: break
             rate.sleep()
         
@@ -435,7 +434,7 @@ if __name__ == '__main__':
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=False,\
+    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=True,\
                  subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
