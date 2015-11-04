@@ -509,7 +509,7 @@ class RigControl(object):
         ax1.set_xlabel('Time (s)')
         ax1.set_ylabel('Position (m)')
         ax1.set_title(''.join(['Position vs Time for: ', label, ' type']))
-        ax1.set_xlim(-0.5, 17)
+        ax1.set_xlim(0.0, 14)
         ax1.set_ylim(0, .86)
         X1 = my_data[:, 0]
         Y1 = my_data[:, 1]
@@ -614,16 +614,16 @@ if __name__ == "__main__":
 
     # '''
     output_classification = ['missed', 'good', 'caught_fist', 'caught_other']
-    label = output_classification[0]
+    label = output_classification[1]
     # force_file_list = os.listdir(''.join([self.data_path, '/',subject, '/auto_labeled/', vel_folder, '/', result, '/']))
-    for i in xrange(4):
+    for i in xrange(4, 5):
 
         save_number = i
         vel = 0.1
         file_name = ''.join([data_path, '/', subject, '/time_warped_auto/', str(vel),'mps/', label, '/force_profile_', str(save_number), '.pkl'])
-        rc.load_and_plot(file_name, label)
+        # rc.load_and_plot(file_name, label)
         vel = 0.15
-        file_name = ''.join([data_path, '/', subject, '/time_warped_auto/', str(vel),'mps/', label, '/force_profile_', str(save_number), '.pkl'])
+        file_name = ''.join([data_path, '/', subject, '/auto_labeled/', str(vel),'mps/', label, '/force_profile_', str(save_number), '.pkl'])
         rc.load_and_plot(file_name, label)
     plt.show()
     # '''

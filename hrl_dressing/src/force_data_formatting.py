@@ -6,6 +6,7 @@ from geometry_msgs.msg import WrenchStamped
 from std_msgs.msg import Bool
 import numpy as np
 import os.path
+import copy
 
 roslib.load_manifest('hrl_dressing')
 roslib.load_manifest('zenither')
@@ -37,6 +38,7 @@ class ForceDataFormatting(object):
         arm_length = rosparam.get_param('crook_to_fist')
         fist_length = arm_length - rosparam.get_param('crook_to_wrist')
         print 'Fist length: ', fist_length, ' cm'
+        position_of_initial_contact = (44.0 - arm_length)/100.
         position_profile = load_pickle(''.join([self.data_path, '/position_profiles/position_combined_0_1mps.pkl']))
         vel = 0.1
         ft_threshold_was_exceeded = False
@@ -98,6 +100,8 @@ class ForceDataFormatting(object):
                         print 'There is no saved position profile for this velocity! Something has gone wrong!'
                         return None
 
+
+
                     ft_threshold_was_exceeded = False
                     current_data = np.array([map(float,line.strip().split()) for line in open(''.join([self.data_path, '/', subject, '/', str(vel), 'mps/height', str(ind_j), '/ft_sleeve_', str(load_num), '.log']))])
                     del_index = []
@@ -107,6 +111,7 @@ class ForceDataFormatting(object):
                     current_data = np.delete(current_data, del_index, 0)
                     position_of_stop = 0.
                     del_index = []
+                    time_of_initial_contact = None
                     for num, j in enumerate(current_data):
                         j[2] = -j[2]
                         j[3] = -j[3]
@@ -122,6 +127,7 @@ class ForceDataFormatting(object):
                                     position_of_stop = position_profile[k, 1] + \
                                                        (position_profile[k+1, 1] - position_profile[k, 1]) * \
                                                        (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
+                            j[1] = new_position
                         elif ft_threshold_was_exceeded:
                             del_index.append(num)
                             # j[1] = position_of_stop
@@ -134,13 +140,35 @@ class ForceDataFormatting(object):
                             j[1] = new_position
                             if abs(new_position - position_of_stop) < 0.0005 and new_position > 0.8:
                                 del_index.append(num)
+                            elif new_position < position_of_initial_contact:
+                                del_index.append(num)
+                            else:
+                                if time_of_initial_contact is None:
+                                    time_of_initial_contact = j[0]
                             position_of_stop = new_position
+                            # if num > 8 and 0.05 < new_position < 0.4 and position_of_initial_contact is None:
+                            #     prev_f_x_average = np.mean(current_data[num-7:num,2])
+                            #     curr_f_x_average = np.mean(current_data[num-6:num+1,2])
+                            #     prev_f_z_average = np.mean(current_data[num-7:num,4])
+                            #     curr_f_z_average = np.mean(current_data[num-6:num+1,4])
+                            #     if curr_f_x_average < -0.08 and curr_f_x_average < prev_f_x_average and curr_f_z_average < prev_f_z_average and curr_f_z_average < -0.03:
+                            #         position_of_initial_contact = copy.copy(new_position)
 
-
+                    # if position_of_initial_contact is None:
+                    #     print 'Position of initial contact was not detected for ', subject, ' and trial ', ind_j, 'at height ', ind_i
+                    #     position_of_initial_contact = 0.
+                    #     # return
+                    # else:
+                    #     print 'Position of initial contact is: ', position_of_initial_contact
+                    # current_data = np.delete(current_data, del_index, 0)
+                    # del_index = []
+                    # for i in xrange(len(current_data)):
+                    #     if current_data[i, 1] < position_of_initial_contact:
+                    #         del_index.append(i)
                     current_data = np.delete(current_data, del_index, 0)
                     output_data = []
                     for item in current_data:
-                        output_data.append([item[0]-3.0, item[1], item[2], item[3], item[4]])
+                        output_data.append([item[0]-time_of_initial_contact, item[1]-position_of_initial_contact, item[2], item[3], item[4]])
                     output_data = np.array(output_data)
                     print 'This trial failed at: ', position_of_stop
                     this_label = None
@@ -167,6 +195,13 @@ class ForceDataFormatting(object):
         # print subject
         # print result
         print 'Now editing files to insert position data and storing them in labeled folders.'
+        paramlist = rosparam.load_file(''.join([self.data_path, '/', subject, '/params.yaml']))
+        for params, ns in paramlist:
+            rosparam.upload_params(ns, params)
+        arm_length = rosparam.get_param('crook_to_fist')
+        fist_length = arm_length - rosparam.get_param('crook_to_wrist')
+        print 'Fist length: ', fist_length, ' cm'
+        position_of_initial_contact = (44.0 - arm_length)/100.
         position_profile = None
         for ind_i in xrange(len(result)):
             for ind_j in xrange(len(result[0])):
@@ -201,7 +236,9 @@ class ForceDataFormatting(object):
                         if current_data[k][0] < 5.0:
                             del_index.append(k)
                     current_data = np.delete(current_data, del_index, 0)
-
+                    position_of_stop = 0.
+                    del_index = []
+                    time_of_initial_contact = None
 
                     # current_data = load_pickle(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
 
@@ -218,13 +255,14 @@ class ForceDataFormatting(object):
                         # if j[0] < 0.5:
                         #     j[1] = 0
                         if np.max(np.abs(j[2:5])) > 10. and not ft_threshold_was_exceeded:
-                            # time_of_stop = j[0]
+                            time_of_stop = j[0]
                             ft_threshold_was_exceeded = True
                             for k in xrange(len(position_profile)-1):
                                 if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
                                     position_of_stop = position_profile[k, 1] + \
                                                        (position_profile[k+1, 1] - position_profile[k, 1]) * \
                                                        (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
+                            j[1] = new_position
                         elif ft_threshold_was_exceeded:
                             del_index.append(num)
                             # j[1] = position_of_stop
@@ -237,13 +275,18 @@ class ForceDataFormatting(object):
                             j[1] = new_position
                             if abs(new_position - position_of_stop) < 0.0005 and new_position > 0.8:
                                 del_index.append(num)
+                            elif new_position < position_of_initial_contact:
+                                del_index.append(num)
+                            else:
+                                if time_of_initial_contact is None:
+                                    time_of_initial_contact = j[0]
                             position_of_stop = new_position
                     # if result[ind_i][ind_j] == 'good'
 
                     current_data = np.delete(current_data, del_index, 0)
                     output_data = []
                     for item in current_data:
-                        output_data.append([item[0]-3.0, item[1], item[2], item[3], item[4]])
+                        output_data.append([item[0]-time_of_initial_contact, item[1]-position_of_initial_contact, item[2], item[3], item[4]])
                     output_data = np.array(output_data)
                     save_number = 0
                     save_file = ''.join([self.data_path, '/', subject, '/formatted/', str(vel), 'mps/', result[ind_i][ind_j], '/force_profile_', str(save_number), '.pkl'])
@@ -308,7 +351,7 @@ if __name__ == "__main__":
 
     fdf = ForceDataFormatting()
 
-    for this_subject in subject_options[7:8]:
+    for this_subject in subject_options[0:9]:
 
         if this_subject == 'subject0':
             this_result = [[label[0], label[1], label[2], label[3]],
@@ -414,9 +457,8 @@ if __name__ == "__main__":
                            [label[0], label[1], label[2], label[3]],
                            [label[0], label[2], label[2], label[3]]]
 
-
-        # fdf.set_position_data_from_saved_movement_profile(this_subject, this_result)
-        # fdf.autolabel_and_set_position(this_subject, this_result)
+        fdf.set_position_data_from_saved_movement_profile(this_subject, this_result)
+        fdf.autolabel_and_set_position(this_subject, this_result)
         fdf.create_time_warped_data(this_subject)
 
 

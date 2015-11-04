@@ -5,7 +5,7 @@ import matplotlib
 import numpy as np
 import matplotlib.pyplot as pp
 import scipy as scp
-import roslib; roslib.load_manifest('sandbox_tapo_darpa_m3')
+import roslib; roslib.load_manifest('hrl_dressing')
 import rospy
 import hrl_lib.util as ut
 import hrl_lib.matplotlib_util as mpu
@@ -17,7 +17,7 @@ import ghmmwrapper
 import random
 
 import sys
-sys.path.insert(0, '/home/tapo/svn/robot1_data/usr/tapo/data_code/dressing/')
+sys.path.insert(0, '/home/ari/svn/robot1_data/usr/tapo/data_code/dressing/')
 from data_organizer import Fmat_original
 
 class HMM_Model:
