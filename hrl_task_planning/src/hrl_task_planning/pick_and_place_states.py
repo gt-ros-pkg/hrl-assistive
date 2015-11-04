@@ -104,11 +104,13 @@ class MoveArmState(smach.State):
             except:
                 print "TF ERROR"
                 return 'aborted'
+        goal_pose.pose.position.z += 0.1
+        goal_pose.pose.orientation = Quaternion(0.0, 0.0, 0.38, 0.925);
 
         # Try to get into position autonomously
-#        self.mpc_pub.publish(goal_pose)
+        self.mpc_pub.publish(goal_pose)
         # Wait to get into position one way or another...
-        while not self.is_near(self.current_pose, goal_pose, threshold=0.18):
+        while not self.is_near(self.current_pose, goal_pose, threshold=0.1):
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
