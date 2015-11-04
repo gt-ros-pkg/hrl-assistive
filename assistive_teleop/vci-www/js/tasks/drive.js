@@ -11,6 +11,7 @@ RFH.Drive = function (options) {
     var baseOffset = options.baseOffset || [0.0, 0.35]; //Half-width of PR2 Base [x - front/back, y-left/right]
     self.buttonText = 'Drive';
     self.buttonClass = 'drive-button';
+    self.toolTipText = "Drive the robot";
     var timer = null;
     var spinTimer = null;
     var lines = {'left':null, 'center':null, 'right':null};
@@ -272,8 +273,8 @@ RFH.Drive = function (options) {
             moveToStop(newStop);
         }
     };
-    $('.drive-look.left').on('click.rfh', toLeft);
-    $('.drive-look.right').on('click.rfh', toRight);
+    $('.drive-look.left').on('click.rfh', toLeft).prop('title', 'Turn head left one step.');
+    $('.drive-look.right').on('click.rfh', toRight).prop('title', 'Turn head right one step.');
 
     var getNearestStop = function () {
         var currentPan = head.getState()[0];
@@ -355,6 +356,7 @@ RFH.Drive = function (options) {
         lines.right.attr({'transform':'r0', 'display':'none'});
         lines.center.attr({'display':'none'});
     });
+    $('.turn-signal.left').prop('title', 'Rotate left\n(in place)');
 
     $('.turn-signal.right').on('mouseenter', function (event) {
         self.cmd = {'x':0, 'y':0, 'theta':-0.1*Math.PI};
@@ -387,6 +389,7 @@ RFH.Drive = function (options) {
         lines.right.attr({'transform':'r0', 'display':'none'});
         lines.center.attr({'display':'none'});
     });
+    $('.turn-signal.right').prop('title', 'Rotate right\n(in place)');
 
     self.start = function () {           
         // everything i can think of to not get stuck driving...

@@ -16,7 +16,7 @@ RFH.TaskMenu = function (divId) {
             label.htmlFor = taskObject.buttonText;
             self.div.append(checkbox, label);
             $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
-            $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item');
+            $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item').prop('title', taskObject.toolTipText);
             $('#'+taskObject.buttonText).on('click.rfh', 
                                             function(event){
                                                 self.buttonCB(taskObject);

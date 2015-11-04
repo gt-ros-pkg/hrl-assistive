@@ -18,8 +18,8 @@ RFH.GripperDisplay = function (options) {
     self.show = function () { $div.show(); };
     self.hide = function () { $div.hide(); };
     self.hide(); // Hide on init
-
     $grabButton.on('click', function () { gripper.grab(); });
+    $grabButton.prop('title', 'Carefully close the gripper to grasp and object');
 
     var releaseOnContactCB = function (event) {
         if ($releaseButton.prop('checked')) {
@@ -29,7 +29,8 @@ RFH.GripperDisplay = function (options) {
         }
     };
     $releaseButton.on('click', releaseOnContactCB );
-   
+    $('label[for='+$releaseButton.prop('id')+']').prop('title', 'Wait until contact, then let go'); 
+
     var updateReleaseOnContact = function (msg) {
         if (!msg.data) {
            $releaseButton.prop('checked', false).button('refresh'); 
@@ -39,6 +40,7 @@ RFH.GripperDisplay = function (options) {
 
     // Set up slider display
     $gripperSlider.css({"background":"rgba(50,50,50,0.72)" });
+    $gripperSlider.prop('title', 'Open or close the gripper');
     $gripperSlider.find('.ui-slider-range').css({"background":"rgba(22,22,22,0.9)",
                                                  "text-align":"center"}).html("Gripper");
     $gripperSlider.find('.ui-slider-handle').css({"height":"160%",

@@ -6,6 +6,7 @@ RFH.CartesianEEControl = function (options) {
     self.name = options.name || self.side[0]+'EECartTask';
     var divId = options.div || 'video-main';
     self.buttonText = self.side[0] === 'r' ? 'Right_Hand' : 'Left_Hand';
+    self.toolTipText = "Control the %side arm and hand".replace('%side', self.side);
     self.buttonClass = 'hand-button';
     self.$div = $('#'+divId);
     self.gripper = options.gripper;
@@ -44,8 +45,10 @@ RFH.CartesianEEControl = function (options) {
     var updatePickPlaceButton = function (graspingMsg) {
         if (graspingMsg.data) {
             self.$pickAndPlaceButton.text("Set Down");
+            self.$pickAndPlaceButton.prop('title', 'Guided process for placing the currently held object');
         } else {
             self.$pickAndPlaceButton.text("Pick Up");
+            self.$pickAndPlaceButton.prop('title', 'Guided process for picking up and moving an object');
         }
     };
     self.gripper.graspingCBList.push(updatePickPlaceButton);
@@ -538,6 +541,11 @@ RFH.CartesianEEControl = function (options) {
 
     $('#'+self.side[0]+'-posrot-pos').on('click.rfh', self.setPositionCtrls);
     $('#'+self.side[0]+'-posrot-rot').on('click.rfh', self.setRotationCtrls);
+    $('label[for='+self.side[0]+'-posrot-pos').prop('title', "Adjust the position of the fingertips");
+    $('label[for='+self.side[0]+'-posrot-rot').prop('title', "Adjust the rotation of hand,\nrotating about the fingertips");
+    $("#ctrl-ring").prop('title', 'Move hand in any direction, parallel to the floor');
+    $("#away-button").prop('title', 'Move hand straight down');
+    $("#toward-button").prop('title', 'Move hand straight up');
 
     /// TASK START/STOP ROUTINES ///
     self.start = function () {

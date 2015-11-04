@@ -90,6 +90,7 @@ h4.drive-ctrl {
     position: absolute;
     bottom:10%;
     text-align:center;
+    pointer-events:none;
 }
 
 .turn-signal.right {
