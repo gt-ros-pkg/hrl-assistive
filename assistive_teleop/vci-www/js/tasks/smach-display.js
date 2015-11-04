@@ -70,10 +70,13 @@ RFH.Smach = function(options) {
         if (!self.smach_tasks[status_msg.path].interfaceTasks) return; // Wait until we know the interface task data
         if (self.activeState !== status_msg.active_states[0]) {
             self.activeState = status_msg.active_states[0]; // There can be only one...
-            var idx = self.smach_tasks[status_msg.path].steps.indexOf(self.activeState);
-            if (self.activeState.indexOf('FINAL') >= 0 ) {
-                self.display.empty();
+            if (self.activeState[0] === '_') {
+                if (self.activeState.indexOf('FINAL') >= 0 ||
+                    self.activeState.indexOf('CLEANUP') >= 0) {
+                    self.display.empty();
+                }
             } else {
+                var idx = self.smach_tasks[status_msg.path].steps.indexOf(self.activeState);
                 self.display.setActive(idx);
                 RFH.taskMenu.startTask(self.smach_tasks[status_msg.path].interfaceTasks[idx]); // Start corresponding task
             }
@@ -93,10 +96,12 @@ RFH.Smach = function(options) {
         var interfaceTasks = self.getInterfaceTasks(msg.domain, actions);
         var taskLabels = self.getTaskLabels(msg.domain, actions);
         self.display.displaySmachStates(taskLabels);
+        self.display.hide();
         if (!self.smach_tasks[msg.problem]) {
             self.smach_tasks[msg.problem] = {};
         }
         self.smach_tasks[msg.problem].domain = msg.domain;
+        self.smach_tasks[msg.problem].labels = taskLabels;
         self.smach_tasks[msg.problem].actions = actions;
         self.smach_tasks[msg.problem].states = msg.states;
         self.smach_tasks[msg.problem].interfaceTasks = interfaceTasks;
@@ -153,8 +158,13 @@ RFH.SmachDisplay = function(options) {
     var ros = options.ros;
     self.$container = options.container;
 
+    self.hide = function () {
+        self.$container.hide();
+    };
+
     self.empty = function () {
         self.$container.empty();
+        self.$container.hide();
     };
 
     self.displaySmachStates = function(stringList) {
@@ -171,6 +181,7 @@ RFH.SmachDisplay = function(options) {
     };
 
     self.setActive = function(idx) {
+        self.$container.show();
         if (idx > self.$container.find('.smach-state').length) { 
             self.empty();
             return;

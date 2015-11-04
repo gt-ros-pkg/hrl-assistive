@@ -1,10 +1,8 @@
 import math
-import numpy as np
 import rospy
 from std_msgs.msg import Bool
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Quaternion
 from tf import TransformListener
-from tf import transformations as tft
 import smach
 
 # pylint: disable=W0102
@@ -16,12 +14,12 @@ def _pose_stamped_to_dict(ps_msg):
     return {'header':
             {'seq': ps_msg.header.seq,
                 'stamp': {'secs': ps_msg.header.stamp.secs,
-                        'nsecs': ps_msg.header.stamp.nsecs},
+                          'nsecs': ps_msg.header.stamp.nsecs},
                 'frame_id': ps_msg.header.frame_id},
             'pose':
             {'position': {'x': ps_msg.pose.position.x,
-                            'y': ps_msg.pose.position.y,
-                            'z': ps_msg.pose.position.z},
+                          'y': ps_msg.pose.position.y,
+                          'z': ps_msg.pose.position.z},
                 'orientation': {'x': ps_msg.pose.orientation.x,
                                 'y': ps_msg.pose.orientation.y,
                                 'z': ps_msg.pose.orientation.z,
@@ -104,11 +102,12 @@ class MoveArmState(smach.State):
             except:
                 print "TF ERROR"
                 return 'aborted'
-        goal_pose.pose.position.z += 0.1
-        goal_pose.pose.orientation = Quaternion(0.0, 0.0, 0.38, 0.925);
+        if not self.is_near(self.current_pose, goal_pose, threshold=0.1):
+            goal_pose.pose.position.z += 0.1
+            goal_pose.pose.orientation = Quaternion(0.0, 0.0, 0.38, 0.925)
+            self.mpc_pub.publish(goal_pose)
 
         # Try to get into position autonomously
-        self.mpc_pub.publish(goal_pose)
         # Wait to get into position one way or another...
         while not self.is_near(self.current_pose, goal_pose, threshold=0.1):
             if self.preempt_requested():
