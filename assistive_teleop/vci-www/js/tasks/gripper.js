@@ -18,8 +18,8 @@ RFH.GripperDisplay = function (options) {
     self.show = function () { $div.show(); };
     self.hide = function () { $div.hide(); };
     self.hide(); // Hide on init
-    $grabButton.on('click', function () { gripper.grab(); });
-    $grabButton.prop('title', 'Carefully close the gripper to grasp and object');
+//    $grabButton.on('click', function () { gripper.grab(); });
+ //   $grabButton.prop('title', 'Carefully close the gripper to grasp and object');
 
     var releaseOnContactCB = function (event) {
         if ($releaseButton.prop('checked')) {
@@ -39,10 +39,15 @@ RFH.GripperDisplay = function (options) {
     gripper.graspingCBList.push(updateReleaseOnContact);
 
     // Set up slider display
-    $gripperSlider.css({"background":"rgba(50,50,50,0.72)" });
-    $gripperSlider.prop('title', 'Open or close the gripper');
+    $gripperSlider.css({"background":"rgba(50,50,50,0.72)" })
+                  .prop('title', 'Open the gripper');
+//                  .on('click.release', function (event) { gripper.open(); } );
     $gripperSlider.find('.ui-slider-range').css({"background":"rgba(22,22,22,0.9)",
-                                                 "text-align":"center"}).html("Gripper");
+                                                 "text-align":"center"})
+                                           .html("Gripper")
+                                           .prop('title', 'Carefully close the gripper to grasp and object');
+                                        //   .on('click.grasp', function(event) { gripper.grab(); })
+
     $gripperSlider.find('.ui-slider-handle').css({"height":"160%",
                                                   "top":"-30%",
                                                   "width":handleWidthPct.toString()+"%",
@@ -60,7 +65,13 @@ RFH.GripperDisplay = function (options) {
     var stopCB = function (event, ui) {
         var values = $gripperSlider.slider("option", "values");
         var diff = values[1]-values[0];
-        gripper.setPosition(diff - (handleWidthPct/100)*range);
+        var newPos = diff - (handleWidthPct/100)*range;
+        var currPos = gripper.getState();
+        if (newPos > currPos + 0.01) { // Add 1cm buffer so we don't react to noise or indecisive commands, only clear instructions
+            gripper.open();
+        } else  if (newPos < currPos - 0.01) {
+            gripper.grab();
+        }
     };
     $gripperSlider.off("slidestop").on("slidestop.rfh", stopCB);
 

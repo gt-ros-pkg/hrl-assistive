@@ -62,6 +62,10 @@ var PR2GripperSensor = function (options) {
         messageType: 'pr2_controllers_msgs/JointControllerState'
     });
 
+    self.getState = function () {
+        return state;
+    };
+
     var setState = function (msg) {
         state = msg.process_value;
     };
@@ -99,6 +103,24 @@ var PR2GripperSensor = function (options) {
     self.close = function () {
         self.setPosition(-0.001);
     };
+    // Open Position Param
+    var positionOpenParam = new ROSLIB.Param({
+        ros: ros,
+        name: self.side[0]+'_gripper_sensor_controller/position_open'
+    });
+
+    // Reload params service
+    var reloadParamsClient = new ROSLIB.Service({
+        ros: ros,
+        name: self.side[0]+'_gripper_sensor_controller/reload_params',
+        serviceType: 'std_srvs/Empty'
+    });
+
+    self.reloadParams = function (cb) {
+        cb = cb || function (ret) {};
+        var req = new ROSLIB.ServiceRequest({});
+        reloadParamsClient.callService(req, cb);
+    };
 
     // Grab action
     var graspActionClient = new ROSLIB.ActionClient({
@@ -107,15 +129,20 @@ var PR2GripperSensor = function (options) {
         actionName: 'pr2_gripper_sensor_msgs/PR2GripperGrabAction'
     });
 
-    ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');
-    self.grab = function (hardness_gain) {
+    var sendGraspMsg = function () {
         var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');
-        msg.command.hardness_gain = hardness_gain || 0.03; // Default value recommended from msg def file
+        msg.command.hardness_gain = 0.03; // Default value recommended from msg def file
         var goal = new ROSLIB.Goal({
             actionClient: graspActionClient,
             goalMessage: msg
         });
         goal.send();
+    };
+
+    ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');
+    self.grab = function () {
+        positionOpenParam.set(state);
+        self.reloadParams(sendGraspMsg);
     };
 
     // Release action
@@ -127,6 +154,8 @@ var PR2GripperSensor = function (options) {
 
     ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
     self.releaseOnContact = function () {
+        positionOpenParam.set(0.09);
+        self.reloadParams(); // Don't enforce a callback, because the open action shouldn't take palce immediately.  It's a race condition we should always win.
         var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
         msg.command.event.trigger_conditions = 2; // Slip OR finger contact OR accelerometer
         msg.command.event.acceleration_trigger_magnitude = 4.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
