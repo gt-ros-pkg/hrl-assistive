@@ -8,7 +8,7 @@ import smach
 SPA = ["succeeded", "preempted", "aborted"]
 
 
-def get_action_state(plan_step):
+def get_action_state(plan_step, domain, problem):
     if plan_step.name == 'PICK':
         def outcome_cb(outcomes):
             if 'aborted' in outcomes.itervalues():
@@ -32,16 +32,17 @@ def get_action_state(plan_step):
 
     elif plan_step.name == 'PLACE':
         def outcome_cb(outcomes):
-            if 'aborted' in outcomes.itervalues():
-                return 'aborted'
+            print "Place cbs:", outcomes
             if 'succeeded' in outcomes.itervalues():
                 return'succeeded'
+            if all([result == 'aborted' for result in outcomes.itervalues()]):
+                return 'aborted'
             return 'preempted'
 
         concurrence = smach.Concurrence(outcomes=SPA,
                                         default_outcome='aborted',
                                         input_keys=['grasp_side'],
-                                        child_termination_cb=lambda so: True,
+                                        child_termination_cb=lambda so: False,
                                         outcome_cb=outcome_cb)
 
         release_state_left = WaitForReleaseState("/grasping/left_gripper", side="left", outcomes=SPA, input_keys=['grasp_side'])
@@ -67,7 +68,8 @@ class IDLocationState(smach.State):
         self.sub = rospy.Subscriber(topic, PoseStamped, self.pose_cb)
 
     def pose_cb(self, ps_msg):
-        self.pose = ps_msg
+        if self.running:
+            self.pose = ps_msg
 
     @staticmethod
     def _pose_stamped_to_dict(ps_msg):

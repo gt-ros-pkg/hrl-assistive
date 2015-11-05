@@ -1,21 +1,22 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(assistive_teleop)
-find_package(catkin REQUIRED COMPONENTS geometry_msgs std_msgs message_generation rospy tf image_rotate pr2_msgs pr2_controllers_msgs control_msgs pr2_common_action_msgs topic_tools sound_play pixel_2_3d rosbridge_server web_video_server)
+find_package(catkin REQUIRED COMPONENTS geometry_msgs std_msgs message_generation rospy tf image_rotate pr2_msgs pr2_controllers_msgs control_msgs pr2_common_action_msgs topic_tools sound_play pixel_2_3d rosbridge_server web_video_server trajectory_msgs moveit_msgs)
 
 catkin_python_setup()
 
 add_service_files(
   DIRECTORY srv
   FILES LookatIk.srv
+  FILES MoveItPlan.srv
 )
 
 generate_messages(
-    DEPENDENCIES geometry_msgs std_msgs
+    DEPENDENCIES moveit_msgs geometry_msgs std_msgs 
 )
 
 catkin_package(
     DEPENDS 
-    CATKIN_DEPENDS rospy tf std_msgs geometry_msgs image_rotate pr2_msgs pr2_controllers_msgs control_msgs pr2_common_action_msgs topic_tools sound_play pixel_2_3d rosbridge_server web_video_server message_runtime
+    CATKIN_DEPENDS rospy tf std_msgs geometry_msgs trajectory_msgs image_rotate pr2_msgs pr2_controllers_msgs control_msgs pr2_common_action_msgs topic_tools sound_play pixel_2_3d rosbridge_server web_video_server message_runtime moveit_msgs
     INCLUDE_DIRS
     LIBRARIES
 )
@@ -28,6 +29,8 @@ catkin_install_python(PROGRAMS
     scripts/lookat_ik
     scripts/ik_move
     scripts/speech_intermediary
+    scripts/moveit_relay
+    scripts/smach_status_relay
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/

@@ -2,6 +2,10 @@
     display:none; /*Initialize hidden*/
 }
 
+h4.drive-ctrl {
+    margin-top:0em;
+}
+
 .drive-look {
     position: absolute;
     bottom:0%;
@@ -57,14 +61,14 @@
     position:absolute;
     bottom:0px;
     height:13%;
-    border: 2px solid rgba(0,188,212,0.35);
+    border: 2px solid rgba(0,188,212,0.55);
     border-bottom:none;
-    background-color: rgba(0,188,212,0.1);
+    background-color: rgba(0,188,212,0.3);
 }
 
 .turn-signal:hover{
-    background-color: rgba(0,188,212,0.35);
-    border: 2px solid rgba(0,188,212,0.5);
+    background-color: rgba(0,188,212,0.6);
+    border: 2px solid rgba(0,188,212,0.45);
     border-bottom:none;
 }
 
@@ -78,6 +82,15 @@
     left:calc(8% + 2px);
     width:21%;
     border-top-right-radius:1em;
+}
+
+.turn-signal > span.label {
+    font-size:1.3em;
+    width:100%;
+    position: absolute;
+    bottom:10%;
+    text-align:center;
+    pointer-events:none;
 }
 
 .turn-signal.right {

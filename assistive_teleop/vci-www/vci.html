@@ -38,6 +38,9 @@
   <script type="text/javascript" src="js/tasks/ee_rotation.js"></script>
   <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
   <script type="text/javascript" src="js/tasks/move-object.js"></script>
+  <script type="text/javascript" src="js/tasks/pick-and-place.js"></script>
+  <script type="text/javascript" src="js/tasks/id-location.js"></script>
+  <script type="text/javascript" src="js/tasks/smach-display.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
 
   <script type="text/javascript" src="js/video/mjpeg_client.js"></script>
@@ -49,8 +52,10 @@
   <link type="text/css" href="css/drive.css" rel="stylesheet" />
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
+  <link type="text/css" href="css/gripper.css" rel="stylesheet" />
   <link type="text/css" href="css/focus.css" rel="stylesheet" />
   <link type="text/css" href="css/undo.css" rel="stylesheet" />
+  <link type="text/css" href="css/smach.css" rel="stylesheet" />
   
 </head>
 
@@ -78,22 +83,45 @@
         <h3>Controls</h3>
         <!-- Driving Controls -->
         <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
+        <h4 class="drive-ctrl" style="display:none">Click on video to drive.</h4>
 
-        <!-- Shared Arm Controls -->
+        <!-- Shared Arm Controls
         <div id="ee-mode-set" class="arm-ctrl" style="display:none">
             <input class="menu-item" id="ee-mode-table" type="radio" name="ee-mode-radio" checked="checked">
             <label for="ee-mode-table">Table</label>
-<!--            <input class="menu-item" id="ee-mode-wall" type="radio" name="ee-mode-radio">
+            <input class="menu-item" id="ee-mode-wall" type="radio" name="ee-mode-radio">
             <label for="ee-mode-wall">Wall</label>
             <input class="menu-item" id="ee-mode-free" type="radio" name="ee-mode-radio">
-            <label for="ee-mode-free">Free</label>-->
-        </div>
-        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
-        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>
+            <label for="ee-mode-free">Free</label>
+        </div>-->
+<!--        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
+        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>-->
 <!--        <input type="checkbox" id="select-focus-toggle"/>
         <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
         <button id="wristCW" style="display:none">CW</button>
         <button id="wristCCW" style="display:none">CCW</button>-->
+
+        <!-- Right Arm Controls -->
+        <div class="pick-and-place r-arm-ctrl" style="display:none"></div>
+        <div id="r-posrot-set" class="r-arm-ctrl posrot-set" style="display:none">
+            <h4>Position/Rotation</h4>
+            <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
+            <label for="r-posrot-pos">Hand Position</label>
+            <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
+            <label for="r-posrot-rot">Wrist Rotation</label>
+        </div>
+
+        <!-- Left Arm Controls -->
+        <div class="pick-and-place l-arm-ctrl" style="display:none"></div>
+        <div id="l-posrot-set" class="l-arm-ctrl posrot-set" style="display:none">
+            <h4>Position/Rotation</h4>
+            <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
+            <label for="l-posrot-pos">Hand Position</label>
+            <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
+            <label for="l-posrot-rot">Wrist Rotation</label>
+        </div>
+
+        <!-- Step size controls -->
         <div id="speedOptions" class="arm-ctrl">
             <h4>Step Size</h4>
             <div id="speedOptions-buttons">
@@ -109,26 +137,11 @@
               </form>
             </div>
         </div>
-
-        <!-- Right Arm Controls -->
-        <div id="r-posrot-set" class="r-arm-ctrl" style="display:none">
-            <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
-            <label for="r-posrot-pos">Position</label>
-            <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
-            <label for="r-posrot-rot">Rotation</label>
-        </div>
-
-        <!-- Left Arm Controls -->
-        <div id="l-posrot-set" class="l-arm-ctrl" style="display:none">
-            <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
-            <label for="l-posrot-pos">Position</label>
-            <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
-            <label for="l-posrot-rot">Rotation</label>
-        </div>
      </div>
  </div>
  <div id='video-main'>
      <img id="mjpeg-image"></img>
+     <div id="smach-container"></div>
      <!-- Divs for selecting eyeballs for looking task -->
      <div class="map-look top left cursor-eyes-up-left"></div>
      <div class="map-look top center cursor-eyes-up"></div>
@@ -145,8 +158,8 @@
      </svg>-->
      <div class="drive-ctrl drive-look left"></div>
      <div class="drive-ctrl drive-look right"></div>
-     <div class="drive-ctrl turn-signal left"></div>
-     <div class="drive-ctrl turn-signal right"></div>
+     <div class="drive-ctrl turn-signal left"><span class="label">Turn Left</span></div>
+     <div class="drive-ctrl turn-signal right"><span class="label">Turn Right</span></div>
      <!-- divs for torso controls -->
      <img id="tallIcon" src="./css/icons/tall.png"></img>
      <img id="shortIcon" src="./css/icons/short.png"></img>
@@ -159,14 +172,31 @@
      <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
          <!--<div class="slider"></div>-->
          <div id="ctrl-ring" class="default">
-             <div class="arrow left default"></div>
-             <div class="arrow right default"></div>
-             <div class="arrow up default"></div>
-             <div class="arrow down default"></div>
+             <div class="arrow n big"></div>
+             <div class="arrow ne small"></div>
+             <div class="arrow e"></div>
+             <div class="arrow se small"></div>
+             <div class="arrow s"></div>
+             <div class="arrow sw small"></div>
+             <div class="arrow w "></div>
+             <div class="arrow nw small"></div>
          </div>
          <div class="center"></div>
          <div id="away-button"></div>
          <div id="toward-button"></div>
+     </div>
+     <!-- divs for gripper controls -->
+     <div id='rGripperCtrlContainer' class='gripper-ctrl-cont r-arm-ctrl'>
+        <div class="gripper-slider"></div>
+<!--        <div class="grab">Grab</div>-->
+        <input type="checkbox" class="release" id="release-right"/>
+        <label for="release-right">Release on contact</label>
+     </div>
+     <div id='lGripperCtrlContainer' class='gripper-ctrl-cont l-arm-ctrl'>
+        <div class="gripper-slider"></div>
+        <input type="checkbox" class="release" id="release-left"/>
+        <label for="release-left">Release on contact</label>
+<!--        <div class="grab">Grab</div>-->
      </div>
  </div>
 

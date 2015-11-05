@@ -3,12 +3,12 @@ RFH.MjpegClient = function (options) {
     var self = this;
     options = options || {};
     self.imageTopic = options.imageTopic;
-    self.divId = options.divId;
-    self.imageId = options.imageId || self.divId + '-image';
+    self.$div = $('#'+options.divId);
+    var imageId = options.imageId || self.$div.attr('id') + '-image';
+    self.$imageDiv = $('#'+ imageId);
     self.server = "http://"+options.host+":"+options.port;
-    self.activeParams = {'quality': options.quality || 65,
-                         'topic': options.imageTopic,
-                         'type': options.type || 'mjpeg'};
+    self.activeParams = {'topic': options.imageTopic,
+                         'quality': options.quality || 50};
 
     self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
                                                infoTopic: options.infoTopic,
@@ -16,12 +16,12 @@ RFH.MjpegClient = function (options) {
                                                tfClient: options.tfClient});
     self.refreshSize = function (resizeEvent) {
         if (!self.cameraModel.has_data) {
-            $('#'+self.divId).html("Waiting on camera information.");
+            self.$div.append("Waiting on camera information.");
             return false;
         }
         var camRatio = self.cameraModel.width/self.cameraModel.height;
-        var contWidth = $('body').width() - $('#'+self.divId).offset().left;
-        var contHeight = $('body').height() - $('#'+self.divId).offset().top;
+        var contWidth = $('body').width() - self.$div.offset().left;
+        var contHeight = $('body').height() - self.$div.offset().top;
         var contRatio = contWidth/contHeight;
         if (contRatio > camRatio) {
             var width  = contHeight * camRatio;
@@ -43,11 +43,10 @@ RFH.MjpegClient = function (options) {
         {
             srcStr += param + '=' + self.activeParams[param] + '&';
         }
-        $("#"+self.imageId).attr("src", srcStr);
+        self.$imageDiv.attr("src", srcStr);
         console.log("Video Request: ", srcStr);
-//        $("#"+self.divID).width(self.activeParams['width'])
-        $("#"+self.imageID).width(self.activeParams.width)
-                           .height(self.activeParams.height);
+        self.$imageDiv.width(self.activeParams.width)
+                      .height(self.activeParams.height);
     };
 
     self.int_params = ['height', 'width', 'quality'];
@@ -240,13 +239,13 @@ var initMjpegCanvas = function (divId) {
     "use strict";
 //    $('#'+divId).off('click'); //Disable click detection so clickable_element catches it
     RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                                     imageTopic: '/head_mount_kinect/rgb/image',
-                                     infoTopic: '/head_mount_kinect/rgb/camera_info',
+                                     imageTopic: '/head_mount_kinect/rgb_lowres/image',
+                                     infoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
                                      divId: 'video-main',
                                      imageId: 'mjpeg-image',
                                      host: RFH.ROBOT,
                                      port: 8080,
-                                     quality: 20,
+                                     quality: 60,
                                      tfClient:RFH.tfClient});
     RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
     RFH.mjpeg.cameraModel.updateCameraInfo();

@@ -30,7 +30,6 @@ body {
 #main-menu h3 {
     display: block;
     font-size: 1.6em;
-    ;
     width: 100%;
     text-align: center;
     margin: 0px;
@@ -43,7 +42,7 @@ body {
     margin: 2px 0.5%;
 }
 .menu-item span.ui-button-text {
-    padding: 0.4em 0.4em;
+    padding: 0.5em 0.0em;
 }
 #video-main {
     overflow: hidden;
@@ -58,8 +57,9 @@ body {
     width: 100%;
     height: 100%;
 }
-
-
+.cursor-wait {
+    cursor: wait !important;
+}
 #controls {
     display: inline-block;
     height: 60%;

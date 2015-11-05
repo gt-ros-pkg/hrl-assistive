@@ -1,9 +1,12 @@
 #undo {
-    height:100%;
+    height:90%;
     width:100px;
     position:relative;
     display: inline-block;
-    top:0%;
+    top:1%;
     left:0%;
-    background-color: rgba(249,120,25,0.87);
+}
+
+#undo p {
+    margin: 0.3em; 0em;
 }

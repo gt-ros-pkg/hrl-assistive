@@ -7,13 +7,18 @@ RFH.Torso = function (options) {
     self.torso = options.torso; 
     self.buttonText = 'Spine';
     self.buttonClass = 'spine-button';
+    self.toolTipText = "Raise or lower the spine";
+    $('#tallIcon').prop('title', "Raise the Spine");
+    $('#shortIcon').prop('title', "Lower the Spine");
 
     self.icons = $('#tallIcon, #shortIcon');
-    self.slider = $('#'+self.sliderDiv).slider({min: 0.011, max: 0.325,
-                             step: 0.01, orientation: 'vertical'})
-                          .on("slidestop.rfh", function (event, ui){
-                               self.torso.setPosition($('#'+self.sliderDiv).slider("value")); } 
-    );
+    self.slider = $('#'+self.sliderDiv).slider({min: 0.011,
+                                                max: 0.325,
+                                                step: 0.01,
+                                                orientation: 'vertical'})
+                                        .on("slidestop.rfh", function (event, ui){
+                                           self.torso.setPosition($('#'+self.sliderDiv).slider("value")); } 
+                                        ).prop('title', "Raise or Lower the Spine");
 
     self.start = function () {
         self.slider.show();
