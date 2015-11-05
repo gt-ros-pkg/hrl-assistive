@@ -171,7 +171,7 @@ class kinect_audio(threading.Thread):
                 src_id = 0
 
                 self.time    = time_stamp.to_sec() - self.init_time
-                self.power   = self.src_feature[i].power #float32
+                self.power   = self.src_feature[i].power if self.src_feature[i].power<50 else self.power
                 self.azimuth = self.src_feature[i].azimuth+self.base_azimuth #float32
                 ## self.length  = self.src_feature[i].length
                 ## self.feature = np.array([self.src_feature[i].featuredata]).T #float32 list

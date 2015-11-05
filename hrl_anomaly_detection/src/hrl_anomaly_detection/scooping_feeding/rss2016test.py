@@ -52,6 +52,9 @@ import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
 
 
+import itertools
+colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k'])
+shapes = itertools.cycle(['x','v', 'o', '+'])
 
 
 def preprocessData(subject_names, task_name, raw_data_path, processed_data_path, nSet=1, \
@@ -77,13 +80,13 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
     # loading and time-sync
     _, data_dict = loadData(success_list, isTrainingData=False, downSampleSize=downSampleSize)
     
-    data_min = {}
-    data_max = {}
-    for key in data_dict.keys():
-        if 'time' in key: continue
-        if data_dict[key] == []: continue
-        data_min[key] = np.min(data_dict[key])        
-        data_max[key] = np.max(data_dict[key])
+    ## data_min = {}
+    ## data_max = {}
+    ## for key in data_dict.keys():
+    ##     if 'time' in key: continue
+    ##     if data_dict[key] == []: continue
+    ##     data_min[key] = np.min(data_dict[key])        
+    ##     data_max[key] = np.max(data_dict[key])
         
     for i in xrange(nSet):
 
@@ -640,8 +643,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
               raw_viz=False, interp_viz=False, save_pdf=False, \
               ## trainingData=True, normalTestData=False, abnormalTestData=False,\
-              modality_list=['kinEEPosList', 'audioPowerList'], data_renew=False):    
-
+              modality_list=['audio'], data_renew=False):    
 
     success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
     
@@ -659,10 +661,11 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     ##     print "There is no saved data"
     ##     sys.exit()
     ## data_dict = ut.load_pickle(target_file)
-    count    = 0
-    nPlot = len(modality_list)
+    count       = 0
+    nPlot       = len(modality_list)
+    time_lim    = [0, 16]
     
-    fig = plt.figure()
+    fig = plt.figure('all')
 
     for modality in modality_list:
         count +=1
@@ -703,38 +706,82 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
         if 'pps' in modality:
             time_list = target_dict['ppsTimesList']
-            data_list = target_dict['ppsLeftList'] #target_dict['ppsRightList']
-            print "not implemented pps senser visualization"
-            sys.exit()
+            data_list1 = target_dict['ppsLeftList']
+            data_list2 = target_dict['ppsRightList']
+
+            # magnitude
+            new_data_list = []
+            for i in xrange(len(data_list1)):
+                d1 = np.array(data_list1[i])
+                d2 = np.array(data_list2[i])
+                d = np.vstack([d1, d2])
+                new_data_list.append( np.linalg.norm(d, axis=0) )
+
+            data_list = new_data_list
 
         if 'fabric' in modality:
             time_list = target_dict['fabricTimesList']
             data_list = target_dict['fabricCenterList']
-            print "not implemented pps senser visualization"
-            sys.exit()
+
+            # magnitude
+            new_data_list = []
+            for d in data_list:
+                
+                sample = []
+                if len(d) != 0:
+                    for i in xrange(len(d[0])):
+                        if d[0][i] == []:
+                            sample.append( 0 )
+                        else:
+                            s = np.array([d[0][i:i+1], d[1][i:i+1], d[2][i:i+1]])
+                            v = np.mean(np.linalg.norm(s, axis=0))
+                            sample.append(v)
+                new_data_list.append(sample)
+            data_list = new_data_list
+
+            ## fig_fabric = plt.figure('fabric')
+            ## ax_fabric = fig_fabric.add_subplot(111) #, projection='3d')
+            ## for d in data_list:
+            ##     color = colors.next()
+            ##     for i in xrange(len(d[0])):
+            ##         if d[0][i] == []: continue
+            ##         ax_fabric.scatter(d[1][i], d[0][i], c=color)
+            ##         ## ax_fabric.scatter(d[0][i], d[1][i], d[2][i])
+            ## ax_fabric.set_xlabel('x')
+            ## ax_fabric.set_ylabel('y')
+            ## ## ax_fabric.set_zlabel('z')
+            ## if save_pdf is False:
+            ##     plt.show()
+            ## else:
+            ##     fig_fabric.savefig('test_fabric.pdf')
+            ##     fig_fabric.savefig('test_fabric.png')
+            ##     os.system('mv test*.p* ~/Dropbox/HRL/')
 
             
         ax = fig.add_subplot(nPlot*100+10+count)
 
         if raw_viz:
             combined_time_list = []
-            for t in time_list:
-                temp = np.array(t[1:])-np.array(t[:-1])
-                combined_time_list += ([0.0]  + list(temp) )
 
-            print modality, " : ", np.mean(combined_time_list), np.std(combined_time_list),\
-              np.max(combined_time_list), len(combined_time_list)            
-            ## ax.plot(combined_time_list, label=modality)
+            ## for t in time_list:
+            ##     temp = np.array(t[1:])-np.array(t[:-1])
+            ##     combined_time_list.append([ [0.0]  + list(temp)] )
+            ##     print modality, " : ", np.mean(temp), np.std(temp), np.max(temp)
+            ##     ## ax.plot(temp, label=modality)
 
             for i in xrange(len(time_list)):
                 if len(time_list[i]) > len(data_list[i]):
                     ax.plot(time_list[i][:len(data_list[i])], data_list[i])
                 else:
-                    ax.plot(time_list[i], data_list[i][:len(time_list[i])])
+                    ax.plot(time_list[i], data_list[i][:len(time_list[i])])                    
         else:
+            interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
             for i in xrange(len(data_list)):
-                for j in xrange(len(data_list[i])):
-                    ax.scatter([j], data_list[i][j])
+                ax.plot(interp_time, data_list[i])                
+                ## for j in xrange(len(data_list[i])):
+                ##     ax.scatter([j], data_list[i][j])
+                    
+        ax.set_xlim(time_lim)
                 
             
     if save_pdf is False:
@@ -765,6 +812,98 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     ##                        abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
     
             
+
+def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
+             nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
+             save_pdf=False, \
+             feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
+
+    success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+    
+    # loading and time-sync    
+    all_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_all')
+    _, all_data_dict = loadData(success_list+failure_list, isTrainingData=False,
+                                downSampleSize=downSampleSize,\
+                                renew=data_renew, save_pkl=all_data_pkl)
+    
+    success_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_success')
+    _, success_data_dict = loadData(success_list, isTrainingData=True,
+                                    downSampleSize=downSampleSize,\
+                                    renew=data_renew, save_pkl=success_data_pkl)
+
+    failure_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_failure')
+    _, failure_data_dict = loadData(failure_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    renew=data_renew, save_pkl=failure_data_pkl)
+
+    # data set
+    _, param_dict       = extractLocalFeature(all_data_dict, feature_list, local_range, \
+                                              rf_center=rf_center)                                              
+    trainingData, _     = extractLocalFeature(success_data_dict, feature_list, local_range, \
+                                              rf_center=rf_center, param_dict=param_dict)
+    abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, local_range, \
+                                              rf_center=rf_center, param_dict=param_dict)
+
+                                              
+    trainingData     = np.array(trainingData)
+    abnormalTestData = np.array(abnormalTestData)
+
+    nDim, nSample, _ = np.shape(trainingData)
+    fig = plt.figure()
+    for i in xrange(nDim):
+        ax  = fig.add_subplot(nDim*100+10+i+1)
+        ax.plot(trainingData[i,:,:].T, 'b')
+        ax.plot(abnormalTestData[i,:,:].T, 'r')
+        ax.set_ylim([-0.1, 1.1])
+        
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
+
+    
+    m,n,k = np.shape(trainingData)
+    data_array = None
+    for i in xrange(n):
+        for j in xrange(k):
+            if data_array is None: data_array = trainingData[:,i,j]
+            else: data_array = np.vstack([data_array, trainingData[:,i,j]])
+
+    ml = PCA(n_components=2)
+    ml.fit(data_array)
+
+    fig = plt.figure()
+    for i in xrange(n):
+        data_array = None
+        for j in xrange(k):
+            if data_array is None: data_array = trainingData[:,i,j]
+            else: data_array = np.vstack([data_array, trainingData[:,i,j]])
+
+        res = ml.transform(data_array)
+        color = colors.next()
+        plt.scatter(res[:,0], res[:,1], c=color)
+
+
+    m,n,k = np.shape(abnormalTestData)
+    data_array = None
+    for i in xrange(n):
+        for j in xrange(k):
+            if data_array is None: data_array = abnormalTestData[:,i,j]
+            else: data_array = np.vstack([data_array, abnormalTestData[:,i,j]])
+
+        res = ml.transform(data_array)
+        color = colors.next()
+        plt.scatter(res[:,0], res[:,1], c='k', marker='x')
+        
+    if save_pdf:
+        fig.savefig('test_pca.pdf')
+        fig.savefig('test_pca.png')
+        os.system('cp test_pca.p* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
+
 
 def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None, save_pdf=False):
 
@@ -809,8 +948,6 @@ def visualization_raw_data(data_dict, modality='ft', save_pdf=False):
     for key in data_dict[data_key].keys():
 
         if not('Pos' in key): continue
-        
-        print "key: ", key
         
         dataList = data_dict[data_key][key]
         fileList = data_dict[file_key]
@@ -884,6 +1021,8 @@ if __name__ == '__main__':
                  default=False, help='Plot raw data.')
     p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
                  default=False, help='Plot raw data.')
+    p.add_option('--pca', action='store_true', dest='bPCAPlot',
+                 default=False, help='Plot pca result.')
     
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
@@ -909,13 +1048,12 @@ if __name__ == '__main__':
     ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagRelativeDist', \
     ##                 'crossmodal_artagRelativeAng']
     
-
     # Dectection TEST 
-    nSet         = 1
-    local_range  = 0.25    
-    viz          = False
-    renew        = False
-    downSampleSize=100
+    nSet           = 1
+    local_range    = 0.25    
+    viz            = False
+    renew          = False
+    downSampleSize = 100
 
     if opt.bLikelihoodPlot:
         nState    = 15
@@ -930,13 +1068,31 @@ if __name__ == '__main__':
                               
     elif opt.bRawDataPlot or opt.bInterpDataPlot:
         target_data_set = 0
-        modality_list   = ['kinematics', 'audio']
+        modality_list   = ['kinematics', 'audio', 'fabric', 'pps']
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,
                   modality_list=modality_list, data_renew=opt.bDataRenew)
-                              
+
+    elif opt.bPCAPlot:
+        target_data_set = 0
+        local_range    = 0.3    
+        ## rf_center    = 'kinEEPos'
+        rf_center    = 'l_forearm_link'
+        feature_list = ['unimodal_ppsForce',\
+                        'unimodal_audioPower',\
+                        'unimodal_fabricForce',\
+                        'crossmodal_targetRelativeDist', \
+                        'crossmodal_targetRelativeAng']
+        
+        pca_plot([subject], task, raw_data_path, save_data_path, rf_center, \
+                  nSet=target_data_set, downSampleSize=downSampleSize, \
+                  save_pdf=opt.bSavePdf,
+                  feature_list=feature_list, data_renew=opt.bDataRenew)
+
+        
+        
     else:
         nState         = 10
         cov_mult       = 5.0       

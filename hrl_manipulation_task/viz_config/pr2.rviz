@@ -600,7 +600,7 @@ Visualization Manager:
       Marker Topic: /pr2_fabric_gripper_right_link_sensor/viz/taxel_array_array
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -608,7 +608,7 @@ Visualization Manager:
       Marker Topic: /pr2_fabric_gripper_right_link_sensor/viz/taxel_array_text_array
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -683,22 +683,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.0743
+      Distance: 4.50018
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.149244
-        Y: 0.209652
-        Z: 0.634723
+        X: 0.106958
+        Y: 0.587076
+        Z: 0.626718
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.430398
+      Pitch: 0.440398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.94858
+      Yaw: 5.78358
     Saved: ~
 Window Geometry:
   Displays:
@@ -716,5 +716,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1615
-  X: 55
-  Y: -14
+  X: 65
+  Y: 24

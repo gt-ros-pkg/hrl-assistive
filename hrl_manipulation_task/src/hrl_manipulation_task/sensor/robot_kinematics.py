@@ -257,7 +257,7 @@ class robot_kinematics(threading.Thread):
         p = PyKDL.Vector(mPose[0,3],mPose[1,3],mPose[2,3])
         M = PyKDL.Rotation(mPose[0,0],mPose[0,1],mPose[0,2], mPose[1,0],mPose[1,1],mPose[1,2], \
                            mPose[2,0],mPose[2,1],mPose[2,2] )
-        poseFrame = PyKDL.Frame(M,p)*self.main_offset
+        poseFrame = PyKDL.Frame(M,p)*self.sub_offset
 
         ee_pos  = np.array( [[poseFrame.p[0], poseFrame.p[1], poseFrame.p[2]]] ).T
         ee_quat = np.array( [[ poseFrame.M.GetQuaternion()[0], poseFrame.M.GetQuaternion()[1],\
