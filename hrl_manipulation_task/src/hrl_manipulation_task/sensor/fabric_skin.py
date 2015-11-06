@@ -158,7 +158,8 @@ class fabric_skin(threading.Thread):
 
     def reset(self, init_time):
         
-        self.zeroSkinHandler()
+        ## self.zeroSkinHandler()
+        ## self.zeroSkinHandler()
         
         self.init_time = init_time
         self.isReset = True
