@@ -58,8 +58,9 @@
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
 
-  <!-- Head following the hand -->
-  <node name="point_head_follow_action_node" pkg="assistive_teleop" type="point_head_follow_action" output="screen" machine="c1" />
+  <!-- Gripper Grasping State Monitors -->
+  <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" args="right" />
+  <node name="l_grasp_state_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" args="left" />
  
   <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">

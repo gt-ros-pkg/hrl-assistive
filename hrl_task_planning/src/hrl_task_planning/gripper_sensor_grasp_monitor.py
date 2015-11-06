@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import sys
+import argparse
+
 import rospy
 from std_msgs.msg import Bool
 
@@ -8,8 +11,9 @@ import pr2_gripper_sensor_msgs.msg as gsm
 
 
 class GripperSensorGraspMonitor(object):
-    def __init__(self, side):
+    def __init__(self, side, fully_closed_dist):
         self.side = side
+        self.fully_closed_dist = fully_closed_dist
         gsa_ns = '/' + self.side[0] + '_gripper_sensor_controller'
 
         self.grasping = None
@@ -24,7 +28,8 @@ class GripperSensorGraspMonitor(object):
         self.contact_state_sub = rospy.Subscriber(gsa_ns+'/contact_state', gsm.PR2GripperFindContactData, self.contact_state_cb)
 
     def gripper_state_cb(self, msg):
-        self.fully_closed = bool(msg.process_value < 0.0015)  # Gripper completely closed
+        self.fully_closed = bool(msg.process_value < self.fully_closed_dist)  # Gripper completely closed
+        self.openness = msg.process_value
 
         if abs(msg.process_value_dot) < 0.001:
             self.cannot_close = bool(msg.error > 0.001)  # Can't close to setpoint
@@ -53,20 +58,21 @@ class GripperSensorGraspMonitor(object):
             # msg += " Fully Closed "
             grasping_now = False
         elif self.opening_from_empty:
-            grasping_now = False
             # msg += " Opening "
+            grasping_now = False  # if grasping_now is None else grasping_now
         elif self.cannot_close:
             # msg += " Stuck "
-            grasping_now = True
+            grasping_now = True  # if grasping_now is None else grasping_now
         elif self.both_contact:
             # msg += " Contact "
-            grasping_now = True
+            grasping_now = True  # if grasping_now is None else grasping_now
         elif (not self.cannot_close and not self.both_contact):
             # msg += " Neither "
-            grasping_now = False
+            grasping_now = False  # if grasping_now is None else grasping_now
         else:
             return  # Nothing happening, skip ahead
 
+        # print grasping_now, msg, self.openness
         if grasping_now != self.grasping:
             if grasping_now:
                 print "%s Gripper Grasped" % self.side.capitalize()
@@ -78,10 +84,14 @@ class GripperSensorGraspMonitor(object):
 
 def main():
     rospy.init_node('gripper_sensor_grasp_detection')
-    left_monitor = GripperSensorGraspMonitor('left')
-    right_monitor = GripperSensorGraspMonitor('right')
-    rate = rospy.Rate(25)
+    parser = argparse.ArgumentParser(description="Report when a gripper grasps or releases an object")
+    parser.add_argument('side', choices=["left", "right"], help="The side of the gripper to monitor ('left' or 'right')")
+    parser.add_argument('--closed', '-c', type=float, default=0.004, help="The position at which the gripper is fully closed (m)")
+    args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
+
+    monitor = GripperSensorGraspMonitor(args.side, args.closed)
+    rospy.sleep(1.5)
+    rate = rospy.Rate(12)
     while not rospy.is_shutdown():
-        left_monitor.update_grasp_state()
-        right_monitor.update_grasp_state()
+        monitor.update_grasp_state()
         rate.sleep()
