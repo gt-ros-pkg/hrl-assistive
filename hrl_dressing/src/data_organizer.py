@@ -16,23 +16,10 @@ import os, os.path
 # Define features
 
 def feature_vector(Zt, cat):
-    dim = len(Zt)
-    vec = np.zeros([dim, 2])
-    if cat in [3, 2, 1, 0]:
-        for i in range(0, dim):
-            vec[i, 0] = random.random() * 1 + 0.0
-            vec[i, 1] = random.random() * 1 + 0.0
-            #vec[i, 2] = random.random() * 1 + 0.0
+    scalar = 1
+    temp = np.dstack([Zt[:,1], (Zt[:,4]) * scalar, (Zt[:, 2]) * scalar])[0]
 
-    temp = np.dstack([Zt[:, 4], Zt[:, 2]])[0]
-    #temp = Zt[:,2:5]
-
-    #if cat == 0:
-        #temp = temp[50:800]
-        #vec = vec[50:800]
-        #temp += vec
-
-    return abs(temp*1000)
+    return abs(temp)
 
 
 if __name__ == '__main__' or __name__ != '__main__':
@@ -42,13 +29,16 @@ if __name__ == '__main__' or __name__ != '__main__':
     velocity_list = ['0.1mps/', '0.15mps/']
 
     Fmat_original = []
+    Subject_armlength = []
 
 ## Trials
-    subject_list = range(0, 6)
+    #pp.figure(4)
+    #symbols = ['r', 'g', 'b', 'y']
+    #vel_symbols = ['+', '-']
+    subject_list = range(0, 6)+range(7, 11)
     total_trial = 0
     for i in subject_list:
-        path = data_path + 'subject' + str(i) + '/auto_labeled/'
-        # path = data_path + 'subject' + str(i) + '/formatted/'
+        path = data_path + 'subject' + str(i) + '/formatted/'
         subject_data = []
         for vel_folders in velocity_list:
             velocity_data = []
@@ -58,14 +48,20 @@ if __name__ == '__main__' or __name__ != '__main__':
                     force_file_list = os.listdir(path + vel_folders + "/" + exp + '/')
                     for f_ind in xrange(100000):
                         if 'force_profile_'+str(f_ind)+'.pkl' in force_file_list:
-                            # print path + vel_folders + "/" + exp + '/' + 'force_profile_'+str(f_ind)+'.pkl'
                             cur_data = pickle.load(open(path + vel_folders + "/" + exp + '/' + 'force_profile_'+str(f_ind)+'.pkl'))
                             force_data.append(feature_vector(cur_data, exp_list.index(exp)))
+                            #pp.plot(range(len(cur_data[:, 4])), abs(cur_data[:, 4]), symbols[exp_list.index(exp)]+vel_symbols[velocity_list.index(vel_folders)])
+                            #if velocity_list.index(vel_folders) == 0:
+                            #    pp.plot(cur_data[:, 0], abs(cur_data[:, 4]), symbols[exp_list.index(exp)]+vel_symbols[velocity_list.index(vel_folders)])
                         else:
                             break
                     velocity_data.append(force_data)
                 subject_data.append(velocity_data)
         Fmat_original.append(subject_data)
+        yaml_file = open(data_path + 'subject' + str(i) + '/params.yaml')
+        first_line = yaml_file.readline()
+        arm_length = float(first_line.split(' ')[1])
+        Subject_armlength.append(arm_length)
     # abc
 
     '''
