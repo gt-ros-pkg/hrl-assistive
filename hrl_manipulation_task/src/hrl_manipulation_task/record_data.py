@@ -94,7 +94,6 @@ class logger:
         Record data and publish raw data
         '''        
         self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
-
         
     def log_start(self):
         self.init_time = rospy.get_rostime().to_sec()
@@ -114,8 +113,8 @@ class logger:
         ##     self.vision.reset(self.init_time)
         ## if self.pps_skin is not None:
         ##     self.pps_skin.reset(self.init_time)
-        ## if self.fabric_skin is not None:
-        ##     self.fabric_skin.reset(self.init_time)
+        if self.fabric_skin is not None:
+            self.fabric_skin.reset(self.init_time)
 
         # logging by thread
         self.enable_log_thread = True

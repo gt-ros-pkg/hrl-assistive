@@ -37,6 +37,7 @@ import numpy as np
 
 # msg
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
+from std_msgs.msg import Empty
 
 class fabric_skin(threading.Thread):
 
@@ -79,6 +80,9 @@ class fabric_skin(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "fabric_skin>> Initialize pusblishers and subscribers"
+
+        self.zero_forearm_pub = rospy.Publisher('/pr2_fabric_forearm_sensor/zero_sensor', Empty)
+        self.zero_upperarm_pub = rospy.Publisher('/pr2_fabric_upperarm_sensor/zero_sensor', Empty)
 
         input_topic = '/pressure/'+self.fabric_arm+'_gripper_motor'
         rospy.Subscriber('haptic_mpc/robot_state', haptic_msgs.RobotHapticState, \
@@ -153,6 +157,9 @@ class fabric_skin(threading.Thread):
     ##     self.isReset = False
 
     def reset(self, init_time):
+        
+        self.zeroSkinHandler()
+        
         self.init_time = init_time
         self.isReset = True
 
@@ -170,4 +177,14 @@ class fabric_skin(threading.Thread):
           return False
         
         
-            
+    ## Zeroes the PR2 skin (eg, to correct for calibration errors).
+    def zeroSkinHandler(self):
+        ## self.zero_gripper_pub.publish(Empty())
+        ## self.zero_gripper_right_link_pub.publish(Empty())
+        ## self.zero_gripper_left_link_pub.publish(Empty())
+        ## self.zero_gripper_palm_pub.publish(Empty())
+        self.zero_forearm_pub.publish(Empty())
+        self.zero_upperarm_pub.publish(Empty())
+        ## self.zero_pps_left_pub.publish(Empty())
+        ## self.zero_pps_right_pub.publish(Empty())
+

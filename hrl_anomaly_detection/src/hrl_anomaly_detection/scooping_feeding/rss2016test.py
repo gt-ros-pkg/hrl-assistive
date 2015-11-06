@@ -642,148 +642,167 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
 def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
               raw_viz=False, interp_viz=False, save_pdf=False, \
+              successData=True, failureData=True,\
               ## trainingData=True, normalTestData=False, abnormalTestData=False,\
               modality_list=['audio'], data_renew=False):    
 
     success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+
+    for idx, file_list in enumerate([success_list, failure_list]):
+        if idx == 0 and successData is not True: continue
+        elif idx == 1 and failureData is not True: continue
     
-    # loading and time-sync
-    success_data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
-    raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
-                                               downSampleSize=downSampleSize,\
-                                               renew=data_renew, save_pkl=success_data_pkl)
-
-    if raw_viz: target_dict = raw_data_dict
-    else: target_dict = interp_data_dict
-            
-    ## target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
-    ## if os.path.isfile(target_file) is not True: 
-    ##     print "There is no saved data"
-    ##     sys.exit()
-    ## data_dict = ut.load_pickle(target_file)
-    count       = 0
-    nPlot       = len(modality_list)
-    time_lim    = [0, 16]
-    
-    fig = plt.figure('all')
-
-    for modality in modality_list:
-        count +=1
-
-        if 'audio' in modality:
-            time_list = target_dict['audioTimesList']
-            data_list = target_dict['audioPowerList']
-
-        if 'kinematics' in modality:
-            time_list = target_dict['kinTimesList']
-            data_list = target_dict['kinEEPosList']
-
-            # distance
-            new_data_list = []
-            for d in data_list:
-                new_data_list.append( np.linalg.norm(d, axis=0) )
-            data_list = new_data_list
-
-        if 'ft' in modality:
-            time_list = target_dict['ftTimesList']
-            data_list = target_dict['ftForceList']
-
-            # distance
-            new_data_list = []
-            for d in data_list:
-                new_data_list.append( np.linalg.norm(d, axis=0) )
-            data_list = new_data_list
-
-        if 'vision' in modality:
-            time_list = target_dict['visionTimesList']
-            data_list = target_dict['visionPosList']
-            
-            # distance
-            new_data_list = []
-            for d in data_list:
-                new_data_list.append( np.linalg.norm(d, axis=0) )
-            data_list = new_data_list
-
-        if 'pps' in modality:
-            time_list = target_dict['ppsTimesList']
-            data_list1 = target_dict['ppsLeftList']
-            data_list2 = target_dict['ppsRightList']
-
-            # magnitude
-            new_data_list = []
-            for i in xrange(len(data_list1)):
-                d1 = np.array(data_list1[i])
-                d2 = np.array(data_list2[i])
-                d = np.vstack([d1, d2])
-                new_data_list.append( np.linalg.norm(d, axis=0) )
-
-            data_list = new_data_list
-
-        if 'fabric' in modality:
-            time_list = target_dict['fabricTimesList']
-            data_list = target_dict['fabricCenterList']
-
-            # magnitude
-            new_data_list = []
-            for d in data_list:
-                
-                sample = []
-                if len(d) != 0:
-                    for i in xrange(len(d[0])):
-                        if d[0][i] == []:
-                            sample.append( 0 )
-                        else:
-                            s = np.array([d[0][i:i+1], d[1][i:i+1], d[2][i:i+1]])
-                            v = np.mean(np.linalg.norm(s, axis=0))
-                            sample.append(v)
-                new_data_list.append(sample)
-            data_list = new_data_list
-
-            ## fig_fabric = plt.figure('fabric')
-            ## ax_fabric = fig_fabric.add_subplot(111) #, projection='3d')
-            ## for d in data_list:
-            ##     color = colors.next()
-            ##     for i in xrange(len(d[0])):
-            ##         if d[0][i] == []: continue
-            ##         ax_fabric.scatter(d[1][i], d[0][i], c=color)
-            ##         ## ax_fabric.scatter(d[0][i], d[1][i], d[2][i])
-            ## ax_fabric.set_xlabel('x')
-            ## ax_fabric.set_ylabel('y')
-            ## ## ax_fabric.set_zlabel('z')
-            ## if save_pdf is False:
-            ##     plt.show()
-            ## else:
-            ##     fig_fabric.savefig('test_fabric.pdf')
-            ##     fig_fabric.savefig('test_fabric.png')
-            ##     os.system('mv test*.p* ~/Dropbox/HRL/')
-
-            
-        ax = fig.add_subplot(nPlot*100+10+count)
-
-        if raw_viz:
-            combined_time_list = []
-
-            ## for t in time_list:
-            ##     temp = np.array(t[1:])-np.array(t[:-1])
-            ##     combined_time_list.append([ [0.0]  + list(temp)] )
-            ##     print modality, " : ", np.mean(temp), np.std(temp), np.max(temp)
-            ##     ## ax.plot(temp, label=modality)
-
-            for i in xrange(len(time_list)):
-                if len(time_list[i]) > len(data_list[i]):
-                    ax.plot(time_list[i][:len(data_list[i])], data_list[i])
-                else:
-                    ax.plot(time_list[i], data_list[i][:len(time_list[i])])                    
+        # loading and time-sync
+        if idx == 0:
+            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
+            raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
+                                                       downSampleSize=downSampleSize,\
+                                                       renew=data_renew, save_pkl=data_pkl)
         else:
-            interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
-            for i in xrange(len(data_list)):
-                ax.plot(interp_time, data_list[i])                
-                ## for j in xrange(len(data_list[i])):
-                ##     ax.scatter([j], data_list[i][j])
-                    
-        ax.set_xlim(time_lim)
-                
+            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure')
+            raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
+                                                       downSampleSize=downSampleSize,\
+                                                       renew=data_renew, save_pkl=data_pkl)
             
+        count       = 0
+        nPlot       = len(modality_list)
+        time_lim    = [0, 16]
+   
+        if raw_viz: target_dict = raw_data_dict
+        else: target_dict = interp_data_dict
+
+        fig = plt.figure('all')
+
+        for modality in modality_list:
+            count +=1
+
+            if 'audio' in modality:
+                time_list = target_dict['audioTimesList']
+                data_list = target_dict['audioPowerList']
+
+            if 'kinematics' in modality:
+                time_list = target_dict['kinTimesList']
+                data_list = target_dict['kinEEPosList']
+
+                # distance
+                new_data_list = []
+                for d in data_list:
+                    new_data_list.append( np.linalg.norm(d, axis=0) )
+                data_list = new_data_list
+
+            if 'ft' in modality:
+                time_list = target_dict['ftTimesList']
+                data_list = target_dict['ftForceList']
+
+                # distance
+                new_data_list = []
+                for d in data_list:
+                    new_data_list.append( np.linalg.norm(d, axis=0) )
+                data_list = new_data_list
+
+            if 'vision' in modality:
+                time_list = target_dict['visionTimesList']
+                data_list = target_dict['visionPosList']
+
+                # distance
+                new_data_list = []
+                for d in data_list:                    
+                    new_data_list.append( np.linalg.norm(d, axis=0) )
+                data_list = new_data_list
+
+            if 'pps' in modality:
+                time_list = target_dict['ppsTimesList']
+                data_list1 = target_dict['ppsLeftList']
+                data_list2 = target_dict['ppsRightList']
+
+                # magnitude
+                new_data_list = []
+                for i in xrange(len(data_list1)):
+                    d1 = np.array(data_list1[i])
+                    d2 = np.array(data_list2[i])
+                    d = np.vstack([d1, d2])
+                    new_data_list.append( np.linalg.norm(d, axis=0) )
+
+                data_list = new_data_list
+
+            if 'fabric' in modality:
+                time_list = target_dict['fabricTimesList']
+                data_list = target_dict['fabricValueList']
+
+                # magnitude
+                new_data_list = []
+                for d in data_list:
+
+                    # d is 3xN-length in which each element has multiple float values
+                    sample = []
+                    if len(d) != 0 and len(d[0]) != 0:
+                        for i in xrange(len(d[0])):
+                            if d[0][i] == []:
+                                sample.append( 0 )
+                            else:                                                               
+                                s = np.array([d[0][i], d[1][i], d[2][i]])
+                                v = np.mean(np.linalg.norm(s, axis=0)) # correct?
+                                sample.append(v)
+                    else:
+                        print "WRONG data size in fabric data"
+                        
+                    new_data_list.append(sample)
+                data_list = new_data_list
+
+            ## print np.shape(data_list), np.shape(data_list[0]), modality
+
+                ## fig_fabric = plt.figure('fabric')
+                ## ax_fabric = fig_fabric.add_subplot(111) #, projection='3d')
+                ## for d in data_list:
+                ##     color = colors.next()
+                ##     for i in xrange(len(d[0])):
+                ##         if d[0][i] == []: continue
+                ##         ax_fabric.scatter(d[1][i], d[0][i], c=color)
+                ##         ## ax_fabric.scatter(d[0][i], d[1][i], d[2][i])
+                ## ax_fabric.set_xlabel('x')
+                ## ax_fabric.set_ylabel('y')
+                ## ## ax_fabric.set_zlabel('z')
+                ## if save_pdf is False:
+                ##     plt.show()
+                ## else:
+                ##     fig_fabric.savefig('test_fabric.pdf')
+                ##     fig_fabric.savefig('test_fabric.png')
+                ##     os.system('mv test*.p* ~/Dropbox/HRL/')
+
+            ax = fig.add_subplot(nPlot*100+10+count)
+            if idx == 0:
+                color = 'b'
+            else:
+                color = 'r'
+
+            if raw_viz:
+                combined_time_list = []
+
+                ## for t in time_list:
+                ##     temp = np.array(t[1:])-np.array(t[:-1])
+                ##     combined_time_list.append([ [0.0]  + list(temp)] )
+                ##     print modality, " : ", np.mean(temp), np.std(temp), np.max(temp)
+                ##     ## ax.plot(temp, label=modality)
+
+                for i in xrange(len(time_list)):
+                    if len(time_list[i]) > len(data_list[i]):
+                        ax.plot(time_list[i][:len(data_list[i])], data_list[i], c=color)
+                    else:
+                        ax.plot(time_list[i], data_list[i][:len(time_list[i])], c=color)                    
+            else:
+                interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
+                
+                print modality, np.shape(interp_time), np.shape(data_list[0])
+                
+                for i in xrange(len(data_list)):
+                    ax.plot(interp_time, data_list[i], c=color)                
+                    ## for j in xrange(len(data_list[i])):
+                    ##     ax.scatter([j], data_list[i][j])
+
+            ax.set_xlim(time_lim)
+            ax.set_title(modality)
+    plt.tight_layout(pad=0.1, w_pad=0.5, h_pad=0.0)
+
     if save_pdf is False:
         plt.show()
     else:
@@ -837,16 +856,29 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
                                     renew=data_renew, save_pkl=failure_data_pkl)
 
     # data set
-    _, param_dict       = extractLocalFeature(all_data_dict, feature_list, local_range, \
+    allData, param_dict = extractLocalFeature(all_data_dict, feature_list, local_range, \
                                               rf_center=rf_center)                                              
     trainingData, _     = extractLocalFeature(success_data_dict, feature_list, local_range, \
                                               rf_center=rf_center, param_dict=param_dict)
     abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, local_range, \
                                               rf_center=rf_center, param_dict=param_dict)
 
-                                              
+    allData          = np.array(allData)
     trainingData     = np.array(trainingData)
     abnormalTestData = np.array(abnormalTestData)
+
+    ## All data
+    # 1) exclude stationary data
+    thres = 0.01
+    n,m,k = np.shape(allData)
+    for i in xrange(n):
+
+        d = allData[i].flatten()
+        print np.std(d)
+
+    sys.exit()
+
+
 
     nDim, nSample, _ = np.shape(trainingData)
     fig = plt.figure()
@@ -863,6 +895,9 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
     else:
         plt.show()
 
+    print "---------------------------------------------------"
+    print np.shape(trainingData), np.shape(abnormalTestData)
+    print "---------------------------------------------------"
     
     m,n,k = np.shape(trainingData)
     data_array = None
@@ -1068,7 +1103,7 @@ if __name__ == '__main__':
                               
     elif opt.bRawDataPlot or opt.bInterpDataPlot:
         target_data_set = 0
-        modality_list   = ['kinematics', 'audio', 'fabric', 'pps']
+        modality_list   = ['kinematics', 'audio', 'fabric', 'pps', 'ft', 'vision']
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
@@ -1079,10 +1114,11 @@ if __name__ == '__main__':
         target_data_set = 0
         local_range    = 0.3    
         ## rf_center    = 'kinEEPos'
-        rf_center    = 'l_forearm_link'
+        rf_center    = 'kinForearmPos'
         feature_list = ['unimodal_ppsForce',\
                         'unimodal_audioPower',\
                         'unimodal_fabricForce',\
+                        'unimodal_ftForce',\
                         'crossmodal_targetRelativeDist', \
                         'crossmodal_targetRelativeAng']
         
@@ -1090,9 +1126,7 @@ if __name__ == '__main__':
                   nSet=target_data_set, downSampleSize=downSampleSize, \
                   save_pdf=opt.bSavePdf,
                   feature_list=feature_list, data_renew=opt.bDataRenew)
-
-        
-        
+                
     else:
         nState         = 10
         cov_mult       = 5.0       
