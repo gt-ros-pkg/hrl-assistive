@@ -111,6 +111,9 @@ class Predicate(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def negate(self):
+        self.neg = not self.neg
+
     def is_abstract(self):
         """ Check if this is an abstract predicate definition (True), or a specific Predicate statement (False)."""
         return any([bool(arg.name[0] == '?') for arg in self.args])
@@ -138,6 +141,43 @@ class Predicate(object):
         res = cls(name, args, neg)
         return res
 
+
+class State(object):
+    def __init__(self, iterable=None):
+        self.predicates = self._remove_duplicates(iterable) if iterable is not None else []
+
+    def __len__(self):
+        return len(self.predicates)
+
+    @staticmethod
+    def _remove_duplicates(pred_list):
+        items = []
+        for pred in pred_list:
+            if pred not in items:
+                items.append(pred)
+        return items
+
+    def satisfies_preds(self, preds):
+        for pred in preds:
+            pos_pred = Predicate(pred.name, pred.args)  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            if (pred.neg and pos_pred in self) or (not pred.neg and pos_pred not in self):
+                return False
+        return True
+
+    def append(self, new_item):
+        if new_item not in self:
+            super(State, self).append(new_item)
+
+    def extend(self, new_items):
+        for item in new_items:
+            self.append(item)
+
+    def __eq__(self, other):
+        """ Determine if two states are equivalent (same predicates). """
+        pass
+
+    def __ne__(self, other):
+        pass
 
 class PlanStep(object):
     """ A class specifying a PDDL action and the parameters with which to call apply it. """
@@ -722,6 +762,8 @@ class FF(object):
 
     def solve(self, domain, problem):
         """ Create a temporary problem file and call FF to solve. """
+        original_problem_name = problem.name
+        problem.name = "tmpProblemName"  # FF's parser gets confused by special characters, so don't let it seem them...
         with NamedTemporaryFile() as problem_file:
             problem.to_file(problem_file.name)
             with NamedTemporaryFile() as domain_file:
@@ -739,6 +781,7 @@ class FF(object):
                         raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (self.problem.name, self.domain.name))
                 finally:
                     # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
+                    problem.name = original_problem_name
                     try:
                         remove('.'.join([problem_file.name, 'soln']))
                     except OSError as ose:

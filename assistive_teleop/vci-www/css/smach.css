@@ -1,0 +1,48 @@
+#smach-container {
+    display: block;
+    position: absolute;
+    top: 1%;
+    left: 1%;
+    width: auto;
+    height: auto;
+}
+.smach-state {
+    font-size: x-large;
+    line-height: 40px;
+    display: inline;
+    white-space: pre;
+    position: static;
+    float: left;
+    border-width: 5px;
+    border-color: rgba(0, 0, 0, 0.5);
+    border-style: solid;
+    border-radius: 15px;
+    text-align: center;
+    height: 40px;
+    transition: background-color 1.0s ease, font-weight 1.0s ease, color 1.0s ease;
+}
+.smach-state.active {
+    background-color: hsla(130, 100%, 50%, 0.75);
+    border-color: hsla(0, 100%, 0%, 0.75);
+    color: hsla(0, 0%, 0%, 0.9);
+}
+.smach-state.incomplete {
+    background-color: hsla(130, 40%, 70%, 0.75);
+    border-color: hsla(0, 100%, 0%, 0.75);
+    color: hsla(0, 0%, 0%, 0.5);
+}
+.smach-state.complete {
+    background-color: hsla(130, 70%, 30%, 0.75);
+    border-color: hsla(0, 100%, 0%, 0.75);
+    color: hsla(0, 0%, 0%, 0.5);
+    overflow:hidden;
+    width: 5%;
+}
+.smach-state-separator {
+    float: left;
+    position: relative;
+    top: 15px;
+    background-color: rgba(0, 0, 0, 0.75);
+    height: 20px;
+    width: 5px;
+}

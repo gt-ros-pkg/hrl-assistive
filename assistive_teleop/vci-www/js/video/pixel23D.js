@@ -29,34 +29,29 @@ RFH.Pixel23DClient = function (options) {
     self.call = function (u, v, cb) {
         var req = new ROSLIB.ServiceRequest({'pixel_u':u, 'pixel_v':v});
         var cb_err_wrap = function (resp) {
+            console.log("Pixel23D response:\n");
+            console.log(resp);
             switch (resp.error_flag) {
                 case 0:
-                    var pose = new ROSLIB.Pose({position: resp.pixel3d.pose.position,
-                                                orientation: resp.pixel3d.pose.orientation});
-                    cb(pose);
+                    cb(resp.pixel3d);
                     break;
                 case 1:
                     RFH.log("ERROR: Still waiting for 3D camera image data");
                     cb(null);
                     throw "Pixel23D (u: %u%, v:%v%): No Camera Info Received".replace("%u%", u).replace("%v%", v);
-                    break;
                 case 2:
                     RFH.log("ERROR: Still waiting for 3D camera depth data");
                     cb(null);
                     throw "Pixel23D (u: %u%, v:%v%): No Pointcloud Received".replace("%u%", u).replace("%v%", v);
-                    break;
                 case 3:
                     RFH.log("ERROR: Invalid Location Requested.");
                     cb(null);
                     throw "Pixel23D (u: %u%, v:%v%): Requested pixel is outside image".replace("%u%", u).replace("%v%", v);
-                    break;
                 case 4:
                     RFH.log("ERROR: No Depth Data available at selected location.");
                     cb(null);
                     throw "Pixel23D (u: %u%, v:%v%): No Pointcloud data at requested pixel".replace("%u%", u).replace("%v%", v);
-                    break;
-
-            };
+            }
         };
         self.serviceClient.callService(req, cb_err_wrap);
     };
@@ -67,4 +62,4 @@ RFH.Pixel23DClient = function (options) {
         v = Math.round(v*self.imageHeight);
         self.call(u, v, cb);
     };
-}
+};

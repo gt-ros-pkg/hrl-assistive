@@ -25,7 +25,7 @@ class TaskPlannerNode(object):
             return (False, [], [])
         except Exception as e:
             raise rospy.ServiceException(e.message)
-        rospy.loginfo("[%s] Planner received problem:\n %s", rospy.get_name(), req.problem)
+        rospy.loginfo("[%s] Planner Solving problem:\n%s", rospy.get_name(), req.problem)
         # Create PDDL Domain object from domain file
         domain = pddl.Domain.from_file(domain_file)
         # Create PDDL Problem object from incoming message
@@ -34,10 +34,10 @@ class TaskPlannerNode(object):
         situation = pddl.Situation(domain, problem)
         try:
             situation.solution = self.planner.solve(domain, problem)
-        except pddl.PlanningError:
+        except pddl.PlanningException:
             return (False, [], [])
         states = situation.get_plan_intermediary_states()
-        states = [PDDLState(problem.name, domain.name, map(str, state)) for state in states]
+        states = [PDDLState(problem.name, req.problem.domain, map(str, state)) for state in states]
         return (True, map(str, situation.solution), states)
 
 

@@ -1,5 +1,8 @@
 <launch>
 
+    <param name="pick_and_place/domain_file" value="$(find hrl_task_planning)/params/pick_and_place.domain"/>
+    <rosparam command="load" file="$(find hrl_task_planning)/params/pick_and_place.yaml" ns="pick_and_place"/>
+
     <param name="move_object/domain_file" value="$(find hrl_task_planning)/params/move_object.domain"/>
     <rosparam command="load" file="$(find hrl_task_planning)/params/move_object.yaml" ns="move_object"/>
 
