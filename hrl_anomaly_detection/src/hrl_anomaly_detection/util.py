@@ -55,7 +55,7 @@ def extrapolateData(data, maxsize):
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
-def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
              verbose=False, renew=True, save_pkl=None):
 
     if save_pkl is not None:
@@ -100,24 +100,62 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
 
         data_dict['timesList'].append(new_times)
 
+        # Define receptive field center trajectory ---------------------------
+        rf_time = np.array(d['kinematics_time']) - init_time
+        if rf_center == 'kinEEPos':
+            rf_traj = d['kinematics_ee_pos']
+        elif rf_center == 'kinForearmPos':
+            kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
+
+            # Forearm
+            rf_traj = None
+            arm_kdl = create_kdl_kin('torso_lift_link', 'l_gripper_tool_frame')
+            for i in xrange(len(kin_jnt_pos[0])):
+                mPose = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_forearm_link', base_link='torso_lift_link')
+                if rf_traj is None: rf_traj = np.array(mPose[:3,3])
+                else: rf_traj = np.hstack([ rf_traj, np.array(mPose[:3,3]) ])
+                    
+        ## elif rf_center == 'l_upper_arm_link':            
+        else:
+            print "No specified rf center"
+            sys.exit()
+
+
         # sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
             audio_time    = (np.array(d['audio_time']) - init_time).tolist()
             audio_azimuth = d['audio_azimuth']
             audio_power   = d['audio_power']
 
+            # get noise
+            noise_power = np.mean(audio_power[:10])
+
+            # extract local feature
+            local_audio_power = []
+            for time_idx in xrange(len(audio_time)):
+
+                rf_time_idx = np.abs(rf_time - audio_time[time_idx]).argmin()                
+                ang_max, ang_min = getAngularSpatialRF(rf_traj[:,rf_time_idx], local_range)
+
+                if audio_azimuth[time_idx] > ang_min and audio_azimuth[time_idx] < ang_max:
+                    if audio_power[time_idx] > 50: local_audio_power.append(audio_power[time_idx-1])
+                    else: local_audio_power.append(audioPower[time_idx])
+                else:                    
+                    local_audio_power.append(noise_power) # or append white noise?
+
+            # Save local raw and interpolated data
             raw_data_dict['audioTimesList'].append(audio_time)
             raw_data_dict['audioAzimuthList'].append(audio_azimuth)
-            raw_data_dict['audioPowerList'].append(audio_power)
+            raw_data_dict['audioPowerList'].append(local_audio_power)
 
             data_dict['audioAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
             data_dict['audioPowerList'].append(interpolationData(audio_time, audio_power, new_times))
 
-            print np.shape(data_dict['audioPowerList'])
+            ## print np.shape(data_dict['audioPowerList'])
 
-            fig = plt.figure()
-            plt.plot(audio_time, raw_data_dict['audioPowerList'][0])
-            plt.show()
+            ## fig = plt.figure()
+            ## plt.plot(audio_time, raw_data_dict['audioPowerList'][0])
+            ## plt.show()
 
 
         # kinematics -----------------------------------------------------------
@@ -137,30 +175,45 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
                 if kin_forearm_pos is None: kin_forearm_pos = np.array(mPose[:3,3])
                 else: kin_forearm_pos = np.hstack([ kin_forearm_pos, np.array(mPose[:3,3]) ])
 
+
+            # extract local feature
+            data_set = [kin_time, kin_ee_pos, kin_ee_quat]
+            [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            data_set = [kin_time, kin_target_pos, kin_target_quat]
+            [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+
             raw_data_dict['kinTimesList'].append(kin_time)
-            raw_data_dict['kinEEPosList'].append(kin_ee_pos)
-            raw_data_dict['kinEEQuatList'].append(kin_ee_quat)
-            raw_data_dict['kinTargetPosList'].append(kin_target_pos)
-            raw_data_dict['kinTargetQuatList'].append(kin_target_quat)
+            raw_data_dict['kinEEPosList'].append(local_kin_ee_pos)
+            raw_data_dict['kinEEQuatList'].append(local_kin_ee_quat)
+            raw_data_dict['kinTargetPosList'].append(local_kin_target_pos)
+            raw_data_dict['kinTargetQuatList'].append(local_kin_target_quat)
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
             raw_data_dict['kinForearmPosList'].append(kin_forearm_pos)
             
-            data_dict['kinEEPosList'].append(interpolationData(kin_time, kin_ee_pos, new_times))
-            data_dict['kinEEQuatList'].append(interpolationData(kin_time, kin_ee_quat, new_times))
-            data_dict['kinTargetPosList'].append(interpolationData(kin_time, kin_target_pos, new_times))
-            data_dict['kinTargetQuatList'].append(interpolationData(kin_time, kin_target_quat, new_times))
+            data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times))
+            data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times))
+            data_dict['kinTargetPosList'].append(interpolationData(kin_time, local_kin_target_pos, new_times))
+            data_dict['kinTargetQuatList'].append(interpolationData(kin_time, local_kin_target_quat, new_times))
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
             data_dict['kinForearmPosList'].append(interpolationData(kin_time, kin_forearm_pos, new_times))
 
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
-            ft_time        = (np.array(d['ft_time']) - init_time).tolist()
-            ft_force_array = d['ft_force']
+            ft_time  = (np.array(d['ft_time']) - init_time).tolist()
+            ft_force = d['ft_force']
+
+            kin_time   = (np.array(d['kinematics_time']) - init_time).tolist()
+            kin_ee_pos = d['kinematics_ee_pos'] # 3xN
+            ft_pos     = interpolationData(kin_time, kin_ee_pos, ft_time)
+
+            # extract local feature
+            data_set = [ft_time, ft_pos, ft_force]
+            [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
             raw_data_dict['ftTimesList'].append(ft_time)
-            raw_data_dict['ftForceList'].append(ft_force_array)
+            raw_data_dict['ftForceList'].append(local_ft_force)
 
-            force_array = interpolationData(ft_time, ft_force_array, new_times)
+            force_array = interpolationData(ft_time, local_ft_force, new_times)
             data_dict['ftForceList'].append(force_array)                                         
             
                     
@@ -170,14 +223,18 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             vision_pos  = d['vision_pos']
             vision_quat = d['vision_quat']
 
-            raw_data_dict['visionTimesList'].append(vision_time)
-            raw_data_dict['visionPosList'].append(vision_pos)
-            raw_data_dict['visionQuatList'].append(vision_quat)
+            # extract local feature
+            data_set = [vision_time, vision_pos, vision_quat]
+            [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
-            vision_pos_array  = interpolationData(vision_time, vision_pos, new_times)
+            raw_data_dict['visionTimesList'].append(vision_time)
+            raw_data_dict['visionPosList'].append(local_vision_pos)
+            raw_data_dict['visionQuatList'].append(local_vision_quat)
+
+            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionPosList'].append(vision_pos_array)                                         
 
-            vision_quat_array = interpolationQuatData(vision_time, vision_quat, new_times)
+            vision_quat_array = interpolationQuatData(vision_time, local_vision_quat, new_times)
             data_dict['visionQuatList'].append(vision_quat_array)                                         
 
         # pps ------------------------------------------------------------------
@@ -186,13 +243,21 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             pps_skin_left  = d['pps_skin_left']
             pps_skin_right = d['pps_skin_right']
 
-            raw_data_dict['ppsTimesList'].append(pps_skin_time)
-            raw_data_dict['ppsLeftList'].append(pps_skin_left)
-            raw_data_dict['ppsRightList'].append(pps_skin_right)
+            kin_time       = (np.array(d['kinematics_time']) - init_time).tolist()
+            kin_target_pos = d['kinematics_target_pos'] # 3xN  # not precise
+            pps_skin_pos   = interpolationData(kin_time, kin_target_pos, pps_skin_time)
 
-            left_array = interpolationData(pps_skin_time, pps_skin_left, new_times)
+            # extract local feature
+            data_set = [pps_skin_time, pps_skin_pos, pps_skin_left, pps_skin_right]
+            [ _, local_pps_skin_left, local_pps_skin_right] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+
+            raw_data_dict['ppsTimesList'].append(pps_skin_time)
+            raw_data_dict['ppsLeftList'].append(local_pps_skin_left)
+            raw_data_dict['ppsRightList'].append(local_pps_skin_right)
+
+            left_array = interpolationData(pps_skin_time, local_pps_skin_left, new_times)
             data_dict['ppsLeftList'].append(left_array)
-            right_array = interpolationData(pps_skin_time, pps_skin_right, new_times)
+            right_array = interpolationData(pps_skin_time, local_pps_skin_right, new_times)
             data_dict['ppsRightList'].append(right_array)
 
 
@@ -209,24 +274,25 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, \
             fabric_skin_values_y  = d['fabric_skin_values_y']
             fabric_skin_values_z  = d['fabric_skin_values_z']
 
+            fabric_skin_centers = [fabric_skin_centers_x, fabric_skin_centers_y, fabric_skin_centers_z]
+            fabric_skin_normals = [fabric_skin_normals_x, fabric_skin_normals_y, fabric_skin_normals_z]
+            fabric_skin_values  = [fabric_skin_values_x, fabric_skin_values_y, fabric_skin_values_z]            
+
+            # extract local feature
+            data_set = [fabric_skin_time, fabric_skin_centers, fabric_skin_normals, fabric_skin_values]
+            [ local_fabric_skin_centers, local_fabric_skin_normals, local_fabric_skin_values] \
+              = extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=True)
+
             # time weighted sum?
             raw_data_dict['fabricTimesList'].append(fabric_skin_time)
-            raw_data_dict['fabricCenterList'].append([fabric_skin_centers_x,\
-                                                      fabric_skin_centers_y,\
-                                                      fabric_skin_centers_z])
-            raw_data_dict['fabricNormalList'].append([fabric_skin_normals_x,\
-                                                      fabric_skin_normals_y,\
-                                                      fabric_skin_normals_z])
-            raw_data_dict['fabricValueList'].append([fabric_skin_values_x,\
-                                                     fabric_skin_values_y,\
-                                                     fabric_skin_values_z])
+            raw_data_dict['fabricCenterList'].append(local_fabric_skin_centers)
+            raw_data_dict['fabricNormalList'].append(local_fabric_skin_normals)
+            raw_data_dict['fabricValueList'].append(local_fabric_skin_values)
 
             # skin interpolation
             center_array, normal_array, value_array \
-              = interpolationSkinData(fabric_skin_time, \
-                                      raw_data_dict['fabricCenterList'][-1],\
-                                      raw_data_dict['fabricNormalList'][-1],\
-                                      raw_data_dict['fabricValueList'][-1], new_times )
+              = interpolationSkinData(fabric_skin_time, local_fabric_skin_centers,\
+                                      local_fabric_skin_normals, local_fabric_skin_values, new_times )
             
             data_dict['fabricCenterList'].append(center_array)
             data_dict['fabricNormalList'].append(normal_array)
@@ -374,9 +440,11 @@ def interpolationSkinData(time_array, center_array, normal_array, value_array, n
     l     = len(time_array)
     new_l = len(new_time_array)
 
-    if l == 0 or len(center_array[0]) == 0: return [],[],[]
 
-    if len(np.array(center_array[0]).flatten()) == 0: return [],[],[]
+    if l == 0: return [],[],[]
+    ## if len(np.array(center_array[0]).flatten()) == 0: return [],[],[]
+    print center_array
+    sys.exit()
 
     idx_list = np.linspace(0, l-2, new_l)
     for idx in idx_list:
@@ -513,6 +581,66 @@ def getAngularSpatialRF(cur_pos, dist_margin ):
 
     return ang_max, ang_min
 
+
+def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, verbose=False):
+    '''
+    Extract local data in data_set
+    The first element of the data_set should be time data.
+    The second element of the data_set should be location data.
+    '''
+
+    time_data = data_set[0]
+    pos_data  = data_set[1]
+    nData = len(data_set)-1
+    
+
+    if skin_flag is False:
+        new_data_set = [None for i in xrange(nData)]
+
+        for time_idx in xrange(len(time_data)):
+            rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()                
+            if np.linalg.norm(pos_data[:,time_idx] - rf_traj[:,rf_time_idx]) <= local_range:
+                for i in xrange(nData):
+                    if new_data_set[i] is None:
+                        new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
+                    else:
+                        new_data_set[i] = np.hstack([ new_data_set[i], data_set[i+1][:,time_idx:time_idx+1] ])
+            else:
+                for i in xrange(nData):
+                    if new_data_set[i] is None:
+                        new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
+                    else:
+                        new_data_set[i] = np.hstack([ new_data_set[i], data_set[i+1][:,-1:] ])
+
+    else:
+        new_data_set = [[] for i in xrange(nData)]
+
+        for time_idx in xrange(len(time_data)):
+            rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()                
+
+            if pos_data[0][time_idx] == []:
+                for i in xrange(nData):
+                    new_data_set[i].append( [] )
+            else:
+                for i in xrange(nData):
+
+                    local_data = []
+                    nPos = len(pos_data[0][time_idx])
+                    for j in xrange(nPos):
+                        pos_array = np.array([pos_data[0][time_idx][j],\
+                                              pos_data[1][time_idx][j],\
+                                              pos_data[2][time_idx][j]])
+                        if np.linalg.norm(pos_array - rf_traj[:,rf_time_idx]) <= local_range:                            
+                            local_data.append( [data_set[i+1][0][time_idx][j],
+                                                data_set[i+1][1][time_idx][j],
+                                                data_set[i+1][2][time_idx][j] ])
+                                        
+                    new_data_set[i].append( local_data )
+            
+
+    return new_data_set
+    
+    
 
 
 def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', param_dict=None, verbose=False):

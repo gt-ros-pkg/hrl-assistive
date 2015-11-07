@@ -640,11 +640,13 @@ def onlineEvaluation(hmm, normalTestData, abnormalTestData, c=-5, verbose=False)
 
         
 def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
-              nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
+              nSet=1, downSampleSize=200, \
+              local_range=0.3, rf_center='kinEEPos', \
+              success_viz=True, failure_viz=False, \
               raw_viz=False, interp_viz=False, save_pdf=False, \
               successData=True, failureData=True,\
               ## trainingData=True, normalTestData=False, abnormalTestData=False,\
-              modality_list=['audio'], data_renew=False):    
+              modality_list=['audio'], data_renew=False, verbose=False):    
 
     success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
 
@@ -654,16 +656,21 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     
         # loading and time-sync
         if idx == 0:
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
+            if verbose: print "Load success data"
+            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_'+rf_center+'_success')
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
+                                                       local_range=local_range, rf_center=rf_center,\
                                                        renew=data_renew, save_pkl=data_pkl)
         else:
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure')
+            if verbose: print "Load failure data"
+            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_'+rf_center+'_failure')
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
+                                                       local_range=local_range, rf_center=rf_center,\
                                                        renew=data_renew, save_pkl=data_pkl)
             
+        if verbose: print "Visualize data"
         count       = 0
         nPlot       = len(modality_list)
         time_lim    = [0, 16]
@@ -1052,6 +1059,8 @@ if __name__ == '__main__':
 
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
+    p.add_option('--localization', '--ll', action='store_true', dest='bLocalization',
+                 default=False, help='Extract local feature.')
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
     p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
@@ -1063,6 +1072,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
+    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
+                 default=False, help='Print out.')
 
     opt, args = p.parse_args()
 
@@ -1102,17 +1113,25 @@ if __name__ == '__main__':
                               renew=renew, save_pdf=opt.bSavePdf)
                               
     elif opt.bRawDataPlot or opt.bInterpDataPlot:
+        '''
+        Before localization: Raw data plot
+        After localization: Raw or interpolated data plot
+        '''
         target_data_set = 0
+        rf_center       = 'kinForearmPos'
         modality_list   = ['kinematics', 'audio', 'fabric', 'pps', 'ft', 'vision']
+
+        if opt.bLocalization: local_range = 0.3
+        else: local_range = 3.0
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
-                  raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,
-                  modality_list=modality_list, data_renew=opt.bDataRenew)
+                  local_range=local_range, rf_center=rf_center, \
+                  raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
+                  modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     elif opt.bPCAPlot:
         target_data_set = 0
-        local_range    = 0.3    
         ## rf_center    = 'kinEEPos'
         rf_center    = 'kinForearmPos'
         feature_list = ['unimodal_ppsForce',\
