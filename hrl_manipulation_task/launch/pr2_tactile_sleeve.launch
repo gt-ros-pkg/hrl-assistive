@@ -11,8 +11,8 @@
 
     <!-- force magnitude to ignore -->
     <arg name="gripper_threshold" default="1.0" />
-    <arg name="forearm_threshold" default="1.5" />
-    <arg name="upperarm_threshold" default="1.0" /> <!-- "0.7" />-->
+    <arg name="forearm_threshold" default="1.3" />
+    <arg name="upperarm_threshold" default="1.5" /> <!-- "0.7" />-->
     <arg name="fingertip_threshold" default="1.0" />
 
     <arg name="ft_input_topic" default="/netft_gravity_zeroing/wrench_zeroed" />
@@ -41,24 +41,6 @@
         type="fabric_skin_calibration_node.py" output='screen'
         ns='pr2_fabric_forearm_sensor'
         args='--slope=$(arg forearm_slope) --miv=$(arg forearm_threshold)' >
-    </node>
-
-    <node name="gripper_right_link_taxels_calibration" pkg="hrl_fabric_based_tactile_sensor"
-        type="fabric_skin_calibration_node.py" output='screen'
-        ns='pr2_fabric_gripper_right_link_sensor'
-        args='--slope=$(arg gripper_slope) --miv=$(arg gripper_threshold)' >
-    </node>
-
-    <node name="gripper_left_link_taxels_calibration" pkg="hrl_fabric_based_tactile_sensor"
-        type="fabric_skin_calibration_node.py" output='screen'
-        ns='pr2_fabric_gripper_left_link_sensor'
-        args='--slope=$(arg gripper_slope) --miv=$(arg gripper_threshold)' >
-    </node>
-
-    <node name="gripper_palm_taxels_calibration" pkg="hrl_fabric_based_tactile_sensor"
-        type="fabric_skin_calibration_node.py" output='screen'
-        ns='pr2_fabric_gripper_palm_sensor'
-        args='--slope=$(arg gripper_slope) --miv=$(arg gripper_threshold)' >
     </node>
 
     <include file='$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_viz.launch' />
