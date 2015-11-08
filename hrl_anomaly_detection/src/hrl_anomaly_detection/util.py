@@ -56,7 +56,7 @@ def extrapolateData(data, maxsize):
         
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
-             verbose=False, renew=True, save_pkl=None):
+             verbose=False, renew=True, save_pkl=None, plot_data=False):
 
     if save_pkl is not None:
         if os.path.isfile(save_pkl+'_raw.pkl') is True and os.path.isfile(save_pkl+'_interp.pkl') is True \
@@ -72,7 +72,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'ftTimesList', 'ftForceList', \
                 'visionTimesList', 'visionPosList', 'visionQuatList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
-                'fabricTimesList', 'fabricCenterList', 'fabricNormalList', 'fabricValueList' ]
+                'fabricTimesList', 'fabricCenterList', 'fabricNormalList', 'fabricValueList', 'fabricMagList' ]
 
     raw_data_dict = {}
     data_dict = {}
@@ -81,7 +81,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         raw_data_dict[key] = []
         if 'time' not in key:
             data_dict[key]  = []
-        
+
+    if plot_data: fig = plt.figure()            
     
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
@@ -120,6 +121,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             print "No specified rf center"
             sys.exit()
 
+        if verbose: print "rf_traj: ", np.shape(rf_traj) 
+
 
         # sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
@@ -128,8 +131,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             audio_power   = d['audio_power']
 
             # get noise
-            noise_power = np.mean(audio_power[:10])
+            noise_power = 26.0 #np.mean(audio_power[:100])
 
+            ang_max_l = []
+            ang_min_l = []
             # extract local feature
             local_audio_power = []
             for time_idx in xrange(len(audio_time)):
@@ -137,9 +142,12 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 rf_time_idx = np.abs(rf_time - audio_time[time_idx]).argmin()                
                 ang_max, ang_min = getAngularSpatialRF(rf_traj[:,rf_time_idx], local_range)
 
+                ang_max_l.append(ang_max)
+                ang_min_l.append(ang_min)
+
                 if audio_azimuth[time_idx] > ang_min and audio_azimuth[time_idx] < ang_max:
                     if audio_power[time_idx] > 50: local_audio_power.append(audio_power[time_idx-1])
-                    else: local_audio_power.append(audioPower[time_idx])
+                    else: local_audio_power.append(audio_power[time_idx])
                 else:                    
                     local_audio_power.append(noise_power) # or append white noise?
 
@@ -149,14 +157,22 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioPowerList'].append(local_audio_power)
 
             data_dict['audioAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
-            data_dict['audioPowerList'].append(interpolationData(audio_time, audio_power, new_times))
+            data_dict['audioPowerList'].append(interpolationData(audio_time, local_audio_power, new_times))
 
-            ## print np.shape(data_dict['audioPowerList'])
-
+            plt.plot([min(ang_min_l)], [29.0],'k*',  )
+            plt.plot([max(ang_max_l)], [29.0],'m*',  )
+            
+            plt.scatter(audio_azimuth, audio_power)
+            plt.scatter(audio_azimuth, local_audio_power, c='r')
             ## fig = plt.figure()
-            ## plt.plot(audio_time, raw_data_dict['audioPowerList'][0])
-            ## plt.show()
-
+            ## plt.plot(audio_time, audio_power, c='k')
+            ## plt.plot(audio_time, local_audio_power, c='b')
+            ## plt.plot(new_times, interpolationData(audio_time, local_audio_power, new_times), c='r')
+            ## fig.savefig('test.pdf')
+            ## fig.savefig('test.png')
+            ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## ## sys.exit()
+            ## ut.get_keystroke('Hit a key to proceed next')
 
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
@@ -197,6 +213,16 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
             data_dict['kinForearmPosList'].append(interpolationData(kin_time, kin_forearm_pos, new_times))
 
+            ## fig = plt.figure()
+            ## plt.plot(kin_time, kin_target_pos[2], c='k')
+            ## plt.plot(kin_time, local_kin_target_pos[2], c='b')
+            ## plt.plot(new_times, interpolationData(kin_time, local_kin_target_pos, new_times)[2], c='r')
+            ## fig.savefig('test.pdf')
+            ## fig.savefig('test.png')
+            ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## sys.exit()
+
+
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time  = (np.array(d['ft_time']) - init_time).tolist()
@@ -215,6 +241,15 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             force_array = interpolationData(ft_time, local_ft_force, new_times)
             data_dict['ftForceList'].append(force_array)                                         
+
+            ## fig = plt.figure()
+            ## plt.plot(ft_time, ft_force[2], c='k')
+            ## plt.plot(ft_time, local_ft_force[2], c='b')
+            ## plt.plot(new_times, interpolationData(ft_time, local_ft_force, new_times)[2], c='r')
+            ## fig.savefig('test.pdf')
+            ## fig.savefig('test.png')
+            ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## sys.exit()
             
                     
         # vision ---------------------------------------------------------------
@@ -223,6 +258,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             vision_pos  = d['vision_pos']
             vision_quat = d['vision_quat']
 
+            if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
+                vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
+            
             # extract local feature
             data_set = [vision_time, vision_pos, vision_quat]
             [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
@@ -234,8 +272,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionPosList'].append(vision_pos_array)                                         
 
-            vision_quat_array = interpolationQuatData(vision_time, local_vision_quat, new_times)
-            data_dict['visionQuatList'].append(vision_quat_array)                                         
+            ## fig = plt.figure()
+            ## plt.plot(vision_time, vision_pos[2], c='k')
+            ## plt.plot(vision_time, local_vision_pos[2], c='b')
+            ## plt.plot(new_times, interpolationData(vision_time, local_vision_pos, new_times)[2], c='r')
+            ## fig.savefig('test.pdf')
+            ## fig.savefig('test.png')
+            ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## sys.exit()
 
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
@@ -260,6 +304,15 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             right_array = interpolationData(pps_skin_time, local_pps_skin_right, new_times)
             data_dict['ppsRightList'].append(right_array)
 
+            ## fig = plt.figure()
+            ## plt.plot(pps_skin_time, pps_skin_left[2], c='k')
+            ## plt.plot(pps_skin_time, local_pps_skin_left[2], c='b')
+            ## plt.plot(new_times, interpolationData(pps_skin_time, local_pps_skin_left, new_times)[2], c='r')
+            ## fig.savefig('test.pdf')
+            ## fig.savefig('test.png')
+            ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## sys.exit()
+
 
         # fabric skin ------------------------------------------------------------------
         if 'fabric_skin_time' in d.keys():
@@ -283,23 +336,55 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             [ local_fabric_skin_centers, local_fabric_skin_normals, local_fabric_skin_values] \
               = extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=True)
 
+            # Get magnitudes
+            fabric_skin_mag = []
+            local_fabric_skin_mag = []
+            for i in xrange(len(fabric_skin_time)):
+                if fabric_skin_values[0][i] == []: fabric_skin_mag.append(0)
+                else:
+                    temp = np.array([fabric_skin_values[0][i], fabric_skin_values[1][i], \
+                                     fabric_skin_values[2][i] ])
+                    fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
+                    ## print temp, fabric_skin_mag[-1]
+
+                if local_fabric_skin_values[0][i] == []: local_fabric_skin_mag.append(0)
+                else:
+                    temp = np.array([local_fabric_skin_values[0][i], \
+                                     local_fabric_skin_values[1][i], \
+                                     local_fabric_skin_values[2][i] ])
+                    local_fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
+                    ## print temp, fabric_skin_mag[-1]
+
             # time weighted sum?
             raw_data_dict['fabricTimesList'].append(fabric_skin_time)
             raw_data_dict['fabricCenterList'].append(local_fabric_skin_centers)
             raw_data_dict['fabricNormalList'].append(local_fabric_skin_normals)
             raw_data_dict['fabricValueList'].append(local_fabric_skin_values)
+            raw_data_dict['fabricMagList'].append(local_fabric_skin_mag)
 
             # skin interpolation
-            center_array, normal_array, value_array \
-              = interpolationSkinData(fabric_skin_time, local_fabric_skin_centers,\
-                                      local_fabric_skin_normals, local_fabric_skin_values, new_times )
-            
-            data_dict['fabricCenterList'].append(center_array)
-            data_dict['fabricNormalList'].append(normal_array)
-            data_dict['fabricValueList'].append(value_array)
+            ## center_array, normal_array, value_array \
+            ##   = interpolationSkinData(fabric_skin_time, local_fabric_skin_centers,\
+            ##                           local_fabric_skin_normals, local_fabric_skin_values, new_times )
+            mag_array = interpolationData(fabric_skin_time, local_fabric_skin_mag, new_times)
+            data_dict['fabricMagList'].append(mag_array)            
+            ## data_dict['fabricCenterList'].append(center_array)
+            ## data_dict['fabricNormalList'].append(normal_array)
+            ## data_dict['fabricValueList'].append(value_array)
+
+            ## if np.sum(mag_array)>0.5:
+            ##     fig = plt.figure()
+            ##     plt.plot(fabric_skin_time, fabric_skin_mag, c='k')
+            ##     plt.plot(fabric_skin_time, local_fabric_skin_mag, c='b')
+            ##     plt.plot(new_times, mag_array, c='r')
+            ##     fig.savefig('test.pdf')
+            ##     fig.savefig('test.png')
+            ##     os.system('cp test.p* ~/Dropbox/HRL/')
+            ##     sys.exit()
 
             
         # ----------------------------------------------------------------------
+    if plot_data: plt.show()
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
@@ -364,17 +449,23 @@ def interpolationData(time_array, data_array, new_time_array):
     from scipy import interpolate
 
     if len(np.shape(data_array)) == 1: data_array = np.array([data_array])
+    if time_array[-1] < new_time_array[0] or time_array[0] > new_time_array[-1]:
+        return data_array[:,: len(new_time_array)]
 
-    n,m = np.shape(data_array)
+    n,m = np.shape(data_array)    
     if len(time_array) > m: time_array = time_array[0:m]
+    
 
     # remove repeated data
     temp_time_array = [time_array[0]]
     temp_data_array = data_array[:,0:1]
-    for i in xrange(1, len(time_array)):
+    for i in xrange(1, len(time_array)):        
         if time_array[i-1] != time_array[i]:
             temp_time_array.append(time_array[i])
             temp_data_array = np.hstack([temp_data_array, data_array[:,i:i+1]])
+        else:
+            if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(data_array[:,i:i+1]):
+                temp_data_array[:,-1:] = data_array[:,i:i+1]
 
     time_array = temp_time_array
     data_array = temp_data_array
@@ -383,14 +474,23 @@ def interpolationData(time_array, data_array, new_time_array):
     if len(time_array) < 2: return np.zeros((3,len(new_time_array)))
     
     new_data_array = None    
-    for i in xrange(n):                    
+    for i in xrange(n):
+
         interp = interpolate.splrep(time_array, data_array[i], s=0)
-        interp_data = interpolate.splev(new_time_array, interp, der=0)
+        interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+
+        # handle extrapolation
+        nonzero_idx = 0
+        for j in xrange(1, len(interp_data)-1):
+            if abs(interp_data[-j]) > 0.0:
+                nonzero_idx = -j
+                break
+        if nonzero_idx != 0:            
+            interp_data[nonzero_idx+1:] += interp_data[nonzero_idx]
         
         if new_data_array is None: new_data_array = interp_data
         else: new_data_array = np.vstack([new_data_array, interp_data])
 
-    print np.shape(new_data_array)
     return new_data_array
     
 def interpolationQuatData(time_array, data_array, new_time_array):
@@ -568,13 +668,12 @@ def scaleData(data_dict, scale=10, data_min=None, data_max=None, verbose=False):
 def getAngularSpatialRF(cur_pos, dist_margin ):
 
     dist = np.linalg.norm(cur_pos)
-    ang_margin = np.arcsin(dist_margin/dist)
+    if dist <= dist_margin: return 90.0, -90.0
+    ang_margin = np.arctan(dist_margin/dist)*180.0/np.pi
 
     pos      = copy.deepcopy(cur_pos)
     pos     /= np.linalg.norm(pos)
-    ang_cur  = np.arccos(pos[1]) - np.pi/2.0
-
-    ang_margin = 10.0 * np.pi/180.0
+    ang_cur  = -1.0 * np.arcsin(pos[1])*180.0/np.pi #- np.pi/2.0
 
     ang_max = ang_cur + ang_margin
     ang_min = ang_cur - ang_margin
@@ -593,7 +692,6 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, v
     pos_data  = data_set[1]
     nData = len(data_set)-1
     
-
     if skin_flag is False:
         new_data_set = [None for i in xrange(nData)]
 
@@ -610,33 +708,44 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, v
                     if new_data_set[i] is None:
                         new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
                     else:
-                        new_data_set[i] = np.hstack([ new_data_set[i], data_set[i+1][:,-1:] ])
+                        new_data_set[i] = np.hstack([ new_data_set[i], new_data_set[i][:,-1:] ])
 
     else:
-        new_data_set = [[] for i in xrange(nData)]
+        new_data_set = [[[],[],[]] for i in xrange(nData)]
 
         for time_idx in xrange(len(time_data)):
             rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()                
 
             if pos_data[0][time_idx] == []:
                 for i in xrange(nData):
-                    new_data_set[i].append( [] )
+                    new_data_set[i][0].append( [0] )
+                    new_data_set[i][1].append( [0] )
+                    new_data_set[i][2].append( [0] )
             else:
                 for i in xrange(nData):
 
-                    local_data = []
+                    local_data_x = []
+                    local_data_y = []
+                    local_data_z = []
                     nPos = len(pos_data[0][time_idx])
                     for j in xrange(nPos):
                         pos_array = np.array([pos_data[0][time_idx][j],\
                                               pos_data[1][time_idx][j],\
                                               pos_data[2][time_idx][j]])
                         if np.linalg.norm(pos_array - rf_traj[:,rf_time_idx]) <= local_range:                            
-                            local_data.append( [data_set[i+1][0][time_idx][j],
-                                                data_set[i+1][1][time_idx][j],
-                                                data_set[i+1][2][time_idx][j] ])
+                            local_data_x.append( data_set[i+1][0][time_idx][j] )
+                            local_data_y.append( data_set[i+1][1][time_idx][j] )
+                            local_data_z.append( data_set[i+1][2][time_idx][j] )
+
+                    ## new_data_set[i].append( local_data )
+                    new_data_set[i][0].append( local_data_x )
+                    new_data_set[i][1].append( local_data_y )
+                    new_data_set[i][2].append( local_data_z )
+
+                    if nPos>1:
+                        new_data_set[i][0]
                                         
-                    new_data_set[i].append( local_data )
-            
+
 
     return new_data_set
     

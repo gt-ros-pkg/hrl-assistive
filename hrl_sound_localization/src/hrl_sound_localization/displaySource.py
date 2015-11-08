@@ -51,12 +51,13 @@ class displaySource():
 
     FRAME_SIZE = 512
     
-    def __init__(self, enable_info_all, enable_info_cen, enable_fft_cen, enable_feature_cen, \
+    def __init__(self, enable_info_all, enable_info_cen, enable_fft_all, enable_fft_cen, enable_feature_cen, \
                  enable_recog, viz=False):
         rospy.init_node('display_sources')
 
         self.enable_info_all = enable_info_all
         self.enable_info_cen = enable_info_cen
+        self.enable_fft_all  = enable_fft_all
         self.enable_fft_cen  = enable_fft_cen
         self.enable_feature_cen = enable_feature_cen
         self.enable_recog    = enable_recog
@@ -73,12 +74,19 @@ class displaySource():
         self.src_info_cen   = 0
         self.src_info_cen_lock = threading.RLock()
 
+        # Source FFT from all direction -----------------
+        self.count_fft_all     = 0
+        self.exist_fft_num_all = 0
+        self.src_fft_all       = 0
+        self.src_fft_all_lock  = threading.RLock()
+        self.showFFTData = {}
+        
         # Source FFT from front direction -----------------
         self.count_fft_cen     = 0
         self.exist_fft_num_cen = 0
         self.src_fft_cen       = 0
         self.src_fft_cen_lock = threading.RLock()
-        self.showFFTData = {}
+        ## self.showFFTData = {}
 
         # Source FEATURE from front direction -----------------
         self.count_feature_cen     = 0
@@ -109,6 +117,8 @@ class displaySource():
         self.torso_frame = 'torso_lift_link'
         self.head_frame  = 'head_mount_link'
 
+        self.plotFFTFlag = False
+
         self.initComms()
         ## self.initParams()
         print "Initialized display source class"
@@ -121,6 +131,7 @@ class displaySource():
         print "Initialize pusblishers and subscribers"
         if self.enable_info_all: rospy.Subscriber('HarkSource/all', HarkSource, self.harkSrcInfoAllCallback)
         if self.enable_info_cen: rospy.Subscriber('HarkSource/center', HarkSource, self.harkSrcInfoCenterCallback)
+        if self.enable_fft_all:  rospy.Subscriber('HarkSrcFFT/all', HarkSrcFFT, self.harkSrcFFTAllCallback)
         if self.enable_fft_cen:  rospy.Subscriber('HarkSrcFFT/center', HarkSrcFFT, self.harkSrcFFTCenterCallback)
         if self.enable_feature_cen: rospy.Subscriber('HarkSrcFeature/all', HarkSrcFeature, \
                                                      self.harkSrcFeatureCenterCallback)
@@ -172,6 +183,49 @@ class displaySource():
             self.exist_info_num_cen = msg.exist_src_num
             self.src_info_cen       = msg.src
 
+    def harkSrcFFTAllCallback(self, msg):
+        '''
+        Get all the source locations from hark. 
+        '''
+        with self.src_fft_all_lock:
+            self.count_fft_all     = msg.count
+            self.exist_fft_num_all = msg.exist_src_num
+            self.src_fft_all       = msg.src
+
+            if self.viz and self.exist_fft_num_all > 0:
+
+                for i in xrange(self.exist_fft_num_all):
+                    src_id = self.src_fft_all[i].id
+
+                    azimuth = self.src_fft_all[i].azimuth
+                    if azimuth > 45 or azimuth < -45:
+                        self.showFFTData[0] = np.hstack([ self.showFFTData[0], \
+                                                               np.array([ 0 ]) ])
+                        continue
+
+                    # Force to use single source id
+                    src_id = 0
+                    
+                    ## if len(self.showFFTData.keys()) > 0:
+                    ##     self.src_fft_all[i]
+
+                    real_fft = self.src_fft_all[i].fftdata_real
+
+                    if src_id not in self.showFFTData.keys():
+                        self.showFFTData[src_id] = np.array([ RMS(real_fft, self.FRAME_SIZE) ])
+                    else:
+                        self.showFFTData[src_id] = np.hstack([ self.showFFTData[src_id], \
+                                                            np.array([ RMS(real_fft, self.FRAME_SIZE) ]) ])
+
+            elif self.viz and self.exist_fft_num_all == 0:
+                if len(self.showFFTData.keys()) == 0: return
+                if len(self.showFFTData[0]) < 1 : return
+
+                src_id = 0
+                self.showFFTData[src_id] = np.hstack([ self.showFFTData[src_id], \
+                                                    np.array([ self.showFFTData[src_id][-1] ]) ])
+
+
     def harkSrcFFTCenterCallback(self, msg):
         '''
         Get all the source locations from hark. 
@@ -217,7 +271,6 @@ class displaySource():
                 src_id = 0
                 self.showFFTData[src_id] = np.hstack([ self.showFFTData[src_id], \
                                                     np.array([ self.showFFTData[src_id][-1] ]) ])
-
 
     def harkSrcFeatureCenterCallback(self, msg):
         '''
@@ -417,7 +470,7 @@ class displaySource():
         else:
             pylab.figure(1)
             
-        with self.src_fft_cen_lock:
+        with self.src_fft_all_lock:
 
             if len(self.showFFTData.keys()) > 1:
                 print "Failure: too many sources!! : ", self.showFFTData.keys()
@@ -436,7 +489,7 @@ class displaySource():
                 
         pylab.xlim([0, self.displen])
         pylab.xticks(range(0, self.displen, 5000),
-                     range(self.count_fft_cen, self.count_fft_cen + self.displen, 5000))
+                     range(self.count_fft_all, self.count_fft_all + self.displen, 5000))
                 
         pylab.ylabel("RMS of ID ")
         ## mx = max(abs(self.showFFTData[key]))
@@ -541,7 +594,7 @@ class displaySource():
             if self.enable_info_all: self.draw_sources_all(10)
             if self.enable_info_cen: self.draw_sources_cen(20)
             if self.enable_recog:    self.draw_sources_cmd(30)
-            if self.enable_fft_cen and self.viz: self.plotFFTData()
+            if self.enable_fft_all and self.viz: self.plotFFTData()
             if self.enable_feature_cen and self.viz: self.plotFeatureData()
             rt.sleep()
             
@@ -555,13 +608,14 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
 
 
-    enable_info_all = True
+    enable_info_all = False
     enable_info_cen = False
+    enable_fft_all  = True
     enable_fft_cen  = False
-    enable_feature_cen  = True
-    enable_recog    = True
+    enable_feature_cen  = False
+    enable_recog    = False
 
-    ds = displaySource( enable_info_all, enable_info_cen, enable_fft_cen, enable_feature_cen, enable_recog,\
+    ds = displaySource( enable_info_all, enable_info_cen, enable_fft_all, enable_fft_cen, enable_feature_cen, enable_recog,\
                         viz=opt.bViz)
     ds.run()
     

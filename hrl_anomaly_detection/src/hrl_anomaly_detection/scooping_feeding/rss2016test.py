@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-## matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -644,7 +644,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               local_range=0.3, rf_center='kinEEPos', \
               success_viz=True, failure_viz=False, \
               raw_viz=False, interp_viz=False, save_pdf=False, \
-              successData=True, failureData=True,\
+              successData=False, failureData=True,\
               ## trainingData=True, normalTestData=False, abnormalTestData=False,\
               modality_list=['audio'], data_renew=False, verbose=False):    
 
@@ -652,7 +652,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
     for idx, file_list in enumerate([success_list, failure_list]):
         if idx == 0 and successData is not True: continue
-        elif idx == 1 and failureData is not True: continue
+        elif idx == 1 and failureData is not True: continue        
     
         # loading and time-sync
         if idx == 0:
@@ -661,14 +661,14 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
-                                                       renew=data_renew, save_pkl=data_pkl)
+                                                       renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
             data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_'+rf_center+'_failure')
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
-                                                       renew=data_renew, save_pkl=data_pkl)
+                                                       renew=data_renew, save_pkl=data_pkl, verbose=verbose)
             
         if verbose: print "Visualize data"
         count       = 0
@@ -728,35 +728,34 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     d1 = np.array(data_list1[i])
                     d2 = np.array(data_list2[i])
                     d = np.vstack([d1, d2])
-                    new_data_list.append( np.linalg.norm(d, axis=0) )
+                    new_data_list.append( np.sum(d, axis=0) )
 
                 data_list = new_data_list
 
             if 'fabric' in modality:
                 time_list = target_dict['fabricTimesList']
-                data_list = target_dict['fabricValueList']
+                ## data_list = target_dict['fabricValueList']
+                data_list = target_dict['fabricMagList']
 
-                # magnitude
-                new_data_list = []
-                for d in data_list:
+                ## # magnitude
+                ## new_data_list = []
+                ## for d in data_list:
 
-                    # d is 3xN-length in which each element has multiple float values
-                    sample = []
-                    if len(d) != 0 and len(d[0]) != 0:
-                        for i in xrange(len(d[0])):
-                            if d[0][i] == []:
-                                sample.append( 0 )
-                            else:                                                               
-                                s = np.array([d[0][i], d[1][i], d[2][i]])
-                                v = np.mean(np.linalg.norm(s, axis=0)) # correct?
-                                sample.append(v)
-                    else:
-                        print "WRONG data size in fabric data"
+                ##     # d is 3xN-length in which each element has multiple float values
+                ##     sample = []
+                ##     if len(d) != 0 and len(d[0]) != 0:
+                ##         for i in xrange(len(d[0])):
+                ##             if d[0][i] == []:
+                ##                 sample.append( 0 )
+                ##             else:                                                               
+                ##                 s = np.array([d[0][i], d[1][i], d[2][i]])
+                ##                 v = np.mean(np.linalg.norm(s, axis=0)) # correct?
+                ##                 sample.append(v)
+                ##     else:
+                ##         print "WRONG data size in fabric data"
                         
-                    new_data_list.append(sample)
-                data_list = new_data_list
-
-            ## print np.shape(data_list), np.shape(data_list[0]), modality
+                ##     new_data_list.append(sample)
+                ## data_list = new_data_list
 
                 ## fig_fabric = plt.figure('fabric')
                 ## ax_fabric = fig_fabric.add_subplot(111) #, projection='3d')
@@ -1119,27 +1118,31 @@ if __name__ == '__main__':
         '''
         target_data_set = 0
         rf_center       = 'kinForearmPos'
-        modality_list   = ['kinematics', 'audio', 'fabric', 'pps', 'ft', 'vision']
+        modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision'] #, 'pps'
+        successData     = True
+        failureData     = False
 
-        if opt.bLocalization: local_range = 0.3
-        else: local_range = 3.0
+        if opt.bLocalization: local_range = 0.1
+        else: local_range = 0.3
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
+                  successData=successData, failureData=failureData,\
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     elif opt.bPCAPlot:
         target_data_set = 0
         ## rf_center    = 'kinEEPos'
         rf_center    = 'kinForearmPos'
-        feature_list = ['unimodal_ppsForce',\
+        feature_list = [#'unimodal_ppsForce',\
                         'unimodal_audioPower',\
                         'unimodal_fabricForce',\
                         'unimodal_ftForce',\
                         'crossmodal_targetRelativeDist', \
                         'crossmodal_targetRelativeAng']
+        
         
         pca_plot([subject], task, raw_data_path, save_data_path, rf_center, \
                   nSet=target_data_set, downSampleSize=downSampleSize, \

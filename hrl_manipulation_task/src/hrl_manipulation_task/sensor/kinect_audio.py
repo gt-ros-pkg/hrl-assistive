@@ -42,10 +42,13 @@ from std_msgs.msg import Bool, Empty, Int32, Int64, Float32, Float64, String
 from hark_msgs.msg import HarkSource, HarkSrcFFT, HarkSrcFeature
 from pr2_controllers_msgs.msg import JointTrajectoryControllerState
 
+def RMS(z, nFFT):
+    return np.sqrt(np.sum(np.dot(z,z))) / np.sqrt(2.0*nFFT)
+
 class kinect_audio(threading.Thread):
-    CHUNK   = 512 # frame per buffer
-    RATE    = 16000 # sampling rate
-    CHANNEL = 4 # number of channels
+    FRAME_SIZE = 512 # frame per buffer
+    RATE       = 16000 # sampling rate
+    CHANNEL    = 4 # number of channels
     
     def __init__(self, verbose=False):
         super(kinect_audio, self).__init__()        
@@ -75,6 +78,7 @@ class kinect_audio(threading.Thread):
         self.audio_cmd     = []
         self.audio_head_joints = None
         
+        self.src_fft_lock = threading.RLock()
         self.src_feature_lock = threading.RLock()
         self.recog_cmd_lock = threading.RLock()
         self.head_state_lock = threading.RLock()
@@ -91,7 +95,8 @@ class kinect_audio(threading.Thread):
         if self.verbose: print "Kinect Audio>> Initialized pusblishers and subscribers"
         ## rospy.Subscriber('HarkSrcFeature/all', HarkSrcFeature, \
         ##                  self.harkSrcFeatureCallback)
-        rospy.Subscriber('HarkSource/all', HarkSource, self.harkSourceCallback)
+        ## rospy.Subscriber('HarkSource/all', HarkSource, self.harkSourceCallback)
+        rospy.Subscriber('HarkSrcFFT/all', HarkSrcFFT, self.harkSrcFFTCallback)
         rospy.Subscriber('julius_recog_cmd', String, self.harkCmdCallback)
         rospy.Subscriber('/head_traj_controller/state', JointTrajectoryControllerState, self.headStateCallback)
         
@@ -186,6 +191,45 @@ class kinect_audio(threading.Thread):
                     self.audio_head_joints = self.head_joints
                     self.audio_cmd.append(self.recog_cmd) # lock??
         
+
+    def harkSrcFFTCallback(self, msg):
+        '''
+        Get all the source locations from hark. 
+        '''
+        with self.src_fft_lock:
+            self.count_fft     = msg.count
+            self.exist_fft_num = msg.exist_src_num
+            self.src_fft       = msg.src
+            time_stamp         = msg.header.stamp
+
+            if self.exist_fft_num > 0:
+
+                for i in xrange(self.exist_fft_num):
+
+                    if self.exist_fft_num > 1:
+                        if self.src_fft[i].azimuth > 89 or self.src_fft[i].azimuth < -89:
+                            continue
+                    
+
+                    azimuth = self.src_fft[i].azimuth
+
+                    # Force to use single source id
+                    src_id = self.src_fft[i].id
+                    src_id = 0
+
+                    self.time    = time_stamp.to_sec() - self.init_time
+                    self.power   = RMS(self.src_fft[i].fftdata_real, self.FRAME_SIZE)
+                    self.azimuth = self.src_fft[i].azimuth+self.base_azimuth #float32
+                    
+                if self.enable_log == True:
+                    self.time_data.append(self.time)
+
+                    self.audio_power.append(self.power)
+                    self.audio_azimuth.append(self.azimuth)
+                    self.audio_head_joints = self.head_joints
+                    self.audio_cmd.append(self.recog_cmd) # lock??
+
+                    
 
     def harkCmdCallback(self, msg):
         '''
