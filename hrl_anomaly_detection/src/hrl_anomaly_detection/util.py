@@ -82,8 +82,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if 'time' not in key:
             data_dict[key]  = []
 
-    if plot_data: fig = plt.figure()            
-    
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
@@ -112,9 +110,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             rf_traj = None
             arm_kdl = create_kdl_kin('torso_lift_link', 'l_gripper_tool_frame')
             for i in xrange(len(kin_jnt_pos[0])):
-                mPose = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_forearm_link', base_link='torso_lift_link')
-                if rf_traj is None: rf_traj = np.array(mPose[:3,3])
-                else: rf_traj = np.hstack([ rf_traj, np.array(mPose[:3,3]) ])
+                mPose1 = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_forearm_link', base_link='torso_lift_link')
+                mPose2 = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_wrist_flex_link', base_link='torso_lift_link')
+                if rf_traj is None: rf_traj = (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0
+                else: rf_traj = np.hstack([ rf_traj, (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0 ])
                     
         ## elif rf_center == 'l_upper_arm_link':            
         else:
@@ -128,10 +127,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if 'audio_time' in d.keys():
             audio_time    = (np.array(d['audio_time']) - init_time).tolist()
             audio_azimuth = d['audio_azimuth']
-            audio_power   = d['audio_power']
+            audio_power   = np.abs(d['audio_power'])
 
             # get noise
-            noise_power = 26.0 #np.mean(audio_power[:100])
+            noise_power = 0.0 #26.0 #np.mean(audio_power[:100])
+            audio_azimuth_margin = 15.0
 
             ang_max_l = []
             ang_min_l = []
@@ -145,9 +145,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 ang_max_l.append(ang_max)
                 ang_min_l.append(ang_min)
 
-                if audio_azimuth[time_idx] > ang_min and audio_azimuth[time_idx] < ang_max:
-                    if audio_power[time_idx] > 50: local_audio_power.append(audio_power[time_idx-1])
-                    else: local_audio_power.append(audio_power[time_idx])
+                if audio_azimuth[time_idx] > ang_min-audio_azimuth_margin and \
+                  audio_azimuth[time_idx] < ang_max+audio_azimuth_margin:
+                    local_audio_power.append(audio_power[time_idx])
+                    ## if audio_power[time_idx] > 50: local_audio_power.append(audio_power[time_idx-1])
+                    ## else: local_audio_power.append(audio_power[time_idx])
                 else:                    
                     local_audio_power.append(noise_power) # or append white noise?
 
@@ -157,21 +159,22 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioPowerList'].append(local_audio_power)
 
             data_dict['audioAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
-            data_dict['audioPowerList'].append(interpolationData(audio_time, local_audio_power, new_times))
+            data_dict['audioPowerList'].append(downSampleAudio(audio_time, local_audio_power, new_times))
 
-            plt.plot([min(ang_min_l)], [29.0],'k*',  )
-            plt.plot([max(ang_max_l)], [29.0],'m*',  )
+            ## plt.plot([min(ang_min_l)], [29.0],'k*',  )
+            ## plt.plot([max(ang_max_l)], [29.0],'m*',  )
             
-            plt.scatter(audio_azimuth, audio_power)
-            plt.scatter(audio_azimuth, local_audio_power, c='r')
+            ## plt.scatter(audio_azimuth, audio_power)
+            ## plt.scatter(audio_azimuth, local_audio_power, c='r')
+            
             ## fig = plt.figure()
             ## plt.plot(audio_time, audio_power, c='k')
             ## plt.plot(audio_time, local_audio_power, c='b')
-            ## plt.plot(new_times, interpolationData(audio_time, local_audio_power, new_times), c='r')
+            ## plt.plot(new_times, downSampleAudio(audio_time, local_audio_power, new_times), c='r')
             ## fig.savefig('test.pdf')
             ## fig.savefig('test.png')
             ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## ## sys.exit()
+            ## sys.exit()
             ## ut.get_keystroke('Hit a key to proceed next')
 
         # kinematics -----------------------------------------------------------
@@ -344,7 +347,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 else:
                     temp = np.array([fabric_skin_values[0][i], fabric_skin_values[1][i], \
                                      fabric_skin_values[2][i] ])
-                    fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
+                    try:
+                        fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
+                    except:
+                        print temp
                     ## print temp, fabric_skin_mag[-1]
 
                 if local_fabric_skin_values[0][i] == []: local_fabric_skin_mag.append(0)
@@ -384,7 +390,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             
         # ----------------------------------------------------------------------
-    if plot_data: plt.show()
 
     # Each iteration may have a different number of time steps, so we extrapolate so they are all consistent
     if isTrainingData:
@@ -441,6 +446,57 @@ def getSubjectFileList(root_path, subject_names, task_name):
     return success_list, failure_list
 
 
+def downSampleAudio(time_array, data_array, new_time_array):
+    '''
+    time_array: N - length array
+    data_array: D x N - length array
+    '''
+    from scipy import interpolate
+
+    if len(np.shape(data_array)) == 1: data_array = np.array([data_array])
+    if time_array[-1] < new_time_array[0] or time_array[0] > new_time_array[-1]:
+        return data_array[:,: len(new_time_array)]
+
+    n,m = np.shape(data_array)    
+    if len(time_array) > m: time_array = time_array[0:m]
+    
+
+    # remove repeated data
+    temp_time_array = [time_array[0]]
+    temp_data_array = data_array[:,0:1]
+    for i in xrange(1, len(time_array)):        
+        if time_array[i-1] != time_array[i]:
+            temp_time_array.append(time_array[i])
+            temp_data_array = np.hstack([temp_data_array, data_array[:,i:i+1]])
+        else:
+            if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(data_array[:,i:i+1]):
+                temp_data_array[:,-1:] = data_array[:,i:i+1]
+
+    time_array = temp_time_array
+    data_array = temp_data_array
+
+    if len(time_array) < 2:
+        nDim = len(data_array)
+        return np.zeros((nDim,len(new_time_array)))
+    
+    new_data_array = None    
+    for i in xrange(n):
+
+        last_time_idx = 0
+        interp_data = []
+        for new_time_idx in xrange(len(new_time_array)):
+            
+            time_idx = np.abs(time_array - new_time_array[new_time_idx]).argmin()                
+            interp_data.append( max(data_array[i,last_time_idx:time_idx+1]) )
+            last_time_idx = time_idx
+        
+        if new_data_array is None: new_data_array = interp_data
+        else: new_data_array = np.vstack([new_data_array, interp_data])
+
+    return new_data_array
+
+
+
 def interpolationData(time_array, data_array, new_time_array):
     '''
     time_array: N - length array
@@ -471,7 +527,9 @@ def interpolationData(time_array, data_array, new_time_array):
     data_array = temp_data_array
 
     
-    if len(time_array) < 2: return np.zeros((3,len(new_time_array)))
+    if len(time_array) < 2:
+        nDim = len(data_array)
+        return np.zeros((nDim,len(new_time_array)))
     
     new_data_array = None    
     for i in xrange(n):
@@ -732,7 +790,10 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, v
                         pos_array = np.array([pos_data[0][time_idx][j],\
                                               pos_data[1][time_idx][j],\
                                               pos_data[2][time_idx][j]])
-                        if np.linalg.norm(pos_array - rf_traj[:,rf_time_idx]) <= local_range:                            
+                        if np.linalg.norm(pos_array - rf_traj[:,rf_time_idx]) <= local_range \
+                          and len(data_set[i+1][0][time_idx]) >= j+1 \
+                          and len(data_set[i+1][1][time_idx]) >= j+1 \
+                          and len(data_set[i+1][2][time_idx]) >= j+1 :
                             local_data_x.append( data_set[i+1][0][time_idx][j] )
                             local_data_y.append( data_set[i+1][1][time_idx][j] )
                             local_data_z.append( data_set[i+1][2][time_idx][j] )
@@ -769,7 +830,8 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
                 p_max = np.amax(pwr)
                 if power_min > p_min:
                     power_min = p_min
-                if p_max < 50 and power_max < p_max:
+                ## if p_max < 50 and power_max < p_max:
+                if power_max < p_max:
                     power_max = p_max
 
             param_dict['unimodal_audioPower_power_max'] = power_max
@@ -828,21 +890,10 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
-            audioAzimuth = d['audioAzimuthList'][idx]
-            audioPower   = d['audioPowerList'][idx]
+            ## audioAzimuth = d['audioAzimuthList'][idx]
+            audioPower   = d['audioPowerList'][idx]            
+            unimodal_audioPower = audioPower
             
-            unimodal_audioPower = []
-            for time_idx in xrange(len(timeList)):
-                ang_max, ang_min = getAngularSpatialRF(rf_traj[:,time_idx], local_range)
-
-                if audioAzimuth[time_idx] > ang_min and audioAzimuth[time_idx] < ang_max:
-                    if audioPower[time_idx] > 50:
-                        unimodal_audioPower.append(param_dict['unimodal_audioPower_power_max'])
-                    else:
-                        unimodal_audioPower.append(audioPower[time_idx])
-                else:
-                    unimodal_audioPower.append(param_dict['unimodal_audioPower_power_min']) # or append white noise?
-
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
 
@@ -862,19 +913,12 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
             unimodal_ftForce = None
             for time_idx in xrange(len(timeList)):
-                if np.linalg.norm(ftPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range:
-                    if unimodal_ftForce is None:
-                        unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-                    else:
-                        unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-                                                       ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
+                if unimodal_ftForce is None:
+                    unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
                 else:
-                    if unimodal_ftForce is None:
-                        unimodal_ftForce = np.zeros((param_dict['unimodal_ftForce_pca_dim'],1))
-                    else:                            
-                        unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-                                                       np.zeros((param_dict['unimodal_ftForce_pca_dim'],1)) ])
-
+                    unimodal_ftForce = np.hstack([ unimodal_ftForce, \
+                                                   ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
+ 
             if dataSample is None: dataSample = np.array(unimodal_ftForce)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce])
 
@@ -889,10 +933,7 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
             unimodal_ppsForce = []
             for time_idx in xrange(len(timeList)):
-                if np.linalg.norm(ppsPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range:
-                    unimodal_ppsForce.append( np.linalg.norm(pps[:,time_idx]) )
-                else:
-                    unimodal_ppsForce.append( param_dict['unimodal_ppsForce_min'] )
+                unimodal_ppsForce.append( np.linalg.norm(pps[:,time_idx]) )
 
             if dataSample is None: dataSample = unimodal_ppsForce
             else: dataSample = np.vstack([dataSample, unimodal_ppsForce])
@@ -900,32 +941,9 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in feature_list:
-            fabricVal = d['fabricValueList'][idx]
-            fabricPos = d['fabricCenterList'][idx]
+            fabricMag = d['fabricMagList'][idx]
 
-            if len(fabricPos) == 0: unimodal_fabricForce = [0]*len(timeList)
-            else:
-                unimodal_fabricForce = []
-                for time_idx in xrange(len(timeList)):
-
-                    # fabricPos[time_idx] is 3xN or []
-                    if fabricPos[time_idx] == []:
-                        unimodal_fabricForce.append( 0 )
-                    else:
-                        value = 0
-                        pos = np.array(fabricPos[time_idx])
-                        val = np.array(fabricVal[time_idx])
-                        n,m = np.shape(pos)
-                        for i in xrange(m):
-                            
-                            if np.linalg.norm(pos[:,i] - rf_traj[:,time_idx]) \
-                              <= local_range:
-                                value += np.linalg.norm(val[:,i])
-                            
-                                ## print np.linalg.norm(pos[:,i] - rf_traj[:,time_idx])
-                            ## print pos[:,i], rf_traj[:,time_idx], np.linalg.norm(pos[:,i] - rf_traj[:,time_idx])
-                                
-                        unimodal_fabricForce.append( value )
+            unimodal_fabricForce = fabricMag
 
             if dataSample is None: dataSample = unimodal_fabricForce
             else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
@@ -939,11 +957,7 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
             crossmodal_targetRelativeDist = []
             for time_idx in xrange(len(timeList)):
-                if np.linalg.norm(kinEEPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range or \
-                  np.linalg.norm(kinTargetPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range:
-                    crossmodal_targetRelativeDist.append( dist[time_idx])
-                else:
-                    crossmodal_targetRelativeDist.append( 0 )
+                crossmodal_targetRelativeDist.append( dist[time_idx])
 
             if dataSample is None: dataSample = np.array(crossmodal_targetRelativeDist)
             else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeDist])
@@ -965,12 +979,7 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
                 endQuat   = kinTargetQuat[:,time_idx]
 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
-
-                if np.linalg.norm(kinEEPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range or \
-                  np.linalg.norm(kinTargetPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range:                
-                    crossmodal_targetRelativeAng.append( abs(diff_ang) )
-                else:
-                    crossmodal_targetRelativeAng.append( 0 )
+                crossmodal_targetRelativeAng.append( abs(diff_ang) )
 
             if dataSample is None: dataSample = np.array(crossmodal_targetRelativeAng)
             else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeAng])
@@ -983,11 +992,7 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
             dist = np.linalg.norm(visionPos - kinEEPos, axis=0)
             crossmodal_artagRelativeDist = []
             for time_idx in xrange(len(timeList)):
-                if np.linalg.norm(kinEEPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range or \
-                  np.linalg.norm(visionPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range:                
-                    crossmodal_artagRelativeDist.append(dist[time_idx])
-                else:
-                    crossmodal_artagRelativeDist.append( 0 )
+                crossmodal_artagRelativeDist.append(dist[time_idx])
 
             if dataSample is None: dataSample = np.array(crossmodal_artagRelativeDist)
             else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeDist])
@@ -1008,11 +1013,7 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
                 endQuat   = visionQuat[:,time_idx]
 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
-                if np.linalg.norm(kinEEPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range or \
-                  np.linalg.norm(visionPos[:,time_idx] - rf_traj[:,time_idx]) <= local_range:
-                    crossmodal_artagRelativeAng.append( abs(diff_ang) )
-                else:
-                    crossmodal_artagRelativeAng.append(0)
+                crossmodal_artagRelativeAng.append( abs(diff_ang) )
 
             if dataSample is None: dataSample = np.array(crossmodal_artagRelativeAng)
             else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeAng])

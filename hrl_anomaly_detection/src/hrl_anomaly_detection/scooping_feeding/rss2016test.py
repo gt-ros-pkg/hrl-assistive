@@ -653,7 +653,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     for idx, file_list in enumerate([success_list, failure_list]):
         if idx == 0 and successData is not True: continue
         elif idx == 1 and failureData is not True: continue        
-    
+
+        ## fig = plt.figure('loadData')                        
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
@@ -669,7 +670,10 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
-            
+
+        ## plt.show()
+        ## sys.exit()
+                                                       
         if verbose: print "Visualize data"
         count       = 0
         nPlot       = len(modality_list)
@@ -873,17 +877,16 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
     trainingData     = np.array(trainingData)
     abnormalTestData = np.array(abnormalTestData)
 
-    ## All data
-    # 1) exclude stationary data
-    thres = 0.01
-    n,m,k = np.shape(allData)
-    for i in xrange(n):
+    ## ## All data
+    ## # 1) exclude stationary data
+    ## thres = 0.01
+    ## n,m,k = np.shape(allData)
+    ## for i in xrange(n):
 
-        d = allData[i].flatten()
-        print np.std(d)
+    ##     d = allData[i].flatten()
+    ##     print np.std(d)
 
-    sys.exit()
-
+    ## sys.exit()
 
 
     nDim, nSample, _ = np.shape(trainingData)
@@ -1098,7 +1101,7 @@ if __name__ == '__main__':
     local_range    = 0.25    
     viz            = False
     renew          = False
-    downSampleSize = 100
+    downSampleSize = 200
 
     if opt.bLikelihoodPlot:
         nState    = 15
@@ -1119,11 +1122,11 @@ if __name__ == '__main__':
         target_data_set = 0
         rf_center       = 'kinForearmPos'
         modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision'] #, 'pps'
-        successData     = True
-        failureData     = False
+        successData     = True #True
+        failureData     = True
 
         if opt.bLocalization: local_range = 0.1
-        else: local_range = 0.3
+        else: local_range = 0.15
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
