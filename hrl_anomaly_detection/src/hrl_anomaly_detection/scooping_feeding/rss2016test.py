@@ -36,24 +36,30 @@ import socket
 
 # visualization
 import matplotlib
-#matplotlib.use('Agg')
+## matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
 
 # util
 import numpy as np
+import scipy
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 import PyKDL
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
+import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
+import hrl_lib.circular_buffer as cb
 
 # learning
 from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
 
+# image
+from astropy.convolution.kernels import CustomKernel
+from astropy.convolution import convolve, convolve_fft
 
 import itertools
-colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k'])
+colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
 
@@ -178,27 +184,20 @@ def updateMinMax(param_dict, feature_name, feature_array):
         
     
 
-def likelihoodOfSequences(processed_data_path, task_name, feature_list, local_range, \
-                          nSet=0, nState=10, threshold=-1.0, \
+def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
+                          nSet=1, downSampleSize=200, \
+                          feature_list=['crossmodal_targetRelativeDist'], \
+                          nState=10, threshold=-1.0, \
                           useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                          renew=False, save_pdf=False, show_plot=True):
+                          renew=False, save_pdf=False, data_renew=False, show_plot=True):
 
-    target_file = os.path.join(processed_data_path, task_name+'_dataSet_'+str(nSet) )                    
-    if os.path.isfile(target_file) is not True: 
-        print "There is no saved data"
-        sys.exit()
-
-    data_dict = ut.load_pickle(target_file)
-
-    # training set
-    trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
-
-    # test set
-    normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
-                                            param_dict=param_dict)        
-    abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
-                                              param_dict=param_dict)
+    allData, trainingData, abnormalTestData = feature_extraction(subject_names, task_name, raw_data_path, \
+                                                                 processed_data_path, rf_center, local_range,\
+                                                                 nSet=nSet, \
+                                                                 downSampleSize=downSampleSize, \
+                                                                 feature_list=feature_list, \
+                                                                 data_renew=data_renew)
 
     print "======================================"
     print "Training data: ", np.shape(trainingData)
@@ -658,14 +657,16 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_'+rf_center+'_success')
+            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success_'+rf_center+\
+                                    '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_'+rf_center+'_failure')
+            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure_'+rf_center+\
+                                    '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
@@ -693,7 +694,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
             if 'kinematics' in modality:
                 time_list = target_dict['kinTimesList']
-                data_list = target_dict['kinEEPosList']
+                data_list = target_dict['kinVelList']
 
                 # distance
                 new_data_list = []
@@ -740,6 +741,10 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 time_list = target_dict['fabricTimesList']
                 ## data_list = target_dict['fabricValueList']
                 data_list = target_dict['fabricMagList']
+
+
+                ## for ii, d in enumerate(data_list):
+                ##     print np.max(d), target_dict['fileNameList'][ii]
 
                 ## # magnitude
                 ## new_data_list = []
@@ -802,8 +807,6 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
             else:
                 interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
                 
-                print modality, np.shape(interp_time), np.shape(data_list[0])
-                
                 for i in xrange(len(data_list)):
                     ax.plot(interp_time, data_list[i], c=color)                
                     ## for j in xrange(len(data_list[i])):
@@ -841,214 +844,932 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     ##                        abnormalTestData=abnormalTestData, save_pdf=save_pdf)        
     
             
+def feature_extraction(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
+             nSet=1, downSampleSize=200, success_viz=False, failure_viz=False, \
+             save_pdf=False, solid_color=True, \
+             feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
 
-def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
+    save_pkl = os.path.join(processed_data_path, 'pca_'+rf_center+'_'+str(local_range) )
+    if os.path.isfile(save_pkl) and data_renew is not True:
+        data_dict = ut.load_pickle(save_pkl)
+        allData          = data_dict['allData']
+        trainingData     = data_dict['trainingData'] 
+        abnormalTestData = data_dict['abnormalTestData']
+        abnormalTestNameList = data_dict['abnormalTestNameList']
+        param_dict       = data_dict['param_dict']
+    else:
+        ## data_renew = False #temp
+        
+        success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+
+        # loading and time-sync    
+        all_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_all_'+rf_center+\
+                                        '_'+str(local_range))
+        _, all_data_dict = loadData(success_list+failure_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    local_range=local_range, rf_center=rf_center,\
+                                    ##global_data=True,\
+                                    renew=data_renew, save_pkl=all_data_pkl)
+
+        success_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_success_'+rf_center+\
+                                            '_'+str(local_range))
+        _, success_data_dict = loadData(success_list, isTrainingData=True,
+                                        downSampleSize=downSampleSize,\
+                                        local_range=local_range, rf_center=rf_center,\
+                                        renew=data_renew, save_pkl=success_data_pkl)
+
+        failure_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_failure_'+rf_center+\
+                                            '_'+str(local_range))
+        _, failure_data_dict = loadData(failure_list, isTrainingData=False,
+                                        downSampleSize=downSampleSize,\
+                                        local_range=local_range, rf_center=rf_center,\
+                                        renew=data_renew, save_pkl=failure_data_pkl)
+
+        # data set
+        allData, param_dict = extractLocalFeature(all_data_dict, feature_list)
+        trainingData, _     = extractLocalFeature(success_data_dict, feature_list, param_dict=param_dict)
+        abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, param_dict=param_dict)
+
+        allData          = np.array(allData)
+        trainingData     = np.array(trainingData)
+        abnormalTestData = np.array(abnormalTestData)
+
+        data_dict = {}
+        data_dict['allData'] = allData
+        data_dict['trainingData'] = trainingData
+        data_dict['abnormalTestData'] = abnormalTestData
+        data_dict['abnormalTestNameList'] = abnormalTestNameList = failure_data_dict['fileNameList']
+        data_dict['param_dict'] = param_dict
+        ut.save_pickle(data_dict, save_pkl)
+
+
+    ## # test
+    ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+    ## _, success_data_dict = loadData(success_list, isTrainingData=True,
+    ##                                 downSampleSize=downSampleSize,\
+    ##                                 local_range=local_range, rf_center=rf_center)
+    ## trainingData, _      = extractLocalFeature(success_data_dict, feature_list, \
+    ##                                            param_dict=data_dict['param_dict'])
+    ## sys.exit()
+    
+    ## All data
+    nPlot = None
+    feature_names = np.array(param_dict['feature_names'])
+
+    if True:
+
+        # 1) exclude stationary data
+        thres = 0.025
+        n,m,k = np.shape(trainingData)
+        diff_all_data = trainingData[:,:,1:] - trainingData[:,:,:-1]
+        add_idx    = []
+        remove_idx = []
+        std_list = []
+        for i in xrange(n):
+            std = np.max(np.max(diff_all_data[i], axis=1))
+            std_list.append(std)
+            if  std < thres: remove_idx.append(i)
+            else: add_idx.append(i)
+
+        allData          = allData[add_idx]
+        trainingData     = trainingData[add_idx]
+        abnormalTestData = abnormalTestData[add_idx]
+        feature_names    = feature_names[add_idx]
+
+        print "--------------------------------"
+        print "STD list: ", std_list
+        print "Add_idx: ", add_idx
+        print "Remove idx: ", remove_idx
+        print "--------------------------------"
+        ## sys.exit()
+
+
+    # -------------------- Display ---------------------
+    fig = None
+    if success_viz:
+        fig = plt.figure()
+        n,m,k = np.shape(trainingData)
+        if nPlot is None:
+            if n%2==0: nPlot = n
+            else: nPlot = n+1
+
+        for i in xrange(n):
+            ax = fig.add_subplot((nPlot/2)*100+20+i)
+            if solid_color: ax.plot(trainingData[i].T, c='b')
+            else: ax.plot(trainingData[i].T)
+            ax.set_title( feature_names[i] )
+
+    if failure_viz:
+        if fig is None: fig = plt.figure()
+        n,m,k = np.shape(abnormalTestData)
+        if nPlot is None:
+            if n%2==0: nPlot = n
+            else: nPlot = n+1
+
+        for i in xrange(n):
+            ax = fig.add_subplot((nPlot/2)*100+20+i)
+            if solid_color: ax.plot(abnormalTestData[i].T, c='r')
+            else: ax.plot(abnormalTestData[i].T)
+            ax.set_title( feature_names[i] )
+
+    if success_viz or failure_viz:
+        plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+
+        if save_pdf:
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('cp test.p* ~/Dropbox/HRL/')        
+        else:
+            plt.show()
+
+
+    print "---------------------------------------------------"
+    print np.shape(trainingData), np.shape(abnormalTestData)
+    print "---------------------------------------------------"
+
+    return allData, trainingData, abnormalTestData
+
+
+def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
              nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
              save_pdf=False, \
              feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
 
-    success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
-    
-    # loading and time-sync    
-    all_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_all')
-    _, all_data_dict = loadData(success_list+failure_list, isTrainingData=False,
-                                downSampleSize=downSampleSize,\
-                                renew=data_renew, save_pkl=all_data_pkl)
-    
-    success_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_success')
-    _, success_data_dict = loadData(success_list, isTrainingData=True,
-                                    downSampleSize=downSampleSize,\
-                                    renew=data_renew, save_pkl=success_data_pkl)
 
-    failure_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_failure')
-    _, failure_data_dict = loadData(failure_list, isTrainingData=False,
-                                    downSampleSize=downSampleSize,\
-                                    renew=data_renew, save_pkl=failure_data_pkl)
-
-    # data set
-    allData, param_dict = extractLocalFeature(all_data_dict, feature_list, local_range, \
-                                              rf_center=rf_center)                                              
-    trainingData, _     = extractLocalFeature(success_data_dict, feature_list, local_range, \
-                                              rf_center=rf_center, param_dict=param_dict)
-    abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, local_range, \
-                                              rf_center=rf_center, param_dict=param_dict)
-
-    allData          = np.array(allData)
-    trainingData     = np.array(trainingData)
-    abnormalTestData = np.array(abnormalTestData)
-
-    ## ## All data
-    ## # 1) exclude stationary data
-    ## thres = 0.01
-    ## n,m,k = np.shape(allData)
-    ## for i in xrange(n):
-
-    ##     d = allData[i].flatten()
-    ##     print np.std(d)
-
-    ## sys.exit()
-
-
-    nDim, nSample, _ = np.shape(trainingData)
-    fig = plt.figure()
-    for i in xrange(nDim):
-        ax  = fig.add_subplot(nDim*100+10+i+1)
-        ax.plot(trainingData[i,:,:].T, 'b')
-        ax.plot(abnormalTestData[i,:,:].T, 'r')
-        ax.set_ylim([-0.1, 1.1])
-        
-    if save_pdf:
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')        
-    else:
-        plt.show()
+    allData, trainingData, abnormalTestData = feature_extraction(subject_names, task_name, raw_data_path, \
+                                                                 processed_data_path, rf_center, local_range,\
+                                                                 nSet=nSet, \
+                                                                 downSampleSize=downSampleSize, \
+                                                                 feature_list=feature_list, \
+                                                                 data_renew=data_renew)
 
     print "---------------------------------------------------"
     print np.shape(trainingData), np.shape(abnormalTestData)
     print "---------------------------------------------------"
     
+    m,n,k = np.shape(allData)
+    all_data_array = None
+    for i in xrange(n):
+        for j in xrange(k):
+            if all_data_array is None: all_data_array = allData[:,i,j]
+            else: all_data_array = np.vstack([all_data_array, allData[:,i,j]])
+                
     m,n,k = np.shape(trainingData)
-    data_array = None
+    success_data_array = None
     for i in xrange(n):
         for j in xrange(k):
-            if data_array is None: data_array = trainingData[:,i,j]
-            else: data_array = np.vstack([data_array, trainingData[:,i,j]])
-
-    ml = PCA(n_components=2)
-    ml.fit(data_array)
-
-    fig = plt.figure()
-    for i in xrange(n):
-        data_array = None
-        for j in xrange(k):
-            if data_array is None: data_array = trainingData[:,i,j]
-            else: data_array = np.vstack([data_array, trainingData[:,i,j]])
-
-        res = ml.transform(data_array)
-        color = colors.next()
-        plt.scatter(res[:,0], res[:,1], c=color)
-
+            if success_data_array is None: success_data_array = trainingData[:,i,j]
+            else: success_data_array = np.vstack([success_data_array, trainingData[:,i,j]])
 
     m,n,k = np.shape(abnormalTestData)
-    data_array = None
+    failure_data_array = None
     for i in xrange(n):
         for j in xrange(k):
-            if data_array is None: data_array = abnormalTestData[:,i,j]
-            else: data_array = np.vstack([data_array, abnormalTestData[:,i,j]])
+            if failure_data_array is None: failure_data_array = abnormalTestData[:,i,j]
+            else: failure_data_array = np.vstack([failure_data_array, abnormalTestData[:,i,j]])
 
-        res = ml.transform(data_array)
-        color = colors.next()
-        plt.scatter(res[:,0], res[:,1], c='k', marker='x')
+    #--------------------- Parameters -------------------------------
+    fig = plt.figure()
+    # step size in the mesh
+    h = .01
+
+    # ------------------- Visualization using different PCA? --------
+    dr = {}
+    from sklearn.manifold import Isomap
+    ## dr['isomap4'] = Isomap(n_neighbors=4, n_components=2)
+    ## dr['isomap5'] = Isomap(n_neighbors=5, n_components=2)
+    dr['isomap4'] = Isomap(n_neighbors=4, n_components=2)
+    dr['isomap7'] = Isomap(n_neighbors=7, n_components=2)
+    from sklearn.decomposition import KernelPCA # Too bad
+    dr['kpca_gamma5'] = KernelPCA(n_components=2, kernel="linear", gamma=5.0)
+    dr['kpca_gamma2'] = KernelPCA(n_components=2, kernel="rbf", gamma=2.0)
+    ## dr['kpca_gamma3'] = KernelPCA(n_components=2, kernel="sigmoid", gamma=0.3)
+    ## dr['kpca_gamma5'] = KernelPCA(n_components=2, kernel="cosine", gamma=0.3)
+    from sklearn.manifold import LocallyLinearEmbedding # Too bad
+    ## dr['lle3'] = LocallyLinearEmbedding(n_neighbors=3, n_components=2, eigen_solver='dense')
+    ## dr['lle5'] = LocallyLinearEmbedding(n_neighbors=5, n_components=2, eigen_solver='dense')
+    ## dr['lle7'] = LocallyLinearEmbedding(n_neighbors=7, n_components=2, eigen_solver='dense')
+
+    bv = {}
+    from sklearn import svm
+    bv['svm_gamma1'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=0.4)
+    bv['svm_gamma2'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=2.0)
+    bv['svm_gamma3'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=3.0)
+    bv['svm_gamma4'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=4.0)
+
+
+    # title for the plots
+    for idx, key in enumerate(dr.keys()):
+    ## for idx, key in enumerate(bv.keys()):
+        ml  = dr[key]
+        clf = bv['svm_gamma1'] #[key]
+        plt.subplot(2, 2, idx + 1)
+
+        # --------------- Dimension Reduction --------------------------
+        success_x = ml.fit_transform(success_data_array)
+        success_y = [1.0]*len(success_data_array)
+
+        failure_x = ml.transform(failure_data_array)
+        failure_y = [0.0]*len(failure_data_array)
+
+        all_x = ml.transform(all_data_array)
+
+        # ---------------- Boundary Visualization ----------------------
+        clf.fit(success_x, success_y)
+
+        # create a mesh to plot in
+        x_min, x_max = all_x[:, 0].min() - 0.2, all_x[:, 0].max() + 0.2
+        y_min, y_max = all_x[:, 1].min() - 0.2, all_x[:, 1].max() + 0.2
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                             np.arange(y_min, y_max, h))
         
-    if save_pdf:
-        fig.savefig('test_pca.pdf')
-        fig.savefig('test_pca.png')
-        os.system('cp test_pca.p* ~/Dropbox/HRL/')        
-    else:
-        plt.show()
+        Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
 
+        # Put the result into a color plot
+        Z = Z.reshape(xx.shape)
 
-def visualization_hmm_data(feature_list, trainingData=None, normalTestData=None, abnormalTestData=None, save_pdf=False):
+        plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.Blues_r)
+        plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors='orange')
+        plt.axis('off')
 
-    if trainingData is not None:
-        nDimension = len(trainingData)
-    elif normalTestData is not None:
-        nDimension = len(normalTestData)
-    elif abnormalTestData is not None:
-        nDimension = len(abnormalTestData)
-    else:
-        print "no data"
-        sys.exit()
-        
-    fig = plt.figure()            
-    # --------------------------------------------------
-    for i in xrange(nDimension):
-        ax = fig.add_subplot(100*nDimension+10+(i+1))
-        if trainingData is not None:
-            ax.plot(np.array(trainingData[i]).T, 'b')
-        ## elif normalTestData is not None:
-        ##     ax.plot(np.array(normalTestData[i]).T, 'k')
-        ## elif abnormalTestData is not None:
-        ##     ax.plot(abnormalTestData[i], 'r')
+        plt.title(key)
 
-        ax.set_title(feature_list[i])
+        # ---------------- Sample Visualization ------------------------
+        if success_viz:
+            plt.scatter(success_x[:,0], success_x[:,1], c='b', label=None)
 
+        # Abnormal
+        if failure_viz:
+            legend_handles = []
+            m,n,k = np.shape(abnormalTestData)
+            for i in xrange(n):
+                data_array = None
+                for j in xrange(k):
+                    if data_array is None: data_array = abnormalTestData[:,i,j]
+                    else: data_array = np.vstack([data_array, abnormalTestData[:,i,j]])
+
+                res = ml.transform(data_array)
+                ## color = colors.next()
+
+                cause = os.path.split(abnormalTestNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
+                if 'unrelated_sound' in cause: color = 'k'
+                elif 'forcesound' == cause: color = 'r'
+                elif 'force' in cause: color = 'm'
+                elif 'sound' in cause: color = 'g'
+                else: color = 'k'
+                    
+                
+                plt.scatter(res[:,0], res[:,1], c=color, marker='x', label=cause)
+                ## legend_handles.append( h )
+
+            ## plt.legend(loc='upper right') #handles=legend_handles) #loc='upper right', 
+            
     if save_pdf:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')        
     else:
         plt.show()
-    #sys.exit()
 
 
-def visualization_raw_data(data_dict, modality='ft', save_pdf=False):
+def space_time_field_plot(subject_names, task_name, raw_data_path, processed_data_path, \
+                          nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
+                          save_pdf=False, data_renew=False):
 
-    data_key = 'trainData'
-    file_key = 'trainFileList'
-    ## data_key = 'normalTestData'
-    ## file_key = 'normalTestFileList'
-    for key in data_dict[data_key].keys():
+    
+    data_pkl = os.path.join(processed_data_path, 'test.pkl')
+    if os.path.isfile(data_pkl):
+        data_dict = ut.load_pickle(data_pkl)
 
-        if not('Pos' in key): continue
+        fileNameList     = data_dict['fileNameList']
+        # Audio
+        audioTimesList   = data_dict['audioTimesList']
+        audioAzimuthList = data_dict['audioAzimuthList']
+        audioPowerList   = data_dict['audioPowerList']
+
+        # Fabric force
+        fabricTimesList  = data_dict['fabricTimesList']
+        fabricCenterList = data_dict['fabricCenterList']
+        fabricNormalList = data_dict['fabricNormalList']
+        fabricValueList  = data_dict['fabricValueList']
+        min_audio_power  = data_dict['min_audio_power']
+    else:
+        success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+
+        #-------------------------------- Success -----------------------------------
+        success_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_success')
+        raw_data_dict, _ = loadData(success_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    global_data=True,\
+                                    renew=data_renew, save_pkl=success_data_pkl)
+
+        # Audio
+        audioTimesList   = raw_data_dict['audioTimesList']
+        audioAzimuthList = raw_data_dict['audioAzimuthList']
+        audioPowerList   = raw_data_dict['audioPowerList']
+
+        ## min_audio_power = np.mean( [np.mean(x) for x in audioPowerList] )
+        min_audio_power = np.min( [np.max(x) for x in audioPowerList] )
+
+        #-------------------------------- Failure -----------------------------------
+        failure_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_failure')
+        raw_data_dict, _ = loadData(failure_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    global_data=True,\
+                                    renew=data_renew, save_pkl=failure_data_pkl)
+
+        fileNameList     = raw_data_dict['fileNameList']
+        # Audio
+        audioTimesList   = raw_data_dict['audioTimesList']
+        audioAzimuthList = raw_data_dict['audioAzimuthList']
+        audioPowerList   = raw_data_dict['audioPowerList']
+
+        # Fabric force
+        fabricTimesList  = raw_data_dict['fabricTimesList']
+        fabricCenterList = raw_data_dict['fabricCenterList']
+        fabricNormalList = raw_data_dict['fabricNormalList']
+        fabricValueList  = raw_data_dict['fabricValueList']
+
+        data_dict = {}
+        data_dict['fileNameList'] = fileNameList
+        # Audio
+        data_dict['audioTimesList'] = audioTimesList
+        data_dict['audioAzimuthList'] = audioAzimuthList
+        data_dict['audioPowerList'] = audioPowerList
+
+        # Fabric force
+        data_dict['fabricTimesList'] = fabricTimesList
+        data_dict['fabricCenterList'] = fabricCenterList
+        data_dict['fabricNormalList'] = fabricNormalList
+        data_dict['fabricValueList'] = fabricValueList
+
+        data_dict['min_audio_power'] = min_audio_power
+        ut.save_pickle(data_dict, data_pkl)
+
+
+    nSample = len(audioTimesList)
+    azimuth_interval = 2.0
+    audioSpace = np.arange(-90, 90, azimuth_interval)
+    max_audio_power      = 5000 #np.median( [np.max(x) for x in audioPowerList] )
+    max_fabric_value     = 3.0
+    max_audio_azimuth  = 15.0
+    max_audio_delay    = 1.0
+    max_fabric_azimuth = 10.0
+    max_fabric_delay   = 1.0
+
+    # gaussian kernel
+    # weibull kernel
+    ## from astropy.convolution import Gaussian1DKernel
+    ## from astropy.convolution import Gaussian2DKernel
+    ## from scipy.stats import norm, gumbel_l
+    
+    for i in xrange(nSample):
+        fig = plt.figure(figsize=(12,8))
+
+        # time
+        downSampleSize = 1000
+        max_time1 = np.max(audioTimesList[i])
+        max_time2 = np.max(fabricTimesList[i])
+        if max_time1 > max_time2: # min of max time
+            max_time = max_time2
+        else:
+            max_time = max_time1            
+        new_times     = np.linspace(0.0, max_time, downSampleSize)
+        time_interval = new_times[1]-new_times[0]
+
+        # define the size of kernel
+        ## audio_kernel_x = int(np.floor(max_audio_delay/time_interval))*2+1
+        ## audio_kernel_y = int(np.floor(max_audio_azimuth/azimuth_interval))*2+1
+        ## fabric_kernel_x = int(np.floor(max_fabric_delay/time_interval))*2+1
+        ## fabric_kernel_y = int(np.floor(max_fabric_azimuth/azimuth_interval))*2+1
+
+        ## max_gaussian_x = norm.ppf(0.682)
+        ## max_audio_kernel_x = int(np.floor(max_gaussian_x*max_audio_delay_range/time_interval))*2+1
+        ## max_audio_kernel_y = int(np.floor(max_gaussian_x*max_audio_azimuth_range/azimuth_interval))*2+1
+        ## max_fabric_kernel_x = int(np.floor(max_gaussian_x*max_fabric_delay_range/time_interval))*2+1
+        ## max_fabric_kernel_y = int(np.floor(max_gaussian_x*max_fabric_azimuth_range/azimuth_interval))*2+1
+        ## if max_kernel_x%2==0: max_kernel_x+=1
+        ## if max_kernel_y%2==0: max_kernel_y+=1
+        ## print max_fabric_kernel_x, max_fabric_kernel_y
+
+        # -------------------------------------------------------------
+        # ------------------- Auditory --------------------------------
+        audioTime    = audioTimesList[i]
+        audioAzimuth = audioAzimuthList[i]
+        audioPower   = audioPowerList[i]
+
+        discrete_azimuth_array = hdl.discretization_array(audioAzimuth, [-90,90], len(audioSpace))
+        discrete_time_array    = hdl.discretization_array(audioTime, [0.0, max_time], len(new_times))
+
+        image = np.zeros((len(new_times),len(audioSpace)))
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+                
+            s = np.zeros(len(audioSpace))
+            if audioPower[j] > max_audio_power:
+                s[discrete_azimuth_array[j]] = 1.0
+            elif audioPower[j] > min_audio_power:                
+                s[discrete_azimuth_array[j]] = ((audioPower[j]-min_audio_power)/
+                                                (max_audio_power-min_audio_power)) #**2
+
+            #
+            if last_time_idx == time_idx:
+                for k in xrange(len(s)):
+                    if image[time_idx,k] < s[k]: image[time_idx,k] = s[k]
+            else:
+                # image: (Ang, N)
+                if len(np.shape(s))==1: s = np.array([s])
+                image[time_idx,:] = s
+            last_time_idx = time_idx
+
+        image = image.T
+        ax = fig.add_subplot(3,3,1)
+        plot_space_time_distribution(ax, image, new_times, audioSpace, \
+                                     x_label='Time [msec]', y_label='Azimuth [deg]', title='Auditory RF')
+
+        # -------------------------------------------------------------
+        # Convoluted data
+        ## g = Gaussian1DKernel(max_audio_kernel_y) # 8*std
+        ## a = g.array
+        gaussian_2D_kernel = get_space_time_kernel(max_audio_delay, max_audio_azimuth, \
+                                                   time_interval, azimuth_interval)
+        gaussian_2D_kernel = CustomKernel(gaussian_2D_kernel)
+
+        # For color scale
+        image_min = np.amin(image.flatten())
+        image_max = np.amax(image.flatten())        
+        image = convolve(image, gaussian_2D_kernel, boundary='extend')
+        if image_max != image_min:
+            image = (image-image_min)/(image_max-image_min)#*image_max
+        else:
+            image = (image-image_min)
+        ## image[0,0] = 1.0
         
-        dataList = data_dict[data_key][key]
-        fileList = data_dict[file_key]
+        ax = fig.add_subplot(3,3,4)        
+        plot_space_time_distribution(ax, image, new_times, audioSpace, \
+                                     x_label='Time [msec]', y_label='Azimuth [deg]', title='Auditory RF')
+        image1 = copy.copy(image)
+
         
-        if len(np.shape(dataList)) < 3: continue
-        nSample, nDim, k = np.shape(dataList)
+        # -------------------------------------------------------------
+        ## Clustering
+        ax = fig.add_subplot(3,3,7)
+        clustered_image, audio_label_list = space_time_clustering(image, max_audio_delay, max_audio_azimuth, \
+                                                                 azimuth_interval, time_interval, 4)
+        plot_space_time_distribution(ax, clustered_image, new_times, audioSpace, \
+                                     x_label='Time [msec]', y_label='Azimuth [deg]', title='Auditory RF')
+        clustered_audio_image = copy.copy(clustered_image)
 
-        fig = plt.figure()            
-        for i in xrange(nDim):
-            ax = fig.add_subplot(nDim*100+10+i)
+        # -------------------------------------------------------------
+        # ------------------- Fabric Force ----------------------------
+        fabricTime   = fabricTimesList[i]
+        fabricCenter = fabricCenterList[i]
+        fabricValue  = fabricValueList[i]
 
-            for j in xrange(nSample):
-                fileName = fileList[j].split('/')[-1] 
-                ax.plot(dataList[j][i,:], label=fileName)
+        ## discrete_azimuth_array = hdl.discretization_array(audioAzimuth, [-90,90], len(audioSpace))
+        discrete_time_array    = hdl.discretization_array(fabricTime, [0.0, max_time], len(new_times))
 
-        ## plt.legend(loc=3,prop={'size':8})
-        ## ax1.set_ylim([0.0, 2.0])
+        image = np.zeros((len(new_times),len(audioSpace)))
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+            s = np.zeros(len(audioSpace))
+
+            # Estimate space
+            xyz  = [fabricCenter[0][j], fabricCenter[1][j], fabricCenter[2][j]]
+            fxyz = [fabricValue[0][j], fabricValue[1][j], fabricValue[2][j]] 
+            for k in xrange(len(xyz[0])):
+                if xyz[0][k]==0 and xyz[1][k]==0 and xyz[2][k]==0: continue
+                y   = xyz[1][k]/np.linalg.norm( np.array([ xyz[0][k],xyz[1][k],xyz[2][k] ]) )
+                ang = np.arcsin(y)*180.0/np.pi 
+                mag = np.linalg.norm(np.array([fxyz[0][k],fxyz[1][k],fxyz[2][k]]))
+
+                ang_idx = hdl.discretize_single(ang, [-90,90], len(audioSpace))
+                if mag > max_fabric_value:
+                    s[ang_idx] = 1.0
+                elif mag > 0.0:
+                    s[ang_idx] = ((mag-0.0)/(max_fabric_value-0.0))
+
+            #
+            if last_time_idx == time_idx:
+                ## print "fabrkc: ", np.shape(image), np.shape(s), last_time_idx, time_idx
+                for k in xrange(len(s)):
+                    if image[time_idx,k] < s[k]: image[time_idx,k] = s[k]
+            else:
+                # image: (Ang, N)
+                if len(np.shape(s))==1: s = np.array([s])
+                ## print np.shape(image), time_idx, np.shape(image[time_idx,:]), np.shape(s)
+                image[time_idx,:] = s
+
+            # clustering label
+            ## for k in xrange(len(z)):
+            ##     if z[k,0] > 0.01: X.append([j,k]) #temp # N x Ang
+
+            # For color scale
+            ## image[0,0]=1.0
+            last_time_idx = time_idx
+            
+        image = image.T
+        ax = fig.add_subplot(3,3,2)
+        plot_space_time_distribution(ax, image, new_times, audioSpace, \
+                                     x_label='Time [msec]', title='Fabric Skin RF')
+
+
+        # -------------------------------------------------------------
+        # Convoluted data
+        gaussian_2D_kernel = get_space_time_kernel(max_fabric_delay, max_fabric_azimuth, \
+                                                   time_interval, azimuth_interval)        
+        gaussian_2D_kernel = CustomKernel(gaussian_2D_kernel)
+
+        # For color scale
+        image_min = np.amin(image.flatten())
+        image_max = np.amax(image.flatten())        
+        image = convolve(image, gaussian_2D_kernel, boundary='extend')
+        if image_max != image_min:
+            image = (image-image_min)/(image_max-image_min)#*image_max
+        else:
+            image = (image-image_min)
+        image[0,0] = 1.0
+
+        ax = fig.add_subplot(3,3,5)
+        plot_space_time_distribution(ax, image, new_times, audioSpace, \
+                                     x_label='Time [msec]', title='Fabric Skin RF')
+        image2 = copy.copy(image)
+
+
+
+        # -------------------------------------------------------------
+        # Clustering
+        ax = fig.add_subplot(3,3,8)
+        clustered_image, fabric_label_list = space_time_clustering(image, max_fabric_delay , max_fabric_azimuth, \
+                                                                  azimuth_interval, time_interval, 4)
+        plot_space_time_distribution(ax, clustered_image, new_times, audioSpace, \
+                                     x_label='Time [msec]', title='Fabric Skin RF')
+        clustered_fabric_image = copy.copy(clustered_image)
+                                     
+        # -------------------------------------------------------------
+        #-----------------Multi modality ------------------------------
+        ax = fig.add_subplot(3,3,6)
+        image = image1 * image2
+        plot_space_time_distribution(ax, image, new_times, audioSpace, \
+                                     x_label='Time [msec]', title='Multimodal RF')
+                                     
+        # -------------------------------------------------------------
+        ax = fig.add_subplot(3,3,9)
+        ## image = clustered_image1 * clustered_image2
+        max_delay   = np.max([max_audio_delay, max_fabric_delay])
+        max_azimuth = np.max([max_audio_azimuth, max_fabric_azimuth])
+        clustered_image, label_list = space_time_clustering(image, max_fabric_delay , max_fabric_azimuth, \
+                                                           azimuth_interval, time_interval, 4)
+        plot_space_time_distribution(ax, clustered_image, new_times, audioSpace, \
+                                     x_label='Time [msec]', title='Multimodal RF')
+
+        cause = os.path.split(fileNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
+        plt.suptitle('Anomaly: '+cause, fontsize=20)                        
+        plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+        
+        # -------------------------------------------------------------
+        # Classification
+        # -------------------------------------------------------------
+        audio_score = np.zeros((len(audio_label_list)))        
+        fabric_score = np.zeros((len(fabric_label_list)))        
+        multi_score = np.zeros((len(label_list)))        
+        for ii in xrange(len(clustered_image)):
+            for jj in xrange(len(clustered_image[ii])):
+                # audio
+                y = clustered_audio_image[ii,jj]
+                if y > 0: audio_score[int(y)-1]+=1
+                # fabric
+                y = clustered_fabric_image[ii,jj]
+                if y > 0: fabric_score[int(y)-1]+=1
+                # multimodal
+                y = clustered_image[ii,jj]
+                if y > 0: multi_score[int(y)-1]+=1
+
+        print "00000000000000000"
+        print audio_score
+        print fabric_score
+        print multi_score
+        print "00000000000000000"
+        image_area = float(len(clustered_image)*len(clustered_image[0]))
+        if np.max(multi_score)/image_area > 0.02:
+            print "Force and sound :: ", cause
+        else:
+            if np.max(audio_score)/image_area > 0.02:
+                print "sound :: ", cause
+            if np.max(fabric_score)/image_area > 0.02:
+                print "Skin contact force :: ", cause
+                    
+        
+
         if save_pdf:
-            fig.savefig('test'+str(count)+'.pdf')
-            fig.savefig('test'+str(count)+'.png')
-            os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('cp test.p* ~/Dropbox/HRL/')
+            ut.get_keystroke('Hit a key to proceed next')
         else:
             plt.show()
 
+        ## sys.exit()
 
-        ## count = 0
-        ## d_list = []
-        ## f_list = []
 
-        ## for idx, data in enumerate(dataList):
+def plot_space_time_distribution(ax, image, x_range, y_range, x_label=None, y_label=None, title=None):
+    ax.imshow(image, aspect='auto', origin='lower', interpolation='none')
+    y_tick = np.arange(y_range[0], y_range[-1]+0.0001, 30)
+    ax.set_yticks(np.linspace(0, len(image), len(y_tick)))
+    ax.set_yticklabels(y_tick)
+    x_tick = np.arange(0, x_range[-1], 5.0)
+    ax.set_xticks(np.linspace(0, len(image[0]), len(x_tick)))        
+    ax.set_xticklabels(x_tick)
+    
+    if title is not None: ax.set_title(title)
+    if x_label is not None: ax.set_xlabel(x_label)
+    if y_label is not None: ax.set_ylabel(y_label)
+    
+    
+def offline_classification(subject_names, task_name, raw_data_path, processed_data_path, \
+                           nSet=1, downSampleSize=200, \
+                           save_pdf=False, data_renew=False):
 
-        ##     d_list.append( np.linalg.norm(data, axis=0) )
-        ##     f_list.append( fileList[idx].split('/')[-1] )
+    
+    data_pkl = os.path.join(processed_data_path, 'test.pkl')
+    if os.path.isfile(data_pkl):
+        data_dict = ut.load_pickle(data_pkl)
 
-        ##     if idx%10 == 9:
+        fileNameList     = data_dict['fileNameList']
+        # Audio
+        audioTimesList   = data_dict['audioTimesList']
+        audioAzimuthList = data_dict['audioAzimuthList']
+        audioPowerList   = data_dict['audioPowerList']
 
-        ##         fig = plt.figure()            
-        ##         ax1 = fig.add_subplot(111)
+        # Fabric force
+        fabricTimesList  = data_dict['fabricTimesList']
+        fabricCenterList = data_dict['fabricCenterList']
+        fabricNormalList = data_dict['fabricNormalList']
+        fabricValueList  = data_dict['fabricValueList']
+        min_audio_power  = data_dict['min_audio_power']
+    else:
+        success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
 
-        ##         for j, d in enumerate(d_list):
-        ##             ax1.plot(d_list[j], label=f_list[j])
+        #-------------------------------- Success -----------------------------------
+        success_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_success')
+        raw_data_dict, _ = loadData(success_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    global_data=True,\
+                                    renew=data_renew, save_pkl=success_data_pkl)
 
-        ##         plt.legend(loc=3,prop={'size':8})
-        ##         ## ax1.set_ylim([0.0, 2.0])
+        # Audio
+        audioTimesList   = raw_data_dict['audioTimesList']
+        audioAzimuthList = raw_data_dict['audioAzimuthList']
+        audioPowerList   = raw_data_dict['audioPowerList']
 
-        ##         if save_pdf:
-        ##             fig.savefig('test'+str(count)+'.pdf')
-        ##             fig.savefig('test'+str(count)+'.png')
-        ##             os.system('cp test'+str(count)+'.p* ~/Dropbox/HRL/')        
-        ##         else:
-        ##             plt.show()
+        ## min_audio_power = np.mean( [np.mean(x) for x in audioPowerList] )
+        min_audio_power = np.min( [np.max(x) for x in audioPowerList] )
 
-        ##         d_list = []
-        ##         f_list = []
-        ##         count += 1
+        #-------------------------------- Failure -----------------------------------
+        failure_data_pkl     = os.path.join(processed_data_path, subject+'_'+task+'_failure')
+        raw_data_dict, _ = loadData(failure_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    global_data=True,\
+                                    renew=data_renew, save_pkl=failure_data_pkl)
 
+        fileNameList     = raw_data_dict['fileNameList']
+        # Audio
+        audioTimesList   = raw_data_dict['audioTimesList']
+        audioAzimuthList = raw_data_dict['audioAzimuthList']
+        audioPowerList   = raw_data_dict['audioPowerList']
+
+        # Fabric force
+        fabricTimesList  = raw_data_dict['fabricTimesList']
+        fabricCenterList = raw_data_dict['fabricCenterList']
+        fabricNormalList = raw_data_dict['fabricNormalList']
+        fabricValueList  = raw_data_dict['fabricValueList']
+
+        data_dict = {}
+        data_dict['fileNameList'] = fileNameList
+        # Audio
+        data_dict['audioTimesList'] = audioTimesList
+        data_dict['audioAzimuthList'] = audioAzimuthList
+        data_dict['audioPowerList'] = audioPowerList
+
+        # Fabric force
+        data_dict['fabricTimesList'] = fabricTimesList
+        data_dict['fabricCenterList'] = fabricCenterList
+        data_dict['fabricNormalList'] = fabricNormalList
+        data_dict['fabricValueList'] = fabricValueList
+
+        data_dict['min_audio_power'] = min_audio_power
+        ut.save_pickle(data_dict, data_pkl)
+
+    # Parameter set
+    downSampleSize = 1000
+
+    azimuth_interval = 2.0
+    audioSpace = np.arange(-90, 90, azimuth_interval)
+
+    max_audio_azimuth  = 15.0
+    max_audio_delay    = 1.0
+    max_fabric_azimuth = 10.0
+    max_fabric_delay   = 1.0
+
+    max_audio_power    = 5000 #np.median( [np.max(x) for x in audioPowerList] )
+    max_fabric_value   = 3.0
+
+
+    anomaly_list = ['sound', 'force', 'forcesound']
+    y_true = []
+    y_pred = []
+    #
+    for i in xrange(len(fileNameList)):
+
+        # time
+        max_time1 = np.max(audioTimesList[i])
+        max_time2 = np.max(fabricTimesList[i])
+        if max_time1 > max_time2: # min of max time
+            max_time = max_time2
+        else:
+            max_time = max_time1            
+        new_times     = np.linspace(0.0, max_time, downSampleSize)
+        time_interval = new_times[1]-new_times[0]
+        
+        # ------------------- Data     --------------------------------
+        audioTime    = audioTimesList[i]
+        audioAzimuth = audioAzimuthList[i]
+        audioPower   = audioPowerList[i]
+
+        fabricTime   = fabricTimesList[i]
+        fabricCenter = fabricCenterList[i]
+        fabricValue  = fabricValueList[i]
+        
+        # ------------------- Auditory --------------------------------
+        discrete_azimuth_array = hdl.discretization_array(audioAzimuth, [-90,90], len(audioSpace))
+        discrete_time_array    = hdl.discretization_array(audioTime, [0.0, max_time], len(new_times))
+
+        image = np.zeros((len(new_times),len(audioSpace)))
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+                
+            s = np.zeros(len(audioSpace))
+            if audioPower[j] > max_audio_power:
+                s[discrete_azimuth_array[j]] = 1.0
+            elif audioPower[j] > min_audio_power:                
+                s[discrete_azimuth_array[j]] = ((audioPower[j]-min_audio_power)/
+                                                (max_audio_power-min_audio_power)) #**2
+
+            #
+            if last_time_idx == time_idx:
+                for k in xrange(len(s)):
+                    if image[time_idx,k] < s[k]: image[time_idx,k] = s[k]
+            else:
+                # image: (Ang, N)
+                if len(np.shape(s))==1: s = np.array([s])
+                image[time_idx,:] = s
+            last_time_idx = time_idx
+
+        image = image.T
+
+        gaussian_2D_kernel = get_space_time_kernel(max_audio_delay, max_audio_azimuth, \
+                                                   time_interval, azimuth_interval)
+        gaussian_2D_kernel = CustomKernel(gaussian_2D_kernel)
+        audio_image = convolve(image, gaussian_2D_kernel, boundary='extend')
+
+        clustered_audio_image, audio_label_list = space_time_clustering(audio_image, max_audio_delay, \
+                                                                       max_audio_azimuth, \
+                                                                       azimuth_interval, time_interval, 4)
+
+        # ------------------- Fabric Force ----------------------------
+        discrete_time_array    = hdl.discretization_array(fabricTime, [0.0, max_time], len(new_times))
+
+        image = np.zeros((len(new_times),len(audioSpace)))
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+            s = np.zeros(len(audioSpace))
+
+            # Estimate space
+            xyz  = [fabricCenter[0][j], fabricCenter[1][j], fabricCenter[2][j]]
+            fxyz = [fabricValue[0][j], fabricValue[1][j], fabricValue[2][j]] 
+            for k in xrange(len(xyz[0])):
+                if xyz[0][k]==0 and xyz[1][k]==0 and xyz[2][k]==0: continue
+                y   = xyz[1][k]/np.linalg.norm( np.array([ xyz[0][k],xyz[1][k],xyz[2][k] ]) )
+                ang = np.arcsin(y)*180.0/np.pi 
+                mag = np.linalg.norm(np.array([fxyz[0][k],fxyz[1][k],fxyz[2][k]]))
+
+                ang_idx = hdl.discretize_single(ang, [-90,90], len(audioSpace))
+                if mag > max_fabric_value:
+                    s[ang_idx] = 1.0
+                elif mag > 0.0:
+                    s[ang_idx] = ((mag-0.0)/(max_fabric_value-0.0))
+
+            if last_time_idx == time_idx:
+                for k in xrange(len(s)):
+                    if image[time_idx,k] < s[k]: image[time_idx,k] = s[k]
+            else:
+                if len(np.shape(s))==1: s = np.array([s])
+                image[time_idx,:] = s
+
+            last_time_idx = time_idx
             
+        image = image.T
+
+        # Convoluted data
+        gaussian_2D_kernel = get_space_time_kernel(max_fabric_delay, max_fabric_azimuth, \
+                                                   time_interval, azimuth_interval)        
+        gaussian_2D_kernel = CustomKernel(gaussian_2D_kernel)
+        fabric_image = convolve(image, gaussian_2D_kernel, boundary='extend')
+
+        clustered_fabric_image, fabric_label_list = space_time_clustering(image, max_fabric_delay , \
+                                                                          max_fabric_azimuth, \
+                                                                          azimuth_interval, time_interval, 4)
+
+        #-----------------Multi modality ------------------------------
+        image = audio_image * fabric_image
+        max_delay   = np.max([max_audio_delay, max_fabric_delay])
+        max_azimuth = np.max([max_audio_azimuth, max_fabric_azimuth])
+        clustered_image, label_list = space_time_clustering(image, max_fabric_delay , max_fabric_azimuth, \
+                                                            azimuth_interval, time_interval, 4)
+
+
+        # -------------------------------------------------------------
+        # Classification
+        # -------------------------------------------------------------
+        audio_score = np.zeros((len(audio_label_list))) if len(audio_label_list) > 0 else [0]       
+        fabric_score = np.zeros((len(fabric_label_list))) if len(fabric_label_list) > 0 else [0]       
+        multi_score = np.zeros((len(label_list))) if len(label_list) > 0 else [0]      
+        for ii in xrange(len(clustered_image)):
+            for jj in xrange(len(clustered_image[ii])):
+                # audio
+                y = clustered_audio_image[ii,jj]
+                if y > 0: audio_score[int(y)-1]+=1
+                # fabric
+                y = clustered_fabric_image[ii,jj]
+                if y > 0: fabric_score[int(y)-1]+=1
+                # multimodal
+                y = clustered_image[ii,jj]
+                if y > 0: multi_score[int(y)-1]+=1
+
+        cause = os.path.split(fileNameList[i])[-1].split('.pkl')[0].split('failure_')[-1].split('_')[0]
+        image_area = float(len(clustered_image)*len(clustered_image[0]))
+        if multi_score is not [] and np.max(multi_score)/image_area > 0.02:
+            estimated_cause = 'forcesound'            
+            print "Force and sound :: ", cause
+        else:
+            if np.max(audio_score)/image_area > np.max(fabric_score)/image_area:
+                estimated_cause = 'sound'
+                print "sound :: ", cause
+            else:
+                estimated_cause = 'force'
+                print "Skin contact force :: ", cause
+
+        for ii, real_anomaly in enumerate(anomaly_list):
+            if real_anomaly == cause:
+                y_true.append(ii)
+                break 
+            
+        for ii, est_anomaly in enumerate(anomaly_list):
+            if est_anomaly == estimated_cause:
+                y_pred.append(ii)                
+                break
+                    
+
+    print y_true
+    print y_pred
+
+
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_true, y_pred)
+    np.set_printoptions(precision=2)
+    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    fig = plt.figure()
+    plt.imshow(cm_normalized, interpolation='nearest')
+    plt.colorbar()
+    tick_marks = np.arange(len(anomaly_list))
+    plt.xticks(tick_marks, anomaly_list, rotation=45)
+    plt.yticks(tick_marks, anomaly_list)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.title('Confusion Matrix')
+    
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+        ## ut.get_keystroke('Hit a key to proceed next')
+    else:
+        plt.show()
+
+
+        
+
+
 
 if __name__ == '__main__':
 
@@ -1067,8 +1788,14 @@ if __name__ == '__main__':
                  default=False, help='Plot raw data.')
     p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
                  default=False, help='Plot raw data.')
+    p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
+                 default=False, help='Plot features.')
     p.add_option('--pca', action='store_true', dest='bPCAPlot',
                  default=False, help='Plot pca result.')
+    p.add_option('--spacetimerf', '--st', action='store_true', dest='bSTField',
+                 default=False, help='Plot space-time receptive field.')
+    p.add_option('--classification', '--c', action='store_true', dest='bClassification',
+                 default=False, help='Evaluate classification performance.')
     
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
@@ -1103,30 +1830,18 @@ if __name__ == '__main__':
     renew          = False
     downSampleSize = 200
 
-    if opt.bLikelihoodPlot:
-        nState    = 15
-        threshold = 0.0
-        preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew, \
-                       downSampleSize=downSampleSize)
-        likelihoodOfSequences(save_data_path, task, feature_list, local_range, \
-                              nState=nState, threshold=threshold,\
-                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
-                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                              renew=renew, save_pdf=opt.bSavePdf)
-                              
-    elif opt.bRawDataPlot or opt.bInterpDataPlot:
+    if opt.bRawDataPlot or opt.bInterpDataPlot:
         '''
         Before localization: Raw data plot
         After localization: Raw or interpolated data plot
         '''
         target_data_set = 0
-        rf_center       = 'kinForearmPos'
+        rf_center       = 'kinEEPos'
+        #rf_center       = 'kinForearmPos'
         modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision'] #, 'pps'
         successData     = True #True
-        failureData     = True
-
-        if opt.bLocalization: local_range = 0.1
-        else: local_range = 0.15
+        failureData     = False
+        local_range     = 0.15
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
@@ -1135,29 +1850,114 @@ if __name__ == '__main__':
                   successData=successData, failureData=failureData,\
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
-    elif opt.bPCAPlot:
+    elif opt.bFeaturePlot:
         target_data_set = 0
-        ## rf_center    = 'kinEEPos'
-        rf_center    = 'kinForearmPos'
-        feature_list = [#'unimodal_ppsForce',\
-                        'unimodal_audioPower',\
-                        'unimodal_fabricForce',\
+        rf_center    = 'kinEEPos'
+        ## rf_center    = 'kinForearmPos'
+        feature_list = ['unimodal_audioPower',\
+                        'unimodal_kinVel',\
                         'unimodal_ftForce',\
+                        #'unimodal_ppsForce',\
+                        'unimodal_fabricForce',\
                         'crossmodal_targetRelativeDist', \
                         'crossmodal_targetRelativeAng']
-        
-        
-        pca_plot([subject], task, raw_data_path, save_data_path, rf_center, \
+        local_range = 0.15
+        success_viz = True
+        failure_viz = True
+
+        feature_extraction([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+                           nSet=target_data_set, downSampleSize=downSampleSize, \
+                           success_viz=success_viz, failure_viz=failure_viz,\
+                           save_pdf=opt.bSavePdf, solid_color=True,\
+                           feature_list=feature_list, data_renew=opt.bDataRenew)
+
+    elif opt.bPCAPlot:
+        target_data_set = 0
+        rf_center    = 'kinEEPos'
+        ## rf_center    = 'kinForearmPos'
+        feature_list = ['unimodal_audioPower',\
+                        'unimodal_kinVel',\
+                        'unimodal_ftForce',\
+                        #'unimodal_ppsForce',\
+                        'unimodal_fabricForce',\
+                        'crossmodal_targetRelativeDist', \
+                        'crossmodal_targetRelativeAng']
+        local_range = 0.15
+        success_viz = True
+        failure_viz = False
+                        
+        pca_plot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
+                  success_viz=success_viz, failure_viz=failure_viz,\
                   save_pdf=opt.bSavePdf,
                   feature_list=feature_list, data_renew=opt.bDataRenew)
-                
+
+    elif opt.bLikelihoodPlot:
+        target_data_set = 0
+        rf_center    = 'kinEEPos'
+        ## rf_center    = 'kinForearmPos'
+        feature_list = ['unimodal_audioPower',\
+                        'unimodal_kinVel',\
+                        'unimodal_ftForce',\
+                        #'unimodal_ppsForce',\
+                        'unimodal_fabricForce',\
+                        'crossmodal_targetRelativeDist', \
+                        'crossmodal_targetRelativeAng']
+        local_range = 0.15
+
+
+        nState    = 15
+        threshold = 0.0
+        ## preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew, \
+        ##                downSampleSize=downSampleSize)
+        likelihoodOfSequences([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+                              nSet=target_data_set, downSampleSize=downSampleSize, \
+                              feature_list=feature_list, \
+                              nState=nState, threshold=threshold,\
+                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                              renew=renew, save_pdf=opt.bSavePdf, data_renew=opt.bDataRenew)
+                              
+
+    elif opt.bSTField:
+        '''
+        space time receptive field
+        '''
+        target_data_set = 0
+        success_viz = False
+        failure_viz = True
+        space_time_field_plot([subject], task, raw_data_path, save_data_path,\
+                              nSet=target_data_set, downSampleSize=downSampleSize, \
+                              success_viz=success_viz, failure_viz=failure_viz,\
+                              save_pdf=opt.bSavePdf, data_renew=opt.bDataRenew)
+
+    elif opt.bClassification:
+        '''
+        Get classification evaluation result
+        '''        
+        target_data_set = 0
+        offline_classification([subject], task, raw_data_path, save_data_path,\
+                               nSet=target_data_set, downSampleSize=downSampleSize, \
+                               save_pdf=opt.bSavePdf, data_renew=opt.bDataRenew)
+
+        
+    ## else:
+    ##     nState         = 10
+    ##     cov_mult       = 5.0       
+    ##     anomaly_offset = -20.0        
+    ##     check_methods = ['progress']
+    ##     evaluation_all([subject], task, check_methods, feature_list, nSet,\
+    ##                    save_data_path, downSampleSize=downSampleSize, \
+    ##                    nState=nState, cov_mult=cov_mult, anomaly_offset=anomaly_offset, local_range=local_range,\
+    ##                    data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, viz=viz)    
+
     else:
-        nState         = 10
-        cov_mult       = 5.0       
-        anomaly_offset = -20.0        
-        check_methods = ['progress']
-        evaluation_all([subject], task, check_methods, feature_list, nSet,\
-                       save_data_path, downSampleSize=downSampleSize, \
-                       nState=nState, cov_mult=cov_mult, anomaly_offset=anomaly_offset, local_range=local_range,\
-                       data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, viz=viz)
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1)
+        from scipy.stats import poisson
+        mu = 0.6
+        mean, var, skew, kurt = poisson.stats(mu, moments='mvsk')
+        x = np.arange(0.0, 30.0)
+        ax.plot(x, poisson.pmf(x, mu), 'bo', ms=8, label='poisson pmf')
+        
+        plt.show()

@@ -56,6 +56,7 @@ def extrapolateData(data, maxsize):
         
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
+             global_data=False,\
              verbose=False, renew=True, save_pkl=None, plot_data=False):
 
     if save_pkl is not None:
@@ -65,10 +66,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict = ut.load_pickle(save_pkl+'_interp.pkl')
             return raw_data_dict, data_dict
 
-    key_list = ['timesList',\
+    key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
-                'kinTargetQuatList', 'kinForearmPosList',\
+                'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'ftTimesList', 'ftForceList', \
                 'visionTimesList', 'visionPosList', 'visionQuatList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
@@ -86,6 +87,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if os.path.isdir(fileName):
             continue
 
+        ## cause = os.path.split(fileName)[1].split('_')[3:]
+        ## description = ''
+        ## if cause is list:
+        ##     for c in cause:
+        ##         description += c
+        raw_data_dict['fileNameList'].append(fileName)
+        data_dict['fileNameList'].append(fileName)        
+
         if verbose: print fileName
         d = ut.load_pickle(fileName)        
         init_time = d['init_time']
@@ -95,7 +104,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             if 'time' in key and 'init' not in key:
                 feature_time = d[key]
                 if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
-        new_times = np.linspace(0.01, max_time, downSampleSize)
+        new_times = np.linspace(0.01, max_time-1.0, downSampleSize)
 
         data_dict['timesList'].append(new_times)
 
@@ -110,8 +119,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             rf_traj = None
             arm_kdl = create_kdl_kin('torso_lift_link', 'l_gripper_tool_frame')
             for i in xrange(len(kin_jnt_pos[0])):
-                mPose1 = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_forearm_link', base_link='torso_lift_link')
-                mPose2 = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_wrist_flex_link', base_link='torso_lift_link')
+                mPose1 = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_forearm_link', \
+                                         base_link='torso_lift_link')
+                mPose2 = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_wrist_flex_link', \
+                                         base_link='torso_lift_link')
                 if rf_traj is None: rf_traj = (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0
                 else: rf_traj = np.hstack([ rf_traj, (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0 ])
                     
@@ -145,8 +156,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 ang_max_l.append(ang_max)
                 ang_min_l.append(ang_min)
 
-                if audio_azimuth[time_idx] > ang_min-audio_azimuth_margin and \
-                  audio_azimuth[time_idx] < ang_max+audio_azimuth_margin:
+                if (audio_azimuth[time_idx] > ang_min-audio_azimuth_margin and \
+                  audio_azimuth[time_idx] < ang_max+audio_azimuth_margin) or global_data:
                     local_audio_power.append(audio_power[time_idx])
                     ## if audio_power[time_idx] > 50: local_audio_power.append(audio_power[time_idx-1])
                     ## else: local_audio_power.append(audio_power[time_idx])
@@ -186,20 +197,64 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
 
-            # Forearm
-            kin_forearm_pos = None
-            arm_kdl = create_kdl_kin('torso_lift_link', 'l_gripper_tool_frame')
-            for i in xrange(len(kin_jnt_pos[0])):
-                mPose = arm_kdl.forward(kin_jnt_pos[:,i], end_link='l_forearm_link', base_link='torso_lift_link')
-                if kin_forearm_pos is None: kin_forearm_pos = np.array(mPose[:3,3])
-                else: kin_forearm_pos = np.hstack([ kin_forearm_pos, np.array(mPose[:3,3]) ])
+            # local kinematics feature
+            if rf_center == 'kinEEPos':
+                local_kin_pos = kin_ee_pos
+                last_kin_pos = np.zeros((3,1))
+                last_time    = 0.0
+                for i in xrange(len(kin_ee_pos[0])):
+                    local_kin_vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
+                    last_kin_pos = kin_ee_pos[:,i:i+1]
+                    last_time    = kin_time[i]
 
+            else:
+                if rf_center == 'kinForearmPos':
+                    frame_list = ['l_forearm_link', 'l_wrist_flex_link']
+                else:
+                    print "Not implemented RF center"
+                    sys.exit()
+                    
+                local_kin_pos = None
+                local_kin_vel = None
+                last_mPose      = None
+                last_time       = 0.0
+                arm_kdl = create_kdl_kin('torso_lift_link', 'l_gripper_tool_frame')
+                for i in xrange(len(kin_jnt_pos[0])):
+                    mPose1 = arm_kdl.forward(kin_jnt_pos[:,i], end_link=frame_list[0], base_link='torso_lift_link')
+                    mPose2 = arm_kdl.forward(kin_jnt_pos[:,i], end_link=frame_list[1], base_link='torso_lift_link')
+                    mPose  = np.array((mPose1[:3,3]+mPose2[:3,3])/2.0)
+                    if local_kin_pos is None: local_kin_pos = mPose
+                    else: local_kin_pos = np.hstack([ local_kin_pos, mPose ])
+
+                    if last_mPose is None:
+                        last_mPose = mPose
+                        last_time  = 0.0
+
+                    vel = (mPose-last_mPose)/(kin_time[i]-last_time)
+                    # to avoid inf values
+                    if np.isinf(np.max(vel)):
+                        if local_kin_vel is not None: vel = local_kin_vel[:,-1:]
+                        else: vel = np.zeros((3,1))
+                        
+                    if local_kin_vel is None: local_kin_vel = vel
+                    else: local_kin_vel = np.hstack([ local_kin_vel, vel])
+                        
+                    last_mPose = mPose
+                    last_time  = kin_time[i]
+
+            # Change the sign of quaternion
+            
 
             # extract local feature
             data_set = [kin_time, kin_ee_pos, kin_ee_quat]
-            [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set,\
+                                                                     global_data=global_data)
             data_set = [kin_time, kin_target_pos, kin_target_quat]
-            [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, \
+                                                                             data_set, global_data=global_data)
+            ## data_set = [kin_time, kin_forearm_pos, kin_forearm_vel]
+            ## [local_kin_forearm_pos, local_kin_forearm_vel] = extractLocalData(rf_time, rf_traj, local_range, \
+            ##                                                                   data_set, global_data=global_data)
 
             raw_data_dict['kinTimesList'].append(kin_time)
             raw_data_dict['kinEEPosList'].append(local_kin_ee_pos)
@@ -207,14 +262,17 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinTargetPosList'].append(local_kin_target_pos)
             raw_data_dict['kinTargetQuatList'].append(local_kin_target_quat)
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
-            raw_data_dict['kinForearmPosList'].append(kin_forearm_pos)
+            raw_data_dict['kinPosList'].append(local_kin_pos)
+            raw_data_dict['kinVelList'].append(local_kin_vel)
             
             data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times))
-            data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times))
+            data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times, True))
             data_dict['kinTargetPosList'].append(interpolationData(kin_time, local_kin_target_pos, new_times))
-            data_dict['kinTargetQuatList'].append(interpolationData(kin_time, local_kin_target_quat, new_times))
+            data_dict['kinTargetQuatList'].append(interpolationData(kin_time, local_kin_target_quat, \
+                                                                    new_times, True))
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
-            data_dict['kinForearmPosList'].append(interpolationData(kin_time, kin_forearm_pos, new_times))
+            data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
+            data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
             ## fig = plt.figure()
             ## plt.plot(kin_time, kin_target_pos[2], c='k')
@@ -234,7 +292,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             kin_time   = (np.array(d['kinematics_time']) - init_time).tolist()
             kin_ee_pos = d['kinematics_ee_pos'] # 3xN
             ft_pos     = interpolationData(kin_time, kin_ee_pos, ft_time)
-
+           
             # extract local feature
             data_set = [ft_time, ft_pos, ft_force]
             [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
@@ -249,9 +307,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             ## plt.plot(ft_time, ft_force[2], c='k')
             ## plt.plot(ft_time, local_ft_force[2], c='b')
             ## plt.plot(new_times, interpolationData(ft_time, local_ft_force, new_times)[2], c='r')
-            ## fig.savefig('test.pdf')
-            ## fig.savefig('test.png')
-            ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## ## fig.savefig('test.pdf')
+            ## ## fig.savefig('test.png')
+            ## ## os.system('cp test.p* ~/Dropbox/HRL/')
+            ## plt.show()
             ## sys.exit()
             
                     
@@ -350,7 +409,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                     try:
                         fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
                     except:
-                        print temp
+                        print "fabric skin message has different length"
+                        minIdx = min([len(fabric_skin_values[0][i]), len(fabric_skin_values[1][i]),\
+                                      len(fabric_skin_values[2][i])])
+                        temp = np.array([fabric_skin_values[0][i][:minIdx], fabric_skin_values[1][i][:minIdx], \
+                                         fabric_skin_values[2][i][:minIdx] ])
+                        fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
+                        print temp, np.sum( np.linalg.norm(temp, axis=0) )
+                        
                     ## print temp, fabric_skin_mag[-1]
 
                 if local_fabric_skin_values[0][i] == []: local_fabric_skin_mag.append(0)
@@ -397,6 +463,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         max_size = max([ len(x) for x in data_dict['timesList'] ])
         # Extrapolate each time step
         for key in data_dict.keys():
+            if 'file' in key: continue
             if data_dict[key] == []: continue
             if 'fabric' in key:
                 data_dict[key] = [x if len(x) >= max_size else x + []*(max_size-len(x)) for x in data_dict[key]]
@@ -497,54 +564,78 @@ def downSampleAudio(time_array, data_array, new_time_array):
 
 
 
-def interpolationData(time_array, data_array, new_time_array):
+def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
     '''
     time_array: N - length array
     data_array: D x N - length array
     '''
     from scipy import interpolate
 
-    if len(np.shape(data_array)) == 1: data_array = np.array([data_array])
+    target_array = copy.deepcopy(data_array)
+    if len(np.shape(target_array)) == 1: target_array = np.array([target_array])
     if time_array[-1] < new_time_array[0] or time_array[0] > new_time_array[-1]:
-        return data_array[:,: len(new_time_array)]
+        return target_array[:,: len(new_time_array)]
 
-    n,m = np.shape(data_array)    
+    n,m = np.shape(target_array)    
     if len(time_array) > m: time_array = time_array[0:m]
-    
+
+    # change quaternion sign
+    if quat_flag:
+        for i in xrange(m-1):            
+            cosHalfTheta = np.sum(target_array[:,i]*target_array[:,i+1])
+            if cosHalfTheta < 0.0:
+                target_array[:,i+1] *= -1.0
+
 
     # remove repeated data
     temp_time_array = [time_array[0]]
-    temp_data_array = data_array[:,0:1]
+    temp_data_array = target_array[:,0:1]
     for i in xrange(1, len(time_array)):        
         if time_array[i-1] != time_array[i]:
             temp_time_array.append(time_array[i])
-            temp_data_array = np.hstack([temp_data_array, data_array[:,i:i+1]])
+            temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
         else:
-            if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(data_array[:,i:i+1]):
-                temp_data_array[:,-1:] = data_array[:,i:i+1]
+            if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(target_array[:,i:i+1]):
+                temp_data_array[:,-1:] = target_array[:,i:i+1]
 
     time_array = temp_time_array
-    data_array = temp_data_array
+    target_array = temp_data_array
 
-    
     if len(time_array) < 2:
-        nDim = len(data_array)
+        nDim = len(target_array)
         return np.zeros((nDim,len(new_time_array)))
     
     new_data_array = None    
     for i in xrange(n):
-
-        interp = interpolate.splrep(time_array, data_array[i], s=0)
+        interp = interpolate.splrep(time_array, target_array[i], s=0)
         interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
 
-        # handle extrapolation
-        nonzero_idx = 0
-        for j in xrange(1, len(interp_data)-1):
-            if abs(interp_data[-j]) > 0.0:
-                nonzero_idx = -j
-                break
-        if nonzero_idx != 0:            
-            interp_data[nonzero_idx+1:] += interp_data[nonzero_idx]
+        if np.isnan(np.max(interp_data)):
+            print "Interpolation error by NaN values"
+            print "New start time = ", new_time_array[0], " start time = ", time_array[0]
+            print "New end time = ", new_time_array[-1], " end time = ", time_array[-1]
+            ## print target_array[i]
+            sys.exit()
+
+        # handle extrapolation - start part
+        if interp_data[0] == 0.0:
+            nonzero_idx = None
+            for j in xrange(len(interp_data)):
+                if abs(interp_data[j]) > 0.0:
+                    nonzero_idx = j
+                    break
+            if nonzero_idx is not None:
+                interp_data[:nonzero_idx] += interp_data[nonzero_idx]
+
+        # handle extrapolation - end part
+        if interp_data[-1] == 0.0:
+            nonzero_idx = None
+            for j in xrange(1, len(interp_data)-1):
+                if abs(interp_data[-j]) > 0.0:
+                    nonzero_idx = -j
+                    break
+            if nonzero_idx is not None:            
+                interp_data[nonzero_idx+1:] += interp_data[nonzero_idx]
         
         if new_data_array is None: new_data_array = interp_data
         else: new_data_array = np.vstack([new_data_array, interp_data])
@@ -731,7 +822,7 @@ def getAngularSpatialRF(cur_pos, dist_margin ):
 
     pos      = copy.deepcopy(cur_pos)
     pos     /= np.linalg.norm(pos)
-    ang_cur  = -1.0 * np.arcsin(pos[1])*180.0/np.pi #- np.pi/2.0
+    ang_cur  = np.arcsin(pos[1])*180.0/np.pi #- np.pi/2.0
 
     ang_max = ang_cur + ang_margin
     ang_min = ang_cur - ang_margin
@@ -739,7 +830,8 @@ def getAngularSpatialRF(cur_pos, dist_margin ):
     return ang_max, ang_min
 
 
-def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, verbose=False):
+def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, global_data=False, \
+                     verbose=False):
     '''
     Extract local data in data_set
     The first element of the data_set should be time data.
@@ -754,8 +846,9 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, v
         new_data_set = [None for i in xrange(nData)]
 
         for time_idx in xrange(len(time_data)):
-            rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()                
-            if np.linalg.norm(pos_data[:,time_idx] - rf_traj[:,rf_time_idx]) <= local_range:
+            rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()
+            
+            if (np.linalg.norm(pos_data[:,time_idx] - rf_traj[:,rf_time_idx]) <= local_range) or global_data:
                 for i in xrange(nData):
                     if new_data_set[i] is None:
                         new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
@@ -790,7 +883,7 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, v
                         pos_array = np.array([pos_data[0][time_idx][j],\
                                               pos_data[1][time_idx][j],\
                                               pos_data[2][time_idx][j]])
-                        if np.linalg.norm(pos_array - rf_traj[:,rf_time_idx]) <= local_range \
+                        if (np.linalg.norm(pos_array - rf_traj[:,rf_time_idx]) <= local_range or global_data)\
                           and len(data_set[i+1][0][time_idx]) >= j+1 \
                           and len(data_set[i+1][1][time_idx]) >= j+1 \
                           and len(data_set[i+1][2][time_idx]) >= j+1 :
@@ -813,7 +906,7 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, v
     
 
 
-def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', param_dict=None, verbose=False):
+def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
@@ -864,7 +957,8 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
             pps_min = np.min( np.array(pps_mag).flatten() )
             param_dict['unimodal_ppsForce_max'] = pps_max
             param_dict['unimodal_ppsForce_min'] = pps_min
-            
+
+        param_dict['feature_names'] = []
     else:
         isTrainingData=False
             
@@ -878,14 +972,14 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
         timeList     = d['timesList'][idx]
         dataSample = None
 
-        # Define receptive field center trajectory ---------------------------
-        if rf_center == 'kinEEPos':
-            rf_traj = d['kinEEPosList'][idx]
-        elif rf_center == 'kinForearmPos':
-            rf_traj = d['kinForearmPosList'][idx]
-        ## elif rf_center == 'l_upper_arm_link':            
-        else:
-            sys.exit()
+        ## # Define receptive field center trajectory ---------------------------
+        ## if rf_center == 'kinEEPos':
+        ##     rf_traj = d['kinEEPosList'][idx]
+        ## elif rf_center == 'kinForearmPos':
+        ##     rf_traj = d['kinForearmPosList'][idx]
+        ## ## elif rf_center == 'l_upper_arm_link':            
+        ## else:
+        ##     sys.exit()
         
 
         # Unimoda feature - Audio --------------------------------------------
@@ -896,31 +990,42 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
+            if 'audioPower' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioPower')
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in feature_list:
-            unimodal_kinVel = []
+            kinVel  = d['kinVelList'][idx]
+            unimodal_kinVel = kinVel
+
             if dataSample is None: dataSample = np.array(unimodal_kinVel)
             else: dataSample = np.vstack([dataSample, unimodal_kinVel])
-            print 'unimodal_kinVel is not implemented feature'
-            sys.exit()
+            if 'kinVel_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinVel_x')
+                param_dict['feature_names'].append('kinVel_y')
+                param_dict['feature_names'].append('kinVel_z')
 
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
             ftForce = d['ftForceList'][idx]
-            ftPos   = d['kinEEPosList'][idx]
-            ftForce_pca = param_dict['unimodal_ftForce_pca']
+            ## ftPos   = d['kinEEPosList'][idx]
+            ## ftForce_pca = param_dict['unimodal_ftForce_pca']
 
-            unimodal_ftForce = None
-            for time_idx in xrange(len(timeList)):
-                if unimodal_ftForce is None:
-                    unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-                else:
-                    unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-                                                   ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
+            unimodal_ftForce = ftForce
+            ## unimodal_ftForce = None
+            ## for time_idx in xrange(len(timeList)):
+            ##     if unimodal_ftForce is None:
+            ##         unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
+            ##     else:
+            ##         unimodal_ftForce = np.hstack([ unimodal_ftForce, \
+            ##                                        ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
  
             if dataSample is None: dataSample = np.array(unimodal_ftForce)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce])
+            if 'ftForce_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_x')
+                param_dict['feature_names'].append('ftForce_y')
+                param_dict['feature_names'].append('ftForce_z')
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in feature_list:
@@ -929,14 +1034,22 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
             ppsPos   = d['kinTargetPosList'][idx]
 
             pps = np.vstack([ppsLeft, ppsRight])
+            unimodal_ppsForce = pps
             ## unimodal_ppsForce = np.linalg.norm(pps, axis=0)
 
-            unimodal_ppsForce = []
-            for time_idx in xrange(len(timeList)):
-                unimodal_ppsForce.append( np.linalg.norm(pps[:,time_idx]) )
+            ## unimodal_ppsForce = []
+            ## for time_idx in xrange(len(timeList)):
+            ##     unimodal_ppsForce.append( np.linalg.norm(pps[:,time_idx]) )
 
             if dataSample is None: dataSample = unimodal_ppsForce
             else: dataSample = np.vstack([dataSample, unimodal_ppsForce])
+            if 'ppsForce_1' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ppsForce_1')
+                param_dict['feature_names'].append('ppsForce_2')
+                param_dict['feature_names'].append('ppsForce_3')
+                param_dict['feature_names'].append('ppsForce_4')
+                param_dict['feature_names'].append('ppsForce_5')
+                param_dict['feature_names'].append('ppsForce_6')
 
 
         # Unimodal feature - fabric skin ------------------------------------
@@ -947,6 +1060,8 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
             if dataSample is None: dataSample = unimodal_fabricForce
             else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
+            if 'fabricForce' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('fabricForce')
 
                 
         # Crossmodal feature - relative dist --------------------------
@@ -961,6 +1076,8 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
             if dataSample is None: dataSample = np.array(crossmodal_targetRelativeDist)
             else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeDist])
+            if 'targetRelativeDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetRelativeDist')
 
 
         # Crossmodal feature - relative angle --------------------------
@@ -968,9 +1085,9 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
             kinEEQuat    = d['kinEEQuatList'][idx]
             kinTargetQuat = d['kinTargetQuatList'][idx]
 
-            kinEEPos     = d['kinEEPosList'][idx]
-            kinTargetPos = d['kinTargetPosList'][idx]
-            dist         = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
+            ## kinEEPos     = d['kinEEPosList'][idx]
+            ## kinTargetPos = d['kinTargetPosList'][idx]
+            ## dist         = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
             
             crossmodal_targetRelativeAng = []
             for time_idx in xrange(len(timeList)):
@@ -981,8 +1098,22 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
                 diff_ang = qt.quat_angle(startQuat, endQuat)
                 crossmodal_targetRelativeAng.append( abs(diff_ang) )
 
+            ## fig = plt.figure()
+            ## ## plt.plot(crossmodal_targetRelativeAng)
+            ## plt.plot( kinEEQuat[0] )
+            ## plt.plot( kinEEQuat[1] )
+            ## plt.plot( kinEEQuat[2] )
+            ## plt.plot( kinEEQuat[3] )
+            ## fig.savefig('test.pdf')
+            ## fig.savefig('test.png')
+            ## os.system('cp test.p* ~/Dropbox/HRL/')        
+            ## sys.exit()
+            
+
             if dataSample is None: dataSample = np.array(crossmodal_targetRelativeAng)
             else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeAng])
+            if 'targetRelativeAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetRelativeAng')
 
         # Crossmodal feature - vision relative dist --------------------------
         if 'crossmodal_artagRelativeDist' in feature_list:
@@ -996,6 +1127,8 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
             if dataSample is None: dataSample = np.array(crossmodal_artagRelativeDist)
             else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeDist])
+            if 'artagRelativeDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('artagRelativeDist')
 
         # Crossmodal feature - vision relative angle --------------------------
         if 'crossmodal_artagRelativeAng' in feature_list:                
@@ -1017,6 +1150,8 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
 
             if dataSample is None: dataSample = np.array(crossmodal_artagRelativeAng)
             else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeAng])
+            if 'artagRelativeAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('artagRelativeAng')
 
         # ----------------------------------------------------------------
         dataList.append(dataSample)
@@ -1042,6 +1177,7 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
         print "max: ", param_dict['feature_max']
         print "min: ", param_dict['feature_min']
         
+        
     scaled_features = []
     for i, feature in enumerate(features):
 
@@ -1058,3 +1194,96 @@ def extractLocalFeature(d, feature_list, local_range, rf_center='kinEEPos', para
     ## sys.exit()
                                 
     return scaled_features, param_dict
+
+
+
+def space_time_clustering(image, time_range, space_range, space_interval, time_interval, n_clusters=8, X=None):
+
+    if X is None:
+        X = []
+        for i in xrange(len(image)):
+            # clustering label
+            for j in xrange(len(image[i])):
+                if image[i,j] > 0.05: X.append([i,j]) #temp # N x Ang
+
+    if len(X)==0: return  np.zeros(np.shape(image)), []
+    if len(X) < n_clusters: n_clusters=len(X)
+                    
+    ## from sklearn.mixture import DPGMM
+    ## mlc = DPGMM(n_components=2)        
+    from sklearn.cluster import KMeans
+    mlc = KMeans(n_clusters=n_clusters)        
+    y = mlc.fit_predict(X)
+    
+    label_list = [ [x] for x in range(0,n_clusters) ]
+    last_label_list = None
+
+    # Merge close labels
+    ii = 0
+    while True:
+
+        for label_idx, label1 in enumerate(label_list):
+            if len(label1)==0 or label_idx==len(label_list)-1: continue
+            for ii in label1:
+
+                for label_idx2, label2 in enumerate(label_list[label_idx+1:]):
+                    if len(label2)==0: continue
+                    for jj in label2:                    
+                        if (abs(mlc.cluster_centers_[ii][0]-mlc.cluster_centers_[jj][0])<\
+                          space_range/space_interval*2.0 and\
+                          abs(mlc.cluster_centers_[ii][1]-mlc.cluster_centers_[jj][1])<\
+                          time_range/time_interval*2.0) :
+                            label_list[label_idx+1+label_idx2].remove(jj)
+                            label_list[label_idx].append(jj)
+
+        if last_label_list == label_list: break
+        else: last_label_list = label_list
+
+    # Replace labels into merged labels
+    temp = copy.copy(y)
+    for ii, label in enumerate(temp):
+        for jj in xrange(len(label_list)):
+            if label_list[jj] == []: continue
+            if label in label_list[jj]:
+                y[ii] = label_list[jj][0]+1
+                break                                
+
+    # 
+    clustered_image = np.zeros(np.shape(image))        
+    for idx, l in enumerate(X):
+        clustered_image[l[0],l[1]] = y[idx]                
+
+    return clustered_image, label_list
+
+
+def get_space_time_kernel(x_max, y_max, x_interval, y_interval):
+    '''
+    x_max is 97.7%
+    '''
+
+    from scipy.stats import norm, gumbel_r
+
+    y_range = np.arange(-y_max*3.0, y_max*3.0, y_interval)
+    if len(y_range)%2 == 0:
+        y_range = np.hstack([y_range, y_range[-1]+y_interval])-y_interval/2.0
+    x_range = np.arange(-x_max*3.0, x_max*3.0, x_interval)
+    if len(x_range)%2 == 0:
+        x_range = np.hstack([x_range, x_range[-1]+x_interval])-x_interval/2.0
+
+    sigma = (y_max/2.0)
+    a  = norm().pdf(y_range/sigma)/sigma
+    gaussian_2D_kernel = None
+    for j in xrange(len(x_range)):
+        if gaussian_2D_kernel is None: gaussian_2D_kernel = np.array([a]).T
+        else: gaussian_2D_kernel = np.hstack([gaussian_2D_kernel, np.array([a]).T])
+
+    ## g = Gaussian1DKernel(len(gaussian_2D_kernel[0])/8. ) # 8*std
+    ## a = g.array
+    sigma = (x_max/2.0)
+    a  = gumbel_r().pdf(x_range/sigma)/sigma
+    for j in xrange(len(gaussian_2D_kernel)):
+        gaussian_2D_kernel[j] = a * gaussian_2D_kernel[j]
+
+    gaussian_2D_kernel/=np.max(gaussian_2D_kernel.flatten())
+
+    return gaussian_2D_kernel
