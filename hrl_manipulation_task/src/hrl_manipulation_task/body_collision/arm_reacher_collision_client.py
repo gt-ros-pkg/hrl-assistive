@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     rospy.wait_for_service("/arm_reach_enable")
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
-    armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
+    #armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     ## print armReachActionRight("initSwing")
     print armReachActionLeft("initSwing")
