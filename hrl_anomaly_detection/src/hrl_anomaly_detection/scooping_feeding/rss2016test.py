@@ -190,15 +190,16 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                           nState=10, threshold=-1.0, \
                           useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                          renew=False, save_pdf=False, data_renew=False, show_plot=True):
+                          hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    allData, trainingData, abnormalTestData = feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                 processed_data_path, rf_center, local_range,\
-                                                                 nSet=nSet, \
-                                                                 downSampleSize=downSampleSize, \
-                                                                 feature_list=feature_list, \
-                                                                 data_renew=data_renew)
+    _, trainingData, abnormalTestData = feature_extraction(subject_names, task_name, raw_data_path, \
+                                                           processed_data_path, rf_center, local_range,\
+                                                           nSet=nSet, \
+                                                           downSampleSize=downSampleSize, \
+                                                           feature_list=feature_list, \
+                                                           data_renew=data_renew)
 
+    normalTestData = None                                    
     print "======================================"
     print "Training data: ", np.shape(trainingData)
     print "Normal test data: ", np.shape(normalTestData)
@@ -208,9 +209,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     # training hmm
     nEmissionDim = len(trainingData)
     detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
+    cov_mult = [10.0]*(nEmissionDim**2)
 
-    ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=False)
-    ret = ml.fit(trainingData, ml_pkl=detection_param_pkl, use_pkl=not(renew))
+    ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, scale=10.0, verbose=False)
+    ret = ml.fit(trainingData, cov_mult=cov_mult, ml_pkl=detection_param_pkl, use_pkl=False) # not(renew))
     ths = threshold
     
     if ret == 'Failure': 
@@ -251,7 +253,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             # disp
             if useTrain_color:
                 plt.plot(log_ll[i], label=str(i))
-                print i, " : ", trainFileList[i], log_ll[i][-1]                
+                ## print i, " : ", trainFileList[i], log_ll[i][-1]                
             else:
                 plt.plot(log_ll[i], 'b-')
 
@@ -261,7 +263,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         ## plt.plot(exp_log_ll[i], 'r-')            
                                              
     # normal test data
-    if useNormalTest:
+    if useNormalTest and False:
 
         log_ll = []
         exp_log_ll = []        
@@ -291,7 +293,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             # disp 
             if useNormalTest_color:
-                print i, " : ", normalTestFileList[i]                
+                ## print i, " : ", normalTestFileList[i]                
                 plt.plot(log_ll[i], label=str(i))
             else:
                 plt.plot(log_ll[i], 'g-')
@@ -414,7 +416,6 @@ def evaluation_all(subject_names, task_name, check_methods, feature_list, nSet, 
                 
 
             os.system('rm '+mutex_file)
-            print "-----------------------------------------------"
 
             if truePos==-1: 
                 print "truePos is -1"
@@ -468,7 +469,7 @@ def evaluation(task_name, processed_data_path, nSet=1, nState=20, cov_mult=5.0, 
         nEmissionDim = len(trainingData)
         detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
 
-        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, verbose=True)
+        ml = hmm.learning_hmm_multi_n(nState, nEmissionDim, scale=1000.0, verbose=True)
 
         print "Start to fit hmm", np.shape(trainingData)
         ret = ml.fit(trainingData, cov_mult=[cov_mult]*nEmissionDim**2, ml_pkl=detection_param_pkl, \
@@ -850,7 +851,7 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
              feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
 
     save_pkl = os.path.join(processed_data_path, 'pca_'+rf_center+'_'+str(local_range) )
-    if os.path.isfile(save_pkl) and data_renew is not True:
+    if os.path.isfile(save_pkl) and data_renew is not True and False:
         data_dict = ut.load_pickle(save_pkl)
         allData          = data_dict['allData']
         trainingData     = data_dict['trainingData'] 
@@ -1227,7 +1228,7 @@ def space_time_field_plot(subject_names, task_name, raw_data_path, processed_dat
         fig = plt.figure(figsize=(12,8))
 
         # time
-        downSampleSize = 1000
+        ## downSampleSize = 1000
         max_time1 = np.max(audioTimesList[i])
         max_time2 = np.max(fabricTimesList[i])
         if max_time1 > max_time2: # min of max time
@@ -1454,14 +1455,14 @@ def space_time_field_plot(subject_names, task_name, raw_data_path, processed_dat
         print fabric_score
         print multi_score
         print "00000000000000000"
-        image_area = float(len(clustered_image)*len(clustered_image[0]))
-        if np.max(multi_score)/image_area > 0.02:
-            print "Force and sound :: ", cause
-        else:
-            if np.max(audio_score)/image_area > 0.02:
-                print "sound :: ", cause
-            if np.max(fabric_score)/image_area > 0.02:
-                print "Skin contact force :: ", cause
+        ## image_area = float(len(clustered_image)*len(clustered_image[0]))
+        ## if np.max(multi_score)/image_area > 0.02:
+        ##     print "Force and sound :: ", cause
+        ## else:
+        ##     if np.max(audio_score)/image_area > 0.02:
+        ##         print "sound :: ", cause
+        ##     if np.max(fabric_score)/image_area > 0.02:
+        ##         print "Skin contact force :: ", cause
                     
         
 
@@ -1565,7 +1566,7 @@ def offline_classification(subject_names, task_name, raw_data_path, processed_da
         ut.save_pickle(data_dict, data_pkl)
 
     # Parameter set
-    downSampleSize = 1000
+    ## downSampleSize = 1000
 
     azimuth_interval = 2.0
     audioSpace = np.arange(-90, 90, azimuth_interval)
@@ -1838,7 +1839,7 @@ if __name__ == '__main__':
         target_data_set = 0
         rf_center       = 'kinEEPos'
         #rf_center       = 'kinForearmPos'
-        modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision'] #, 'pps'
+        modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision', 'pps']
         successData     = True #True
         failureData     = False
         local_range     = 0.15
@@ -1857,7 +1858,7 @@ if __name__ == '__main__':
         feature_list = ['unimodal_audioPower',\
                         'unimodal_kinVel',\
                         'unimodal_ftForce',\
-                        #'unimodal_ppsForce',\
+                        'unimodal_ppsForce',\
                         'unimodal_fabricForce',\
                         'crossmodal_targetRelativeDist', \
                         'crossmodal_targetRelativeAng']
@@ -1878,7 +1879,7 @@ if __name__ == '__main__':
         feature_list = ['unimodal_audioPower',\
                         'unimodal_kinVel',\
                         'unimodal_ftForce',\
-                        #'unimodal_ppsForce',\
+                        'unimodal_ppsForce',\
                         'unimodal_fabricForce',\
                         'crossmodal_targetRelativeDist', \
                         'crossmodal_targetRelativeAng']
@@ -1896,17 +1897,17 @@ if __name__ == '__main__':
         target_data_set = 0
         rf_center    = 'kinEEPos'
         ## rf_center    = 'kinForearmPos'
-        feature_list = ['unimodal_audioPower',\
-                        'unimodal_kinVel',\
+        feature_list = [#'unimodal_audioPower',\
+                        #'unimodal_kinVel',\
                         'unimodal_ftForce',\
                         #'unimodal_ppsForce',\
-                        'unimodal_fabricForce',\
+                        #'unimodal_fabricForce',\
                         'crossmodal_targetRelativeDist', \
-                        'crossmodal_targetRelativeAng']
+                        #'crossmodal_targetRelativeAng'
+                        ]
         local_range = 0.15
 
-
-        nState    = 15
+        nState    = 10
         threshold = 0.0
         ## preprocessData([subject], task, raw_data_path, save_data_path, renew=opt.bDataRenew, \
         ##                downSampleSize=downSampleSize)
@@ -1916,7 +1917,7 @@ if __name__ == '__main__':
                               nState=nState, threshold=threshold,\
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                              renew=renew, save_pdf=opt.bSavePdf, data_renew=opt.bDataRenew)
+                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               
 
     elif opt.bSTField:

@@ -415,7 +415,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                         temp = np.array([fabric_skin_values[0][i][:minIdx], fabric_skin_values[1][i][:minIdx], \
                                          fabric_skin_values[2][i][:minIdx] ])
                         fabric_skin_mag.append( np.sum( np.linalg.norm(temp, axis=0) ) )
-                        print temp, np.sum( np.linalg.norm(temp, axis=0) )
                         
                     ## print temp, fabric_skin_mag[-1]
 
@@ -932,17 +931,24 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
                                 
         if 'unimodal_ftForce' in feature_list:
             force_array = None
+            start_force_array = None
             for idx in xrange(len(d['ftForceList'])):
                 if force_array is None:
                     force_array = d['ftForceList'][idx]
+                    start_force_array = d['ftForceList'][idx][:,:5]
                 else:
                     force_array = np.hstack([force_array, d['ftForceList'][idx] ])
+                    start_force_array = np.hstack([start_force_array, d['ftForceList'][idx][:,:5]])
 
-            ftPCADim    = 1
+            ftPCADim    = 2
             ftForce_pca = PCA(n_components=ftPCADim)
-            res = ftForce_pca.fit_transform( force_array.T )
+            res = ftForce_pca.fit_transform( force_array.T )            
             param_dict['unimodal_ftForce_pca'] = ftForce_pca
             param_dict['unimodal_ftForce_pca_dim'] = ftPCADim
+
+            ## res = ftForce_pca.transform(start_force_array.T)
+            ## param_dict['unimodal_ftForce_pca_init_avg'] = np.array([np.mean(res, axis=0)]).T
+            ## param_dict['unimodal_ftForce_init_avg'] = np.mean(start_force_array, axis=1)
 
         if 'unimodal_ppsForce' in feature_list:
             ppsLeft  = d['ppsLeftList']
@@ -1009,23 +1015,30 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         if 'unimodal_ftForce' in feature_list:
             ftForce = d['ftForceList'][idx]
             ## ftPos   = d['kinEEPosList'][idx]
-            ## ftForce_pca = param_dict['unimodal_ftForce_pca']
+            ftForce_pca = param_dict['unimodal_ftForce_pca']
 
-            unimodal_ftForce = ftForce
-            ## unimodal_ftForce = None
-            ## for time_idx in xrange(len(timeList)):
-            ##     if unimodal_ftForce is None:
-            ##         unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-            ##     else:
-            ##         unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-            ##                                        ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
- 
+            ## unimodal_ftForce = ftForce
+            unimodal_ftForce = None
+            for time_idx in xrange(len(timeList)):
+                if unimodal_ftForce is None:
+                    unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
+                else:
+                    unimodal_ftForce = np.hstack([ unimodal_ftForce, \
+                                                   ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
+
+            unimodal_ftForce -= np.array([np.mean(unimodal_ftForce[:,:5], axis=1)]).T
+            
             if dataSample is None: dataSample = np.array(unimodal_ftForce)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce])
-            if 'ftForce_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('ftForce_x')
-                param_dict['feature_names'].append('ftForce_y')
-                param_dict['feature_names'].append('ftForce_z')
+            ## if 'ftForce' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('ftForce')
+            if 'ftForce_1' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_1')
+                param_dict['feature_names'].append('ftForce_2')
+            ## if 'ftForce_x' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('ftForce_x')
+            ##     param_dict['feature_names'].append('ftForce_y')
+            ##     param_dict['feature_names'].append('ftForce_z')
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in feature_list:
@@ -1035,7 +1048,15 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
 
             pps = np.vstack([ppsLeft, ppsRight])
             unimodal_ppsForce = pps
-            ## unimodal_ppsForce = np.linalg.norm(pps, axis=0)
+
+            # 2
+            pps = np.vstack([np.sum(ppsLeft, axis=0), np.sum(ppsRight, axis=0)])
+            unimodal_ppsForce = pps
+            
+            # 1
+            ## unimodal_ppsForce = np.array([np.linalg.norm(pps, axis=0)])
+
+            unimodal_ppsForce -= np.array([np.mean(unimodal_ppsForce[:,:5], axis=1)]).T
 
             ## unimodal_ppsForce = []
             ## for time_idx in xrange(len(timeList)):
@@ -1043,13 +1064,19 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
 
             if dataSample is None: dataSample = unimodal_ppsForce
             else: dataSample = np.vstack([dataSample, unimodal_ppsForce])
+
+            ## if 'ppsForce' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('ppsForce')
             if 'ppsForce_1' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ppsForce_1')
-                param_dict['feature_names'].append('ppsForce_2')
-                param_dict['feature_names'].append('ppsForce_3')
-                param_dict['feature_names'].append('ppsForce_4')
-                param_dict['feature_names'].append('ppsForce_5')
-                param_dict['feature_names'].append('ppsForce_6')
+                param_dict['feature_names'].append('ppsForce_2')                
+            ## if 'ppsForce_1' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('ppsForce_1')
+            ##     param_dict['feature_names'].append('ppsForce_2')
+            ##     param_dict['feature_names'].append('ppsForce_3')
+            ##     param_dict['feature_names'].append('ppsForce_4')
+            ##     param_dict['feature_names'].append('ppsForce_5')
+            ##     param_dict['feature_names'].append('ppsForce_6')
 
 
         # Unimodal feature - fabric skin ------------------------------------

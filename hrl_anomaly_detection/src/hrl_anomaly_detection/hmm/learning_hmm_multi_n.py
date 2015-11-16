@@ -50,7 +50,7 @@ os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_n:
     def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
-                 cluster_type='time', verbose=False):
+                 cluster_type='time', scale=1.0, verbose=False):
         self.ml = None
         self.verbose = verbose
 
@@ -59,6 +59,7 @@ class learning_hmm_multi_n:
         self.nGaussian      = nState
         self.nEmissionDim   = nEmissionDim
         self.anomaly_offset = anomaly_offset
+        self.scale          = scale
         
         ## Un-tunable parameters
         self.trans_type = 'left_right' # 'left_right' 'full'
@@ -86,6 +87,10 @@ class learning_hmm_multi_n:
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
             ml_pkl=None, use_pkl=False):
+        '''
+        TODO: explanation of the shape and type of xData
+        xData: sample x dimension x length
+        '''
 
         if ml_pkl is None:
             ml_pkl = os.path.join(os.path.dirname(__file__), 'ml_temp_n.pkl')            
@@ -94,8 +99,8 @@ class learning_hmm_multi_n:
             cov_mult = [1.0]*(self.nEmissionDim**2)
 
         # Daehyung: What is the shape and type of input data?
-        X = [np.array(data) for data in xData]
-
+        X = [np.array(data)*self.scale for data in xData]
+        
         if A is None:
             if self.verbose: print "Generating a new A matrix"
             # Transition probability matrix (Initial transition probability, TODO?)
@@ -106,6 +111,7 @@ class learning_hmm_multi_n:
             # We should think about multivariate Gaussian pdf.  
 
             mus, cov = self.vectors_to_mean_cov(X, self.nState)
+            print np.shape(mus), np.shape(cov)
 
             for i in xrange(self.nEmissionDim):
                 for j in xrange(self.nEmissionDim):
@@ -133,6 +139,7 @@ class learning_hmm_multi_n:
         # print 'Creating Training Data'
         X_train = self.convert_sequence(X) # Training input
         X_train = X_train.tolist()
+        print "training data size: ", np.shape(X_train)
         
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
         final_seq = ghmm.SequenceSet(self.F, X_train)
@@ -408,7 +415,7 @@ class learning_hmm_multi_n:
         return mu_l, cov_l
 
     def loglikelihood(self, X):
-        X = np.squeeze(X)
+        X = np.squeeze(X)*self.scale
         X_test = X.tolist()        
 
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
@@ -486,17 +493,19 @@ class learning_hmm_multi_n:
     # Returns mu,sigma for n hidden-states from feature-vector
     def vectors_to_mean_cov(self, vecs, nState):
         index = 0
-        m, n = np.shape(vecs[0])
-        #print m,n
+        m, n = np.shape(vecs[0]) # ? x length
         mus  = [np.zeros(nState) for i in xrange(self.nEmissionDim)]
         cov  = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
         DIVS = n/nState
 
         while index < nState:
             m_init = index*DIVS
+
             temp_vecs = [np.reshape(vec[:, m_init:(m_init+DIVS)], (1, DIVS*m)) for vec in vecs]
             for i, mu in enumerate(mus):
                 mu[index] = np.mean(temp_vecs[i])
+
+            print np.shape(temp_vecs), np.shape(cov)
             cov[index, :, :] = np.cov(np.concatenate(temp_vecs, axis=0))
             index += 1
 
@@ -533,6 +542,10 @@ class learning_hmm_multi_n:
 
     @staticmethod
     def convert_sequence(data, emission=False):
+        '''
+        data: dimension x sample x length
+        '''
+        
         # change into array from other types
         X = [copy.copy(np.array(d)) if type(d) is not np.ndarray else copy.copy(d) for d in data]
 
@@ -560,6 +573,7 @@ class learning_hmm_multi_n:
 
         if self.nEmissionDim == 1: X_test = np.array([X[0]])
         else: X_test = self.convert_sequence(X, emission=False)
+        X_test *= self.scale
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -634,6 +648,9 @@ class learning_hmm_multi_n:
     def expLikelihoods(self, X, ths_mult=None):
         if self.nEmissionDim == 1: X_test = np.array([X[0]])
         else: X_test = self.convert_sequence(X, emission=False)
+
+        # scaling
+        X_test *= self.scale
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
