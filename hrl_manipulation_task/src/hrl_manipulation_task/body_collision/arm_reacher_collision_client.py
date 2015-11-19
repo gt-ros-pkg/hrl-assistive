@@ -49,6 +49,7 @@ if __name__ == '__main__':
 
     ## print armReachActionRight("initSwing")
     print armReachActionLeft("initSwing")
+    ut.get_keystroke('Hit a key to proceed next')
     print armReachActionLeft("runSwing")
     ## print armReachActionLeft("test")
        

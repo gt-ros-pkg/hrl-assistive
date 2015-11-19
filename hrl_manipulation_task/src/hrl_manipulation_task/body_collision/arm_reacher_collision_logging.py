@@ -42,61 +42,28 @@ import hrl_lib.util as ut
 from hrl_manipulation_task.record_data import logger
 
 
-def scooping(armReachActionLeft, armReachActionRight, log, detection_flag):
+def swing(armReachActionLeft, armReachActionRight, log, detection_flag):
 
-    log.task = 'scooping'
+    log.task = 'touching'
     log.initParams()
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
-    print armReachActionRight("initScooping")
-    
-    #ut.get_keystroke('Hit a key to proceed next')        
-    print armReachActionLeft("getBowlPos")
-    print armReachActionLeft('lookAtBowl')
-    print armReachActionLeft("initScooping")
+    print armReachActionLeft("initSwing")
+    ut.get_keystroke('Hit a key to proceed next')
         
     print "Start to log!"    
     log.log_start()
     if detection_flag: log.enableDetector(True)
     
     print "Running scooping!"
-    print armReachActionLeft("runScooping")
+    print armReachActionLeft("runSwing")
 
     if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
 
-    
-def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
-
-    log.task = 'feeding'
-    log.initParams()
-    
-    ## Feeding -----------------------------------
-    print "Initializing left arm for feeding"
-    #print armReachActionRight("initFeeding")
-    print armReachActionLeft("initFeeding")
-
-    print "Detect ar tag on the head"
-    print armReachActionLeft('lookAtMouth')
-    print armReachActionLeft("getHeadPos")
-    #ut.get_keystroke('Hit a key to proceed next')        
-
-    print "Running feeding1"    
-    print armReachActionLeft("runFeeding1")
-    
-    print "Start to log!"    
-    log.log_start()
-    if detection_flag: log.enableDetector(True)
-    
-    print "Running feeding2"    
-    print armReachActionLeft("runFeeding2")
-
-    if detection_flag: log.enableDetector(False)
-    print "Finish to log!"    
-    log.close_log_file()
-    
+        
     
 if __name__ == '__main__':
     
@@ -112,8 +79,8 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=True, skin=True, \
-                 subject="gatsbii", task='scooping', data_pub=opt.bDataPub, verbose=False)
+    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=True, \
+                 subject="gatsbii", task='collision', data_pub=opt.bDataPub, verbose=False)
 
     last_trial  = '4'
     last_detect = '2'
@@ -122,7 +89,7 @@ if __name__ == '__main__':
 
         detection_flag = False
         
-        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
+        trial  = raw_input('Enter trial\'s status (e.g. 1:swing, else: exit): ')
         if trial=='': trial=last_trial
             
         if trial is '1' or trial is '2' or trial is '3':
@@ -131,12 +98,9 @@ if __name__ == '__main__':
             if detect == '1': detection_flag = True
             
             if trial == '1':
-                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
-            elif trial == '2':
-                feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+                swing(armReachActionLeft, armReachActionRight, log, detection_flag)
             else:
-                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
-                feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+                swing(armReachActionLeft, armReachActionRight, log, detection_flag)
         else:
             break
 

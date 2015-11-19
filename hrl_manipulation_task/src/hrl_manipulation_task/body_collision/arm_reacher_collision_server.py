@@ -118,16 +118,15 @@ class armReachAction(mpcBaseAction):
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
         self.motions['initSwing'] = {}
         self.motions['initSwing']['left'] = \
-          [['MOVEJ', '[0.0, 0.0, 0.0, 0, 0, 0, 0]', 10.0],
-        self.motions['initSwing']['right'] = \
-          []
+          [['MOVEJ', '[0.0, 0.0, 0.0, 0, 0, 0, 0]', 5.0],
+           ]
+        self.motions['initSwing']['right'] = []
           
         self.motions['runSwing'] = {}
         self.motions['runSwing']['left'] = \
-          [['MOVEJ', '[0.785, 0.0, 0.0, 0, 0, 0, 0]', 10.0],
-           ['PAUSE', 2.0] ]
-        self.motions['runSwing']['right'] = \
-          []
+          [['MOVEJ', '[0.785, 0.0, 0.0, 0, 0, 0, 0]', 5.0],
+           ]
+        self.motions['runSwing']['right'] = []
           
         rospy.loginfo("Parameters are loaded.")
 

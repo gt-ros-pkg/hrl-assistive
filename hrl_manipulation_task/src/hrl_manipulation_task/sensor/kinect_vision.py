@@ -40,10 +40,12 @@ from matplotlib import pyplot as plt
 # vision library
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
+import image_geometry
 
 # ROS message
 import tf
 from pr2_controllers_msgs.msg import JointTrajectoryControllerState
+from sensor_msgs.msg import Image, CameraInfo
 
 class kinect_vision(threading.Thread):
     def __init__(self, verbose=False):
@@ -66,6 +68,11 @@ class kinect_vision(threading.Thread):
         self.initParams()
         self.initComms()
 
+        rate = rospy.Rate(10) # 25Hz, nominally.            
+        while not rospy.is_shutdown():
+            if self.imageGray is not None: break
+            rate.sleep()
+
         if self.verbose: print "Kinect Vision>> initialization complete"
         
     def initComms(self):
@@ -74,6 +81,7 @@ class kinect_vision(threading.Thread):
         '''
         if self.verbose: print "Kinect Vision>> Initialized pusblishers and subscribers"
         rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)        
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
 
     def initParams(self):
         '''
@@ -81,6 +89,9 @@ class kinect_vision(threading.Thread):
         '''
         self.torso_frame = 'torso_lift_link'
         self.bridge = CvBridge()
+
+        self.cameraWidth = None
+        self.imageGray = None
 
     def imageCallback(self, data):
         # Grab image from Kinect sensor
@@ -93,7 +104,7 @@ class kinect_vision(threading.Thread):
 
         with self.image_lock:
             # Convert to grayscale (if needed)
-            self.imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            self.imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, 1)
 
     def cameraRGBInfoCallback(self, data):
         if self.cameraWidth is None:
@@ -120,17 +131,25 @@ class kinect_vision(threading.Thread):
     
     def test(self, save_pdf=False):
         ## img = cv2.imread('/home/dpark/Dropbox/HRL/IMG_3499.JPG',0)
+        sift = cv2.SIFT()
+        fig = plt.figure()
+        plt.ion()
+        plt.show()        
+        
+        rate = rospy.Rate(10) # 25Hz, nominally.    
+        while not rospy.is_shutdown():
+            print "running test"
+            with self.image_lock:
+                imageGray = copy.copy(self.imageGray)
 
-        with self.image_lock:
-            gray= cv2.cvtColor(imageGray,cv2.COLOR_BGR2GRAY)
-
-        ## sift = cv2.SIFT()
-        ## kp = sift.detect(gray,None)
-
-        ## img=cv2.drawKeypoints(gray,kp)
-        ## cv2.imwrite('test.jpg',img)
-        ## os.system('cp test.jpg ~/Dropbox/HRL/')
-
+            kp = sift.detect(imageGray,None)
+            img=cv2.drawKeypoints(imageGray,kp)
+            ## cv2.imwrite('test.jpg',img)
+            ## ## os.system('cp test.jpg ~/Dropbox/HRL/')
+            plt.imshow(img)
+            plt.draw()
+            ## cv2.imshow('MyWindow', img)
+            rate.sleep()
 
         ## # Initiate STAR detector
         ## orb = cv2.ORB_create()
@@ -151,6 +170,11 @@ class kinect_vision(threading.Thread):
         ##     os.system('cp test.p* ~/Dropbox/HRL/')
         ## else:
         ##     if show_plot: plt.show()        
+
+
+
+        
+        
         
     def reset(self, init_time):
         self.init_time = init_time
@@ -172,7 +196,7 @@ class kinect_vision(threading.Thread):
 
 
 if __name__ == '__main__':
-    ## rospy.init_node('kinect_vision')
+    rospy.init_node('kinect_vision')
 
     kv = kinect_vision()
     kv.test(True)
