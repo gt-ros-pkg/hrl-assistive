@@ -396,7 +396,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # extract local feature
             data_set = [fabric_skin_time, fabric_skin_centers, fabric_skin_normals, fabric_skin_values]
             [ local_fabric_skin_centers, local_fabric_skin_normals, local_fabric_skin_values] \
-              = extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=True)
+              = extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=True, \
+                                 global_data=global_data)
 
             # Get magnitudes
             fabric_skin_mag = []
@@ -1314,3 +1315,30 @@ def get_space_time_kernel(x_max, y_max, x_interval, y_interval):
     gaussian_2D_kernel/=np.max(gaussian_2D_kernel.flatten())
 
     return gaussian_2D_kernel
+
+
+def cross_correlation(image1, image2, x_pad, y_pad):
+
+    n,m = np.shape(image1)
+    
+    # padding
+    A = np.zeros(( n+(2*x_pad-2), m+(y_pad-1) ))
+    A[x_pad-1:x_pad-1+n, y_pad-1:y_pad-1+m] = image1
+    B = image2
+    
+    # convolution
+    C = np.zeros((2*(x_pad-1), y_pad-1))
+    for i in xrange(len(C)):
+        for j in xrange(len(C[0])):
+            ## print i,i+n,j,j+m,np.shape(A), np.shape(A[i:i+n,j:j+m]), np.shape(B), np.shape(C)
+            C[i,j] = np.sum( A[i:i+n,j:j+m] * B )
+
+    # unpadding
+    ## C = C[x_pad-1:x_pad-1+n, y_pad-1:y_pad-1+m]
+    ## print "size C and B", np.shape(C), np.shape(B)
+
+    # Find delays with maximum correlation
+    x_diff, y_diff = np.unravel_index(C.argmax(), C.shape)
+    ## print "diff: ", x_diff, y_diff
+
+    return C, x_diff, y_diff
