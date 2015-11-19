@@ -1,31 +1,4 @@
-#!/usr/bin/env python
-#
-# Copyright (c) 2014, Georgia Tech Research Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the Georgia Tech Research Corporation nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-
+#!/usr/local/bin/python
 
 import numpy as np
 import sys, os, copy
@@ -33,6 +6,7 @@ from scipy.stats import norm, entropy
 
 # Util
 import roslib
+roslib.load_manifest('hrl_anomaly_detection')
 import hrl_lib.util as ut
 
 # Matplot
@@ -48,23 +22,21 @@ from joblib import Parallel, delayed
 
 os.system("taskset -p 0xff %d" % os.getpid())
 
-class learning_hmm_multi_n:
+class learning_hmm_multi_4d:
     def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
-                 cluster_type='time', scale=1.0, verbose=False):
+                 cluster_type='time', verbose=False):
         self.ml = None
-        self.verbose = verbose
 
         ## Tunable parameters
-        self.nState         = nState # the number of hidden states
-        self.nGaussian      = nState
-        self.nEmissionDim   = nEmissionDim
-        self.anomaly_offset = anomaly_offset
-        self.scale          = scale
+        self.nState = nState # the number of hidden states
+        self.nGaussian = nState
+        self.nEmissionDim = nEmissionDim
+        self.verbose = verbose
         
         ## Un-tunable parameters
         self.trans_type = 'left_right' # 'left_right' 'full'
-        self.A  = None # transition matrix        
-        self.B  = None # emission matrix
+        self.A = None # transition matrix        
+        self.B = None # emission matrix
         self.pi = None # Initial probabilities per state
         self.check_method = check_method # ['global', 'progress']
         self.cluster_type = cluster_type
@@ -77,69 +49,68 @@ class learning_hmm_multi_n:
         self.l_mu = None
         self.l_std = None
         self.std_coff = None
-        self.km = None
 
+        self.anomaly_offset=anomaly_offset
 
         # emission domain of this model        
         self.F = ghmm.Float()  
 
         # print 'HMM initialized for', self.check_method
 
-    def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl=None, use_pkl=False):
-        '''
-        TODO: explanation of the shape and type of xData
-        xData: sample x dimension x length
-        '''
+    def fit(self, xData1, xData2, xData3, xData4, A=None, B=None, pi=None, cov_mult=[1.0]*16, \
+            ml_pkl='ml_temp_4d.pkl', use_pkl=False):
+        ml_pkl = os.path.join(os.path.dirname(__file__), ml_pkl)
+        X1 = np.array(xData1)
+        X2 = np.array(xData2)
+        X3 = np.array(xData3)
+        X4 = np.array(xData4)
 
-        if ml_pkl is None:
-            ml_pkl = os.path.join(os.path.dirname(__file__), 'ml_temp_n.pkl')            
-        
-        if cov_mult is None:
-            cov_mult = [1.0]*(self.nEmissionDim**2)
-
-        # Daehyung: What is the shape and type of input data?
-        X = [np.array(data)*self.scale for data in xData]
-        
-        if A is None:
+        if A is None:        
             if self.verbose: print "Generating a new A matrix"
             # Transition probability matrix (Initial transition probability, TODO?)
             A = self.init_trans_mat(self.nState).tolist()
+
+            # print 'A', A
 
         if B is None:
             if self.verbose: print "Generating a new B matrix"
             # We should think about multivariate Gaussian pdf.  
 
-            mus, cov = self.vectors_to_mean_cov(X, self.nState)
-            print np.shape(mus), np.shape(cov)
-
+            mu1, mu2, mu3, mu4, cov = self.vectors_to_mean_cov(X1, X2, X3, X4, self.nState)
             for i in xrange(self.nEmissionDim):
                 for j in xrange(self.nEmissionDim):
                     cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
 
             if self.verbose:
-                for i, mu in enumerate(mus):
-                    print 'mu%i' % i, mu
+                print 'mu1:', mu1
+                print 'mu2:', mu2
+                print 'mu3:', mu3
+                print 'mu4:', mu4
                 print 'cov', cov
                 
             # Emission probability matrix
-            B = [0] * self.nState
+            B = [0.0] * self.nState
             for i in range(self.nState):
-                B[i] = [[mu[i] for mu in mus]]
-                B[i].append(cov[i].flatten())
+                B[i] = [[mu1[i], mu2[i], mu3[i], mu4[i]], [cov[i,0,0], cov[i,0,1], cov[i,0,2], cov[i,0,3],
+                                                           cov[i,1,0], cov[i,1,1], cov[i,1,2], cov[i,1,3],
+                                                           cov[i,2,0], cov[i,2,1], cov[i,2,2], cov[i,2,3],
+                                                           cov[i,3,0], cov[i,3,1], cov[i,3,2], cov[i,3,3]]]
         if pi is None:
             # pi - initial probabilities per state 
             ## pi = [1.0/float(self.nState)] * self.nState
             pi = [0.0] * self.nState
             pi[0] = 1.0
+            # pi[0] = 0.3
+            # pi[1] = 0.3
+            # pi[2] = 0.2
+            # pi[3] = 0.2
 
         # print 'Generating HMM'
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
         # print 'Creating Training Data'
-        X_train = self.convert_sequence(X) # Training input
+        X_train = self.convert_sequence(X1, X2, X3, X4) # Training input
         X_train = X_train.tolist()
-        print "training data size: ", np.shape(X_train)
         
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
         final_seq = ghmm.SequenceSet(self.F, X_train)
@@ -154,7 +125,7 @@ class learning_hmm_multi_n:
 
         #--------------- learning for anomaly detection ----------------------------
         [A, B, pi] = self.ml.asMatrices()
-        n, m = np.shape(X[0])
+        n, m = np.shape(X1)
         self.nGaussian = self.nState
 
         if self.check_method == 'change' or self.check_method == 'globalChange':
@@ -162,7 +133,7 @@ class learning_hmm_multi_n:
             ll_delta_logp = []
             for j in xrange(n):    
                 l_logp = []                
-                for k in xrange(1, m):
+                for k in xrange(1,m):
                     final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
                     logp         = self.ml.loglikelihoods(final_ts_obj)[0]
 
@@ -182,7 +153,7 @@ class learning_hmm_multi_n:
 
             l_logp = []
             for j in xrange(n):
-                for k in xrange(1, m):
+                for k in xrange(1,m):
                     final_ts_obj = ghmm.EmissionSequence(self.F, X_train[j][:k*self.nEmissionDim])
                     logp         = self.ml.loglikelihoods(final_ts_obj)[0]
 
@@ -192,10 +163,10 @@ class learning_hmm_multi_n:
             self.l_std = np.std(l_logp)
             
         elif self.check_method == 'progress':
+
             # Get average loglikelihood threshold wrt progress
 
             if os.path.isfile(ml_pkl) and use_pkl:
-                if self.verbose: print 'Load detector parameters'
                 d = ut.load_pickle(ml_pkl)
                 self.l_statePosterior = d['state_post'] # time x state division
                 self.ll_mu            = d['ll_mu']
@@ -216,7 +187,7 @@ class learning_hmm_multi_n:
                     self.km = None                    
                     self.ll_mu = None
                     self.ll_std = None
-                    self.ll_mu, self.ll_std = self.state_clustering(X)
+                    self.ll_mu, self.ll_std = self.state_clustering(X1, X2, X3, X4)
                     path_mat  = np.zeros((self.nState, m*n))
                     likelihood_mat = np.zeros((1, m*n))
                     self.l_statePosterior=None
@@ -228,8 +199,9 @@ class learning_hmm_multi_n:
                 ut.save_pickle(d, ml_pkl)
                             
                     
-    def get_sensitivity_gain(self, X):
-        X_test = self.convert_sequence(X, emission=False)
+    def get_sensitivity_gain(self, X1, X2, X3, X4):
+
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -245,7 +217,7 @@ class learning_hmm_multi_n:
                 if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return [], 0.0 # anomaly
 
-            n = len(np.squeeze(X[0]))
+            n = len(np.squeeze(X1))
 
             # Find the best posterior distribution
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
@@ -263,9 +235,9 @@ class learning_hmm_multi_n:
             return ths, 0
 
         elif self.check_method == 'change':
-            if len(X[0])<3: return [], 0.0 #error
+            if len(X1)<3: return [], 0.0 #error
 
-            X_test = self.convert_sequence([x[:-1] for x in X], emission=False)
+            X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
 
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -278,9 +250,9 @@ class learning_hmm_multi_n:
             return ths, 0
 
         elif self.check_method == 'globalChange':
-            if len(X[0])<3: return [], 0.0 #error
+            if len(X1)<3: return [], 0.0 #error
 
-            X_test = self.convert_sequence([x[:-1] for x in X], emission=False)
+            X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
 
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -296,11 +268,14 @@ class learning_hmm_multi_n:
             return [ths_c, ths_g], 0
         
 
-    def path_disp(self, X):
-        X = [np.array(x) for x in X]
+    def path_disp(self, X1, X2, X3, X4):
+        X1 = np.array(X1)
+        X2 = np.array(X2)
+        X3 = np.array(X3)
+        X4 = np.array(X4)
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-        n, m = np.shape(X[0])
+        n, m = np.shape(X1)
         if self.verbose: print n, m
         x = np.arange(0., float(m))*(1./43.)
         path_mat  = np.zeros((self.nState, m))
@@ -308,12 +283,15 @@ class learning_hmm_multi_n:
 
         path_l = []
         for i in xrange(n):
-            x_test = [x[i:i+1,:] for x in X]
+            x_test1 = X1[i:i+1,:]
+            x_test2 = X2[i:i+1,:]
+            x_test3 = X3[i:i+1,:]
+            x_test4 = X4[i:i+1,:]
 
             if self.nEmissionDim == 1:
-                X_test = x_test[0]
+                X_test = x_test1
             else:
-                X_test = self.convert_sequence(x_test, emission=False)
+                X_test = self.convert_sequence(x_test1, x_test2, x_test3, x_test4, emission=False)
 
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
             path,_    = self.ml.viterbi(final_ts_obj)
@@ -414,8 +392,43 @@ class learning_hmm_multi_n:
 
         return mu_l, cov_l
 
+    def predict2(self, X, x1, x2, x3, x4):
+        X = np.squeeze(X)
+        X_test = X.tolist()        
+        n = len(X_test)
+
+        mu_l = np.zeros(self.nEmissionDim)
+        cov_l = np.zeros(self.nEmissionDim**2)
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test + [x1, x2, x3, x4])
+
+        try:
+            (alpha, scale) = self.ml.forward(final_ts_obj)
+        except:
+            if self.verbose: print "No alpha is available !!"
+            sys.exit()
+
+        alpha = np.array(alpha)
+
+        for j in xrange(self.nState):
+            
+            [[mu1, mu2, mu3, mu4], [cov11, cov12, cov13, cov14, cov21, cov22, cov23, cov24,
+                                    cov31, cov32, cov33, cov34, cov41, cov42, cov43, cov44]] = self.B[j]
+
+            mu_l[0] = x1
+            mu_l[1] += alpha[n/self.nEmissionDim, j] * (mu2 + cov21/cov11*(x1 - mu1) )
+            mu_l[2] += alpha[n/self.nEmissionDim, j] * (mu3 + cov31/cov21*(x2 - mu2)) # TODO Where does this come from?
+            mu_l[3] += alpha[n/self.nEmissionDim, j] * (mu4 + cov41/cov31*(x3 - mu3)) # TODO Where does this come from?
+            ## cov_l[0] += (cov11)*(total**2)
+            ## cov_l[1] += (cov12)*(total**2)
+            ## cov_l[2] += (cov21)*(total**2)
+            ## cov_l[3] += (cov22)*(total**2)
+
+        return mu_l, cov_l
+        
     def loglikelihood(self, X):
-        X = np.squeeze(X)*self.scale
+
+        X = np.squeeze(X)
         X_test = X.tolist()        
 
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
@@ -428,14 +441,16 @@ class learning_hmm_multi_n:
 
         return p
 
-    def likelihoods(self, X):
-        X_test = self.convert_sequence(X, emission=False)
+    def likelihoods(self, X1, X2, X3, X4):
+        # n, m = np.shape(X1)
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+        # i = m - 1
 
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
         logp = self.ml.loglikelihood(final_ts_obj)
         post = np.array(self.ml.posterior(final_ts_obj))
 
-        n = len(np.squeeze(X[0]))
+        n = len(np.squeeze(X1))
 
         # Find the best posterior distribution
         min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
@@ -447,10 +462,12 @@ class learning_hmm_multi_n:
 
         return ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std
 
-    def allLikelihoods(self, X):
-        X_test = self.convert_sequence(X, emission=False)
+    def allLikelihoods(self, X1, X2, X3, X4):
+        # n, m = np.shape(X1)
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+        # i = m - 1
 
-        m = len(np.squeeze(X[0]))
+        m = len(np.squeeze(X1))
 
         ll_likelihood = np.zeros(m)
         ll_state_idx  = np.zeros(m)
@@ -486,30 +503,40 @@ class learning_hmm_multi_n:
             temp_vec = np.reshape(temp_vec, (1, DIVS*m))
             mu[index]  = np.mean(temp_vec)
             sig[index] = np.std(temp_vec)
-            index += 1
+            index = index+1
 
         return mu, sig
         
     # Returns mu,sigma for n hidden-states from feature-vector
-    def vectors_to_mean_cov(self, vecs, nState):
+    def vectors_to_mean_cov(self, vec1, vec2, vec3, vec4, nState):
         index = 0
-        m, n = np.shape(vecs[0]) # ? x length
-        mus  = [np.zeros(nState) for i in xrange(self.nEmissionDim)]
-        cov  = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
+        m, n = np.shape(vec1)
+        #print m,n
+        mu_1 = np.zeros(nState)
+        mu_2 = np.zeros(nState)
+        mu_3 = np.zeros(nState)
+        mu_4 = np.zeros(nState)
+        cov = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
         DIVS = n/nState
 
         while index < nState:
             m_init = index*DIVS
+            temp_vec1 = vec1[:, m_init:(m_init+DIVS)]
+            temp_vec2 = vec2[:, m_init:(m_init+DIVS)]
+            temp_vec3 = vec3[:, m_init:(m_init+DIVS)]
+            temp_vec4 = vec4[:, m_init:(m_init+DIVS)]
+            temp_vec1 = np.reshape(temp_vec1, (1, DIVS*m))
+            temp_vec2 = np.reshape(temp_vec2, (1, DIVS*m))
+            temp_vec3 = np.reshape(temp_vec3, (1, DIVS*m))
+            temp_vec4 = np.reshape(temp_vec4, (1, DIVS*m))
+            mu_1[index] = np.mean(temp_vec1)
+            mu_2[index] = np.mean(temp_vec2)
+            mu_3[index] = np.mean(temp_vec3)
+            mu_4[index] = np.mean(temp_vec4)
+            cov[index, :, :] = np.cov(np.concatenate((temp_vec1, temp_vec2, temp_vec3, temp_vec4), axis=0))
+            index = index+1
 
-            temp_vecs = [np.reshape(vec[:, m_init:(m_init+DIVS)], (1, DIVS*m)) for vec in vecs]
-            for i, mu in enumerate(mus):
-                mu[index] = np.mean(temp_vecs[i])
-
-            print np.shape(temp_vecs), np.shape(cov)
-            cov[index, :, :] = np.cov(np.concatenate(temp_vecs, axis=0))
-            index += 1
-
-        return mus, cov
+        return mu_1, mu_2, mu_3, mu_4, cov
 
     @staticmethod
     def init_trans_mat(nState):
@@ -540,40 +567,83 @@ class learning_hmm_multi_n:
 
         return trans_prob_mat
 
-    @staticmethod
-    def convert_sequence(data, emission=False):
-        '''
-        data: dimension x sample x length
-        '''
+    def init_plot(self):
+        print "Start to print out"
+
+        self.fig = plt.figure(1)
+        gs = gridspec.GridSpec(4, 1)
         
+        self.ax1 = self.fig.add_subplot(gs[0])        
+        self.ax2 = self.fig.add_subplot(gs[1])        
+        self.ax3 = self.fig.add_subplot(gs[2])
+        self.ax4 = self.fig.add_subplot(gs[3])
+
+    def data_plot(self, X_test1, X_test2, X_test3, X_test4, color='r'):
+        self.ax1.plot(np.hstack([X_test1[0]]), color)
+        self.ax2.plot(np.hstack([X_test2[0]]), color)
+        self.ax3.plot(np.hstack([X_test3[0]]), color)
+        self.ax4.plot(np.hstack([X_test4[0]]), color)
+
+    @staticmethod
+    def final_plot():
+        plt.rc('text', usetex=True)
+        plt.show()
+
+    @staticmethod
+    def convert_sequence(data1, data2, data3, data4, emission=False):
         # change into array from other types
-        X = [copy.copy(np.array(d)) if type(d) is not np.ndarray else copy.copy(d) for d in data]
+        if type(data1) is not np.ndarray:
+            X1 = copy.copy(np.array(data1))
+        else:
+            X1 = copy.copy(data1)
+        if type(data2) is not np.ndarray:
+            X2 = copy.copy(np.array(data2))
+        else:
+            X2 = copy.copy(data2)
+        if type(data3) is not np.ndarray:
+            X3 = copy.copy(np.array(data3))
+        else:
+            X3 = copy.copy(data3)
+        if type(data4) is not np.ndarray:
+            X4 = copy.copy(np.array(data4))
+        else:
+            X4 = copy.copy(data4)
 
-        # Change into 2-dimensional array
-        X = [np.reshape(x, (1, len(x))) if len(np.shape(x)) == 1 else x for x in X]
+        # Change into 2dimensional array
+        dim = np.shape(X1)
+        if len(dim) == 1:
+            X1 = np.reshape(X1, (1, len(X1)))
+        dim = np.shape(X2)
+        if len(dim) == 1:
+            X2 = np.reshape(X2, (1, len(X2)))
+        dim = np.shape(X3)
+        if len(dim) == 1:
+            X3 = np.reshape(X3, (1, len(X3)))
+        dim = np.shape(X4)
+        if len(dim) == 1:
+            X4 = np.reshape(X4, (1, len(X4)))
 
-        n, m = np.shape(X[0])
+        n, m = np.shape(X1)
 
-        Seq = []
+        X = []
         for i in xrange(n):
             Xs = []
                 
             if emission:
                 for j in xrange(m):
-                    Xs.append([x[i, j] for x in X])
-                Seq.append(Xs)
+                    Xs.append([X1[i, j], X2[i, j], X3[i, j], X4[i, j]])
+                X.append(Xs)
             else:
                 for j in xrange(m):
-                    Xs.append([x[i, j] for x in X])
-                Seq.append(np.array(Xs).flatten().tolist())
+                    Xs.append([X1[i, j], X2[i, j], X3[i, j], X4[i, j]])
+                X.append(np.array(Xs).flatten().tolist())
 
-        return np.array(Seq)
+        return np.array(X)
         
-    def anomaly_check(self, X, ths_mult=None):
+    def anomaly_check(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
 
-        if self.nEmissionDim == 1: X_test = np.array([X[0]])
-        else: X_test = self.convert_sequence(X, emission=False)
-        X_test *= self.scale
+        if self.nEmissionDim == 1: X_test = np.array([X1])
+        else: X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -588,7 +658,7 @@ class learning_hmm_multi_n:
             ##     if self.verbose: print "Too short profile!"
             ##     return -1, 0.0 #error
 
-            X_test = self.convert_sequence([x[:-1] for x in X], emission=False)
+            X_test = self.convert_sequence(X1[:-1], X2[:-1], X3[:-1], X4[:-1], emission=False)                
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 last_logp         = self.ml.loglikelihood(final_ts_obj)
@@ -599,7 +669,7 @@ class learning_hmm_multi_n:
             ## print self.l_mean_delta + ths_mult*self.l_std_delta, abs(logp-last_logp)
             if type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple:
                 err = (self.l_mean_delta + (-1.0*ths_mult[0])*self.l_std_delta ) - abs(logp-last_logp)
-            else:
+            else:                
                 err = (self.l_mean_delta + (-1.0*ths_mult)*self.l_std_delta ) - abs(logp-last_logp)
             ## if err < self.anomaly_offset: return 1.0, 0.0 # anomaly            
             if err < 0.0: return True, 0.0 # anomaly            
@@ -621,15 +691,13 @@ class learning_hmm_multi_n:
                 if self.verbose: print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 return True, 0.0 # anomaly
 
-            if len(X[0]) == 1:
+            if len(X1) == 1:
                 n = 1
             else:
-                n = len(np.squeeze(X[0]))
+                n = len(np.squeeze(X1))
 
             # Find the best posterior distribution
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
-
-            print "Min index: ", min_index, " logp: ", logp, " ths_mult: ", ths_mult
 
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
@@ -645,12 +713,9 @@ class learning_hmm_multi_n:
             
 
             
-    def expLikelihoods(self, X, ths_mult=None):
-        if self.nEmissionDim == 1: X_test = np.array([X[0]])
-        else: X_test = self.convert_sequence(X, emission=False)
-
-        # scaling
-        X_test *= self.scale
+    def expLikelihoods(self, X1, X2=None, X3=None, X4=None, ths_mult=None):
+        if self.nEmissionDim == 1: X_test = np.array([X1])
+        else: X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -665,7 +730,7 @@ class learning_hmm_multi_n:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
             return 1.0, 0.0 # anomaly
 
-        n = len(np.squeeze(X[0]))
+        n = len(np.squeeze(X1))
 
         # Find the best posterior distribution
         min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
@@ -679,9 +744,9 @@ class learning_hmm_multi_n:
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
             ## print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
-            return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]
+            return (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
         else:
-            return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
+            return (self.ll_mu[min_index] + ths_mult*self.ll_std[min_index])
 
 
         
@@ -704,14 +769,16 @@ class learning_hmm_multi_n:
 
         return X_scaled, min_c, max_c
 
-    def likelihood_disp(self, X, X_true, Z, Z_true, axisTitles, ths_mult, figureSaveName=None):
-        n, m = np.shape(X[0])
-        n2, m2 = np.shape(Z[0])
+    def likelihood_disp(self, X1, X2, X3, X4, X1_true, X2_true, X3_true, X4_true,
+                        Z1, Z2, Z3, Z4, Z1_true, Z2_true, Z3_true, Z4_true, ths_mult, figureSaveName=None):
+        ## print np.shape(X1)
+        n, m = np.shape(X1)
+        n2, m2 = np.shape(Z1)
         if self.verbose: print "Input sequence X1: ", n, m
-        if self.verbose: print 'Anomaly: ', self.anomaly_check(X, ths_mult)
+        if self.verbose: print 'Anomaly: ', self.anomaly_check(X1, X2, X3, X4, ths_mult)
 
-        X_test = self.convert_sequence(X, emission=False)
-        Z_test = self.convert_sequence(Z, emission=False)
+        X_test = self.convert_sequence(X1, X2, X3, X4, emission=False)
+        Z_test = self.convert_sequence(Z1, Z2, Z3, Z4, emission=False)
 
         x = np.arange(0., float(m))
         z = np.arange(0., float(m2))
@@ -769,9 +836,15 @@ class learning_hmm_multi_n:
         # y2 = (X2_true[0]/scale2[2])*(scale2[1]-scale2[0])+scale2[0]
         # y3 = (X3_true[0]/scale3[2])*(scale3[1]-scale3[0])+scale3[0]
         # y4 = (X4_true[0]/scale4[2])*(scale4[1]-scale4[0])+scale4[0]
-        Y = [x_true[0] for x_true in X_true]
+        y1 = X1_true[0]
+        y2 = X2_true[0]
+        y3 = X3_true[0]
+        y4 = X4_true[0]
 
-        ZY = [np.mean(z_true, axis=0) for z_true in Z_true]
+        zy1 = np.mean(Z1_true, axis=0)
+        zy2 = np.mean(Z2_true, axis=0)
+        zy3 = np.mean(Z3_true, axis=0)
+        zy4 = np.mean(Z4_true, axis=0)
 
         ## matplotlib.rcParams['figure.figsize'] = 8,7
         matplotlib.rcParams['pdf.fonttype'] = 42
@@ -780,49 +853,100 @@ class learning_hmm_multi_n:
         fig = plt.figure()
         plt.rc('text', usetex=True)
 
-        for index, (y, zy, title) in enumerate(zip(Y, ZY, axisTitles)):
-            ax = plt.subplot('%i1%i' % (len(X) + 1, index + 1))
-            ax.plot(x*(1./10.), y)
-            ax.plot(z*(1./10.), zy, 'r')
-            y_min = np.amin(y)
-            y_max = np.amax(y)
-            collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
-                                                                     ymin=0, ymax=y_max+0.5,
-                                                                     # ymin=y_min - y_min/15.0, ymax=y_max + y_min/15.0,
-                                                                     where=np.array(block_flag_interp)>0,
-                                                                     facecolor='green',
-                                                                     edgecolor='none', alpha=0.3)
-            ax.add_collection(collection)
-            ax.set_ylabel(title, fontsize=16)
-            ax.set_xlim([0, x[-1]*(1./10.)])
-            ax.set_ylim([y_min - 0.25, y_max + 0.5])
-            # ax.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
+        ax1 = plt.subplot(512)
+        # print np.shape(x), np.shape(y1)
+        ax1.plot(x*(1./10.), y1)
+        # print np.shape(z), np.shape(zy1)
+        ax1.plot(z*(1./10.), zy1, 'r')
+        y_min = np.amin(y1)
+        y_max = np.amax(y1)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=0, ymax=y_max+0.5,
+                                                                 where=np.array(block_flag_interp)>0,
+                                                                 facecolor='green',
+                                                                 edgecolor='none', alpha=0.3)
+        ax1.add_collection(collection)
+        ax1.set_ylabel("Force (N)", fontsize=16)
+        ax1.set_xlim([0, x[-1]*(1./10.)])
+        ## ax1.set_ylim([0, np.amax(y1)*1.1])
+        ax1.set_ylim([y_min - 0.25, y_max + 0.5])
 
-            # Text for progress
-            if index == 0:
-                for i in xrange(len(block_state)):
-                    if i%2 is 0:
-                        if i<10:
-                            ax.text((text_x[i])*(1./10.), y_max+0.15, str(block_state[i]+1))
-                        else:
-                            ax.text((text_x[i]-1.0)*(1./10.), y_max+0.15, str(block_state[i]+1))
-                    else:
-                        if i<10:
-                            ax.text((text_x[i])*(1./10.), y_max+0.06, str(block_state[i]+1))
-                        else:
-                            ax.text((text_x[i]-1.0)*(1./10.), y_max+0.06, str(block_state[i]+1))
+        # -----
 
-        ax = plt.subplot('%i1%i' % (len(X) + 1, len(X) + 1))
-        ax.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
-        ax.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
-        ax.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
-        # ax.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
-        ax.set_ylabel('Log-likelihood', fontsize=16)
-        ax.set_xlim([0, x[-1]*(1./10.)])
+        ax2 = plt.subplot(511)
+        ax2.plot(x*(1./10.), y2)
+        ax2.plot(z*(1./10.), zy2, 'r')
+        y_max = np.amax(y2)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=0, ymax=y_max + 0.25,
+                                                                 where=np.array(block_flag_interp)>0,
+                                                                 facecolor='green',
+                                                                 edgecolor='none', alpha=0.3)
+        ax2.add_collection(collection)
 
-        # ax.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
-        lgd = ax.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.5), prop={'size':14})
-        ax.set_xlabel('Time (sec)', fontsize=16)
+        # Text for progress
+        for i in xrange(len(block_state)):
+            if i%2 is 0:
+                if i<10:
+                    ax2.text((text_x[i])*(1./10.), y_max+0.15, str(block_state[i]+1))
+                else:
+                    ax2.text((text_x[i]-1.0)*(1./10.), y_max+0.15, str(block_state[i]+1))
+            else:
+                if i<10:
+                    ax2.text((text_x[i])*(1./10.), y_max+0.06, str(block_state[i]+1))
+                else:
+                    ax2.text((text_x[i]-1.0)*(1./10.), y_max+0.06, str(block_state[i]+1))
+
+        ax2.set_ylabel("Distance (m)", fontsize=16)
+        ax2.set_xlim([0, x[-1]*(1./10.)])
+        ax2.set_ylim([0, y_max + 0.25])
+
+        # -----
+
+        ax4 = plt.subplot(514)
+        ax4.plot(x*(1./10.), y3)
+        ax4.plot(z*(1./10.), zy3, 'r')
+        y_max = np.amax(y3)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=0, ymax=y_max + 0.1,
+                                                                 where=np.array(block_flag_interp)>0,
+                                                                 facecolor='green',
+                                                                 edgecolor='none', alpha=0.3)
+        ax4.add_collection(collection)
+        ax4.set_ylabel("Angle (rad)", fontsize=16)
+        ax4.set_xlim([0, x[-1]*(1./10.)])
+        ax4.set_ylim([0, y_max + 0.1])
+
+        # -----
+
+        ax5 = plt.subplot(513)
+        ax5.plot(x*(1./10.), y4)
+        ax5.plot(z*(1./10.), zy4, 'r')
+        y_min = np.amin(y4)
+        y_max = np.amax(y4)
+        collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
+                                                                 ymin=y_min - y_min/15.0, ymax=y_max + y_min/15.0,
+                                                                 where=np.array(block_flag_interp)>0,
+                                                                 facecolor='green',
+                                                                 edgecolor='none', alpha=0.3)
+        ax5.add_collection(collection)
+        ax5.set_ylabel("Audio (dec)", fontsize=16)
+        ax5.set_xlim([0, x[-1]*(1./10.)])
+        ax5.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
+
+        # -----
+
+        ax3 = plt.subplot(515)
+        ax3.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
+        ax3.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
+        ax3.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
+        ## ax3.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
+        ax3.set_ylabel('Log-likelihood',fontsize=16)
+        ax3.set_xlim([0, x[-1]*(1./10.)])
+
+        ## ax3.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
+        lgd = ax3.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.5), prop={'size':14})
+        ax3.set_xlabel('Time (sec)', fontsize=16)
 
         plt.subplots_adjust(bottom=0.15)
 
@@ -850,18 +974,24 @@ class learning_hmm_multi_n:
         return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
 
 
-    def state_clustering(self, X):
-        n, m = np.shape(X[0])
+    def state_clustering(self, X1, X2, X3, X4):
+        n,m = np.shape(X1)
 
-        print n, m
-        x = np.arange(0., float(m))*(1./43.)
+        print n,m
+        x   = np.arange(0., float(m))*(1./43.)
         state_mat  = np.zeros((self.nState, m*n))
         likelihood_mat = np.zeros((1, m*n))
 
         count = 0           
         for i in xrange(n):
-            for j in xrange(1, m):
-                X_test = self.convert_sequence([x[i:i+1,:j] for x in X], emission=False)
+
+            for j in xrange(1,m):            
+
+                x_test1 = X1[i:i+1,:j]
+                x_test2 = X2[i:i+1,:j]            
+                x_test3 = X3[i:i+1,:j]            
+                x_test4 = X4[i:i+1,:j]            
+                X_test = self.convert_sequence(x_test1, x_test2, x_test3, x_test4, emission=False)
 
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 ## path,_    = self.ml.viterbi(final_ts_obj)        
