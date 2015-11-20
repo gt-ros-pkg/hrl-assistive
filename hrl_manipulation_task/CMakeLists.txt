@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_manipulation_task)
 
-find_package(catkin REQUIRED COMPONENTS roscpp)
+find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros kdl_parser orocos_kdl)
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 #find_package(Boost REQUIRED COMPONENTS thread)
 
 catkin_python_setup()
 
 set(CMAKE_PREFIX_PATH /usr/local)
-find_package(PCL)
+find_package(PCL REQUIRED)
 if (PCL_FOUND)
   message("--------- User Print Out-----------")
-  message("PCL lib: ${PCL_INCLUDE_DIRS}")
+  message("PCL include: ${PCL_INCLUDE_DIRS}")
   message("PCL lib: ${PCL_LIBRARIES}")
   message("-----------------------------------")
   include_directories(${PCL_INCLUDE_DIRS})
@@ -22,14 +22,18 @@ endif (PCL_FOUND)
 catkin_package(
     DEPENDS rospy
     CATKIN_DEPENDS hrl_lib tf tf_conversions hark_msgs ar_track_alvar geometry_msgs pr2_msgs visualization_msgs pr2_controllers_msgs hrl_haptic_manipulation_in_clutter_msgs std_msgs sandbox_dpark_darpa_m3 hrl_anomaly_detection hrl_srvs sensor_msgs pcl_conversions
-    #CATKIN_DEPENDS hrl_lib tf tf_conversions hark_msgs ar_track_alvar_msgs geometry_msgs pr2_msgs visualization_msgs pr2_controllers_msgs hrl_haptic_manipulation_in_clutter_msgs std_msgs sandbox_dpark_darpa_m3 hrl_anomaly_detection hrl_srvs
     INCLUDE_DIRS include
     LIBRARIES 
 )
 
+add_library(robot src/robot.cpp)
+target_link_libraries(robot ${orocos_kdl_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+#rosbuild_link_boost(sift_extractor thread signals)
+
+
 # Camera Filter
 add_executable(sift_extractor src/pcl_sift_extractor.cpp)
-target_link_libraries(sift_extractor ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+target_link_libraries(sift_extractor ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 #rosbuild_link_boost(sift_extractor thread signals)
 
 install(TARGETS sift_extractor

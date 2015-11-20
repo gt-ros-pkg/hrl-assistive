@@ -4,7 +4,9 @@
 // ROS
 #include <ros/ros.h>
 /* #include "tf/LinearMath/Transform.h" */
-/* #include "tf/transform_listener.h" */
+#include "tf/transform_listener.h"
+
+#include "hrl_manipulation_task/robot.h"
 
 // PCL
 #include <pcl/point_cloud.h>
@@ -13,7 +15,8 @@
 #include <pcl/conversions.h>
 #include <pcl_conversions/pcl_conversions.h> 
 #include <pcl/keypoints/sift_keypoint.h>
-/* #include <pcl/filters/conditional_removal.h> */
+#include <pcl/filters/conditional_removal.h> 
+#include <pcl_ros/transforms.h>
 
 // Message
 #include <sensor_msgs/PointCloud.h>
@@ -43,6 +46,8 @@ public:
 private:
     bool getParams();   
     bool initComms();
+    bool initFilter();
+    bool initRobot();
 
     void cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input);
     void jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState);
@@ -56,6 +61,7 @@ public:
     ros::Subscriber camera_sub_;
     ros::Subscriber joint_state_sub_;
 
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
 
@@ -65,23 +71,33 @@ private:
 
     // PCL
     pcl::PointCloud<PointType>::Ptr cloud_ptr_; 
+    pcl::PointCloud<PointType>::Ptr cloud_filtered_ptr_; 
     pcl::PointCloud<PointType>::Ptr kpts_ptr_; 
 
+    // tf
+    tf::StampedTransform head_transform_;
 
-    /* // Robot */
-    /* boost::shared_ptr<Robot> robot_ptr_; */
-    /* std::string base_frame_; */
-    /* std::string ee_frame_; */
-    /* pcl::PointCloud<pcl::PointXYZ> arm_mesh_; */
+    // filtering
+    pcl::ConditionAnd<PointType>::Ptr range_cond_;
+    /* pcl::ConditionalRemoval<PointType>::Ptr condrem_ptr_; */
+
+    // Robot
+    boost::shared_ptr<Robot> robot_ptr_;
+    std::string base_frame_;
+    std::string ee_frame_;
     /* int robot_dimensions_; /// Number of dimensions in the robot space, eg 1->n */
 
-    /* // current info */
-    /* sensor_msgs::JointState joint_state_;  */
-    /* std::vector<std::string> joint_names_; */
-    /* std::vector<double> joint_angles_; // Current joint angles. */
-    /* bool has_current_; */
+    // current info
+    sensor_msgs::JointState joint_state_;
+    std::vector<std::string> joint_names_;
+    std::vector<double> joint_angles_; // Current joint angles.
+    bool has_current_;
     /* KDL::Frame current_ee_frame_; */
 
+
+    // flag
+    bool has_tf_;
+    bool has_joint_state_;
 
     /* tf::TransformListener tf_lstnr_; */
     /* tf::StampedTransform tr_; */
