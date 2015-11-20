@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_manipulation_task)
 
-find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros kdl_parser orocos_kdl)
+find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros kdl_parser)
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 #find_package(Boost REQUIRED COMPONENTS thread)
 
 catkin_python_setup()
+
+find_package(orocos_kdl REQUIRED)
+if (orocos_kdl_FOUND)
+  message("--------- User Print Out-----------")
+  message("orocos_kdl include: ${orocos_kdl_INCLUDE_DIRS}")
+  message("orocos_kdl lib: ${orocos_kdl_LIBRARIES}")
+  message("-----------------------------------")
+  include_directories(${orocos_kdl_INCLUDE_DIRS})
+endif (orocos_kdl_FOUND)
 
 set(CMAKE_PREFIX_PATH /usr/local)
 find_package(PCL REQUIRED)
