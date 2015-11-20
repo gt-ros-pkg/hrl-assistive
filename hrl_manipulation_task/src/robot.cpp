@@ -28,18 +28,18 @@ Robot::~Robot()
 bool Robot::forwardKinematics(std::vector<double> &joint_angles, KDL::Frame &cartpos, int link_number)  const
 { 
     // Create solver based on kinematic chain
-    KDL::ChainFkSolverPos_recursive fksolver = KDL::ChainFkSolverPos_recursive(chain_);
+    KDL::ChainFkSolverPos_recursive fksolver = KDL::ChainFkSolverPos_recursive(ee_chain_);
    
     // Create joint array
     unsigned int nj = chain_.getNrOfJoints();
-    if (static_cast<unsigned int>(joint_angles.size()) > nj)
+    if (static_cast<unsigned int>(joint_angles.size()) < nj)
     {
         std::cerr<<"Wrong number of joints in FK\n"; 
         return false;    
     }
   
     KDL::JntArray jointpositions(nj); 
-    for (unsigned int i = 0; i < joint_angles.size(); i++)
+    for (unsigned int i = 0; i < nj; i++)
     {
         jointpositions(i) = joint_angles[i];
     }
@@ -74,48 +74,53 @@ bool Robot::getParams()
 bool Robot::setupKDL()
 {  
     ROS_INFO("Successfully setup KDL tree.");
-    tree_.getChain(base_link_, target_link_, chain_);
+
+    tree_.getChain(base_link_, "l_gripper_tool_frame", ee_chain_);
+    tree_.getChain(base_link_, "l_wrist_flex_link", wrist_chain_);
+    tree_.getChain(base_link_, "l_elbow_flex_link", elbow_chain_);
+    tree_.getChain(base_link_, "l_upper_arm_link", shoulder_chain_);
+
     // std::cout << base_link_ << " " <<  target_link_ << std::endl;
 
     ROS_INFO("Successfully extracted arm KDL chain from complete tree.");
     // std::cout <<"Num segments " << chain_.getNrOfSegments() << ", Num joints " << chain_.getNrOfJoints() << std::endl;
 
-    XmlRpc::XmlRpcValue jt_min;
-    XmlRpc::XmlRpcValue jt_max;
+    // XmlRpc::XmlRpcValue jt_min;
+    // XmlRpc::XmlRpcValue jt_max;
 
-    std::string str_jt_min = "/haptic_mpc/";
-    std::string str_jt_max = "/haptic_mpc/";
+    // std::string str_jt_min = "/haptic_mpc/";
+    // std::string str_jt_max = "/haptic_mpc/";
         
-    // str_jt_min.append((string)robot_path);
-    // str_jt_max.append((string)robot_path);
+    // // str_jt_min.append((string)robot_path);
+    // // str_jt_max.append((string)robot_path);
 
-    str_jt_min.append("pr2/joint_limits/");
-    str_jt_max.append("pr2/joint_limits/");
+    // str_jt_min.append("pr2/joint_limits/");
+    // str_jt_max.append("pr2/joint_limits/");
 
-    str_jt_min.append("left");
-    str_jt_max.append("left");
+    // str_jt_min.append("left");
+    // str_jt_max.append("left");
 
-    str_jt_min.append("/min");
-    str_jt_max.append("/max");
+    // str_jt_min.append("/min");
+    // str_jt_max.append("/max");
 
-    while (nh_.getParam(str_jt_min, jt_min) == false)
-        sleep(0.1);
-    while (nh_.getParam(str_jt_max, jt_max) == false)
-        sleep(0.1);
+    // while (nh_.getParam(str_jt_min, jt_min) == false)
+    //     sleep(0.1);
+    // while (nh_.getParam(str_jt_max, jt_max) == false)
+    //     sleep(0.1);
 
-    // Number of joints check
-    assert((int)jt_min.size()==(int)chain_.getNrOfJoints()); 
-    assert((int)jt_max.size()==(int)chain_.getNrOfJoints());
+    // // Number of joints check
+    // assert((int)jt_min.size()==(int)chain_.getNrOfJoints()); 
+    // assert((int)jt_max.size()==(int)chain_.getNrOfJoints());
 
-    qmin_.resize(chain_.getNrOfJoints());
-    qmax_.resize(chain_.getNrOfJoints());
+    // qmin_.resize(chain_.getNrOfJoints());
+    // qmax_.resize(chain_.getNrOfJoints());
         
-    // 
-    for (unsigned int i = 0; i < chain_.getNrOfJoints(); i++)
-    {
-        qmin_(i) = (double((int)jt_min[i])-0.0)*M_PI/180.0; // added offset 0.3
-        qmax_(i) = (double((int)jt_max[i])+0.0)*M_PI/180.0;
-    }
+    // // 
+    // for (unsigned int i = 0; i < chain_.getNrOfJoints(); i++)
+    // {
+    //     qmin_(i) = (double((int)jt_min[i])-0.0)*M_PI/180.0; // added offset 0.3
+    //     qmax_(i) = (double((int)jt_max[i])+0.0)*M_PI/180.0;
+    // }
 
   return true;  
 }

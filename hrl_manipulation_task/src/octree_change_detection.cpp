@@ -1,13 +1,13 @@
 #include "hrl_manipulation_task/pcl_sift_extractor.h"
 
 
-SIFT::SIFT(const ros::NodeHandle &nh): nh_(nh)
+changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
 {
     cloud_ptr_.reset (new pcl::PointCloud<PointType>());
     cloud_filtered_ptr_.reset (new pcl::PointCloud<PointType>());
     kpts_ptr_.reset (new pcl::PointCloud<PointType>);
 
-#ifndef USE_SIFT
+#ifndef USE_changeDetector
     // PyramidalKLT
     tracker_.reset (new pcl::tracking::PyramidalKLTTracker<PointType>);
 #endif
@@ -22,11 +22,11 @@ SIFT::SIFT(const ros::NodeHandle &nh): nh_(nh)
 
 }
 
-SIFT::~SIFT()
+changeDetector::~changeDetector()
 {
 }
 
-bool SIFT::getParams()
+bool changeDetector::getParams()
 {
     robot_dimensions_ = 7; // 7 link pr2 arm
 
@@ -43,14 +43,14 @@ bool SIFT::getParams()
     return true;
 }
 
-bool SIFT::initComms()
+bool changeDetector::initComms()
 {
     sift_markers_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/sift_markers", 10, true);
     com_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/hrl_manipulation_task/com_markers", 
                                                                       10, true);
     
-    camera_sub_ = nh_.subscribe("/head_mount_kinect/depth_registered/points", 1, &SIFT::cameraCallback, this);
-    joint_state_sub_ = nh_.subscribe("/joint_states", 10, &SIFT::jointStateCallback, this);    
+    camera_sub_ = nh_.subscribe("/head_mount_kinect/depth_registered/points", 1, &changeDetector::cameraCallback, this);
+    joint_state_sub_ = nh_.subscribe("/joint_states", 10, &changeDetector::jointStateCallback, this);    
     ROS_INFO("Comms Initialized!!");
 
     tf::TransformListener listener;
@@ -75,7 +75,7 @@ bool SIFT::initComms()
     return true;
 }
 
-bool SIFT::initFilter()
+bool changeDetector::initFilter()
 {
     range_cond_.reset (new pcl::ConditionAnd<PointType> ());
 
@@ -96,13 +96,13 @@ bool SIFT::initFilter()
     // // build the filter
     // condrem_ptr_.reset (new pcl::ConditionalRemoval<PointType>(range_cond) );    
 
-    sift_.reset(new pcl::SIFTKeypoint<PointType, KeyType>);
+    sift_.reset(new pcl::changeDetectorKeypoint<PointType, KeyType>);
     sift_->setScales(min_scale, nr_octaves, nr_scales);
     sift_->setMinimumContrast(contrast);
 
 }
 
-bool SIFT::initRobot()
+bool changeDetector::initRobot()
 {
     ROS_INFO("Start to initialize robot!!");
     base_frame_ = "torso_lift_link";
@@ -123,7 +123,7 @@ bool SIFT::initRobot()
     return true;
 }
 
-void SIFT::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input)
+void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input)
 {
     boost::mutex::scoped_lock lock(cloud_mtx_);
     pcl::PCLPointCloud2 pcl_pc;
@@ -150,7 +150,7 @@ void SIFT::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input)
     
 }
 
-void SIFT::jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState) 
+void changeDetector::jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState) 
 {
     if (jointState->name.size() != jointState->position.size() || 
         jointState->name.size() !=jointState->velocity.size()) {
@@ -189,7 +189,7 @@ void SIFT::jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState)
 
 
 // Publish 
-void SIFT::pubSiftMarkers()
+void changeDetector::pubSiftMarkers()
 {
     // visualization_msgs::MarkerArray siftMarkers;
     sensor_msgs::PointCloud2 msg;
@@ -201,7 +201,7 @@ void SIFT::pubSiftMarkers()
 }
 
 // Publish 
-void SIFT::pubCoMMarkers(double x, double y, double z)
+void changeDetector::pubCoMMarkers(double x, double y, double z)
 {
     visualization_msgs::Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
@@ -240,12 +240,12 @@ void SIFT::pubCoMMarkers(double x, double y, double z)
 }
 
 
-void SIFT::extractSIFT()
+void changeDetector::extractchangeDetector()
 {
-    // ROS_INFO("Start to extract SIFT features");
+    // ROS_INFO("Start to extract changeDetector features");
 
-#ifdef USE_SIFT
-    // SIFT
+#ifdef USE_changeDetector
+    // changeDetector
     pcl::PointCloud<KeyType>::Ptr keypoints (new pcl::PointCloud<KeyType>);
     sift_->setInputCloud(cloud_filtered_ptr_);
     sift_->setSearchSurface(cloud_filtered_ptr_);
@@ -300,8 +300,8 @@ void SIFT::extractSIFT()
 #endif
 }
 
-#ifndef USE_SIFT
-void SIFT::detect_keypoints (const CloudConstPtr& cloud)
+#ifndef USE_changeDetector
+void changeDetector::detect_keypoints (const CloudConstPtr& cloud)
 {
     pcl::HarrisKeypoint2D<PointType, KeyType> harris;
     harris.setInputCloud (cloud);
@@ -321,19 +321,19 @@ void SIFT::detect_keypoints (const CloudConstPtr& cloud)
 
 int main(int argc, char **argv)
 {
-    ROS_INFO("SIFT extractor main()");
+    ROS_INFO("changeDetector main()");
     ros::init(argc, argv, "talker");
     ros::NodeHandle n;
 
-    // Initialize a SIFT extractor object.
-    SIFT extractor(n);
+    // Initialize a changeDetector object.
+    changeDetector detector(n);
 
 
-    ROS_INFO("SIFT extractor: Loop Start!!");
+    ROS_INFO("changeDetector: Loop Start!!");
     ros::Rate loop_rate(1.0); // 1Hz
     while (ros::ok())
     { 
-        extractor.extractSIFT();
+        detector.runDetector();
 
         // Ros loop stuff
         ros::spinOnce();

@@ -1,7 +1,5 @@
-#ifndef PCL_SIFT_EXTRACTOR_H_
-#define PCL_SIFT_EXTRACTOR_H_
-
-#define USE_SIFT
+#ifndef OCTREE_CHANGE_DETECTION_H_
+#define OCTREE_CHANGE_DETECTION_H_
 
 // ROS
 #include <ros/ros.h>
@@ -18,13 +16,7 @@
 #include <pcl_conversions/pcl_conversions.h> 
 #include <pcl/filters/conditional_removal.h> 
 #include <pcl_ros/transforms.h>
-
-#ifdef USE_SIFT
-#include <pcl/keypoints/sift_keypoint.h>
-#else
-#include <pcl/tracking/pyramidal_klt.h>
-#include <pcl/keypoints/harris_2d.h>
-#endif
+#include <pcl/octree/octree.h>
 
 // Message
 #include <sensor_msgs/PointCloud.h>
@@ -37,20 +29,16 @@
 #include <boost/thread.hpp>
 /* #include <boost/math/distributions/normal.hpp> */
 
-const float min_scale = 0.01;
-const int nr_octaves = 3;
-const int nr_scales = 3;
-const float contrast = 10;
 
-typedef pcl::PointXYZRGBA PointType;
+typedef pcl::PointXYZ PointType;
 typedef pcl::PointXYZI KeyType;
 using namespace std;
 
-class SIFT
+class changeDetector
 {
 public:
-    SIFT(const ros::NodeHandle &nh);
-    ~SIFT();
+    changeDetector(const ros::NodeHandle &nh);
+    ~changeDetector();
 
 private:
     bool getParams();   
@@ -62,17 +50,11 @@ private:
     void jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState);
 
 public:
-    void pubSiftMarkers();
-    void pubCoMMarkers(double x, double y, double z);
-    void extractSIFT();
+    void pubChangetMarkers();
+    void runDetector();
 
-#ifdef USE_SIFT
-#else
-    void detect_keypoints (const CloudConstPtr& cloud);
-#endif
-
-    ros::Publisher sift_markers_pub_;
-    ros::Publisher com_markers_pub_;
+private:
+    ros::Publisher change_pub_;
 
     ros::Subscriber camera_sub_;
     ros::Subscriber joint_state_sub_;
@@ -83,22 +65,11 @@ private:
 
     // Common major variables
     ros::NodeHandle nh_;
-    boost::mutex camera_mtx; // mutex for contact cost subscribers
 
     // PCL
     pcl::PointCloud<PointType>::Ptr cloud_ptr_; 
     pcl::PointCloud<PointType>::Ptr cloud_filtered_ptr_; 
-    pcl::PointCloud<PointType>::Ptr kpts_ptr_; 
 
-#ifdef USE_SIFT
-    // SIFT
-    pcl::SIFTKeypoint<PointType, KeyType>::Ptr sift_;
-#else
-    // PyramidalKLT
-    boost::shared_ptr<pcl::tracking::PyramidalKLTTracker<PointType> > tracker_;
-    pcl::PointCloud<pcl::PointUV>::ConstPtr keypoints_;
-    pcl::PointIndicesConstPtr points_status_;
-#endif
 
     // tf
     tf::StampedTransform head_transform_;
@@ -128,7 +99,8 @@ private:
     bool has_joint_state_;
 
     boost::mutex cloud_mtx_; // mutex for contact cost subscribers
-    boost::mutex points_mutex_;
+    /* boost::mutex points_mutex_; */
+    /* boost::mutex camera_mtx; // mutex for contact cost subscribers */
 
 };
 

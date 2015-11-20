@@ -57,7 +57,10 @@ public:
 protected:
     ros::NodeHandle nh_;
 
-    KDL::Chain chain_;
+    KDL::Chain ee_chain_;
+    KDL::Chain wrist_chain_;
+    KDL::Chain elbow_chain_;
+    KDL::Chain shoulder_chain_;
     KDL::Tree tree_;
 
     // Planning model variables
