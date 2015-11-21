@@ -7,6 +7,7 @@
 #include "tf/transform_listener.h"
 
 #include "hrl_manipulation_task/robot.h"
+#include "hrl_manipulation_task/util.h"
 
 // PCL
 #include <pcl/point_cloud.h>
@@ -18,6 +19,12 @@
 #include <pcl_ros/transforms.h>
 #include <pcl/octree/octree.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+
+// For custom PCL filter
+#include <pcl/filters/filter_indices.h>
+#include <pcl/search/pcl_search.h>
+#include <pcl/common/io.h>
 
 // Message
 #include <sensor_msgs/PointCloud.h>
@@ -32,13 +39,14 @@
 /* #include <boost/math/distributions/normal.hpp> */
 
 // Octree resolution - side length of octree voxels
-const float resolution = 0.02;
+const float resolution = 0.05;
 
 typedef pcl::PointXYZ PointType;
 typedef pcl::PointXYZI KeyType;
 typedef struct {
     double r,g,b;
 } COLOR;
+typedef typename pcl::search::Search<PointType>::Ptr SearcherPtr;
 
 using namespace std;
 
@@ -47,6 +55,10 @@ class changeDetector
 public:
     changeDetector(const ros::NodeHandle &nh);
     ~changeDetector();
+
+    void pubFilteredPCL();
+    void pubChangeMarkers();
+    void runDetector();
 
 private:
     bool getParams();   
@@ -57,10 +69,9 @@ private:
     void cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input);
     void jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState);
 
-public:
-    void pubFilteredPCL();
-    void pubChangeMarkers();
-    void runDetector();
+    void robotBodyFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud);
+    void noiseFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud, int mean_k, 
+                     double distance_threshold, double std_mul);
 
 private:
     ros::Publisher pcl_filtered_pub_;
@@ -83,6 +94,7 @@ private:
     boost::shared_ptr<pcl::octree::OctreePointCloudChangeDetector<PointType> > octree_ptr_;
     pcl::ExtractIndices<PointType>::Ptr extract_ptr_;
     pcl::PointIndices::Ptr inliers_ptr_;
+    pcl::StatisticalOutlierRemoval<PointType>::Ptr sorfilter_ptr_;
 
     // tf
     tf::StampedTransform head_transform_;
@@ -103,11 +115,13 @@ private:
     bool has_current_;
 
     /* KDL::Frame current_ee_frame_; */
-    std::vector<KDL::Frame> frames_;
+    std::vector<KDL::Frame*> frames_;
+    std::vector<double> radius_;
 
     // flag
     bool has_tf_;
     bool has_joint_state_;
+    bool has_robot_;
     int counter_;
 
     boost::mutex cloud_mtx_; // mutex for contact cost subscribers

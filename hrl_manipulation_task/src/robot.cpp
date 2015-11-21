@@ -51,9 +51,10 @@ bool Robot::forwardKinematics(std::vector<double> &joint_angles, KDL::Frame &car
     bool kinematics_status;
     kinematics_status = fksolver.JntToCart(jointpositions, cartpos);
     // if(kinematics_status>=0){
-    //     std::cout << cartpos <<std::endl;
+    //     std::cout << link_number << " " << cartpos.p <<std::endl;
     //     printf("%s \n","Success, thanks KDL!");
-    // }else{
+    // }
+
     if(kinematics_status<0)
     {
         ROS_ERROR("%s \n","Error: could not calculate forward kinematics :(");

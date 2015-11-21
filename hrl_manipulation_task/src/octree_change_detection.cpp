@@ -7,10 +7,11 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
     cloud_filtered_ptr_.reset (new pcl::PointCloud<PointType>());
     octree_ptr_.reset (new pcl::octree::OctreePointCloudChangeDetector<PointType>(resolution));
     extract_ptr_.reset(new pcl::ExtractIndices<PointType>());
-    inliers_ptr_.reset(new pcl::PointIndices ());
+    sorfilter_ptr_.reset(new pcl::StatisticalOutlierRemoval<PointType>(false));
 
     has_tf_ = false;
     has_joint_state_ = false;
+    has_robot_ = false;
 
     getParams();
     initFilter();
@@ -20,7 +21,7 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
 
 changeDetector::~changeDetector()
 {
-    std::vector<KDL::Frame> T;
+    std::vector<KDL::Frame*> T;
     frames_.swap(T);
 }
 
@@ -85,7 +86,7 @@ bool changeDetector::initFilter()
     range_cond_->addComparison (pcl::FieldComparison<PointType>::ConstPtr (new
      pcl::FieldComparison<PointType> ("y", pcl::ComparisonOps::GT, -0.2)));
     range_cond_->addComparison (pcl::FieldComparison<PointType>::ConstPtr (new
-      pcl::FieldComparison<PointType> ("y", pcl::ComparisonOps::LT, 0.6)));
+      pcl::FieldComparison<PointType> ("y", pcl::ComparisonOps::LT, 0.7)));
     range_cond_->addComparison (pcl::FieldComparison<PointType>::ConstPtr (new
       pcl::FieldComparison<PointType> ("z", pcl::ComparisonOps::GT, -0.4)));
     range_cond_->addComparison (pcl::FieldComparison<PointType>::ConstPtr (new
@@ -98,6 +99,15 @@ bool changeDetector::initFilter()
 
 bool changeDetector::initRobot()
 {
+    frames_.push_back(new KDL::Frame);    
+    frames_.push_back(new KDL::Frame);    
+    frames_.push_back(new KDL::Frame);    
+    frames_.push_back(new KDL::Frame);    
+
+    radius_.push_back(0.10); // upper arm
+    radius_.push_back(0.10); // forearm
+    radius_.push_back(0.08); // hand
+
     ROS_INFO("Start to initialize robot!!");
     base_frame_ = "torso_lift_link";
     ee_frame_   = "l_gripper_tool_frame";
@@ -112,6 +122,8 @@ bool changeDetector::initRobot()
         ros::Duration(2.0).sleep();
         ros::spinOnce();
     }
+    
+    has_robot_=true;
     ROS_INFO("Robot Initialized!!");
 
     return true;
@@ -180,12 +192,15 @@ void changeDetector::jointStateCallback(const sensor_msgs::JointStateConstPtr &j
     }
 
     // Get end-effector
-    for (unsigned int i=0 ; i<frames_.size() ; i++)
+    if (has_robot_)
     {
-        robot_ptr_->forwardKinematics(joint_angles_, frames_[i], i);
+        for (unsigned int i=0 ; i<frames_.size() ; i++)
+        {
+            robot_ptr_->forwardKinematics(joint_angles_, *frames_[i], i);
+            // std::cout << "frame: " << *frames_[i] << std::endl;
+        }
+        // cout << (*frames_[0]).p << (*frames_[3]).p << endl;
     }
-    // 
-    // cout << current_ee_frame_ << endl;
 
     has_joint_state_ = true;
 }
@@ -257,6 +272,7 @@ void changeDetector::pubChangeMarkers()
 void changeDetector::runDetector()
 {
     // ROS_INFO("Start to extract changeDetector features");
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 
     ROS_INFO("changeDetector: Loop Start!!");
     ros::Rate loop_rate(10.0); // 1Hz
@@ -269,17 +285,17 @@ void changeDetector::runDetector()
 
         // Get vector of point indices from octree voxels which did not exist in previous buffer
         octree_ptr_->getPointIndicesFromNewVoxels (newPointIdxVector);
-        inliers_ptr_->indices = newPointIdxVector;
+        inliers->indices = newPointIdxVector;
 
         // Extract the inliers
         extract_ptr_->setInputCloud (cloud_filtered_ptr_);
-        extract_ptr_->setIndices (inliers_ptr_);
+        extract_ptr_->setIndices (inliers);
         extract_ptr_->setNegative (false);
         extract_ptr_->filter (*cloud_filtered_ptr_);
 
         // Output points
-        cout << "The Number of change voxels " <<  newPointIdxVector.size() << " " << 
-            octree_ptr_->getVoxelSquaredDiameter() << endl;
+        // cout << "The Number of change voxels " <<  newPointIdxVector.size() << " " << 
+        //     octree_ptr_->getVoxelSquaredDiameter() << endl;
         // std::cout << "Output from getPointIndicesFromNewVoxels:" << std::endl;
         // for (size_t i = 0; i < newPointIdxVector.size (); ++i)
         //     std::cout << i << "# Index:" << newPointIdxVector[i]
@@ -287,9 +303,18 @@ void changeDetector::runDetector()
         //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].y << " "
         //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].z << std::endl;
 
+        // robotBodyFilter(cloud_filtered_ptr_);        
 
-        filterRobotBody();
-        dist_Point_to_Segment();
+        // Statistical outlier filter
+        sorfilter_ptr_->setInputCloud (cloud_filtered_ptr_);
+        sorfilter_ptr_->setMeanK (8);
+        sorfilter_ptr_->setStddevMulThresh (-0.2);
+        sorfilter_ptr_->filter (*cloud_filtered_ptr_);
+
+        // int mean_k = 8;
+        // double dist = 0.005;
+        // double std_mul = 1.0;
+        // noiseFilter(cloud_filtered_ptr_, mean_k, dist, std_mul);
 
         //visualization
         // pubCurOctree(octree);
@@ -303,32 +328,156 @@ void changeDetector::runDetector()
     }
 }
 
-void changeDetector::filterRobotBody(const pcl::PointCloud<PointType>::Ptr& pcl_cloud)
+void changeDetector::robotBodyFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud)
 {
-    for (unsigned int i = 0; i < pcl_cloud->size(); i++)
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+
+
+    for (unsigned int i=0 ; i<frames_.size()-1 ; i++)
     {
+        std::vector<int> inlier_idx;
+        for (unsigned int j = 0; j < pcl_cloud->size(); j++)
+        {
+            KDL::Vector p( pcl_cloud->points[j].x, pcl_cloud->points[j].y, pcl_cloud->points[j].z );
+            double dist = dist_Point_to_Segment(p, frames_[i]->p, frames_[i+1]->p);
+            if ( dist > radius_[i])
+                inlier_idx.push_back(j);
+            // else
+            //     cout << dist << " / " << "outlier: " << j << " / " << pcl_cloud->points.size()<< endl;
 
-    }    
+        }    
+        inliers->indices = inlier_idx;
+        // cout << i << endl;
+        
+        extract_ptr_->setInputCloud (pcl_cloud);
+        extract_ptr_->setIndices (inliers);
+        extract_ptr_->setNegative (false);
+        extract_ptr_->filter (*pcl_cloud);
+    }
 }
 
-double changeDetector::dist_Point_to_Segment( KDL::Vector p0, KDL::Vector p1, Segment S)
+void changeDetector::noiseFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud, int mean_k, 
+                                 double distance_threshold, double std_mul)
 {
-    KDL::Vector v = S.P1 - S.P0;
-    KDL::Vector w = P - S.P0;
+    SearcherPtr searcher_;
+    // KdTreePtr tree_;
+    std::vector<int> indices, indices_;
+    bool negative_ = false;
 
-    double c1 = dot(w,v);
-    if ( c1 <= 0 )
-        return d(P, S.P0);
+    
+    indices_.resize(pcl_cloud->points.size() );
 
-    double c2 = dot(v,v);
-    if ( c2 <= c1 )
-        return d(P, S.P1);
 
-    double b = c1 / c2;
-    Point Pb = S.P0 + b * v;
-    return d(P, Pb);
+    // Initialize the search class
+    if (!searcher_)
+    {
+        if (pcl_cloud->isOrganized ())
+            searcher_.reset (new pcl::search::OrganizedNeighbor<PointType> ());
+        else
+            searcher_.reset (new pcl::search::KdTree<PointType> (false));
+    }
+    searcher_->setInputCloud (pcl_cloud);
+
+   // The arrays to be used
+   std::vector<int> nn_indices (mean_k);
+   std::vector<float> nn_dists (mean_k);
+   std::vector<float> distances (indices_.size ());
+   std::vector<float> max_distances (indices_.size ());
+   indices.resize (indices_.size ());
+   int oii = 0, rii = 0;  // oii = output indices iterator, rii = removed indices iterator
+
+
+   // First pass: Compute the mean distances for all points with respect to their k nearest neighbors
+   int valid_distances = 0;
+   for (int iii = 0; iii < static_cast<int> (indices_.size ()); ++iii)  // iii = input indices iterator
+   {
+       if (!pcl_isfinite (pcl_cloud->points[indices_[iii]].x) ||
+           !pcl_isfinite (pcl_cloud->points[indices_[iii]].y) ||
+           !pcl_isfinite (pcl_cloud->points[indices_[iii]].z))
+       {
+           distances[iii] = 0.0;
+           max_distances[iii] = 100000.0;
+           continue;
+       }
+       
+       // Perform the nearest k search
+       if (searcher_->nearestKSearch (indices_[iii], mean_k + 1, nn_indices, nn_dists) == 0)
+       {
+           distances[iii] = 0.0;
+           max_distances[iii] = 100000.0;
+           ROS_WARN ("Searching for the closest %d neighbors failed.\n", mean_k);
+           continue;
+       }
+  
+       // Calculate the mean distance to its neighbors
+       double dist_sum = 0.0;
+       double dist;
+       for (int k = 1; k < mean_k + 1; ++k){  // k = 0 is the query point
+           dist = sqrt (nn_dists[k]);
+           dist_sum += dist;
+           if (k==1) max_distances[iii] = static_cast<float>(dist);
+           else if ( max_distances[iii] < dist) max_distances[iii] = static_cast<float>(dist);
+       }
+       
+       distances[iii] = static_cast<float> (dist_sum / mean_k);
+       valid_distances++;
+   }
+
+   // Estimate the mean and the standard deviation of the distance vector
+   double sum = 0, sq_sum = 0;
+   for (size_t i = 0; i < distances.size (); ++i)
+   {
+       sum += distances[i];
+       sq_sum += distances[i] * distances[i];
+   }
+   double mean = sum / static_cast<double>(valid_distances);
+   double variance = (sq_sum - sum * sum / static_cast<double>(valid_distances)) / (static_cast<double>(valid_distances) - 1);
+   double stddev = sqrt (variance);
+
+   // cout << "Current mean: " << mean << endl;
+   //getMeanStd (distances, mean, stddev);
+   // double distance_threshold = mean + std_mul_ * stddev;
+   double dist_thres;
+   // if (distance_threshold > mean + std_mul * stddev)
+   //     dist_thres = mean + std_mul * stddev;
+   // else
+   //     dist_thres = distance_threshold;
+   dist_thres = distance_threshold;
+
+   // Second pass: Classify the points on the computed distance threshold
+   for (int iii = 0; iii < static_cast<int> (indices_.size ()); ++iii)  // iii = input indices iterator
+   {
+       // Points having a too high average distance are outliers and are passed to removed indices
+       // Unless negative was set, then it's the opposite condition
+       // if ((!negative_ && distances[iii] > dist_thres) || (negative_ && distances[iii] <= dist_thres))
+       // {
+       //     continue;
+       // }
+       if ((!negative_ && max_distances[iii] > dist_thres) || (negative_ && max_distances[iii] <= dist_thres))
+       {
+           continue;
+       }
+
+       cout << max_distances[iii] << endl;
+ 
+       // Otherwise it was a normal point for output (inlier)
+       indices[oii++] = indices_[iii];
+   }
+   
+   // Resize the output arrays
+   indices.resize (oii);
+
+
+   // Extract the inliers
+   pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+   extract_ptr_->setInputCloud (pcl_cloud);
+   inliers->indices = indices;
+   extract_ptr_->setIndices (inliers);
+   extract_ptr_->setNegative (false);
+   extract_ptr_->filter (*pcl_cloud);
+   
+       
 }
-
 
 int main(int argc, char **argv)
 {

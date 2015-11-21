@@ -39,7 +39,7 @@ add_library(robot src/robot.cpp)
 target_link_libraries(robot ${orocos_kdl_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 #rosbuild_link_boost(sift_extractor thread signals)
 
-add_executable(change_detector src/octree_change_detection.cpp)
+add_executable(change_detector src/octree_change_detection.cpp src/util.cpp)
 target_link_libraries(change_detector ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 
 
