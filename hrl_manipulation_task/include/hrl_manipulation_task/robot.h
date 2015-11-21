@@ -25,11 +25,11 @@
 #include <stdio.h>
 #include <iostream>
 
-#define MESH_SURFACE    1
-#define MESH_VOLUME     2
+/* #define MESH_SURFACE    1 */
+/* #define MESH_VOLUME     2 */
 
-#define LEFT 1
-#define RIGHT 2
+/* #define LEFT 1 */
+/* #define RIGHT 2 */
 
 using namespace std;
 
@@ -57,10 +57,7 @@ public:
 protected:
     ros::NodeHandle nh_;
 
-    KDL::Chain ee_chain_;
-    KDL::Chain wrist_chain_;
-    KDL::Chain elbow_chain_;
-    KDL::Chain shoulder_chain_;
+    std::vector<KDL::Chain*> chain_;
     KDL::Tree tree_;
 
     // Planning model variables

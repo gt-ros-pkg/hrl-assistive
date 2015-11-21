@@ -17,6 +17,7 @@
 #include <pcl/filters/conditional_removal.h> 
 #include <pcl_ros/transforms.h>
 #include <pcl/octree/octree.h>
+#include <pcl/filters/extract_indices.h>
 
 // Message
 #include <sensor_msgs/PointCloud.h>
@@ -24,14 +25,21 @@
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
+#include <std_msgs/ColorRGBA.h>
 
 // Boost
 #include <boost/thread.hpp>
 /* #include <boost/math/distributions/normal.hpp> */
 
+// Octree resolution - side length of octree voxels
+const float resolution = 0.02;
 
 typedef pcl::PointXYZ PointType;
 typedef pcl::PointXYZI KeyType;
+typedef struct {
+    double r,g,b;
+} COLOR;
+
 using namespace std;
 
 class changeDetector
@@ -50,11 +58,13 @@ private:
     void jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState);
 
 public:
-    void pubChangetMarkers();
+    void pubFilteredPCL();
+    void pubChangeMarkers();
     void runDetector();
 
 private:
-    ros::Publisher change_pub_;
+    ros::Publisher pcl_filtered_pub_;
+    ros::Publisher octree_marker_pub_;
 
     ros::Subscriber camera_sub_;
     ros::Subscriber joint_state_sub_;
@@ -69,7 +79,10 @@ private:
     // PCL
     pcl::PointCloud<PointType>::Ptr cloud_ptr_; 
     pcl::PointCloud<PointType>::Ptr cloud_filtered_ptr_; 
-
+    // Instantiate octree-based point cloud change detection class
+    boost::shared_ptr<pcl::octree::OctreePointCloudChangeDetector<PointType> > octree_ptr_;
+    pcl::ExtractIndices<PointType>::Ptr extract_ptr_;
+    pcl::PointIndices::Ptr inliers_ptr_;
 
     // tf
     tf::StampedTransform head_transform_;
@@ -89,14 +102,13 @@ private:
     std::vector<double> joint_angles_; // Current joint angles.
     bool has_current_;
 
-    KDL::Frame current_ee_frame_;
-    KDL::Frame current_wrist_frame_;
-    KDL::Frame current_elbow_frame_;
-    KDL::Frame current_shoulder_frame_;
+    /* KDL::Frame current_ee_frame_; */
+    std::vector<KDL::Frame> frames_;
 
     // flag
     bool has_tf_;
     bool has_joint_state_;
+    int counter_;
 
     boost::mutex cloud_mtx_; // mutex for contact cost subscribers
     /* boost::mutex points_mutex_; */

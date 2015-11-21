@@ -21,17 +21,20 @@ Robot::~Robot()
     std::vector<std::string> T;
     left_arm_joint_names_.swap(T);
     left_arm_link_names_.swap(T);
+
+    std::vector<KDL::Chain*> W;
+    chain_.swap(W);
 }
 
 
 // Get the transformation matrix to the given link's frame based on the joint angles.
 bool Robot::forwardKinematics(std::vector<double> &joint_angles, KDL::Frame &cartpos, int link_number)  const
 { 
-    // Create solver based on kinematic chain
-    KDL::ChainFkSolverPos_recursive fksolver = KDL::ChainFkSolverPos_recursive(ee_chain_);
+    // Create solver based on kinematic chain    
+    KDL::ChainFkSolverPos_recursive fksolver = KDL::ChainFkSolverPos_recursive(*chain_[link_number]);
    
     // Create joint array
-    unsigned int nj = chain_.getNrOfJoints();
+    unsigned int nj = (*chain_[link_number]).getNrOfJoints();
     if (static_cast<unsigned int>(joint_angles.size()) < nj)
     {
         std::cerr<<"Wrong number of joints in FK\n"; 
@@ -75,10 +78,15 @@ bool Robot::setupKDL()
 {  
     ROS_INFO("Successfully setup KDL tree.");
 
-    tree_.getChain(base_link_, "l_gripper_tool_frame", ee_chain_);
-    tree_.getChain(base_link_, "l_wrist_flex_link", wrist_chain_);
-    tree_.getChain(base_link_, "l_elbow_flex_link", elbow_chain_);
-    tree_.getChain(base_link_, "l_upper_arm_link", shoulder_chain_);
+    // for (unsigned int i=0 ; i<chain_.size() ; i++)
+    chain_.push_back(new KDL::Chain);
+    tree_.getChain(base_link_, "l_upper_arm_link", *chain_[0]);     
+    chain_.push_back(new KDL::Chain);
+    tree_.getChain(base_link_, "l_elbow_flex_link", *chain_[1]);
+    chain_.push_back(new KDL::Chain);
+    tree_.getChain(base_link_, "l_wrist_flex_link", *chain_[2]);
+    chain_.push_back(new KDL::Chain);
+    tree_.getChain(base_link_, "l_gripper_tool_frame", *chain_[3]);
 
     // std::cout << base_link_ << " " <<  target_link_ << std::endl;
 

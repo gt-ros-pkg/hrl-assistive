@@ -39,13 +39,15 @@ add_library(robot src/robot.cpp)
 target_link_libraries(robot ${orocos_kdl_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 #rosbuild_link_boost(sift_extractor thread signals)
 
+add_executable(change_detector src/octree_change_detection.cpp)
+target_link_libraries(change_detector ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+
 
 # Camera Filter
-add_executable(sift_extractor src/pcl_sift_extractor.cpp)
-target_link_libraries(sift_extractor ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
-#rosbuild_link_boost(sift_extractor thread signals)
+#add_executable(sift_extractor src/pcl_sift_extractor.cpp)
+#target_link_libraries(sift_extractor ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 
-install(TARGETS sift_extractor
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+#install(TARGETS sift_extractor
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})

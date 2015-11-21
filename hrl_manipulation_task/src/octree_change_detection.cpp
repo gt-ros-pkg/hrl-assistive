@@ -1,16 +1,13 @@
-#include "hrl_manipulation_task/pcl_sift_extractor.h"
+#include "hrl_manipulation_task/octree_change_detection.h"
 
 
 changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
 {
     cloud_ptr_.reset (new pcl::PointCloud<PointType>());
     cloud_filtered_ptr_.reset (new pcl::PointCloud<PointType>());
-    kpts_ptr_.reset (new pcl::PointCloud<PointType>);
-
-#ifndef USE_changeDetector
-    // PyramidalKLT
-    tracker_.reset (new pcl::tracking::PyramidalKLTTracker<PointType>);
-#endif
+    octree_ptr_.reset (new pcl::octree::OctreePointCloudChangeDetector<PointType>(resolution));
+    extract_ptr_.reset(new pcl::ExtractIndices<PointType>());
+    inliers_ptr_.reset(new pcl::PointIndices ());
 
     has_tf_ = false;
     has_joint_state_ = false;
@@ -19,11 +16,12 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
     initFilter();
     initComms();    
     initRobot();
-
 }
 
 changeDetector::~changeDetector()
 {
+    std::vector<KDL::Frame> T;
+    frames_.swap(T);
 }
 
 bool changeDetector::getParams()
@@ -45,9 +43,9 @@ bool changeDetector::getParams()
 
 bool changeDetector::initComms()
 {
-    sift_markers_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/sift_markers", 10, true);
-    com_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/hrl_manipulation_task/com_markers", 
-                                                                      10, true);
+    pcl_filtered_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/pcl_filtered", 10, true);
+    octree_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/hrl_manipulation_task/octree_changes",
+                                                                        10, true);
     
     camera_sub_ = nh_.subscribe("/head_mount_kinect/depth_registered/points", 1, &changeDetector::cameraCallback, this);
     joint_state_sub_ = nh_.subscribe("/joint_states", 10, &changeDetector::jointStateCallback, this);    
@@ -96,10 +94,6 @@ bool changeDetector::initFilter()
     // // build the filter
     // condrem_ptr_.reset (new pcl::ConditionalRemoval<PointType>(range_cond) );    
 
-    sift_.reset(new pcl::changeDetectorKeypoint<PointType, KeyType>);
-    sift_->setScales(min_scale, nr_octaves, nr_scales);
-    sift_->setMinimumContrast(contrast);
-
 }
 
 bool changeDetector::initRobot()
@@ -133,7 +127,6 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
 
     if (has_tf_ && has_joint_state_)
     {
-
         // transform
         tf::Transform head_transform(head_transform_.getRotation(), head_transform_.getOrigin());
         pcl_ros::transformPointCloud(*cloud_ptr_, *cloud_filtered_ptr_, head_transform);
@@ -145,9 +138,16 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
         condrem.filter (*cloud_filtered_ptr_);    
 
         // Exclude arm
-    
-    }
-    
+
+        // Switch octree buffers: This resets octree but keeps previous tree structure in memory.
+        if (counter_>0) octree_ptr_->switchBuffers ();
+
+        // Add points from cloud to octree
+        octree_ptr_->setInputCloud (cloud_filtered_ptr_);
+        octree_ptr_->addPointsFromInputCloud ();
+        counter_++;
+        if (counter_ > 65534) counter_ = 1;    
+    }    
 }
 
 void changeDetector::jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState) 
@@ -180,143 +180,154 @@ void changeDetector::jointStateCallback(const sensor_msgs::JointStateConstPtr &j
     }
 
     // Get end-effector
-    robot_ptr_->forwardKinematics(joint_angles_, current_ee_frame_, robot_dimensions_);
-    cout << current_ee_frame_ << endl;
+    for (unsigned int i=0 ; i<frames_.size() ; i++)
+    {
+        robot_ptr_->forwardKinematics(joint_angles_, frames_[i], i);
+    }
+    // 
+    // cout << current_ee_frame_ << endl;
 
     has_joint_state_ = true;
 }
 
 
-
 // Publish 
-void changeDetector::pubSiftMarkers()
+void changeDetector::pubFilteredPCL()
 {
-    // visualization_msgs::MarkerArray siftMarkers;
     sensor_msgs::PointCloud2 msg;
 
-    pcl::toROSMsg(*kpts_ptr_, msg);
-    msg.header.frame_id = "torso_lift_link";
-    sift_markers_pub_.publish(msg);
-
+    pcl::toROSMsg(*cloud_filtered_ptr_, msg);
+    msg.header.frame_id = "/torso_lift_link";
+    pcl_filtered_pub_.publish(msg);    
 }
 
 // Publish 
-void changeDetector::pubCoMMarkers(double x, double y, double z)
+// void changeDetector::pubChangeMarkers(const std::vector<int> &newPointIdxVector)
+void changeDetector::pubChangeMarkers()
 {
-    visualization_msgs::Marker marker;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = "torso_lift_link"; //base_link_;
-    marker.header.stamp = ros::Time::now();
 
-    marker.ns = "basic_shapes";
-    marker.type = visualization_msgs::Marker::CUBE;
-    marker.action = visualization_msgs::Marker::ADD;
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
-    marker.scale.x = 0.05;
-    marker.scale.y = 0.05;
-    marker.scale.z = 0.05;
+    ros::Time rostime = ros::Time::now();
+    // COLOR c = {1.0,1.0,1.0}; // white
+    // COLOR cr = getColor(value, FAKE_LOGODD, 0.9); // need parameterize
+    std_msgs::ColorRGBA cubeColor;
+    cubeColor.r = 0.0f;
+    cubeColor.g = 1.0f;
+    cubeColor.b = 0.0f;
+    cubeColor.a = 1.0f;
 
-    // Set the color -- be sure to set alpha to something non-zero!
-    marker.color.r = 1.0f;
-    marker.color.g = 0.0f;
-    marker.color.b = 0.0f;
-    marker.color.a = 1.0;
+    visualization_msgs::MarkerArray octreeChangeVis;
+    octreeChangeVis.markers.resize(1);
 
-    marker.lifetime = ros::Duration();
+    for (size_t i = 0; i < cloud_filtered_ptr_->points.size (); ++i)
+    {
+        // Cubes
+        geometry_msgs::Point cubeCenter;
+        cubeCenter.x = cloud_filtered_ptr_->points[i].x;
+        cubeCenter.y = cloud_filtered_ptr_->points[i].y;
+        cubeCenter.z = cloud_filtered_ptr_->points[i].z;
+        
+        octreeChangeVis.markers[0].points.push_back(cubeCenter);
+        octreeChangeVis.markers[0].colors.push_back(cubeColor);
+    }
 
-    marker.id = 101;
+    double size =  resolution; //cloud_filtered_ptr_->getVoxelSquaredDiameter();
 
-    marker.pose.position.x = x;
-    marker.pose.position.y = y;
-    marker.pose.position.z = z;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
+    // For occupied voxel
+    octreeChangeVis.markers[0].header.frame_id = "/torso_lift_link";
+    octreeChangeVis.markers[0].header.stamp = rostime;
+    octreeChangeVis.markers[0].ns = "leaf";
+    octreeChangeVis.markers[0].id = 1000;
+    octreeChangeVis.markers[0].type = visualization_msgs::Marker::CUBE_LIST;
+    octreeChangeVis.markers[0].scale.x = size;
+    octreeChangeVis.markers[0].scale.y = size;
+    octreeChangeVis.markers[0].scale.z = size;
+    octreeChangeVis.markers[0].color = cubeColor;
+    octreeChangeVis.markers[0].lifetime = ros::Duration();
+    
+    if ( octreeChangeVis.markers[0].points.size() > 0 )                               
+        octreeChangeVis.markers[0].action = visualization_msgs::Marker::ADD;
+    else
+        octreeChangeVis.markers[0].action = visualization_msgs::Marker::DELETE;        
 
-    visualization_msgs::MarkerArray COM_markers;
-    COM_markers.markers.push_back(marker);    
-    com_markers_pub_.publish(COM_markers);
+    octree_marker_pub_.publish(octreeChangeVis);
 }
 
 
-void changeDetector::extractchangeDetector()
+
+void changeDetector::runDetector()
 {
     // ROS_INFO("Start to extract changeDetector features");
 
-#ifdef USE_changeDetector
-    // changeDetector
-    pcl::PointCloud<KeyType>::Ptr keypoints (new pcl::PointCloud<KeyType>);
-    sift_->setInputCloud(cloud_filtered_ptr_);
-    sift_->setSearchSurface(cloud_filtered_ptr_);
-    sift_->compute(*keypoints);
-    kpts_ptr_->points.resize(keypoints->points.size());
-    pcl::copyPointCloud(*keypoints, *kpts_ptr_);
-    // std::cout << "Found " << keypoints->points.size() << " keypoints." << std::endl;
+    ROS_INFO("changeDetector: Loop Start!!");
+    ros::Rate loop_rate(10.0); // 1Hz
+    while (ros::ok())
+    { 
+        if (counter_==0) continue;
 
-    // Get mean
-    double x = 0;
-    double y = 0;
-    double z = 0;
-    for(std::size_t i = 0 ; i < kpts_ptr_->size() ; ++i)
-    {
-        x += kpts_ptr_->points[i].x/(double)kpts_ptr_->points.size();
-        y += kpts_ptr_->points[i].y/(double)kpts_ptr_->points.size();
-        z += kpts_ptr_->points[i].z/(double)kpts_ptr_->points.size();
+        // changeDetector
+        std::vector<int> newPointIdxVector;
+
+        // Get vector of point indices from octree voxels which did not exist in previous buffer
+        octree_ptr_->getPointIndicesFromNewVoxels (newPointIdxVector);
+        inliers_ptr_->indices = newPointIdxVector;
+
+        // Extract the inliers
+        extract_ptr_->setInputCloud (cloud_filtered_ptr_);
+        extract_ptr_->setIndices (inliers_ptr_);
+        extract_ptr_->setNegative (false);
+        extract_ptr_->filter (*cloud_filtered_ptr_);
+
+        // Output points
+        cout << "The Number of change voxels " <<  newPointIdxVector.size() << " " << 
+            octree_ptr_->getVoxelSquaredDiameter() << endl;
+        // std::cout << "Output from getPointIndicesFromNewVoxels:" << std::endl;
+        // for (size_t i = 0; i < newPointIdxVector.size (); ++i)
+        //     std::cout << i << "# Index:" << newPointIdxVector[i]
+        //               << "  Point:" << cloud_filtered_ptr_->points[newPointIdxVector[i]].x << " "
+        //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].y << " "
+        //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].z << std::endl;
+
+
+        filterRobotBody();
+        dist_Point_to_Segment();
+
+        //visualization
+        // pubCurOctree(octree);
+        pubFilteredPCL();
+        pubChangeMarkers();
+
+
+        // Ros loop stuff
+        ros::spinOnce();
+        loop_rate.sleep();        
     }
-
-    KeyType point = KeyType();
-    point.x = x;
-    point.y = y;
-    point.z = z;
-    point.intensity = 100;
-    // this->kpts_ptr_->push_back(point);
-    ROS_INFO("%f %f %f", x,y,z);
-
-    //visualization
-    pubSiftMarkers();
-    pubCoMMarkers(x,y,z);
-#else
-    // PyramidalKLT    
-    tracker_->setInputCloud (cloud_filtered_ptr_);
-    if (!points_ || true)
-    {
-        detect_keypoints (cloud_);
-        tracker_->setPointsToTrack (points_);
-    }
-    tracker_->compute ();
-
-    if (tracker_->getInitialized () && cloud_)
-    {
-        if (points_mutex_.try_lock ())
-        {
-            keypoints_ = tracker_->getTrackedPoints ();
-            points_status_ = tracker_->getPointsToTrackStatus ();
-            points_mutex_.unlock ();
-        }        
-    }
-    
-
-#endif
 }
 
-#ifndef USE_changeDetector
-void changeDetector::detect_keypoints (const CloudConstPtr& cloud)
+void changeDetector::filterRobotBody(const pcl::PointCloud<PointType>::Ptr& pcl_cloud)
 {
-    pcl::HarrisKeypoint2D<PointType, KeyType> harris;
-    harris.setInputCloud (cloud);
-    harris.setNumberOfThreads (6);
-    harris.setNonMaxSupression (true);
-    harris.setRadiusSearch (0.01);
-    harris.setMethod (pcl::HarrisKeypoint2D<PointType, KeyType>::TOMASI);
-    harris.setThreshold (0.05);
-    harris.setWindowWidth (5);
-    harris.setWindowHeight (5);
-    pcl::PointCloud<KeyType>::Ptr response (new pcl::PointCloud<KeyType>);
-    harris.compute (*response);
-    points_ = harris.getKeypointsIndices ();
+    for (unsigned int i = 0; i < pcl_cloud->size(); i++)
+    {
+
+    }    
 }
-#endif
+
+double changeDetector::dist_Point_to_Segment( KDL::Vector p0, KDL::Vector p1, Segment S)
+{
+    KDL::Vector v = S.P1 - S.P0;
+    KDL::Vector w = P - S.P0;
+
+    double c1 = dot(w,v);
+    if ( c1 <= 0 )
+        return d(P, S.P0);
+
+    double c2 = dot(v,v);
+    if ( c2 <= c1 )
+        return d(P, S.P1);
+
+    double b = c1 / c2;
+    Point Pb = S.P0 + b * v;
+    return d(P, Pb);
+}
 
 
 int main(int argc, char **argv)
@@ -327,18 +338,7 @@ int main(int argc, char **argv)
 
     // Initialize a changeDetector object.
     changeDetector detector(n);
-
-
-    ROS_INFO("changeDetector: Loop Start!!");
-    ros::Rate loop_rate(1.0); // 1Hz
-    while (ros::ok())
-    { 
-        detector.runDetector();
-
-        // Ros loop stuff
-        ros::spinOnce();
-        loop_rate.sleep();        
-    }
+    detector.runDetector();
 
     return 0;
 }
