@@ -38,14 +38,12 @@ import PyKDL
 from matplotlib import pyplot as plt
 
 # vision library
-import cv2
-from cv_bridge import CvBridge, CvBridgeError
-import image_geometry
+import sensor_msgs.point_cloud2 as pc2
+from sensor_msgs.msg import PointCloud2, PointField
 
 # ROS message
 import tf
 from pr2_controllers_msgs.msg import JointTrajectoryControllerState
-from sensor_msgs.msg import Image, CameraInfo
 
 class kinect_vision(threading.Thread):
     def __init__(self, verbose=False):
@@ -59,20 +57,16 @@ class kinect_vision(threading.Thread):
         self.init_time = 0.0
         
         # instant data
+        self.time     = None
+        self.centers  = None
         
         # Declare containers
         self.time_data = []
 
-        self.image_lock = threading.RLock()
+        self.lock = threading.RLock()
         
         self.initParams()
         self.initComms()
-
-        rate = rospy.Rate(10) # 25Hz, nominally.            
-        while not rospy.is_shutdown():
-            if self.imageGray is not None: break
-            rate.sleep()
-
         if self.verbose: print "Kinect Vision>> initialization complete"
         
     def initComms(self):
@@ -80,58 +74,30 @@ class kinect_vision(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "Kinect Vision>> Initialized pusblishers and subscribers"
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)        
-        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        rospy.Subscriber('/hrl_manipulation_task/pcl_changes', PointCloud2, self.changeCallback)        
 
     def initParams(self):
         '''
         Get parameters
         '''
         self.torso_frame = 'torso_lift_link'
-        self.bridge = CvBridge()
 
-        self.cameraWidth = None
-        self.imageGray = None
 
-    def imageCallback(self, data):
-        # Grab image from Kinect sensor
-        try:
-            image = self.bridge.imgmsg_to_cv(data)
-            image = np.asarray(image[:,:])
-        except CvBridgeError, e:
-            print e
-            return
-
-        with self.image_lock:
-            # Convert to grayscale (if needed)
-            self.imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, 1)
-
-    def cameraRGBInfoCallback(self, data):
-        if self.cameraWidth is None:
-            self.cameraWidth = data.width
-            self.cameraHeight = data.height
-            self.pinholeCamera = image_geometry.PinholeCameraModel()
-            self.pinholeCamera.fromCameraInfo(data)
-            self.rgbCameraFrame = data.header.frame_id
-            
-    def transpose3DToCamera(self, frame3D, pos3D):
-        # Transpose 3D position to camera frame
-        self.transformer.waitForTransform(self.rgbCameraFrame, frame3D, rospy.Time(0), rospy.Duration(5))
-        try :
-            transPos, transRot = self.transformer.lookupTransform(self.rgbCameraFrame, frame3D, rospy.Time(0))
-            transMatrix = np.dot(tf.transformations.translation_matrix(transPos), tf.transformations.quaternion_matrix(transRot))
-        except tf.ExtrapolationException:
-            print 'Transpose failed!'
-            return
-
-        transposedPos = np.dot(transMatrix, np.array([pos3D[0], pos3D[1], pos3D[2], 1.0]))[:3]
-        x2D, y2D = self.pinholeCamera.project3dToPixel(transposedPos)
-        return x2D, y2D
-    
+    def changeCallback(self, data):
+        time_stamp = data.header.stamp
+        
+        with self.lock:
+            self.time = time_stamp.to_sec()             
+            points = pc2.read_points(data, skip_nans=True)        
+            self.centers = np.zeros((len(points), 3))
+        
+            # Grab pcl changes
+            for i, point in enumerate(points):
+                self.centers[i,0] = point[0]
+                self.centers[i,1] = point[1]
+                self.centers[i,2] = point[2]        
     
     def test(self, save_pdf=False):
-        ## img = cv2.imread('/home/dpark/Dropbox/HRL/IMG_3499.JPG',0)
-        sift = cv2.SIFT()
         fig = plt.figure()
         plt.ion()
         plt.show()        
@@ -139,58 +105,27 @@ class kinect_vision(threading.Thread):
         rate = rospy.Rate(10) # 25Hz, nominally.    
         while not rospy.is_shutdown():
             print "running test"
-            with self.image_lock:
-                imageGray = copy.copy(self.imageGray)
+            with self.lock:
+                change_pcl = copy.copy(self.centers)
 
-            kp = sift.detect(imageGray,None)
-            img=cv2.drawKeypoints(imageGray,kp)
-            ## cv2.imwrite('test.jpg',img)
-            ## ## os.system('cp test.jpg ~/Dropbox/HRL/')
-            plt.imshow(img)
+            plt.scatter(change_pcl[:,0], change_pcl[:,1] )
             plt.draw()
-            ## cv2.imshow('MyWindow', img)
             rate.sleep()
-
-        ## # Initiate STAR detector
-        ## orb = cv2.ORB_create()
-
-        ## # find the keypoints with ORB
-        ## kp = orb.detect(img,None)
-
-        ## # compute the descriptors with ORB
-        ## kp, des = orb.compute(img, kp)
-
-        ## # draw only keypoints location,not size and orientation
-        ## img2 = cv2.drawKeypoints(img,kp,color=(0,255,0), flags=0)
-        ## plt.imshow(img2)
-
-        ## if save_pdf == True:
-        ##     fig.savefig('test.pdf')
-        ##     fig.savefig('test.png')
-        ##     os.system('cp test.p* ~/Dropbox/HRL/')
-        ## else:
-        ##     if show_plot: plt.show()        
-
-
-
-        
         
         
     def reset(self, init_time):
         self.init_time = init_time
+        self.isReset = True
 
         # Reset containers
         self.time_data = []
-        
-        self.isReset = True
 
         
-    ## def isReady(self):
-    ##     if self.azimuth is not None and self.power is not None and \
-    ##       self.head_joints is not None:
-    ##       return True
-    ##     else:
-    ##       return False
+    def isReady(self):
+        if self.centers is not None:
+          return True
+        else:
+          return False
 
 
 

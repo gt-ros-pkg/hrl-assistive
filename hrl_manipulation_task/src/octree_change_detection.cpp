@@ -5,6 +5,7 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
 {
     cloud_ptr_.reset (new pcl::PointCloud<PointType>());
     cloud_filtered_ptr_.reset (new pcl::PointCloud<PointType>());
+    cloud_changes_ptr_.reset (new pcl::PointCloud<PointType>());
     octree_ptr_.reset (new pcl::octree::OctreePointCloudChangeDetector<PointType>(resolution));
     extract_ptr_.reset(new pcl::ExtractIndices<PointType>());
     sorfilter_ptr_.reset(new pcl::StatisticalOutlierRemoval<PointType>(false));
@@ -45,6 +46,7 @@ bool changeDetector::getParams()
 bool changeDetector::initComms()
 {
     pcl_filtered_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/pcl_filtered", 10, true);
+    pcl_changes_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/pcl_changes", 10, true);
     octree_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/hrl_manipulation_task/octree_changes",
                                                                         10, true);
     
@@ -217,6 +219,16 @@ void changeDetector::pubFilteredPCL()
 }
 
 // Publish 
+void changeDetector::pubChangesPCL()
+{
+    sensor_msgs::PointCloud2 msg;
+
+    pcl::toROSMsg(*cloud_changes_ptr_, msg);
+    msg.header.frame_id = "/torso_lift_link";
+    pcl_changes_pub_.publish(msg);    
+}
+
+// Publish 
 // void changeDetector::pubChangeMarkers(const std::vector<int> &newPointIdxVector)
 void changeDetector::pubChangeMarkers()
 {
@@ -291,7 +303,7 @@ void changeDetector::runDetector()
         extract_ptr_->setInputCloud (cloud_filtered_ptr_);
         extract_ptr_->setIndices (inliers);
         extract_ptr_->setNegative (false);
-        extract_ptr_->filter (*cloud_filtered_ptr_);
+        extract_ptr_->filter (*cloud_changes_ptr_);
 
         // Output points
         // cout << "The Number of change voxels " <<  newPointIdxVector.size() << " " << 
@@ -306,10 +318,10 @@ void changeDetector::runDetector()
         // robotBodyFilter(cloud_filtered_ptr_);        
 
         // Statistical outlier filter
-        sorfilter_ptr_->setInputCloud (cloud_filtered_ptr_);
+        sorfilter_ptr_->setInputCloud (cloud_changes_ptr_);
         sorfilter_ptr_->setMeanK (8);
         sorfilter_ptr_->setStddevMulThresh (-0.2);
-        sorfilter_ptr_->filter (*cloud_filtered_ptr_);
+        sorfilter_ptr_->filter (*cloud_changes_ptr_);
 
         // int mean_k = 8;
         // double dist = 0.005;
@@ -317,9 +329,9 @@ void changeDetector::runDetector()
         // noiseFilter(cloud_filtered_ptr_, mean_k, dist, std_mul);
 
         //visualization
-        // pubCurOctree(octree);
-        pubFilteredPCL();
-        pubChangeMarkers();
+        // pubFilteredPCL();
+        pubChangesPCL();
+        // pubChangeMarkers();
 
 
         // Ros loop stuff

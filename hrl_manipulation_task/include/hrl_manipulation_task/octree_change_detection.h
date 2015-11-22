@@ -57,6 +57,7 @@ public:
     ~changeDetector();
 
     void pubFilteredPCL();
+    void pubChangesPCL();
     void pubChangeMarkers();
     void runDetector();
 
@@ -75,6 +76,7 @@ private:
 
 private:
     ros::Publisher pcl_filtered_pub_;
+    ros::Publisher pcl_changes_pub_;
     ros::Publisher octree_marker_pub_;
 
     ros::Subscriber camera_sub_;
@@ -90,6 +92,7 @@ private:
     // PCL
     pcl::PointCloud<PointType>::Ptr cloud_ptr_; 
     pcl::PointCloud<PointType>::Ptr cloud_filtered_ptr_; 
+    pcl::PointCloud<PointType>::Ptr cloud_changes_ptr_; 
     // Instantiate octree-based point cloud change detection class
     boost::shared_ptr<pcl::octree::OctreePointCloudChangeDetector<PointType> > octree_ptr_;
     pcl::ExtractIndices<PointType>::Ptr extract_ptr_;
