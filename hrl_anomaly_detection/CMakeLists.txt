@@ -6,7 +6,7 @@ catkin_python_setup()
 
 add_message_files(
   DIRECTORY msg
-  FILES MultiModality.msg
+  FILES MultiModality.msg pclChange.msg
 )
 
 generate_messages(

@@ -17,8 +17,12 @@ float64[] kinematics_target_quat
 float64[] ft_force
 float64[] ft_torque
 
-float64[] vision_pos
-float64[] vision_quat
+float64[] vision_artag_pos
+float64[] vision_artag_quat
+
+float64[] vision_change_centers_x
+float64[] vision_change_centers_y
+float64[] vision_change_centers_z
 
 float64[] pps_skin_left
 float64[] pps_skin_right

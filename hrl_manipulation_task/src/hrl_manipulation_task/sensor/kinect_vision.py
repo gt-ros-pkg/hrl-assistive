@@ -35,6 +35,7 @@ import os, threading, copy
 # util
 import numpy as np
 import PyKDL
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import pyplot as plt
 
 # vision library
@@ -44,6 +45,7 @@ from sensor_msgs.msg import PointCloud2, PointField
 # ROS message
 import tf
 from pr2_controllers_msgs.msg import JointTrajectoryControllerState
+from hrl_anomaly_detection.msg import pclChange
 
 class kinect_vision(threading.Thread):
     def __init__(self, verbose=False):
@@ -74,7 +76,7 @@ class kinect_vision(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "Kinect Vision>> Initialized pusblishers and subscribers"
-        rospy.Subscriber('/hrl_manipulation_task/pcl_changes', PointCloud2, self.changeCallback)        
+        rospy.Subscriber('/hrl_manipulation_task/changes', pclChange, self.changeCallback)        
 
     def initParams(self):
         '''
@@ -88,28 +90,29 @@ class kinect_vision(threading.Thread):
         
         with self.lock:
             self.time = time_stamp.to_sec()             
-            points = pc2.read_points(data, skip_nans=True)        
-            self.centers = np.zeros((len(points), 3))
-        
-            # Grab pcl changes
-            for i, point in enumerate(points):
-                self.centers[i,0] = point[0]
-                self.centers[i,1] = point[1]
-                self.centers[i,2] = point[2]        
+            self.centers = np.array([data.centers_x, data.centers_y, data.centers_z]).T # Nx3
+
+            if self.verbose: print np.shape(self.centers),np.shape(data.centers_x)
+            
     
     def test(self, save_pdf=False):
         fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
         plt.ion()
         plt.show()        
         
         rate = rospy.Rate(10) # 25Hz, nominally.    
         while not rospy.is_shutdown():
-            print "running test"
+            ## print "running test: ", len(self.centers)
             with self.lock:
                 change_pcl = copy.copy(self.centers)
-
-            plt.scatter(change_pcl[:,0], change_pcl[:,1] )
-            plt.draw()
+                del ax.collections[:] 
+                ax.scatter(change_pcl[:,0], change_pcl[:,1], change_pcl[:,2] )
+                ax.set_xlim([0.3, 1.4])
+                ax.set_ylim([-0.2, 1.0])
+                ax.set_zlim([-0.5, 0.5])
+                plt.draw()
+                
             rate.sleep()
         
         

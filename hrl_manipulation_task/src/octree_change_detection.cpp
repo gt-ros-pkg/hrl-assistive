@@ -9,10 +9,13 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
     octree_ptr_.reset (new pcl::octree::OctreePointCloudChangeDetector<PointType>(resolution));
     extract_ptr_.reset(new pcl::ExtractIndices<PointType>());
     sorfilter_ptr_.reset(new pcl::StatisticalOutlierRemoval<PointType>(false));
+    voxelfilter_.setSaveLeafLayout(true);
 
     has_tf_ = false;
     has_joint_state_ = false;
     has_robot_ = false;
+    counter_ = 0;
+    time_gap_counter_=0;
 
     getParams();
     initFilter();
@@ -23,7 +26,8 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
 changeDetector::~changeDetector()
 {
     std::vector<KDL::Frame*> T;
-    frames_.swap(T);
+    cur_frames_.swap(T);
+    last_frames_.swap(T);
 }
 
 bool changeDetector::getParams()
@@ -47,8 +51,7 @@ bool changeDetector::initComms()
 {
     pcl_filtered_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/pcl_filtered", 10, true);
     pcl_changes_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/hrl_manipulation_task/pcl_changes", 10, true);
-    octree_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/hrl_manipulation_task/octree_changes",
-                                                                        10, true);
+    changes_pub_ = nh_.advertise<hrl_anomaly_detection::pclChange>("/hrl_manipulation_task/changes", 10, true);
     
     camera_sub_ = nh_.subscribe("/head_mount_kinect/depth_registered/points", 1, &changeDetector::cameraCallback, this);
     joint_state_sub_ = nh_.subscribe("/joint_states", 10, &changeDetector::jointStateCallback, this);    
@@ -101,10 +104,46 @@ bool changeDetector::initFilter()
 
 bool changeDetector::initRobot()
 {
-    frames_.push_back(new KDL::Frame);    
-    frames_.push_back(new KDL::Frame);    
-    frames_.push_back(new KDL::Frame);    
-    frames_.push_back(new KDL::Frame);    
+    cur_frames_.push_back(new KDL::Frame);    
+    cur_frames_.push_back(new KDL::Frame);    
+    cur_frames_.push_back(new KDL::Frame);    
+    cur_frames_.push_back(new KDL::Frame);    
+
+    last_frames_.push_back(new KDL::Frame);    
+    last_frames_.push_back(new KDL::Frame);    
+    last_frames_.push_back(new KDL::Frame);    
+    last_frames_.push_back(new KDL::Frame);    
+
+    last1_frames_.push_back(new KDL::Frame);    
+    last1_frames_.push_back(new KDL::Frame);    
+    last1_frames_.push_back(new KDL::Frame);    
+    last1_frames_.push_back(new KDL::Frame);    
+
+    last2_frames_.push_back(new KDL::Frame);    
+    last2_frames_.push_back(new KDL::Frame);    
+    last2_frames_.push_back(new KDL::Frame);    
+    last2_frames_.push_back(new KDL::Frame);    
+
+    last3_frames_.push_back(new KDL::Frame);    
+    last3_frames_.push_back(new KDL::Frame);    
+    last3_frames_.push_back(new KDL::Frame);    
+    last3_frames_.push_back(new KDL::Frame);    
+
+    last4_frames_.push_back(new KDL::Frame);    
+    last4_frames_.push_back(new KDL::Frame);    
+    last4_frames_.push_back(new KDL::Frame);    
+    last4_frames_.push_back(new KDL::Frame);    
+
+    last5_frames_.push_back(new KDL::Frame);    
+    last5_frames_.push_back(new KDL::Frame);    
+    last5_frames_.push_back(new KDL::Frame);    
+    last5_frames_.push_back(new KDL::Frame);    
+
+    last6_frames_.push_back(new KDL::Frame);    
+    last6_frames_.push_back(new KDL::Frame);    
+    last6_frames_.push_back(new KDL::Frame);    
+    last6_frames_.push_back(new KDL::Frame);    
+
 
     radius_.push_back(0.10); // upper arm
     radius_.push_back(0.10); // forearm
@@ -138,6 +177,7 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
     pcl_conversions::toPCL(*input, pcl_pc);
 
     pcl::fromPCLPointCloud2(pcl_pc, *cloud_ptr_);
+    header_ = input->header;
 
     if (has_tf_ && has_joint_state_)
     {
@@ -159,6 +199,23 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
         // Add points from cloud to octree
         octree_ptr_->setInputCloud (cloud_filtered_ptr_);
         octree_ptr_->addPointsFromInputCloud ();
+
+
+        for (unsigned int i=0 ; i<cur_frames_.size() ; i++)
+        {
+            last_frames_[i]  = last1_frames_[i];
+            last1_frames_[i] = last2_frames_[i];
+            last2_frames_[i] = last3_frames_[i];
+            last3_frames_[i] = last4_frames_[i];
+            last4_frames_[i] = last5_frames_[i];
+            last5_frames_[i] = last6_frames_[i];
+            last6_frames_[i] = cur_frames_[i];
+        }
+
+        // Get end-effector
+        for (unsigned int i=0 ; i<cur_frames_.size() ; i++)
+            robot_ptr_->forwardKinematics(joint_angles_, *cur_frames_[i], i);
+
         counter_++;
         if (counter_ > 65534) counter_ = 1;    
     }    
@@ -193,17 +250,6 @@ void changeDetector::jointStateCallback(const sensor_msgs::JointStateConstPtr &j
       joint_angles_[i] = joint_state_.position[jt_idx_list[i]];
     }
 
-    // Get end-effector
-    if (has_robot_)
-    {
-        for (unsigned int i=0 ; i<frames_.size() ; i++)
-        {
-            robot_ptr_->forwardKinematics(joint_angles_, *frames_[i], i);
-            // std::cout << "frame: " << *frames_[i] << std::endl;
-        }
-        // cout << (*frames_[0]).p << (*frames_[3]).p << endl;
-    }
-
     has_joint_state_ = true;
 }
 
@@ -229,56 +275,21 @@ void changeDetector::pubChangesPCL()
 }
 
 // Publish 
-// void changeDetector::pubChangeMarkers(const std::vector<int> &newPointIdxVector)
-void changeDetector::pubChangeMarkers()
+void changeDetector::pubChanges()
 {
+    hrl_anomaly_detection::pclChange msg;
+    msg.header = header_;
+    msg.header.frame_id = "/torso_lift_link";
 
-    ros::Time rostime = ros::Time::now();
-    // COLOR c = {1.0,1.0,1.0}; // white
-    // COLOR cr = getColor(value, FAKE_LOGODD, 0.9); // need parameterize
-    std_msgs::ColorRGBA cubeColor;
-    cubeColor.r = 0.0f;
-    cubeColor.g = 1.0f;
-    cubeColor.b = 0.0f;
-    cubeColor.a = 1.0f;
-
-    visualization_msgs::MarkerArray octreeChangeVis;
-    octreeChangeVis.markers.resize(1);
-
-    for (size_t i = 0; i < cloud_filtered_ptr_->points.size (); ++i)
+    for (unsigned int i = 0; i < cloud_changes_ptr_->size(); i++)
     {
-        // Cubes
-        geometry_msgs::Point cubeCenter;
-        cubeCenter.x = cloud_filtered_ptr_->points[i].x;
-        cubeCenter.y = cloud_filtered_ptr_->points[i].y;
-        cubeCenter.z = cloud_filtered_ptr_->points[i].z;
-        
-        octreeChangeVis.markers[0].points.push_back(cubeCenter);
-        octreeChangeVis.markers[0].colors.push_back(cubeColor);
+        msg.centers_x.push_back(cloud_changes_ptr_->points[i].x);
+        msg.centers_y.push_back(cloud_changes_ptr_->points[i].y);
+        msg.centers_z.push_back(cloud_changes_ptr_->points[i].z);
     }
 
-    double size =  resolution; //cloud_filtered_ptr_->getVoxelSquaredDiameter();
-
-    // For occupied voxel
-    octreeChangeVis.markers[0].header.frame_id = "/torso_lift_link";
-    octreeChangeVis.markers[0].header.stamp = rostime;
-    octreeChangeVis.markers[0].ns = "leaf";
-    octreeChangeVis.markers[0].id = 1000;
-    octreeChangeVis.markers[0].type = visualization_msgs::Marker::CUBE_LIST;
-    octreeChangeVis.markers[0].scale.x = size;
-    octreeChangeVis.markers[0].scale.y = size;
-    octreeChangeVis.markers[0].scale.z = size;
-    octreeChangeVis.markers[0].color = cubeColor;
-    octreeChangeVis.markers[0].lifetime = ros::Duration();
-    
-    if ( octreeChangeVis.markers[0].points.size() > 0 )                               
-        octreeChangeVis.markers[0].action = visualization_msgs::Marker::ADD;
-    else
-        octreeChangeVis.markers[0].action = visualization_msgs::Marker::DELETE;        
-
-    octree_marker_pub_.publish(octreeChangeVis);
+    changes_pub_.publish(msg);
 }
-
 
 
 void changeDetector::runDetector()
@@ -303,7 +314,20 @@ void changeDetector::runDetector()
         extract_ptr_->setInputCloud (cloud_filtered_ptr_);
         extract_ptr_->setIndices (inliers);
         extract_ptr_->setNegative (false);
-        extract_ptr_->filter (*cloud_changes_ptr_);
+        extract_ptr_->filter (*cloud_changes_ptr_);        
+        if (cloud_changes_ptr_->points.size() == 0){
+            ros::spinOnce();
+            continue;
+        }
+
+        // Create the filtering object
+        voxelfilter_.setInputCloud (cloud_changes_ptr_);
+        voxelfilter_.setLeafSize (0.01f, 0.01f, 0.01f);
+        voxelfilter_.filter (*cloud_changes_ptr_);
+        if (cloud_changes_ptr_->points.size() == 0){
+            ros::spinOnce();
+            continue;
+        }
 
         // Output points
         // cout << "The Number of change voxels " <<  newPointIdxVector.size() << " " << 
@@ -315,13 +339,21 @@ void changeDetector::runDetector()
         //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].y << " "
         //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].z << std::endl;
 
-        // robotBodyFilter(cloud_filtered_ptr_);        
+        robotBodyFilter(cloud_changes_ptr_);        
+        if (cloud_changes_ptr_->points.size() == 0){
+            ros::spinOnce();
+            continue;
+        }
 
         // Statistical outlier filter
         sorfilter_ptr_->setInputCloud (cloud_changes_ptr_);
         sorfilter_ptr_->setMeanK (8);
-        sorfilter_ptr_->setStddevMulThresh (-0.2);
+        sorfilter_ptr_->setStddevMulThresh (-0.0);
         sorfilter_ptr_->filter (*cloud_changes_ptr_);
+        if (cloud_changes_ptr_->points.size() == 0){
+            ros::spinOnce();
+            continue;
+        }
 
         // int mean_k = 8;
         // double dist = 0.005;
@@ -331,6 +363,7 @@ void changeDetector::runDetector()
         //visualization
         // pubFilteredPCL();
         pubChangesPCL();
+        pubChanges();
         // pubChangeMarkers();
 
 
@@ -342,28 +375,37 @@ void changeDetector::runDetector()
 
 void changeDetector::robotBodyFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud)
 {
-    pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+    pcl::PointIndices::Ptr outliers (new pcl::PointIndices ());
 
 
-    for (unsigned int i=0 ; i<frames_.size()-1 ; i++)
+    for (unsigned int i=0 ; i<cur_frames_.size()-1 ; i++)
     {
-        std::vector<int> inlier_idx;
+        std::vector<int> outlier_idx;
         for (unsigned int j = 0; j < pcl_cloud->size(); j++)
         {
             KDL::Vector p( pcl_cloud->points[j].x, pcl_cloud->points[j].y, pcl_cloud->points[j].z );
-            double dist = dist_Point_to_Segment(p, frames_[i]->p, frames_[i+1]->p);
-            if ( dist > radius_[i])
-                inlier_idx.push_back(j);
+            double dist = dist_Point_to_Segment(p, cur_frames_[i]->p, cur_frames_[i+1]->p);
+            if ( dist < radius_[i])
+            {
+                outlier_idx.push_back(j);
+                continue;
+            }
+            dist = dist_Point_to_Segment(p, last_frames_[i]->p, last_frames_[i+1]->p);
+            if ( dist < radius_[i])
+            {
+                outlier_idx.push_back(j);
+                continue;
+            }
             // else
             //     cout << dist << " / " << "outlier: " << j << " / " << pcl_cloud->points.size()<< endl;
 
         }    
-        inliers->indices = inlier_idx;
+        outliers->indices = outlier_idx;
         // cout << i << endl;
         
         extract_ptr_->setInputCloud (pcl_cloud);
-        extract_ptr_->setIndices (inliers);
-        extract_ptr_->setNegative (false);
+        extract_ptr_->setIndices (outliers);
+        extract_ptr_->setNegative (true);
         extract_ptr_->filter (*pcl_cloud);
     }
 }

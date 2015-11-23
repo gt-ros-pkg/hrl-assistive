@@ -20,6 +20,7 @@
 #include <pcl/octree/octree.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/voxel_grid.h>
 
 // For custom PCL filter
 #include <pcl/filters/filter_indices.h>
@@ -30,9 +31,9 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/JointState.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <visualization_msgs/Marker.h>
-#include <std_msgs/ColorRGBA.h>
+#include "hrl_anomaly_detection/pclChange.h"
+/* #include <visualization_msgs/MarkerArray.h> */
+/* #include <visualization_msgs/Marker.h> */
 
 // Boost
 #include <boost/thread.hpp>
@@ -43,9 +44,6 @@ const float resolution = 0.05;
 
 typedef pcl::PointXYZ PointType;
 typedef pcl::PointXYZI KeyType;
-typedef struct {
-    double r,g,b;
-} COLOR;
 typedef typename pcl::search::Search<PointType>::Ptr SearcherPtr;
 
 using namespace std;
@@ -58,7 +56,7 @@ public:
 
     void pubFilteredPCL();
     void pubChangesPCL();
-    void pubChangeMarkers();
+    void pubChanges();
     void runDetector();
 
 private:
@@ -77,7 +75,7 @@ private:
 private:
     ros::Publisher pcl_filtered_pub_;
     ros::Publisher pcl_changes_pub_;
-    ros::Publisher octree_marker_pub_;
+    ros::Publisher changes_pub_;
 
     ros::Subscriber camera_sub_;
     ros::Subscriber joint_state_sub_;
@@ -95,9 +93,12 @@ private:
     pcl::PointCloud<PointType>::Ptr cloud_changes_ptr_; 
     // Instantiate octree-based point cloud change detection class
     boost::shared_ptr<pcl::octree::OctreePointCloudChangeDetector<PointType> > octree_ptr_;
+
+    // Create the filtering object
     pcl::ExtractIndices<PointType>::Ptr extract_ptr_;
     pcl::PointIndices::Ptr inliers_ptr_;
     pcl::StatisticalOutlierRemoval<PointType>::Ptr sorfilter_ptr_;
+    pcl::VoxelGrid<PointType> voxelfilter_;
 
     // tf
     tf::StampedTransform head_transform_;
@@ -118,14 +119,19 @@ private:
     bool has_current_;
 
     /* KDL::Frame current_ee_frame_; */
-    std::vector<KDL::Frame*> frames_;
+    std::vector<KDL::Frame*> cur_frames_;
+    std::vector<KDL::Frame*> last_frames_, last1_frames_, last2_frames_, last3_frames_, last4_frames_,
+        last5_frames_, last6_frames_, last7_frames_;
     std::vector<double> radius_;
+
+    std_msgs::Header header_;
 
     // flag
     bool has_tf_;
     bool has_joint_state_;
     bool has_robot_;
     int counter_;
+    int time_gap_counter_;
 
     boost::mutex cloud_mtx_; // mutex for contact cost subscribers
     /* boost::mutex points_mutex_; */

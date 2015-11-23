@@ -79,8 +79,8 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=True, \
-                 subject="gatsbii", task='collision', data_pub=opt.bDataPub, verbose=False)
+    log = logger(ft=False, audio=True, kinematics=True, vision_artag=False, vision_change=True, pps=False, 
+                 skin=True, subject="gatsbii", task='collision', data_pub=opt.bDataPub, verbose=False)
 
     last_trial  = '4'
     last_detect = '2'
@@ -92,7 +92,7 @@ if __name__ == '__main__':
         trial  = raw_input('Enter trial\'s status (e.g. 1:swing, else: exit): ')
         if trial=='': trial=last_trial
             
-        if trial is '1' or trial is '2' or trial is '3':
+        if trial is '1' or trial is '2':
             detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
             if detect == '': detect=last_detect
             if detect == '1': detection_flag = True

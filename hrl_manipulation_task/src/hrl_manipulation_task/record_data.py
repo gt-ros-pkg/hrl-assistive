@@ -49,12 +49,14 @@ from sensor.kinect_audio import kinect_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
 from sensor.artag_vision import artag_vision
+from sensor.kinect_vision import kinect_vision
 from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 
 
 class logger:
-    def __init__(self, ft=False, audio=False, kinematics=False, vision=False, pps=False, skin=False, \
+    def __init__(self, ft=False, audio=False, kinematics=False, vision_artag=False, vision_change=False, \
+                 pps=False, skin=False, \
                  subject=None, task=None, data_pub= False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
@@ -65,12 +67,13 @@ class logger:
         
         self.initParams()
         
-        self.audio       = kinect_audio() if audio else None
-        self.kinematics  = robot_kinematics() if kinematics else None
-        self.ft          = tool_ft() if ft else None
-        self.vision      = artag_vision(False, viz=False) if vision else None
-        self.pps_skin    = pps_skin(True) if pps else None
-        self.fabric_skin = fabric_skin(True) if skin else None
+        self.audio         = kinect_audio() if audio else None
+        self.kinematics    = robot_kinematics() if kinematics else None
+        self.ft            = tool_ft() if ft else None
+        self.vision_artag  = artag_vision(False, viz=False) if vision_artag else None
+        self.vision_change = kinect_vision(False) if vision_change else None
+        self.pps_skin      = pps_skin(True) if pps else None
+        self.fabric_skin   = fabric_skin(True) if skin else None
 
         self.waitForReady()
         self.initComms()
@@ -224,13 +227,20 @@ class logger:
                     print "-------------------------------------"
                     continue
 
-            if self.vision is not None:
-                if self.vision.isReady() is False: 
+            if self.vision_artag is not None:
+                if self.vision_artag.isReady() is False: 
                     print "-------------------------------------"
                     print "AR tag is not ready"                                        
                     print "-------------------------------------"
                     continue
 
+            if self.vision_change is not None:
+                if self.vision_change.isReady() is False: 
+                    print "-------------------------------------"
+                    print "Octree change is not ready"                                        
+                    print "-------------------------------------"
+                    continue
+                
             if self.pps_skin is not None:
                 if self.pps_skin.isReady() is False: 
                     print "-------------------------------------"
@@ -259,7 +269,7 @@ class logger:
         while not rospy.is_shutdown():
             count += 1
             print count
-            if count > 100: break
+            if count > 200: break
             rate.sleep()
 
         self.close_log_file()
@@ -296,11 +306,17 @@ class logger:
                 msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()
                 msg.ft_torque = np.squeeze(self.ft.torque_raw.T).tolist()
 
-            if self.vision is not None:
-                if self.vision.artag_pos is not None:
-                    msg.vision_pos  = np.squeeze(self.vision.artag_pos.T).tolist()
-                    msg.vision_quat = np.squeeze(self.vision.artag_quat.T).tolist()
-            
+            if self.vision_artag is not None:
+                if self.vision_artag.artag_pos is not None:
+                    msg.vision_pos  = np.squeeze(self.vision_artag.artag_pos.T).tolist()
+                    msg.vision_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
+
+            if self.vision_change is not None:
+                if self.vision_change.centers is not None:
+                    msg.vision_change_centers_x = np.squeeze(self.vision_change.centers[:,0]).tolist() # 3xN
+                    msg.vision_change_centers_y = np.squeeze(self.vision_change.centers[:,1]).tolist() # 3xN
+                    msg.vision_change_centers_z = np.squeeze(self.vision_change.centers[:,2]).tolist() # 3xN
+                    
             if self.pps_skin is not None:
                 msg.pps_skin_left  = np.squeeze(self.pps_skin.data_left.T).tolist()
                 msg.pps_skin_right = np.squeeze(self.pps_skin.data_right.T).tolist()
@@ -377,16 +393,31 @@ class logger:
                     self.data['ft_force']  = np.hstack([self.data['ft_force'], self.ft.force_raw])
                     self.data['ft_torque'] = np.hstack([self.data['ft_torque'], self.ft.torque_raw])
                     
-            if self.vision is not None:
-                if 'vision_time' not in self.data.keys():
-                    self.data['vision_time'] = [self.vision.time]
-                    self.data['vision_pos']  = self.vision.artag_pos
-                    self.data['vision_quat'] = self.vision.artag_quat
+            if self.vision_artag is not None:
+                if 'vision_artag_time' not in self.data.keys():
+                    self.data['vision_artag_time'] = [self.vision_artag.time]
+                    self.data['vision_artag_pos']  = self.vision_artag.artag_pos
+                    self.data['vision_artag_quat'] = self.vision_artag.artag_quat
                 else:                    
-                    self.data['vision_time'].append(self.vision.time)
-                    self.data['vision_pos']  = np.hstack([self.data['vision_pos'], self.vision.artag_pos])
-                    self.data['vision_quat'] = np.hstack([self.data['vision_quat'], self.vision.artag_quat])
-                                
+                    self.data['vision_artag_time'].append(self.vision_artag.time)
+                    self.data['vision_artag_pos']  = np.hstack([self.data['vision_artag_pos'], \
+                                                                self.vision_artag.artag_pos])
+                    self.data['vision_artag_quat'] = np.hstack([self.data['vision_artag_quat'], \
+                                                                self.vision_artag.artag_quat])
+
+            if self.vision_change is not None:
+
+                if 'vision_change_time' not in self.data.keys():
+                    self.data['vision_change_time'] = [self.vision_change.time]
+                    self.data['vision_change_centers_x']  = [self.vision_change.centers[:,0].tolist()]
+                    self.data['vision_change_centers_y']  = [self.vision_change.centers[:,1].tolist()]
+                    self.data['vision_change_centers_z']  = [self.vision_change.centers[:,2].tolist()]
+                else:                    
+                    self.data['vision_change_time'].append(self.vision_change.time)
+                    self.data['vision_change_centers_x'].append(self.vision_change.centers[:,0].tolist())
+                    self.data['vision_change_centers_y'].append(self.vision_change.centers[:,1].tolist())
+                    self.data['vision_change_centers_z'].append(self.vision_change.centers[:,2].tolist())
+                                                                
             if self.pps_skin is not None:
                 if 'pps_skin_time' not in self.data.keys():
                     self.data['pps_skin_time']  = [self.pps_skin.time]
@@ -436,8 +467,8 @@ if __name__ == '__main__':
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=True, kinematics=True, vision=False, pps=False, skin=True,\
-                 subject=subject, task=task, verbose=verbose)
+    log = logger(ft=False, audio=True, kinematics=True, vision_artag=False, vision_change=True, \
+                 pps=False, skin=True, subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
     log.run()
