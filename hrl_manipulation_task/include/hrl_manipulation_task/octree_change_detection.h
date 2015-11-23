@@ -120,8 +120,8 @@ private:
 
     /* KDL::Frame current_ee_frame_; */
     std::vector<KDL::Frame*> cur_frames_;
-    std::vector<KDL::Frame*> last_frames_, last1_frames_, last2_frames_, last3_frames_, last4_frames_,
-        last5_frames_, last6_frames_, last7_frames_;
+    std::vector<KDL::Frame*> last_frames_;
+    std::queue<std::vector<KDL::Frame*> > frame_seq_;
     std::vector<double> radius_;
 
     std_msgs::Header header_;
@@ -131,7 +131,7 @@ private:
     bool has_joint_state_;
     bool has_robot_;
     int counter_;
-    int time_gap_counter_;
+    int max_frame_check_step_;
 
     boost::mutex cloud_mtx_; // mutex for contact cost subscribers
     /* boost::mutex points_mutex_; */

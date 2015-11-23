@@ -15,7 +15,7 @@ changeDetector::changeDetector(const ros::NodeHandle &nh): nh_(nh)
     has_joint_state_ = false;
     has_robot_ = false;
     counter_ = 0;
-    time_gap_counter_=0;
+    max_frame_check_step_ = 10;
 
     getParams();
     initFilter();
@@ -28,6 +28,9 @@ changeDetector::~changeDetector()
     std::vector<KDL::Frame*> T;
     cur_frames_.swap(T);
     last_frames_.swap(T);
+
+    for(int i=0; i<frame_seq_.size() ; i++)
+        frame_seq_.pop();
 }
 
 bool changeDetector::getParams()
@@ -104,46 +107,16 @@ bool changeDetector::initFilter()
 
 bool changeDetector::initRobot()
 {
-    cur_frames_.push_back(new KDL::Frame);    
-    cur_frames_.push_back(new KDL::Frame);    
-    cur_frames_.push_back(new KDL::Frame);    
-    cur_frames_.push_back(new KDL::Frame);    
+    for(int j=0 ; j<4 ; j++)
+    {
+        cur_frames_.push_back(new KDL::Frame);    
+        last_frames_.push_back(new KDL::Frame);    
+    }
 
-    last_frames_.push_back(new KDL::Frame);    
-    last_frames_.push_back(new KDL::Frame);    
-    last_frames_.push_back(new KDL::Frame);    
-    last_frames_.push_back(new KDL::Frame);    
-
-    last1_frames_.push_back(new KDL::Frame);    
-    last1_frames_.push_back(new KDL::Frame);    
-    last1_frames_.push_back(new KDL::Frame);    
-    last1_frames_.push_back(new KDL::Frame);    
-
-    last2_frames_.push_back(new KDL::Frame);    
-    last2_frames_.push_back(new KDL::Frame);    
-    last2_frames_.push_back(new KDL::Frame);    
-    last2_frames_.push_back(new KDL::Frame);    
-
-    last3_frames_.push_back(new KDL::Frame);    
-    last3_frames_.push_back(new KDL::Frame);    
-    last3_frames_.push_back(new KDL::Frame);    
-    last3_frames_.push_back(new KDL::Frame);    
-
-    last4_frames_.push_back(new KDL::Frame);    
-    last4_frames_.push_back(new KDL::Frame);    
-    last4_frames_.push_back(new KDL::Frame);    
-    last4_frames_.push_back(new KDL::Frame);    
-
-    last5_frames_.push_back(new KDL::Frame);    
-    last5_frames_.push_back(new KDL::Frame);    
-    last5_frames_.push_back(new KDL::Frame);    
-    last5_frames_.push_back(new KDL::Frame);    
-
-    last6_frames_.push_back(new KDL::Frame);    
-    last6_frames_.push_back(new KDL::Frame);    
-    last6_frames_.push_back(new KDL::Frame);    
-    last6_frames_.push_back(new KDL::Frame);    
-
+    // cur_frames_.push_back(new KDL::Frame);    
+    // cur_frames_.push_back(new KDL::Frame);    
+    // cur_frames_.push_back(new KDL::Frame);    
+    // cur_frames_.push_back(new KDL::Frame);    
 
     radius_.push_back(0.10); // upper arm
     radius_.push_back(0.10); // forearm
@@ -200,21 +173,15 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
         octree_ptr_->setInputCloud (cloud_filtered_ptr_);
         octree_ptr_->addPointsFromInputCloud ();
 
-
-        for (unsigned int i=0 ; i<cur_frames_.size() ; i++)
-        {
-            last_frames_[i]  = last1_frames_[i];
-            last1_frames_[i] = last2_frames_[i];
-            last2_frames_[i] = last3_frames_[i];
-            last3_frames_[i] = last4_frames_[i];
-            last4_frames_[i] = last5_frames_[i];
-            last5_frames_[i] = last6_frames_[i];
-            last6_frames_[i] = cur_frames_[i];
-        }
-
         // Get end-effector
         for (unsigned int i=0 ; i<cur_frames_.size() ; i++)
             robot_ptr_->forwardKinematics(joint_angles_, *cur_frames_[i], i);
+
+        if (counter_ > max_frame_check_step_){ 
+            last_frames_ = frame_seq_.front();
+            frame_seq_.pop();
+        }
+        frame_seq_.push(cur_frames_);
 
         counter_++;
         if (counter_ > 65534) counter_ = 1;    
