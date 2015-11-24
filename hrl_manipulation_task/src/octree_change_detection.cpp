@@ -27,10 +27,12 @@ changeDetector::~changeDetector()
 {
     std::vector<KDL::Frame*> T;
     cur_frames_.swap(T);
-    last_frames_.swap(T);
 
-    for(int i=0; i<frame_seq_.size() ; i++)
-        frame_seq_.pop();
+    std::deque<std::vector<KDL::Frame*> >::iterator it;
+    while(it!=frame_seq_.end()){
+        (*it).swap(T);
+        it = frame_seq_.erase(it);
+    }
 }
 
 bool changeDetector::getParams()
@@ -46,6 +48,11 @@ bool changeDetector::getParams()
     joint_names_.push_back("l_wrist_roll_joint");
 
     joint_angles_.resize(robot_dimensions_);
+
+    for(int j=0 ; j<4 ; j++)
+    {
+        cur_frames_.push_back(new KDL::Frame);    
+    }
 
     return true;
 }
@@ -107,19 +114,13 @@ bool changeDetector::initFilter()
 
 bool changeDetector::initRobot()
 {
-    for(int j=0 ; j<4 ; j++)
-    {
-        cur_frames_.push_back(new KDL::Frame);    
-        last_frames_.push_back(new KDL::Frame);    
-    }
-
     // cur_frames_.push_back(new KDL::Frame);    
     // cur_frames_.push_back(new KDL::Frame);    
     // cur_frames_.push_back(new KDL::Frame);    
     // cur_frames_.push_back(new KDL::Frame);    
 
-    radius_.push_back(0.10); // upper arm
-    radius_.push_back(0.10); // forearm
+    radius_.push_back(0.1); // upper arm
+    radius_.push_back(0.1); // forearm
     radius_.push_back(0.08); // hand
 
     ROS_INFO("Start to initialize robot!!");
@@ -152,7 +153,7 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
     pcl::fromPCLPointCloud2(pcl_pc, *cloud_ptr_);
     header_ = input->header;
 
-    if (has_tf_ && has_joint_state_)
+    if (has_tf_ && has_joint_state_ && has_robot_)
     {
         // transform
         tf::Transform head_transform(head_transform_.getRotation(), head_transform_.getOrigin());
@@ -164,8 +165,6 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
         condrem.setKeepOrganized(true);
         condrem.filter (*cloud_filtered_ptr_);    
 
-        // Exclude arm
-
         // Switch octree buffers: This resets octree but keeps previous tree structure in memory.
         if (counter_>0) octree_ptr_->switchBuffers ();
 
@@ -173,16 +172,20 @@ void changeDetector::cameraCallback(const sensor_msgs::PointCloud2ConstPtr& inpu
         octree_ptr_->setInputCloud (cloud_filtered_ptr_);
         octree_ptr_->addPointsFromInputCloud ();
 
+        std::vector<KDL::Frame*> cur_frames;
+        for(int i=0 ; i<4 ; i++) cur_frames.push_back(new KDL::Frame);    
+
         // Get end-effector
-        for (unsigned int i=0 ; i<cur_frames_.size() ; i++)
-            robot_ptr_->forwardKinematics(joint_angles_, *cur_frames_[i], i);
+        for (unsigned int i=0 ; i<cur_frames.size() ; i++)
+            robot_ptr_->forwardKinematics(joint_angles_, *(cur_frames[i]), i);
 
         if (counter_ > max_frame_check_step_){ 
-            last_frames_ = frame_seq_.front();
-            frame_seq_.pop();
+            std::vector<KDL::Frame*> T;
+            frame_seq_.front().swap(T);
+            frame_seq_.pop_front();
         }
-        frame_seq_.push(cur_frames_);
 
+        frame_seq_.push_back(cur_frames);
         counter_++;
         if (counter_ > 65534) counter_ = 1;    
     }    
@@ -268,7 +271,10 @@ void changeDetector::runDetector()
     ros::Rate loop_rate(10.0); // 1Hz
     while (ros::ok())
     { 
-        if (counter_==0) continue;
+        if (counter_==0){
+            ros::spinOnce();
+            continue;
+        }
 
         // changeDetector
         std::vector<int> newPointIdxVector;
@@ -287,14 +293,19 @@ void changeDetector::runDetector()
             continue;
         }
 
+        // clock_t time = clock();
+
         // Create the filtering object
         voxelfilter_.setInputCloud (cloud_changes_ptr_);
-        voxelfilter_.setLeafSize (0.01f, 0.01f, 0.01f);
+        voxelfilter_.setLeafSize (0.02f, 0.02f, 0.02f);
         voxelfilter_.filter (*cloud_changes_ptr_);
         if (cloud_changes_ptr_->points.size() == 0){
             ros::spinOnce();
             continue;
         }
+
+        // cout << "elapsed1: " << double(clock() - time) / CLOCKS_PER_SEC * 1000 << endl;
+        // time = clock();
 
         // Output points
         // cout << "The Number of change voxels " <<  newPointIdxVector.size() << " " << 
@@ -305,22 +316,28 @@ void changeDetector::runDetector()
         //               << "  Point:" << cloud_filtered_ptr_->points[newPointIdxVector[i]].x << " "
         //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].y << " "
         //               << cloud_filtered_ptr_->points[newPointIdxVector[i]].z << std::endl;
-
-        robotBodyFilter(cloud_changes_ptr_);        
-        if (cloud_changes_ptr_->points.size() == 0){
-            ros::spinOnce();
-            continue;
-        }
-
+        
         // Statistical outlier filter
         sorfilter_ptr_->setInputCloud (cloud_changes_ptr_);
         sorfilter_ptr_->setMeanK (8);
-        sorfilter_ptr_->setStddevMulThresh (-0.0);
+        sorfilter_ptr_->setStddevMulThresh (0.0);
         sorfilter_ptr_->filter (*cloud_changes_ptr_);
         if (cloud_changes_ptr_->points.size() == 0){
             ros::spinOnce();
             continue;
         }
+        // cout << "elapsed2: " << double(clock() - time) / CLOCKS_PER_SEC * 1000 << endl;
+        // time = clock();
+
+        if (counter_>3) robotBodyFilter(cloud_changes_ptr_);        
+        if (cloud_changes_ptr_->points.size() == 0){
+            ros::spinOnce();
+            continue;
+        }
+        // cout << "elapsed3: " << double(clock() - time) / CLOCKS_PER_SEC * 1000 << endl;
+        // time = clock();
+
+
 
         // int mean_k = 8;
         // double dist = 0.005;
@@ -340,44 +357,59 @@ void changeDetector::runDetector()
     }
 }
 
-void changeDetector::robotBodyFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud)
+void changeDetector::robotBodyFilter(pcl::PointCloud<PointType>::Ptr& pcl_cloud)
 {
     pcl::PointIndices::Ptr outliers (new pcl::PointIndices ());
 
 
-    for (unsigned int i=0 ; i<cur_frames_.size()-1 ; i++)
+    std::vector<int> outlier_idx;
+    for (int j = 0; j < pcl_cloud->size(); j++)
     {
-        std::vector<int> outlier_idx;
-        for (unsigned int j = 0; j < pcl_cloud->size(); j++)
-        {
-            KDL::Vector p( pcl_cloud->points[j].x, pcl_cloud->points[j].y, pcl_cloud->points[j].z );
-            double dist = dist_Point_to_Segment(p, cur_frames_[i]->p, cur_frames_[i+1]->p);
-            if ( dist < radius_[i])
-            {
-                outlier_idx.push_back(j);
-                continue;
-            }
-            dist = dist_Point_to_Segment(p, last_frames_[i]->p, last_frames_[i+1]->p);
-            if ( dist < radius_[i])
-            {
-                outlier_idx.push_back(j);
-                continue;
-            }
-            // else
-            //     cout << dist << " / " << "outlier: " << j << " / " << pcl_cloud->points.size()<< endl;
+        KDL::Vector p( pcl_cloud->points[j].x, pcl_cloud->points[j].y, pcl_cloud->points[j].z );
 
-        }    
-        outliers->indices = outlier_idx;
-        // cout << i << endl;
-        
-        extract_ptr_->setInputCloud (pcl_cloud);
-        extract_ptr_->setIndices (outliers);
-        extract_ptr_->setNegative (true);
-        extract_ptr_->filter (*pcl_cloud);
-    }
+        // cout << frame_seq_.back()[3]->p - frame_seq_.at(1)[3]->p << " " << endl; 
+        // cout << frame_seq_.size() << " " << max_frame_check_step_/2 << endl;
+        // cout << frame_seq_.at(0).size() << endl;
+
+        bool outlier_flag=false;
+        for (unsigned int i=0 ; i<frame_seq_.back().size()-1 ; i++)
+        {
+            double dist = dist_Point_to_Segment(p, frame_seq_.back()[i]->p, frame_seq_.back()[i+1]->p);
+            if ( dist < radius_[i])
+            {
+                outlier_flag = true;
+                break;
+            }
+            dist = dist_Point_to_Segment(p, frame_seq_.at(0)[i]->p, frame_seq_.at(0)[i+1]->p);
+            if ( dist < radius_[i])
+            {
+                outlier_flag = true;
+                break;
+            }
+
+            if (max_frame_check_step_/2 > frame_seq_.size()-1) continue;
+            dist = dist_Point_to_Segment(p, frame_seq_[max_frame_check_step_/2][i]->p, 
+                                         frame_seq_[max_frame_check_step_/2][i+1]->p);
+            if ( dist < radius_[i])
+            {
+                outlier_flag = true;
+                break;
+            }
+        }
+
+        if (outlier_flag) outlier_idx.push_back(j);
+    }    
+
+    outliers->indices = outlier_idx;
+
+    extract_ptr_->setInputCloud (pcl_cloud);
+    extract_ptr_->setIndices (outliers);
+    extract_ptr_->setNegative (true);
+    extract_ptr_->filter (*pcl_cloud);
+    // cout << "size of outlier : " << outlier_idx.size() << endl;
 }
 
-void changeDetector::noiseFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud, int mean_k, 
+void changeDetector::noiseFilter(pcl::PointCloud<PointType>::Ptr& pcl_cloud, int mean_k, 
                                  double distance_threshold, double std_mul)
 {
     SearcherPtr searcher_;

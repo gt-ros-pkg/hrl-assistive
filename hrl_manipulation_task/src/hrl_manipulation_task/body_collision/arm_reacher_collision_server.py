@@ -124,7 +124,7 @@ class armReachAction(mpcBaseAction):
           
         self.motions['runSwing'] = {}
         self.motions['runSwing']['left'] = \
-          [['MOVEJ', '[0.785, 0.0, 0.0, 0, 0, 0, 0]', 5.0],
+          [['MOVEJ', '[0.3925, 0.0, 0.0, 0, 0, 0, 0]', 5.0],
            ]
         self.motions['runSwing']['right'] = []
           

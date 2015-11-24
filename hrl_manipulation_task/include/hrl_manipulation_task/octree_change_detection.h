@@ -40,7 +40,7 @@
 /* #include <boost/math/distributions/normal.hpp> */
 
 // Octree resolution - side length of octree voxels
-const float resolution = 0.05;
+const float resolution = 0.02;
 
 typedef pcl::PointXYZ PointType;
 typedef pcl::PointXYZI KeyType;
@@ -68,8 +68,8 @@ private:
     void cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input);
     void jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState);
 
-    void robotBodyFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud);
-    void noiseFilter(const pcl::PointCloud<PointType>::Ptr& pcl_cloud, int mean_k, 
+    void robotBodyFilter(pcl::PointCloud<PointType>::Ptr& pcl_cloud);
+    void noiseFilter(pcl::PointCloud<PointType>::Ptr& pcl_cloud, int mean_k, 
                      double distance_threshold, double std_mul);
 
 private:
@@ -120,8 +120,7 @@ private:
 
     /* KDL::Frame current_ee_frame_; */
     std::vector<KDL::Frame*> cur_frames_;
-    std::vector<KDL::Frame*> last_frames_;
-    std::queue<std::vector<KDL::Frame*> > frame_seq_;
+    std::deque<std::vector<KDL::Frame*> > frame_seq_;
     std::vector<double> radius_;
 
     std_msgs::Header header_;
