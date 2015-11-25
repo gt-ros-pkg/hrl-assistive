@@ -16,6 +16,11 @@
 #################################
 *.swp
 
+# files created by data recording #
+###################################
+*.wav
+*.pkl
+
 # ROS specific files and folders #
 ##################################
 bin

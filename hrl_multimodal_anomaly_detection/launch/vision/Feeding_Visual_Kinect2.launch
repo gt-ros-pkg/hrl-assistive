@@ -1,0 +1,98 @@
+<launch>
+  <arg name="subject" default="dummy_1" />
+  <arg name="data_pkg" value="$(find hrl_multimodal_anomaly_detection)/bag" />
+  <arg name="head_pcs_dir" default="$(arg data_pkg)" />
+  <arg name="kinect_points" default="/head_mount_kinect/depth_registered/points" />
+  <arg name="kinect_camera" default="/head_mount_kinect/rgb_lowres/image" />
+  <arg name="kinect_camera_info" default="/head_mount_kinect/rgb_lowres/camera_info" />
+
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+
+  <include file="$(find hrl_multimodal_anomaly_detection)/launch/vision/cupFinder_Kinect2.launch" />
+
+
+  <node pkg="hrl_head_registration" name="l_head_registration_srv" type="head_registration_srv"
+        output="screen" args="$(arg head_pcs_dir)/$(arg subject)_l_face.bag">
+      <param name="max_iters" value="300" />
+      <param name="color_weight" value="0.0" />
+      <param name="icp_max_corresp" value="0.3" />
+      <param name="icp_trans_eps" value="0.0000000001" />
+      <param name="trim_radius" value="0.13" />
+      <param name="model_radius" value="0.03" />
+      <param name="color_std_thresh" value="4.0" />
+      <param name="hue_weight" value="5.0" />
+      <remap from="/head_registration" to="/head_registration_l" />
+      <remap from="/points" to="$(arg kinect_points)" />
+  </node>
+
+  <node pkg="hrl_head_registration" name="r_head_registration_srv" type="head_registration_srv"
+        output="screen" args="$(arg head_pcs_dir)/$(arg subject)_r_face.bag">
+      <param name="max_iters" value="300" />
+      <param name="color_weight" value="0.0" />
+      <param name="icp_max_corresp" value="0.3" />
+      <param name="icp_trans_eps" value="0.0000000001" />
+      <param name="trim_radius" value="0.13" />
+      <param name="model_radius" value="0.03" />
+      <param name="color_std_thresh" value="4.0" />
+      <param name="hue_weight" value="5.0" />
+      <remap from="/head_registration" to="/head_registration_r" />
+      <remap from="/points" to="$(arg kinect_points)" />
+  </node>
+
+  <node pkg="hrl_multimodal_anomaly_detection" name="registration_loader" type="registration_loader.py"
+        output="screen" >
+      <remap from="/feedback" to="/wt_log_out" />
+      <param name="registration_dir" value="$(arg head_pcs_dir)" />
+      <param name="subject" value="$(arg subject)" />
+      <param name="face_side1" value="l" />
+  </node>
+
+  <node pkg="hrl_head_registration" name="head_bowl_alignment_confirm" type= "head_bowl_alignment_confirm"
+        output="screen" respawn="True" >
+      <remap from ="/kinect_camera" to="$(arg kinect_camera)" />
+  </node>
+
+  <!-- Rosbridge, Rosapi, Webserver (roswww), and mjpeg_server -->
+  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge.py" output="screen">
+      <param name="port" type="int" value="9091" />
+  </node>
+
+  <node name="rosapi" pkg="rosapi" type="rosapi.py" output="screen"/>
+
+  <rosparam> 'http/default': 8000 </rosparam>
+  <node name="roswww" pkg="roswww" type="webserver.py" output="screen"/>
+
+  <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
+      <param name="port" type="int" value="8080" />
+  </node>
+
+  <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
+  <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
+      <remap from="info_topic" to="$(arg kinect_camera_info)"/>
+      <remap from="point_cloud" to="$(arg kinect_points)"/>
+      <!--remap from="l_mouse_click" to="/clickable_display/l_mouse_click"/-->
+      <param name="normal_radius" type="double" value="0.035" />
+      <!--param name="output_frame" value="/base_link"/-->
+      <param name="use_closest_pixel" value="True"/>
+
+
+      <!-- remap from="image" to="$(arg kinect_camera)" / -->
+      <!-- remap from="point_cloud" to="$(arg kinect_points)" / -->
+      <!-- param name="normal_radius" type="double" value="0.035" / -->
+      <!-- param name="use_closest_pixel"  value="True"/ -->
+  </node>
+
+  <!-- Throttling nodes for robot state -->
+  <node name="torso_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
+
+  <node name="head_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
+
+  <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /r_gripper_controller/state 1 /r_gripper_controller/state_throttled" />
+
+  <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
+
+</launch>

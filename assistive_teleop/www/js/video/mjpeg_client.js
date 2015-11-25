@@ -10,13 +10,13 @@ var MjpegClient = function (options) {
     self.height = options.height || 480;
     self.quality = options.quality || 90;
 
-    self.cameraData = {'Head': {topic:'/head_mount_kinect/rgb/image_color',
+    self.cameraData = {'Head': {topic:'/head_mount_kinect/rgb_lowres/image',//kinect 1 is image_color
                                        optgroup:'Default',
-                                       cameraInfo:'/head_mount_kienct/rgb/camera_info',
+                                       cameraInfo:'/head_mount_kinect/rgb_lowres/camera_info',
                                        clickable:true,
                                        rotated: false,
-                                       width: 640, //1280,
-                                       height:480},//1024}
+                                       width: 960, //1280, originally 640
+                                       height:540},//1024, originally 480}
                               'Right Arm': {topic: '/r_forearm_cam/image_color_rotated',
                                             optgroup:'Default',
                                             cameraInfo: '/r_forearm_cam/camera_info',
@@ -40,11 +40,11 @@ var MjpegClient = function (options) {
                                          height:480},
                               'Head Registration': {topic: '/head_registration/confirmation',
                                                     optgroup:'Special',
-                                                    cameraInfo: 'head_mount_kinect/rgb/camera_info',
+                                                    cameraInfo: 'head_mount_kinect/rgb_lowres/camera_info',
                                                     clickable: true,
                                                     rotated: false,
-                                                    width: 640, //1280,
-                                                    height:480}//1024}
+                                                    width: 960, //1280,
+                                                    height:540}//1024}
     }
 
     self.cameraModels = {};

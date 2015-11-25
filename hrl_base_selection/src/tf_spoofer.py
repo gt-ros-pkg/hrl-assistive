@@ -114,8 +114,12 @@ class TF_Spoofer(object):
                                                  [0., 0., 1., -0.075],
                                                  [0., 0., 0., 1.]])
             pos, ori = Bmat_to_pos_quat(world_B_head_back*head_back_B_head_center)
+            self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
+                                              rospy.Time.now(), '/head_frame', "/optitrak")
+            robot_B_head = self.robot_B_world*world_B_head_back*head_back_B_head_center
+            pos, ori = Bmat_to_pos_quat(robot_B_head)
             psm = PoseStamped()
-            psm.header.frame_id = data.header.frame_id
+            psm.header.frame_id = '/base_link'
             psm.pose.position.x = pos[0]
             psm.pose.position.y = pos[1]
             psm.pose.position.z = pos[2]
@@ -127,8 +131,7 @@ class TF_Spoofer(object):
             # world_B_pr2 = createBMatrix(trans, rot)
             # self.robot_pose = world_B_pr2
             # self.update_feedback()
-            self.tf_broadcaster.sendTransform((pos[0], pos[1], pos[2]), (ori[0], ori[1], ori[2], ori[3]),
-                                              rospy.Time.now(), '/head_frame', "/optitrak")
+
 
     def reference_cb(self, data):
         with self.lock:

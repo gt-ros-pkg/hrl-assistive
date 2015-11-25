@@ -1,0 +1,6 @@
+<launch>
+    
+
+    <node name="local_data_record" pkg="hrl_multimodal_anomaly_detection" type="local_data_record.py" output="screen" />
+
+</launch>

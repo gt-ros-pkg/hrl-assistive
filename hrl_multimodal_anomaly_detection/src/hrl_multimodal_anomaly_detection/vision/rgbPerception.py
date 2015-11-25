@@ -1,0 +1,436 @@
+#!/usr/bin/env python
+
+__author__ = 'zerickson'
+
+import cv2
+import time
+import rospy
+import random
+import numpy as np
+
+try :
+    import sensor_msgs.point_cloud2 as pc2
+except:
+    import point_cloud2 as pc2
+from sensor_msgs.msg import Image, CameraInfo
+from roslib import message
+
+import roslib
+roslib.load_manifest('hrl_multimodal_anomaly_detection')
+import tf
+import image_geometry
+from cv_bridge import CvBridge, CvBridgeError
+from hrl_multimodal_anomaly_detection.msg import Circle, Rectangle, ImageFeatures
+
+gripperFeature = None
+
+class rgbPerception:
+    def __init__(self, targetFrame=None, visual=False, tfListener=None):
+        # ROS publisher for data points
+        self.publisher2D = rospy.Publisher('image_features', ImageFeatures)
+        self.bridge = CvBridge()
+
+        self.rgbTime = time.time()
+        self.visual = visual
+        self.targetFrame = targetFrame
+        self.updateNumber = 0
+
+        if tfListener is None:
+            self.transformer = tf.TransformListener()
+        else:
+            self.transformer = tfListener
+
+        self.imageData = None
+        self.activeFeatures = []
+        self.currentIndex = 0
+
+        # RGB Camera
+        self.rgbCameraFrame = None
+        self.cameraWidth = None
+        self.cameraHeight = None
+        self.pinholeCamera = None
+        self.prevGray = None
+
+        # Gripper
+        self.lGripperPosition = None
+        self.lGripperRotation = None
+        self.lGripperTransposeMatrix = None
+        self.lGripX = None
+        self.lGripY = None
+        self.grips = []
+        # Spoon
+        self.spoonX = None
+        self.spoonY = None
+
+        # Bounding Box
+        self.box = None
+        self.spoonBox = None
+        self.centerX = None
+        self.centerY = None
+        self.diffX = None
+        self.diffY = None
+
+        # Parameters for ShiTomasi corner detection
+        self.feature_params = dict(maxCorners=100, qualityLevel=0.05, minDistance=3, blockSize=7)
+        # Parameters for Lucas Kanade optical flow
+        self.lk_params = dict(winSize=(20, 20), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+
+        self.N = 50
+
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/image', Image, self.imageCallback)
+        print 'Connected to Kinect images'
+        rospy.Subscriber('/head_mount_kinect/rgb_lowres/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        print 'Connected to Kinect camera info'
+
+    def getAllRecentPoints(self):
+        lowX, highX, lowY, highY = self.box
+        return self.imageData, self.getNovelAndClusteredFeatures(), [self.lGripX - lowX, self.lGripY - lowY], [self.spoonX - lowX, self.spoonY - lowY]
+
+    def imageCallback(self, data):
+        global gripperFeature
+        # startTime = time.time()
+        # print 'Time between rgb calls:', time.time() - self.rgbTime
+        if self.rgbCameraFrame is None:
+            self.rgbCameraFrame = data.header.frame_id
+
+        self.transposeGripperToCamera()
+
+        # Determine location of spoon
+        spoon3D = [0.21, -0.050, 0]
+        spoon = np.dot(self.lGripperTransposeMatrix, np.array([spoon3D[0], spoon3D[1], spoon3D[2], 1.0]))[:3]
+        self.spoonX, self.spoonY = self.pinholeCamera.project3dToPixel(spoon)
+
+        # Find half way point between spoon end and gripper
+        # self.centerX = (self.lGripX + self.spoonX) / 2.0
+        # self.centerY = (self.lGripY + self.spoonY) / 2.0
+        # self.diffX = np.abs(self.centerX - self.lGripX)
+        # self.diffY = np.abs(self.centerY - self.lGripY)
+
+        self.box = self.boundingBox()
+
+        # Grab image from Kinect sensor
+        try:
+            image = self.bridge.imgmsg_to_cv(data)
+            image = np.asarray(image[:,:])
+        except CvBridgeError, e:
+            print e
+            return
+
+        lowX, highX, lowY, highY = self.box
+
+        # Crop imageGray to bounding box size
+        self.imageData = image[lowY:highY, lowX:highX, :]
+
+        # Find velocity of the gripper
+        if gripperFeature is None and self.lGripX is not None:
+            gripperFeature = feature(0, [self.lGripX, self.lGripY], lowX, lowY)
+        if gripperFeature is not None:
+            gripperFeature.update([self.lGripX, self.lGripY], lowX, lowY)
+            # print 'Gripper velocity:', gripperFeature.speed
+
+        # print 'Time for first step:', time.time() - startTime
+        # timeStamp = time.time()
+        # TODO This is all optional
+
+        # Convert to grayscale
+        imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        self.spoonBox = self.boundingBoxSpoon()
+
+        if not self.activeFeatures:
+            # Determine initial features
+            self.determineGoodFeatures(imageGray)
+            lowX, highX, lowY, highY = self.box
+            # Crop imageGray to bounding box size
+            imageGray = imageGray[lowY:highY, lowX:highX]
+            self.prevGray = imageGray
+            self.rgbTime = time.time()
+            return
+
+        # Add new features to our feature tracker
+        self.determineGoodFeatures(imageGray)
+
+        lowX, highX, lowY, highY = self.box
+
+        # Crop imageGray to bounding box size
+        imageGray = imageGray[lowY:highY, lowX:highX]
+
+        # print 'Time for second step:', time.time() - timeStamp
+        # timeStamp = time.time()
+        if self.activeFeatures:
+            self.opticalFlow(imageGray)
+        # print 'Time for third step:', time.time() - timeStamp
+        # timeStamp = time.time()
+        if self.visual:
+            self.publishImageFeatures()
+        # print 'Time for fourth step:', time.time() - timeStamp
+
+        # print ['%.3f' % feat.speed for feat in self.activeFeatures if feat.isNovel]
+
+        self.prevGray = imageGray
+
+        self.updateNumber += 1
+        # print 'RGB computation time:', time.time() - startTime
+        # self.rgbTime = time.time()
+
+    def determineGoodFeatures(self, imageGray):
+        if len(self.activeFeatures) >= self.N:
+            return
+        lowX, highX, lowY, highY = self.spoonBox
+        boxX, _, boxY, _ = self.box
+
+        # Crop imageGray to bounding box size
+        imageGray = imageGray[lowY:highY, lowX:highX]
+
+        # Take a frame and find corners in it
+        feats = cv2.goodFeaturesToTrack(imageGray, mask=None, **self.feature_params)
+
+        # Reposition features back into original bounding box image size
+        feats[:, 0, 0] += lowX - boxX
+        feats[:, 0, 1] += lowY - boxY
+        feats = feats.tolist()
+
+        while len(self.activeFeatures) < self.N and len(feats) > 0:
+            feat = random.choice(feats)
+            feats.remove(feat)
+
+            # Add feature to tracking list
+            # print 'Feature added:', feat
+            newFeat = feature(self.currentIndex, feat[0], boxX, boxY)
+            self.activeFeatures.append(newFeat)
+            self.currentIndex += 1
+
+    def opticalFlow(self, imageGray):
+        feats = []
+        for feat in self.activeFeatures:
+            feats.append([feat.position])
+        feats = np.array(feats, dtype=np.float32)
+
+        newFeats, status, error = cv2.calcOpticalFlowPyrLK(self.prevGray, imageGray, feats, None, **self.lk_params)
+        statusRemovals = [i for i, s in enumerate(status) if s == 0]
+
+        lowX, highX, lowY, highY = self.box
+        # Update all features
+        for i, feat in enumerate(self.activeFeatures):
+            feat.update(newFeats[i][0], lowX, lowY)
+
+        # Remove all features that are no longer being tracked (ie. status == 0)
+        self.activeFeatures = np.delete(self.activeFeatures, statusRemovals, axis=0).tolist()
+
+        # Remove all features outside the bounding box
+        self.activeFeatures = [feat for feat in self.activeFeatures if self.pointInBoundingBox(feat.globalPos, self.box) and not feat.removal]
+
+    def getNovelAndClusteredFeatures(self):
+        feats = [feat for feat in self.activeFeatures if feat.isNovel]
+        if not feats:
+            # No novel features
+            return None
+        return {feat.index: (feat.globalPos.tolist(), feat.position.tolist()) for i, feat in enumerate(feats) if self.pointInBoundingBox(feat.globalPos, self.box)}
+
+    def transposeGripperToCamera(self):
+        # Transpose gripper position to camera frame
+        self.transformer.waitForTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0), rospy.Duration(5))
+        try :
+            self.lGripperPosition, self.lGripperRotation = self.transformer.lookupTransform(self.rgbCameraFrame, '/l_gripper_tool_frame', rospy.Time(0))
+            transMatrix = np.dot(tf.transformations.translation_matrix(self.lGripperPosition), tf.transformations.quaternion_matrix(self.lGripperRotation))
+        except tf.ExtrapolationException:
+            pass
+        # gripX, gripY = self.pinholeCamera.project3dToPixel(self.lGripperPosition)
+
+        mic = [0.12, -0.02, 0]
+        micLoc = np.dot(transMatrix, np.array([mic[0], mic[1], mic[2], 1.0]))[:3]
+        gripX, gripY = self.pinholeCamera.project3dToPixel(micLoc)
+        if len(self.grips) >= 3:
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = self.grips[-3]
+        else:
+            self.lGripX, self.lGripY, self.lGripperTransposeMatrix = int(gripX), int(gripY), transMatrix
+        self.grips.append((int(gripX), int(gripY), transMatrix))
+
+    # Finds a bounding box given defined features
+    # Returns coordinates (lowX, highX, lowY, highY)
+    def boundingBox(self):
+        size = 150
+        left = self.lGripX - 50
+        right = left + size
+        bottom = self.lGripY + 75
+        top = bottom - size
+
+        # Check if box extrudes past image bounds
+        if left < 0:
+            left = 0
+            right = left + size
+        if right > self.cameraWidth - 1:
+            right = self.cameraWidth - 1
+            left = right - size
+        if top < 0:
+            top = 0
+            bottom = top + size
+        if bottom > self.cameraHeight - 1:
+            bottom = self.cameraHeight - 1
+            top = bottom - size
+
+        return int(left), int(right), int(top), int(bottom)
+
+    # Finds a tighter bounding box around the spoon
+    # Returns coordinates (lowX, highX, lowY, highY)
+    def boundingBoxSpoon(self):
+        left = self.lGripX
+        right = self.spoonX + 25
+        if self.spoonY < self.lGripY - 20:
+            bottom = self.lGripY
+            top = self.spoonY - 25
+        else:
+            if self.spoonY < self.lGripY + 5:
+                bottom = self.lGripY + 5
+                top = self.spoonY - 25
+            else:
+                bottom = self.spoonY + 25
+                top = self.lGripY - 5
+
+        # Check for minimum sizes
+        if np.abs(left - right) < 40:
+            left -= 20
+            right += 20
+        if np.abs(top - bottom) < 40:
+            bottom += 20
+            top -= 20
+
+        # Check if box extrudes past image bounds
+        if left < 0:
+            left = 0
+        if right > self.cameraWidth - 1:
+            right = self.cameraWidth - 1
+        if top < 0:
+            top = 0
+        if bottom > self.cameraHeight - 1:
+            bottom = self.cameraHeight - 1
+
+        # Check if spoon box extrudes past large bounding box
+        lowX, highX, lowY, highY = self.box
+        if left < lowX:
+            left = lowX
+            # print 'Spoon left is less than bounding box!'
+        if right > highX:
+            right = highX
+            # print 'Spoon right is greater than bounding box!'
+        if top < lowY:
+            top = lowY
+            # print 'Spoon top is less than bounding box!'
+        if bottom > highY:
+            bottom = highY
+            # print 'Spoon bottom is greater than bounding box!'
+
+        return int(left), int(right), int(top), int(bottom)
+
+    @staticmethod
+    def pointInBoundingBox(point, boxPoints):
+        px, py = point
+        lowX, highX, lowY, highY = boxPoints
+        return lowX <= px <= highX and lowY <= py <= highY
+
+    def cameraRGBInfoCallback(self, data):
+        if self.cameraWidth is None:
+            self.cameraWidth = data.width
+            self.cameraHeight = data.height
+            self.pinholeCamera = image_geometry.PinholeCameraModel()
+            self.pinholeCamera.fromCameraInfo(data)
+
+    def publishImageFeatures(self):
+        imageFeatures = ImageFeatures()
+
+        # Draw an orange point on image for gripper
+        circle = Circle()
+        circle.x, circle.y = int(self.lGripX), int(self.lGripY)
+        circle.radius = 10
+        circle.r = 255
+        circle.g = 128
+        imageFeatures.circles.append(circle)
+
+        # Draw an blue point on image for spoon tip
+        circle = Circle()
+        circle.x, circle.y = int(self.spoonX), int(self.spoonY)
+        circle.radius = 10
+        circle.r = 50
+        circle.g = 255
+        circle.b = 255
+        imageFeatures.circles.append(circle)
+
+        # Draw all features (as red)
+        for feat in self.activeFeatures:
+            circle = Circle()
+            circle.x, circle.y = feat.globalPos
+            circle.radius = 5
+            circle.r = 255
+            imageFeatures.circles.append(circle)
+
+        # Draw a bounding box around spoon (or left gripper)
+        rect = Rectangle()
+        rect.lowX, rect.highX, rect.lowY, rect.highY = self.box
+        rect.r = 75
+        rect.g = 150
+        rect.thickness = 5
+        imageFeatures.rectangles.append(rect)
+
+        # Draw a bounding box around spoon (or left gripper)
+        rect = Rectangle()
+        rect.lowX, rect.highX, rect.lowY, rect.highY = self.spoonBox
+        rect.r = 128
+        rect.b = 128
+        rect.thickness = 3
+        imageFeatures.rectangles.append(rect)
+
+        features = self.getNovelAndClusteredFeatures()
+        if features is not None:
+            # Draw all novel and bounded box features
+            for feat in features.values():
+                circle = Circle()
+                circle.x, circle.y = feat[0]
+                circle.radius = 5
+                circle.b = 255
+                circle.g = 128
+                imageFeatures.circles.append(circle)
+
+        self.publisher2D.publish(imageFeatures)
+
+class feature:
+    def __init__(self, index, position, lowX, lowY):
+        position = np.array(position)
+        self.index = index
+        self.position = position
+        self.globalStart = position + [lowX, lowY]
+        self.globalPos = position + [lowX, lowY]
+        self.lastGlobalPos = position + [lowX, lowY]
+        self.posCount = 0
+        self.isNovel = False
+        self.velocity = None
+        self.speed = 0
+        self.lastTime = time.time()
+        self.strikes = 0
+        self.removal = False
+
+    def update(self, newPosition, lowX, lowY):
+        newPosition = np.array(newPosition)
+        self.position = newPosition
+        self.globalPos = newPosition + [lowX, lowY]
+        # Update velocity of feature
+        if self.posCount >= 5:
+            self.posCount = 0
+            distChange = self.globalPos - self.lastGlobalPos
+            timeChange = time.time() - self.lastTime
+            self.velocity = distChange / timeChange
+            self.lastGlobalPos = self.globalPos
+            self.lastTime = time.time()
+            self.speed = np.linalg.norm(self.velocity)
+            # Check if velocity is wildly different than that of the gripper's
+            if np.abs(gripperFeature.speed - self.speed) > 20:
+                self.strikes += 1
+            else:
+                self.strikes = 0
+            # Too many strikes causes a removal of this feature
+            if self.strikes >= 2:
+                self.removal = True
+        self.posCount += 1
+        # Check if feature has moved far enough to become novel
+        distance = np.linalg.norm(self.globalPos - self.globalStart)
+        if distance >= 20:
+            self.isNovel = True

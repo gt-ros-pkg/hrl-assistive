@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package>
+  <name>hrl_sound_localization</name>
+  <version>0.0.0</version>
+  <description>The hrl_sound_localization package</description>
+
+  <maintainer email="deric.park@gatech.edu">Daehyung Park Advisor:
+  Prof. Charlie Kemp. Healthcare Robotics Lab, Georgia
+  Tech</maintainer> 
+
+  <license>BSD</license>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>rospy</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>hark_msgs</build_depend>
+  <build_depend>hrl_common_code_darpa_m3</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>rospy</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>hark_msgs</run_depend>
+  <run_depend>hrl_common_code_darpa_m3</run_depend>
+
+</package>

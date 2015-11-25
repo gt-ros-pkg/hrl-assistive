@@ -56,6 +56,17 @@ class DataReader_Task(object):
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'feeding_quick':
+            liftlink_B_head = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
+            liftlink_B_goal = [[1.070794, -0.000, 1.183998, -0.018872, 0.033197, 0.999248, 0.006737],
+                               [1.154571, -0.000, 1.175490, -0.018872, 0.033197, 0.999248, 0.006737],
+                               # [1.058091, -0.00, 1.213801, -0.251047, 0.033853, 0.967382, -0.001178],
+                               [1.226054, -0.00, 1.120987, 0.005207, 0.032937, 0.999380, -0.011313]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['head']
+            self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'brushing':
             liftlink_B_head = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
             liftlink_B_goal = [[1.000937, 0.162396, 1.348265, -0.167223, 0.150695, -0.676151, 0.701532],

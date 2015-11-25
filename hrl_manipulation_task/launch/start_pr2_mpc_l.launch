@@ -1,0 +1,23 @@
+<launch>
+
+    <!--Left arm launch files-->
+    <arg name="arm1" default="l"/>
+    <arg name="verbose" default="False" />
+
+    <arg name="mpc_config" default="$(find hrl_manipulation_task)/params/mpc_params_pr2.yaml" />
+    <arg name="robot_config" default="$(find hrl_manipulation_task)/params/pr2_config_params_l.yaml" />
+
+    <rosparam command="load" file="$(arg mpc_config)" />
+    <rosparam command="load" file="$(arg robot_config)" />
+
+    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
+      <param name="tip_name" value="l_gripper_spoon_frame" />
+      <!--param name="tip_name" value="l_wrist_roll_link" /-->
+      <param name="root_name" value="torso_lift_link" />
+    </node>
+    <node name="waypoint_generator" pkg="hrl_haptic_mpc" type="waypoint_generator.py" args="-r pr2 -s fabric -a $(arg arm1)" output="screen"/>
+    <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node.py" args="-r pr2 -s fabric -a $(arg arm1)" output="screen"/>
+    <node name="haptic_mpc" pkg="hrl_haptic_mpc" type="haptic_mpc.py" args="-r pr2 -a $(arg arm1) -v $(arg verbose)" output="screen"/>
+  
+
+</launch>

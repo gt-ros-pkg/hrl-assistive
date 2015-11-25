@@ -1,0 +1,24 @@
+<launch>
+  
+  <arg name="arm1" default="l"/>
+  <!--remap from="/ar_track_alvar/bowl_cen_pose" to="hrl_feeding_task/bowl_location"/-->  
+  <!--remap from="/ar_track_alvar/mouth_pose" to="hrl_feeding_task/head_location"/-->  
+
+  <!--node name="arm_reacher_server_left" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm1)" output="screen"/-->
+
+  <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection_pushing.yaml" />    
+  <rosparam command="load" file="$(arg ad_param)" />
+
+  <group ns="right" >
+    <arg name="arm2" default="r"/>
+
+    <arg name="mpc_config_right" default="$(find hrl_manipulation_task)/params/mpc_params_pr2.yaml" />    
+    <arg name="robot_config_right" default="$(find hrl_manipulation_task)/params/pr2_config_params_r.yaml" />
+    <rosparam command="load" file="$(arg mpc_config_right)" />
+    <rosparam command="load" file="$(arg robot_config_right)" />
+
+    <node name="arm_reacher_server_right" pkg="hrl_manipulation_task" type="arm_reacher_pushing_server.py" args="-a $(arg arm2)" output="screen"/>
+  </group>
+
+</launch>
+

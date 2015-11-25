@@ -1,0 +1,32 @@
+#!/usr/bin/env batchflow
+<?xml version="1.0"?>
+<Document>
+  <Network type="subnet" name="MAIN">
+    <Node name="node_loop_1" type="loop" x="210" y="190">
+    </Node>
+    <NetOutput name="OUTPUT" node="node_loop_1" terminal="OUTPUT" object_type="any" description="No description available"/>
+  </Network>
+  <Network type="iterator" name="loop">
+    <Node name="node_Iterate_1" type="Iterate" x="250" y="190">
+      <Parameter name="MAX_ITER" type="int" value="996" description="Number of iteration to do (max)"/>
+    </Node>
+    <Node name="node_AudioStreamFromMic_1" type="AudioStreamFromMic" x="210" y="280">
+      <Parameter name="LENGTH" type="int" value="512" description="The frame length of each channel (in samples) [default: 512]."/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
+      <Parameter name="CHANNEL_COUNT" type="int" value="4" description="The number of channels."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (Hz) [default: 16000]."/>
+      <Parameter name="DEVICETYPE" type="string" value="ALSA" description="Device type [default: WS]."/>
+      <Parameter name="GAIN" type="string" value="0dB" description="capture gain (dB)  [default: 0dB]."/>
+      <Parameter name="DEVICE" type="string" value="plughw:2,0" description="Device name or IP address [default: 127.0.0.1]"/>
+    </Node>
+    <Node name="node_SaveWavePCM_1" type="SaveWavePCM" x="650" y="280">
+      <Parameter name="BASENAME" type="string" value="kinect_" description="Basename of files. [default: sep_]"/>
+      <Parameter name="ADVANCE" type="int" value="160" description="The shift length beween adjacent frames (in samples)[default: 160]."/>
+      <Parameter name="SAMPLING_RATE" type="int" value="16000" description="Sampling rate (in samples)[default: 16000]."/>
+      <Parameter name="BITS" type="string" value="int16" description="Bit format of samples. int16 , int24 and float32 bits are supported."/>
+    </Node>
+    <Link from="node_AudioStreamFromMic_1" output="AUDIO" to="node_SaveWavePCM_1" input="INPUT"/>
+    <NetOutput name="OUTPUT" node="node_SaveWavePCM_1" terminal="OUTPUT" object_type="any" description="No description available"/>
+    <NetCondition name="CONDITION" node="node_Iterate_1" terminal="OUTPUT"/>
+  </Network>
+</Document>
