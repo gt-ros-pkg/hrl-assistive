@@ -71,7 +71,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'ftTimesList', 'ftForceList', \
-                'visionTimesList', 'visionPosList', 'visionQuatList', \
+                'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
+                'visionChangeTimesList', 'visionChangeCentersList', 'visionChangeMagList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
                 'fabricTimesList', 'fabricCenterList', 'fabricNormalList', 'fabricValueList', 'fabricMagList' ]
 
@@ -104,7 +105,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             if 'time' in key and 'init' not in key:
                 feature_time = d[key]
                 if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
-        new_times = np.linspace(0.01, max_time-1.0, downSampleSize)
+        new_times = np.linspace(0.01, max_time, downSampleSize)
 
         data_dict['timesList'].append(new_times)
 
@@ -314,11 +315,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             ## sys.exit()
             
                     
-        # vision ---------------------------------------------------------------
-        if 'vision_time' in d.keys():
-            vision_time = (np.array(d['vision_time']) - init_time).tolist()
-            vision_pos  = d['vision_pos']
-            vision_quat = d['vision_quat']
+        # vision artag -------------------------------------------------------------
+        if 'vision_artag_time' in d.keys():
+            vision_time = (np.array(d['vision_artag_time']) - init_time).tolist()
+            vision_pos  = d['vision_artag_pos']
+            vision_quat = d['vision_artag_quat']
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
                 vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
@@ -327,12 +328,12 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_set = [vision_time, vision_pos, vision_quat]
             [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
-            raw_data_dict['visionTimesList'].append(vision_time)
-            raw_data_dict['visionPosList'].append(local_vision_pos)
-            raw_data_dict['visionQuatList'].append(local_vision_quat)
+            raw_data_dict['visionArtagTimesList'].append(vision_time)
+            raw_data_dict['visionArtagPosList'].append(local_vision_pos)
+            raw_data_dict['visionArtagQuatList'].append(local_vision_quat)
 
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
-            data_dict['visionPosList'].append(vision_pos_array)                                         
+            data_dict['visionArtagPosList'].append(vision_pos_array)                                         
 
             ## fig = plt.figure()
             ## plt.plot(vision_time, vision_pos[2], c='k')
@@ -342,6 +343,35 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             ## fig.savefig('test.png')
             ## os.system('cp test.p* ~/Dropbox/HRL/')
             ## sys.exit()
+
+        # vision change -----------------------------------------------------------
+        if 'vision_change_time' in d.keys():
+            vision_time = (np.array(d['vision_change_time']) - init_time).tolist()
+            vision_centers_x  = d['vision_change_centers_x']
+            vision_centers_y  = d['vision_change_centers_y']
+            vision_centers_z  = d['vision_change_centers_z']
+
+            vision_centers = np.array([vision_centers_x, vision_centers_y, vision_centers_z])
+
+            if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
+                vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
+
+            # extract local feature
+            data_set = [vision_time, vision_centers]
+            [ local_centers ] = extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=True)
+
+            # Get magnitudes
+            local_change_mag = []
+            for i in xrange(len(vision_time)):
+                local_change_mag.append( len(local_centers[0][i]) )
+
+            raw_data_dict['visionChangeTimesList'].append(vision_time)
+            raw_data_dict['visionChangeCentersList'].append(local_centers)
+            raw_data_dict['visionChangeMagList'].append(local_change_mag)
+
+            mag_array  = interpolationData(vision_time, local_change_mag, new_times)
+            data_dict['visionChangeMagList'].append(mag_array)                                        
+
 
         # pps ------------------------------------------------------------------
         if 'pps_skin_time' in d.keys():
@@ -396,7 +426,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # extract local feature
             data_set = [fabric_skin_time, fabric_skin_centers, fabric_skin_normals, fabric_skin_values]
             [ local_fabric_skin_centers, local_fabric_skin_normals, local_fabric_skin_values] \
-              = extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=True, \
+              = extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=True, \
                                  global_data=global_data)
 
             # Get magnitudes
@@ -830,7 +860,7 @@ def getAngularSpatialRF(cur_pos, dist_margin ):
     return ang_max, ang_min
 
 
-def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, global_data=False, \
+def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=False, global_data=False, \
                      verbose=False):
     '''
     Extract local data in data_set
@@ -842,12 +872,12 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, skin_flag=False, g
     pos_data  = data_set[1]
     nData = len(data_set)-1
     
-    if skin_flag is False:
+    if multi_pos_flag is False:
         new_data_set = [None for i in xrange(nData)]
 
         for time_idx in xrange(len(time_data)):
             rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()
-            
+
             if (np.linalg.norm(pos_data[:,time_idx] - rf_traj[:,rf_time_idx]) <= local_range) or global_data:
                 for i in xrange(nData):
                     if new_data_set[i] is None:
@@ -1080,6 +1110,18 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
             ##     param_dict['feature_names'].append('ppsForce_6')
 
 
+        # Unimodal feature - vision change ------------------------------------
+        if 'unimodal_visionChange' in feature_list:
+            visionChangeMag = d['visionChangeMagList'][idx]
+
+            unimodal_visionChange = visionChangeMag
+
+            if dataSample is None: dataSample = unimodal_visionChange
+            else: dataSample = np.vstack([dataSample, unimodal_visionChange])
+            if 'visionChange' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('visionChange')
+
+                
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in feature_list:
             fabricMag = d['fabricMagList'][idx]
@@ -1146,9 +1188,9 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         # Crossmodal feature - vision relative dist --------------------------
         if 'crossmodal_artagRelativeDist' in feature_list:
             kinEEPos  = d['kinEEPosList'][idx]
-            visionPos = d['visionPosList'][idx]
+            visionArtagPos = d['visionArtagPosList'][idx]
 
-            dist = np.linalg.norm(visionPos - kinEEPos, axis=0)
+            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
             crossmodal_artagRelativeDist = []
             for time_idx in xrange(len(timeList)):
                 crossmodal_artagRelativeDist.append(dist[time_idx])
@@ -1161,17 +1203,17 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         # Crossmodal feature - vision relative angle --------------------------
         if 'crossmodal_artagRelativeAng' in feature_list:                
             kinEEQuat    = d['kinEEQuatList'][idx]
-            visionQuat = d['visionQuatList'][idx]
+            visionArtagQuat = d['visionArtagQuatList'][idx]
 
             kinEEPos  = d['kinEEPosList'][idx]
-            visionPos = d['visionPosList'][idx]
-            dist = np.linalg.norm(visionPos - kinEEPos, axis=0)
+            visionArtagPos = d['visionArtagPosList'][idx]
+            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
             
             crossmodal_artagRelativeAng = []
             for time_idx in xrange(len(timeList)):
 
                 startQuat = kinEEQuat[:,time_idx]
-                endQuat   = visionQuat[:,time_idx]
+                endQuat   = visionArtagQuat[:,time_idx]
 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
                 crossmodal_artagRelativeAng.append( abs(diff_ang) )
@@ -1284,6 +1326,23 @@ def space_time_clustering(image, time_range, space_range, space_interval, time_i
     return clustered_image, label_list
 
 
+def get_time_kernel(x_max, x_interval):
+    '''
+    x_max is 97.7%
+    '''
+    from scipy.stats import gumbel_r
+
+    x_range = np.arange(-x_max*3.0, x_max*3.0, x_interval)
+    if len(x_range)%2 == 0:
+        x_range = np.hstack([x_range, x_range[-1]+x_interval])-x_interval/2.0
+
+    sigma = (x_max/2.0)
+    gumbel_1D_kernel  = gumbel_r().pdf(x_range/sigma)/sigma
+    gumbel_1D_kernel /= np.max(gumbel_1D_kernel)
+
+    return gumbel_1D_kernel
+
+
 def get_space_time_kernel(x_max, y_max, x_interval, y_interval):
     '''
     x_max is 97.7%
@@ -1317,7 +1376,7 @@ def get_space_time_kernel(x_max, y_max, x_interval, y_interval):
     return gaussian_2D_kernel
 
 
-def cross_correlation(image1, image2, x_pad, y_pad):
+def cross_2D_correlation(image1, image2, x_pad, y_pad):
 
     n,m = np.shape(image1)
     
@@ -1342,3 +1401,24 @@ def cross_correlation(image1, image2, x_pad, y_pad):
     ## print "diff: ", x_diff, y_diff
 
     return C, x_diff, y_diff
+
+def cross_1D_correlation(seq1, seq2, pad):
+
+    n = len(seq1)
+    
+    # padding
+    A = np.zeros(( n+(2*pad-2) ))
+    A[pad-1:pad-1+n] = seq1
+    B = seq2
+    
+    # convolution
+    C = np.zeros((2*(pad-1) ))
+    for i in xrange(len(C)):
+        ## print i,i+n,j,j+m,np.shape(A), np.shape(A[i:i+n,j:j+m]), np.shape(B), np.shape(C)
+        C[i] = np.sum( A[i:i+n] * B )
+
+    # Find delays with maximum correlation ??
+    x_diff = C.argmax()
+    # print "diff: ", x_diff
+
+    return C, x_diff

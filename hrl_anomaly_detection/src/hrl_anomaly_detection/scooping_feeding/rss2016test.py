@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -46,6 +46,7 @@ import numpy as np
 import scipy
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection.data_manager import *
 import PyKDL
 import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
@@ -197,12 +198,12 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, trainingData, abnormalTestData = feature_extraction(subject_names, task_name, raw_data_path, \
-                                                           processed_data_path, rf_center, local_range,\
-                                                           nSet=nSet, \
-                                                           downSampleSize=downSampleSize, \
-                                                           feature_list=feature_list, \
-                                                           data_renew=data_renew)
+    _, trainingData, abnormalTestData,_ = feature_extraction(subject_names, task_name, raw_data_path, \
+                                                             processed_data_path, rf_center, local_range,\
+                                                             nSet=nSet, \
+                                                             downSampleSize=downSampleSize, \
+                                                             feature_list=feature_list, \
+                                                             data_renew=data_renew)
 
     normalTestData = None                                    
     print "======================================"
@@ -718,15 +719,19 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     new_data_list.append( np.linalg.norm(d, axis=0) )
                 data_list = new_data_list
 
-            if 'vision' in modality:
-                time_list = target_dict['visionTimesList']
-                data_list = target_dict['visionPosList']
+            if 'vision_artag' in modality:
+                time_list = target_dict['visionArtagTimesList']
+                data_list = target_dict['visionArtagPosList']
 
                 # distance
                 new_data_list = []
                 for d in data_list:                    
                     new_data_list.append( np.linalg.norm(d, axis=0) )
                 data_list = new_data_list
+
+            if 'vision_change' in modality:
+                time_list = target_dict['visionChangeTimesList']
+                data_list = target_dict['visionChangeMagList']
 
             if 'pps' in modality:
                 time_list = target_dict['ppsTimesList']
@@ -856,7 +861,7 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
              feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
 
     save_pkl = os.path.join(processed_data_path, 'pca_'+rf_center+'_'+str(local_range) )
-    if os.path.isfile(save_pkl) and data_renew is not True and False:
+    if os.path.isfile(save_pkl) and data_renew is not True :
         data_dict = ut.load_pickle(save_pkl)
         allData          = data_dict['allData']
         trainingData     = data_dict['trainingData'] 
@@ -993,7 +998,7 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
     print np.shape(trainingData), np.shape(abnormalTestData)
     print "---------------------------------------------------"
 
-    return allData, trainingData, abnormalTestData
+    return allData, trainingData, abnormalTestData, abnormalTestNameList
 
 
 def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
@@ -1002,12 +1007,13 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
              feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
 
 
-    allData, trainingData, abnormalTestData = feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                 processed_data_path, rf_center, local_range,\
-                                                                 nSet=nSet, \
-                                                                 downSampleSize=downSampleSize, \
-                                                                 feature_list=feature_list, \
-                                                                 data_renew=data_renew)
+    allData, trainingData, abnormalTestData, abnormalTestNameList\
+      = feature_extraction(subject_names, task_name, raw_data_path, \
+                           processed_data_path, rf_center, local_range,\
+                           nSet=nSet, \
+                           downSampleSize=downSampleSize, \
+                           feature_list=feature_list, \
+                           data_renew=data_renew)
 
     print "---------------------------------------------------"
     print np.shape(trainingData), np.shape(abnormalTestData)
@@ -1118,10 +1124,10 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
                 ## color = colors.next()
 
                 cause = os.path.split(abnormalTestNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
-                if 'unrelated_sound' in cause: color = 'k'
-                elif 'forcesound' == cause: color = 'r'
-                elif 'force' in cause: color = 'm'
-                elif 'sound' in cause: color = 'g'
+                if 'falling' in cause: color = 'k'
+                elif 'touching' == cause: color = 'r'
+                elif 'slip' in cause: color = 'm'
+                ## elif 'sound' in cause: color = 'g'
                 else: color = 'k'
                     
                 
@@ -1137,6 +1143,347 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
     else:
         plt.show()
 
+def time_correlation(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
+                     nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
+                     save_pdf=False, \
+                     feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
+
+    if success_viz or failure_viz: bPlot = True
+    else: bPlot = False
+
+    data_pkl = os.path.join(processed_data_path, task_name+'_test.pkl')
+    if os.path.isfile(data_pkl) and data_renew == False:
+        data_dict = ut.load_pickle(data_pkl)
+
+        fileNameList     = data_dict['fileNameList']
+        # Audio
+        audioTimesList   = data_dict['audioTimesList']
+        audioPowerList   = data_dict['audioPowerList']
+        min_audio_power  = data_dict['min_audio_power']
+
+        # Fabric force
+        fabricTimesList  = data_dict['fabricTimesList']
+        fabricValueList  = data_dict['fabricValueList']
+
+        # Vision change
+        visionTimesList         = data_dict['visionChangeTimesList']
+        visionChangeMagList     = data_dict['visionChangeMagList']
+        
+    else:
+        success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+
+        #-------------------------------- Success -----------------------------------
+        success_data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success')
+        raw_data_dict, _ = loadData(success_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    local_range=local_range, rf_center=rf_center,\
+                                    renew=data_renew, save_pkl=success_data_pkl)
+
+        fileNameList = raw_data_dict['fileNameList']
+        # Audio
+        audioTimesList   = raw_data_dict['audioTimesList']
+        audioPowerList   = raw_data_dict['audioPowerList']
+
+        # Fabric force
+        fabricTimesList  = raw_data_dict['fabricTimesList']
+        fabricValueList  = raw_data_dict['fabricValueList']
+
+        visionTimesList         = raw_data_dict['visionChangeTimesList']
+        visionChangeMagList     = raw_data_dict['visionChangeMagList']
+
+        ## min_audio_power = np.mean( [np.mean(x) for x in audioPowerList] )
+        min_audio_power = np.min( [np.max(x) for x in audioPowerList] )
+
+        #-------------------------------- Failure -----------------------------------
+        failure_data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure')
+        raw_data_dict, _ = loadData(failure_list, isTrainingData=False,
+                                    downSampleSize=downSampleSize,\
+                                    local_range=local_range, rf_center=rf_center,\
+                                    renew=data_renew, save_pkl=failure_data_pkl)
+
+        data_dict = {}
+
+        fileNameList += raw_data_dict['fileNameList']
+        data_dict['fileNameList'] = fileNameList
+        # Audio
+        audioTimesList += raw_data_dict['audioTimesList']
+        audioPowerList += raw_data_dict['audioPowerList']
+        data_dict['audioTimesList'] = audioTimesList
+        data_dict['audioPowerList'] = audioPowerList
+
+        # Fabric force
+        fabricTimesList += raw_data_dict['fabricTimesList']
+        fabricValueList += raw_data_dict['fabricValueList']
+        data_dict['fabricTimesList']  = fabricTimesList
+        data_dict['fabricValueList']  = fabricValueList
+
+        visionTimesList += raw_data_dict['visionChangeTimesList']
+        visionChangeMagList += raw_data_dict['visionChangeMagList']
+        data_dict['visionChangeTimesList']   = visionTimesList    
+        data_dict['visionChangeMagList']     = visionChangeMagList
+
+        data_dict['min_audio_power'] = min_audio_power
+        ut.save_pickle(data_dict, data_pkl)
+
+
+    max_audio_power    = 5000 #np.median( [np.max(x) for x in audioPowerList] )
+    max_fabric_value   = 3.0
+    max_vision_change  = 80 #? 
+    
+    max_audio_delay    = 1.0
+    max_fabric_delay   = 0.1
+    max_vision_delay   = 1.0
+
+    nSample      = len(audioTimesList)    
+    label_list = ['no_failure', 'falling', 'slip', 'touch']
+    cause_list   = []
+
+    x_cors = []
+    x_diffs= []
+    y_true = []
+
+    for i in xrange(nSample):
+
+        # time
+        max_time1 = np.max(audioTimesList[i])
+        max_time2 = np.max(fabricTimesList[i])
+        max_time3 = np.max(visionTimesList[i])
+        max_time  = min([max_time1, max_time2, max_time3]) # min of max time
+        new_times     = np.linspace(0.0, max_time, downSampleSize)
+        time_interval = new_times[1]-new_times[0]
+
+        if 'success' in fileNameList[i]: cause = 'no_failure'
+        else:
+            cause = os.path.split(fileNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
+
+        # -------------------------------------------------------------
+        # ------------------- Auditory --------------------------------
+        audioTime    = audioTimesList[i]
+        audioPower   = audioPowerList[i]
+    
+        discrete_time_array = hdl.discretization_array(audioTime, [0.0, max_time], len(new_times))
+        audio_raw = np.zeros(np.shape(discrete_time_array))
+
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+                
+            if audioPower[j] > max_audio_power:
+                audio_raw[time_idx] = 1.0
+            elif audioPower[j] > min_audio_power:
+                s = ((audioPower[j]-min_audio_power)/(max_audio_power-min_audio_power)) #**2
+                if audio_raw[time_idx] < s: audio_raw[time_idx] = s
+
+            last_time_idx = time_idx
+
+        # -------------------------------------------------------------
+        # Convoluted data
+        time_1D_kernel = get_time_kernel(max_audio_delay, time_interval)
+        time_1D_kernel = CustomKernel(time_1D_kernel)
+
+        # For color scale
+        audio_min = np.amin(audio_raw)
+        audio_max = np.amax(audio_raw)
+        audio_smooth = convolve(audio_raw, time_1D_kernel, boundary='extend')
+        ## if audio_min != audio_max:
+        ##     audio_smooth = (audio_smooth - audio_min)/(audio_max-audio_min)
+        ## else:
+        ##     audio_smooth = audio_smooth - audio_min
+
+        # -------------------------------------------------------------
+        # ------------------- Fabric Force ----------------------------
+        fabricTime   = fabricTimesList[i]
+        fabricValue  = fabricValueList[i]
+
+        discrete_time_array = hdl.discretization_array(fabricTime, [0.0, max_time], len(new_times))
+        fabric_raw = np.zeros(np.shape(discrete_time_array))
+
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+
+            f = [fabricValue[0][j], fabricValue[1][j], fabricValue[2][j]]
+            mag = 0.0
+            for k in xrange(len(f[0])):
+                s = np.linalg.norm(np.array([f[0][k],f[1][k],f[2][k]]))
+
+                if s > max_fabric_value: mag = 1.0
+                elif s > 0.0 or s/max_fabric_value>mag: mag = (s-0.0)/(max_fabric_value-0.0)
+
+            #
+            if last_time_idx == time_idx:
+                if fabric_raw[time_idx] < mag: fabric_raw[time_idx] = mag
+            else:
+                fabric_raw[time_idx] = mag
+
+            last_time_idx = time_idx
+
+        # -------------------------------------------------------------
+        # Convoluted data
+        time_1D_kernel = get_time_kernel(max_fabric_delay, time_interval)
+        time_1D_kernel = CustomKernel(time_1D_kernel)
+                
+        # For color scale
+        fabric_min = np.amin(fabric_raw)
+        fabric_max = np.amax(fabric_raw)
+        fabric_smooth = convolve(fabric_raw, time_1D_kernel, boundary='extend')
+        ## if fabric_min != fabric_max:
+        ##     fabric_smooth = (fabric_smooth - fabric_min)/(fabric_max-fabric_min)
+        ## else:
+        ##     fabric_smooth = fabric_smooth - fabric_min
+
+        # -------------------------------------------------------------
+        # ------------------- Vision Change ---------------------------
+        visionTime      = visionTimesList[i]
+        visionChangeMag = visionChangeMagList[i]
+
+        discrete_time_array = hdl.discretization_array(visionTime, [0.0, max_time], len(new_times))
+        vision_raw          = np.zeros(np.shape(discrete_time_array))
+
+        last_time_idx = -1
+        for j, time_idx in enumerate(discrete_time_array):
+            if time_idx < 0: time_idx = 0
+            if time_idx >= len(new_times): time_idx=len(new_times)-1
+
+            mag = visionChangeMag[j]
+            if mag > max_vision_change: mag = 1.0
+            elif mag > 0.0: mag = (mag-0.0)/(max_vision_change-0.0)
+
+            #
+            if last_time_idx == time_idx:
+                if vision_raw[time_idx] < mag: vision_raw[time_idx] = mag
+            else:
+                vision_raw[time_idx] = mag
+
+            last_time_idx = time_idx
+
+        # -------------------------------------------------------------
+        # Convoluted data
+        time_1D_kernel = get_time_kernel(max_vision_delay, time_interval)
+        time_1D_kernel = CustomKernel(time_1D_kernel)
+                
+        # For color scale
+        vision_min = np.amin(vision_raw)
+        vision_max = np.amax(vision_raw)
+        vision_smooth = convolve(vision_raw, time_1D_kernel, boundary='extend')
+        ## if vision_min != vision_max:
+        ##     vision_smooth = (vision_smooth - vision_min)/(vision_max-vision_min)
+        ## else:
+        ##     vision_smooth = vision_smooth - vision_min
+
+        # -------------------------------------------------------------
+        #-----------------Multi modality ------------------------------
+        
+        pad = int(np.floor(4.0/time_interval))
+
+        cor_seq1, time_diff1 = cross_1D_correlation(fabric_raw, vision_raw, pad)
+        cor_seq2, time_diff2 = cross_1D_correlation(fabric_raw, audio_raw, pad)
+        cor_seq3, time_diff3 = cross_1D_correlation(vision_raw, audio_raw, pad)
+
+        # Normalization
+        ## if np.amax(cor_seq1) > 1e-6: cor_seq1 /= np.amax(cor_seq1)
+        ## if np.amax(cor_seq2) > 1e-6: cor_seq2 /= np.amax(cor_seq2)
+        ## if np.amax(cor_seq3) > 1e-6: cor_seq3 /= np.amax(cor_seq3)
+
+        # -------------------------------------------------------------
+        # Visualization
+        # -------------------------------------------------------------
+        if bPlot:
+            y_lim=[0,1.0]
+            
+            fig = plt.figure(figsize=(12,8))
+
+            ax = fig.add_subplot(3,3,1)
+            plot_time_distribution(ax, audio_raw, new_times, x_label='Time [sec]', title='Raw Audio Data',\
+                                   y_lim=y_lim)
+            ax = fig.add_subplot(3,3,2)        
+            plot_time_distribution(ax, audio_smooth, new_times, x_label='Time [sec]', title='Smooth Audio Data',\
+                                   y_lim=y_lim)
+            
+            ax = fig.add_subplot(3,3,4)
+            plot_time_distribution(ax, fabric_raw, new_times, x_label='Time [sec]', title='Raw Fabric Skin Data',\
+                                   y_lim=y_lim)
+            ax = fig.add_subplot(3,3,5)
+            plot_time_distribution(ax, fabric_smooth, new_times, x_label='Time [sec]', \
+                                   title='Smooth Fabric Skin Data',\
+                                   y_lim=y_lim)
+            
+            ax = fig.add_subplot(3,3,7)
+            plot_time_distribution(ax, vision_raw, new_times, x_label='Time [sec]', title='Raw Vision Data',\
+                                   y_lim=y_lim)
+            ax = fig.add_subplot(3,3,8)
+            plot_time_distribution(ax, vision_smooth, new_times, x_label='Time [sec]', \
+                                   title='Smooth Vision Data',\
+                                   y_lim=y_lim)
+
+            ax = fig.add_subplot(3,3,3)
+            plot_time_distribution(ax, cor_seq1, None, x_label='Time [sec]', title='Fabric-vision Correlation',\
+                                   y_lim=[0,1])
+            ax = fig.add_subplot(3,3,6)
+            plot_time_distribution(ax, cor_seq2, None, x_label='Time [sec]', title='Fabric-audio Correlation',\
+                                   y_lim=[0,1])
+            ax = fig.add_subplot(3,3,9)
+            plot_time_distribution(ax, cor_seq3, None, x_label='Time [sec]', title='Vision-audio Correlation',\
+                                   y_lim=[0,1])
+
+
+            plt.suptitle('Anomaly: '+cause, fontsize=20)                        
+            plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+
+        if bPlot:
+            if save_pdf:
+                fig.savefig('test.pdf')
+                fig.savefig('test.png')
+                os.system('cp test.p* ~/Dropbox/HRL/')        
+            else:
+                plt.show()
+
+        # -------------------------------------------------------------
+        # Classification
+        # -------------------------------------------------------------
+
+        x_cors.append([cor_seq1, cor_seq2, cor_seq3])
+        x_diffs.append([time_diff1, time_diff2, time_diff3])
+        cause_list.append(cause)
+
+        for idx, anomaly in enumerate(label_list):
+            if cause == anomaly: y_true.append(idx)
+
+    # data preprocessing
+    aXData = []
+    chunks = []
+    labels = []
+    for i, x_cor in enumerate(x_cors):
+        X = []
+        Y = []
+        ## print "image range: ", i , np.amax(image), np.amin(image)
+        ## if np.amax(image) < 1e-6: continue
+
+        for ii in xrange(len(x_cor[0])):
+            ## if x_cor[0][ii] < 0.01 and x_cor[1][ii] < 0.01 and x_cor[2][ii] < 0.01:
+            ##     continue
+            X.append([ x_cor[0][ii],x_cor[1][ii],x_cor[2][ii] ])
+            Y.append(y_true[i])
+
+        if X==[]: continue
+            
+        aXData.append(X)
+        chunks.append(cause_list[i])
+        labels.append(y_true[i])
+        
+    data_set = create_mvpa_dataset(aXData, chunks, labels)
+
+    # save data
+    d = {}
+    d['label_list'] = label_list
+    d['mvpa_dataset'] = data_set
+    ## d['c'] = c
+    ut.save_pickle(d, 'st_svm.pkl')
+
+
+                
 
 def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_path, \
                         nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
@@ -1160,6 +1507,12 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
         fabricCenterList = data_dict['fabricCenterList']
         fabricNormalList = data_dict['fabricNormalList']
         fabricValueList  = data_dict['fabricValueList']
+
+        # Vision change
+        visionTimesList         = data_dict['visionChangeTimesList']
+        visionChangeCentersList = data_dict['visionChangeCentersList']
+        visionChangeMagList     = data_dict['visionChangeMagList']
+        
         min_audio_power  = data_dict['min_audio_power']
     else:
         success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -1176,6 +1529,18 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
         audioAzimuthList = raw_data_dict['audioAzimuthList']
         audioPowerList   = raw_data_dict['audioPowerList']
 
+        # Fabric force
+        fabricTimesList  = raw_data_dict['fabricTimesList']
+        fabricCenterList = raw_data_dict['fabricCenterList']
+        fabricNormalList = raw_data_dict['fabricNormalList']
+        fabricValueList  = raw_data_dict['fabricValueList']
+
+        # Vision change
+        visionTimesList         = raw_data_dict['visionChangeTimesList']
+        visionChangeCentersList = raw_data_dict['visionChangeCentersList']
+        visionChangeMagList     = raw_data_dict['visionChangeMagList']
+
+
         ## min_audio_power = np.mean( [np.mean(x) for x in audioPowerList] )
         min_audio_power = np.min( [np.max(x) for x in audioPowerList] )
 
@@ -1186,30 +1551,34 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
                                     global_data=True,\
                                     renew=data_renew, save_pkl=failure_data_pkl)
 
-        fileNameList     = raw_data_dict['fileNameList']
-        # Audio
-        audioTimesList   = raw_data_dict['audioTimesList']
-        audioAzimuthList = raw_data_dict['audioAzimuthList']
-        audioPowerList   = raw_data_dict['audioPowerList']
-
-        # Fabric force
-        fabricTimesList  = raw_data_dict['fabricTimesList']
-        fabricCenterList = raw_data_dict['fabricCenterList']
-        fabricNormalList = raw_data_dict['fabricNormalList']
-        fabricValueList  = raw_data_dict['fabricValueList']
-
         data_dict = {}
+
+        fileNameList += raw_data_dict['fileNameList']
         data_dict['fileNameList'] = fileNameList
         # Audio
-        data_dict['audioTimesList'] = audioTimesList
+        audioTimesList   += raw_data_dict['audioTimesList']
+        audioAzimuthList += raw_data_dict['audioAzimuthList']
+        audioPowerList   += raw_data_dict['audioPowerList']
+        data_dict['audioTimesList']   = audioTimesList
         data_dict['audioAzimuthList'] = audioAzimuthList
-        data_dict['audioPowerList'] = audioPowerList
+        data_dict['audioPowerList']   = audioPowerList
 
         # Fabric force
-        data_dict['fabricTimesList'] = fabricTimesList
+        fabricTimesList += raw_data_dict['fabricTimesList']
+        fabricCenterList+= raw_data_dict['fabricCenterList']
+        fabricNormalList+= raw_data_dict['fabricNormalList']
+        fabricValueList += raw_data_dict['fabricValueList']
+        data_dict['fabricTimesList']  = fabricTimesList
         data_dict['fabricCenterList'] = fabricCenterList
         data_dict['fabricNormalList'] = fabricNormalList
-        data_dict['fabricValueList'] = fabricValueList
+        data_dict['fabricValueList']  = fabricValueList
+
+        visionTimesList += raw_data_dict['visionChangeTimesList']
+        visionChangeCentersList += raw_data_dict['visionChangeCentersList']
+        visionChangeMagList += raw_data_dict['visionChangeMagList']
+        data_dict['visionChangeTimesList']   = visionTimesList    
+        data_dict['visionChangeCentersList'] = visionChangeCentersList
+        data_dict['visionChangeMagList']     = visionChangeMagList
 
         data_dict['min_audio_power'] = min_audio_power
         ut.save_pickle(data_dict, data_pkl)
@@ -1218,49 +1587,39 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
     nSample = len(audioTimesList)
     azimuth_interval = 2.0
     audioSpace = np.arange(-90, 90+0.01, azimuth_interval)
-    max_audio_power      = 5000 #np.median( [np.max(x) for x in audioPowerList] )
-    max_fabric_value     = 3.0
-    max_audio_azimuth  = 15.0
-    max_audio_delay    = 1.0
-    max_fabric_azimuth = 10.0
-    max_fabric_delay   = 1.0
-    anomaly_list = ['sound', 'force', 'forcesound', 'ind']
+
+    max_audio_power    = 5000 #np.median( [np.max(x) for x in audioPowerList] )
+    max_fabric_value   = 3.0
+    max_vision_change  = 80 #?
+
+    limit = [[0.25, 1.0], [-0.2, 1.0], [-0.5,0.5]
+    
+    max_audio_azimuth = 15.0
+    max_audio_delay   = 1.0
+    max_fabric_offset = 10.0
+    max_fabric_delay  = 1.0
+    max_vision_offset = 0.05
+    max_vision_delay  = 1.0
+    label_list = ['no_failure', 'falling', 'slip', 'touch']
 
     X_images = []
-    X_diff   = []
     y_true   = []
     cause_list = []
     
     for i in xrange(nSample):
 
         # time
-        ## downSampleSize = 1000
         max_time1 = np.max(audioTimesList[i])
         max_time2 = np.max(fabricTimesList[i])
-        if max_time1 > max_time2: # min of max time
-            max_time = max_time2
-        else:
-            max_time = max_time1            
+        max_time3 = np.max(visionTimesList[i])
+        max_time  = min([max_time1, max_time2, max_time3]) # min of max time
         new_times     = np.linspace(0.0, max_time, downSampleSize)
         time_interval = new_times[1]-new_times[0]
 
-        cause = os.path.split(fileNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
+        if 'success' in fileNameList[i]: cause = 'no_failure'
+        else:
+            cause = os.path.split(fileNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
         
-        # define the size of kernel
-        ## audio_kernel_x = int(np.floor(max_audio_delay/time_interval))*2+1
-        ## audio_kernel_y = int(np.floor(max_audio_azimuth/azimuth_interval))*2+1
-        ## fabric_kernel_x = int(np.floor(max_fabric_delay/time_interval))*2+1
-        ## fabric_kernel_y = int(np.floor(max_fabric_azimuth/azimuth_interval))*2+1
-
-        ## max_gaussian_x = norm.ppf(0.682)
-        ## max_audio_kernel_x = int(np.floor(max_gaussian_x*max_audio_delay_range/time_interval))*2+1
-        ## max_audio_kernel_y = int(np.floor(max_gaussian_x*max_audio_azimuth_range/azimuth_interval))*2+1
-        ## max_fabric_kernel_x = int(np.floor(max_gaussian_x*max_fabric_delay_range/time_interval))*2+1
-        ## max_fabric_kernel_y = int(np.floor(max_gaussian_x*max_fabric_azimuth_range/azimuth_interval))*2+1
-        ## if max_kernel_x%2==0: max_kernel_x+=1
-        ## if max_kernel_y%2==0: max_kernel_y+=1
-        ## print max_fabric_kernel_x, max_fabric_kernel_y
-
         # -------------------------------------------------------------
         # ------------------- Auditory --------------------------------
         audioTime    = audioTimesList[i]
@@ -1469,7 +1828,7 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
         cause_list.append(cause)
         print "diff", azimuth_diff, time_diff, cause, os.path.split(fileNameList[i])[-1].split('.pkl')[0]
 
-        for idx, anomaly in enumerate(anomaly_list):
+        for idx, anomaly in enumerate(label_list):
             if cause == anomaly: y_true.append(idx)
 
         if bPlot:
@@ -1507,21 +1866,17 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
 
     # save data
     d = {}
-    d['X']            = X
-    d['Y']            = Y
-    d['anomaly_list'] = anomaly_list
+    d['label_list'] = label_list
     d['mvpa_dataset'] = data_set
     ## d['c'] = c
     ut.save_pickle(d, 'st_svm.pkl')
     
 
-def space_time_confusion_matrix(save_pdf=False, verbose=False):
+def correlation_confusion_matrix(save_pdf=False, verbose=False):
     
-    d            = ut.load_pickle('st_svm.pkl')
-    X            = d['X'] 
-    Y            = d['Y']
-    dataSet      = d['mvpa_dataset']
-    anomaly_list = d['anomaly_list']
+    d          = ut.load_pickle('st_svm.pkl')
+    dataSet    = d['mvpa_dataset']
+    label_list = d['label_list']
 
     # leave-one-out data set
     splits = []
@@ -1536,12 +1891,12 @@ def space_time_confusion_matrix(save_pdf=False, verbose=False):
         splits.append([train_dataSet, test_dataSet])
 
         ## print "test"
-        ## space_time_anomaly_check_offline(0, train_dataSet, test_dataSet, anomaly_list=anomaly_list)
+        ## space_time_anomaly_check_offline(0, train_dataSet, test_dataSet, label_list=label_list)
         ## sys.exit()
 
     if verbose: print "Start to parallel job"
     r = Parallel(n_jobs=-1)(delayed(space_time_anomaly_check_offline)(i, train_dataSet, test_dataSet, \
-                                                                      anomaly_list)\
+                                                                      label_list)\
                             for i, (train_dataSet, test_dataSet) in enumerate(splits))
     y_pred_ll, y_true_ll = zip(*r)
 
@@ -1566,9 +1921,9 @@ def space_time_confusion_matrix(save_pdf=False, verbose=False):
     fig = plt.figure()
     plt.imshow(cm_normalized, interpolation='nearest')
     plt.colorbar()
-    tick_marks = np.arange(len(anomaly_list))
-    plt.xticks(tick_marks, anomaly_list, rotation=45)
-    plt.yticks(tick_marks, anomaly_list)
+    tick_marks = np.arange(len(label_list))
+    plt.xticks(tick_marks, label_list, rotation=45)
+    plt.yticks(tick_marks, label_list)
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
@@ -1584,7 +1939,7 @@ def space_time_confusion_matrix(save_pdf=False, verbose=False):
 
 
 
-def space_time_anomaly_check_offline(idx, train_dataSet, test_dataSet, anomaly_list=None):
+def space_time_anomaly_check_offline(idx, train_dataSet, test_dataSet, label_list=None):
 
     print "Parallel Run ", idx
     
@@ -1619,9 +1974,9 @@ def space_time_anomaly_check_offline(idx, train_dataSet, test_dataSet, anomaly_l
         y_true.append(test_labels[0])
         res = ml.predict(test_aXData[0,0])
 
-        score = np.zeros((len(anomaly_list)))
+        score = np.zeros((len(label_list)))
         for s in res:
-            for idx in range(len(anomaly_list)):
+            for idx in range(len(label_list)):
                 if s == idx: score[idx] += 1.0
 
         y_pred.append( np.argmax(score) )
@@ -1727,19 +2082,6 @@ def space_time_class_viz(save_pdf=False):
 
         ## sys.exit()
 
-
-def plot_space_time_distribution(ax, image, x_range, y_range, x_label=None, y_label=None, title=None):
-    ax.imshow(image, aspect='auto', origin='lower', interpolation='none')
-    y_tick = np.arange(y_range[0], y_range[-1]+0.01, 30)
-    ax.set_yticks(np.linspace(0, len(image), len(y_tick)))
-    ax.set_yticklabels(y_tick)
-    x_tick = np.arange(0, x_range[-1], 5.0)
-    ax.set_xticks(np.linspace(0, len(image[0]), len(x_tick)))        
-    ax.set_xticklabels(x_tick)
-    
-    if title is not None: ax.set_title(title)
-    if x_label is not None: ax.set_xlabel(x_label)
-    if y_label is not None: ax.set_ylabel(y_label)
     
     
 def offline_classification(subject_names, task_name, raw_data_path, processed_data_path, \
@@ -1831,7 +2173,7 @@ def offline_classification(subject_names, task_name, raw_data_path, processed_da
     max_fabric_value   = 3.0
 
 
-    anomaly_list = ['sound', 'force', 'forcesound']
+    label_list = ['sound', 'force', 'forcesound']
     y_true = []
     y_pred = []
     #
@@ -1979,12 +2321,12 @@ def offline_classification(subject_names, task_name, raw_data_path, processed_da
                 estimated_cause = 'force'
                 print "Skin contact force :: ", cause
 
-        for ii, real_anomaly in enumerate(anomaly_list):
+        for ii, real_anomaly in enumerate(label_list):
             if real_anomaly == cause:
                 y_true.append(ii)
                 break 
             
-        for ii, est_anomaly in enumerate(anomaly_list):
+        for ii, est_anomaly in enumerate(label_list):
             if est_anomaly == estimated_cause:
                 y_pred.append(ii)                
                 break
@@ -2002,9 +2344,9 @@ def offline_classification(subject_names, task_name, raw_data_path, processed_da
     fig = plt.figure()
     plt.imshow(cm_normalized, interpolation='nearest')
     plt.colorbar()
-    tick_marks = np.arange(len(anomaly_list))
-    plt.xticks(tick_marks, anomaly_list, rotation=45)
-    plt.yticks(tick_marks, anomaly_list)
+    tick_marks = np.arange(len(label_list))
+    plt.xticks(tick_marks, label_list, rotation=45)
+    plt.yticks(tick_marks, label_list)
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
@@ -2044,8 +2386,10 @@ if __name__ == '__main__':
                  default=False, help='Plot features.')
     p.add_option('--pca', action='store_true', dest='bPCAPlot',
                  default=False, help='Plot pca result.')
-    p.add_option('--spaceTimeClassification', '--st', action='store_true', dest='bSTField',
-                 default=False, help='Plot space-time receptive field.')
+    p.add_option('--timeCorrelation', '--tc', action='store_true', dest='bTimeCorr',
+                 default=False, help='Plot time correlation.')
+    p.add_option('--spaceTimeAnalysis', '--st', action='store_true', dest='bSpaceTimeAnalysis',
+                 default=False, help='Plot space-time correlation.')
     p.add_option('--classification', '--c', action='store_true', dest='bClassification',
                  default=False, help='Evaluate classification performance.')
     
@@ -2088,11 +2432,13 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         target_data_set = 0
-        rf_center       = 'kinEEPos'
-        #rf_center       = 'kinForearmPos'
-        modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision', 'pps']
+        task    = 'touching'    
+        ## rf_center       = 'kinEEPos'
+        ## modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
+        rf_center       = 'kinForearmPos'
+        modality_list   = ['kinematics', 'audio', 'fabric', 'vision_change']
         successData     = True #True
-        failureData     = False
+        failureData     = True
         local_range     = 0.15
         
         data_plot([subject], task, raw_data_path, save_data_path,\
@@ -2104,11 +2450,13 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         target_data_set = 0
+        task    = 'touching'    
         rf_center    = 'kinEEPos'
         ## rf_center    = 'kinForearmPos'
         feature_list = ['unimodal_audioPower',\
                         'unimodal_kinVel',\
                         'unimodal_ftForce',\
+                        'unimodal_visionChange',\
                         'unimodal_ppsForce',\
                         'unimodal_fabricForce',\
                         'crossmodal_targetRelativeDist', \
@@ -2125,18 +2473,24 @@ if __name__ == '__main__':
 
     elif opt.bPCAPlot:
         target_data_set = 0
-        rf_center    = 'kinEEPos'
-        ## rf_center    = 'kinForearmPos'
+        ## rf_center    = 'kinEEPos'
+        ## feature_list = ['unimodal_audioPower',\
+        ##                 'unimodal_kinVel',\
+        ##                 'unimodal_ftForce',\
+        ##                 'unimodal_visionChange',\
+        ##                 'unimodal_ppsForce',\
+        ##                 'unimodal_fabricForce',\
+        ##                 'crossmodal_targetRelativeDist', \
+        ##                 'crossmodal_targetRelativeAng']
+        task         = 'touching'    
+        rf_center    = 'kinForearmPos'
         feature_list = ['unimodal_audioPower',\
                         'unimodal_kinVel',\
-                        'unimodal_ftForce',\
-                        'unimodal_ppsForce',\
-                        'unimodal_fabricForce',\
-                        'crossmodal_targetRelativeDist', \
-                        'crossmodal_targetRelativeAng']
+                        'unimodal_visionChange',\
+                        'unimodal_fabricForce']
         local_range = 0.15
         success_viz = True
-        failure_viz = False
+        failure_viz = True
                         
         pca_plot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
@@ -2151,6 +2505,7 @@ if __name__ == '__main__':
         feature_list = [#'unimodal_audioPower',\
                         #'unimodal_kinVel',\
                         'unimodal_ftForce',\
+                        #'unimodal_visionChange',\
                         #'unimodal_ppsForce',\
                         #'unimodal_fabricForce',\
                         'crossmodal_targetRelativeDist', \
@@ -2170,8 +2525,30 @@ if __name__ == '__main__':
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               
+    elif opt.bTimeCorr:
+        '''
+        time correlation alaysis
+        '''
+        task    = 'touching'    
+        target_data_set = 0
+        rf_center    = 'kinForearmPos'
+        feature_list = ['unimodal_audioPower',\
+                        ##'unimodal_kinVel',\
+                        'unimodal_visionChange',\
+                        'unimodal_fabricForce',\
+                        ]
+        local_range = 0.15
+        success_viz = False
+        failure_viz = False
+                        
+        time_correlation([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+                         nSet=target_data_set, downSampleSize=downSampleSize, \
+                         success_viz=success_viz, failure_viz=failure_viz,\
+                         save_pdf=opt.bSavePdf,
+                         feature_list=feature_list, data_renew=opt.bDataRenew)
 
-    elif opt.bSTField:
+
+    elif opt.bSpaceTimeAnalysis:
         '''
         space time receptive field
         '''
@@ -2191,7 +2568,7 @@ if __name__ == '__main__':
         '''        
         task    = 'touching'    
         target_data_set = 0
-        space_time_confusion_matrix(save_pdf=False, verbose=True)
+        correlation_confusion_matrix(save_pdf=False, verbose=True)
         ## offline_classification([subject], task, raw_data_path, save_data_path,\
         ##                        nSet=target_data_set, downSampleSize=downSampleSize, \
         ##                        save_pdf=opt.bSavePdf, data_renew=opt.bDataRenew)
