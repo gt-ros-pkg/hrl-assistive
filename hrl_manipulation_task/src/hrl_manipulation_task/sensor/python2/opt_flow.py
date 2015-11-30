@@ -3,6 +3,8 @@
 import numpy as np
 import cv2
 import video
+from sklearn.cluster import KMeans
+import time, random
 
 help_message = '''
 USAGE: opt_flow.py [<video_source>]
@@ -12,6 +14,16 @@ Keys:
  2 - toggle glitch
 
 '''
+last_center = None
+color_list = [[0,0,255],
+              [255,0,0],
+              [0,255,0],
+              [255,255,255]]
+for i in xrange(10):
+    color_list.append([random.randint(0,255),
+                       random.randint(0,255),
+                       random.randint(0,255) ])
+
 
 def draw_flow(img, flow, step=16):
     h, w = img.shape[:2]
@@ -24,6 +36,45 @@ def draw_flow(img, flow, step=16):
     for (x1, y1), (x2, y2) in lines:
         cv2.circle(vis, (x1, y1), 1, (0, 255, 0), -1)
     return vis
+
+def draw_clustered_flow(img, flow):
+    global last_center, color_list
+    
+    h, w = flow.shape[:2]
+
+    ## start = time.clock()
+    yy, xx = np.meshgrid(range(w), range(h))
+    flow_array = flow.reshape((h*w,2))
+    mag_array  = np.linalg.norm(flow_array, axis=1)
+
+    data = np.vstack([xx.ravel(), yy.ravel(), mag_array]).T
+    flow_filt = data[data[:,2]>3.0]
+    ## end = time.clock()
+    ## print "%.2gs" % (end-start)
+
+    n_clusters = 10
+    if len(flow_filt) < n_clusters: return img
+
+    if last_center is not None:
+        clt = KMeans(n_clusters = n_clusters, init=last_center)
+    else:
+        clt = KMeans(n_clusters = n_clusters)
+    clt.fit(flow_filt)
+    last_center = clt.cluster_centers_
+
+    cluster_centers.append(clt.cluster_centers_)
+
+    overlay = img.copy()
+    for ii, center in enumerate(clt.cluster_centers_):
+        x = int(center[1])
+        y = int(center[0])
+        c = color_list[ii]
+        cv2.circle(overlay, (x, y), 8, (c[0], c[1], int(c[2]*center[2])), -1)
+
+    opacity = 0.4
+    cv2.addWeighted(overlay, opacity, img, 1 - opacity, 0, img)
+        
+    return img
 
 def draw_hsv(flow):
     h, w = flow.shape[:2]
@@ -51,8 +102,11 @@ if __name__ == '__main__':
     try: fn = sys.argv[1]
     except: fn = 0
 
+    scale = 0.3
     cam = video.create_capture(fn)
     ret, prev = cam.read()
+    prev = cv2.resize(prev, (0,0), fx=scale, fy=scale) 
+    
     prevgray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
     show_hsv = False
     show_glitch = False
@@ -60,18 +114,23 @@ if __name__ == '__main__':
 
     while True:
         ret, img = cam.read()
+        img = cv2.resize(img, (0,0), fx=scale, fy=scale) 
+        
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         flow = cv2.calcOpticalFlowFarneback(prevgray, gray, 0.5, 3, 15, 3, 5, 1.2, 0)
         prevgray = gray
-
-        cv2.imshow('flow', draw_flow(gray, flow))
+        
+        cluster_img = draw_clustered_flow(img, flow)
+        cv2.imshow('flow cluster', cluster_img)
+        
+        ## cv2.imshow('flow', draw_flow(gray, flow))
         if show_hsv:
             cv2.imshow('flow HSV', draw_hsv(flow))
         if show_glitch:
             cur_glitch = warp_flow(cur_glitch, flow)
             cv2.imshow('glitch', cur_glitch)
 
-        ch = 0xFF & cv2.waitKey(5)
+        ch = 0xFF & cv2.waitKey(1)
         if ch == 27:
             break
         if ch == ord('1'):
@@ -82,4 +141,6 @@ if __name__ == '__main__':
             if show_glitch:
                 cur_glitch = img.copy()
             print 'glitch is', ['off', 'on'][show_glitch]
+
+            
     cv2.destroyAllWindows()
