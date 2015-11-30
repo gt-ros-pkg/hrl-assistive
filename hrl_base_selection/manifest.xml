@@ -19,18 +19,19 @@
 
     <depend package="tf"/>
 
-    <depend package="pr2_controllers_msgs"/>
-    <depend package="hrl_haptic_manipulation_in_clutter_msgs"/>
+    <!--<depend package="pr2_controllers_msgs"/>-->
+    <!--<depend package="hrl_haptic_manipulation_in_clutter_msgs"/>-->
     <depend package="hrl_lib"/>
     <depend package="hrl_msgs"/>
-    <depend package="kinematics_msgs"/>  <!-- used by the PR2 arm client -->
-    <depend package="hrl_darpa_arm" />
+    <!--<depend package="kinematics_msgs"/>-->  <!-- used by the PR2 arm client -->
+    <!--<depend package="hrl_darpa_arm" />-->
 
     <depend package="sensor_msgs"/>
     <depend package="visualization_msgs"/>
 
     <depend package="trajectory_msgs"/>
-    <depend package="sandbox_dpark_darpa_m3"/>
+    
+    <!--<depend package="sandbox_dpark_darpa_m3"/>-->
 
 
 </package>
