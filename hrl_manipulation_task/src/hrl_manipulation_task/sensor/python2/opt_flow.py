@@ -102,7 +102,6 @@ def draw_clustered_flow(img, flow, counter):
                 min_label= l
                 min_idx  = jj
 
-        print ii, min_dist
         # new label
         if min_dist > 300:
             cur_labels[ii] = max_label+1
@@ -115,7 +114,6 @@ def draw_clustered_flow(img, flow, counter):
     ######################### Update last centers and labels             
     last_center = cur_centers.tolist()
     last_label  = cur_labels.tolist()
-    print "-----------------"
 
     # cluster center
     overlay = img.copy()
@@ -135,7 +133,7 @@ def draw_clustered_flow(img, flow, counter):
     for ii, center in enumerate(cur_centers):
         x = int(center[1])
         y = int(center[0])
-        flow = np.sum(flow_array[clt.labels_ == ii], axis=0)
+        flow = np.sum(flow_array[data[:,2]>3.0][clt.labels_ == ii], axis=0)
         lines = np.vstack([x, y, x+flow[0], y+flow[1]]).T.reshape(-1, 2, 2)
         lines = np.int32(lines + 0.5)        
         cv2.polylines(vis, lines, 0, (0, 255, 0))
@@ -172,7 +170,7 @@ if __name__ == '__main__':
     try: fn = sys.argv[1]
     except: fn = 0
 
-    scale = 0.3
+    scale = 0.5
     cam = video.create_capture(fn)
     ret, prev = cam.read()
     prev = cv2.resize(prev, (0,0), fx=scale, fy=scale) 
