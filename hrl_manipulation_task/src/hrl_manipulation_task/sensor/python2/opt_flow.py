@@ -170,7 +170,7 @@ if __name__ == '__main__':
     try: fn = sys.argv[1]
     except: fn = 0
 
-    scale = 0.5
+    scale = 0.3
     cam = video.create_capture(fn)
     ret, prev = cam.read()
     prev = cv2.resize(prev, (0,0), fx=scale, fy=scale) 
