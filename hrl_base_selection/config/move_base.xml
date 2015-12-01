@@ -28,8 +28,9 @@
 
   <node pkg="move_base" type="move_base" name="move_base_node" machine="c2" output="screen">
     <remap from="odom" to="base_odometry/odom" />
-    <remap from="cmd_vel" to="navigation/cmd_vel" />
-    <!--<remap from="cmd_vel" to="base_controller/command" />-->
+    <!--<remap from="cmd_vel" to="navigation/cmd_vel" />-->
+    <!--<remap from="cmd_vel" to="pr2_move_base/goal" />-->
+    <remap from="cmd_vel" to="base_controller/command" />
 
     <!-- Use the dwa local planner for the PR2 -->
     <!--<param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />-->
