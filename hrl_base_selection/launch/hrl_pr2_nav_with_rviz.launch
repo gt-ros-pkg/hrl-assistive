@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find pr2_navigation_global)/rviz/move_base.rviz">
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find hrl_base_selection)/rviz/move_base.rviz">
   </node>
   <node name="map_server" pkg="map_server" type="map_server" args="$(find hrl_base_selection)/data/maps/foliage_rm_test.yaml"/>
 
