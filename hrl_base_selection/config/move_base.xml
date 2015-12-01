@@ -2,7 +2,7 @@
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
 
   <!-- Bring up the tilt_laser aware version of move_base -->
-  <node pkg="hrl_base_selection" name="pr2_move_base_node" type="pr2_move_base.py" machine="c2" output="screen"/>
+  <node pkg="hrl_base_selection" name="pr2_move_base_node" type="pr2_move_base.py" machine="c1" output="screen"/>
 
   <!-- Trajectory generator -->
   <node pkg="joint_trajectory_generator" type="joint_trajectory_generator" output="screen"

@@ -35,9 +35,10 @@
 #* Author: Eitan Marder-Eppstein
 #***********************************************************
 
-PKG = "pr2_move_base"
+PKG = "hrl_base_selection"
 
 import roslib; roslib.load_manifest(PKG) 
+roslib.load_manifest('pr2_move_base')
 
 import rospy
 import actionlib
