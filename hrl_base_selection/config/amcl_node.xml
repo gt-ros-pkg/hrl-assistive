@@ -1,5 +1,5 @@
 <launch>
-<node pkg="amcl" type="amcl" name="amcl" machine="c2" launch-prefix="$(find hrl_base_selection)/launch/global_init_amcl">
+<node pkg="amcl" type="amcl" name="amcl" machine="c2" launch-prefix="$(find hrl_base_selection)/config/global_init_amcl" output="screen">
   <remap from="scan" to="base_scan" />
   <!-- Publish scans from best pose at a max of 10 Hz -->
   <param name="base_frame_id" value="base_footprint"/>
