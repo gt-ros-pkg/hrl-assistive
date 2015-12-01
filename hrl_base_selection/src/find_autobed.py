@@ -3,11 +3,11 @@
 import rospy, roslib
 import numpy as np
 import os, threading, copy
+roslib.load_manifest('hrl_base_selection')
 
 import PyKDL
 
 from tf_conversions import posemath
-from hrl_lib import quaternion as qt
 import hrl_lib.util as ut
 import hrl_lib.circular_buffer as cb
 
@@ -41,14 +41,12 @@ class arTagDetector:
     def arTagCallback(self, msg):
 
         markers = msg.markers
-
         with self.frame_lock:
             for i in xrange(len(markers)):
-
                 if markers[i].id == self.bed_tag_id:
                     bed_tag_frame = posemath.fromMsg(markers[i].pose.pose)
 
-                    if bed_tag_frame.p.Norm() > 2.0: 
+                    if bed_tag_frame.p.Norm() > 3.0: 
                         print "Detected tag is located at too far location."
                         continue
 
@@ -100,20 +98,16 @@ class arTagDetector:
                     
                     self.bed_frame = bed_tag_frame
 
-                    self.pubMouthPose()
+                    self.pubBedPose()
 
-                        
-        if bed_tag_flag: self.bed_tag_flag = True
-                    
                     
    
     def pubBedPose(self):
-
         f = self.bed_frame 
         f.M.DoRotX(np.pi)        
         
         ps = PoseStamped()
-        ps.header.frame_id = 'torso_lift_link'
+        ps.header.frame_id = 'camera_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
@@ -138,7 +132,7 @@ class arTagDetector:
         
         # frame pub --------------------------------------
         ps = PoseStamped()
-        ps.header.frame_id = 'torso_lift_link'
+        ps.header.frame_id = 'camera_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
@@ -163,8 +157,8 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
     
     total_tags = 1
-    tag_id = 10 #9
-    tag_side_length = 0.053 #0.033
+    tag_id = 4 #9
+    tag_side_length = 0.133 #0.033
     pos_thres = 0.2
     max_idx   = 18
 
