@@ -26,6 +26,10 @@ for i in xrange(10):
                        random.randint(0,255),
                        random.randint(0,255) ])
 cluster_centers = None
+track_len = 10
+tracks_cen   = []
+tracks_label = []
+
 
 def draw_flow(img, flow, step=16):
     h, w = img.shape[:2]
@@ -43,7 +47,7 @@ def draw_clustered_flow(img, flow, counter):
     global last_center, last_label, color_list
     global init_center
     global cluster_centers
-    
+    global track_len, tracks_cen, tracks_label
     
     h, w = flow.shape[:2]
 
@@ -57,7 +61,7 @@ def draw_clustered_flow(img, flow, counter):
     ## end = time.clock()
     ## print "%.2gs" % (end-start)
 
-    n_clusters = 3
+    n_clusters = 5
     if len(flow_filt) < n_clusters: return img
 
     if last_center is not None:
@@ -67,6 +71,8 @@ def draw_clustered_flow(img, flow, counter):
     clt.fit(flow_filt)
     init_center = clt.cluster_centers_
     
+    #----------------------------------------------------------
+    # Spatio-temporal clustering
     #----------------------------------------------------------
     time_array = np.ones((n_clusters, 1))*counter
     if cluster_centers is None:
@@ -85,12 +91,22 @@ def draw_clustered_flow(img, flow, counter):
     if last_label is None: 
         last_center = clt.cluster_centers_[-n_clusters:].tolist()
         last_label  = clt.labels_[-n_clusters:].tolist()
-        print "JJJJJJJJJJJJJJJJump"
+        for ii in xrange(len(last_label)):
+            if last_label[ii] in tracks_label:
+                idx = tracks_label.index(last_label[ii])
+                tracks_cen[idx][-1] = [ (tracks_cen[idx][-1][0] + last_center[ii][1])/2.0,\
+                                        (tracks_cen[idx][-1][1] + last_center[ii][0])/2.0 ]
+            else:
+                tracks_cen.append([ [last_center[ii][1],last_center[ii][0]] ])
+                tracks_label.append(last_label[ii])
         return img
     cur_centers = clt.cluster_centers_[-n_clusters:]
     cur_labels  = clt.labels_[-n_clusters:]
 
+    # label matching
     max_label = max(last_label)
+    new_tracks_cen   = []
+    new_tracks_label = []
     for ii, (center, label) in enumerate(zip(cur_centers, cur_labels)):
         min_dist = 1000
         min_label= 0
@@ -103,13 +119,32 @@ def draw_clustered_flow(img, flow, counter):
                 min_idx  = jj
 
         # new label
-        if min_dist > 300:
+        if min_dist > 50:
             cur_labels[ii] = max_label+1
             max_label += 1
+            new_tracks_cen.append([[center[1],center[0]]])
+            new_tracks_label.append(max_label)
+            ## print tracks_cen            
+            ## for jj in xrange(len(tracks_label)):
+            ##     if tracks_label[jj] == min_label:
+            ##         del tracks_label[jj]
+            ##         break
         else:
             del last_center[min_idx]
             del last_label[min_idx]
             cur_labels[ii] = min_label
+
+            idx = tracks_label.index(min_label)
+            tracks_cen[idx].append([center[1],center[0]])
+
+            if len( tracks_cen[idx] ) > track_len:
+                del tracks_cen[idx][0]
+
+            new_tracks_cen.append( tracks_cen[idx] )
+            new_tracks_label.append( tracks_label[idx] )
+                
+    tracks_label = new_tracks_label
+    tracks_cen   = new_tracks_cen
 
     ######################### Update last centers and labels             
     last_center = cur_centers.tolist()
@@ -128,18 +163,34 @@ def draw_clustered_flow(img, flow, counter):
     opacity = 0.5
     cv2.addWeighted(overlay, opacity, img, 1 - opacity, 0, img)
 
-    # moving direction
-    vis = img.copy()
-    for ii, center in enumerate(cur_centers):
-        x = int(center[1])
-        y = int(center[0])
-        flow = np.sum(flow_array[data[:,2]>3.0][clt.labels_ == ii], axis=0)
-        lines = np.vstack([x, y, x+flow[0], y+flow[1]]).T.reshape(-1, 2, 2)
-        lines = np.int32(lines + 0.5)        
-        cv2.polylines(vis, lines, 0, (0, 255, 0))
+    ## # moving direction
+    ## vis = img.copy()
+    ## for ii, center in enumerate(cur_centers):
+    ##     x = int(center[1])
+    ##     y = int(center[0])
+    ##     flow = np.sum(flow_array[data[:,2]>3.0][clt.labels_ == ii], axis=0)
+    ##     lines = np.vstack([x, y, x+flow[0], y+flow[1]]).T.reshape(-1, 2, 2)
+    ##     lines = np.int32(lines + 0.5)        
+    ##     cv2.polylines(vis, lines, 0, (0, 255, 0))
     
+    ## opacity = 1.0
+    ## cv2.addWeighted(vis, opacity, img, 1 - opacity, 0, img)
+
+    ## tracking
+    vis = img.copy()
+
+    new_tracks = []
+    for tr, label in zip(tracks_cen, tracks_label):
+        if len(tr)<3: continue
+        new_tracks.append( np.int32(tr) )
+    ##     print np.int32(tr), np.shape(np.int32(tr))
+    ##     cv2.polylines(vis, np.int32(np.array(tr)), False, (0, 255, 0))
+    ## print np.int32(tracks_cen), np.shape( np.int32(tracks_cen) )
+    cv2.polylines(vis, new_tracks, False, (0, 255, 0))        
     opacity = 1.0
     cv2.addWeighted(vis, opacity, img, 1 - opacity, 0, img)
+
+
 
         
     return img

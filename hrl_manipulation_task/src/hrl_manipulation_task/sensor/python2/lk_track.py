@@ -86,9 +86,10 @@ class App:
         self.cam = video.create_capture(video_src)
         self.frame_idx = 0
 
-        self.nCluster = 6
+        self.nCluster = 8
         self.km = KMeans(self.nCluster)
-        self.cluster_centers = []
+        self.center_tracks = []
+        self.label_tracks = []
         self.id = {} # id, center, current label
         
 
@@ -100,11 +101,7 @@ class App:
             self.color_list.append([random.randint(0,255),
                                     random.randint(0,255),
                                     random.randint(0,255) ])
-            
-
-        
-
-        
+                            
     def run(self):
         prevPts = None
         currPts = None
@@ -151,7 +148,8 @@ class App:
                 ##     rgbPts.append([np.float32(frame_color[x,y,0]), np.float32(frame_color[x,y,1]), \
                 ##                   np.float32(frame_color[x,y,2])] )
                 ## rgbPts = np.array(rgbPts)
-                    
+
+                ## pos, vel features
                 currPts  = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
                 deltaPts = np.float32([np.array(tr[-2]) - np.array(tr[-1]) if len(tr)>1 else np.array([0,0]) for tr in self.tracks]).reshape(-1, 2)
 
@@ -160,26 +158,92 @@ class App:
                 points = np.hstack([currPts, deltaPts])
                 point_max = np.amax(points, axis=0)
                 point_min = np.amin(points, axis=0)
-                
                 points = (points - point_min)/(point_max - point_min)
-                labels = self.km.fit_predict(points)
-                max_idx = max(labels)
+
+                ## KM clustering
+                labels  = self.km.fit_predict(points)
+                centers = self.km.cluster_centers_
+
+                # estimate mean vel and filtering it
+                new_points   = None
+                remove_label = []
+                for i in xrange(self.nCluster):
+                    mean_vel = np.mean(np.linalg.norm(points[labels==i][:,2:],axis=1))
+                    if mean_vel > 0.1:
+                        if new_points is None:
+                            new_points = points[labels==i]
+                        else:
+                            new_points = np.vstack([ new_points, points[labels==i]])
+                    else:
+                        remove_label.append(i)
+
+                labels = range(self.nCluster)
+                if len(remove_label) > 0:
+                    for ii in reversed(remove_label):
+                        idx = labels.index(ii)
+                        del labels[idx]
+                        np.delete(centers,idx)
+                        
+                if len(self.label_tracks) == 0:
+                    self.label_tracks  = labels
+                    self.center_tracks = [[center] for center in centers]
+
+                ## print self.label_tracks                    
+                last_centers = copy.copy([self.center_tracks[i][-1] for i in xrange(len(self.center_tracks))])
+                last_labels  = copy.copy(self.label_tracks)
+
+                offset = 0.3
+                for c1, l1 in zip(last_centers, last_labels):
+                    remove_flag = True
+                    for c2, l2 in zip(centers, labels):
+                        if np.linalg.norm(c1[:2] - c2[:2]) < offset:
+                            idx = self.label_tracks.index(l1)
+                            self.center_tracks[idx].append(c2)
+                            remove_flag = False
+                            break
+                        
+                    if remove_flag:
+                        idx = self.label_tracks.index(l1)
+                        del self.label_tracks[idx]
+                        del self.center_tracks[idx]
+
+                for c2, l2 in zip(centers, labels):
+                    add_flag = True
+                    for c1, l1 in zip(last_centers, last_labels):
+                        if np.linalg.norm(c1[:2] - c2[:2]) > offset:
+                            add_flag = False
+                            break
+
+                    # new label
+                    if add_flag:
+                        max_label   = max(self.label_tracks)                        
+                        self.label_tracks.append(max_label+1)
+                        self.center_tracks.append([c2])
+
+                        
+                cur_centers = copy.copy([self.center_tracks[i][-1] for i in xrange(len(self.center_tracks))])
+                cur_labels  = copy.copy(self.label_tracks)
 
 
-                self.cluster_centers.append(self.km.cluster_centers_)
-                clt = KMeans(n_clusters = self.nCluster)
-                cluster_seq = np.array(self.cluster_centers).reshape( (np.shape(self.cluster_centers)[0]*\
-                                                                        np.shape(self.cluster_centers)[1],4) )
-                clt.fit(cluster_seq)
+                for c1, l1 in zip(cur_centers, cur_labels):
+
+                    x = int(c1[0]*(point_max[0] - point_min[0]) + point_min[0])
+                    y = int(c1[1]*(point_max[1] - point_min[1]) + point_min[1])
+                    label = l1
+                    color_idx = label if label < len(self.color_list) else label%len(self.color_list)
+                    c = self.color_list[color_idx]
+                    
+                    cv2.circle(vis, (x, y), 8, (c[0], c[1], c[2]), -1)
+
+
+                ## self.cluster_centers.append(centers)
+                ## clt = KMeans(n_clusters = self.nCluster)
+                ## cluster_seq = np.array(self.cluster_centers).reshape( (np.shape(self.cluster_centers)[0]*\
+                ##                                                         np.shape(self.cluster_centers)[1],4) )
+                ## clt.fit(cluster_seq)
                                                                         
-                print np.shape(cluster_seq)
-                
-                for ii, center in enumerate(self.km.cluster_centers_):
-                    x = int(center[0]*(point_max[0] - point_min[0]) + point_min[0])
-                    y = int(center[1]*(point_max[1] - point_min[1]) + point_min[1])
-                    cv2.circle(vis, (x, y), 8, (255,0,0), -1)
 
-
+                cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
 
                 ## if self.id == {}:
                 ##     for ii, cur_center in enumerate(self.km.cluster_centers_):
@@ -232,7 +296,12 @@ class App:
                 ## clt   = KMeans(n_clusters = 5)
                 ## clt.fit(image)
 
-                ## cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
+                ## test = []
+                ## for tr in self.tracks:
+                ##     test.append(np.int32(tr))
+                ## print test, np.shape(test)
+                ## sys.exit()
+
                 draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
 
             if self.frame_idx % self.detect_interval == 0:
