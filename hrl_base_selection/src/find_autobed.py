@@ -113,7 +113,7 @@ class arTagDetector:
         f.M.DoRotX(np.pi)        
         
         ps = PoseStamped()
-        ps.header.frame_id = 'camera_link'
+        ps.header.frame_id = 'torso_lift_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
@@ -138,7 +138,7 @@ class arTagDetector:
         
         # frame pub --------------------------------------
         ps = PoseStamped()
-        ps.header.frame_id = 'camera_link'
+        ps.header.frame_id = 'torso_lift_link'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position.x = f.p[0]
         ps.pose.position.y = f.p[1]
