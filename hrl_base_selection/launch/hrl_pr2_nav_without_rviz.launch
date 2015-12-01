@@ -1,7 +1,5 @@
 <launch>
   <node name="map_server" pkg="map_server" type="map_server" args="$(find hrl_base_selection)/data/maps/foliage_rm_test.yaml"/>
-
-
   <!--<include file="$(find pr2_navigation_perception)/lasers_and_filters.xml"/>-->
   <!--<include file="$(find pr2_navigation_perception)/ground_plane.xml"/>-->
   <include file="$(find hrl_base_selection)/launch/move_base.xml"/>

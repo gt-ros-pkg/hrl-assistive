@@ -1,5 +1,5 @@
 <launch>
-  <include file="$(find pr2_machine)/pr2.machine" />
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />
 
   <!-- Bring up the tilt_laser aware version of move_base -->
   <node pkg="pr2_move_base" name="pr2_move_base_node" type="pr2_move_base.py" machine="c2" />
@@ -39,7 +39,8 @@
     <rosparam file="$(find pr2_navigation_config)/move_base/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find pr2_navigation_config)/move_base/dwa_local_planner.yaml" command="load" ns="DWAPlannerROS" />
     <rosparam file="$(find pr2_navigation_config)/move_base/recovery_behaviors.yaml" command="load" />
-
+    <rosparam file="$(find hrl_base_selection)/launch/global_planner_params.yaml" command="load" />
+    <rosparam file="$(find hrl_base_selection)/launch/navfn_global_planner_params.yaml" command="load" />
     <!-- Load global navigation specific parameters -->
     <rosparam file="$(find pr2_navigation_global)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find pr2_navigation_global)/config/global_costmap_params.yaml" command="load" />
