@@ -41,11 +41,16 @@ class App(object):
 
     def onmouse(self, event, x, y, flags, param):
         x, y = np.int16([x, y]) # BUG
+        
+        ## print event, cv2.EVENT_LBUTTONDOWN, cv2.EVENT_LBUTTONUP
+        
         if event == cv2.EVENT_LBUTTONDOWN:
             self.drag_start = (x, y)
             self.tracking_state = 0
         if self.drag_start:
-            if flags & cv2.EVENT_FLAG_LBUTTON:
+            ## print flags & cv2.EVENT_FLAG_LBUTTON
+            ## if flags & cv2.EVENT_FLAG_LBUTTON:
+            if flags == 33:
                 h, w = self.frame.shape[:2]
                 xo, yo = self.drag_start
                 x0, y0 = np.maximum(0, np.minimum([xo, yo], [x, y]))
@@ -53,10 +58,12 @@ class App(object):
                 self.selection = None
                 if x1-x0 > 0 and y1-y0 > 0:
                     self.selection = (x0, y0, x1, y1)
-            else:
-                self.drag_start = None
-                if self.selection is not None:
-                    self.tracking_state = 1
+            ## else:
+        if event == cv2.EVENT_LBUTTONUP:            
+            self.drag_start = None
+        if self.selection is not None and self.drag_start is None:
+            self.drag_start = None
+            self.tracking_state = 1
 
     def show_hist(self):
         bin_count = self.hist.shape[0]

@@ -48,6 +48,9 @@ def draw_clustered_flow(img, flow, counter):
     global init_center
     global cluster_centers
     global track_len, tracks_cen, tracks_label
+
+    window_h = 20
+    window_w = 20
     
     h, w = flow.shape[:2]
 
