@@ -52,27 +52,27 @@ class GripperSensorGraspMonitor(object):
             self.both_contact = False  # No contacts, not grasping...
 
     def update_grasp_state(self):
-        # msg = ''
+#        msg = ''
         grasping_now = None
         if self.fully_closed:
-            # msg += " Fully Closed "
+#            msg += " Fully Closed "
             grasping_now = False
-        elif self.opening_from_empty:
-            # msg += " Opening "
-            grasping_now = False  # if grasping_now is None else grasping_now
-        elif self.cannot_close:
-            # msg += " Stuck "
-            grasping_now = True  # if grasping_now is None else grasping_now
-        elif self.both_contact:
-            # msg += " Contact "
-            grasping_now = True  # if grasping_now is None else grasping_now
-        elif (not self.cannot_close and not self.both_contact):
-            # msg += " Neither "
-            grasping_now = False  # if grasping_now is None else grasping_now
-        else:
+        if self.opening_from_empty:
+#            msg += " Opening "
+            grasping_now = False if grasping_now is None else grasping_now
+        if self.cannot_close:
+#            msg += " Stuck "
+            grasping_now = True if grasping_now is None else grasping_now
+        if self.both_contact:
+#            msg += " Contact "
+            grasping_now = True if grasping_now is None else grasping_now
+        if (not self.cannot_close and not self.both_contact):
+#            msg += " Neither "
+            grasping_now = False if grasping_now is None else grasping_now
+        if grasping_now is None:
             return  # Nothing happening, skip ahead
 
-        # print grasping_now, msg, self.openness
+#        print grasping_now, msg, self.openness
         if grasping_now != self.grasping:
             if grasping_now:
                 print "%s Gripper Grasped" % self.side.capitalize()
