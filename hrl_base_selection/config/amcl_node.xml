@@ -3,6 +3,8 @@
   <remap from="scan" to="base_scan" />
   <!-- Publish scans from best pose at a max of 10 Hz -->
   <param name="base_frame_id" value="base_footprint"/>
+  <param name="odom_frame_id"             value="odom_combined"/> 
+  <param name="global_frame_id"           value="map"/>
   <param name="odom_model_type" value="omni"/>
   <param name="odom_alpha5" value="0.1"/>
   <param name="transform_tolerance" value="0.2" />
@@ -34,5 +36,7 @@
   <param name="transform_tolerance" value="0.1"/>
   <param name="recovery_alpha_slow" value="0.0"/>
   <param name="recovery_alpha_fast" value="0.0"/>
+
+
 </node>
 </launch>

@@ -2,7 +2,7 @@
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
 
   <!-- Bring up the tilt_laser aware version of move_base -->
-  <node pkg="pr2_move_base" name="pr2_move_base_node" type="pr2_move_base.py" machine="c2" output="screen"/>
+  <node pkg="hrl_base_selection" name="pr2_move_base_node" type="pr2_move_base.py" machine="c1" output="screen"/>
 
   <!-- Trajectory generator -->
   <node pkg="joint_trajectory_generator" type="joint_trajectory_generator" output="screen"
@@ -28,8 +28,9 @@
 
   <node pkg="move_base" type="move_base" name="move_base_node" machine="c2" output="screen">
     <remap from="odom" to="base_odometry/odom" />
-    <remap from="cmd_vel" to="navigation/cmd_vel" />
-    <!--<remap from="cmd_vel" to="base_controller/command" />-->
+    <!--<remap from="cmd_vel" to="navigation/cmd_vel" />-->
+    <!--<remap from="cmd_vel" to="pr2_move_base/goal" />-->
+    <remap from="cmd_vel" to="base_controller/command" />
 
     <!-- Use the dwa local planner for the PR2 -->
     <!--<param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />-->

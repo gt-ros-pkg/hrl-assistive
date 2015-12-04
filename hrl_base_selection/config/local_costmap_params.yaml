@@ -9,9 +9,9 @@ local_costmap:
    width: 6.0
    height: 6.0
    resolution: 0.025
-   transform_tolerance: 0.5
-   origin_x: 0.0
-   origin_y: 0.0
+   transform_tolerance: 0.2
+   #origin_x: 0.0
+   #origin_y: 0.0
    plugins:
     - {name: obstacle_layer,      type: "costmap_2d::VoxelLayer"}
     - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
