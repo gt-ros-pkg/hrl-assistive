@@ -461,7 +461,7 @@ if __name__ == "__main__":
     # vel_options = [0.1, 0.15]
     # vel = vel_options[0]
 
-    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'tapo_test_data','wenhao_test_data', 'test_subj']
+    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12', 'tapo_test_data','wenhao_test_data', 'test_subj']
     this_subject = subject_options[1]
     height_options = ['height0', 'height1', 'height2', 'height3', 'height4', 'height5']
     height = height_options[0]
@@ -471,7 +471,7 @@ if __name__ == "__main__":
 
     fdf = ForceDataFormatting()
 
-    for this_subject in subject_options[0:11]:
+    for this_subject in subject_options[11:13]:
 
         if this_subject == 'subject0':
             this_result = [[label[0], label[1], label[2], label[3]],
@@ -608,11 +608,33 @@ if __name__ == "__main__":
                            [label[0], label[2], label[3], label[3]],
                            [label[0], label[1], label[3], label[3]],
                            [label[0], label[1], label[3], label[3]]]
+        elif this_subject == 'subject11':
+            this_result = [[label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[3], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]]]
+        elif this_subject == 'subject12':
+            this_result = [[label[0], label[0], label[3], label[3]],
+                           [label[0], label[0], label[2], label[3]],
+                           [label[0], label[0], label[2], label[3]],
+                           [label[0], label[0], label[2], label[3]],
+                           [label[0], label[1], label[3], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[0], label[2], label[3]],
+                           [label[0], label[1], label[1], label[3]],
+                           [label[0], label[1], label[2], label[3]],
+                           [label[0], label[1], label[2], label[3]]]
 
-        # fdf.format_data_four_categories(this_subject, this_result)
+        fdf.format_data_four_categories(this_subject, this_result)
         fdf.format_data_three_categories(this_subject, this_result)
-        # fdf.autolabel_and_set_position(this_subject, this_result)
-        # fdf.create_time_warped_data(this_subject)
+        fdf.autolabel_and_set_position(this_subject, this_result)
+        fdf.create_time_warped_data(this_subject)
 
 
 

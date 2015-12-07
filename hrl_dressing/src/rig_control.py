@@ -569,7 +569,7 @@ class RigControl(object):
                 ax2.set_ylabel('Force_z (N)')
                 ax2.set_title(''.join(['Force in upward direction vs Position for: ', label, ' type']))
                 vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -581,7 +581,7 @@ class RigControl(object):
                     Y2 = loaded_data[:, 4]
                     surf2 = ax2.plot(X2, Y2, color="green", alpha=1)
                 vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -596,23 +596,27 @@ class RigControl(object):
 
     def plot_mean_and_std(self, subjects, labels):
         fig2 = plt.figure(2)
-        num_bins = 100.
+        num_bins = 150.
         bins = np.arange(0, 0.85+0.00001, 0.85/num_bins)
-        bin_values = np.arange(0,0.85, 0.85/num_bins)+0.85/(2.*num_bins)
+        bin_values = np.arange(0, 0.85, 0.85/num_bins)+0.85/(2.*num_bins)
         ax1 = fig2.add_subplot(211)
-        ax1.set_xlim(0., .2)
-        ax1.set_ylim(-0.5, 0.05)
-        ax1.set_xlabel('Position (m)')
-        ax1.set_ylabel('Force_x (N)')
-        ax1.set_title(''.join(['Force in direction of movement vs Position']))
+        ax1.set_xlim(0., .85)
+        ax1.set_ylim(-10.0, 1.0)
+        ax1.set_xlabel('Position (m)', fontsize=20)
+        ax1.set_ylabel('Force_x (N)', fontsize=20)
+        ax1.set_title(''.join(['Force in direction of movement vs Position']), fontsize=20)
+        ax1.tick_params(axis='x', labelsize=20)
+        ax1.tick_params(axis='y', labelsize=20)
         # fig2 = plt.figure(2*num+2)
         ax2 = fig2.add_subplot(212)
-        ax2.set_xlim(0, .2)
-        ax2.set_ylim(-0.2, 0.1)
-        ax2.set_xlabel('Position (m)')
-        ax2.set_ylabel('Force_z (N)')
-        ax2.set_title(''.join(['Force in upward direction vs Position']))
-        colors = ['green', 'blue', 'red', 'orange']
+        ax2.set_xlim(0, .85)
+        ax2.set_ylim(-10.0, 1.0)
+        ax2.set_xlabel('Position (m)', fontsize=20)
+        ax2.set_ylabel('Force_z (N)', fontsize=20)
+        ax2.tick_params(axis='x', labelsize=20)
+        ax2.tick_params(axis='y', labelsize=20)
+        ax2.set_title(''.join(['Force in upward direction vs Position']), fontsize=20)
+        colors = ['blue', 'green', 'red']
         for num, label in enumerate(labels):
             bin_entries_x = []
             bin_entries_z = []
@@ -637,7 +641,7 @@ class RigControl(object):
                 # ax2.set_ylabel('Force_z (N)')
                 # ax2.set_title(''.join(['Force in upward direction vs Position for: ', label, ' type']))
                 vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -650,7 +654,7 @@ class RigControl(object):
                         bin_entries_x[placed_in_bin[i]].append(loaded_data[i, 2])
                         bin_entries_z[placed_in_bin[i]].append(loaded_data[i, 4])
                 vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -689,12 +693,12 @@ class RigControl(object):
             # Y6 = Y4 - np.std(data_z, 0)
             # print len(X1)
             # print len(Y1)
-            surf1 = ax1.plot(position_values, mean_x, color=colors[num], alpha=1, label=label)
+            surf1 = ax1.plot(position_values, mean_x, color=colors[num], alpha=1, label=label, linewidth=2)
             surf1 = ax1.fill_between(position_values, mean_x + std_x, mean_x - std_x, color=colors[num], alpha=0.3)
-            ax1.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
-            surf2 = ax2.plot(position_values, mean_z, color=colors[num], alpha=1, label=label)
+            ax1.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., fontsize=20)
+            surf2 = ax2.plot(position_values, mean_z, color=colors[num], alpha=1, label=label, linewidth=2)
             surf2 = ax2.fill_between(position_values, mean_z + std_z, mean_z - std_z, color=colors[num], alpha=0.3)
-            ax2.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+            ax2.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., fontsize=20)
 
 
     def histogram_of_stop_point_fist(self, subjects, labels):
@@ -705,11 +709,13 @@ class RigControl(object):
             for subject in subjects:
                 # fig1 = plt.figure(2*num+1)
                 ax1 = fig1.add_subplot(111)
-                ax1.set_xlim(0., .85)
+                ax1.set_xlim(0.2, .5)
                 # ax1.set_ylim(-10.0, 1.0)
-                ax1.set_xlabel('Stop Position (m)')
-                ax1.set_ylabel('Number of trials')
-                ax1.set_title(''.join(['Stop position when caught on fist, when started at tip of fist']))
+                ax1.set_xlabel('Stop Position (m)', fontsize=20)
+                ax1.set_ylabel('Number of trials', fontsize=20)
+                ax1.tick_params(axis='x', labelsize=20)
+                ax1.tick_params(axis='y', labelsize=20)
+                ax1.set_title(''.join(['Stop position when caught on fist, when started at tip of fist']), fontsize=20)
                 vel = 0.1
                 directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
@@ -730,13 +736,14 @@ class RigControl(object):
         n, bins, patches = ax1.hist(stop_locations, 10, color="green", alpha=0.75)
         points = np.arange(0, 10, 0.001)
         y = mlab.normpdf(points, mu, sigma)
-        l = ax1.plot(points, y, 'r--', linewidth=1)
+        l = ax1.plot(points, y, 'r--', linewidth=2)
 
     def histogram_of_stop_point_elbow(self, subjects, labels):
         fig1 = plt.figure(4)
         fig2 = plt.figure(5)
         labels = ['good']
         stop_locations = []
+        arm_lengths = []
         for num, label in enumerate(labels):
             for subj_num, subject in enumerate(subjects):
                 subject_stop_locations = []
@@ -746,27 +753,30 @@ class RigControl(object):
                 arm_length = rosparam.get_param('crook_to_fist')/100.
                 # fig1 = plt.figure(2*num+1)
                 ax1 = fig1.add_subplot(111)
-                ax1.set_xlim(0., .85)
+                ax1.set_xlim(0.2, .4)
                 # ax1.set_ylim(-10.0, 1.0)
-                ax1.set_xlabel('Stop Position (m)')
-                ax1.set_ylabel('Number of trials')
-                ax1.set_title(''.join(['Difference between arm length and stop position at the elbow']))
+                ax1.set_xlabel('Stop Position (m)', fontsize=20)
+                ax1.set_ylabel('Number of trials', fontsize=20)
+                ax1.set_title(''.join(['Difference between arm length and stop position at the elbow']), fontsize=20)
+                ax1.tick_params(axis='x', labelsize=20)
+                ax1.tick_params(axis='y', labelsize=20)
                 ax2 = fig2.add_subplot(431+subj_num)
                 ax2.set_xlim(0.2, .4)
                 # ax1.set_ylim(-10.0, 1.0)
-                ax2.set_xlabel('Stop Position (m)')
+                ax2.set_xlabel('Position (m)')
                 ax2.set_ylabel('Number of trials')
-                ax2.set_title(''.join(['Difference between arm length and stop position at the elbow']))
+                ax2.set_title(''.join(['Stop position for "Good" outcome']), fontsize=20)
                 vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
                     loaded_data = load_pickle(directory+file_name)
                     stop_locations.append(np.max(loaded_data[:,1])-arm_length)
                     subject_stop_locations.append(np.max(loaded_data[:,1])-arm_length)
+                    arm_lengths.append(arm_length)
                 vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     loaded_data = load_pickle(directory+file_name)
@@ -775,12 +785,16 @@ class RigControl(object):
                 ax2.hist(subject_stop_locations)
         mu = np.mean(stop_locations)
         sigma = np.std(stop_locations)
+        print 'The minimum arm length is: ', np.min(arm_lengths)
+        print 'The max arm length is: ', np.max(arm_lengths)
+        print 'The mean arm length is: ', np.mean(arm_lengths)
         print 'The mean of the stop location is: ', mu
+        print arm_lengths
         print 'The standard deviation of the stop location is: ', sigma
         n, bins, patches = ax1.hist(stop_locations, 10, color="green", alpha=0.75)
         points = np.arange(0, 10, 0.001)
         y = mlab.normpdf(points, mu, sigma)
-        l = ax1.plot(points, y, 'r--', linewidth=1)
+        l = ax1.plot(points, y, 'r--', linewidth=2)
 
     def start_recording_data(self, num):
         self.array_to_save = np.zeros([3000, 5])
@@ -847,11 +861,12 @@ if __name__ == "__main__":
 
     # '''
     # output_classification = ['missed', 'good', 'caught_fist', 'caught_other']
-    # rc.plot_all_data(subject_options[0:6]+subject_options[7:11], output_classification)
-    # rc.histogram_of_stop_point_fist(subject_options[0:6]+subject_options[7:11], output_classification)
-    # rc.histogram_of_stop_point_elbow(subject_options[0:6]+subject_options[7:11], output_classification)
-    # rc.plot_mean_and_std(subject_options[0:6]+subject_options[7:11], output_classification)
-    # plt.show()
+    output_classification = ['missed', 'good', 'caught']
+    # rc.plot_all_data(subject_options[0:6]+subject_options[7:13], output_classification)
+    rc.histogram_of_stop_point_fist(subject_options[0:6]+subject_options[7:13], output_classification)
+    rc.histogram_of_stop_point_elbow(subject_options[0:6]+subject_options[7:13], output_classification)
+    # rc.plot_mean_and_std(subject_options[0:6]+subject_options[7:13], output_classification)
+    plt.show()
     # '''
 
 
