@@ -101,6 +101,9 @@ class App(object):
                 prob = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
                 prob &= mask
                 term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
+
+                print np.shape(prob)
+                print self.track_window
                 track_box, self.track_window = cv2.CamShift(prob, self.track_window, term_crit)
 
                 if self.show_backproj:

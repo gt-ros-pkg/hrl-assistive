@@ -25,21 +25,29 @@ Keys:
 import numpy as np
 import cv2
 import video
-
+from sklearn.cluster import KMeans
+from scipy import stats
+import copy
 
 class App(object):
     def __init__(self, video_src):
         self.cam = video.create_capture(video_src)
         ret, self.frame = self.cam.read()
         cv2.namedWindow('camshift')
-        cv2.setMouseCallback('camshift', self.onmouse)
+        ## cv2.setMouseCallback('camshift', self.onmouse)
 
+        ## self.selections = []
+        self.track_windows = []
+        self.hists = []
+        
         self.selection = None
         self.drag_start = None
         self.tracking_state = 0
         self.show_backproj = False
 
-        init_params()
+        self.init_params()
+        self.frame = cv2.resize(self.frame, (0,0), fx=self.scale, fy=self.scale) 
+
 
     def init_params(self):
 
@@ -50,7 +58,7 @@ class App(object):
         self.last_center = None
         return
 
-    def get_flow_centers(self):
+    def get_flow_centers(self, flow):
 
         window_h = 20
         window_w = 20
@@ -60,10 +68,10 @@ class App(object):
         flow_array = flow.reshape((h*w,2))
         mag_array  = np.linalg.norm(flow_array, axis=1)
 
-        data = np.vstack([xx.ravel(), yy.ravel(), mag_array]).T
+        data = np.vstack([yy.ravel(), xx.ravel(), mag_array]).T
         flow_filt = data[data[:,2]>self.flow_thres]
 
-        if len(flow_filt) < self.n_clusters: return
+        if len(flow_filt) < self.n_clusters: return []
 
         if self.last_center is not None:
             clt = KMeans(n_clusters = self.n_clusters, init=self.last_center)
@@ -75,14 +83,81 @@ class App(object):
         #----------------------------------------------------------
         # flow center
         #----------------------------------------------------------
+        new_selections = []
         for ii, center in enumerate(clt.cluster_centers_):
-            x = int(center[1])
-            y = int(center[0])
-            flow_mean = np.mean(flow_array[data[:,2]>self.flow_thres][clt.labels_ == ii], axis=0)
+            # loc
+            flow_cluster = flow_filt[clt.labels_ == ii]
+            l1 = np.amin(flow_cluster[:,:2], axis=0).astype(int)
+            r1 = np.amax(flow_cluster[:,:2], axis=0).astype(int)
 
-        
-        
-        return
+            # size check
+            if r1[0]-l1[0] < 2 or r1[0]-l1[0] > 40: continue
+            if r1[1]-l1[1] < 2 or r1[1]-l1[1] > 40: continue
+            ## ## if r1[0]-l1[0] < 20 or r1[0]-l1[0] > 40: continue
+            ## ## if r1[1]-l1[1] < 20 or r1[1]-l1[1] > 40: continue
+            if l1[0] == 0 and r1[0] == 0: continue
+            if l1[1] == 0 and r1[1] == 0: continue
+
+            overlap_flag = False
+            for jj, window in enumerate(self.track_windows):
+                x0, y0, xd, yd = window
+                x1 = x0+xd
+                y1 = y0+yd
+
+                if not(r1[0] < x0 or x1 < l1[0] or r1[1] < y0 or y1 < l1[1]):
+                    overlap_flag = True
+                    break
+                    
+
+            if overlap_flag is False:
+                new_selections.append([l1[0], l1[1], r1[0], r1[1]])
+
+        ##     sub_flow_array = flow_array[data[:,2]>self.flow_thres][clt.labels_ == ii]
+        ##     flow_mean = np.mean(, axis=0)
+        return new_selections
+
+
+    def reduce_track_windows(self):
+
+        track_windows = copy.copy(self.track_windows)
+        hists = copy.copy(self.hists)
+
+        self.track_windows = []
+        self.hists = []
+
+        keep_idx = []
+        while True:
+            
+            window = track_windows[0]
+            hist   = hists[0]
+
+            x0, y0, xd, yd = window
+            x1 = x0+xd
+            y1 = y0+yd
+
+            overlap_idx = []
+            non_overlap_idx = []
+            for ii, (window2, hist2) in enumerate(zip(track_windows, hists)):
+                if ii == 0:
+                    overlap_idx.append(ii)
+                    continue
+                
+                x2, y2, xd, yd = window2
+                x3 = x2+xd
+                y3 = y2+yd
+
+                if not(x1 < x2 or x3 < x0 or y1 < y2 or y3 < y0):
+                    ## if np.linalg.norm(hist/np.sum(hist) - hist2/np.sum(hist2)) > 0.5:
+                    overlap_idx.append(ii)
+                else:
+                    non_overlap_idx.append(ii)
+
+            self.track_windows.append(window)
+            self.hists.append(hist)
+            
+            if len(non_overlap_idx) == 0: break
+            track_windows = [track_windows[i] for i in non_overlap_idx]
+            hists = [hists[i] for i in non_overlap_idx]            
 
     
     def onmouse(self, event, x, y, flags, param):
@@ -128,49 +203,66 @@ class App(object):
         prev     = cv2.resize(prev, (0,0), fx=self.scale, fy=self.scale) 
         prevgray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
         
-        
+        counter = 0
         while True:
             ret, self.frame = self.cam.read()
+            self.frame = cv2.resize(self.frame, (0,0), fx=self.scale, fy=self.scale)             
             vis = self.frame.copy()
             hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
 
             # Current gray image
-            img = cv2.resize(self.frame, (0,0), fx=self.scale, fy=self.scale) 
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)            
+            gray = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)            
             flow = cv2.calcOpticalFlowFarneback(prevgray, gray, 0.5, 3, 15, 3, 5, 1.2, 0)
             prevgray = gray
 
             # Automatic tracking center selection
-            self.get_flow_centers(gray, flow)
-            
+            new_selections = self.get_flow_centers(flow)
             mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
+            
+            if len(new_selections)>0:
+                for selection in new_selections:
+                    x0, y0, x1, y1 = selection
+                    hsv_roi = hsv[y0:y1, x0:x1]
+                    mask_roi = mask[y0:y1, x0:x1]
+                    ## hsv_roi = hsv[y0:y1, x0:x1]
+                    ## mask_roi = mask[y0:y1, x0:x1]
+                    hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
+                    cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX);
+                    
+                    self.hists.append(hist.reshape(-1))
+                    ## self.show_hist()
 
-            if self.selection:
-                x0, y0, x1, y1 = self.selection
-                self.track_window = (x0, y0, x1-x0, y1-y0)
-                hsv_roi = hsv[y0:y1, x0:x1]
-                mask_roi = mask[y0:y1, x0:x1]
-                hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
-                cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX);
-                self.hist = hist.reshape(-1)
-                self.show_hist()
+                    ## vis_roi = vis[y0:y1, x0:x1]
+                    ## cv2.bitwise_not(vis_roi, vis_roi)
+                    ## vis[mask == 0] = 0
+                    ## self.selections.append(selection)
+                    if x0==0 and y0==0: continue
+                    self.track_windows.append((x0, y0, x1-x0, y1-y0))
 
-                vis_roi = vis[y0:y1, x0:x1]
-                cv2.bitwise_not(vis_roi, vis_roi)
-                vis[mask == 0] = 0
+            if len(self.track_windows)>1: # self.tracking_state == 1:
+                ## self.selection = None
+                track_boxes = []
+                for ii, hist in enumerate(self.hists):
+                    prob = cv2.calcBackProject([hsv], [0], hist, [0, 180], 1)
+                    prob &= mask
+                    term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
 
-            if self.tracking_state == 1:
-                self.selection = None
-                prob = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
-                prob &= mask
-                term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
-                track_box, self.track_window = cv2.CamShift(prob, self.track_window, term_crit)
+                    if self.track_windows[ii][0]==0 and self.track_windows[ii][1]==0: continue
+                    track_box, self.track_windows[ii] = cv2.CamShift(prob, self.track_windows[ii], term_crit)
+                    track_boxes.append(track_box)
 
-                if self.show_backproj:
-                    vis[:] = prob[...,np.newaxis]
-                try: cv2.ellipse(vis, track_box, (0, 0, 255), 2)
-                except: print track_box
+                self.reduce_track_windows()
+                for track_box in track_boxes:
 
+                    ## if self.show_backproj:
+                    ##     vis[:] = prob[...,np.newaxis]
+                    try: cv2.ellipse(vis, track_box, (0, 0, 255), 2)
+                    except: print track_box
+
+                        
+
+                counter += 1
+            print "---------------------------------------"
             cv2.imshow('camshift', vis)
 
             ch = 0xFF & cv2.waitKey(5)
