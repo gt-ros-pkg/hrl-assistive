@@ -26,7 +26,10 @@ if (PCL_FOUND)
   include_directories(${PCL_INCLUDE_DIRS})
 endif (PCL_FOUND)
 
-
+find_package(OpenCV REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(image_geometry REQUIRED)
+find_package(cv_bridge REQUIRED)
 
 catkin_package(
     DEPENDS rospy
@@ -39,8 +42,11 @@ add_library(robot src/robot.cpp)
 target_link_libraries(robot ${orocos_kdl_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 #rosbuild_link_boost(sift_extractor thread signals)
 
-add_executable(change_detector src/octree_change_detection.cpp src/util.cpp)
-target_link_libraries(change_detector ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+add_executable(Overlay src/Kinect2Overlayer.cpp)
+target_link_libraries(Overlay ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${image_geometry_LIBRARIES} ${image_transport_LIBRARIES} ${cv_bridge_LIBRARIES})
+
+#add_executable(change_detector src/octree_change_detection.cpp src/util.cpp)
+#target_link_libraries(change_detector ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 
 
 # Camera Filter
