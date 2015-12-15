@@ -1,0 +1,5 @@
+string task
+string model
+---
+float64[] base_goal
+float64[] configuration_goal
