@@ -1,30 +1,28 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(hrl_base_selection)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+find_package(catkin REQUIRED COMPONENTS rospy std_msgs geometry_msgs tf tf_conversions ar_track_alvar hrl_lib hrl_msgs sensor_msgs visualization_msgs trajectory_msgs message_generation)
 
-rosbuild_init()
+catkin_python_setup()
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-#uncomment if you have defined messages
-#rosbuild_genmsg()
 #uncomment if you have defined services
-rosbuild_gensrv()
+add_service_files(
+    DIRECTORY srv  
+    FILES BaseMove.srv 
+    FILES BaseMove_multi.srv
+)
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+generate_messages(
+    DEPENDENCIES geometry_msgs std_msgs
+)
+
+catkin_package(
+    DEPENDS rospy std_msgs geometry_msgs tf tf_conversions ar_track_alvar hrl_lib hrl_msgs sensor_msgs visualization_msgs trajectory_msgs message_runtime
+    CATKIN_DEPENDS # TODO
+    INCLUDE_DIRS # TODO include
+    LIBRARIES # TODO
+)
+
+#catkin_install_python(PROGRAMS scripts/executable1 
+#    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}) 
+
