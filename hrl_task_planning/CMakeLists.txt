@@ -46,6 +46,8 @@ catkin_install_python(PROGRAMS
    scripts/task_smacher
    scripts/test_client
    scripts/domain_state_aggregator
+   scripts/proximity_monitor
+   scripts/known_location_monitor
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
