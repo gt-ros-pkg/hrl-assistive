@@ -97,6 +97,7 @@ class PDDLTaskThread(Thread):
         self.next_thread = next_thread
         self.problem_name = problem_msg.name
         self.domain = problem_msg.domain
+        self.result = None
         self.constant_predicates = rosparam.get('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.default_goal = rosparam.get('/pddl_tasks/%s/constant_predicates' % self.domain)
         self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, latch=True)
@@ -113,8 +114,7 @@ class PDDLTaskThread(Thread):
         # Build out problem (init, goal), check for sub-goals, plan, check for irrecoverable actions, publish plan, compose sm, run sm
         if not self.problem_msg.goal:
             self.problem_msg = self.default_goal
-        outcome = ''
-        while outcome != 'succeeded':
+        while self.result is None:
             # For the current problem get initial state and
             if self.problem_msg.init:  # if initial state is given, add constant predicates
                 self.problem_msg.init.extend(self.constant_predicates)
@@ -144,14 +144,50 @@ class PDDLTaskThread(Thread):
                            transitions={'succeeded': '%s-%d' % (self.domain, i + 1),
                                         'preempted': 'preempted',
                                         'aborted': 'aborted'})
-            outcome = sm.execute()
-            if outcome is 'preempted':
+            self.result = sm.execute()
+            if self.result == 'preempted':
                 return  # TODO: See if we're abandoning a possible next_thread here...
         if self.next_thread is not None:
             self.next_thread.start()
 
     def preempt(self):
         return self.state_machine.request_preempt()
+
+
+class PDDLSmachState(smach.State):
+    def __init__(self, domain, problem_name, init_state, goal_state, *args, **kwargs):
+        super(PDDLSmachState, self).__init__(*args, **kwargs)
+        self.domain = domain
+        self.problem_name = problem_name
+        self.init_state = pddl.State(init_state)
+        self.goal_state = pddl.GoalState(goal_state)
+        self.state_delta = self.init_state.difference(self.goal_state)
+        self.current_state = None
+        self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
+
+    def domain_state_cb(self, state_msg):
+        self.current_state = pddl.State(state_msg.predicates)
+
+    def on_execute(self):
+        """ Override to create task-specific functionality before waiting for state update in main execute."""
+        pass
+
+    def execute(self, ud):
+        # Watch for task state to match goal state, then return successful
+        self.on_execute()
+        rate = rospy.Rate(20)
+        while not rospy.is_shutdown():
+            if self.preempt_requested:
+                self.service_preempt()
+                return 'preempted'
+            if self.goal_state.is_satisfied(self.current_state):
+                return 'success'
+            progress = self.init_state.difference(self.current_state)
+            for pred in progress:
+                if pred not in self.state_delta:
+                    return 'aborted'
+            rate.sleep()
+        return 'preempted'
 
 
 def build_sm(self, solution, get_state_fn, next_task_request=None):

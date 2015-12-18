@@ -62,6 +62,7 @@
 
  (:action forget-location
   :parameters (?l - location)
+  :precondition (and (known ?l))
   :effect (not (known ?l))
   )
 )
