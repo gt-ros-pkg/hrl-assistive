@@ -206,8 +206,36 @@ class State(object):
                 diff_list.append(Predicate(pred.name, pred.args))
         return diff_list
 
+    def apply_update(self, update):
+        assert isinstance(update, StateUpdate), "apply_update only accepts StateUpdate obects."
+        for predicate in update.predicates:
+            if predicate.neg:
+                try:
+                    self.predicates.remove(predicate)
+                except ValueError:
+                    pass
+            else:
+                self.prediates.add(predicate)
 
-class GoalState(object):
+    @classmethod
+    def from_msg(cls, msg):
+        return cls(msg.predicates)
+
+
+class StateUpdate(State):
+    """ A class representing a change in PDDL State."""
+    def add(self, new_pred):
+        if new_pred.neg:
+            try:
+                self.predicates.remove(Predicate(new_pred.name, new_pred.args))  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            except ValueError:
+                pass  # Positive predicate not in list, so don't need to remove
+        if new_pred not in self.predicates:
+            self.predicates.append(new_pred)
+
+
+class GoalState(State):
+    """ A Goal PDDL State (can contain negative predicates)"""
     def add(self, new_pred):
         """ Add a predicate to the state, or remove a predicate if adding a negative."""
         if new_pred.neg:

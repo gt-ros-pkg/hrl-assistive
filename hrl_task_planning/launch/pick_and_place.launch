@@ -1,0 +1,11 @@
+<launch>
+    <group ns="pddl_tasks">
+        <group ns="pick_and_place">
+            <param name="domain" textfile="$(find hrl_task_planning)/params/pick_and_place.domain"/>
+            <rosparam command="load" file="$(find hrl_task_planning)/params/pick_and_place.yaml"/>
+        </group>
+    </group>
+    <node name='grasp_state_monitor' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="pick_and_place"/>
+    <node name='known_loc_monitor' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args=""/>
+    <node name='proximity_monitor' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args=""/>
+</launch>
