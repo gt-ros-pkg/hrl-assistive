@@ -1,0 +1,31 @@
+<launch>
+
+
+
+    <arg name="gateway_name" default="gateway"/>
+    <!-- Polling period for multimaster advertising/flipping -->
+    <arg name="gateway_watch_loop_period" default="5"/>
+    <!-- semi-colon separated hub names/regex patterns -->
+    <arg name="hub_whitelist" default=""/>
+    <node pkg="rocon_gateway" type="gateway.py" name="gateway">
+        <rosparam command="load" file="$(find rocon_gateway)/param/default.yaml" />
+        <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
+        <rosparam command="load" file="$(find rocon_app_manager)/param/app_manager_advertisements.yaml" />
+        <rosparam command="load" file="$(find rocon_app_manager)/param/app_manager_flips.yaml" />
+        <!-- The paired hub, if available -->
+        <rosparam param="hub_uri">http://localhost:6380</rosparam>
+        <param name="name" value="$(arg gateway_name)"/>
+        <!-- Nothing comes in! -->
+        <rosparam param="firewall">true</rosparam>
+        <param name="watch_loop_period" value="$(arg gateway_watch_loop_period)"/>
+        <param name="hub_whitelist" value="$(arg hub_whitelist)"/>
+    </node>
+
+    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen">
+    </node>
+
+    <node name="arm_reacher" pkg="hrl_base_selection" type="arm_reacher_server.py" output="screen">
+    </node>
+
+
+</launch>

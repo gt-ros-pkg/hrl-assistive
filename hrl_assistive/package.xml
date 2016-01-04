@@ -19,6 +19,7 @@
   <run_depend>hrl_ellipsoidal_control</run_depend>
   <run_depend>hrl_face_adls</run_depend>
   <run_depend>hrl_head_registration</run_depend>
+  <run_depend>hrl_base_selection</run_depend>
 
   <export>
     <metapackage/>
