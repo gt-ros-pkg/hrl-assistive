@@ -44,6 +44,7 @@ def calibrate(z):
     st = 0.9
     z.move_position(st)
     rospy.sleep(5.0)
+    pos = z.get_position_meters()
     print 'Current position is: ', pos
     print 'Movement Over'
     #go_pos = 0.1

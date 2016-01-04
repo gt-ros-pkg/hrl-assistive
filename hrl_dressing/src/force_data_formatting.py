@@ -419,6 +419,123 @@ class ForceDataFormatting(object):
         # if self.plot:
         #     self.plot_data(current_data)
 
+    def format_fake_arm_two_categories(self, subject, result):
+        # print subject
+        # print result
+        if not subject == 'fake_arm':
+            print 'Can only do fake arm formatting for fake arm data'
+            return
+        print 'Now editing files to insert position data and storing them in labeled folders.'
+        # paramlist = rosparam.load_file(''.join([self.data_path, '/', subject, '/params.yaml']))
+        # for params, ns in paramlist:
+        #     rosparam.upload_params(ns, params)
+        # arm_length = rosparam.get_param('crook_to_fist')
+        # fist_length = arm_length - rosparam.get_param('crook_to_wrist')
+        # print 'Fist length: ', fist_length, ' cm'
+        # position_of_initial_contact = (44.0 - arm_length)/100.
+        position_of_initial_contact = 0.
+        position_profile = None
+        for ind_i in xrange(len(result)):
+            for ind_j in xrange(len(result[0])):
+                if ind_i < len(result)/2:
+                    load_num = ind_i
+                    vel = 0.1
+                else:
+                    load_num = ind_i - len(result)/2
+                    vel = 0.15
+
+                if vel == 0.1:
+                    # print ''.join([self.data_path, '/position_profiles/position_combined_0_1mps.pkl'])
+                    position_profile = load_pickle(''.join([self.data_path, '/position_profiles/position_combined_0_1mps.pkl']))
+                    # print 'Position profile loaded!'
+                elif vel == 0.15:
+                    position_profile = load_pickle(''.join([self.data_path, '/position_profiles/position_combined_0_15mps.pkl']))
+                    # print ''.join([self.data_path, '/position_profiles/position_combined_0_15mps.pkl'])
+                    # print 'Position profile loaded!'
+                else:
+                    print 'There is no saved position profile for this velocity! Something has gone wrong!'
+                    return None
+                ft_threshold_was_exceeded = False
+                # current_data = np.array([map(float,line.strip().split()) for line in open(''.join([self.data_path, '/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(load_num), '.log']))])
+
+            # while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/',str(vel),'mps/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
+                ft_threshold_was_exceeded = False
+                # print ''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])
+                current_data = np.array([map(float,line.strip().split()) for line in open(''.join([self.data_path, '/', subject, '/', str(vel), 'mps/height', str(ind_j), '/ft_sleeve_', str(load_num), '.log']))])
+                del_index = []
+                for k in xrange(len(current_data)):
+                    if current_data[k][0] < 5.0:
+                        del_index.append(k)
+                current_data = np.delete(current_data, del_index, 0)
+                position_of_stop = 0.
+                del_index = []
+                time_of_initial_contact = None
+
+                # current_data = load_pickle(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
+
+                # if np.max(current_data[:, 2]) >= 10. or np.max(current_data[:, 3]) >= 10. \
+                #         or np.max(current_data[:, 4]) >= 10.:
+                #     ft_threshold_was_exceeded = True
+                position_of_stop = 0.
+                del_index = []
+                for num, j in enumerate(current_data):
+                    j[2] = -j[2]
+                    j[3] = -j[3]
+                    j[4] = -j[4]
+                    j[0] = j[0] - 2.0
+                    # if j[0] < 0.5:
+                    #     j[1] = 0
+                    if np.max(np.abs(j[2:5])) > 10. and not ft_threshold_was_exceeded:
+                        time_of_stop = j[0]
+                        ft_threshold_was_exceeded = True
+                        for k in xrange(len(position_profile)-1):
+                            if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
+                                position_of_stop = position_profile[k, 1] + \
+                                                   (position_profile[k+1, 1] - position_profile[k, 1]) * \
+                                                   (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
+                        j[1] = new_position
+                    elif ft_threshold_was_exceeded:
+                        del_index.append(num)
+                        # j[1] = position_of_stop
+                    else:
+                        for k in xrange(len(position_profile)-1):
+                            if position_profile[k, 0] <= j[0] < position_profile[k+1, 0]:
+                                new_position = position_profile[k, 1] + \
+                                               (position_profile[k+1, 1] - position_profile[k, 1]) * \
+                                               (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
+                        j[1] = new_position
+                        if abs(new_position - position_of_stop) < 0.0005 and new_position > 0.8:
+                            del_index.append(num)
+                        elif new_position < position_of_initial_contact:
+                            del_index.append(num)
+                        else:
+                            if time_of_initial_contact is None:
+                                time_of_initial_contact = j[0]
+                        position_of_stop = new_position
+                # if result[ind_i][ind_j] == 'good'
+
+                current_data = np.delete(current_data, del_index, 0)
+                output_data = []
+                for item in current_data:
+                    output_data.append([item[0]-time_of_initial_contact, item[1]-position_of_initial_contact, item[2], item[3], item[4]])
+                output_data = np.array(output_data)
+                save_number = 0
+                if result[ind_i][ind_j] == 'caught_fist' or result[ind_i][ind_j] == 'caught_other':
+                    save_file = ''.join([self.data_path, '/', subject, '/formatted_three/', str(vel), 'mps/', 'caught', '/force_profile_', str(save_number), '.pkl'])
+                else:
+                    save_file = ''.join([self.data_path, '/', subject, '/formatted_three/', str(vel), 'mps/', result[ind_i][ind_j], '/force_profile_', str(save_number), '.pkl'])
+                while os.path.isfile(save_file):
+                    save_number += 1
+                    if result[ind_i][ind_j] == 'caught_fist' or result[ind_i][ind_j] == 'caught_other':
+                        save_file = ''.join([self.data_path, '/', subject, '/formatted_three/', str(vel), 'mps/', 'caught', '/force_profile_', str(save_number), '.pkl'])
+                    else:
+                        save_file = ''.join([self.data_path, '/', subject, '/formatted_three/', str(vel), 'mps/', result[ind_i][ind_j], '/force_profile_', str(save_number), '.pkl'])
+                print 'Saving with file name', save_file
+                save_pickle(output_data, save_file)
+        print 'Done editing files!'
+        # if self.plot:
+        #     self.plot_data(current_data)
+
     def create_time_warped_data(self, subject):
         result_list = ['missed', 'good', 'caught_fist', 'caught_other']
         velocity_list = ['0.1mps', '0.15mps']
@@ -461,8 +578,8 @@ if __name__ == "__main__":
     # vel_options = [0.1, 0.15]
     # vel = vel_options[0]
 
-    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12', 'tapo_test_data','wenhao_test_data', 'test_subj']
-    this_subject = subject_options[1]
+    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12', 'fake_arm', 'tapo_test_data','wenhao_test_data', 'test_subj']
+    this_subject = subject_options[13]
     height_options = ['height0', 'height1', 'height2', 'height3', 'height4', 'height5']
     height = height_options[0]
 
@@ -471,7 +588,7 @@ if __name__ == "__main__":
 
     fdf = ForceDataFormatting()
 
-    for this_subject in subject_options[11:13]:
+    for this_subject in subject_options[13:14]:
 
         if this_subject == 'subject0':
             this_result = [[label[0], label[1], label[2], label[3]],
@@ -630,10 +747,52 @@ if __name__ == "__main__":
                            [label[0], label[1], label[1], label[3]],
                            [label[0], label[1], label[2], label[3]],
                            [label[0], label[1], label[2], label[3]]]
+        elif this_subject == 'fake_arm':
+            this_result = [[label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]],
+                           [label[0], label[3]]]
 
-        fdf.format_data_four_categories(this_subject, this_result)
-        fdf.format_data_three_categories(this_subject, this_result)
-        fdf.autolabel_and_set_position(this_subject, this_result)
+        # fdf.format_data_four_categories(this_subject, this_result)
+        # fdf.format_data_three_categories(this_subject, this_result)
+        # fdf.autolabel_and_set_position(this_subject, this_result)
+        fdf.format_fake_arm_two_categories(this_subject, this_result)
         fdf.create_time_warped_data(this_subject)
 
 
