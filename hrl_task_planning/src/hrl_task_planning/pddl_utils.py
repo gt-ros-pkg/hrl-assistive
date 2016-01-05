@@ -168,6 +168,9 @@ class State(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def string_list(self):
+        return map(str, self.predicates)
+
     @staticmethod
     def _remove_duplicates(pred_list):
         items = []
@@ -732,7 +735,7 @@ class Situation(object):
         plan = self.solution if plan is None else plan
         if plan is None:
             raise RuntimeError("Cannot find intermediary plan states.  No plan provided, and no solution already stored.")
-        states = [self.problem.init]
+        states = [State(self.problem.init)]
         for step in plan:
             new_state = self.apply_action(self.domain.actions[step.name], step.args, copy.copy(states[-1]))
             states.append(new_state)

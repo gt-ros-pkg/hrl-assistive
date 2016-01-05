@@ -15,15 +15,17 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
 add_message_files(DIRECTORY msg
   FILES
+  DomainList.msg
   PDDLProblem.msg
   PDDLSolution.msg
   PDDLState.msg
+  PDDLPlanStep.msg
 )
 
 add_service_files(DIRECTORY srv
   FILES
   PDDLPlanner.srv
-  PreprocessProblem.srv
+  PreemptTask.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -41,7 +43,8 @@ catkin_package(
 
 catkin_install_python(PROGRAMS
    scripts/pddl_planner
-   scripts/grasp_state_monitor
+   scripts/gripper_sensor_grasp_monitor
+   scripts/grasping_monitor
    scripts/preprocess_problems
    scripts/task_smacher
    scripts/test_client

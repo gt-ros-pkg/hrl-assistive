@@ -18,9 +18,12 @@ class GraspStateMonitor(object):
         self.l_grasp_state = None
         self.r_grasp_state_sub = rospy.Subscriber('/grasping/right_gripper', Bool, self.grasp_state_cb, 'right')
         self.l_grasp_state_sub = rospy.Subscriber('/grasping/left_gripper', Bool, self.grasp_state_cb, 'left')
-        self.state_pub = rospy.Publisher('/pddl_tasks/%s/state_update' % self.domain, PDDLState, latch=True)
+        self.state_pubs = {}
+        for domain in self.domains:
+            self.state_pubs[domain] = rospy.Publisher('/pddl_tasks/%s/state_updates' % domain, PDDLState)
 
-    def grasp_stat_cb(self, grasping_msg, side):
+    def grasp_state_cb(self, grasping_msg, side):
+        update = False
         if grasping_msg.data:
             if self.grasping[side] is None:
                 pred = pddl.Predicate('GRASPING', ['HAND', 'TARGET'])
@@ -34,15 +37,15 @@ class GraspStateMonitor(object):
         if update:
             state_msg = PDDLState()
             state_msg.predicates = [str(pred)]
-            for domain in self.domains:
+            for domain, pub in self.state_pubs.iteritems():
                 state_msg.domain = domain
-                self.state_pub.publish(state_msg)
+                pub.publish(state_msg)
 
 
 def main():
     rospy.init_node('grasping_state_monitor')
     parser = argparse.ArgumentParser(description="Update the PDDLState when items are grasped/released.")
-    parser.add_argument('domain(s)', nargs='+', help="The domains this monitor is updating.")
+    parser.add_argument('--domains', '-d', nargs='+', help="The domain(s) this monitor is updating.")
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
 
     monitor = GraspStateMonitor(args.domains)

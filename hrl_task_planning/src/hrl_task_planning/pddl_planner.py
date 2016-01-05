@@ -17,17 +17,16 @@ class TaskPlannerNode(object):
         rospy.loginfo("[%s] Ready", rospy.get_name())
 
     def plan_req_cb(self, req):
+        # Create PDDL Domain object from domain param
         try:
-            domain_file_param = '/'.join([req.problem.domain, 'domain_file'])
-            domain_file = rospy.get_param(domain_file_param)
+            domain_param = '/'.join(['/pddl_tasks', req.problem.domain, 'domain'])
+            domain = pddl.Domain.from_string(rospy.get_param(domain_param))
         except KeyError as e:
             rospy.logerr("[%s] Could not find parameter: %s", rospy.get_name(), e.message)
             return (False, [], [])
         except Exception as e:
             raise rospy.ServiceException(e.message)
-        rospy.loginfo("[%s] Planner Solving problem:\n%s", rospy.get_name(), req.problem)
-        # Create PDDL Domain object from domain file
-        domain = pddl.Domain.from_file(domain_file)
+#        rospy.loginfo("[%s] Planner Solving problem:\n%s", rospy.get_name(), req.problem)
         # Create PDDL Problem object from incoming message
         problem = pddl.Problem.from_msg(req.problem)
         # Define the planning situation (domain and problem)
@@ -37,8 +36,8 @@ class TaskPlannerNode(object):
             situation.solution = self.planner.solve(domain, problem)
             result.solved = True
             result.steps = map(str, situation.solution)
-            result.states = [PDDLState(problem.name, map(str, state)) for state in situation.get_plan_intermediary_states()]
-        except pddl.PlanningError:
+            result.states = [PDDLState(problem.name, domain.name, state.string_list()) for state in situation.get_plan_intermediary_states()]
+        except pddl.PlanningException:
             result.solved = False
         except Exception as e:
             raise rospy.ServiceException(e.message)

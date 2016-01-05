@@ -15,7 +15,7 @@ class ParameterMonitor(object):
         self.args = args
         self.params = ["/pddl_tasks/%s/%s/%s" % (self.domain, self.predicate, arg) for arg in self.args]
         self.state = []
-        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_update' % self.domain, PDDLState)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState)
 
     def run(self):
         pub = False
@@ -46,7 +46,7 @@ def main():
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
     rospy.init_node('%s_%s_param_monitor' % (args.domain, args.predicate))
     monitor = ParameterMonitor(args.domain, args.predicate, args.args)
-    rate = rospy.Rate(20)
+    rate = rospy.Rate(4)
     while not rospy.is_shutdown():
         monitor.run()
         rate.sleep()
