@@ -1,3 +1,2 @@
 constant_predicates: []
-#default_goal: ['(AT TARGET PLACE_LOC)']
-default_goal: []
+default_goal: ['(AT TARGET PLACE_LOC)']

@@ -163,7 +163,6 @@ class PDDLTaskThread(Thread):
                 break
         if self.next_thread is not None:
             self.next_thread.start()
-        print "Thread finished"
 
     def preempt(self):
         return self.state_machine.request_preempt()
