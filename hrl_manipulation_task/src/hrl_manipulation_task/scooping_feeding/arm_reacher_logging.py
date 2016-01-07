@@ -52,6 +52,7 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag):
     print armReachActionRight("initScooping")
     
     #ut.get_keystroke('Hit a key to proceed next')        
+    print armReachActionRight("runScooping")
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping")
@@ -75,8 +76,8 @@ def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
-    #print armReachActionRight("initFeeding")
     print armReachActionLeft("initFeeding")
+    print armReachActionRight("initFeeding")
 
     print "Detect ar tag on the head"
     print armReachActionLeft('lookAtMouth')
@@ -112,7 +113,8 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    log = logger(ft=True, audio=True, kinematics=True, vision=True, pps=True, skin=True, \
+    log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
+                 pps=True, skin=True, \
                  subject="gatsbii", task='scooping', data_pub=opt.bDataPub, verbose=False)
 
     last_trial  = '4'

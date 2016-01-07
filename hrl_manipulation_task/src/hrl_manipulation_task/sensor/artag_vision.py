@@ -45,13 +45,14 @@ from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 class artag_vision(threading.Thread):
 
-    def __init__(self, verbose=False, viz=False):
+    def __init__(self, task='feeding', verbose=False, viz=False):
         super(artag_vision, self).__init__()        
         self.daemon = True
         self.cancelled = False
         self.isReset = False
         self.verbose = verbose
         self.viz     = viz
+        self.task    = task
 
         self.init_time = 0.0        
         self.counter = 0
@@ -85,11 +86,11 @@ class artag_vision(threading.Thread):
         '''
         Get parameters
         '''
-        self.tag_id         = rospy.get_param('hrl_manipulation_task/head/artag_id')
-        self.tag_length     = rospy.get_param('hrl_manipulation_task/head/artag_length')
-        self.tag_max_id     = rospy.get_param('hrl_manipulation_task/head/artag_max_id')
-        self.tag_total_tags = rospy.get_param('hrl_manipulation_task/head/artag_total_tags')
-        self.tag_buf_size   = rospy.get_param('hrl_manipulation_task/head/artag_buf_size')
+        self.tag_id         = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_id')
+        self.tag_length     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_length')
+        self.tag_max_id     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_max_id')
+        self.tag_total_tags = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_total_tags')
+        self.tag_buf_size   = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_buf_size')
 
         self.pos_buf  = cb.CircularBuffer(self.tag_buf_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.tag_buf_size, (4,))               

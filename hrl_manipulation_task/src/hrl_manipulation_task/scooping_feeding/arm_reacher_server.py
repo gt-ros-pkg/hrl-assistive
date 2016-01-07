@@ -92,8 +92,8 @@ class armReachAction(mpcBaseAction):
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped, latch=True)
         
         rospy.Subscriber('InterruptAction', String, self.stopCallback)
-        rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
-                         PoseStamped, self.bowlPoseCallback)
+        ## rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
+        ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/ar_track_alvar/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
         
@@ -107,7 +107,7 @@ class armReachAction(mpcBaseAction):
         '''
         Industrial movment commands generally follows following format, 
         
-               Movement type, joint or pose(pos+euler), timeout, relative_frame(not implemented)
+               Movement type, joint or pose(pos+euler), timeout, relative_frame, threshold
 
         In this code, we allow to use following movement types,
 
@@ -149,21 +149,23 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping'] = {}
         self.motions['initScooping']['left'] = \
           [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0],
-           ['MOVES', '[-0.04, 0.0, -0.1, 0, 0.7, 0]', 5, 'self.bowl_frame']] 
+           ['MOVES', '[-0.04, 0.0, -0.15, 0, 0.7, 0]', 5, 'self.bowl_frame']] 
         self.motions['initScooping']['right'] = \
-          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],
-          #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
-           ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.],
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],             
            ['PAUSE', 1.0]]
-          
+          #['MOVEJ', '[-0.649, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0]
+          #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
+
+        
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.0,  0.03, 0, 0.7, 0]', 3, 'self.bowl_frame'],
-           ['MOVES', '[ 0.02, 0.0,  0.03, 0, 1.2, 0]', 4, 'self.bowl_frame'],
+          [['MOVES', '[-0.04, 0.0,  0.04, 0, 0.7, 0]', 4, 'self.bowl_frame'],
+           ['MOVES', '[ 0.02, 0.0,  0.05, 0, 1.2, 0]', 4, 'self.bowl_frame'],
            ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'],
            ['PAUSE', 2.0] ]
         self.motions['runScooping']['right'] = \
-          []
+          [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.]
+           ]
         
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -173,18 +175,21 @@ class armReachAction(mpcBaseAction):
            ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0, 'self.default_frame'], 
            ['PAUSE', 2.0] ]           
         self.motions['initFeeding']['right'] = \
-          [['MOVEJ', '[-1.57, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0]]
+          [['MOVEJ', '[-1.0, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0],
+           ]
+        #['MOVEJ', '[-1.57, 0.0, -1.57, -1.69, 0.0, -0.748, -1.57]', 5.0]]
 
         self.motions['runFeeding1'] = {}
         self.motions['runFeeding1']['left'] = \
-          [['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
+          [['MOVES', '[0.0, 0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ['PAUSE', 2.0] 
            ]
 
         self.motions['runFeeding2'] = {}
         self.motions['runFeeding2']['left'] = \
-          [['MOVES', '[0.0, 0.02, 0.03, 0., 0., 0.]', 10., 'self.mouth_frame', 0.05],
-           ['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame', 0.05],                     
+          [['MOVES', '[0.0, 0.02, 0.02, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['PAUSE', 2.0], 
+           ['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
           
         rospy.loginfo("Parameters are loaded.")
@@ -196,10 +201,10 @@ class armReachAction(mpcBaseAction):
         if task == "getBowlPos":
             if self.bowl_frame_kinect is not None:
                 self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)
-                return "Chose kinect bowl position"
+                return "Choose kinect bowl position"
             elif self.bowl_frame_kinect is None:
                 self.bowl_frame = copy.deepcopy(self.getBowlFrame())
-                return "Chose bowl position from kinematics using tf"                
+                return "Choose bowl position from kinematics using tf"                
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"

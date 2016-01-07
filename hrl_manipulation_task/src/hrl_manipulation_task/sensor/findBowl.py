@@ -25,8 +25,8 @@ class arTagDetector:
 
         self.bowl_tag_id   = bowl_tag_id
         self.bowl_calib    = False
-        self.bowl_z_offset = 0.05
-        self.bowl_forward_offset = 0.075
+        self.bowl_z_offset = 0.0 #0.05
+        self.bowl_forward_offset = 0.0 #0.075
         self.bowl_tag_flag = False
 
         self.bowl_cen_frame_off = None
@@ -37,9 +37,9 @@ class arTagDetector:
         self.bowl_quat_buf = cb.CircularBuffer(self.hist_size, (4,))               
 
         self.x_neg90_frame = PyKDL.Frame.Identity()
-        self.x_neg90_frame.M = PyKDL.Rotation.Quaternion(-np.sqrt(0.5), 0.0, 0.0, np.sqrt(0.5))
+        #self.x_neg90_frame.M = PyKDL.Rotation.Quaternion(-np.sqrt(0.5), 0.0, 0.0, np.sqrt(0.5))
         self.y_90_frame = PyKDL.Frame.Identity()
-        self.y_90_frame.M = PyKDL.Rotation.Quaternion(0.0, np.sqrt(0.5), 0.0, np.sqrt(0.5))
+        #self.y_90_frame.M = PyKDL.Rotation.Quaternion(0.0, np.sqrt(0.5), 0.0, np.sqrt(0.5))
        
         self.bowl_cen_pose_pub = rospy.Publisher("ar_track_alvar/bowl_cen_pose", PoseStamped, latch=True)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
@@ -262,12 +262,14 @@ if __name__ == '__main__':
 
     
     total_tags = 1
-    tag_id = 9
+    tag_id = 11
     tag_side_length = 0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18
 
-    save_file = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/params/ar_tag/bowl_offsetframe.pkl' 
+    #save_file = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/params/ar_tag/bowl_offsetframe.pkl' 
+    save_file = '/home/dpark/git/hrl-assistive/hrl_manipulation_task/params/ar_tag/bowl_offsetframe.pkl' 
+    
         
     atd = arTagDetector(tag_id, tag_side_length, pos_thres)
 

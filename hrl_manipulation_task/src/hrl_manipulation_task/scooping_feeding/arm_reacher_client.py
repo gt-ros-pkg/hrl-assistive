@@ -47,39 +47,41 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    print armReachActionRight("initScooping")
-    print armReachActionLeft("getBowlPos")
-    print armReachActionLeft('lookAtBowl')
-    print armReachActionLeft("initScooping")
-    ## print armReachActionLeft("test")
-    sys.exit()
+    if True:
+        print armReachActionRight("initScooping")
+        print armReachActionLeft("getBowlPos")
+        print armReachActionLeft('lookAtBowl')
+        ## print armReachActionLeft("test")
+        ## sys.exit()
     
     
     ## Scooping -----------------------------------    
-    print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping")
-    print armReachActionRight("initScooping")
-    
-    #ut.get_keystroke('Hit a key to proceed next')        
-    print armReachActionLeft("getBowlPos")
-    print armReachActionLeft('lookAtBowl')
+    if True:
+        print "Initializing left arm for scooping"
+        print armReachActionRight("runScooping")
 
-    print "Running scooping!"
-    print armReachActionLeft("runScooping")
+        #ut.get_keystroke('Hit a key to proceed next')        
+        print armReachActionLeft("getBowlPos")
+        print armReachActionLeft('lookAtBowl')
+        print armReachActionLeft("initScooping")
+
+        print "Running scooping!"
+        print armReachActionLeft("runScooping")
 
     ## Feeding -----------------------------------
-    print "Initializing left arm for feeding"
-    print armReachActionRight("initFeeding")
-    print armReachActionLeft("initFeeding")
+    if True:
+        print "Initializing left arm for feeding"
+        print armReachActionLeft("initFeeding")
+        print armReachActionRight("initFeeding")
 
-    print "Detect ar tag on the head"
-    print armReachActionLeft('lookAtMouth')
-    print armReachActionLeft("getHeadPos")
-    ut.get_keystroke('Hit a key to proceed next')        
+        print "Detect ar tag on the head"
+        print armReachActionLeft('lookAtMouth')
+        print armReachActionLeft("getHeadPos")
+        ut.get_keystroke('Hit a key to proceed next')        
 
-    print "Running feeding!"
-    print armReachActionLeft("runFeeding1")
-    print armReachActionLeft("runFeeding2")
+        print "Running feeding!"
+        print armReachActionLeft("runFeeding1")
+        print armReachActionLeft("runFeeding2")
 
     
     ## t1 = datetime.datetime.now()

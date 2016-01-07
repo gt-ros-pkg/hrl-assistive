@@ -49,8 +49,16 @@ hrl_manipulation_task:
     - r_wrist_roll_joint
 
   # For visual perception
-  head:
+  feeding:
     artag_id: 10
+    artag_length: 0.053
+    artag_max_id: 18
+    artag_total_tags: 1
+    artag_buf_size: 10
+
+  # For visual perception
+  scooping:
+    artag_id: 11
     artag_length: 0.053
     artag_max_id: 18
     artag_total_tags: 1

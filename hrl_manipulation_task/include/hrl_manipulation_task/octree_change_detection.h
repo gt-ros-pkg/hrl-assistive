@@ -31,7 +31,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/JointState.h>
-/* #include "hrl_anomaly_detection/pclChange.h" */
+#include "hrl_anomaly_detection/pclChange.h"
 /* #include <visualization_msgs/MarkerArray.h> */
 /* #include <visualization_msgs/Marker.h> */
 

@@ -70,7 +70,7 @@ class logger:
         self.audio         = kinect_audio() if audio else None
         self.kinematics    = robot_kinematics() if kinematics else None
         self.ft            = tool_ft() if ft else None
-        self.vision_artag  = artag_vision(False, viz=False) if vision_artag else None
+        self.vision_artag  = artag_vision(self.task, False, viz=False) if vision_artag else None
         self.vision_change = kinect_vision(False) if vision_change else None
         self.pps_skin      = pps_skin(True) if pps else None
         self.fabric_skin   = fabric_skin(True) if skin else None
@@ -277,8 +277,7 @@ class logger:
     def runDataPub(self):
         '''
         Publish collected data
-        '''
-        
+        '''        
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
 
