@@ -97,11 +97,12 @@ class PDDLTaskThread(Thread):
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
         self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, latch=True)
+        self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, latch=True)
         self.planner_service = rospy.ServiceProxy("/pddl_planner", PDDLPlanner)
         self.domain_smach_states = importlib.import_module("hrl_task_planning.%s_states" % self.domain)
         self.domain_state = None
         self.domain_status_sub = rospy.Subscriber('/pddl_tasks/%s/state' % self.domain, PDDLState, self.domain_state_cb)
-        self.state_machine = smach.StateMachine(outcomes=SPA)
+        self.state_machine = None
         self.daemon = True
 
     def domain_state_cb(self, pddl_state_msg):
@@ -113,13 +114,12 @@ class PDDLTaskThread(Thread):
             self.problem_msg.goal = self.default_goal
         while self.result != 'succeeded':
             # For the current problem get initial state and
-            if self.problem_msg.init:  # if initial state is given, add constant predicates
-                self.problem_msg.init.extend(self.constant_predicates)
-            else:  # if initial state is not given, use current domain state
-                while self.domain_state is None:
-                    rospy.loginfo("Waiting for state of %s domain.", self.domain)
-                    rospy.sleep(1)
-                self.problem_msg.init.extend(self.domain_state)
+            self.problem_msg.init.extend(self.constant_predicates)
+            while self.domain_state is None:
+                rospy.loginfo("Waiting for state of %s domain.", self.domain)
+                rospy.sleep(1)
+            print "Extending initial state with ", self.domain_state
+            self.problem_msg.init.extend(self.domain_state)
 
             # Get solution from planner
             try:
@@ -142,16 +142,21 @@ class PDDLTaskThread(Thread):
             state_preds = [state.predicates for state in solution.states]
             states = [State(preds) for preds in [map(Predicate.from_string, preds) for preds in state_preds]]
             n_steps = len(steps)
+            self.state_machine = smach.StateMachine(outcomes=SPA)
             with self.state_machine:
                 for i in range(n_steps):  # TODO: Catch index errors at end of list
                     smach_state = self.domain_smach_states.get_action_state(self.domain, self.problem_name,
                                                                             steps[i].name, steps[i].args,
                                                                             states[i], states[i+1])
                     if i == n_steps-1:
-                        transitions = {'preempted':'preempted', 'aborted':'aborted', 'succeeded':'succeeded'}
+                        transitions = {'preempted': 'preempted',
+                                       'aborted': 'aborted',
+                                       'succeeded': 'succeeded'}
                     else:
-                        transitions = {'succeeded': '%s-%d' % (self.domain, i+1)}
-                    self.state_machine.add('%s-%d' % (self.domain, i), smach_state, transitions=transitions)
+                        transitions = {'preempted': 'preempted',
+                                       'aborted': 'aborted',
+                                       'succeeded': '%d-%s' % (i+1, steps[i+1].name)}
+                    self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=transitions)
             try:
                 self.result = self.state_machine.execute()
                 print "Result: ", self.result
@@ -161,11 +166,19 @@ class PDDLTaskThread(Thread):
                 if self.next_thread is not None:
                     self.next_thread.preempt()
                 break
+
+        # Publish empty action to current action topic (since we're done)
+        plan_step_msg = PDDLPlanStep()
+        plan_step_msg.domain = self.domain
+        plan_step_msg.problem = self.problem
+        self.action_pub.publish(plan_step_msg)
+
         if self.next_thread is not None:
             self.next_thread.start()
 
     def preempt(self):
-        return self.state_machine.request_preempt()
+        if self.state_machine is not None:
+            self.state_machine.request_preempt()
 
 
 class PDDLSmachState(smach.State):
@@ -183,7 +196,7 @@ class PDDLSmachState(smach.State):
         self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
 
     def domain_state_cb(self, state_msg):
-        self.current_state = State(state_msg.predicates)
+        self.current_state = State(map(Predicate.from_string, state_msg.predicates))
 
     def on_execute(self, ud):
         """ Override to create task-specific functionality before waiting for state update in main execute."""
@@ -199,8 +212,16 @@ class PDDLSmachState(smach.State):
         self.action_pub.publish(plan_step_msg)
         self.on_execute(ud)
         rate = rospy.Rate(20)
+        print "Starting PDDLSmachState: %s" % self.action
+        print "Initial State: ", str(self.init_state)
+        print "Goal State: ", str(self.goal_state)
+        while self.current_state is None:
+            rospy.loginfo("State %s waiting for current state", self.action)
+            rospy.sleep(1)
+        print "Current State: ", str(self.current_state)
         while not rospy.is_shutdown():
-            if self.preempt_requested:
+            if self.preempt_requested():
+                rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
                 self.service_preempt()
                 return 'preempted'
             if self.goal_state.is_satisfied(self.current_state):
@@ -211,36 +232,6 @@ class PDDLSmachState(smach.State):
                     return 'aborted'
             rate.sleep()
         return 'preempted'
-
-
-#def build_sm(self, solution, get_state_fn, next_task_request=None):
-#    plan = map(PlanStep.from_string, solution.steps)
-#    pddl_states = solution.states
-#    problem = solution.states[0].problem.split('+')[0]
-#
-#    sm = smach.StateMachine(outcomes=SPA)
-#    sm_states = []
-#    for i, step in enumerate(plan):
-#        sm_states.append(("_PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
-#        step_state = get_state_fn(step)
-#        if isinstance(step_state, PDDLProblem):
-#            sm_states.append((step.name + "+%d" % i, self.problem_msg_to_state_machine(step_state)))
-#        else:
-#            sm_states.append((step.name + "+%d" % i, get_state_fn(step)))
-#    sm_states.append(("_PDDL_STATE_PUB+FINAL", PDDLStatePublisherState(pddl_states[-1], self.state_pub, outcomes=SPA)))
-#    if next_task_request is None:
-#        sm_states.append(("_CLEANUP", CleanupState(problem=problem, outcomes=SPA, input_keys=["problem_name"])))
-#    else:
-#        sm_states.append(("_NextTask", StartNewTaskState(next_task_request, outcomes=SPA)))  # Keep old info if we're continuing on with this task...
-#    with sm:
-#        try:
-#            for i, sm_state in enumerate(sm_states):
-#                next_sm_state = sm_states[i + 1]
-#                # print "State: %s --> Next State: %s" % (sm_state, next_sm_state)
-#                sm.add(sm_state[0], sm_state[1], transitions={'succeeded': next_sm_state[0]})
-#        except IndexError:
-#            sm.add(sm_states[-1][0], sm_states[-1][1], transitions={'succeeded': 'succeeded'})
-#    return sm
 
 
 class CleanupState(smach.State):

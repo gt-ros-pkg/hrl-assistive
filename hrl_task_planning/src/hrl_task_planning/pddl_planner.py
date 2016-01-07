@@ -25,8 +25,8 @@ class TaskPlannerNode(object):
             rospy.logerr("[%s] Could not find parameter: %s", rospy.get_name(), e.message)
             return (False, [], [])
         except Exception as e:
-            raise rospy.ServiceException(e.message)
-#        rospy.loginfo("[%s] Planner Solving problem:\n%s", rospy.get_name(), req.problem)
+            raise rospy.ServiceException(': '.join(['Error defining domain', e.message]))
+        rospy.loginfo("[%s] Planner Solving problem:\n%s", rospy.get_name(), req.problem)
         # Create PDDL Problem object from incoming message
         problem = pddl.Problem.from_msg(req.problem)
         # Define the planning situation (domain and problem)
@@ -40,7 +40,7 @@ class TaskPlannerNode(object):
         except pddl.PlanningException:
             result.solved = False
         except Exception as e:
-            raise rospy.ServiceException(e.message)
+            raise rospy.ServiceException(': '.join(['Error finding solution', e.message]))
         return result
 
 

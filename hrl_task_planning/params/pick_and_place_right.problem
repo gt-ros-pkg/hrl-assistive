@@ -3,6 +3,7 @@
      (:objects bloc - item)
      (:init
             (at target pick_loc)
+            (grasping hand bloc)
      )
      (:goal (and (at target place_loc))
      )

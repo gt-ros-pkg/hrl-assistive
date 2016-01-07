@@ -61,9 +61,8 @@
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
 
   <!-- Gripper Grasping State Monitors -->
-  <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" args="right" output="screen"/>
-  <node name="l_grasp_state_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" args="left" output="screen"/>
-
+  <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="gripper_sensor_grasp_monitor" args="right" output="screen"/>
+  <node name="l_grasp_state_monitor" pkg="hrl_task_planning" type="gripper_sensor_grasp_monitor" args="left" output="screen"/>
 
   <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">

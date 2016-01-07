@@ -29,71 +29,104 @@ def _dict_to_pose_stamped(ps_dict):
 
 
 class ProximityMonitor(object):
-    def __init__(self, domain, object_frames, distance_threshold=0.1):
+    def __init__(self, domain, object_name, frame, distance_threshold=0.1):
         self.domain = domain
-        self.object_frames = object_frames
+        self.object_name = object_name
+        self.frame = frame
         self.dist_thresh = distance_threshold
+        self.grasping = []
+        self.near_locations = []
         self.tfl = TransformListener()
         self.state = []
-        self.known_locations = set()
-        self.location_poses = {}
+        self.known_locations = {}
         self.state_update_pub = rospy.Publisher("/pddl_tasks/%s/state_updates" % self.domain, PDDLState)
         self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
 
     def domain_state_cb(self, state_msg):
         # When state is updated, find all known locations in updated state
-        known_set_update = set()
-        for pred_str in state_msg.predicates:
-            pred = pddl.Predicate.from_string(pred_str)
+        pub = False
+        predicates = map(pddl.Predicate.from_string, state_msg.predicates)
+        current_known_locations = []
+        current_grasped_items = []
+        for pred in predicates:
             if pred.name == 'KNOWN':
-                known_set_update.add(pred.args[0])
+                loc = pred.args[0]
+                current_known_locations.append(loc)
+                if loc not in self.known_locations:
+                    try:
+                        pose_dict = rospy.get_param("/pddl_tasks/%s/KNOWN/%s" % (self.domain, loc))
+                        self.known_locations[loc] = _dict_to_pose_stamped(pose_dict)
+                    except KeyError:
+                        rospy.logwarn("[%s] Expected location of %s on parameter server, but not found!", rospy.get_name(), pred.args[0])
+                        pass
+            if pred.name == 'GRASPING' and pred.args[0] == self.object_name:
+                    current_grasped_items.append(pred.args[1])
+                    if pred.args[1] not in self.grasping:
+                        self.grasping.append(pred.args[1])
 
         # Identify forgotten locations, remove from internal state list, and replace with negation
-        forgotten_locations = self.known_locations.difference(known_set_update)
-        removals = []
-        for loc in forgotten_locations:
-            for pred in self.state:
-                if loc in pred.args:
-                    removals.append(pred)
-        for remove_pred in removals:
-            self.state.remove(remove_pred)
-            remove_pred.negate()
-            self.state.append(remove_pred)
+        update_preds = []
+        for loc in self.known_locations:
+            if loc not in current_known_locations:
+                self.known_locations.pop(loc)
+                if loc in self.near_locations:
+                    update_preds.append(pddl.Predicate('AT', [self.object_name, loc], neg=True))
+                    self.near_locations.remove(loc)
 
-        # Get the location poses for newly known states
-        new_locations = known_set_update.difference(self.known_locations)
-        for loc in new_locations:
-            self.location_poses[loc] = _dict_to_pose_stamped(rospy.get_param('/pddl_tasks/%s/KNOWN/%s' % (self.domain, loc)))
+        for item in self.grasping:
+            if item not in current_grasped_items:
+                self.grasping.remove(item)
+                for loc in self.near_locations:
+                    update_preds.append(pddl.Predicate('AT', [item, loc]))  # the item was grasped, now isn't (dropped), so must be at the location
 
-        update_msg = PDDLState()
-        update_msg.domain = self.domain
-        update_msg.predicates = map(str, self.state)
-        self.state_update_pub.publish(update_msg)
+        for pred in update_preds:
+            pos_pred = pddl.Predicate(pred.name, pred.args)
+            if pred.neg and pos_pred in self.state:
+                self.state.remove(pos_pred)
+                pub = True
+            if not pred.neg and pred not in self.state:
+                self.state.add(pred)
+                pub = True
+
+        if pub:
+            update_msg = PDDLState()
+            update_msg.domain = self.domain
+            update_msg.predicates = map(str, self.state)
+            self.state_update_pub.publish(update_msg)
 
     def check_state(self):
         pub = False
         now_near = []
-        for gripper, frame in self.object_frames.iteritems():
-            for loc, loc_pose in self.location_poses.iteritems():
-                try:
-                    (trans, _) = self.tfl.lookupTransform(loc_pose.header.frame_id, frame, rospy.Time(0))
-                    loc = np.array([loc_pose.pose.position.x, loc_pose.pose.position.y, loc_pose.pose.position.z])
-                    if np.linalg.norm(loc-trans) < self.dist_thresh:
-                        now_near.append(pddl.Predicate('NEAR', [gripper, loc]))
-                except (LookupException, ConnectivityException, ExtrapolationException):
-                    pass
-        for pred in self.state:
+
+        for loc_name, loc_pose in self.known_locations.iteritems():
+            try:
+                (trans, _) = self.tfl.lookupTransform(loc_pose.header.frame_id, self.frame, rospy.Time(0))
+                loc = np.array([loc_pose.pose.position.x, loc_pose.pose.position.y, loc_pose.pose.position.z])
+                if np.linalg.norm(loc-trans) < self.dist_thresh:
+                    now_near.append(loc_name)
+            except (LookupException, ConnectivityException, ExtrapolationException):
+                pass
+
+        update_preds = []
+        # Add newly near locations
+        for loc in now_near:
+            if loc not in self.near_locations:
+                self.near_locations.append(loc)
+                update_preds.append(pddl.Predicate('AT', [self.object_name, loc]))
+        # remove no-longer-near locations
+        for loc in self.near_locations:
+            if loc not in now_near:
+                self.near_locations.remove(loc)
+                update_preds.append(pddl.Predicate('AT', [self.object_name, loc], neg=True))
+
+        for pred in update_preds:
             pos_pred = pddl.Predicate(pred.name, pred.args)
-            if pred.neg and pos_pred in now_near:
-                pred.negate()  # Was NOT near, now is
+            if pred.neg and pos_pred in self.state:
+                self.state.remove(pos_pred)
                 pub = True
-            if not pred.neg and pred not in now_near:
-                self.state.remove(pred)  # Was near, now isn't
+            if not pred.neg and pred not in self.state:
+                self.state.append(pred)
                 pub = True
-        newly_near = [pred for pred in now_near if pred not in self.state]  # add newly near states
-        if newly_near:
-            self.state.extend(newly_near)
-            pub = True
 
         if pub:
             update_msg = PDDLState()
@@ -105,21 +138,13 @@ class ProximityMonitor(object):
 def main():
     parser = argparse.ArgumentParser(description="Monitor location of frames, and update domain state when close to known locations.")
     parser.add_argument('domain', help="The domain for which the parameter will be monitored.")
-    parser.add_argument('--objects', '-o', nargs="*", default=[], help="A list of pddl object names to monitor for nearness to locations.")
-    parser.add_argument('--frames', '-f', nargs="*", default=[], help="A list of frames corresponding to the list of pddl object names.")
+    parser.add_argument('object', help="The pddl name of the object to monitor for nearness to locations.")
+    parser.add_argument('frame', help="The TF frame corresponding to the pddl object.")
     parser.add_argument('--distance', '-d', default=0.1, help="The threshold distance to declare 'near.'")
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
-    assert len(args.objects) == len(args.frames), "A TF frame name must be given for each listed object."
-    if not args.objects:
-        object_frames = {"RIGHT_GRIPPER": "r_gripper_tool_frame",
-                         "LEFT_GRIPPER": "l_gripper_tool_frame"}
-    else:
-        object_frames = {}
-        for obj, frame in zip(args.objects, args.frames):
-            object_frames[obj] = frame
 
     rospy.init_node('%s_proximity_monitor' % args.domain)
-    monitor = ProximityMonitor(args.domain, object_frames, args.distance)
+    monitor = ProximityMonitor(args.domain, args.object, args.frame, args.distance)
     rate = rospy.Rate(20)
     while not rospy.is_shutdown():
         monitor.check_state()

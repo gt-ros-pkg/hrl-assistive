@@ -3,7 +3,6 @@
 import copy
 import itertools as it
 
-
 def _separate_string(string):
     """ Space out parentheses and split to separate items in a lisp string."""
     string = string.replace(')', ' ) ')
@@ -66,6 +65,8 @@ class Type(object):
 class Object(object):
     """ A class describing an Object in PDDL. """
     def __init__(self, name, type_=None):
+        assert isinstance(name, str), "Object name must be a string."
+        assert isinstance(type_, str) or type_ is None, "Object name must be a string."
         self.name = name
         self.type = type_
 

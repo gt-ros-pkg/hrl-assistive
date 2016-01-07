@@ -404,6 +404,10 @@ var PR2ArmMPC = function (options) {
     self.ros.getMsgDetails('geometry_msgs/PoseStamped');
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
 
+    self.getState = function () {
+        return self.state;
+    };
+
     self.setState = function (msg) {
         self.state = msg;
     };

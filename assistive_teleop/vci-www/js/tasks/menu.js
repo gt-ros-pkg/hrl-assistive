@@ -100,7 +100,12 @@ RFH.initTaskMenu = function (divId) {
                                        base: RFH.pr2.base}));
 //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
     RFH.taskMenu.addTask(new RFH.IdLocation({ros:RFH.ros}));
-    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros}));
+    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
+                                               arm: RFH.pr2.r_arm_cart,
+                                               gripper: RFH.pr2.r_gripper}));
+    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
+                                               arm: RFH.pr2.l_arm_cart,
+                                               gripper: RFH.pr2.r_gripper}));
                                     
     // Start looking task by default
     $('#'+RFH.taskMenu.tasks.lookingTask.buttonText).click();

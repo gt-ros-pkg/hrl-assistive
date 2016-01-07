@@ -1,5 +1,4 @@
 <launch>
-    <node name='grasp_state_monitor' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place_right pick_and_place_left"/>
 
     <group ns="pddl_tasks">
         <group ns="pick_and_place_right">
@@ -8,7 +7,8 @@
         </group>
     </group>
     <node name='known_loc_monitor_right' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place_right known -a pick_loc place_loc elsewhere"/>
-    <node name='proximity_monitor_right' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place_right -o hand -f r_gripper_tool_frame -d 0.1"/>
+    <node name='proximity_monitor_right' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place_right  hand r_gripper_tool_frame -d 0.1"/>
+    <node name='grasp_state_monitor_right' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place_right -s right"/>
 
     <group ns="pddl_tasks">
         <group ns="pick_and_place_left">
@@ -17,5 +17,7 @@
         </group>
     </group>
     <node name='known_loc_monitor_left' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place_left known -a pick_loc place_loc elsewhere"/>
-    <node name='proximity_monitor_left' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place_left -o hand -f l_gripper_tool_frame -d 0.1"/>
+    <node name='proximity_monitor_left' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place_left hand l_gripper_tool_frame -d 0.1"/>
+    <node name='grasp_state_monitor_left' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place_left -s left"/>
+
 </launch>

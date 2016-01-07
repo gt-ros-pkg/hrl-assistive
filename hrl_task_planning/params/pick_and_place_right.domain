@@ -9,6 +9,7 @@
              target - item
              pick_loc - location
              place_loc - location
+             hand_start_loc - location
              elsewhere - location
  )
 
