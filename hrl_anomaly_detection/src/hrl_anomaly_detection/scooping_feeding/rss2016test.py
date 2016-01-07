@@ -677,7 +677,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         if verbose: print "Visualize data"
         count       = 0
         nPlot       = len(modality_list)
-        time_lim    = [0, 16]
+        time_lim    = [0, 16] #?????????????????????????????
    
         if raw_viz: target_dict = raw_data_dict
         else: target_dict = interp_data_dict
@@ -791,7 +791,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
             if idx == 0:
                 color = 'b'
             else:
-                color = 'r'
+                color = 'r'            
 
             if raw_viz:
                 combined_time_list = []
@@ -809,7 +809,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                         ax.plot(time_list[i], data_list[i][:len(time_list[i])], c=color)                    
             else:
                 interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
-                
+
+                ## print modality, np.shape(interp_time), np.shape(data_list), np.shape(data_list[0])
                 for i in xrange(len(data_list)):
                     ax.plot(interp_time, data_list[i], c=color)                
                     ## for j in xrange(len(data_list[i])):
@@ -822,6 +823,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     if save_pdf is False:
         plt.show()
     else:
+        print "Save pdf to Dropbox folder"
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('mv test.p* ~/Dropbox/HRL/')
@@ -2425,10 +2427,10 @@ if __name__ == '__main__':
         '''
         target_data_set = 0
         ## task    = 'touching'    
-        ## rf_center       = 'kinEEPos'
-        ## modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-        rf_center       = 'kinForearmPos'
-        modality_list   = ['kinematics', 'audio', 'fabric', 'vision_change']
+        rf_center       = 'kinEEPos'
+        modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
+        ## rf_center       = 'kinForearmPos'
+        ## modality_list   = ['kinematics', 'audio', 'fabric', 'vision_change']
         successData     = True #True
         failureData     = True
         local_range     = 0.15

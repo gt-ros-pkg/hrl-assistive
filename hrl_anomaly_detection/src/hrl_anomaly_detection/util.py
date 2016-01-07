@@ -871,6 +871,13 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
     time_data = data_set[0]
     pos_data  = data_set[1]
     nData = len(data_set)-1
+
+    # length adjustment
+    if len(time_data) != len(pos_data[0]):
+        if len(time_data) > len(pos_data[0]):
+            time_data = time_data[:len(pos_data[0])]
+        else:
+            pos_data = pos_data[:,:len(time_data)]
     
     if multi_pos_flag is False:
         new_data_set = [None for i in xrange(nData)]
@@ -929,8 +936,6 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
                     if nPos>1:
                         new_data_set[i][0]
                                         
-
-
     return new_data_set
     
     
