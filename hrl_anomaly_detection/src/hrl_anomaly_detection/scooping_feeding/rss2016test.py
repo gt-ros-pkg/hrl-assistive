@@ -170,10 +170,6 @@ def preprocessData(subject_names, task_name, raw_data_path, processed_data_path,
         except:
             print "There is already target file: "
         
-        
-
-        
-
 
 def updateMinMax(param_dict, feature_name, feature_array):
 
@@ -186,8 +182,7 @@ def updateMinMax(param_dict, feature_name, feature_array):
             param_dict[feature_name+'_min'] = minVal
     else:
         param_dict[feature_name+'_max'] = -100000000000
-        param_dict[feature_name+'_min'] =  100000000000
-        
+        param_dict[feature_name+'_min'] =  100000000000        
     
 
 def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
@@ -236,7 +231,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
         log_ll = []
         exp_log_ll = []        
-        count = 0
         for i in xrange(len(trainingData[0])):
 
             log_ll.append([])
@@ -273,7 +267,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
         log_ll = []
         exp_log_ll = []        
-        count = 0
         for i in xrange(len(normalTestData[0])):
 
             log_ll.append([])
@@ -314,7 +307,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     if useAbnormalTest:
         log_ll = []
         exp_log_ll = []        
-        count = 0
         for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
@@ -1592,7 +1584,7 @@ def space_time_analysis(subject_names, task_name, raw_data_path, processed_data_
     max_fabric_value   = 3.0
     max_vision_change  = 80 #?
 
-    limit = [[0.25, 1.0], [-0.2, 1.0], [-0.5,0.5]
+    limit = [[0.25, 1.0], [-0.2, 1.0], [-0.5,0.5]]
     
     max_audio_azimuth = 15.0
     max_audio_delay   = 1.0
@@ -2432,7 +2424,7 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         target_data_set = 0
-        task    = 'touching'    
+        ## task    = 'touching'    
         ## rf_center       = 'kinEEPos'
         ## modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
         rf_center       = 'kinForearmPos'

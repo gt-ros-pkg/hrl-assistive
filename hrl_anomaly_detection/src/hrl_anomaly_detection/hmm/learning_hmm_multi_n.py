@@ -89,7 +89,7 @@ class learning_hmm_multi_n:
             ml_pkl=None, use_pkl=False):
         '''
         TODO: explanation of the shape and type of xData
-        xData: sample x dimension x length
+        xData: dimension x sample x length  (???)
         '''
 
         if ml_pkl is None:
@@ -111,7 +111,7 @@ class learning_hmm_multi_n:
             # We should think about multivariate Gaussian pdf.  
 
             mus, cov = self.vectors_to_mean_cov(X, self.nState)
-            print np.shape(mus), np.shape(cov)
+            ## print np.shape(mus), np.shape(cov)
 
             for i in xrange(self.nEmissionDim):
                 for j in xrange(self.nEmissionDim):
@@ -139,7 +139,7 @@ class learning_hmm_multi_n:
         # print 'Creating Training Data'
         X_train = self.convert_sequence(X) # Training input
         X_train = X_train.tolist()
-        print "training data size: ", np.shape(X_train)
+        if self.verbose: print "training data size: ", np.shape(X_train)
         
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
         final_seq = ghmm.SequenceSet(self.F, X_train)
@@ -251,10 +251,8 @@ class learning_hmm_multi_n:
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
             ths = (logp - self.ll_mu[min_index])/self.ll_std[min_index]
-            ## if logp >= 0.:                
-            ##     ths = (logp*0.95 - self.ll_mu[min_index])/self.ll_std[min_index]
-            ## else:
-            ##     ths = (logp*1.05 - self.ll_mu[min_index])/self.ll_std[min_index]
+            ## if logp >= 0.: ths = (logp*0.95 - self.ll_mu[min_index])/self.ll_std[min_index]
+            ## else: ths = (logp*1.05 - self.ll_mu[min_index])/self.ll_std[min_index]
                         
             return ths, min_index
 
@@ -505,7 +503,7 @@ class learning_hmm_multi_n:
             for i, mu in enumerate(mus):
                 mu[index] = np.mean(temp_vecs[i])
 
-            print np.shape(temp_vecs), np.shape(cov)
+            ## print np.shape(temp_vecs), np.shape(cov)
             cov[index, :, :] = np.cov(np.concatenate(temp_vecs, axis=0))
             index += 1
 
@@ -629,7 +627,7 @@ class learning_hmm_multi_n:
             # Find the best posterior distribution
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
-            print "Min index: ", min_index, " logp: ", logp, " ths_mult: ", ths_mult
+            if self.verbose: print "Min index: ", min_index, " logp: ", logp, " ths_mult: ", ths_mult
 
             if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
                 err = logp - (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index])
@@ -674,8 +672,8 @@ class learning_hmm_multi_n:
         # print logp
         # print self.ll_mu[min_index]
         # print self.ll_std[min_index]
-
-        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index], 'mult_std', ths_mult*self.ll_std[min_index]
+        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index],
+        # 'mult_std', ths_mult*self.ll_std[min_index]
 
         if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
             ## print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
@@ -853,7 +851,6 @@ class learning_hmm_multi_n:
     def state_clustering(self, X):
         n, m = np.shape(X[0])
 
-        print n, m
         x = np.arange(0., float(m))*(1./43.)
         state_mat  = np.zeros((self.nState, m*n))
         likelihood_mat = np.zeros((1, m*n))
