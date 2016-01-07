@@ -648,6 +648,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
     success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
 
+    fig = plt.figure('all')
+
     for idx, file_list in enumerate([success_list, failure_list]):
         if idx == 0 and successData is not True: continue
         elif idx == 1 and failureData is not True: continue        
@@ -674,15 +676,18 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         ## plt.show()
         ## sys.exit()
                                                        
-        if verbose: print "Visualize data"
+        if verbose:
+            print "--- Visualize data ---"
+            ## print modality_list
+            ## print raw_data_dict.keys()
+            ## print interp_data_dict.keys()
+            
         count       = 0
         nPlot       = len(modality_list)
         time_lim    = [0, 16] #?????????????????????????????
    
         if raw_viz: target_dict = raw_data_dict
         else: target_dict = interp_data_dict
-
-        fig = plt.figure('all')
 
         for modality in modality_list:
             count +=1
@@ -691,7 +696,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 time_list = target_dict['audioTimesList']
                 data_list = target_dict['audioPowerList']
 
-            if 'kinematics' in modality:
+            elif 'kinematics' in modality:
                 time_list = target_dict['kinTimesList']
                 data_list = target_dict['kinVelList']
 
@@ -701,7 +706,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     new_data_list.append( np.linalg.norm(d, axis=0) )
                 data_list = new_data_list
 
-            if 'ft' in modality:
+            elif 'ft' in modality:
                 time_list = target_dict['ftTimesList']
                 data_list = target_dict['ftForceList']
 
@@ -711,7 +716,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     new_data_list.append( np.linalg.norm(d, axis=0) )
                 data_list = new_data_list
 
-            if 'vision_artag' in modality:
+            elif 'vision_artag' in modality:
                 time_list = target_dict['visionArtagTimesList']
                 data_list = target_dict['visionArtagPosList']
 
@@ -721,11 +726,11 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     new_data_list.append( np.linalg.norm(d, axis=0) )
                 data_list = new_data_list
 
-            if 'vision_change' in modality:
+            elif 'vision_change' in modality:
                 time_list = target_dict['visionChangeTimesList']
                 data_list = target_dict['visionChangeMagList']
 
-            if 'pps' in modality:
+            elif 'pps' in modality:
                 time_list = target_dict['ppsTimesList']
                 data_list1 = target_dict['ppsLeftList']
                 data_list2 = target_dict['ppsRightList']
@@ -740,7 +745,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
                 data_list = new_data_list
 
-            if 'fabric' in modality:
+            elif 'fabric' in modality:
                 time_list = target_dict['fabricTimesList']
                 ## data_list = target_dict['fabricValueList']
                 data_list = target_dict['fabricMagList']
@@ -788,13 +793,12 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 ##     os.system('mv test*.p* ~/Dropbox/HRL/')
 
             ax = fig.add_subplot(nPlot*100+10+count)
-            if idx == 0:
-                color = 'b'
-            else:
-                color = 'r'            
+            if idx == 0: color = 'b'
+            else: color = 'r'            
 
             if raw_viz:
                 combined_time_list = []
+                if data_list == []: continue
 
                 ## for t in time_list:
                 ##     temp = np.array(t[1:])-np.array(t[:-1])
@@ -802,6 +806,10 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 ##     print modality, " : ", np.mean(temp), np.std(temp), np.max(temp)
                 ##     ## ax.plot(temp, label=modality)
 
+                print modality, np.shape(data_list)
+                if 'kinematics' in modality:
+                    print data_list
+                
                 for i in xrange(len(time_list)):
                     if len(time_list[i]) > len(data_list[i]):
                         ax.plot(time_list[i][:len(data_list[i])], data_list[i], c=color)

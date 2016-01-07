@@ -56,12 +56,12 @@ def extrapolateData(data, maxsize):
         
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
-             global_data=False,\
-             verbose=False, renew=True, save_pkl=None, plot_data=False):
+             global_data=False, verbose=False, renew=True, save_pkl=None, plot_data=False):
 
     if save_pkl is not None:
         if os.path.isfile(save_pkl+'_raw.pkl') is True and os.path.isfile(save_pkl+'_interp.pkl') is True \
           and renew is not True:
+            print "Load stored data, ", save_pkl
             raw_data_dict = ut.load_pickle(save_pkl+'_raw.pkl')
             data_dict = ut.load_pickle(save_pkl+'_interp.pkl')
             return raw_data_dict, data_dict
@@ -204,7 +204,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 last_kin_pos = np.zeros((3,1))
                 last_time    = 0.0
                 for i in xrange(len(kin_ee_pos[0])):
-                    local_kin_vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
+                    if abs(kin_time[i]-last_time) < 0.00000001:
+                        if local_kin_vel is None: local_kin_vel = np.zeros((3,1))
+                    else:                    
+                        local_kin_vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
                     last_kin_pos = kin_ee_pos[:,i:i+1]
                     last_time    = kin_time[i]
 
@@ -231,7 +234,13 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                         last_mPose = mPose
                         last_time  = 0.0
 
-                    vel = (mPose-last_mPose)/(kin_time[i]-last_time)
+
+                    if abs(kin_time[i]-last_time) < 0.00000001:
+                        if local_kin_vel is not None: vel = local_kin_vel[:,-1:]
+                        else: vel = np.zeros((3,1))
+                    else:
+                        vel = (mPose-last_mPose)/(kin_time[i]-last_time)
+
                     # to avoid inf values
                     if np.isinf(np.max(vel)):
                         if local_kin_vel is not None: vel = local_kin_vel[:,-1:]
@@ -265,7 +274,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
             raw_data_dict['kinPosList'].append(local_kin_pos)
             raw_data_dict['kinVelList'].append(local_kin_vel)
-            
+
             data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times))
             data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times, True))
             data_dict['kinTargetPosList'].append(interpolationData(kin_time, local_kin_target_pos, new_times))
@@ -723,6 +732,7 @@ def interpolationSkinData(time_array, center_array, normal_array, value_array, n
     if l == 0: return [],[],[]
     ## if len(np.array(center_array[0]).flatten()) == 0: return [],[],[]
     print center_array
+    print "temporal exit?????????????????????????? from util.py"
     sys.exit()
 
     idx_list = np.linspace(0, l-2, new_l)
