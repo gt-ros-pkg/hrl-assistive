@@ -96,11 +96,11 @@ RFH.PickAndPlace = function (options) {
         msg.domain = 'pick_and_place_'+self.side;
         msg.init = ['(AT HAND HAND_START_LOC)', '(KNOWN HAND_START_LOC)'];  // Initialize with sensible information...
         self.setPoseToParam(self.arm.getState(), 'HAND_START_LOC');
-        self.updatePDDLState(msg.init);
         if (!self.gripper.getGrasping()) {
             msg.init.push('(AT TARGET PICK_LOC)');
         }
         msg.goal = [];  // Empty goal will use default for task
+        self.updatePDDLState(msg.init);
         self.taskPublisher.publish(msg);
     };
 

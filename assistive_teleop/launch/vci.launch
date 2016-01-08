@@ -41,9 +41,9 @@
       <param name="use_closest_pixel"  value="true"/>
   </node>
 
-  <node name="smach_status_clean_relay" pkg="assistive_teleop" type="smach_status_relay" output="screen" />
+  <!--  <node name="smach_status_clean_relay" pkg="assistive_teleop" type="smach_status_relay" output="screen" />-->
 
-  <node name="moveit_relay" pkg="assistive_teleop" type="moveit_relay" output="screen" />
+  <!--  <node name="moveit_relay" pkg="assistive_teleop" type="moveit_relay" output="screen" />-->
 
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 

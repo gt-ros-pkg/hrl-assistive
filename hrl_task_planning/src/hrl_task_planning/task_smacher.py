@@ -124,6 +124,13 @@ class PDDLTaskThread(Thread):
             # Get solution from planner
             try:
                 solution = self.planner_service.call(self.problem_msg)
+                sol_msg = PDDLSolution()
+                sol_msg.domain = self.domain
+                sol_msg.problem = self.problem_name
+                sol_msg.solved = solution.solved
+                sol_msg.actions = solution.steps
+                sol_msg.states = solution.states
+                self.solution_pub.publish(sol_msg)
                 print "Solution:\n", solution
                 if solution.solved:
                     if not solution.steps:  # Already solved, no action retquired

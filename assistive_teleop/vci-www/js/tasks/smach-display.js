@@ -4,8 +4,11 @@ RFH.Smach = function(options) {
     self.$displayContainer = options.displayContainer || $('#scmah-display');
     self.display = new RFH.SmachDisplay({ros: ros,
                                          container: self.$displayContainer});
-    self.smach_tasks = {};
+    self.smachTasks = []; // Array of data on tasks. Display only most recent (last index) for ordering of sub-tasks.
     self.activeState = null;
+    self.currentActionSubscribers = {};
+    self.ros.getMsgDetails('hrl_task_planning/PDDLSolution');
+    self.ros.getMsgDetails('hrl_task_planning/PDDLPlanStep');
 
     self.solutionSubscriber = new ROSLIB.Topic({
         ros: ros,
@@ -13,14 +16,55 @@ RFH.Smach = function(options) {
         type: 'hrl_task_planning/PDDLSolution'
     });
 
+    self.planSolutionCB = function(msg) {
+        self.display.empty(); // Out with the old
+        var actions = self.parseActions(msg.actions);
+        var interfaceTasks = self.getInterfaceTasks(msg.domain, actions);
+        var taskLabels = self.getTaskLabels(msg.domain, actions);
+        self.display.displaySmachStates(taskLabels);
+        self.display.show();
+        var taskData = {'domain': msg.domain,
+                        'problem': msg.problem,
+                        'labels': taskLabels,
+                        'actions': actions,
+                        'states': msg.states,
+                        'interfaceTasks': interfaceTasks};
+        self.smachTasks.push(taskData);
+    };
+    self.solutionSubscriber.subscribe(self.planSolutionCB);
+
+    self.setupCurrentActionSubscriber = function (domain) {
+        self.currentActionSubscribers[domain] = new ROSLIB.Topic({
+            ros: ros,
+            name: '/pddl_tasks/'+domain+'/active_state',
+            type: '/hrl_task_planning/PDDLPlanStep'
+        });
+        self.currentActionSubscribers[domain].subscribe(self.updateCurrentAction);
+    };
+
+    self.updateCurrentAction = function (plan_step_msg) {
+        var task;
+        // Get the task from the list matching this message
+        for (var i=0; i<self.smachTasks.length; i+=1){
+            if (self.smachTasks[i].problem == plan_step_msg.problem) {
+                task = self.smachTasks[i];
+            }
+            for (i=0; i<task.taskData.actions.length; i+=1) {
+                
+            }
+        }
+        self.$displayContainer.show();
+    };
+
+/*
     var smachStructureCB = function (scs_msg) {
         if (scs_msg.path.indexOf('/') >= 0) return; // Ignore non-base structures
-        if (!self.smach_tasks[scs_msg.path]) {
-            self.smach_tasks[scs_msg.path] = {};
+        if (!self.smachTasks[scs_msg.path]) {
+            self.smachTasks[scs_msg.path] = {};
         }
-        if (self.smach_tasks[scs_msg.path].steps !== undefined) return; // We've already got this one...
+        if (self.smachTasks[scs_msg.path].steps !== undefined) return; // We've already got this one...
         var chain = getStateChain(scs_msg.outcomes_from, scs_msg.outcomes_to, scs_msg.internal_outcomes);
-        self.smach_tasks[scs_msg.path].steps = filterStateChain(chain);
+        self.smachTasks[scs_msg.path].steps = filterStateChain(chain);
     };
 
     var getStateChain = function (from_states, to_states, transitions) {
@@ -66,8 +110,8 @@ RFH.Smach = function(options) {
 
     var smachContainerStatusCB = function (status_msg) {
         if (status_msg.path.indexOf('/') >= 0) return; // Ignore non-base structures
-        if (!self.smach_tasks[status_msg.path].steps) return; // Wait until we know the structure...
-        if (!self.smach_tasks[status_msg.path].interfaceTasks) return; // Wait until we know the interface task data
+        if (!self.smachTasks[status_msg.path].steps) return; // Wait until we know the structure...
+        if (!self.smachTasks[status_msg.path].interfaceTasks) return; // Wait until we know the interface task data
         if (self.activeState !== status_msg.active_states[0]) {
             self.activeState = status_msg.active_states[0]; // There can be only one...
             if (self.activeState[0] === '_') {
@@ -76,9 +120,9 @@ RFH.Smach = function(options) {
                     self.display.empty();
                 }
             } else {
-                var idx = self.smach_tasks[status_msg.path].steps.indexOf(self.activeState);
+                var idx = self.smachTasks[status_msg.path].steps.indexOf(self.activeState);
                 self.display.setActive(idx);
-                RFH.taskMenu.startTask(self.smach_tasks[status_msg.path].interfaceTasks[idx]); // Start corresponding task
+                RFH.taskMenu.startTask(self.smachTasks[status_msg.path].interfaceTasks[idx]); // Start corresponding task
             }
         }
     };
@@ -90,24 +134,13 @@ RFH.Smach = function(options) {
     });
     smachContainerStatusSub.subscribe(smachContainerStatusCB);
 
-    self.planSolutionCB = function(msg) {
-        self.display.empty(); // Out with the old
-        var actions = self.parseActions(msg.actions);
-        var interfaceTasks = self.getInterfaceTasks(msg.domain, actions);
-        var taskLabels = self.getTaskLabels(msg.domain, actions);
-        self.display.displaySmachStates(taskLabels);
-        self.display.hide();
-        if (!self.smach_tasks[msg.problem]) {
-            self.smach_tasks[msg.problem] = {};
-        }
-        self.smach_tasks[msg.problem].domain = msg.domain;
-        self.smach_tasks[msg.problem].labels = taskLabels;
-        self.smach_tasks[msg.problem].actions = actions;
-        self.smach_tasks[msg.problem].states = msg.states;
-        self.smach_tasks[msg.problem].interfaceTasks = interfaceTasks;
-    };
-    self.solutionSubscriber.subscribe(self.planSolutionCB);
-
+    self.smachStatusSubscriber = new ROSLIB.Topic({
+        ros: ros,
+        name: "/task_state",
+        type: "hrl_task_planning/PDDLState"
+    });
+*/
+    // Receives a list of action strings, returns a lists of action objects: [{name:'', args:['','',..]}, ... ]
     self.parseActions = function(actions) {
         var act, i, name_args, name, args;
         var acts_list = [];
@@ -126,6 +159,7 @@ RFH.Smach = function(options) {
         return acts_list;
     };
 
+    // Receives: domain/task name and list of action objects, returns task for interface to run for each action
     self.getInterfaceTasks = function (domain, actions) {
         var task = RFH.taskMenu.tasks[domain];
         var taskNames = [];
@@ -135,6 +169,7 @@ RFH.Smach = function(options) {
         return taskNames;
     };
 
+    // Receives domain/task name + list of action objects, returns label for each action to use in guide display
     self.getTaskLabels = function (domain, actions) {
         var task = RFH.taskMenu.tasks[domain];
         var taskLabels = [];
@@ -144,11 +179,6 @@ RFH.Smach = function(options) {
         return taskLabels;
     };
 
-    self.smachStatusSubscriber = new ROSLIB.Topic({
-        ros: ros,
-        name: "/task_state",
-        type: "hrl_task_planning/PDDLState"
-    });
 };
 
 
@@ -167,6 +197,7 @@ RFH.SmachDisplay = function(options) {
         self.$container.hide();
     };
 
+    // Receives a list of label strings, creates a display of actions in sequence with highlighting for done/current/future actions
     self.displaySmachStates = function(stringList) {
         for (var i = 0; i < stringList.length; i += 1) {
             self.$container.append($('<div>', {
@@ -190,6 +221,4 @@ RFH.SmachDisplay = function(options) {
         self.$container.find('.smach-state:gt('+idx+')').addClass('incomplete active').removeClass('complete');
         self.$container.find('.smach-state:eq(' + idx + ')').removeClass('incomplete complete').addClass('active');
     };
-
-
 };
