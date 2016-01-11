@@ -55,6 +55,7 @@ class TaskSmacher(object):
             default_goal_problem.goal = []
             default_goal_thread = PDDLTaskThread(default_goal_problem)
             self._sm_threads.append(default_goal_thread)
+        # TODO: Validate combined plan sequence? (at least check that it exists?)
         thread = PDDLTaskThread(problem_msg, next_thread=default_goal_thread)
         self._sm_threads.append(thread)
         return thread
@@ -145,13 +146,14 @@ class PDDLTaskThread(Thread):
                              rospy.get_name(), self.problem_name, self.domain, e.message)
                 return
 
+            # TODO: Check for irreversible actions and add a confirmation state.
             steps = map(PlanStep.from_string, solution.steps)
             state_preds = [state.predicates for state in solution.states]
             states = [State(preds) for preds in [map(Predicate.from_string, preds) for preds in state_preds]]
             n_steps = len(steps)
             self.state_machine = smach.StateMachine(outcomes=SPA)
             with self.state_machine:
-                for i in range(n_steps):  # TODO: Catch index errors at end of list
+                for i in range(n_steps):
                     smach_state = self.domain_smach_states.get_action_state(self.domain, self.problem_name,
                                                                             steps[i].name, steps[i].args,
                                                                             states[i], states[i+1])
@@ -177,7 +179,7 @@ class PDDLTaskThread(Thread):
         # Publish empty action to current action topic (since we're done)
         plan_step_msg = PDDLPlanStep()
         plan_step_msg.domain = self.domain
-        plan_step_msg.problem = self.problem
+        plan_step_msg.problem = self.problem_name
         self.action_pub.publish(plan_step_msg)
 
         if self.next_thread is not None:

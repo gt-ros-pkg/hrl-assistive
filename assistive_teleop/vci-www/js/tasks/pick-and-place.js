@@ -29,18 +29,24 @@ RFH.PickAndPlace = function (options) {
         self.pddlStateUpdatePub.publish(msg);
     };
 
-    self.getInterfaceTask = function (plan_step) {
-        switch (plan_step.name){
+    self.startAction = function (planStepMsg) {
+        switch (planStepMsg.action){
             case 'ID-LOCATION':
-                return 'idLocationTask';
+                RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.name+'/KNOWN/'+planStepMsg.args[0]);
+                RFH.taskMenu.startTask('paramLocationTask');
+                break;
             case 'FORGET-LOCATION':
-                return 'LookingTask';
+                RFH.taskMenu.startTask('LookingTask');
+                break;
             case 'MOVE-ARM':
-                return  self.side.substring(0,1)+'EECartTask';
+                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
+                break;
             case 'GRAB':
-                return self.side.substring(0,1)+'EECartTask';
+                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
+                break;
             case 'RELEASE':
-                return self.side.substring(0,1)+'EECartTask';
+                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
+                break;
         }
     };
 

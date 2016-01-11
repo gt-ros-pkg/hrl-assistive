@@ -6,7 +6,7 @@
             <rosparam command="load" file="$(find hrl_task_planning)/params/pick_and_place_right.yaml"/>
         </group>
     </group>
-    <node name='known_loc_monitor_right' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place_right known -a pick_loc place_loc elsewhere"/>
+    <node name='known_loc_monitor_right' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place_right KNOWN -a PICK_LOC PLACE_LOC ELSEWHERE"/>
     <node name='proximity_monitor_right' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place_right  hand r_gripper_tool_frame -d 0.1"/>
     <node name='grasp_state_monitor_right' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place_right -s right"/>
 
@@ -16,7 +16,7 @@
             <rosparam command="load" file="$(find hrl_task_planning)/params/pick_and_place_left.yaml"/>
         </group>
     </group>
-    <node name='known_loc_monitor_left' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place_left known -a pick_loc place_loc elsewhere"/>
+    <node name='known_loc_monitor_left' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place_left KNOWN -a PICK_LOC PLACE_LOC ELSEWHERE"/>
     <node name='proximity_monitor_left' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place_left hand l_gripper_tool_frame -d 0.1"/>
     <node name='grasp_state_monitor_left' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place_left -s left"/>
 
