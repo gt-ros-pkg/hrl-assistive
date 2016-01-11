@@ -28,7 +28,7 @@ class RigControl(object):
     def __init__(self, mode='autorun', plot=False, num=None, vel=None, subj=None, height=None):
         # print 'Initializing Sleeve Rig'
         self.total_start_time = rospy.Time.now()
-        rospy.loginfo('Initializing Sleeve Rig')
+        rospy.loginfo('Starting rig_control node')
 
         self.mode = mode
         self.plot = plot
@@ -75,7 +75,7 @@ class RigControl(object):
         self.ft_arm_bias_t_y = 0.
         self.ft_arm_bias_t_z = 0.
 
-        self.pulling_force_threshold = 10.0
+        self.pulling_force_threshold = 5.0
         self.reset_force_threshold = 60.0
         self.pulling = True
 
@@ -90,10 +90,10 @@ class RigControl(object):
 
         self.zenither_pose = 0.
 
+        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
         if self.mode == 'autorun' or self.mode == 'calib':
+            rospy.loginfo('Initializing Sleeve Rig')
             self.initialize_zenither(self.mode)
-        else:
-            self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
 
     def initialize_zenither(self, mode):
         # print 'Initializing Zenither'
@@ -201,8 +201,8 @@ class RigControl(object):
             threshold = self.pulling_force_threshold
         else:
             threshold = self.reset_force_threshold
-
-        if (np.abs(x_force) > threshold) or (np.abs(y_force) > threshold) or (np.abs(z_force) > threshold):
+        # mag_force = np.linalg.norm(np.abs([x_force, y_force, z_force]))
+        if (np.linalg.norm(np.abs([x_force, y_force, z_force])) > threshold):
                 out = Bool()
                 out.data = True
                 self.force_threshold_exceeded_pub.publish(out)
@@ -282,6 +282,8 @@ class RigControl(object):
         rospy.sleep(2.0)
         self.test_vel = 0.1
         for i in xrange(self.number_trials):
+            if not self.z.calibrated:
+                return
             test_pos = 0.05
             test_vel = self.test_vel
             test_acc = 1.0
@@ -330,6 +332,8 @@ class RigControl(object):
             self.z.estop()
             self.stop_recording_data(i)
             self.pulling = False
+            if not self.z.calibrated:
+                return
             rospy.sleep(1.5)
             # rospy.loginfo('Resetting...')
             print 'Finished trial ', i+1, 'at velocity', self.test_vel
@@ -356,8 +360,12 @@ class RigControl(object):
             self.zenither_pose = self.z.get_position_meters()
             print 'Current position is: ', self.zenither_pose
             rospy.sleep(4.0)
+            if not self.z.calibrated:
+                return
         self.test_vel = 0.15
         for i in xrange(self.number_trials):
+            if not self.z.calibrated:
+                return
             test_pos = 0.05
             test_vel = self.test_vel
             test_acc = 1.0
@@ -406,6 +414,8 @@ class RigControl(object):
             self.z.estop()
             self.stop_recording_data(i)
             self.pulling = False
+            if not self.z.calibrated:
+                return
             rospy.sleep(1.5)
             # rospy.loginfo('Resetting...')
             print 'Finished trial ', i+1, 'at velocity', self.test_vel
@@ -444,23 +454,23 @@ class RigControl(object):
         position_profile = None
         for vel in [0.1, 0.15]:
             if vel == 0.1:
-                print ''.join([self.pkg_path, '/data/position_profiles/position_combined_0_1mps.pkl'])
-                position_profile = load_pickle(''.join([self.pkg_path, '/data/position_profiles/position_combined_0_1mps.pkl']))
+                print ''.join([self.data_path, '/position_profiles/position_combined_0_1mps.pkl'])
+                position_profile = load_pickle(''.join([self.data_path, '/position_profiles/position_combined_0_1mps.pkl']))
                 print 'Position profile loaded!'
             elif vel == 0.15:
-                position_profile = load_pickle(''.join([self.pkg_path, '/data/position_profiles/position_combined_0_15mps.pkl']))
-                print ''.join([self.pkg_path, '/data/position_profiles/position_combined_0_15mps.pkl'])
+                position_profile = load_pickle(''.join([self.data_path, '/data/position_profiles/position_combined_0_15mps.pkl']))
+                print ''.join([self.data_path, '/position_profiles/position_combined_0_15mps.pkl'])
                 print 'Position profile loaded!'
             else:
                 print 'There is no saved position profile for this velocity! Something has gone wrong!'
                 return None
             for class_num in xrange(len(input_classes)):
                 i = 0
-                while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/',str(vel),'mps/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
+                while os.path.isfile(''.join([self.data_path, '/', subject, '/', str(vel), 'mps/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])):
                     ft_threshold_was_exceeded = False
-                    print ''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])
+                    print ''.join([self.data_path, '/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl'])
                     # current_data = np.array([map(float,line.strip().split()) for line in open(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.log']))])
-                    current_data = load_pickle(''.join([self.pkg_path, '/data/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
+                    current_data = load_pickle(''.join([self.data_path, '/', subject, '/', input_classes[class_num], '/ft_sleeve_', str(i), '.pkl']))
 
                     # if np.max(current_data[:, 2]) >= 10. or np.max(current_data[:, 3]) >= 10. \
                     #         or np.max(current_data[:, 4]) >= 10.:
@@ -491,10 +501,10 @@ class RigControl(object):
                                                        (j[0]-position_profile[k, 0])/(position_profile[k+1, 0] - position_profile[k, 0])
                                 j[1] = new_position
                     save_number = 0
-                    while os.path.isfile(''.join([self.pkg_path, '/data/', subject, '/formatted/', str(vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl'])):
+                    while os.path.isfile(''.join([self.data_path, '/', subject, '/formatted/', str(vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl'])):
                         save_number += 1
                     print 'Saving with number', save_number
-                    save_pickle(current_data, ''.join([self.pkg_path, '/data/', subject, '/formatted/', str(vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl']))
+                    save_pickle(current_data, ''.join([self.data_path, '/', subject, '/formatted/', str(vel),'mps/', output_classes[class_num], '/force_profile_', str(save_number), '.pkl']))
                     i += 1
         print 'Done editing files!'
         # if self.plot:
@@ -555,21 +565,21 @@ class RigControl(object):
         for num, label in enumerate(labels):
             for subject in subjects:
                 # fig1 = plt.figure(2*num+1)
-                ax1 = fig1.add_subplot(331+2*num)
-                ax1.set_xlim(0., .8)
-                ax1.set_ylim(-10.0, 1.0)
+                ax1 = fig1.add_subplot(221+2*num)
+                ax1.set_xlim(0., .85)
+                ax1.set_ylim(-0.40, 0.40)
                 ax1.set_xlabel('Position (m)')
                 ax1.set_ylabel('Force_x (N)')
                 ax1.set_title(''.join(['Force in direction of movement vs Position for: ', label, ' type']))
                 # fig2 = plt.figure(2*num+2)
-                ax2 = fig1.add_subplot(332+2*num)
-                ax2.set_xlim(0, .8)
-                ax2.set_ylim(-10.0, 1.0)
+                ax2 = fig1.add_subplot(222+2*num)
+                ax2.set_xlim(0, .85)
+                ax2.set_ylim(-0.40, 0.40)
                 ax2.set_xlabel('Position (m)')
                 ax2.set_ylabel('Force_z (N)')
                 ax2.set_title(''.join(['Force in upward direction vs Position for: ', label, ' type']))
                 vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -581,7 +591,7 @@ class RigControl(object):
                     Y2 = loaded_data[:, 4]
                     surf2 = ax2.plot(X2, Y2, color="green", alpha=1)
                 vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -596,23 +606,27 @@ class RigControl(object):
 
     def plot_mean_and_std(self, subjects, labels):
         fig2 = plt.figure(2)
-        num_bins = 100.
+        num_bins = 150.
         bins = np.arange(0, 0.85+0.00001, 0.85/num_bins)
-        bin_values = np.arange(0,0.85, 0.85/num_bins)+0.85/(2.*num_bins)
+        bin_values = np.arange(0, 0.85, 0.85/num_bins)+0.85/(2.*num_bins)
         ax1 = fig2.add_subplot(211)
-        ax1.set_xlim(0., .2)
-        ax1.set_ylim(-0.5, 0.05)
-        ax1.set_xlabel('Position (m)')
-        ax1.set_ylabel('Force_x (N)')
-        ax1.set_title(''.join(['Force in direction of movement vs Position']))
+        ax1.set_xlim(0., .85)
+        ax1.set_ylim(-10.0, 1.0)
+        ax1.set_xlabel('Position (m)', fontsize=20)
+        ax1.set_ylabel('Force_x (N)', fontsize=20)
+        ax1.set_title(''.join(['Force in direction of movement vs Position']), fontsize=20)
+        ax1.tick_params(axis='x', labelsize=20)
+        ax1.tick_params(axis='y', labelsize=20)
         # fig2 = plt.figure(2*num+2)
         ax2 = fig2.add_subplot(212)
-        ax2.set_xlim(0, .2)
-        ax2.set_ylim(-0.2, 0.1)
-        ax2.set_xlabel('Position (m)')
-        ax2.set_ylabel('Force_z (N)')
-        ax2.set_title(''.join(['Force in upward direction vs Position']))
-        colors = ['green', 'blue', 'red', 'orange']
+        ax2.set_xlim(0, .85)
+        ax2.set_ylim(-10.0, 1.0)
+        ax2.set_xlabel('Position (m)', fontsize=20)
+        ax2.set_ylabel('Force_z (N)', fontsize=20)
+        ax2.tick_params(axis='x', labelsize=20)
+        ax2.tick_params(axis='y', labelsize=20)
+        ax2.set_title(''.join(['Force in upward direction vs Position']), fontsize=20)
+        colors = ['blue', 'green', 'red']
         for num, label in enumerate(labels):
             bin_entries_x = []
             bin_entries_z = []
@@ -637,11 +651,12 @@ class RigControl(object):
                 # ax2.set_ylabel('Force_z (N)')
                 # ax2.set_title(''.join(['Force in upward direction vs Position for: ', label, ' type']))
                 vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
                     loaded_data = load_pickle(directory+file_name)
+                    print directory+file_name
                     mean_bin_data_x = []
                     mean_bin_data_z = []
                     placed_in_bin = np.digitize(loaded_data[:, 1], bins)-1
@@ -650,7 +665,7 @@ class RigControl(object):
                         bin_entries_x[placed_in_bin[i]].append(loaded_data[i, 2])
                         bin_entries_z[placed_in_bin[i]].append(loaded_data[i, 4])
                 vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
@@ -689,12 +704,12 @@ class RigControl(object):
             # Y6 = Y4 - np.std(data_z, 0)
             # print len(X1)
             # print len(Y1)
-            surf1 = ax1.plot(position_values, mean_x, color=colors[num], alpha=1, label=label)
+            surf1 = ax1.plot(position_values, mean_x, color=colors[num], alpha=1, label=label, linewidth=2)
             surf1 = ax1.fill_between(position_values, mean_x + std_x, mean_x - std_x, color=colors[num], alpha=0.3)
-            ax1.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
-            surf2 = ax2.plot(position_values, mean_z, color=colors[num], alpha=1, label=label)
+            ax1.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., fontsize=20)
+            surf2 = ax2.plot(position_values, mean_z, color=colors[num], alpha=1, label=label, linewidth=2)
             surf2 = ax2.fill_between(position_values, mean_z + std_z, mean_z - std_z, color=colors[num], alpha=0.3)
-            ax2.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+            ax2.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., fontsize=20)
 
 
     def histogram_of_stop_point_fist(self, subjects, labels):
@@ -705,11 +720,13 @@ class RigControl(object):
             for subject in subjects:
                 # fig1 = plt.figure(2*num+1)
                 ax1 = fig1.add_subplot(111)
-                ax1.set_xlim(0., .85)
+                ax1.set_xlim(0.2, .5)
                 # ax1.set_ylim(-10.0, 1.0)
-                ax1.set_xlabel('Stop Position (m)')
-                ax1.set_ylabel('Number of trials')
-                ax1.set_title(''.join(['Stop position when caught on fist, when started at tip of fist']))
+                ax1.set_xlabel('Stop Position (m)', fontsize=20)
+                ax1.set_ylabel('Number of trials', fontsize=20)
+                ax1.tick_params(axis='x', labelsize=20)
+                ax1.tick_params(axis='y', labelsize=20)
+                ax1.set_title(''.join(['Stop position when caught on fist, when started at tip of fist']), fontsize=20)
                 vel = 0.1
                 directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
@@ -730,13 +747,14 @@ class RigControl(object):
         n, bins, patches = ax1.hist(stop_locations, 10, color="green", alpha=0.75)
         points = np.arange(0, 10, 0.001)
         y = mlab.normpdf(points, mu, sigma)
-        l = ax1.plot(points, y, 'r--', linewidth=1)
+        l = ax1.plot(points, y, 'r--', linewidth=2)
 
     def histogram_of_stop_point_elbow(self, subjects, labels):
         fig1 = plt.figure(4)
         fig2 = plt.figure(5)
         labels = ['good']
         stop_locations = []
+        arm_lengths = []
         for num, label in enumerate(labels):
             for subj_num, subject in enumerate(subjects):
                 subject_stop_locations = []
@@ -746,27 +764,30 @@ class RigControl(object):
                 arm_length = rosparam.get_param('crook_to_fist')/100.
                 # fig1 = plt.figure(2*num+1)
                 ax1 = fig1.add_subplot(111)
-                ax1.set_xlim(0., .85)
+                ax1.set_xlim(0.2, .4)
                 # ax1.set_ylim(-10.0, 1.0)
-                ax1.set_xlabel('Stop Position (m)')
-                ax1.set_ylabel('Number of trials')
-                ax1.set_title(''.join(['Difference between arm length and stop position at the elbow']))
+                ax1.set_xlabel('Stop Position (m)', fontsize=20)
+                ax1.set_ylabel('Number of trials', fontsize=20)
+                ax1.set_title(''.join(['Difference between arm length and stop position at the elbow']), fontsize=20)
+                ax1.tick_params(axis='x', labelsize=20)
+                ax1.tick_params(axis='y', labelsize=20)
                 ax2 = fig2.add_subplot(431+subj_num)
                 ax2.set_xlim(0.2, .4)
                 # ax1.set_ylim(-10.0, 1.0)
-                ax2.set_xlabel('Stop Position (m)')
+                ax2.set_xlabel('Position (m)')
                 ax2.set_ylabel('Number of trials')
-                ax2.set_title(''.join(['Difference between arm length and stop position at the elbow']))
+                ax2.set_title(''.join(['Stop position for "Good" outcome']), fontsize=20)
                 vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     # print directory+file_name
                     loaded_data = load_pickle(directory+file_name)
                     stop_locations.append(np.max(loaded_data[:,1])-arm_length)
                     subject_stop_locations.append(np.max(loaded_data[:,1])-arm_length)
+                    arm_lengths.append(arm_length)
                 vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
+                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
                 force_file_list = os.listdir(directory)
                 for file_name in force_file_list:
                     loaded_data = load_pickle(directory+file_name)
@@ -775,18 +796,22 @@ class RigControl(object):
                 ax2.hist(subject_stop_locations)
         mu = np.mean(stop_locations)
         sigma = np.std(stop_locations)
+        print 'The minimum arm length is: ', np.min(arm_lengths)
+        print 'The max arm length is: ', np.max(arm_lengths)
+        print 'The mean arm length is: ', np.mean(arm_lengths)
         print 'The mean of the stop location is: ', mu
+        print arm_lengths
         print 'The standard deviation of the stop location is: ', sigma
         n, bins, patches = ax1.hist(stop_locations, 10, color="green", alpha=0.75)
         points = np.arange(0, 10, 0.001)
         y = mlab.normpdf(points, mu, sigma)
-        l = ax1.plot(points, y, 'r--', linewidth=1)
+        l = ax1.plot(points, y, 'r--', linewidth=2)
 
     def start_recording_data(self, num):
         self.array_to_save = np.zeros([3000, 5])
         self.array_line = 0
         # self.arm_file = open(''.join([self.pkg_path, '/data/ft_arm_', str(num), '.log']), 'w')
-        self.sleeve_file = open(''.join([self.pkg_path, '/data/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.log']), 'w')
+        self.sleeve_file = open(''.join([self.data_path, '/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.log']), 'w')
         # self.arm_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
         # self.sleeve_file.write('Time(us) Pos(m) force_x(N) force_y(N) force_z(N) torque_x(Nm) torque_y(Nm) torque_z(Nm) \n')
         # self.position_file = open(''.join([self.pkg_path, '/data/position_', str(num), '.log']), 'w')
@@ -798,7 +823,7 @@ class RigControl(object):
         # self.arm_file.close()
         self.sleeve_file.close()
         # self.position_file.close()
-        save_pickle(self.array_to_save, ''.join([self.pkg_path, '/data/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.pkl']))
+        save_pickle(self.array_to_save, ''.join([self.data_path, '/',self.subject,'/',str(self.test_vel),'mps/',self.height,'/ft_sleeve_', str(num), '.pkl']))
         # self.array_to_save = np.zeros([1000, 5])
         # self.array_line = 0
 
@@ -827,12 +852,12 @@ if __name__ == "__main__":
     mode = None
     plot = True
     # plot = False
-    num = 5
+    num = 20
     vel = 0.1
-    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12', 'tapo_test_data','wenhao_test_data', 'test_subj']
-    subject = subject_options[12]
+    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12', 'fake_arm', 'tapo_test_data','wenhao_test_data', 'test_subj']
+    subject = subject_options[13]
     height_options = ['height0', 'height1', 'height2', 'height3', 'height4', 'height5']
-    height = height_options[3]
+    height = height_options[1]
     rc = RigControl(mode=mode, plot=plot, num=num, vel=vel, subj=subject, height=height)
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_dressing')
@@ -847,17 +872,25 @@ if __name__ == "__main__":
 
     # '''
     # output_classification = ['missed', 'good', 'caught_fist', 'caught_other']
-    # rc.plot_all_data(subject_options[0:6]+subject_options[7:11], output_classification)
-    # rc.histogram_of_stop_point_fist(subject_options[0:6]+subject_options[7:11], output_classification)
-    # rc.histogram_of_stop_point_elbow(subject_options[0:6]+subject_options[7:11], output_classification)
-    # rc.plot_mean_and_std(subject_options[0:6]+subject_options[7:11], output_classification)
+    # output_classification = ['missed', 'good', 'caught']
+    # rc.plot_all_data(subject_options[0:6]+subject_options[7:13], output_classification)
+    # rc.histogram_of_stop_point_fist(subject_options[0:6]+subject_options[7:13], output_classification)
+    # rc.histogram_of_stop_point_elbow(subject_options[0:6]+subject_options[7:13], output_classification)
+    # rc.plot_mean_and_std(subject_options[0:6]+subject_options[7:13], output_classification)
     # plt.show()
     # '''
+
+    output_classification = ['missed', 'good']
+    rc.plot_all_data(subject_options[13:14], output_classification)
+    # rc.histogram_of_stop_point_fist(subject_options[0:6]+subject_options[7:13], output_classification)
+    # rc.histogram_of_stop_point_elbow(subject_options[0:6]+subject_options[7:13], output_classification)
+    # rc.plot_mean_and_std(subject_options[13:14], output_classification)
+    plt.show()
 
 
     '''
     label = output_classification[1]
-    for subject in subject_options[0:11]:
+    for subject in subject_options[13:14]:
         vel = 0.1
         directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
         force_file_list = os.listdir(directory)

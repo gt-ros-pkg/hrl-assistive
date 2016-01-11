@@ -136,6 +136,24 @@ class DataReader_Task(object):
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['thigh_right']
             self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'scratching_knee_left':
+            liftlink_B_head = createBMatrix([0.977372, 0.086085, 0.624297], [0.702011, 0.084996, -0.084900, 0.701960])
+            liftlink_B_goal = [[1.139935, 0.087965, 0.748606, -0.599114, 0.005096, 0.800630, -0.005276],
+                               [1.257200, 0.088435, 0.762122, -0.599114, 0.005096, 0.800630, -0.005276]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['knee_left']
+            self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'scratching_knee_right':
+            liftlink_B_head = createBMatrix([0.977394, -0.085915, 0.624282], [0.702011, 0.084996, -0.084900, 0.701960])
+            liftlink_B_goal = [[1.257598, -0.081394, 0.764582, -0.599114, 0.005096, 0.800630, -0.005276],
+                               [1.097844, -0.081661, 0.772003, -0.599114, 0.005096, 0.800630, -0.005276]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['knee_right']
+            self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_chest':
             liftlink_B_head = createBMatrix([0.424870, 0.000019, 0.589686], [0.706732, -0.023949, 0.024036, 0.706667])
             liftlink_B_goal = [[0.606949, -0.012159, 0.723371, -0.599114, 0.005096, 0.800630, -0.005276],
@@ -202,7 +220,7 @@ class DataReader_Task(object):
 
 if __name__ == "__main__":
     model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
-    task = 'shaving'  # options are: bathing, brushing, feeding, shaving, scratching_arm/forearm/thigh/chest/knee
+    task = 'scratching_knee_right'  # options are: bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
     subject = 'any_subject'
     rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
     start_time = time.time()

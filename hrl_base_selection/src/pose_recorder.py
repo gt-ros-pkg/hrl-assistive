@@ -7,7 +7,7 @@ import math as m
 import openravepy as op
 import copy
 
-roslib.load_manifest('hrl_head_tracking')
+# roslib.load_manifest('hrl_head_tracking')
 import rospy
 import rospkg
 from threading import RLock
@@ -88,6 +88,10 @@ class PoseRecorder(object):
                 ref_model = self.autobed.GetLink('quad_left_link')
             elif self.reference == 'right_thigh':
                 ref_model = self.autobed.GetLink('quad_right_link')
+            elif self.reference == 'left_knee':
+                ref_model = self.autobed.GetLink('calf_left_link')
+            elif self.reference == 'right_knee':
+                ref_model = self.autobed.GetLink('calf_right_link')
             elif self.reference == 'left_forearm':
                 ref_model = self.autobed.GetLink('forearm_left_link')
             elif self.reference == 'right_forearm':
@@ -114,7 +118,7 @@ class PoseRecorder(object):
                                                                                  ref_ori[3])]))
 
     def publish_reference_pose(self, pos, ori, name):
-        vis_pub = rospy.Publisher(''.join(['~', name]), PoseStamped, latch=True)
+        vis_pub = rospy.Publisher(''.join(['~', name]), PoseStamped, queue_size=1, latch=True)
         marker = PoseStamped()
         marker.header.frame_id = "/base_link"
         marker.header.stamp = rospy.Time()
@@ -129,7 +133,7 @@ class PoseRecorder(object):
         print 'Published a goal marker to rviz'
 
     def publish_reference_marker(self, pos, ori, name):
-        vis_pub = rospy.Publisher(''.join(['~', name]), Marker, latch=True)
+        vis_pub = rospy.Publisher(''.join(['~', name]), Marker, queue_size=1, latch=True)
         marker = Marker()
         marker.header.frame_id = "/base_link"
         marker.header.stamp = rospy.Time()
@@ -194,7 +198,7 @@ class PoseRecorder(object):
         else:
             print 'I got a bad model. What is going on???'
             return None
-        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, latch=True)
+        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, queue_size=1, latch=True)
         marker.ns = ''.join(['base_service_',name])
         vis_pub.publish(marker)
         print 'Published a model of the subject to rviz'
@@ -257,8 +261,8 @@ if __name__ == "__main__":
     rospy.init_node('pose_recorder')
     model = 'autobed'
     file_number = 0
-    task = 'scratching_chest'  # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee_left/right
-    reference = 'chest'  # options are: head, left/right_arm, left/right_thigh, left/right_forearm, chest
+    task = 'scratching_knee_right'  # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee_left/right
+    reference = 'right_knee'  # options are: head, left/right_arm, left/right_thigh, left/right_forearm, chest
     recorder = PoseRecorder(file_number, task, reference, model=model)
     rospy.spin()
 
