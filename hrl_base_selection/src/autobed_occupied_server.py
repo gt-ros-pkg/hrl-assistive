@@ -26,7 +26,7 @@ class AutobedOccupied():
         print "Autobed Data Sampled"
         total_weight = np.sum(np.asarray(self.pressure_map)) 
         print "Total Weight on the mat:{}".format(total_weight)
-        if total_weight >= 800:
+        if total_weight >= 2000:
             return None_BoolResponse(True)
         else:
             return None_BoolResponse(False)
