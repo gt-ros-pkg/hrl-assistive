@@ -234,7 +234,7 @@ class PDDLSmachState(smach.State):
                 self.service_preempt()
                 return 'preempted'
             if self.goal_state.is_satisfied(self.current_state):
-                return 'success'
+                return 'succeeded'
             progress = self.init_state.difference(self.current_state)
             for pred in progress:
                 if pred not in self.state_delta:

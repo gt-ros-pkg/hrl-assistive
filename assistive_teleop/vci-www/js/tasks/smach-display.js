@@ -26,7 +26,7 @@ RFH.Smach = function(options) {
                         'problem': msg.problem,
                         'labels': taskLabels,
                         'actions': actions,
-                        'states': msg.states}
+                        'states': msg.states};
         self.smachTasks.push(taskData);
         self.setupCurrentActionSubscriber(msg.domain);
     };
@@ -50,7 +50,6 @@ RFH.Smach = function(options) {
             }
         }
         // Get the matching action from the task's actions
-        var idx;
         for (i=0; i<task.actions.length; i+=1) {
             var action = task.actions[i];
             if (action.name === planStepMsg.action) {
@@ -58,16 +57,16 @@ RFH.Smach = function(options) {
                     for (var j=0; j<action.args.length; j+=1) {
                         if (action.args[j] !== planStepMsg.args[j]) {
                             continue;
-                        }
-                        idx = i;
-                        continue; // Use the first instance (maybe problematic?), don't need to check the rest
+                        } 
+                        // Use the first instance (maybe problematic?), don't need to check the rest
+                        // Switch interface to the correct task interface;
+                        self.display.setActive(i);  // This is the first matching action, return it's index
+                        RFH.taskMenu.tasks[planStepMsg.domain].startAction(planStepMsg);
+                        return;
                     }
                 }
             }
         }
-        // Switch interface to the correct task interface;
-        self.display.setActive(idx);  // This is the first matching action, return it's index
-        RFH.taskMenu.tasks[planStepMsg.domain].startAction(planStepMsg);
     };
 
 /*

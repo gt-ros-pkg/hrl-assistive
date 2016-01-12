@@ -35,6 +35,8 @@ class ParameterMonitor(object):
             else:
                 try:
                     self.state.remove(pred)
+                    pred.negate()
+                    self.state.append(pred)
                     pub = True
                 except ValueError:
                     pass

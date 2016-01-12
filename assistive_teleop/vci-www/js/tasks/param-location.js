@@ -5,6 +5,8 @@ RFH.ParamLocation = function(options) {
     var paramName = options.paramName || 'id_location';
     self.name = options.name || 'paramLocationTask';
     self.container = options.container;
+    var positionOverride = null;
+    var orientationOverride = null;
     var offset = {position:{x:0, y:0, z:0},
                    rotation:{x:0, y:0, z:0}};
     self.pixel23d = new RFH.Pixel23DClient({
@@ -37,13 +39,29 @@ RFH.ParamLocation = function(options) {
     };
 
     self.setOffset = function (new_offset) {
-        offset.position.x = new_offset.position.x || offset.position.x;
-        offset.position.y = new_offset.position.y || offset.position.y;
-        offset.position.z = new_offset.position.z || offset.position.z;
-        offset.rotation.x = new_offset.rotation.x || offset.rotation.x;
-        offset.rotation.y = new_offset.rotation.y || offset.rotation.y;
-        offset.rotation.z = new_offset.rotation.z || offset.rotation.z;
-        offset.rotation.w = new_offset.rotation.w || offset.rotation.w;
+        try {
+            offset.position.x = new_offset.position.x || offset.position.x;
+            offset.position.y = new_offset.position.y || offset.position.y;
+            offset.position.z = new_offset.position.z || offset.position.z;
+        } catch (err) {
+            offset.position = {'x':0, 'y':0, 'z':0};
+        }
+        try {
+            offset.rotation.x = new_offset.rotation.x || offset.rotation.x;
+            offset.rotation.y = new_offset.rotation.y || offset.rotation.y;
+            offset.rotation.z = new_offset.rotation.z || offset.rotation.z;
+            offset.rotation.w = new_offset.rotation.w || offset.rotation.w;
+        } catch (err) {
+            offset.rotation = {'x':0, 'y':0, 'z':0, 'w':1};
+        }
+    };
+
+    self.setOrientationOverride = function (quat) {
+            orientationOverride = quat;
+    };
+
+    self.setPositionOverride = function (position) {
+        positionOverride = position;
     };
 
     self.poseCB = function(pose_msg) {
@@ -106,6 +124,17 @@ RFH.ParamLocation = function(options) {
         pose.orientation.y = quat.y;
         pose.orientation.z = quat.z;
         pose.orientation.w = quat.w;
+        if (positionOverride !== null){
+            pose.position.x = positionOverride.x;
+            pose.position.y = positionOverride.y;
+            pose.position.z = positionOverride.z;
+        }
+        if (orientationOverride !== null){
+            pose.orientation.x = orientationOverride.x;
+            pose.orientation.y = orientationOverride.y;
+            pose.orientation.z = orientationOverride.z;
+            pose.orientation.w = orientationOverride.w;
+        }
         return pose;
     };
 

@@ -1,8 +1,6 @@
-import math
 import rospy
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped
 import tf
-import smach
 
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
@@ -48,9 +46,8 @@ class MoveArmState(PDDLSmachState):
         super(MoveArmState, self).__init__(domain=domain, *args, **kwargs)
         self.location = location
         self.domain = domain
-        self.current_pose = None
         self.tfl = tf.TransformListener()
-        self.mpc_pub = rospy.Publisher("/r_arm/haptic_mpc/goal_pose", PoseStamped)
+        self.mpc_pub = rospy.Publisher("/right_arm/haptic_mpc/goal_pose", PoseStamped)
 
     def on_execute(self, ud):
         try:
@@ -59,19 +56,7 @@ class MoveArmState(PDDLSmachState):
         except KeyError:
             rospy.loginfo("[%s] Move Arm Cannot find location %s on parameter server", rospy.get_name(), self.location)
             return 'aborted'
-        # Correct goal pose for checking
-        if self.current_pose.header.frame_id != goal_pose.header.frame_id:
-            try:
-                now = rospy.Time.now()
-                goal_pose.header.stamp = now
-                self.tfl.waitForTransform(self.current_pose.header.frame_id, goal_pose.header.frame_id, now, rospy.Duration(10))
-                goal_pose = self.tfl.transformPose(self.current_pose.header.frame_id, goal_pose)
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print "TF ERROR"
-                return 'aborted'
-            goal_pose.pose.position.z += 0.1
-            goal_pose.pose.orientation = Quaternion(0.0, 0.0, 0.38, 0.925)
-            self.mpc_pub.publish(goal_pose)
+        self.mpc_pub.publish(goal_pose)
 
 
 def _pose_stamped_to_dict(ps_msg):

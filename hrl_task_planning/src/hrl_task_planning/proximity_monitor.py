@@ -66,12 +66,15 @@ class ProximityMonitor(object):
 
         # Identify forgotten locations, remove from internal state list, and replace with negation
         update_preds = []
+        poplist = []
         for loc in self.known_locations:
             if loc not in current_known_locations:
-                self.known_locations.pop(loc)
+                poplist.append(loc)
                 if loc in self.near_locations:
                     update_preds.append(pddl.Predicate('AT', [self.object_name, loc], neg=True))
                     self.near_locations.remove(loc)
+        for loc in poplist:
+            self.known_locations.pop(loc)
 
         for item in self.grasping:
             if item not in current_grasped_items:
@@ -83,6 +86,7 @@ class ProximityMonitor(object):
             pos_pred = pddl.Predicate(pred.name, pred.args)
             if pred.neg and pos_pred in self.state:
                 self.state.remove(pos_pred)
+                self.state.add(pred)
                 pub = True
             if not pred.neg and pred not in self.state:
                 self.state.add(pred)
@@ -102,7 +106,9 @@ class ProximityMonitor(object):
             try:
                 (trans, _) = self.tfl.lookupTransform(loc_pose.header.frame_id, self.frame, rospy.Time(0))
                 loc = np.array([loc_pose.pose.position.x, loc_pose.pose.position.y, loc_pose.pose.position.z])
-                if np.linalg.norm(loc-trans) < self.dist_thresh:
+                dist = np.linalg.norm(loc-trans)
+                if dist < self.dist_thresh:
+                    # print "%s to %s --> %s m" % (self.frame, loc_name, dist)
                     now_near.append(loc_name)
             except (LookupException, ConnectivityException, ExtrapolationException):
                 pass
@@ -140,7 +146,7 @@ def main():
     parser.add_argument('domain', help="The domain for which the parameter will be monitored.")
     parser.add_argument('object', help="The pddl name of the object to monitor for nearness to locations.")
     parser.add_argument('frame', help="The TF frame corresponding to the pddl object.")
-    parser.add_argument('--distance', '-d', default=0.1, help="The threshold distance to declare 'near.'")
+    parser.add_argument('--distance', '-d', type=float, default=0.1, help="The threshold distance to declare 'near.'")
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
 
     rospy.init_node('%s_proximity_monitor' % args.domain)
