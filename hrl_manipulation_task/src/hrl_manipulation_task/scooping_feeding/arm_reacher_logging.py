@@ -42,7 +42,7 @@ import hrl_lib.util as ut
 from hrl_manipulation_task.record_data import logger
 
 
-def scooping(armReachActionLeft, armReachActionRight, log, detection_flag):
+def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=False):
 
     log.task = 'scooping'
     log.initParams()
@@ -51,8 +51,9 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag):
     print "Initializing left arm for scooping"
     print armReachActionRight("initScooping")
     
-    #ut.get_keystroke('Hit a key to proceed next')        
-    print armReachActionRight("runScooping")
+    #ut.get_keystroke('Hit a key to proceed next')
+    if train: print armReachActionRight("runScoopingRandom")
+    else: print armReachActionRight("runScooping")
     print armReachActionLeft("getBowlPos")
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping")
@@ -124,16 +125,18 @@ if __name__ == '__main__':
 
         detection_flag = False
         
-        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both else: exit): ')
+        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both 4:scoopingTraining else: exit): ')
         if trial=='': trial=last_trial
             
-        if trial is '1' or trial is '2' or trial is '3':
+        if trial is '1' or trial is '2' or trial is '3' or trial is '4':
             detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
             if detect == '': detect=last_detect
             if detect == '1': detection_flag = True
             
             if trial == '1':
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
+            elif trial == '4':
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True)
             elif trial == '2':
                 feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
             else:

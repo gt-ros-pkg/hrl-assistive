@@ -58,7 +58,8 @@ if __name__ == '__main__':
     ## Scooping -----------------------------------    
     if True:
         print "Initializing left arm for scooping"
-        print armReachActionRight("runScooping")
+        ## print armReachActionRight("runScooping")
+        print armReachActionRight("runScoopingRandom")
 
         #ut.get_keystroke('Hit a key to proceed next')        
         print armReachActionLeft("getBowlPos")

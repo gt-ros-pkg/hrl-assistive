@@ -166,6 +166,13 @@ class armReachAction(mpcBaseAction):
         self.motions['runScooping']['right'] = \
           [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.]
            ]
+
+        # only for training setup
+        self.motions['runScoopingRandom'] = {}
+        self.motions['runScoopingRandom']['left'] = []
+        self.motions['runScoopingRandom']['right'] = \
+          [['MOVES', '[0.7+random.randrange(-0.1, 0.1), -0.15+random.randrange(-0.1, 0.1),-0.1+random.randrange(-0.1, 0.1), -3.1415, 0.0, 1.57]', 2.],
+           ]
         
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
