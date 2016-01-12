@@ -119,8 +119,8 @@ class PDDLTaskThread(Thread):
             while self.domain_state is None:
                 rospy.loginfo("Waiting for state of %s domain.", self.domain)
                 rospy.sleep(1)
-            print "Extending initial state with ", self.domain_state
-            self.problem_msg.init.extend(self.domain_state)
+            print "Extending initial state"
+            [self.problem_msg.init.append(pred) for pred in self.domain_state if pred not in self.problem_msg.init]
 
             # Get solution from planner
             try:
