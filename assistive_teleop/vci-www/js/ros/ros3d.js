@@ -2739,10 +2739,30 @@ ROS3D.Viewer = function(options) {
   };
 
   // create the canvas to render to
-  this.renderer = new THREE.WebGLRenderer({
-    alpha : true, 
-    antialias : this.antialias
-  });
+  var webglAvailable = function () {
+      try {
+          var canvas = document.createElement( 'canvas' );
+          return !!( window.WebGLRenderingContext && (
+                     canvas.getContext( 'webgl' ) ||
+                     canvas.getContext( 'experimental-webgl' ) )
+                   );
+      } catch ( e ) {
+          return false;
+      }
+  };
+
+  if ( webglAvailable() ) {
+      console.log("WebGL Available, so using it.");
+      this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: this.antialias});
+  } else {
+      console.log("WebGL Unavailable, falling back to canvas renderer.");
+//      this.renderer = new THREE.CanvasRenderer({alpha: true, antialias: this.antialias});
+      this.renderer = new THREE.CanvasRenderer();
+  }
+//  this.renderer = new THREE.WebGLRenderer({
+//    alpha : true, 
+//    antialias : this.antialias
+//  });
   this.renderer.setSize(width, height);
 //  this.renderer.setClearColor(0x000000, 0);
   this.renderer.sortObjects = false;

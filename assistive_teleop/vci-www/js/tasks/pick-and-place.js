@@ -116,6 +116,7 @@ RFH.PickAndPlace = function (options) {
             ros: ros,
             name: '/pddl_tasks/'+self.name+'/KNOWN/'+location_name
         });
+        console.log("Setting " + location_name + " pose as:", ps_msg);
         poseParam.set(ps_msg);
     };
 
@@ -134,13 +135,12 @@ RFH.PickAndPlace = function (options) {
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'pick_and_place_'+self.side+'-'+ new Date().getTime().toString();
         msg.domain = 'pick_and_place_'+self.side;
-        msg.init = ['(AT HAND HAND_START_LOC)', '(KNOWN HAND_START_LOC)'];  // Initialize with sensible information...
         self.setPoseToParam(self.arm.getState(), 'HAND_START_LOC');
+        self.updatePDDLState(['(NOT (AT TARGET PLACE_LOC))','(AT TARGET PICK_LOC)']);
         if (!self.gripper.getGrasping()) {
             msg.init.push('(AT TARGET PICK_LOC)');
         }
         msg.goal = [];  // Empty goal will use default for task
-        self.updatePDDLState(msg.init);
         self.taskPublisher.publish(msg);
     };
 

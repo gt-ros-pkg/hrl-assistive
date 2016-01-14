@@ -42,6 +42,11 @@ RFH.Smach = function(options) {
     };
 
     self.updateCurrentAction = function (planStepMsg) {
+        if (planStepMsg.action === '') {
+            self.display.empty(); 
+            RFH.taskMenu.startTask('lookingTask');
+            return;
+        }
         var task;
         // Get the task from the list matching this message
         for (var i=0; i<self.smachTasks.length; i+=1){

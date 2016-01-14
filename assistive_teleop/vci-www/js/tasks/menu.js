@@ -108,7 +108,7 @@ RFH.initTaskMenu = function (divId) {
                                                gripper: RFH.pr2.r_gripper}));
     RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
                                                arm: RFH.pr2.l_arm_cart,
-                                               gripper: RFH.pr2.r_gripper}));
+                                               gripper: RFH.pr2.l_gripper}));
                                     
     // Start looking task by default
     $('#'+RFH.taskMenu.tasks.lookingTask.buttonText).click();

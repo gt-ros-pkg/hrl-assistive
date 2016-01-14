@@ -111,19 +111,26 @@ class PDDLTaskThread(Thread):
 
     def run(self):
         # Build out problem (init, goal), check for sub-goals, plan, check for irrecoverable actions, publish plan, compose sm, run sm
+        first_run = True
         if not self.problem_msg.goal:
             self.problem_msg.goal = self.default_goal
         while self.result != 'succeeded':
             # For the current problem get initial state and
-            self.problem_msg.init.extend(self.constant_predicates)
-            while self.domain_state is None:
-                rospy.loginfo("Waiting for state of %s domain.", self.domain)
-                rospy.sleep(1)
-            print "Extending initial state"
-            [self.problem_msg.init.append(pred) for pred in self.domain_state if pred not in self.problem_msg.init]
+            [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
+            if first_run:
+                while self.domain_state is None:
+                    rospy.loginfo("Waiting for state of %s domain.", self.domain)
+                    rospy.sleep(1)
+                rospy.sleep(2)
+            self.problem_msg.init = self.domain_state
+#                print "Extending initial state"
+#                [self.problem_msg.init.append(pred) for pred in self.domain_state if pred not in self.problem_msg.init]
+#            else:
+            first_run = False
 
             # Get solution from planner
             try:
+                print self.problem_msg
                 solution = self.planner_service.call(self.problem_msg)
                 sol_msg = PDDLSolution()
                 sol_msg.domain = self.domain
