@@ -671,7 +671,11 @@ class learning_hmm_multi_n:
             else: return False, err
             
             
-    def expLikelihood(self, X, ths_mult=None, smooth=True):
+    def expLikelihood(self, X, ths_mult=None, method='time_cluster'):
+        '''
+        Decision Boundary
+        '''
+        
         if self.nEmissionDim == 1: X_test = np.array([X[0]])
         else: X_test = self.convert_sequence(X, emission=False)
 
@@ -693,7 +697,7 @@ class learning_hmm_multi_n:
 
         n = len(np.squeeze(X[0]))
 
-        if smooth:
+        if method=='smooth':
             # The version for IROS 2016.
             # The expected log-likelihood is estimated using weighted average.
             sum_w = 0.
@@ -713,7 +717,7 @@ class learning_hmm_multi_n:
 
             return sum_l/sum_w, logp
 
-        else:
+        elif method=='time_cluster':
             # The version of ICRA 2016
             # Find the best posterior distribution
             min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
@@ -723,6 +727,27 @@ class learning_hmm_multi_n:
                 return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index], logp
             else:
                 return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index], logp
+
+        else:
+            sum_w = 0.
+            sum_mu = 0.
+            sum_std = []
+            dist_l = []
+            for i in xrange(self.nGaussian):
+                dist = 1.0/entropy(post[n-1], self.l_statePosterior[i])
+                dist = dist*dist
+                sum_w += dist
+                sum_mu  += dist * self.ll_mu[i]
+                ## sum_std.append( dist * self.ll_std[i] )
+                dist_l.append(dist)
+
+            est_mu   = sum_mu/sum_w
+            ## est_std  = np.sum(sum_std)/sum_w
+            ## est_mult = [x*est_std/sum_w for x in dist_l]
+            est_mult = [x*self.ll_std[idx]/sum_w for idx, x in enumerate(dist_l)]
+            
+            return est_mu + np.sum(est_mult * np.array(ths_mult) ), est_mu, logp
+            
 
         
     @staticmethod

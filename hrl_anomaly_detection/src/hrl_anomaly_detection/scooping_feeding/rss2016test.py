@@ -376,7 +376,8 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
 
     log_ll     = []
     exp_log_ll = []
-    smooth = False
+    dec_log_ll = []
+    method = 'new'
     c1 = 1.0
     c2 = 1.0        
 
@@ -388,7 +389,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         for j in range(2, len(normalTestData[0][i])):
             X = [x[i,:j] for x in normalTestData]                
 
-            exp_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, smooth=smooth)
+            _, exp_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, method=method)
             prev_exp_log_l.append(exp_logp)
             l_prev_cost.append( max(0, 1.0+(2.0*c2-1.0)*(exp_logp-logp)) )
 
@@ -396,20 +397,22 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         X = [x[i,:] for x in normalTestData]
         y = -1
         if i>3:
-            cf.updateClassifierCoff(ml, X, y, c1=c1, c2=c2, smooth=smooth)
+            cf.updateClassifierCoff(ml, X, y, c1=c1, c2=c2, method=method)
         else:
-            cf.updateClassifierCoff(ml, X, y, c1=c1, c2=c2, smooth=smooth, optimization=False)
+            cf.updateClassifierCoff(ml, X, y, c1=c1, c2=c2, method=method, optimization=False)
         #----------------------------------------------------------
 
         log_ll.append([])
         exp_log_ll.append([])
+        dec_log_ll.append([])
         l_cost = []
         for j in range(2, len(normalTestData[0][i])):
             X = [x[i,:j] for x in normalTestData]                
 
-            exp_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, smooth=smooth)
+            exp_logp, dec_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, method=method)
             log_ll[i].append(logp)
             exp_log_ll[i].append(exp_logp)
+            dec_log_ll[i].append(dec_logp)
             l_cost.append( max(0, 1.0+(2.0*c2-1.0)*(exp_logp-logp)) )
 
         if len(log_ll)>4:
@@ -421,6 +424,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
             plt.plot(log_ll[-1], 'b-', lw=3.0)
             plt.plot(prev_exp_log_l, 'm*--', lw=3.0)            
             plt.plot(exp_log_ll[-1], 'm-', lw=3.0)            
+            plt.plot(dec_log_ll[-1], 'g-', lw=1.0)            
 
             ax = fig.add_subplot(212)
             plt.plot(l_prev_cost, 'b-')
@@ -441,24 +445,26 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         for j in range(2, len(abnormalTestData[0][i])):
             X = [x[i,:j] for x in abnormalTestData]                
 
-            exp_logp, _ = ml.expLikelihood(X, ml.l_ths_mult, smooth=smooth)
+            exp_logp, _ = ml.expLikelihood(X, ml.l_ths_mult, method=method)
             prev_exp_log_l.append(exp_logp)
 
         #----------------------------------------------------------
         X      = [x[i,:] for x in abnormalTestData]
         y      = [1]
-        cf.updateClassifierCoff(ml, X, y, c1=c1, c2=c2, smooth=smooth)
+        cf.updateClassifierCoff(ml, X, y, c1=c1, c2=c2, method=method)
         #----------------------------------------------------------
         # visualization
 
         log_ll.append([])
         exp_log_ll.append([])
+        dec_log_ll.append([])
         for j in range(2, len(abnormalTestData[0][i])):
             X = [x[i,:j] for x in abnormalTestData]                
 
-            exp_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, smooth=smooth)
+            exp_logp, dec_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, method=method)
             log_ll[-1].append(logp)
             exp_log_ll[-1].append(exp_logp)
+            dec_log_ll[-1].append(dec_logp)
 
 
         fig = plt.figure()
@@ -472,6 +478,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         plt.plot(log_ll[-1], 'r-', lw=3.0)
         plt.plot(prev_exp_log_l, 'm*--', lw=3.0)            
         plt.plot(exp_log_ll[-1], 'm-', lw=3.0)            
+        plt.plot(dec_log_ll[-1], 'g-', lw=1.0)            
 
         if save_pdf == True:
             fig.savefig('test.pdf')
