@@ -295,7 +295,7 @@ class logger:
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
                 msg.kinematics_ee_quat = np.squeeze(self.kinematics.ee_quat.T).tolist()
-                msg.kinematics_jnt_pos = np.squeeze(self.kinematics.main148_jnt_positions.T).tolist()
+                msg.kinematics_jnt_pos = np.squeeze(self.kinematics.main_jnt_positions.T).tolist()
                 msg.kinematics_jnt_vel = np.squeeze(self.kinematics.main_jnt_velocities.T).tolist()
                 msg.kinematics_jnt_eff = np.squeeze(self.kinematics.main_jnt_efforts.T).tolist()
                 msg.kinematics_target_pos  = np.squeeze(self.kinematics.target_pos.T).tolist()
