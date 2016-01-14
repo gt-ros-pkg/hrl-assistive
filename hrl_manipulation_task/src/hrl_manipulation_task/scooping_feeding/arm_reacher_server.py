@@ -30,6 +30,7 @@
 
 # System
 import sys, time, copy
+import random
 import numpy as np
 
 # ROS
@@ -146,26 +147,37 @@ class armReachAction(mpcBaseAction):
         
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
-        self.motions['initScooping'] = {}
-        self.motions['initScooping']['left'] = \
-          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0],
-           ['MOVES', '[-0.04, 0.0, -0.15, 0, 0.7, 0]', 5, 'self.bowl_frame']] 
-        self.motions['initScooping']['right'] = \
+        self.motions['initScooping1'] = {}
+        self.motions['initScooping1']['left'] = \
+          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0]]
+        self.motions['initScooping1']['right'] = \
           [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],             
            ['PAUSE', 1.0]]
           #['MOVEJ', '[-0.649, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0]
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
 
+        self.motions['initScooping2'] = {}
+        self.motions['initScooping2']['left'] = \
+          [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 5, 'self.bowl_frame']] 
+        self.motions['initScooping2']['right'] = \
+          [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.]
+           ]
+          
+        # only for training setup
+        self.motions['initScooping2Random'] = {}
+        self.motions['initScooping2Random']['left'] = []
+        self.motions['initScooping2Random']['right'] = \
+          [['MOVES', '[0.7+random.uniform(-0.1, 0.1), -0.15+random.uniform(-0.1, 0.1),-0.1+random.uniform(-0.1, 0.1), -3.1415, 0.0, 1.57]', 2.],
+           ]
         
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.0,  0.04, 0, 0.7, 0]', 4, 'self.bowl_frame'],
-           ['MOVES', '[ 0.02, 0.0,  0.05, 0, 1.2, 0]', 4, 'self.bowl_frame'],
-           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.2, 0]', 4, 'self.bowl_frame'],
+          [['MOVES', '[-0.05, 0.0,  0.06, 0, 0.5, 0]', 4, 'self.bowl_frame'],
+           ['MOVES', '[ 0.03, 0.0,  0.06, 0, 1.3, 0]', 4, 'self.bowl_frame'],
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.3, 0]', 4, 'self.bowl_frame'],
            ['PAUSE', 2.0] ]
         self.motions['runScooping']['right'] = \
-          [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.]
-           ]
+          []
         
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -208,6 +220,13 @@ class armReachAction(mpcBaseAction):
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
+        elif task == "getBowlPosRandom":
+            if self.bowl_frame_kinect is not None:
+                self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)                
+                return "Choose kinect bowl position"
+            elif self.bowl_frame_kinect is None:
+                self.bowl_frame = copy.deepcopy(self.getBowlFrame(addNoise=True))
+                return "Choose bowl position from kinematics using tf"                
         elif task == "getHeadPos":
             if self.mouth_frame_kinect is not None:
                 self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
@@ -285,7 +304,7 @@ class armReachAction(mpcBaseAction):
 
         # TODO: location should be replaced into the last scooping or feeding starts.
         print "Moving left arm to safe position "
-        self.parsingMovements(self.motions['initScooping'][self.arm])
+        self.parsingMovements(self.motions['initScooping1'][self.arm])
         
         ## if data.data == 'InterruptHead':
         ##     self.feeding([0])
@@ -295,7 +314,7 @@ class armReachAction(mpcBaseAction):
         ##     self.setPostureGoal(self.lInitAngScooping, 10)
 
 
-    def getBowlFrame(self):
+    def getBowlFrame(self, addNoise=False):
         # Get frame info from right arm and upate bowl_pos                
 
         # 1. right arm ('r_gripper_tool_frame') from tf
@@ -316,6 +335,12 @@ class armReachAction(mpcBaseAction):
         M.DoRotY(orient_offset['ry'])
         M.DoRotZ(orient_offset['rz'])        
 
+        # 2.* add noise for random training 
+        if addNoise:
+            p = p + PyKDL.Vector(random.uniform(-0.1, 0.1),
+                                 random.uniform(-0.1, 0.1),
+                                 random.uniform(-0.1, 0.1))        
+        
         # 4. (optional) publish pose for visualization
         ps = PoseStamped()
         ps.header.frame_id = 'torso_lift_link'

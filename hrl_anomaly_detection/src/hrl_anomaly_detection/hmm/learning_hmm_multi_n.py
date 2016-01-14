@@ -67,6 +67,11 @@ class learning_hmm_multi_n:
         self.B  = None # emission matrix
         self.pi = None # Initial probabilities per state
         self.check_method = check_method # ['global', 'progress']
+
+        # For non-parametric decision boundary estimation
+        # use: knn
+        # For parametric decision boundary estimation (ICRA 2016)
+        # use: time
         self.cluster_type = cluster_type
 
         self.l_statePosterior = None
@@ -78,7 +83,7 @@ class learning_hmm_multi_n:
         self.l_std = None
         self.std_coff = None
         self.km = None
-
+        self.l_ths_mult = [-1.0]*self.nState
 
         # emission domain of this model        
         self.F = ghmm.Float()  
@@ -193,7 +198,7 @@ class learning_hmm_multi_n:
             
         elif self.check_method == 'progress':
             # Get average loglikelihood threshold wrt progress
-
+            
             if os.path.isfile(ml_pkl) and use_pkl:
                 if self.verbose: print 'Load detector parameters'
                 d = ut.load_pickle(ml_pkl)
@@ -207,7 +212,8 @@ class learning_hmm_multi_n:
                     g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
                     g_sig = float(m) / float(self.nGaussian) * self.std_coff
                     r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
-                                                                           self.nEmissionDim, g_mu_list[i], g_sig, self.nState)
+                                                                           self.nEmissionDim, g_mu_list[i], \
+                                                                           g_sig, self.nState)
                                                                            for i in xrange(self.nGaussian))
                     if self.verbose: print 'Completed parallel job'
                     l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
@@ -413,18 +419,40 @@ class learning_hmm_multi_n:
         return mu_l, cov_l
 
     def loglikelihood(self, X):
-        X = np.squeeze(X)*self.scale
-        X_test = X.tolist()        
-
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+        X_test = np.squeeze(X)*self.scale
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
 
         try:    
             p = self.ml.loglikelihood(final_ts_obj)
         except:
-            if self.verbose: print 'Likelihood error!!!!'
+            print 'Likelihood error!!!!'
             sys.exit()
 
         return p
+
+    def loglikelihoods(self, X):
+        X_test = self.convert_sequence(X, emission=False)
+        X_test = np.squeeze(X_test)*self.scale
+
+        l_likelihood = []
+        l_post       = []        
+        
+        for i in xrange(1, len(X[0])):
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[:i*self.nEmissionDim].tolist())
+
+            try:
+                logp = self.ml.loglikelihood(final_ts_obj)
+                post = np.array(self.ml.posterior(final_ts_obj))
+            except:
+                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                ## return False, False # anomaly
+                continue
+
+            l_likelihood.append( logp )
+            l_post.append( post[i-1] )
+
+        return l_likelihood, l_post
+            
 
     def likelihoods(self, X):
         X_test = self.convert_sequence(X, emission=False)
@@ -542,6 +570,7 @@ class learning_hmm_multi_n:
     def convert_sequence(data, emission=False):
         '''
         data: dimension x sample x length
+        TODO: need to replace entire code it looks too inefficient conversion.
         '''
         
         # change into array from other types
@@ -641,9 +670,8 @@ class learning_hmm_multi_n:
             if err < 0.0: return True, err
             else: return False, err
             
-
             
-    def expLikelihoods(self, X, ths_mult=None):
+    def expLikelihood(self, X, ths_mult=None, smooth=True):
         if self.nEmissionDim == 1: X_test = np.array([X[0]])
         else: X_test = self.convert_sequence(X, emission=False)
 
@@ -655,32 +683,46 @@ class learning_hmm_multi_n:
             logp = self.ml.loglikelihood(final_ts_obj)
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
-            return -1, 0.0 # error
+            return False, False # error
 
         try:
             post = np.array(self.ml.posterior(final_ts_obj))
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            return 1.0, 0.0 # anomaly
+            return False, False # anomaly
 
         n = len(np.squeeze(X[0]))
 
-        # Find the best posterior distribution
-        min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
+        if smooth:
+            # The version for IROS 2016.
+            # The expected log-likelihood is estimated using weighted average.
+            sum_w = 0.
+            sum_l = 0.
+            dist_l = []
+            for i in xrange(self.nGaussian):
+                dist = 1.0/entropy(post[n-1], self.l_statePosterior[i])
+                sum_w += dist
+                
+                if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) \
+                  and len(ths_mult)>1:
+                    sum_l += dist * (self.ll_mu[i] + ths_mult[i] * self.ll_std[i])
+                else:
+                    sum_l += dist * (self.ll_mu[i] + ths_mult * self.ll_std[i])                    
 
-        # print 'Computing anomaly'
-        # print logp
-        # print self.ll_mu[min_index]
-        # print self.ll_std[min_index]
-        # print 'logp:', logp, 'll_mu', self.ll_mu[min_index], 'll_std', self.ll_std[min_index],
-        # 'mult_std', ths_mult*self.ll_std[min_index]
+                dist_l.append(dist)
 
-        if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and len(ths_mult)>1:
-            ## print min_index, self.ll_mu[min_index], self.ll_std[min_index], ths_mult[min_index], " = ", (self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]) 
-            return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]
+            return sum_l/sum_w, logp
+
         else:
-            return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
+            # The version of ICRA 2016
+            # Find the best posterior distribution
+            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
 
+            if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and \
+              len(ths_mult)>1:
+                return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index], logp
+            else:
+                return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index], logp
 
         
     @staticmethod
@@ -908,7 +950,8 @@ class learning_hmm_multi_n:
 
         return min_index, min_dist
         
-        
+
+    
 ####################################################################
 # functions for paralell computation
 ####################################################################
@@ -968,4 +1011,5 @@ def computeLikelihood(F, k, data, g_mu, g_sig, nEmissionDim, A, B, pi):
     # print np.shape(g_post), np.shape(g_lhood), np.shape(g_lhood2), np.shape(prop_sum)
 
     return g_post, g_lhood, g_lhood2, prop_sum
+
 
