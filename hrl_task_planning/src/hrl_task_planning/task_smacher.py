@@ -23,6 +23,8 @@ class TaskSmacher(object):
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
         rospy.loginfo("[%s] Ready", rospy.get_name())
 
+    def
+
     def req_cb(self, req):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
@@ -99,6 +101,7 @@ class PDDLTaskThread(Thread):
         self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
         self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, latch=True)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, latch=True)
+        # TODO: Catch close signal, publish empty action before stopping...
         self.planner_service = rospy.ServiceProxy("/pddl_planner", PDDLPlanner)
         self.domain_smach_states = importlib.import_module("hrl_task_planning.%s_states" % self.domain)
         self.domain_state = None
