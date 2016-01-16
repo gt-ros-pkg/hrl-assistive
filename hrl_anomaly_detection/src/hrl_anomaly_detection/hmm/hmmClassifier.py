@@ -6,6 +6,7 @@ from sklearn.grid_search import RandomizedSearchCV, GridSearchCV
 from sklearn.base import BaseEstimator, ClassifierMixin
 from learning_hmm_multi_n import learning_hmm_multi_n
 from util import *
+import learning_util as util
 
 class HmmClassifier(BaseEstimator, ClassifierMixin):
 
@@ -226,7 +227,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         # Scale features
         for i in xrange(nDimension):
             for j in xrange(len(dataList[i])):
-                dataList_scaled[i].append(scaling(dataList[i][j], minVals[i], maxVals[i], self.scale).tolist())
+                dataList_scaled[i].append(util.scaling(dataList[i][j], minVals[i], maxVals[i], self.scale).tolist())
 
         return dataList_scaled, minVals, maxVals
 
