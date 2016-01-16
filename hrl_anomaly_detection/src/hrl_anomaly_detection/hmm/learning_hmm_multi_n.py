@@ -46,6 +46,8 @@ from sklearn.metrics import r2_score
 from sklearn.cluster import KMeans
 from joblib import Parallel, delayed
 
+import learning_util as util
+
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_n:
@@ -109,13 +111,13 @@ class learning_hmm_multi_n:
         if A is None:
             if self.verbose: print "Generating a new A matrix"
             # Transition probability matrix (Initial transition probability, TODO?)
-            A = self.init_trans_mat(self.nState).tolist()
+            A = util.init_trans_mat(self.nState).tolist()
 
         if B is None:
             if self.verbose: print "Generating a new B matrix"
             # We should think about multivariate Gaussian pdf.  
 
-            mus, cov = self.vectors_to_mean_cov(X, self.nState)
+            mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim)
             ## print np.shape(mus), np.shape(cov)
 
             for i in xrange(self.nEmissionDim):
@@ -142,7 +144,7 @@ class learning_hmm_multi_n:
         # HMM model object
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
         # print 'Creating Training Data'
-        X_train = self.convert_sequence(X) # Training input
+        X_train = util.convert_sequence(X) # Training input
         X_train = X_train.tolist()
         if self.verbose: print "training data size: ", np.shape(X_train)
         
@@ -197,8 +199,7 @@ class learning_hmm_multi_n:
             self.l_std = np.std(l_logp)
             
         elif self.check_method == 'progress':
-            # Get average loglikelihood threshold wrt progress
-            
+            # Get average loglikelihood threshold wrt progress used for ICRA2016
             if os.path.isfile(ml_pkl) and use_pkl:
                 if self.verbose: print 'Load detector parameters'
                 d = ut.load_pickle(ml_pkl)
@@ -218,7 +219,7 @@ class learning_hmm_multi_n:
                     if self.verbose: print 'Completed parallel job'
                     l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
-                elif self.cluster_type == 'state':
+                elif self.cluster_type == 'kmean':
                     self.km = None                    
                     self.ll_mu = None
                     self.ll_std = None
@@ -227,15 +228,35 @@ class learning_hmm_multi_n:
                     likelihood_mat = np.zeros((1, m*n))
                     self.l_statePosterior=None
                     
+                elif self.cluster_type == 'state':
+                    if self.verbose: print 'Begining parallel job'
+
+                    for j in xrange(n):                        
+                        _, l_post, l_logp = loglikelihoods(j, self, X_train[j], bPosterior=True)
+                        print np.shape(l_post), np.shape(l_logp)
+                    
+                        
+                    ## self.ll_mu, self.ll_std = learn_likelihoods_state()
+                    sys.exit()
+                    
+                    ## r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_state)(i, n, m, A, B, pi, self.F, X_train,
+                    ##                                                          self.nEmissionDim, self.nState)
+                    ##                                                          for i in xrange(self.nState))
+                    ## if self.verbose: print 'Completed parallel job'
+                    ## l_i, self.ll_mu, self.ll_std = zip(*r)
+                    self.l_statePosterior=None
+                    
+                    
                 d = dict()
                 d['state_post'] = self.l_statePosterior
                 d['ll_mu'] = self.ll_mu
                 d['ll_std'] = self.ll_std
                 ut.save_pickle(d, ml_pkl)
-                            
+
+                
                     
     def get_sensitivity_gain(self, X):
-        X_test = self.convert_sequence(X, emission=False)
+        X_test = util.convert_sequence(X, emission=False)
 
         try:
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -269,7 +290,7 @@ class learning_hmm_multi_n:
         elif self.check_method == 'change':
             if len(X[0])<3: return [], 0.0 #error
 
-            X_test = self.convert_sequence([x[:-1] for x in X], emission=False)
+            X_test = util.convert_sequence([x[:-1] for x in X], emission=False)
 
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -284,7 +305,7 @@ class learning_hmm_multi_n:
         elif self.check_method == 'globalChange':
             if len(X[0])<3: return [], 0.0 #error
 
-            X_test = self.convert_sequence([x[:-1] for x in X], emission=False)
+            X_test = util.convert_sequence([x[:-1] for x in X], emission=False)
 
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
@@ -299,84 +320,6 @@ class learning_hmm_multi_n:
             
             return [ths_c, ths_g], 0
         
-
-    def path_disp(self, X):
-        X = [np.array(x) for x in X]
-        from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-        n, m = np.shape(X[0])
-        if self.verbose: print n, m
-        x = np.arange(0., float(m))*(1./43.)
-        path_mat  = np.zeros((self.nState, m))
-        zbest_mat = np.zeros((self.nState, m))
-
-        path_l = []
-        for i in xrange(n):
-            x_test = [x[i:i+1,:] for x in X]
-
-            if self.nEmissionDim == 1:
-                X_test = x_test[0]
-            else:
-                X_test = self.convert_sequence(x_test, emission=False)
-
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-            path,_    = self.ml.viterbi(final_ts_obj)
-            post = self.ml.posterior(final_ts_obj)
-
-            use_last = False
-            for j in xrange(m):
-                ## sum_post = np.sum(post[j*2+1])
-                ## if sum_post <= 0.1 or sum_post > 1.1 or sum_post == float('Inf') or use_last == True:
-                ##     use_last = True
-                ## else:
-                add_post = np.array(post[j])/float(n)
-                path_mat[:, j] += add_post
-
-            path_l.append(path)
-            for j in xrange(m):
-                zbest_mat[path[j], j] += 1.0
-
-        path_mat /= np.sum(path_mat, axis=0)
-
-        # maxim = np.max(path_mat)
-        # path_mat = maxim - path_mat
-
-        zbest_mat /= np.sum(zbest_mat, axis=0)
-
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        matplotlib.rcParams['ps.fonttype'] = 42
-
-        fig = plt.figure()
-        plt.rc('text', usetex=True)
-
-        ax1 = plt.subplot(111)
-        im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper',
-                         extent=[0, float(m)*(1.0/10.), 20, 1], aspect=0.85)
-
-        ## divider = make_axes_locatable(ax1)
-        ## cax = divider.append_axes("right", size="5%", pad=0.05)
-        plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
-        ax1.set_xlabel("Time (sec)", fontsize=18)
-        ax1.set_ylabel("Hidden State Index", fontsize=18)
-        ax = plt.gca()
-        ax.set_ylim(ax.get_ylim()[::-1])
-
-        ## for p in path_l:
-        ##     ax1.plot(x, p, '*')
-
-        ## ax2 = plt.subplot(212)
-        ## im2 = ax2.imshow(zbest_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper',
-        ##                  extent=[0,float(m)*(1.0/43.),20,1], aspect=0.1)
-        ## plt.colorbar(im2, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
-        ## ax2.set_xlabel("Time [sec]", fontsize=18)
-        ## ax2.set_ylabel("Hidden State", fontsize=18)
-
-
-        ## ax3 = plt.subplot(313)
-        # fig.savefig('test.pdf')
-        # fig.savefig('test.png')
-        plt.grid()
-        plt.show()
 
     def predict(self, X):
         X = np.squeeze(X)
@@ -418,8 +361,10 @@ class learning_hmm_multi_n:
 
         return mu_l, cov_l
 
+
     def loglikelihood(self, X):
-        X_test = np.squeeze(X)*self.scale
+        X_test = util.convert_sequence(X, emission=False)
+        X_test = np.squeeze(X_test)*self.scale
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
 
         try:    
@@ -430,176 +375,98 @@ class learning_hmm_multi_n:
 
         return p
 
-    def loglikelihoods(self, X):
-        X_test = self.convert_sequence(X, emission=False)
+
+    def loglikelihoods(self, X, bPosterior=False):
+        X_test = util.convert_sequence(X, emission=False)
         X_test = np.squeeze(X_test)*self.scale
 
         l_likelihood = []
-        l_post       = []        
+        l_posterior   = []        
         
         for i in xrange(1, len(X[0])):
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[:i*self.nEmissionDim].tolist())
 
             try:
                 logp = self.ml.loglikelihood(final_ts_obj)
-                post = np.array(self.ml.posterior(final_ts_obj))
+                if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
             except:
                 print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                 ## return False, False # anomaly
                 continue
 
             l_likelihood.append( logp )
-            l_post.append( post[i-1] )
+            if bPosterior: l_posterior.append( post[i-1] )
 
-        return l_likelihood, l_post
+        if bPosterior:
+            return l_likelihood, l_posterior
+        else:
+            return l_likelihood
             
 
-    def likelihoods(self, X):
-        X_test = self.convert_sequence(X, emission=False)
+    def expLoglikelihood(self, X, ths_mult=None, smooth=True, bLoglikelihood=False):
+        X_test = util.convert_sequence(X, emission=False)
+        X_test = np.squeeze(X_test)*self.scale
 
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-        logp = self.ml.loglikelihood(final_ts_obj)
-        post = np.array(self.ml.posterior(final_ts_obj))
+        logp = None
+
+        try:
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            if bLoglikelihood: logp = self.ml.loglikelihood(final_ts_obj)
+        except:
+            print "Too different input profile that cannot be expressed by emission matrix"
+            return False, False # error
+
+        try:
+            post = np.array(self.ml.posterior(final_ts_obj))
+        except:
+            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+            return False, False # anomaly
 
         n = len(np.squeeze(X[0]))
 
-        # Find the best posterior distribution
-        min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
-
-        ll_likelihood = logp
-        ll_state_idx  = min_index
-        ll_likelihood_mu  = self.ll_mu[min_index]
-        ll_likelihood_std = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
-
-        return ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std
-
-    def allLikelihoods(self, X):
-        X_test = self.convert_sequence(X, emission=False)
-
-        m = len(np.squeeze(X[0]))
-
-        ll_likelihood = np.zeros(m)
-        ll_state_idx  = np.zeros(m)
-        ll_likelihood_mu  = np.zeros(m)
-        ll_likelihood_std = np.zeros(m)
-        for i in xrange(1, m):
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
-            logp = self.ml.loglikelihood(final_ts_obj)
-            post = np.array(self.ml.posterior(final_ts_obj))
-
-            # Find the best posterior distribution
-            min_index, min_dist = self.findBestPosteriorDistribution(post[i-1])
-
-            ll_likelihood[i] = logp
-            ll_state_idx[i]  = min_index
-            ll_likelihood_mu[i]  = self.ll_mu[min_index]
-            ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
-
-        return ll_likelihood, ll_state_idx, ll_likelihood_mu, ll_likelihood_std
-
-    # Returns mu,sigma for n hidden-states from feature-vector
-    @staticmethod
-    def vectors_to_mean_sigma(vec, nState):
-        index = 0
-        m,n = np.shape(vec)
-        mu  = np.zeros(nState)
-        sig = np.zeros(nState)
-        DIVS = n/nState
-
-        while index < nState:
-            m_init = index*DIVS
-            temp_vec = vec[:, m_init:(m_init+DIVS)]
-            temp_vec = np.reshape(temp_vec, (1, DIVS*m))
-            mu[index]  = np.mean(temp_vec)
-            sig[index] = np.std(temp_vec)
-            index += 1
-
-        return mu, sig
-        
-    # Returns mu,sigma for n hidden-states from feature-vector
-    def vectors_to_mean_cov(self, vecs, nState):
-        index = 0
-        m, n = np.shape(vecs[0]) # ? x length
-        mus  = [np.zeros(nState) for i in xrange(self.nEmissionDim)]
-        cov  = np.zeros((nState, self.nEmissionDim, self.nEmissionDim))
-        DIVS = n/nState
-
-        while index < nState:
-            m_init = index*DIVS
-
-            temp_vecs = [np.reshape(vec[:, m_init:(m_init+DIVS)], (1, DIVS*m)) for vec in vecs]
-            for i, mu in enumerate(mus):
-                mu[index] = np.mean(temp_vecs[i])
-
-            ## print np.shape(temp_vecs), np.shape(cov)
-            cov[index, :, :] = np.cov(np.concatenate(temp_vecs, axis=0))
-            index += 1
-
-        return mus, cov
-
-    @staticmethod
-    def init_trans_mat(nState):
-        # Reset transition probability matrix
-        trans_prob_mat = np.zeros((nState, nState))
-
-        for i in xrange(nState):
-            # Exponential function
-            # From y = a*e^(-bx)
-            ## a = 0.4
-            ## b = np.log(0.00001/a)/(-(nState-i))
-            ## f = lambda x: a*np.exp(-b*x)
-
-            # Linear function
-            # From y = -a*x + b
-            b = 0.4
-            a = b/float(nState)
-            f = lambda x: -a*x+b
-
-            for j in np.array(range(nState-i))+i:
-                trans_prob_mat[i, j] = f(j)
-
-            # Gaussian transition probability
-            ## z_prob = norm.pdf(float(i),loc=u_mu_list[i],scale=u_sigma_list[i])
-
-            # Normalization
-            trans_prob_mat[i,:] /= np.sum(trans_prob_mat[i,:])
-
-        return trans_prob_mat
-
-    @staticmethod
-    def convert_sequence(data, emission=False):
-        '''
-        data: dimension x sample x length
-        TODO: need to replace entire code it looks too inefficient conversion.
-        '''
-        
-        # change into array from other types
-        X = [copy.copy(np.array(d)) if type(d) is not np.ndarray else copy.copy(d) for d in data]
-
-        # Change into 2-dimensional array
-        X = [np.reshape(x, (1, len(x))) if len(np.shape(x)) == 1 else x for x in X]
-
-        n, m = np.shape(X[0])
-
-        Seq = []
-        for i in xrange(n):
-            Xs = []
+        if smooth:
+            # The version for IROS 2016.
+            # The expected log-likelihood is estimated using weighted average.
+            sum_w = 0.
+            sum_l = 0.
+            dist_l = []
+            for i in xrange(self.nGaussian):
+                dist = 1.0/entropy(post[n-1], self.l_statePosterior[i])
+                sum_w += dist
                 
-            if emission:
-                for j in xrange(m):
-                    Xs.append([x[i, j] for x in X])
-                Seq.append(Xs)
-            else:
-                for j in xrange(m):
-                    Xs.append([x[i, j] for x in X])
-                Seq.append(np.array(Xs).flatten().tolist())
+                if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) \
+                  and len(ths_mult)>1:
+                    sum_l += dist * (self.ll_mu[i] + ths_mult[i] * self.ll_std[i])
+                else:
+                    sum_l += dist * (self.ll_mu[i] + ths_mult * self.ll_std[i])                    
 
-        return np.array(Seq)
-        
+                dist_l.append(dist)
+
+            if bLoglikelihood: return sum_l/sum_w, logp
+            else: return sum_l/sum_w
+
+        else:
+            # The version of ICRA 2016
+            # Find the best posterior distribution
+            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
+
+            if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and \
+              len(ths_mult)>1:
+                if bLoglikelihood:
+                    return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index], logp
+                else:
+                    return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index]
+            else:
+                if bLoglikelihood:
+                    return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index], logp
+                else:
+                    return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
+
+
     def anomaly_check(self, X, ths_mult=None):
 
         if self.nEmissionDim == 1: X_test = np.array([X[0]])
-        else: X_test = self.convert_sequence(X, emission=False)
+        else: X_test = util.convert_sequence(X, emission=False)
         X_test *= self.scale
 
         try:
@@ -615,7 +482,7 @@ class learning_hmm_multi_n:
             ##     if self.verbose: print "Too short profile!"
             ##     return -1, 0.0 #error
 
-            X_test = self.convert_sequence([x[:-1] for x in X], emission=False)
+            X_test = util.convert_sequence([x[:-1] for x in X], emission=False)
             try:
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 last_logp         = self.ml.loglikelihood(final_ts_obj)
@@ -670,250 +537,7 @@ class learning_hmm_multi_n:
             if err < 0.0: return True, err
             else: return False, err
             
-            
-    def expLikelihood(self, X, ths_mult=None, method='time_cluster'):
-        '''
-        Decision Boundary
-        '''
-        
-        if self.nEmissionDim == 1: X_test = np.array([X[0]])
-        else: X_test = self.convert_sequence(X, emission=False)
-
-        # scaling
-        X_test *= self.scale
-
-        try:
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
-            logp = self.ml.loglikelihood(final_ts_obj)
-        except:
-            print "Too different input profile that cannot be expressed by emission matrix"
-            return False, False # error
-
-        try:
-            post = np.array(self.ml.posterior(final_ts_obj))
-        except:
-            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            return False, False # anomaly
-
-        n = len(np.squeeze(X[0]))
-
-        if method=='smooth':
-            # The version for IROS 2016.
-            # The expected log-likelihood is estimated using weighted average.
-            sum_w = 0.
-            sum_l = 0.
-            dist_l = []
-            for i in xrange(self.nGaussian):
-                dist = 1.0/entropy(post[n-1], self.l_statePosterior[i])
-                sum_w += dist
-                
-                if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) \
-                  and len(ths_mult)>1:
-                    sum_l += dist * (self.ll_mu[i] + ths_mult[i] * self.ll_std[i])
-                else:
-                    sum_l += dist * (self.ll_mu[i] + ths_mult * self.ll_std[i])                    
-
-                dist_l.append(dist)
-
-            return sum_l/sum_w, logp
-
-        elif method=='time_cluster':
-            # The version of ICRA 2016
-            # Find the best posterior distribution
-            min_index, min_dist = self.findBestPosteriorDistribution(post[n-1])
-
-            if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) and \
-              len(ths_mult)>1:
-                return self.ll_mu[min_index] + ths_mult[min_index]*self.ll_std[min_index], logp
-            else:
-                return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index], logp
-
-        else:
-            sum_w = 0.
-            sum_mu = 0.
-            sum_std = []
-            dist_l = []
-            for i in xrange(self.nGaussian):
-                dist = 1.0/entropy(post[n-1], self.l_statePosterior[i])
-                dist = dist*dist
-                sum_w += dist
-                sum_mu  += dist * self.ll_mu[i]
-                ## sum_std.append( dist * self.ll_std[i] )
-                dist_l.append(dist)
-
-            est_mu   = sum_mu/sum_w
-            ## est_std  = np.sum(sum_std)/sum_w
-            ## est_mult = [x*est_std/sum_w for x in dist_l]
-            est_mult = [x*self.ll_std[idx]/sum_w for idx, x in enumerate(dist_l)]
-            
-            return est_mu + np.sum(est_mult * np.array(ths_mult) ), est_mu, logp
-            
-
-        
-    @staticmethod
-    def scaling(X, min_c=None, max_c=None, scale=10.0, verbose=False):
-        '''
-        scale should be over than 10.0(?) to avoid floating number problem in ghmm.
-        Return list type
-        '''
-        ## X_scaled = preprocessing.scale(np.array(X))
-
-        if min_c is None or max_c is None:
-            min_c = np.min(X)
-            max_c = np.max(X)
-
-        X_scaled = []
-        for x in X:
-            if verbose is True: print min_c, max_c, " : ", np.min(x), np.max(x)
-            X_scaled.append(((x-min_c) / (max_c-min_c) * scale))
-
-        return X_scaled, min_c, max_c
-
-    def likelihood_disp(self, X, X_true, Z, Z_true, axisTitles, ths_mult, figureSaveName=None):
-        n, m = np.shape(X[0])
-        n2, m2 = np.shape(Z[0])
-        if self.verbose: print "Input sequence X1: ", n, m
-        if self.verbose: print 'Anomaly: ', self.anomaly_check(X, ths_mult)
-
-        X_test = self.convert_sequence(X, emission=False)
-        Z_test = self.convert_sequence(Z, emission=False)
-
-        x = np.arange(0., float(m))
-        z = np.arange(0., float(m2))
-        ll_likelihood = np.zeros(m)
-        ll_state_idx  = np.zeros(m)
-        ll_likelihood_mu  = np.zeros(m)
-        ll_likelihood_std = np.zeros(m)
-        ll_thres_mult = np.zeros(m)
-        for i in xrange(1, m):
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0,:i*self.nEmissionDim].tolist())
-            logp = self.ml.loglikelihood(final_ts_obj)
-            post = np.array(self.ml.posterior(final_ts_obj))
-
-            # Find the best posterior distribution
-            min_index, min_dist = self.findBestPosteriorDistribution(post[i-1])
-
-            ll_likelihood[i] = logp
-            ll_state_idx[i]  = min_index
-            ll_likelihood_mu[i]  = self.ll_mu[min_index]
-            ll_likelihood_std[i] = self.ll_std[min_index] #self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
-            ll_thres_mult[i] = ths_mult
-
-        # state blocks
-        block_flag = []
-        block_x    = []
-        block_state= []
-        text_n     = []
-        text_x     = []
-        for i, p in enumerate(ll_state_idx):
-            if i is 0:
-                block_flag.append(0)
-                block_state.append(0)
-                text_x.append(0.0)
-            elif ll_state_idx[i] != ll_state_idx[i-1]:
-                if block_flag[-1] is 0: block_flag.append(1)
-                else: block_flag.append(0)
-                block_state.append( int(p) )
-                text_x[-1] = (text_x[-1]+float(i-1))/2.0 - 0.5 #
-                text_x.append(float(i))
-            else:
-                block_flag.append(block_flag[-1])
-            block_x.append(float(i))
-        text_x[-1] = (text_x[-1]+float(m-1))/2.0 - 0.5 #
-
-        block_flag_interp = []
-        block_x_interp    = []
-        for i in xrange(len(block_flag)):
-            block_flag_interp.append(block_flag[i])
-            block_flag_interp.append(block_flag[i])
-            block_x_interp.append( float(block_x[i]) )
-            block_x_interp.append(block_x[i]+0.5)
-
-
-        # y1 = (X1_true[0]/scale1[2])*(scale1[1]-scale1[0])+scale1[0]
-        # y2 = (X2_true[0]/scale2[2])*(scale2[1]-scale2[0])+scale2[0]
-        # y3 = (X3_true[0]/scale3[2])*(scale3[1]-scale3[0])+scale3[0]
-        # y4 = (X4_true[0]/scale4[2])*(scale4[1]-scale4[0])+scale4[0]
-        Y = [x_true[0] for x_true in X_true]
-
-        ZY = [np.mean(z_true, axis=0) for z_true in Z_true]
-
-        ## matplotlib.rcParams['figure.figsize'] = 8,7
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        matplotlib.rcParams['ps.fonttype'] = 42
-
-        fig = plt.figure()
-        plt.rc('text', usetex=True)
-
-        for index, (y, zy, title) in enumerate(zip(Y, ZY, axisTitles)):
-            ax = plt.subplot('%i1%i' % (len(X) + 1, index + 1))
-            ax.plot(x*(1./10.), y)
-            ax.plot(z*(1./10.), zy, 'r')
-            y_min = np.amin(y)
-            y_max = np.amax(y)
-            collection = collections.BrokenBarHCollection.span_where(np.array(block_x_interp)*(1./10.),
-                                                                     ymin=0, ymax=y_max+0.5,
-                                                                     # ymin=y_min - y_min/15.0, ymax=y_max + y_min/15.0,
-                                                                     where=np.array(block_flag_interp)>0,
-                                                                     facecolor='green',
-                                                                     edgecolor='none', alpha=0.3)
-            ax.add_collection(collection)
-            ax.set_ylabel(title, fontsize=16)
-            ax.set_xlim([0, x[-1]*(1./10.)])
-            ax.set_ylim([y_min - 0.25, y_max + 0.5])
-            # ax.set_ylim([y_min - y_min/15.0, y_max + y_min/15.0])
-
-            # Text for progress
-            if index == 0:
-                for i in xrange(len(block_state)):
-                    if i%2 is 0:
-                        if i<10:
-                            ax.text((text_x[i])*(1./10.), y_max+0.15, str(block_state[i]+1))
-                        else:
-                            ax.text((text_x[i]-1.0)*(1./10.), y_max+0.15, str(block_state[i]+1))
-                    else:
-                        if i<10:
-                            ax.text((text_x[i])*(1./10.), y_max+0.06, str(block_state[i]+1))
-                        else:
-                            ax.text((text_x[i]-1.0)*(1./10.), y_max+0.06, str(block_state[i]+1))
-
-        ax = plt.subplot('%i1%i' % (len(X) + 1, len(X) + 1))
-        ax.plot(x*(1./10.), ll_likelihood, 'b', label='Actual from \n test data')
-        ax.plot(x*(1./10.), ll_likelihood_mu, 'r', label='Expected from \n trained model')
-        ax.plot(x*(1./10.), ll_likelihood_mu + ll_thres_mult*ll_likelihood_std, 'r--', label='Threshold')
-        # ax.set_ylabel(r'$log P({\mathbf{X}} | {\mathbf{\theta}})$',fontsize=18)
-        ax.set_ylabel('Log-likelihood', fontsize=16)
-        ax.set_xlim([0, x[-1]*(1./10.)])
-
-        # ax.legend(loc='upper left', fancybox=True, shadow=True, ncol=3, prop={'size':14})
-        lgd = ax.legend(loc='upper center', fancybox=True, shadow=True, ncol=3, bbox_to_anchor=(0.5, -0.5), prop={'size':14})
-        ax.set_xlabel('Time (sec)', fontsize=16)
-
-        plt.subplots_adjust(bottom=0.15)
-
-        if figureSaveName is None:
-            plt.show()
-        else:
-            # fig.savefig('test.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
-            fig.savefig(figureSaveName, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-    def learn_likelihoods_progress_par(self, i, n, m, A, B, pi, X_train, g_mu, g_sig):
-        l_likelihood_mean = 0.0
-        l_likelihood_mean2 = 0.0
-        l_statePosterior = np.zeros(self.nState)
-
-        for j in xrange(n):
-            results = Parallel(n_jobs=-1)(delayed(computeLikelihood)(self.F, k, X_train[j][:k*self.nEmissionDim], g_mu, g_sig, self.nEmissionDim, A, B, pi) for k in xrange(1, m))
-
-            g_post = np.sum([r[0] for r in results], axis=0)
-            g_lhood, g_lhood2, prop_sum = np.sum([r[1:] for r in results], axis=0)
-
-            l_statePosterior += g_post / prop_sum / float(n)
-            l_likelihood_mean += g_lhood / prop_sum / float(n)
-            l_likelihood_mean2 += g_lhood2 / prop_sum / float(n)
-
-        return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
-
+    #-------------------------------------------------------------------
 
     def state_clustering(self, X):
         n, m = np.shape(X[0])
@@ -925,7 +549,7 @@ class learning_hmm_multi_n:
         count = 0           
         for i in xrange(n):
             for j in xrange(1, m):
-                X_test = self.convert_sequence([x[i:i+1,:j] for x in X], emission=False)
+                X_test = util.convert_sequence([x[i:i+1,:j] for x in X], emission=False)
 
                 final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
                 ## path,_    = self.ml.viterbi(final_ts_obj)        
@@ -1016,7 +640,43 @@ def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu
         l_likelihood_mean2 += g_lhood2 / prop_sum / float(n)
 
     return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
-    
+
+
+def learn_likelihoods_state(i, n, m, A, B, pi, F, X_train, nEmissionDim, nState):
+    if nEmissionDim >= 2:
+        ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    else:
+        ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+
+    l_likelihood_mean = 0.0
+    l_likelihood_mean2 = 0.0
+    l_statePosterior = np.zeros(nState)
+
+    for j in xrange(n):    
+
+        g_post = np.zeros(nState)
+        g_lhood = 0.0
+        g_lhood2 = 0.0
+        prop_sum = 0.0
+
+        for k in xrange(1, m):
+            final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
+            logp = ml.loglikelihoods(final_ts_obj)[0]
+            # print 'Log likelihood:', logp
+            post = np.array(ml.posterior(final_ts_obj))
+
+            k_prop = norm(loc=g_mu, scale=g_sig).pdf(k)
+            g_post += post[k-1] * k_prop
+            g_lhood += logp * k_prop
+            g_lhood2 += logp * logp * k_prop
+
+            prop_sum  += k_prop
+
+        l_likelihood_mean += g_lhood / prop_sum / float(n)
+        l_likelihood_mean2 += g_lhood2 / prop_sum / float(n)
+
+    return i, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+
 def computeLikelihood(F, k, data, g_mu, g_sig, nEmissionDim, A, B, pi):
     if nEmissionDim >= 2:
         hmm_ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
@@ -1038,3 +698,28 @@ def computeLikelihood(F, k, data, g_mu, g_sig, nEmissionDim, A, B, pi):
     return g_post, g_lhood, g_lhood2, prop_sum
 
 
+def loglikelihoods(idx, ml, X, bPosterior=False):
+    X_test = util.convert_sequence(X, emission=False)
+    X_test = np.squeeze(X_test)*ml.scale
+
+    l_likelihood = []
+    l_posterior   = []        
+
+    for i in xrange(1, len(X[0])):
+        final_ts_obj = ghmm.EmissionSequence(ml.F, X_test[:i*ml.nEmissionDim].tolist())
+
+        try:
+            logp = ml.ml.loglikelihood(final_ts_obj)
+            if bPosterior: post = np.array(ml.ml.posterior(final_ts_obj))
+        except:
+            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+            ## return False, False # anomaly
+            continue
+
+        l_likelihood.append( logp )
+        if bPosterior: l_posterior.append( post[i-1] )
+
+    if bPosterior:
+        return idx, l_likelihood, l_posterior
+    else:
+        return idx, l_likelihood

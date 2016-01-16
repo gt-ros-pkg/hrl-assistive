@@ -9,6 +9,7 @@ import multiprocessing
 from learning_hmm_multi_n import learning_hmm_multi_n
 
 from util import *
+import learning_util as util
 
 def scaleData(dataList, scale=[10,10,10,10], minVals=None, maxVals=None, verbose=False):
     # Determine max and min values
@@ -30,7 +31,7 @@ def scaleData(dataList, scale=[10,10,10,10], minVals=None, maxVals=None, verbose
     # Scale features
     for i in xrange(nDimension):
         for j in xrange(len(dataList[i])):
-            dataList_scaled[i].append( scaling(dataList[i][j], minVals[i], maxVals[i], scale[i]).tolist() )
+            dataList_scaled[i].append( util.scaling(dataList[i][j], minVals[i], maxVals[i], scale[i]).tolist() )
 
     return dataList_scaled, minVals, maxVals
 
@@ -166,9 +167,8 @@ def likelihoodOfSequences(hmm, trainData, thresTestData=None, normalTestData=Non
             log_ll.append([])
             exp_log_ll.append([])
             for j in range(2, len(data[0][i])):
-                X_test = hmm.convert_sequence([x[i][:j] for x in data])
                 try:
-                    logp = hmm.loglikelihood(X_test)
+                    logp = hmm.loglikelihood([x[i][:j] for x in data])
                 except:
                     print "Too different input profile that cannot be expressed by emission matrix"
                     return [], 0.0 # error

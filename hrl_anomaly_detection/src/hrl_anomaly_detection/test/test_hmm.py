@@ -235,7 +235,7 @@ if __name__ == '__main__':
                 ## return [], 0.0 # error
 
             log_ll[i].append(logp)
-            exp_logp = ml.expLikelihoods(X, ths)
+            exp_logp = ml.expLoglikelihood(X, ths)
             exp_log_ll[i].append(exp_logp)
 
         if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)

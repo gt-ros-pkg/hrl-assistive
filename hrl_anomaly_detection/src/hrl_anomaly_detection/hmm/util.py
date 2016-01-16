@@ -37,9 +37,9 @@ def get_rms(block):
 
     return math.sqrt(sum_squares / count)
 
-def scaling(X, minVal, maxVal, scale=1.0):
-    X = np.array(X)
-    return (X - minVal) / (maxVal - minVal) * scale
+## def scaling(X, minVal, maxVal, scale=1.0):
+##     X = np.array(X)
+##     return (X - minVal) / (maxVal - minVal) * scale
 
 def forceKinematics(fileName):
     with open(fileName, 'rb') as f:
@@ -210,9 +210,8 @@ def displayExpLikelihoods(hmm, trainData, normalTestData, abnormalTestData, ths_
         exp_log_ll.append([])
         for j in range(2, m):
             
-            X_test = hmm.convert_sequence([x[i][:j] for x in normalTestData])
             try:
-                logp = hmm.loglikelihood(X_test)
+                logp = hmm.loglikelihood([x[i][:j] for x in normalTestData])
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
                 return [], 0.0 # error
@@ -220,7 +219,7 @@ def displayExpLikelihoods(hmm, trainData, normalTestData, abnormalTestData, ths_
             log_ll[i].append(logp)
 
 
-            exp_logp = hmm.expLikelihoods([x[i][:j] for x in normalTestData], ths_mult)
+            exp_logp = hmm.expLoglikelihood([x[i][:j] for x in normalTestData], ths_mult)
             exp_log_ll[i].append(exp_logp)
             
 
@@ -303,10 +302,8 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
         log_ll.append([])
         for j in range(2, m):
 
-            X_test = hmm.convert_sequence([x[i][:j] for x in trainData])
-                        
             try:
-                logp = hmm.loglikelihood(X_test)
+                logp = hmm.loglikelihood([x[i][:j] for x in trainData])
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
                 return [], 0.0 # error
@@ -325,10 +322,8 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
         log_ll.append([])
         for j in range(2, m):
 
-            X_test = hmm.convert_sequence([x[i][:j] for x in normalTestData])
-
             try:
-                logp = hmm.loglikelihood(X_test)
+                logp = hmm.loglikelihood([x[i][:j] for x in normalTestData])
             except:
                 print "Too different input profile that cannot be expressed by emission matrix"
                 return [], 0.0 # error

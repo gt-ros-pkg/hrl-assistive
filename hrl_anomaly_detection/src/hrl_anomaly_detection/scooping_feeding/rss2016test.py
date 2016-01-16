@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -237,7 +237,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
                 X = [x[i,:j] for x in trainingData]                
 
-                exp_logp, logp = ml.expLikelihood(X, ths, smooth=True)
+                exp_logp, logp = ml.expLoglikelihood(X, ths, smooth=True)
                 log_ll[i].append(logp)
                 exp_log_ll[i].append(exp_logp)
 
@@ -270,7 +270,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             for j in range(2, len(normalTestData[0][i])):
                 X = [x[i,:j] for x in normalTestData]                
 
-                exp_logp, logp = ml.expLikelihood(X, ths)
+                exp_logp, logp = ml.expLoglikelihood(X, ths)
                 log_ll[i].append(logp)
                 exp_log_ll[i].append(exp_logp)
 
@@ -297,9 +297,8 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             for j in range(2, len(abnormalTestData[0][i])):
                 X = [x[i,:j] for x in abnormalTestData]                
-                X_test = ml.convert_sequence(X)
                 try:
-                    logp = ml.loglikelihood(X_test)
+                    logp = ml.loglikelihood(X)
                 except:
                     print "Too different input profile that cannot be expressed by emission matrix"
                     return [], 0.0 # error
@@ -389,7 +388,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         for j in range(2, len(normalTestData[0][i])):
             X = [x[i,:j] for x in normalTestData]                
 
-            _, exp_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, method=method)
+            exp_logp, logp = ml.expLoglikelihood(X, ml.l_ths_mult, smooth=smooth)
             prev_exp_log_l.append(exp_logp)
             l_prev_cost.append( max(0, 1.0+(2.0*c2-1.0)*(exp_logp-logp)) )
 
@@ -409,7 +408,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         for j in range(2, len(normalTestData[0][i])):
             X = [x[i,:j] for x in normalTestData]                
 
-            exp_logp, dec_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, method=method)
+            exp_logp, logp = ml.expLoglikelihood(X, ml.l_ths_mult, smooth=smooth)
             log_ll[i].append(logp)
             exp_log_ll[i].append(exp_logp)
             dec_log_ll[i].append(dec_logp)
@@ -445,7 +444,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         for j in range(2, len(abnormalTestData[0][i])):
             X = [x[i,:j] for x in abnormalTestData]                
 
-            exp_logp, _ = ml.expLikelihood(X, ml.l_ths_mult, method=method)
+            exp_logp, _ = ml.expLoglikelihood(X, ml.l_ths_mult, smooth=smooth)
             prev_exp_log_l.append(exp_logp)
 
         #----------------------------------------------------------
@@ -461,7 +460,7 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
         for j in range(2, len(abnormalTestData[0][i])):
             X = [x[i,:j] for x in abnormalTestData]                
 
-            exp_logp, dec_logp, logp = ml.expLikelihood(X, ml.l_ths_mult, method=method)
+            exp_logp, logp = ml.expLoglikelihood(X, ml.l_ths_mult, smooth=smooth)
             log_ll[-1].append(logp)
             exp_log_ll[-1].append(exp_logp)
             dec_log_ll[-1].append(dec_logp)
