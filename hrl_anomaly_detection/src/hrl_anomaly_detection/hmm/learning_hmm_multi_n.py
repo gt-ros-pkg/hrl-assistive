@@ -47,12 +47,16 @@ from sklearn.cluster import KMeans
 from joblib import Parallel, delayed
 
 import learning_util as util
+from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 os.system("taskset -p 0xff %d" % os.getpid())
 
-class learning_hmm_multi_n:
-    def __init__(self, nState, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
+class learning_hmm_multi_n(learning_base):
+    def __init__(self, nState=10, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
                  cluster_type='time', scale=1.0, verbose=False):
+        # parent class
+        learning_base.__init__(self)
+                 
         self.ml = None
         self.verbose = verbose
 
@@ -96,71 +100,90 @@ class learning_hmm_multi_n:
             ml_pkl=None, use_pkl=False):
         '''
         TODO: explanation of the shape and type of xData
-        xData: dimension x sample x length  (???)
+        xData: dimension x sample x length  
         '''
-
-        if ml_pkl is None:
-            ml_pkl = os.path.join(os.path.dirname(__file__), 'ml_temp_n.pkl')            
         
-        if cov_mult is None:
-            cov_mult = [1.0]*(self.nEmissionDim**2)
-
         # Daehyung: What is the shape and type of input data?
         X = [np.array(data)*self.scale for data in xData]
         
-        if A is None:
-            if self.verbose: print "Generating a new A matrix"
-            # Transition probability matrix (Initial transition probability, TODO?)
-            A = util.init_trans_mat(self.nState).tolist()
+        param_dict = {}
 
-        if B is None:
-            if self.verbose: print "Generating a new B matrix"
-            # We should think about multivariate Gaussian pdf.  
-
-            mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim)
-            ## print np.shape(mus), np.shape(cov)
-
-            for i in xrange(self.nEmissionDim):
-                for j in xrange(self.nEmissionDim):
-                    cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
-
-            if self.verbose:
-                for i, mu in enumerate(mus):
-                    print 'mu%i' % i, mu
-                print 'cov', cov
+        # Load pre-trained HMM without training
+        if use_pkl and ml_pkl is not None and os.path.isfile(ml_pkl):
+            if self.verbose: print "Load HMM parameters without train the hmm"
                 
-            # Emission probability matrix
-            B = [0] * self.nState
-            for i in range(self.nState):
-                B[i] = [[mu[i] for mu in mus]]
-                B[i].append(cov[i].flatten())
-        if pi is None:
-            # pi - initial probabilities per state 
-            ## pi = [1.0/float(self.nState)] * self.nState
-            pi = [0.0] * self.nState
-            pi[0] = 1.0
+            param_dict = ut.load_pickle(ml_pkl)
+            self.A  = param_dict['A']
+            self.B  = param_dict['B']
+            self.pi = param_dict['pi']                       
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                           self.A, self.B, self.pi)
 
-        # print 'Generating HMM'
-        # HMM model object
-        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-        # print 'Creating Training Data'
-        X_train = util.convert_sequence(X) # Training input
-        X_train = X_train.tolist()
-        if self.verbose: print "training data size: ", np.shape(X_train)
-        
-        if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
-        final_seq = ghmm.SequenceSet(self.F, X_train)
-        ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-        ret = self.ml.baumWelch(final_seq, 10000)
-        print 'Baum Welch return:', ret
-        if np.isnan(ret): return 'Failure'
+        else:
+           
+            if ml_pkl is None:
+                ml_pkl = os.path.join(os.path.dirname(__file__), 'ml_temp_n.pkl')            
 
-        [self.A, self.B, self.pi] = self.ml.asMatrices()
-        self.A = np.array(self.A)
-        self.B = np.array(self.B)
+            if cov_mult is None:
+                cov_mult = [1.0]*(self.nEmissionDim**2)
+
+            if A is None:
+                if self.verbose: print "Generating a new A matrix"
+                # Transition probability matrix (Initial transition probability, TODO?)
+                A = util.init_trans_mat(self.nState).tolist()
+
+            if B is None:
+                if self.verbose: print "Generating a new B matrix"
+                # We should think about multivariate Gaussian pdf.  
+
+                mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim)
+                ## print np.shape(mus), np.shape(cov)
+
+                for i in xrange(self.nEmissionDim):
+                    for j in xrange(self.nEmissionDim):
+                        cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
+
+                if self.verbose:
+                    for i, mu in enumerate(mus):
+                        print 'mu%i' % i, mu
+                    print 'cov', cov
+
+                # Emission probability matrix
+                B = [0] * self.nState
+                for i in range(self.nState):
+                    B[i] = [[mu[i] for mu in mus]]
+                    B[i].append(cov[i].flatten())
+            if pi is None:
+                # pi - initial probabilities per state 
+                ## pi = [1.0/float(self.nState)] * self.nState
+                pi = [0.0] * self.nState
+                pi[0] = 1.0
+
+            # print 'Generating HMM'
+            # HMM model object
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
+            # print 'Creating Training Data'
+            X_train = util.convert_sequence(X) # Training input
+            X_train = X_train.tolist()
+            if self.verbose: print "training data size: ", np.shape(X_train)
+
+            if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
+            final_seq = ghmm.SequenceSet(self.F, X_train)
+            ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
+            ret = self.ml.baumWelch(final_seq, 10000)
+            print 'Baum Welch return:', ret
+            if np.isnan(ret): return 'Failure'
+
+            [self.A, self.B, self.pi] = self.ml.asMatrices()
+            self.A = np.array(self.A)
+            self.B = np.array(self.B)
+
+            param_dict['A'] = self.A
+            param_dict['B'] = self.B
+            param_dict['pi'] = self.pi
 
         #--------------- learning for anomaly detection ----------------------------
-        [A, B, pi] = self.ml.asMatrices()
+        ## [A, B, pi] = self.ml.asMatrices()
         n, m = np.shape(X[0])
         self.nGaussian = self.nState
 
@@ -184,7 +207,7 @@ class learning_hmm_multi_n:
                 print "mean_delta: ", self.l_mean_delta, " std_delta: ", self.l_std_delta
         
         
-        if self.check_method == 'global' or self.check_method == 'globalChange':
+        elif self.check_method == 'global' or self.check_method == 'globalChange':
             # Get average loglikelihood threshold over whole time
 
             l_logp = []
@@ -207,17 +230,40 @@ class learning_hmm_multi_n:
                 self.ll_mu            = d['ll_mu']
                 self.ll_std           = d['ll_std']
             else:
+
+                # Estimate loglikelihoods and corresponding posteriors
+                r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, \
+                                                                   X_train[i], \
+                                                                   self.nEmissionDim, self.nState,
+                                                                   bPosterior=True, converted_X=True)
+                                                                   for i in xrange(n))
+                _, ll_idx, ll_logp, ll_post = zip(*r)
+
+                l_idx = []
+                l_logp = []
+                l_post = []
+                for i in xrange(len(ll_logp)):
+                    l_idx  += ll_idx[i]
+                    l_logp += ll_logp[i]
+                    l_post += ll_post[i]
+
+                
                 if self.cluster_type == 'time':                
                     if self.verbose: print 'Begining parallel job'
                     self.std_coff  = 1.0
                     g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
                     g_sig = float(m) / float(self.nGaussian) * self.std_coff
-                    r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_progress)(i, n, m, A, B, pi, self.F, X_train,
-                                                                           self.nEmissionDim, g_mu_list[i], \
+                    ## r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, n, m, A, B, pi, self.F, X_train,
+                    ##                                                        self.nEmissionDim, g_mu_list[i], \
+                    ##                                                        g_sig, self.nState)
+                    ##                                                        for i in xrange(self.nGaussian))
+                    r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
+                                                                           g_mu_list[i],\
                                                                            g_sig, self.nState)
-                                                                           for i in xrange(self.nGaussian))
+                                            for i in xrange(self.nGaussian))
+                    
                     if self.verbose: print 'Completed parallel job'
-                    l_i, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+                    _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
                 elif self.cluster_type == 'kmean':
                     self.km = None                    
@@ -231,29 +277,26 @@ class learning_hmm_multi_n:
                 elif self.cluster_type == 'state':
                     if self.verbose: print 'Begining parallel job'
 
-                    for j in xrange(n):                        
-                        _, l_post, l_logp = loglikelihoods(j, self, X_train[j], bPosterior=True)
-                        print np.shape(l_post), np.shape(l_logp)
-                    
+                    ## # temp
+                    ## for i in xrange(self.nState):
+                    ##     learn_state_clustering(i, ll_idx, ll_logp, ll_post, self.nState)
+                    ##     print '-------------- ', i , ' ---------------------------'
+                                                
+                    r = Parallel(n_jobs=-1)(delayed(learn_state_clustering)(i, ll_idx, ll_logp, ll_post, \
+                                                                            self.nState)
+                                            for i in xrange(self.nState))
+                    if self.verbose: print 'Completed parallel job'
                         
-                    ## self.ll_mu, self.ll_std = learn_likelihoods_state()
-                    sys.exit()
-                    
-                    ## r = Parallel(n_jobs=-1)(delayed(learn_likelihoods_state)(i, n, m, A, B, pi, self.F, X_train,
-                    ##                                                          self.nEmissionDim, self.nState)
-                    ##                                                          for i in xrange(self.nState))
-                    ## if self.verbose: print 'Completed parallel job'
-                    ## l_i, self.ll_mu, self.ll_std = zip(*r)
-                    self.l_statePosterior=None
-                    
-                    
-                d = dict()
-                d['state_post'] = self.l_statePosterior
-                d['ll_mu'] = self.ll_mu
-                d['ll_std'] = self.ll_std
-                ut.save_pickle(d, ml_pkl)
+                    _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+                                            
+                param_dict['state_post'] = self.l_statePosterior
+                param_dict['ll_mu'] = self.ll_mu
+                param_dict['ll_std'] = self.ll_std
 
-                
+        ## elif self.check_method == 'none':
+        ut.save_pickle(param_dict, ml_pkl)
+        return
+            
                     
     def get_sensitivity_gain(self, X):
         X_test = util.convert_sequence(X, emission=False)
@@ -376,14 +419,14 @@ class learning_hmm_multi_n:
         return p
 
 
-    def loglikelihoods(self, X, bPosterior=False):
+    def loglikelihoods(self, X, bPosterior=False, startIdx=1):
         X_test = util.convert_sequence(X, emission=False)
         X_test = np.squeeze(X_test)*self.scale
 
         l_likelihood = []
         l_posterior   = []        
         
-        for i in xrange(1, len(X[0])):
+        for i in xrange(startIdx, len(X[0])):
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test[:i*self.nEmissionDim].tolist())
 
             try:
@@ -403,14 +446,15 @@ class learning_hmm_multi_n:
             return l_likelihood
             
 
-    def expLoglikelihood(self, X, ths_mult=None, smooth=True, bLoglikelihood=False):
+    def expLoglikelihood(self, X, ths_mult=None, smooth=False, bLoglikelihood=False):
+
         X_test = util.convert_sequence(X, emission=False)
         X_test = np.squeeze(X_test)*self.scale
 
         logp = None
 
         try:
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[0].tolist())
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
             if bLoglikelihood: logp = self.ml.loglikelihood(final_ts_obj)
         except:
             print "Too different input profile that cannot be expressed by emission matrix"
@@ -427,20 +471,30 @@ class learning_hmm_multi_n:
         if smooth:
             # The version for IROS 2016.
             # The expected log-likelihood is estimated using weighted average.
+            # We may not use this
             sum_w = 0.
             sum_l = 0.
-            dist_l = []
+            l_dist = []
             for i in xrange(self.nGaussian):
-                dist = 1.0/entropy(post[n-1], self.l_statePosterior[i])
-                sum_w += dist
+                if self.cluster_type == 'state':
+                    dist = np.linalg.norm(post[n-1] - self.l_statePosterior[i])
+                else:
+                    dist = util.symmetric_entropy(post[n-1], self.l_statePosterior[i])
+                    ## weight = 1.0/entropy(post[n-1], self.l_statePosterior[i])
+
+                l_dist.append(dist)
+                    
+                if dist < 1e-6: weight = 1e+6
+                elif np.isinf(dist): weight = 1e-6
+                else: weight = 1.0/dist
+                
+                sum_w += weight
                 
                 if (type(ths_mult) == list or type(ths_mult) == np.ndarray or type(ths_mult) == tuple) \
                   and len(ths_mult)>1:
-                    sum_l += dist * (self.ll_mu[i] + ths_mult[i] * self.ll_std[i])
+                    sum_l += weight * (self.ll_mu[i] + ths_mult[i] * self.ll_std[i])
                 else:
-                    sum_l += dist * (self.ll_mu[i] + ths_mult * self.ll_std[i])                    
-
-                dist_l.append(dist)
+                    sum_l += weight * (self.ll_mu[i] + ths_mult * self.ll_std[i])                    
 
             if bLoglikelihood: return sum_l/sum_w, logp
             else: return sum_l/sum_w
@@ -586,51 +640,79 @@ class learning_hmm_multi_n:
         min_dist  = 100000000
         min_index = 0
 
-        if self.cluster_type == 'time':
-            for j in xrange(self.nGaussian):
+        if self.cluster_type == 'time' :
+            for j in xrange(len(self.l_statePosterior)):
                 dist = entropy(post, self.l_statePosterior[j])
                 if min_dist > dist:
                     min_index = j
-                    min_dist  = dist 
-        else:
-            print "state based clustering"
+                    min_dist  = dist
+                    
+        elif self.cluster_type == 'kmean':
             min_index = self.km.predict(post)
             min_dist  = -1
+            
+        elif self.cluster_type == 'state':
+            for j in xrange(len(self.l_statePosterior)):
+                dist = np.linalg.norm( post - self.l_statePosterior[j] )
+                ## dist = entropy(post, self.l_statePosterior[j])
+                if min_dist > dist:
+                    min_index = j
+                    min_dist  = dist
+            
+            
 
         return min_index, min_dist
-        
+
+    def getPostLoglikelihoods(self, xData):
+
+        X = [np.array(data)*self.scale for data in xData]
+        X_test = util.convert_sequence(X) # Training input
+        X_test = X_test.tolist()
+
+        n, m = np.shape(X[0])
+
+        # Estimate loglikelihoods and corresponding posteriors
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
+                                                           self.nEmissionDim, self.nState,
+                                                           bPosterior=True, converted_X=True)
+                                                           for i in xrange(n))
+        _, ll_idx, ll_logp, ll_post = zip(*r)
+
+        l_idx  = []
+        l_logp = []
+        l_post = []
+        for i in xrange(len(ll_logp)):
+            l_idx  += ll_idx[i]
+            l_logp += ll_logp[i]
+            l_post += ll_post[i]
+
+        return l_idx, l_logp, l_post
+    
 
     
 ####################################################################
 # functions for paralell computation
 ####################################################################
 
-def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
-    if nEmissionDim >= 2:
-        ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
-    else:
-        ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
     l_likelihood_mean = 0.0
     l_likelihood_mean2 = 0.0
     l_statePosterior = np.zeros(nState)
+    n = len(ll_idx)
 
-    for j in xrange(n):    
+    for j in xrange(n):
 
         g_post = np.zeros(nState)
         g_lhood = 0.0
         g_lhood2 = 0.0
         prop_sum = 0.0
 
-        for k in xrange(1, m):
-            final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
-            logp = ml.loglikelihoods(final_ts_obj)[0]
-            # print 'Log likelihood:', logp
-            post = np.array(ml.posterior(final_ts_obj))
+        for idx, logp, post in zip(ll_idx[j], ll_logp[j], ll_post[j]):
 
-            k_prop = norm(loc=g_mu, scale=g_sig).pdf(k)
-            g_post += post[k-1] * k_prop
-            g_lhood += logp * k_prop
+            k_prop    = norm(loc=g_mu, scale=g_sig).pdf(idx)
+            g_post   += post * k_prop
+            g_lhood  += logp * k_prop
             g_lhood2 += logp * logp * k_prop
 
             prop_sum  += k_prop
@@ -642,84 +724,176 @@ def learn_likelihoods_progress(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu
     return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
 
 
-def learn_likelihoods_state(i, n, m, A, B, pi, F, X_train, nEmissionDim, nState):
+def learn_state_clustering(i, ll_idx, ll_logp, ll_post, nState):
+
+    l_statePosterior = np.zeros(nState)
+    l_statePosterior[i] = 1.0
+
+    l_likelihood_mean = 0.0
+    l_likelihood_mean2 = 0.0
+    n = len(ll_idx)
+
+    for j in xrange(n):
+        sum_weight = 0.0
+        sum_logp   = 0.0
+        sum_logp2  = 0.0
+
+        for idx, logp, post in zip(ll_idx[j], ll_logp[j], ll_post[j]):
+
+            dist = np.linalg.norm(post-l_statePosterior)
+            if dist < 1e-6: weight = 1e+6
+            else: weight = 1.0/dist
+            ## weight = 1.0/entropy(post, l_statePosterior)
+            ## if np.isnan(weight): continue
+            
+            sum_weight += weight
+            sum_logp   += weight * logp
+            sum_logp2  += weight * logp*logp
+
+        ## if sum_weight < 1e-5: continue
+        l_likelihood_mean  += sum_logp / sum_weight / float(n)
+        l_likelihood_mean2 += sum_logp2 / sum_weight / float(n)
+
+    return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+
+
+def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
+                      bPosterior=False, converted_X=False):
+    '''
+    This function will be deprecated. Please, use computeLikelihoods.
+    '''
+
     if nEmissionDim >= 2:
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
     else:
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
-
-    l_likelihood_mean = 0.0
-    l_likelihood_mean2 = 0.0
-    l_statePosterior = np.zeros(nState)
-
-    for j in xrange(n):    
-
-        g_post = np.zeros(nState)
-        g_lhood = 0.0
-        g_lhood2 = 0.0
-        prop_sum = 0.0
-
-        for k in xrange(1, m):
-            final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
-            logp = ml.loglikelihoods(final_ts_obj)[0]
-            # print 'Log likelihood:', logp
-            post = np.array(ml.posterior(final_ts_obj))
-
-            k_prop = norm(loc=g_mu, scale=g_sig).pdf(k)
-            g_post += post[k-1] * k_prop
-            g_lhood += logp * k_prop
-            g_lhood2 += logp * logp * k_prop
-
-            prop_sum  += k_prop
-
-        l_likelihood_mean += g_lhood / prop_sum / float(n)
-        l_likelihood_mean2 += g_lhood2 / prop_sum / float(n)
-
-    return i, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
-
-def computeLikelihood(F, k, data, g_mu, g_sig, nEmissionDim, A, B, pi):
-    if nEmissionDim >= 2:
-        hmm_ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    
+    if converted_X is False:
+        X_test = util.convert_sequence(X, emission=False)
+        X_test = np.squeeze(X_test)*ml.scale
+        X_test = X_test.tolist()
     else:
-        hmm_ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+        X_test = X
 
-    final_ts_obj = ghmm.EmissionSequence(F, data)
-    logp = hmm_ml.loglikelihoods(final_ts_obj)[0]
-    post = np.array(hmm_ml.posterior(final_ts_obj))
-
-    k_prop = norm(loc=g_mu, scale=g_sig).pdf(k)
-    g_post = post[k-1] * k_prop
-    g_lhood = logp * k_prop
-    g_lhood2 = logp * logp * k_prop
-    prop_sum = k_prop
-
-    # print np.shape(g_post), np.shape(g_lhood), np.shape(g_lhood2), np.shape(prop_sum)
-
-    return g_post, g_lhood, g_lhood2, prop_sum
-
-
-def loglikelihoods(idx, ml, X, bPosterior=False):
-    X_test = util.convert_sequence(X, emission=False)
-    X_test = np.squeeze(X_test)*ml.scale
-
+    l_idx        = []
     l_likelihood = []
-    l_posterior   = []        
+    l_posterior  = []        
 
-    for i in xrange(1, len(X[0])):
-        final_ts_obj = ghmm.EmissionSequence(ml.F, X_test[:i*ml.nEmissionDim].tolist())
+    for i in xrange(startIdx, len(X_test)/nEmissionDim):
+        final_ts_obj = ghmm.EmissionSequence(F, X_test[:i*nEmissionDim])
 
         try:
-            logp = ml.ml.loglikelihood(final_ts_obj)
-            if bPosterior: post = np.array(ml.ml.posterior(final_ts_obj))
+            logp = ml.loglikelihood(final_ts_obj)
+            if bPosterior: post = np.array(ml.posterior(final_ts_obj))
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
             ## return False, False # anomaly
             continue
 
+        l_idx.append( i )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
 
     if bPosterior:
-        return idx, l_likelihood, l_posterior
+        return idx, l_idx, l_likelihood, l_posterior
     else:
-        return idx, l_likelihood
+        return idx, l_idx, l_likelihood
+
+
+def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startIdx=2, \
+                       bPosterior=False, converted_X=False):
+    '''
+    Return
+    '''
+
+    if nEmissionDim >= 2:
+        ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    else:
+        ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+
+    X_test = util.convert_sequence(X, emission=False)
+    X_test = np.squeeze(X_test)*scale
+
+    l_idx        = []
+    l_likelihood = []
+    l_posterior  = []        
+
+    for i in xrange(startIdx, len(X[0])):
+        final_ts_obj = ghmm.EmissionSequence(F, X_test[:i*nEmissionDim].tolist())
+
+        try:
+            logp = ml.loglikelihood(final_ts_obj)
+            if bPosterior: post = np.array(ml.posterior(final_ts_obj))
+        except:
+            print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+            ## return False, False # anomaly
+            continue
+
+        l_idx.append( i )
+        l_likelihood.append( logp )
+        if bPosterior: l_posterior.append( post[i-1] )
+
+    if bPosterior:
+        return idx, l_idx, l_likelihood, l_posterior
+    else:
+        return idx, l_idx, l_likelihood
+
+
+## def learn_time_clustering(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
+    ## if nEmissionDim >= 2:
+    ##     ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+    ## else:
+    ##     ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+    
+    ## l_likelihood_mean = 0.0
+    ## l_likelihood_mean2 = 0.0
+    ## l_statePosterior = np.zeros(nState)
+
+    ## for j in xrange(n):    
+
+    ##     g_post = np.zeros(nState)
+    ##     g_lhood = 0.0
+    ##     g_lhood2 = 0.0
+    ##     prop_sum = 0.0
+
+    ##     for k in xrange(1, m):
+    ##         final_ts_obj = ghmm.EmissionSequence(F, X_train[j][:k*nEmissionDim])
+    ##         logp = ml.loglikelihoods(final_ts_obj)[0]
+    ##         # print 'Log likelihood:', logp
+    ##         post = np.array(ml.posterior(final_ts_obj))
+
+    ##         k_prop = norm(loc=g_mu, scale=g_sig).pdf(k)
+    ##         g_post += post[k-1] * k_prop
+    ##         g_lhood += logp * k_prop
+    ##         g_lhood2 += logp * logp * k_prop
+
+    ##         prop_sum  += k_prop
+
+    ##     l_statePosterior += g_post / prop_sum / float(n)
+    ##     l_likelihood_mean += g_lhood / prop_sum / float(n)
+    ##     l_likelihood_mean2 += g_lhood2 / prop_sum / float(n)
+
+    ## return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+
+
+## def computeLikelihood(F, k, data, g_mu, g_sig, nEmissionDim, A, B, pi):
+##     if nEmissionDim >= 2:
+##         hmm_ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+##     else:
+##         hmm_ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+
+##     final_ts_obj = ghmm.EmissionSequence(F, data)
+##     logp = hmm_ml.loglikelihoods(final_ts_obj)[0]
+##     post = np.array(hmm_ml.posterior(final_ts_obj))
+
+##     k_prop = norm(loc=g_mu, scale=g_sig).pdf(k)
+##     g_post = post[k-1] * k_prop
+##     g_lhood = logp * k_prop
+##     g_lhood2 = logp * logp * k_prop
+##     prop_sum = k_prop
+
+##     # print np.shape(g_post), np.shape(g_lhood), np.shape(g_lhood2), np.shape(prop_sum)
+
+##     return g_post, g_lhood, g_lhood2, prop_sum
+
+

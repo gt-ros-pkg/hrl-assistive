@@ -27,6 +27,8 @@
 #
 
 import numpy as np
+import sys, os, copy
+from scipy.stats import norm, entropy
 
 def init_trans_mat(nState):
     # Reset transition probability matrix
@@ -147,3 +149,9 @@ def scaling(X, min_c=None, max_c=None, scale=10.0, bMinMax=False, verbose=False)
     else:
         return X_scaled.tolist()
     
+def symmetric_entropy(p,q):
+    '''
+    Return the sum of KL divergences
+    '''
+
+    return min(entropy(p,q) , entropy(q,p))

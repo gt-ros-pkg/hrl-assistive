@@ -1250,7 +1250,12 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         feature  = []
 
         for j in xrange(nSample):
-            feature.append(dataList[j][i,:])
+            try:
+                ## feature.append(dataList[j][i])
+                feature.append(dataList[j][i,:])
+            except:
+                print np.shape(dataList), np.shape(dataList[j]), j, i
+                sys.exit()
 
         features.append( feature )
 
