@@ -147,7 +147,6 @@ class learning_base():
     def cross_validation(self, X, nFold):
         '''
         '''
-
         nSample = len(X)
         
         # Variable check

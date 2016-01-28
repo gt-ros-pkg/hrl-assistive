@@ -114,7 +114,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if rf_center == 'kinEEPos':
             rf_traj = d['kinematics_ee_pos']
         elif rf_center == 'kinForearmPos':
-            kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
+            kin_jnt_pos = d['kinematics_jnt_pos'] # 7xN
 
             # Forearm
             rf_traj = None
@@ -203,6 +203,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 local_kin_pos = kin_ee_pos
                 last_kin_pos = np.zeros((3,1))
                 last_time    = 0.0
+                local_kin_vel= None
                 for i in xrange(len(kin_ee_pos[0])):
                     if abs(kin_time[i]-last_time) < 0.00000001:
                         if local_kin_vel is None: local_kin_vel = np.zeros((3,1))
@@ -898,15 +899,27 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
             if (np.linalg.norm(pos_data[:,time_idx] - rf_traj[:,rf_time_idx]) <= local_range) or global_data:
                 for i in xrange(nData):
                     if new_data_set[i] is None:
-                        new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
+                        if len(np.shape(data_set[i+1])) > 1:
+                            new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
+                        else:
+                            new_data_set[i] = data_set[i+1][time_idx:time_idx+1]
                     else:
-                        new_data_set[i] = np.hstack([ new_data_set[i], data_set[i+1][:,time_idx:time_idx+1] ])
+                        if len(np.shape(data_set[i+1])) > 1:
+                            new_data_set[i] = np.hstack([ new_data_set[i], data_set[i+1][:,time_idx:time_idx+1] ])
+                        else:
+                            new_data_set[i] = np.hstack([ new_data_set[i], data_set[i+1][time_idx:time_idx+1] ])
             else:
                 for i in xrange(nData):
                     if new_data_set[i] is None:
-                        new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
+                        if len(np.shape(data_set[i+1])) > 1:
+                            new_data_set[i] = data_set[i+1][:,time_idx:time_idx+1]
+                        else:
+                            new_data_set[i] = data_set[i+1][time_idx:time_idx+1]
                     else:
-                        new_data_set[i] = np.hstack([ new_data_set[i], new_data_set[i][:,-1:] ])
+                        if len(np.shape(data_set[i+1])) > 1:
+                            new_data_set[i] = np.hstack([ new_data_set[i], new_data_set[i][:,-1:] ])
+                        else:
+                            new_data_set[i] = np.hstack([ new_data_set[i], new_data_set[i][-1:] ])
 
     else:
         new_data_set = [[[],[],[]] for i in xrange(nData)]
@@ -975,26 +988,26 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
             param_dict['unimodal_audioPower_power_max'] = power_max
             param_dict['unimodal_audioPower_power_min'] = power_min
                                 
-        if 'unimodal_ftForce' in feature_list:
-            force_array = None
-            start_force_array = None
-            for idx in xrange(len(d['ftForceList'])):
-                if force_array is None:
-                    force_array = d['ftForceList'][idx]
-                    start_force_array = d['ftForceList'][idx][:,:5]
-                else:
-                    force_array = np.hstack([force_array, d['ftForceList'][idx] ])
-                    start_force_array = np.hstack([start_force_array, d['ftForceList'][idx][:,:5]])
+        ## if 'unimodal_ftForce' in feature_list:
+        ##     force_array = None
+        ##     start_force_array = None
+        ##     for idx in xrange(len(d['ftForceList'])):
+        ##         if force_array is None:
+        ##             force_array = d['ftForceList'][idx]
+        ##             ## start_force_array = d['ftForceList'][idx][:,:5]
+        ##         else:
+        ##             force_array = np.hstack([force_array, d['ftForceList'][idx] ])
+        ##             ## start_force_array = np.hstack([start_force_array, d['ftForceList'][idx][:,:5]])
 
-            ftPCADim    = 2
-            ftForce_pca = PCA(n_components=ftPCADim)
-            res = ftForce_pca.fit_transform( force_array.T )            
-            param_dict['unimodal_ftForce_pca'] = ftForce_pca
-            param_dict['unimodal_ftForce_pca_dim'] = ftPCADim
+        ##     ftPCADim    = 2
+        ##     ftForce_pca = PCA(n_components=ftPCADim)
+        ##     res = ftForce_pca.fit_transform( force_array.T )            
+        ##     param_dict['unimodal_ftForce_pca'] = ftForce_pca
+        ##     param_dict['unimodal_ftForce_pca_dim'] = ftPCADim
 
-            ## res = ftForce_pca.transform(start_force_array.T)
-            ## param_dict['unimodal_ftForce_pca_init_avg'] = np.array([np.mean(res, axis=0)]).T
-            ## param_dict['unimodal_ftForce_init_avg'] = np.mean(start_force_array, axis=1)
+        ##     ## res = ftForce_pca.transform(start_force_array.T)
+        ##     ## param_dict['unimodal_ftForce_pca_init_avg'] = np.array([np.mean(res, axis=0)]).T
+        ##     ## param_dict['unimodal_ftForce_init_avg'] = np.mean(start_force_array, axis=1)
 
         if 'unimodal_ppsForce' in feature_list:
             ppsLeft  = d['ppsLeftList']
@@ -1060,27 +1073,46 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
             ftForce = d['ftForceList'][idx]
-            ## ftPos   = d['kinEEPosList'][idx]
-            ftForce_pca = param_dict['unimodal_ftForce_pca']
 
-            ## unimodal_ftForce = ftForce
-            unimodal_ftForce = None
-            for time_idx in xrange(len(timeList)):
-                if unimodal_ftForce is None:
-                    unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-                else:
-                    unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-                                                   ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
+            # magnitude
+            if len(np.shape(ftForce)) > 1:
+                unimodal_ftForce = np.linalg.norm(ftForce, axis=0)
+            else:                
+                unimodal_ftForce = ftForce
 
-            unimodal_ftForce -= np.array([np.mean(unimodal_ftForce[:,:5], axis=1)]).T
-            
             if dataSample is None: dataSample = np.array(unimodal_ftForce)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce])
-            ## if 'ftForce' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce')
-            if 'ftForce_1' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('ftForce_1')
-                param_dict['feature_names'].append('ftForce_2')
+
+            if 'ftForce_mag' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag')
+
+            # individual force
+            if len(np.shape(ftForce)) > 1:
+                unimodal_ftForce = ftForce                
+                if dataSample is None: dataSample = np.array(unimodal_ftForce)
+                else: dataSample = np.vstack([dataSample, unimodal_ftForce])
+
+                if 'ftForce_z' not in param_dict['feature_names']:
+                    param_dict['feature_names'].append('ftForce_x')
+                    param_dict['feature_names'].append('ftForce_y')
+                    param_dict['feature_names'].append('ftForce_z')
+                            
+            ## ftPos   = d['kinEEPosList'][idx]
+            ## ftForce_pca = param_dict['unimodal_ftForce_pca']
+
+            ## unimodal_ftForce = None
+            ## for time_idx in xrange(len(timeList)):
+            ##     if unimodal_ftForce is None:
+            ##         unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
+            ##     else:
+            ##         unimodal_ftForce = np.hstack([ unimodal_ftForce, \
+            ##                                        ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
+
+            ## unimodal_ftForce -= np.array([np.mean(unimodal_ftForce[:,:5], axis=1)]).T
+            
+            ## if 'ftForce_1' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('ftForce_1')
+            ##     param_dict['feature_names'].append('ftForce_2')
             ## if 'ftForce_x' not in param_dict['feature_names']:
             ##     param_dict['feature_names'].append('ftForce_x')
             ##     param_dict['feature_names'].append('ftForce_y')

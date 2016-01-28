@@ -33,7 +33,7 @@ import os, sys, copy
 
 # visualization
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -63,11 +63,14 @@ class classifier(learning_base):
             ## self.dt = svm.OneClassSVM(nu=0.1, kernel=custom_kernel)
             ## self.dt = SVC(nu=0.1, kernel='linear')
             ## self.dt = SVC(kernel='linear', gamma=0.0001, kernel=symmetric_entropy, verbose=True)
-            ## self.dt = SVC(kernel='linear', gamma=0.01, verbose=True, \
-            ##               class_weight=self.class_weight)
-            self.dt = SVC(kernel=custom_kernel, gamma=0.01, verbose=True, \
+            self.dt = SVC(kernel='linear', gamma=0.01, verbose=True, \
                           class_weight=self.class_weight)
+            ## self.dt = SVC(kernel=custom_kernel, gamma=0.01, verbose=True, \
+            ##               class_weight=self.class_weight)
             #self.dt = SVC(kernel=custom_kernel2, verbose=True)
+        elif self.method == 'cssvm':
+            import svmutil as cssvm
+            self.class_weight = class_weight
         elif self.method == 'progress_time_cluster':
             self.nLength   = nLength
             self.std_coff  = 1.0
@@ -88,8 +91,14 @@ class classifier(learning_base):
         if self.method == 'svm':
             self.dt.set_params(class_weight=self.class_weight)
             return self.dt.fit(X, y)
-        elif self.method == 'cost_svm':
-            return
+        elif self.method == 'cssvm':
+            import svmutil as cssvm
+            ## self.dt = svm_train(y, X, '-c 4')
+            if type(X) is not list: X=X.tolist()
+            ## self.dt = cssvm.svm_train(y, X, '-s 1 -t 0 -c '+str(self.class_weight) )
+            ## self.dt = cssvm.svm_train(y, X, '-c '+str(self.class_weight) )
+            self.dt = cssvm.svm_train(y, X, '-c 1 -t 2 -w1 '+str(self.class_weight)+' -w-1 1' )
+            
         elif self.method == 'progress_time_cluster':
             if type(X) == list: X = np.array(X)
             ll_logp = X[:,0:1]
@@ -102,18 +111,29 @@ class classifier(learning_base):
                                                                    g_mu_list[i],\
                                                                    g_sig, self.nPosteriors)
                                                                    for i in xrange(self.nPosteriors))
-
             _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+
+            ## for i in xrange(self.nPosteriors):            
+            ##     learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i], g_sig, self.nPosteriors)
 
             return self.l_statePosterior, self.ll_mu, self.ll_std
         
 
-    def predict(self, X):
+    def predict(self, X, y=None):
+        '''
+        return predicted values (not necessarily binaries)
+        '''
 
         if self.method == 'svm':
             return self.dt.predict(X)
-        elif self.method == 'cost_svm':
-            return
+        elif self.method == 'cssvm':
+            import svmutil as cssvm            
+            if type(X) is not list: X=X.tolist()
+            if y is not None:
+                p_labels, _, p_vals = cssvm.svm_predict(y, X, self.dt)
+            else:
+                p_labels, _, p_vals = cssvm.svm_predict([0]*len(X), X, self.dt)
+            return p_labels
         elif self.method == 'progress_time_cluster':
             self.ml.cluster_type = 'time'
             
@@ -136,6 +156,11 @@ class classifier(learning_base):
 
         if self.method == 'svm':
             return self.dt.decision_function(X)
+        elif self.method == 'cssvm':
+            if type(X) is not list:
+                return self.predict(X.tolist())
+            else:
+                return self.predict(X)
         else:
             print "Not implemented"
             sys.exit()
@@ -250,24 +275,25 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     l_statePosterior = np.zeros(nState)
     n = len(ll_idx)
 
+    g_post = np.zeros(nState)
+    g_lhood = 0.0
+    g_lhood2 = 0.0
+    prop_sum = 0.0
+
     for j in xrange(n):
 
-        g_post = np.zeros(nState)
-        g_lhood = 0.0
-        g_lhood2 = 0.0
-        prop_sum = 0.0
+        idx  = ll_idx[j]
+        logp = ll_logp[j][0]
+        post = ll_post[j]
 
-        for idx, logp, post in zip(ll_idx[j], ll_logp[j], ll_post[j]):
+        k_prop    = norm(loc=g_mu, scale=g_sig).pdf(idx)
+        g_post   += post * k_prop
+        g_lhood  += logp * k_prop
+        g_lhood2 += logp * logp * k_prop
+        prop_sum += k_prop
 
-            k_prop    = norm(loc=g_mu, scale=g_sig).pdf(idx)
-            g_post   += post * k_prop
-            g_lhood  += logp * k_prop
-            g_lhood2 += logp * logp * k_prop
-
-            prop_sum  += k_prop
-
-        l_statePosterior += g_post / prop_sum / float(n)
-        l_likelihood_mean += g_lhood / prop_sum / float(n)
-        l_likelihood_mean2 += g_lhood2 / prop_sum / float(n)
+    l_statePosterior   = g_post / prop_sum 
+    l_likelihood_mean  = g_lhood / prop_sum 
+    l_likelihood_mean2 = g_lhood2 / prop_sum 
 
     return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)

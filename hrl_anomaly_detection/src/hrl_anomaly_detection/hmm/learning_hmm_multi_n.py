@@ -52,8 +52,12 @@ from hrl_anomaly_detection.hmm.learning_base import learning_base
 os.system("taskset -p 0xff %d" % os.getpid())
 
 class learning_hmm_multi_n(learning_base):
-    def __init__(self, nState=10, nEmissionDim=4, check_method='progress', anomaly_offset=0.0, \
+    def __init__(self, nState=10, nEmissionDim=4, check_method='none', anomaly_offset=0.0, \
                  cluster_type='time', scale=1.0, verbose=False):
+        '''
+        check_method and cluter_type will be deprecated
+        '''
+                 
         # parent class
         learning_base.__init__(self)
                  
@@ -64,7 +68,6 @@ class learning_hmm_multi_n(learning_base):
         self.nState         = nState # the number of hidden states
         self.nGaussian      = nState
         self.nEmissionDim   = nEmissionDim
-        self.anomaly_offset = anomaly_offset
         self.scale          = scale
         
         ## Un-tunable parameters
@@ -72,6 +75,10 @@ class learning_hmm_multi_n(learning_base):
         self.A  = None # transition matrix        
         self.B  = None # emission matrix
         self.pi = None # Initial probabilities per state
+
+        ####################################################################
+        ## Uner this line, every parameter will be deprecated soon.
+        self.anomaly_offset = anomaly_offset
         self.check_method = check_method # ['global', 'progress']
 
         # For non-parametric decision boundary estimation
@@ -95,6 +102,13 @@ class learning_hmm_multi_n(learning_base):
         self.F = ghmm.Float()  
 
         # print 'HMM initialized for', self.check_method
+
+    def set_hmm_object(self, A, B, pi):
+
+        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                       A, B, pi)
+        return self.ml
+
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
             ml_pkl=None, use_pkl=False):
@@ -294,10 +308,50 @@ class learning_hmm_multi_n(learning_base):
                 param_dict['ll_std'] = self.ll_std
 
         ## elif self.check_method == 'none':
-        ut.save_pickle(param_dict, ml_pkl)
+        if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
         return
+                               
+
+    def predict(self, X):
+        X = np.squeeze(X)
+        X_test = X.tolist()
+
+        mu_l = np.zeros(self.nEmissionDim)
+        cov_l = np.zeros(self.nEmissionDim**2)
+
+        if self.verbose: print self.F
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
+
+        try:
+            # alpha: X_test length y # latent States at the moment t when state i is ended
+            # test_profile_length x number_of_hidden_state
+            (alpha, scale) = self.ml.forward(final_ts_obj)
+            alpha = np.array(alpha)
+        except:
+            if self.verbose: print "No alpha is available !!"
             
-                    
+        f = lambda x: round(x, 12)
+        for i in range(len(alpha)):
+            alpha[i] = map(f, alpha[i])
+        alpha[-1] = map(f, alpha[-1])
+        
+        n = len(X_test)
+        pred_numerator = 0.0
+
+        for j in xrange(self.nState): # N+1
+            total = np.sum(self.A[:,j]*alpha[n/self.nEmissionDim-1,:]) #* scaling_factor
+            [mus, covars] = self.B[j]
+
+            ## print mu1, mu2, cov11, cov12, cov21, cov22, total
+            pred_numerator += total
+
+            for i in xrange(mu_l.size):
+                mu_l[i] += mus[i]*total
+            for i in xrange(cov_l.size):
+                cov_l[i] += covars[i] * (total**2)
+
+        return mu_l, cov_l
+
     def get_sensitivity_gain(self, X):
         X_test = util.convert_sequence(X, emission=False)
 
@@ -363,47 +417,6 @@ class learning_hmm_multi_n(learning_base):
             
             return [ths_c, ths_g], 0
         
-
-    def predict(self, X):
-        X = np.squeeze(X)
-        X_test = X.tolist()
-
-        mu_l = np.zeros(self.nEmissionDim)
-        cov_l = np.zeros(self.nEmissionDim**2)
-
-        if self.verbose: print self.F
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
-
-        try:
-            # alpha: X_test length y # latent States at the moment t when state i is ended
-            # test_profile_length x number_of_hidden_state
-            (alpha, scale) = self.ml.forward(final_ts_obj)
-            alpha = np.array(alpha)
-        except:
-            if self.verbose: print "No alpha is available !!"
-            
-        f = lambda x: round(x, 12)
-        for i in range(len(alpha)):
-            alpha[i] = map(f, alpha[i])
-        alpha[-1] = map(f, alpha[-1])
-        
-        n = len(X_test)
-        pred_numerator = 0.0
-
-        for j in xrange(self.nState): # N+1
-            total = np.sum(self.A[:,j]*alpha[n/self.nEmissionDim-1,:]) #* scaling_factor
-            [mus, covars] = self.B[j]
-
-            ## print mu1, mu2, cov11, cov12, cov21, cov22, total
-            pred_numerator += total
-
-            for i in xrange(mu_l.size):
-                mu_l[i] += mus[i]*total
-            for i in xrange(cov_l.size):
-                cov_l[i] += covars[i] * (total**2)
-
-        return mu_l, cov_l
-
 
     def loglikelihood(self, X):
         X_test = util.convert_sequence(X, emission=False)

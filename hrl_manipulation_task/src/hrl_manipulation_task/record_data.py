@@ -46,6 +46,7 @@ from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneR
 
 # Sensors
 from sensor.kinect_audio import kinect_audio
+from sensor.wrist_audio import wrist_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
 from sensor.artag_vision import artag_vision
@@ -55,7 +56,8 @@ from sensor.fabric_skin import fabric_skin
 
 
 class logger:
-    def __init__(self, ft=False, audio=False, kinematics=False, vision_artag=False, vision_change=False, \
+    def __init__(self, ft=False, audio=False, audio_wrist=False, kinematics=False, vision_artag=False, \
+                 vision_change=False, \
                  pps=False, skin=False, \
                  subject=None, task=None, data_pub= False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
@@ -67,7 +69,8 @@ class logger:
         
         self.initParams()
         
-        self.audio         = kinect_audio() if audio else None
+        self.audio_kinect  = kinect_audio() if audio else None
+        self.audio_wrist   = wrist_audio() if audio_wrist else None
         self.kinematics    = robot_kinematics() if kinematics else None
         self.ft            = tool_ft() if ft else None
         self.vision_artag  = artag_vision(self.task, False, viz=False) if vision_artag else None
@@ -90,7 +93,6 @@ class logger:
         # File saving
         self.record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
-
         
     def initComms(self):
         '''
@@ -104,9 +106,9 @@ class logger:
         self.data['init_time'] = self.init_time
 
         ## ## Reset time
-        ## if self.audio is not None:
-        ##     self.audio.reset(self.init_time)            
-        ##     ## self.audio.enable_log = True # logging by callback
+        ## if self.audio_kinect is not None:
+        ##     self.audio_kinect.reset(self.init_time)            
+        ##     ## self.audio_kinect.enable_log = True # logging by callback
         ## if self.kinematics is not None:
         ##     self.kinematics.reset(self.init_time)
         ##     ## self.kinematics.enable_log = True # logging by callback            
@@ -129,14 +131,14 @@ class logger:
 
         ## # logging by callback
         ## # disable logging
-        ## if self.audio is not None: self.audio.enable_log = False
+        ## if self.audio_kinect is not None: self.audio_kinect.enable_log = False
         ## if self.kinematics is not None: self.kinematics.enable_log = False
         
         ## # log into data
-        ## if self.audio is not None: 
-        ##     self.data['audio_time']    = self.audio.time_data            
-        ##     self.data['audio_azimuth'] = self.audio.audio_azimuth
-        ##     self.data['audio_power']   = self.audio.audio_power
+        ## if self.audio_kinect is not None: 
+        ##     self.data['audio_time']    = self.audio_kinect.time_data            
+        ##     self.data['audio_azimuth'] = self.audio_kinect.audio_azimuth
+        ##     self.data['audio_power']   = self.audio_kinect.audio_power
         
         ## if self.kinematics is not None:
         ##     self.data['kinematics_time']        = self.kinematics.time_data
@@ -150,7 +152,6 @@ class logger:
 
         # logging by thread 
         self.enable_log_thread = False
-
 
         flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
         if flag == '1':   status = 'success'
@@ -199,20 +200,25 @@ class logger:
         print "-------------------------------------"
         print "Wait for sensor ready"
         print "-------------------------------------"
-
-        print self.audio.isReady()
         
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
             rate.sleep()
 
-            if self.audio is not None:
-                if self.audio.isReady() is False:
+            if self.audio_kinect is not None:
+                if self.audio_kinect.isReady() is False:
                     print "-------------------------------------"
-                    print "audio is not ready"
+                    print "audio kinect is not ready"
                     print "-------------------------------------"
                     continue
 
+            if self.audio_wrist is not None:
+                if self.audio_wrist.isReady() is False:
+                    print "-------------------------------------"
+                    print "audio wrist is not ready"
+                    print "-------------------------------------"
+                    continue
+                
             if self.kinematics is not None:
                 if self.kinematics.isReady() is False: 
                     print "-------------------------------------"
@@ -284,14 +290,17 @@ class logger:
             msg = MultiModality()
             msg.header.stamp      = rospy.Time.now()
 
-            if self.audio is not None: 
-                if self.audio.feature is not None:           
-                    msg.audio_feature     = np.squeeze(self.audio.feature.T).tolist()
-                    msg.audio_power       = self.audio.power
-                    msg.audio_azimuth     = self.audio.azimuth+self.audio.base_azimuth
-                msg.audio_head_joints     = [self.audio.head_joints[0], self.audio.head_joints[1]]
-                msg.audio_cmd             = self.audio.recog_cmd if type(self.audio.recog_cmd)==str() else 'None'
+            if self.audio_kinect is not None: 
+                if self.audio_kinect.feature is not None:           
+                    msg.audio_feature     = np.squeeze(self.audio_kinect.feature.T).tolist()
+                    msg.audio_power       = self.audio_kinect.power
+                    msg.audio_azimuth     = self.audio_kinect.azimuth+self.audio_kinect.base_azimuth
+                msg.audio_head_joints     = [self.audio_kinect.head_joints[0], self.audio_kinect.head_joints[1]]
+                msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
+            if self.audio_wrist is not None: 
+                msg.audio_power       = self.audio_wrist.power
+                
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
                 msg.kinematics_ee_quat = np.squeeze(self.kinematics.ee_quat.T).tolist()
@@ -345,15 +354,23 @@ class logger:
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
 
-            if self.audio is not None: 
+            if self.audio_kinect is not None: 
                 if 'audio_time' not in self.data.keys():
-                    self.data['audio_time']    = [self.audio.time]
-                    self.data['audio_azimuth'] = [self.audio.azimuth]
-                    self.data['audio_power']   = [self.audio.power]
+                    self.data['audio_time']    = [self.audio_kinect.time]
+                    self.data['audio_azimuth'] = [self.audio_kinect.azimuth]
+                    self.data['audio_power']   = [self.audio_kinect.power]
                 else:
-                    self.data['audio_time'].append(self.audio.time)
-                    self.data['audio_azimuth'].append(self.audio.azimuth)
-                    self.data['audio_power'].append(self.audio.power)
+                    self.data['audio_time'].append(self.audio_kinect.time)
+                    self.data['audio_azimuth'].append(self.audio_kinect.azimuth)
+                    self.data['audio_power'].append(self.audio_kinect.power)
+                    
+            if self.audio_wrist is not None: 
+                if 'audio_wrist_time' not in self.data.keys():
+                    self.data['audio_wrist_time']    = [self.audio_wrist.time]
+                    self.data['audio_wrist_power']   = [self.audio_wrist.power]
+                else:
+                    self.data['audio_wrist_time'].append(self.audio_wrist.time)
+                    self.data['audio_wrist_power'].append(self.audio_wrist.power)
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
@@ -466,7 +483,8 @@ if __name__ == '__main__':
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=True, kinematics=True, vision_artag=False, vision_change=True, \
+    log = logger(ft=False, audio=True, audio_wrist=False, kinematics=True, vision_artag=False, \
+                 vision_change=True, \
                  pps=False, skin=True, subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)

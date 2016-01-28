@@ -40,6 +40,7 @@ from mvpa2.datasets.base import Dataset
 from mvpa2.generators.partition import NFoldPartitioner
 from mvpa2.generators import splitters
 
+from sklearn import cross_validation
 
 def create_mvpa_dataset(aXData, chunks, labels):
     data = Dataset(samples=aXData)
@@ -48,3 +49,34 @@ def create_mvpa_dataset(aXData, chunks, labels):
     data.sa['targets'] = labels
 
     return data
+
+def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
+
+    normal_folds   = cross_validation.KFold(nNormal, n_folds=nNormalFold, shuffle=True)
+    abnormal_folds = cross_validation.KFold(nAbnormal, n_folds=nAbnormalFold, shuffle=True)
+
+    kFold_list = []
+
+    for normal_temp_fold, normal_test_fold in normal_folds:
+
+        normal_dc_fold = cross_validation.KFold(len(normal_temp_fold), \
+                                                n_folds=nNormalFold-1, shuffle=True)
+        for normal_train_fold, normal_classifier_fold in normal_dc_fold:
+
+            normal_d_fold = normal_temp_fold[normal_train_fold]
+            normal_c_fold = normal_temp_fold[normal_classifier_fold]
+
+            for abnormal_c_fold, abnormal_test_fold in abnormal_folds:
+                '''
+                Normal training data for model
+                Normal training data for classifier
+                Abnormal training data for classifier
+                Normal test data 
+                Abnormal test data 
+                '''
+                index_list = [normal_d_fold, normal_c_fold, abnormal_c_fold, \
+                              normal_test_fold, abnormal_test_fold]
+                kFold_list.append(index_list)
+
+    return kFold_list
+    
