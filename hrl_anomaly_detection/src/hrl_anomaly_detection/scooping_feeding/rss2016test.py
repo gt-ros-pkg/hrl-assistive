@@ -506,8 +506,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ROC_data[method]['fn_l'].append([])
                 ROC_data[method]['delay_l'].append([])
 
-    ROC_data['svm']['complete']                   = True
-    ROC_data['progress_time_cluster']['complete'] = True
+    ## ROC_data['svm']['complete']                   = True
+    ## ROC_data['progress_time_cluster']['complete'] = True
     
 
     for idx, (trainIdx, normalClassifierIdx, abnormalClassifierIdx, normalTestIdx, abnormalTestIdx) \
@@ -587,7 +587,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     weights = np.logspace(-2, 0.1, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'progress_time_cluster':
-                    thresholds = -np.logspace(-0.5, 1, nPoints)
+                    ## thresholds = -np.linspace(1., 50, nPoints)+2.0
+                    thresholds = -np.linspace(1., 10, nPoints)+2.0
                     dtc.set_params( ths_mult = thresholds[j] )
 
                 ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
@@ -644,6 +645,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ROC_data[method]['tn_l'][j] += tn_l
                 ROC_data[method]['delay_l'][j] += delay_l
 
+
+    for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
 
     ut.save_pickle(ROC_data, roc_pkl)

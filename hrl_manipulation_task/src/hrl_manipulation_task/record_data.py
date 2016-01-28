@@ -365,12 +365,15 @@ class logger:
                     self.data['audio_power'].append(self.audio_kinect.power)
                     
             if self.audio_wrist is not None: 
+                    audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()
                 if 'audio_wrist_time' not in self.data.keys():
-                    self.data['audio_wrist_time']    = [self.audio_wrist.time]
-                    self.data['audio_wrist_power']   = [self.audio_wrist.power]
+                    self.data['audio_wrist_time']  = [audio_wrist_time]
+                    self.data['audio_wrist_rms']   = [audio_wrist_rms]
+                    self.data['audio_wrist_mfcc']  = [audio_wrist_mfcc]
                 else:
-                    self.data['audio_wrist_time'].append(self.audio_wrist.time)
-                    self.data['audio_wrist_power'].append(self.audio_wrist.power)
+                    self.data['audio_wrist_time'].append(audio_wrist_time)
+                    self.data['audio_wrist_rms'].append(audio_wrist_rms)
+                    self.data['audio_wrist_mfcc'].append(audio_wrist_mfcc)
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():

@@ -37,6 +37,8 @@ import numpy as np
 import math
 import pyaudio
 import struct
+from features import mfcc
+
 
 class wrist_audio(threading.Thread):
     FRAME_SIZE = 8192 # frame per buffer
@@ -44,6 +46,7 @@ class wrist_audio(threading.Thread):
     CHANNEL    = 2 # number of channels
     FORMAT     = pyaudio.paInt16
     MAX_INT    = 32768.0
+    WINLEN     = float(RATE)/float(FRAME_SIZE)
 
     def __init__(self, verbose=False):
         super(wrist_audio, self).__init__()        
@@ -57,11 +60,9 @@ class wrist_audio(threading.Thread):
 
         # instant data
         self.time  = None
-        self.power = None
         
         # Declare containers
         self.time_data = []
-        self.audio_power   = []
         
         self.lock = threading.RLock()
 
@@ -101,17 +102,21 @@ class wrist_audio(threading.Thread):
 
         # Reset containers
         self.time_data = []
-        self.audio_power   = []        
         
         self.isReset = True
 
         
     def isReady(self):
 
-        if self.power is not None:
-          return True
-        else:
-          return False
+        try:
+            data = self.stream.read(self.FRAME_SIZE)
+            return True
+        except:
+            return False
+        ## if self.power is not None:
+        ##   return True
+        ## else:
+        ##   return False
 
 
     def find_input_device(self):
@@ -135,16 +140,18 @@ class wrist_audio(threading.Thread):
     def get_data(self):
         try:
             data       = self.stream.read(self.FRAME_SIZE)
-            ## audio_FFT  = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
-            ## audio_FFT  = []
-            ## audio_rms  = self.get_rms(data)
+            audio_rms  = self.get_rms(data)
+            audio_data = np.fromstring(data, np.int16)
+            audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN)
         except:
             print "Audio read failure due to input over flow"
             self.stream.stop_stream()
             self.stream.close()
             sys.exit()
 
-        return data #audio_rms, audio_FFT
+        audio_time = rospy.get_rostime().to_sec()
+
+        return audio_time, audio_rms, audio_mfcc
 
 
     def get_rms(self, block):
@@ -177,7 +184,7 @@ class wrist_audio(threading.Thread):
         import hrl_lib.circular_buffer as cb
         self.rms_buf  = cb.CircularBuffer(100, ())
         import matplotlib.pyplot as plt
-        
+
         ## fig = plt.figure()
         ## ax = fig.add_subplot(111)
         ## plt.ion()
@@ -189,15 +196,19 @@ class wrist_audio(threading.Thread):
             with self.lock:
                 ## rms, _ = self.get_data()
                 ## print rms
-                data = self.get_data()
-                rms  = self.get_rms(data)
+                audio_time, rms, mfcc = self.get_data()
+                ## rms  = self.get_rms(data)
 
                 ## audio_data = np.fromstring(data, self.FORMAT)
                 ## audio_FFT  = np.fft.fft(float(audio_data) / float(self.MAX_INT))  #normalization & FFT
-                audio_data = np.fromstring(data, np.int16)
-                audio_FFT  = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
-                
-                print len(data), rms, sys.getsizeof(data), sys.getsizeof(rms), sys.getsizeof(audio_FFT), np.shape(audio_FFT[-1])
+                ## audio_data = np.fromstring(data, np.int16)
+                ## audio_FFT  = np.fft.fft(audio_data / float(self.MAX_INT))  #normalization & FFT
+
+                ## mfcc_feat = mfcc(audio_data, samplerate=48000, nfft=self.FRAME_SIZE, winlen=48000./8192.0)
+
+                print audio_time, sys.getsizeof(rms), sys.getsizeof(mfcc), np.shape(mfcc)
+                ## print mfcc_feat
+                ## print len(data), rms, sys.getsizeof(data), sys.getsizeof(rms), sys.getsizeof(audio_FFT), np.shape(audio_FFT[-1])
                 ## self.rms_buf.append(rms)
                 ## print "==> ", rms_buf.get_array()
                 
