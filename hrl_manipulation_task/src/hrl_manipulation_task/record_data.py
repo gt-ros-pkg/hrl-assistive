@@ -271,10 +271,9 @@ class logger:
         self.log_start()
 
         count = 0
-        rate = rospy.Rate(20) # 25Hz, nominally.
+        rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             count += 1
-            print count
             if count > 200: break
             rate.sleep()
 
@@ -299,7 +298,9 @@ class logger:
                 msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
             if self.audio_wrist is not None: 
-                msg.audio_power       = self.audio_wrist.power
+                audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()                
+                msg.audio_wrist_rms       = audio_wrist_rms
+                msg.audio_wrist_mfcc       = audio_wrist_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
@@ -365,7 +366,7 @@ class logger:
                     self.data['audio_power'].append(self.audio_kinect.power)
                     
             if self.audio_wrist is not None: 
-                    audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()
+                audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()
                 if 'audio_wrist_time' not in self.data.keys():
                     self.data['audio_wrist_time']  = [audio_wrist_time]
                     self.data['audio_wrist_rms']   = [audio_wrist_rms]
@@ -486,9 +487,9 @@ if __name__ == '__main__':
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=True, audio_wrist=False, kinematics=True, vision_artag=False, \
-                 vision_change=True, \
-                 pps=False, skin=True, subject=subject, task=task, verbose=verbose)
+    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+                 vision_change=False, \
+                 pps=True, skin=False, subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
     log.run()

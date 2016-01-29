@@ -26,7 +26,6 @@ class arTagDetector:
         self.head_tag_id   = head_tag_id
         self.head_calib    = False
         self.head_z_offset = 0.13 #12 #0.15
-        self.head_tag_flag = False
 
         self.mouth_frame_off = None
         self.head_frame   = None
@@ -46,18 +45,14 @@ class arTagDetector:
 
         markers = msg.markers
 
-        head_tag_flag  = False
-
         with self.frame_lock:
             for i in xrange(len(markers)):
 
                 if markers[i].id == self.head_tag_id:
-                    head_tag_flag = True
                     head_tag_frame = posemath.fromMsg(markers[i].pose.pose)
 
                     if head_tag_frame.p.Norm() > 2.0: 
                         print "Detected tag is located at too far location."
-                        head_tag_flag = False
                         continue
 
                     cur_p = np.array([head_tag_frame.p[0], head_tag_frame.p[1], head_tag_frame.p[2]])
@@ -114,9 +109,7 @@ class arTagDetector:
                     else:
                         self.pubMouthPose()
 
-                        
-        if head_tag_flag: self.head_tag_flag = True
-                    
+                                            
 
     def updateMouthFrames(self, head_frame):
 

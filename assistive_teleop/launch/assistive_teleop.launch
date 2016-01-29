@@ -12,11 +12,11 @@
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
       <param name="port" type="int" value="9091" />
   </node>
-  <node name="rosapi" pkg="rosapi" type="rosapi" output="screen"/>
+  <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
   <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port 8000 --webpath vci-www"/>
   <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
 
-  </node>
+  <!-- </node> -->
 
   <!-- Throttling nodes for robot state -->
   <node name="torso_state_throttle" pkg="topic_tools" type="throttle"

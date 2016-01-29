@@ -57,7 +57,7 @@ class tool_ft(threading.Thread):
         self.torque_raw = None
 
         # Declare containers        
-        self.time_data    = []
+        ## self.time_data    = []
         self.force_array  = None
         self.torque_array = None
 
@@ -126,7 +126,7 @@ class tool_ft(threading.Thread):
         self.isReset = True
 
         # Reset containers
-        self.time_data    = []
+        ## self.time_data    = []
         self.force_array  = None
         self.torque_array = None
 

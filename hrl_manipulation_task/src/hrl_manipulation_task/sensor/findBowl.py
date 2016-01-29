@@ -27,7 +27,6 @@ class arTagDetector:
         self.bowl_calib    = False
         self.bowl_z_offset = 0.0 #0.05
         self.bowl_forward_offset = 0.0 #0.075
-        self.bowl_tag_flag = False
 
         self.bowl_cen_frame_off = None
         self.bowl_frame   = None
@@ -51,18 +50,14 @@ class arTagDetector:
 
         markers = msg.markers
 
-        bowl_tag_flag  = False
-
         with self.frame_lock:
             for i in xrange(len(markers)):
 
                 if markers[i].id == self.bowl_tag_id:
-                    bowl_tag_flag = True
                     bowl_tag_frame = posemath.fromMsg(markers[i].pose.pose)
 
                     if bowl_tag_frame.p.Norm() > 2.0: 
                         print "Detected tag is located at too far location."
-                        bowl_tag_flag = False
                         continue
 
                     cur_p = np.array([bowl_tag_frame.p[0], bowl_tag_frame.p[1], bowl_tag_frame.p[2]])
@@ -119,8 +114,6 @@ class arTagDetector:
                         self.pubBowlcenPose()
 
                                                
-        if bowl_tag_flag: self.bowl_tag_flag = True
-                    
 
     def updateBowlcenFrames(self, bowl_frame):
 
