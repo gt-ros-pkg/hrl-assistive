@@ -8,6 +8,8 @@ from learning_hmm_multi_n import learning_hmm_multi_n
 from util import *
 import learning_util as util
 
+# catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
+
 class HmmClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, downSampleSize=200, scale=10, nState=20, cov_mult=1.0, isScooping=True):
@@ -45,19 +47,14 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         use try/except blog with exceptions. This is just for short syntax.
         """
 
-        if self.isScooping:
-            subject_names = ['pr2']
-            task_name = 'scooping'
-        else:
-            subject_names = ['s2', 's3', 's4']
-            task_name = 'feeding'
+        subject_names = ['s2', 's3', 's4']
+        task_name = 'feeding'
 
         # Loading success and failure data
         root_path = '/home/mycroft/feeding'
         success_list, failure_list = getSubjectFileList(root_path, subject_names, task_name)
 
-        trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue, trainTimeList, \
-        thresTestTimeList, normalTestTimeList, abnormalTestTimeList = self.getData(success_list, failure_list)
+        trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue = self.getData(success_list, failure_list)
 
         # minimum and maximum vales for scaling from Daehyung
         dataList, _ = loadData(success_list, isTrainingData=False, downSampleSize=self.downSampleSize)
@@ -68,10 +65,10 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
             self.maxVals.append(np.max(modality))
 
         # Scale data
-        trainData, _, _ = self.scaleData(trainDataTrue, minVals=self.minVals, maxVals=self.maxVals)
-        thresTestData, _ , _ = self.scaleData(thresTestDataTrue, minVals=self.minVals, maxVals=self.maxVals)
-        self.normalTestData, _ , _ = self.scaleData(normalTestDataTrue, minVals=self.minVals, maxVals=self.maxVals)
-        self.abnormalTestData, _ , _ = self.scaleData(abnormalTestDataTrue, minVals=self.minVals, maxVals=self.maxVals)
+        trainData = self.scaleData(trainDataTrue, minVals=self.minVals, maxVals=self.maxVals)
+        thresTestData = self.scaleData(thresTestDataTrue, minVals=self.minVals, maxVals=self.maxVals)
+        self.normalTestData = self.scaleData(normalTestDataTrue, minVals=self.minVals, maxVals=self.maxVals)
+        self.abnormalTestData = self.scaleData(abnormalTestDataTrue, minVals=self.minVals, maxVals=self.maxVals)
 
         # cutting data (only training and thresTest data)
         start_idx = int(float(len(trainData[0][0]))*self.train_cutting_ratio[0])
@@ -80,12 +77,10 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         for j in xrange(len(trainData)):
             for k in xrange(len(trainData[j])):
                 trainData[j][k] = trainData[j][k][start_idx:end_idx]
-                trainTimeList[k] = trainTimeList[k][start_idx:end_idx]
 
         for j in xrange(len(thresTestData)):
             for k in xrange(len(thresTestData[j])):
                 thresTestData[j][k] = thresTestData[j][k][start_idx:end_idx]
-                thresTestTimeList[k] = thresTestTimeList[k][start_idx:end_idx]
 
         # hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
         self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, anomaly_offset=self.anomaly_offset, verbose=self.verbose)
@@ -201,37 +196,26 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         failure_test_idx = random.sample(failure_idx, nTest)
 
         # get training data
-        trainData, trainTimeList = loadData([success_list[x] for x in train_idx],
+        trainData, _ = loadData([success_list[x] for x in train_idx],
                                             isTrainingData=True, downSampleSize=self.downSampleSize,
                                             verbose=self.verbose)
 
         # get threshold-test data
-        thresTestData, thresTestTimeList = loadData([success_list[x] for x in ths_test_idx],
+        thresTestData, _ = loadData([success_list[x] for x in ths_test_idx],
                                                     isTrainingData=True, downSampleSize=self.downSampleSize,
                                                     verbose=self.verbose)
 
         # get test data
-        normalTestData, normalTestTimeList = loadData([success_list[x] for x in success_test_idx],
+        normalTestData, _ = loadData([success_list[x] for x in success_test_idx],
                                                       isTrainingData=False, downSampleSize=self.downSampleSize,
                                                       verbose=self.verbose)
-        abnormalTestData, abnormalTestTimeList = loadData([failure_list[x] for x in failure_test_idx],
+        abnormalTestData, _ = loadData([failure_list[x] for x in failure_test_idx],
                                                           isTrainingData=False, downSampleSize=self.downSampleSize,
                                                           verbose=self.verbose)
 
-        return trainData, thresTestData, normalTestData, abnormalTestData, trainTimeList, thresTestTimeList, normalTestTimeList, abnormalTestTimeList
+        return trainData, thresTestData, normalTestData, abnormalTestData
 
     def scaleData(self, dataList, minVals=None, maxVals=None):
-        # Determine max and min values
-        if minVals is None:
-            minVals = []
-            maxVals = []
-            for modality in dataList:
-                minVals.append(np.min(modality))
-                maxVals.append(np.max(modality))
-            if self.verbose:
-                print 'minValues', minVals
-                print 'maxValues', maxVals
-
         nDimension = len(dataList)
         dataList_scaled = []
         for i in xrange(nDimension):
@@ -242,14 +226,14 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
             for j in xrange(len(dataList[i])):
                 dataList_scaled[i].append(util.scaling(dataList[i][j], minVals[i], maxVals[i], self.scale))
 
-        return dataList_scaled, minVals, maxVals
+        return dataList_scaled
 
 
 # Specify parameters and possible parameter values
 tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'cov_mult': [1.0, 3.0, 5.0, 10.0]}
 
 # Run grid search
-gs = GridSearchCV(HmmClassifier(), tuned_params)
+gs = GridSearchCV(HmmClassifier(), tuned_params, cv=1)
 gs.fit(X=[1,2,3,4], y=[1,1,1,1])
 
 print 'Grid Search:'
