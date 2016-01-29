@@ -25,10 +25,11 @@ class DataReader_Task(object):
         self.goals = []
         self.reset_goals()
 
+
     def reset_goals(self):
         self.goals = []
         if self.task == 'shaving':
-            liftlink_B_head = createBMatrix([1.249848, -0.013344, 0.1121597], [0.044735, -0.010481, 0.998626, -0.025188])
+            liftlink_B_reference = createBMatrix([1.249848, -0.013344, 0.1121597], [0.044735, -0.010481, 0.998626, -0.025188])
             liftlink_B_goal = [[1.107086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
                                [1.089931, -0.023529, 0.115044, 0.008146, 0.125716, 0.032856, 0.991489],
                                [1.123504, -0.124174, 0.060517, 0.065528, -0.078776, 0.322874, 0.940879],
@@ -38,12 +39,12 @@ class DataReader_Task(object):
                                [1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515],
                                [1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'feeding':
-            liftlink_B_head = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
+            liftlink_B_reference = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
             liftlink_B_goal = [[1.070794, -0.000, 1.183998, -0.018872, 0.033197, 0.999248, 0.006737],
                                [1.070794, 0.02, 1.183998, -0.018872, 0.033197, 0.999248, 0.006737],
                                [1.070794, -0.02, 1.183998, -0.018872, 0.033197, 0.999248, 0.006737],
@@ -52,23 +53,23 @@ class DataReader_Task(object):
                                [1.226054, -0.00, 1.120987, 0.005207, 0.032937, 0.999380, -0.011313],
                                [1.250737, -0.00, 1.062824, -0.011666, 0.032741, 0.999325, -0.011866]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'feeding_quick':
-            liftlink_B_head = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
+            liftlink_B_reference = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
             liftlink_B_goal = [[1.070794, -0.000, 1.183998, -0.018872, 0.033197, 0.999248, 0.006737],
                                [1.154571, -0.000, 1.175490, -0.018872, 0.033197, 0.999248, 0.006737],
                                # [1.058091, -0.00, 1.213801, -0.251047, 0.033853, 0.967382, -0.001178],
                                [1.226054, -0.00, 1.120987, 0.005207, 0.032937, 0.999380, -0.011313]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'brushing':
-            liftlink_B_head = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
+            liftlink_B_reference = createBMatrix([0.902000, 0.000000, 1.232000], [0.000000, 0.000000, 0.000000, 1.000000])
             liftlink_B_goal = [[1.000937, 0.162396, 1.348265, -0.167223, 0.150695, -0.676151, 0.701532],
                                [0.928537, 0.128237, 1.374088, -0.021005, 0.029874, -0.692838, 0.720168],
                                [0.813246, 0.123432, 1.352483, 0.120200, -0.156845, -0.685395, 0.700847],
@@ -78,100 +79,102 @@ class DataReader_Task(object):
                                [0.948000, -0.045943, 1.375369, 0.229507, 0.227993, -0.675373, 0.662735],
                                [0.861745, -0.042059, 1.372639, 0.280951, 0.174134, -0.691221, 0.642617]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_upper_arm_left':
-            liftlink_B_head = createBMatrix([0.521625, 0.175031, 0.596279], [0.707105, 0.006780, -0.006691, 0.707044])
+            liftlink_B_reference = createBMatrix([0.521625, 0.175031, 0.596279], [0.707105, 0.006780, -0.006691, 0.707044])
             liftlink_B_goal = [[0.554345, 0.233102, 0.693507, -0.524865, 0.025934, 0.850781, -0.003895],
                                [0.661972, 0.231151, 0.699075, -0.630902, 0.025209, 0.775420, -0.007229]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to upper arm
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['upper_arm_left']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_upper_arm_right':
-            liftlink_B_head = createBMatrix([0.521668, -0.174969, 0.596249], [0.706852, 0.020076, -0.019986, 0.706794])
+            liftlink_B_reference = createBMatrix([0.521668, -0.174969, 0.596249], [0.706852, 0.020076, -0.019986, 0.706794])
             liftlink_B_goal = [[0.595982, -0.218764, 0.702598, -0.582908, 0.005202, 0.812505, -0.005172],
                                [0.673797, -0.218444, 0.712133, -0.665426, 0.004626, 0.746428, -0.005692]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to upper arm
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['upper_arm_right']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_forearm_left':
-            liftlink_B_head = createBMatrix([0.803358, 0.225067, 0.579914], [0.707054, -0.010898, 0.010985, 0.706991])
+            liftlink_B_reference = createBMatrix([0.803358, 0.225067, 0.579914], [0.707054, -0.010898, 0.010985, 0.706991])
             liftlink_B_goal = [[0.884083, 0.234311, 0.708599, -0.599114, 0.005096, 0.800630, -0.005276],
                                [1.005796, 0.234676, 0.714125, -0.599114, 0.005096, 0.800630, -0.005276]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to forearm
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['forearm_left']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_forearm_right':
-            liftlink_B_head = createBMatrix([0.803222, -0.224933, 0.580274], [0.707054, -0.010898, 0.010985, 0.706991])
+            liftlink_B_reference = createBMatrix([0.803222, -0.224933, 0.580274], [0.707054, -0.010898, 0.010985, 0.706991])
             liftlink_B_goal = [[0.905275, -0.223041, 0.714310, -0.599114, 0.005096, 0.800630, -0.005276],
                                [1.000633, -0.223224, 0.686273, -0.599114, 0.005096, 0.800630, -0.005276]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to forearm
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['forearm_right']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_thigh_left':
-            liftlink_B_head = createBMatrix([0.977372, 0.086085, 0.624297], [0.702011, 0.084996, -0.084900, 0.701960])
+            liftlink_B_reference = createBMatrix([0.977372, 0.086085, 0.624297], [0.702011, 0.084996, -0.084900, 0.701960])
             liftlink_B_goal = [[1.139935, 0.087965, 0.748606, -0.599114, 0.005096, 0.800630, -0.005276],
                                [1.257200, 0.088435, 0.762122, -0.599114, 0.005096, 0.800630, -0.005276]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to thigh
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['thigh_left']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_thigh_right':
-            liftlink_B_head = createBMatrix([0.977394, -0.085915, 0.624282], [0.702011, 0.084996, -0.084900, 0.701960])
+            liftlink_B_reference = createBMatrix([0.977394, -0.085915, 0.624282], [0.702011, 0.084996, -0.084900, 0.701960])
             liftlink_B_goal = [[1.257598, -0.081394, 0.764582, -0.599114, 0.005096, 0.800630, -0.005276],
                                [1.097844, -0.081661, 0.772003, -0.599114, 0.005096, 0.800630, -0.005276]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to thigh
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['thigh_right']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_knee_left':
-            liftlink_B_head = createBMatrix([0.977372, 0.086085, 0.624297], [0.702011, 0.084996, -0.084900, 0.701960])
-            liftlink_B_goal = [[1.139935, 0.087965, 0.748606, -0.599114, 0.005096, 0.800630, -0.005276],
-                               [1.257200, 0.088435, 0.762122, -0.599114, 0.005096, 0.800630, -0.005276]]
+            liftlink_B_reference = createBMatrix([1.403718, 0.086138, 0.632848], [0.027523, 0.706540, 0.706598, -0.027614])
+            liftlink_B_goal = [[1.452417, 0.090990, 0.702744, -0.694316, 0.002271, 0.719607, 0.009260],
+                               [1.452027, 0.144753, 0.667666, -0.651384, 0.240372, 0.679096, -0.238220],
+                               [1.451370, 0.056361, 0.689148, -0.675084, -0.162301, 0.696923, 0.179497]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to knee
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['knee_left']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_knee_right':
-            liftlink_B_head = createBMatrix([0.977394, -0.085915, 0.624282], [0.702011, 0.084996, -0.084900, 0.701960])
-            liftlink_B_goal = [[1.257598, -0.081394, 0.764582, -0.599114, 0.005096, 0.800630, -0.005276],
-                               [1.097844, -0.081661, 0.772003, -0.599114, 0.005096, 0.800630, -0.005276]]
+            liftlink_B_reference = createBMatrix([1.403740, -0.085862, 0.632833], [0.027523, 0.706540, 0.706598, -0.027614])
+            liftlink_B_goal = [[1.406576, -0.041661, 0.714539, -0.686141, 0.106256, 0.712874, -0.098644],
+                               [1.404770, -0.129258, 0.703603, -0.671525, -0.176449, 0.692998, 0.194099],
+                               [1.463372, -0.089422, 0.700517, -0.694316, 0.002271, 0.719607, 0.009260]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to knee
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['knee_right']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'scratching_chest':
-            liftlink_B_head = createBMatrix([0.424870, 0.000019, 0.589686], [0.706732, -0.023949, 0.024036, 0.706667])
+            liftlink_B_reference = createBMatrix([0.424870, 0.000019, 0.589686], [0.706732, -0.023949, 0.024036, 0.706667])
             liftlink_B_goal = [[0.606949, -0.012159, 0.723371, -0.599114, 0.005096, 0.800630, -0.005276],
                                [0.660066, -0.011944, 0.729623, -0.599114, 0.005096, 0.800630, -0.005276]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_head.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to chest
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['chest']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'bathing':
-            liftlink_B_ref = []
-            liftlink_B_ref.append(createBMatrix([0.521625, 0.175031, 0.596279], [0.707105, 0.006780, -0.006691, 0.707044]))
-            liftlink_B_ref.append(createBMatrix([0.521668, -0.174969, 0.596249], [0.706852, 0.020076, -0.019986, 0.706794]))
-            liftlink_B_ref.append(createBMatrix([0.803358, 0.225067, 0.579914], [0.707054, -0.010898, 0.010985, 0.706991]))
-            liftlink_B_ref.append(createBMatrix([0.803222, -0.224933, 0.580274], [0.707054, -0.010898, 0.010985, 0.706991]))
-            liftlink_B_ref.append(createBMatrix([0.977372, 0.086085, 0.624297], [0.702011, 0.084996, -0.084900, 0.701960]))
-            liftlink_B_ref.append(createBMatrix([0.977394, -0.085915, 0.624282], [0.702011, 0.084996, -0.084900, 0.701960]))
-            liftlink_B_ref.append(createBMatrix([0.424870, 0.000019, 0.589686], [0.706732, -0.023949, 0.024036, 0.706667]))
+            liftlink_B_reference = []
+            liftlink_B_reference.append(createBMatrix([0.521625, 0.175031, 0.596279], [0.707105, 0.006780, -0.006691, 0.707044]))
+            liftlink_B_reference.append(createBMatrix([0.521668, -0.174969, 0.596249], [0.706852, 0.020076, -0.019986, 0.706794]))
+            liftlink_B_reference.append(createBMatrix([0.803358, 0.225067, 0.579914], [0.707054, -0.010898, 0.010985, 0.706991]))
+            liftlink_B_reference.append(createBMatrix([0.803222, -0.224933, 0.580274], [0.707054, -0.010898, 0.010985, 0.706991]))
+            liftlink_B_reference.append(createBMatrix([0.977372, 0.086085, 0.624297], [0.702011, 0.084996, -0.084900, 0.701960]))
+            liftlink_B_reference.append(createBMatrix([0.977394, -0.085915, 0.624282], [0.702011, 0.084996, -0.084900, 0.701960]))
+            liftlink_B_reference.append(createBMatrix([0.424870, 0.000019, 0.589686], [0.706732, -0.023949, 0.024036, 0.706667]))
             liftlink_B_goal = [[0.554345, 0.233102, 0.693507, -0.524865, 0.025934, 0.850781, -0.003895],
                                [0.661972, 0.231151, 0.699075, -0.630902, 0.025209, 0.775420, -0.007229],
                                [0.595982, -0.218764, 0.702598, -0.582908, 0.005202, 0.812505, -0.005172],
@@ -187,7 +190,7 @@ class DataReader_Task(object):
                                [0.606949, -0.012159, 0.723371, -0.599114, 0.005096, 0.800630, -0.005276],
                                [0.660066, -0.011944, 0.729623, -0.599114, 0.005096, 0.800630, -0.005276]]
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_ref[i/2].I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+                self.goals.append(liftlink_B_reference[i/2].I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # in reference to different parts
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['upper_arm_left', 'upper_arm_right', 'forearm_left', 'forearm_right', 'thigh_left', 'thigh_right', 'chest']
             self.reference = np.array([[0],
@@ -216,7 +219,7 @@ class DataReader_Task(object):
         run_data = DataReader(subject=self.subject, model=self.model, task=self.task)
         run_data.receive_input_data(self.goals, self.num, self.reference_options, self.reference)
         run_data.generate_output_goals()
-        run_data.generate_score(viz_rviz=True, visualize=self.visualize, plot=False)
+        run_data.generate_score(viz_rviz=False, visualize=self.visualize, plot=False)
 
 if __name__ == "__main__":
     model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
@@ -224,6 +227,6 @@ if __name__ == "__main__":
     subject = 'any_subject'
     rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
     start_time = time.time()
-    shaving_data_reader = DataReader_Task(model, task)
+    shaving_data_reader = DataReader_Task(task, model)
     shaving_data_reader.generate_score()
     print 'Done! Time to generate all scores: %fs' % (time.time() - start_time)

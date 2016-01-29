@@ -24,7 +24,7 @@ import matplotlib.patches as patches
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove, BaseMove_multi
+# from hrl_base_selection.srv import BaseMove, BaseMove_multi
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -33,7 +33,7 @@ from matplotlib.cbook import flatten
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
-from sPickle import Pickler
+# from sPickle import Pickler
 import tf.transformations as tft
 from score_generator import ScoreGenerator
 import data_clustering as clust

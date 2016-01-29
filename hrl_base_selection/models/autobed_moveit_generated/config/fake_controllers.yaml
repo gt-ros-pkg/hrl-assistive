@@ -1,0 +1,28 @@
+controller_list:
+  - name: fake_bed_height_controller
+    joints:
+      - tele_legs_joint
+  - name: fake_back_rest_controller
+    joints:
+      - head_rest_hinge
+      - head_neck_joint1
+      - head_neck_joint2
+      - neck_body_joint
+      - body_arm_left_joint
+      - arm_forearm_left_joint
+      - forearm_hand_left_joint
+      - body_arm_right_joint
+      - arm_forearm_right_joint
+      - forearm_hand_right_joint
+      - upper_mid_body_joint
+      - mid_lower_body_joint
+      - body_quad_left_joint
+      - quad_calf_left_joint
+      - calf_foot_left_joint
+      - body_quad_right_joint
+      - quad_calf_right_joint
+      - calf_foot_right_joint
+  - name: fake_sliding_human_controller
+    joints:
+      - head_bed_updown_joint
+      - head_bed_leftright_joint
