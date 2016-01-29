@@ -158,7 +158,7 @@ def suppress_output():
             sys.stderr = old_stderr
 
 
-def getSubjectFileList(root_path, subject_names, task_name):
+def getSubjectFileList(root_path, subject_names, task_name, verbose=False):
     # List up recorded files
     folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]        
 
@@ -186,10 +186,11 @@ def getSubjectFileList(root_path, subject_names, task_name):
                 else:
                     print "It's not success/failure file: ", f
 
-    print "--------------------------------------------"
-    print "# of Success files: ", len(success_list)
-    print "# of Failure files: ", len(failure_list)
-    print "--------------------------------------------"
+    if verbose:
+        print "--------------------------------------------"
+        print "# of Success files: ", len(success_list)
+        print "# of Failure files: ", len(failure_list)
+        print "--------------------------------------------"
     
     return success_list, failure_list
 

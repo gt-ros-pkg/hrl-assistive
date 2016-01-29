@@ -15,11 +15,14 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.scale = scale
         self.nState = nState
         self.cov_mult = cov_mult
+        # print 'Testing', downSampleSize, scale, nState, cov_mult
 
         self.train_cutting_ratio = [0.0, 0.65]
         self.anomaly_offset = 0.0
         self.isScooping = isScooping
         self.verbose = False
+
+        self.isFitted = False
 
         self.hmm = None
         self.minVals = None
@@ -27,6 +30,12 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.normalTestData = None
         self.abnormalTestData = None
         self.minThresholds = None
+
+    def set_params(self, **parameters):
+        for parameter, value in parameters.items():
+            setattr(self, parameter, value)
+            print parameter, value
+        return self
 
     def fit(self, X=None, y=None):
         """
@@ -44,7 +53,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
             task_name = 'feeding'
 
         # Loading success and failure data
-        root_path = '/home/zerickson/feeding'
+        root_path = '/home/mycroft/feeding'
         success_list, failure_list = getSubjectFileList(root_path, subject_names, task_name)
 
         trainDataTrue, thresTestDataTrue, normalTestDataTrue, abnormalTestDataTrue, trainTimeList, \
@@ -84,7 +93,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
         if ret == 'Failure':
             print 'HMM return was a failure!'
-            exit()
+            return self
 
         with suppress_output():
             # minThresholds = tuneSensitivityGain(hmm, thresTestData, verbose=verbose)
@@ -99,9 +108,13 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
                 if minThresholds2[i] < self.minThresholds[i]:
                     self.minThresholds[i] = minThresholds2[i]
 
+        self.isFitted = True
+
         return self
 
     def score(self, X, y, sample_weight=None):
+        if not self.isFitted:
+            return 0
         c = self.minThresholds
         truePos = 0
         trueNeg = 0
@@ -227,17 +240,17 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         # Scale features
         for i in xrange(nDimension):
             for j in xrange(len(dataList[i])):
-                dataList_scaled[i].append(util.scaling(dataList[i][j], minVals[i], maxVals[i], self.scale).tolist())
+                dataList_scaled[i].append(util.scaling(dataList[i][j], minVals[i], maxVals[i], self.scale))
 
         return dataList_scaled, minVals, maxVals
 
 
 # Specify parameters and possible parameter values
-tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'covMult': [1.0, 3.0, 5.0, 10.0]}
+tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'cov_mult': [1.0, 3.0, 5.0, 10.0]}
 
 # Run grid search
 gs = GridSearchCV(HmmClassifier(), tuned_params)
-gs.fit(X=None, y=None)
+gs.fit(X=[1,2,3,4], y=[1,1,1,1])
 
 print 'Grid Search:'
 print gs.best_params_, gs.best_score_, gs.grid_scores_
@@ -247,8 +260,11 @@ print gs.best_params_, gs.best_score_, gs.grid_scores_
 param_dist = {'downSampleSize': sp_randint(100, 300),
               'scale': sp_randint(1, 10),
               'nState': sp_randint(20, 30),
-              'covMult': sp_randint(1, 10)}
+              'cov_mult': sp_randint(1, 10)}
 
 # Run randomized search
-random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=50)
-random_search.fit(X=None, y=None)
+random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=5)
+random_search.fit(X=[1,2,3,4], y=[1,1,1,1])
+
+print 'Randomized Search:'
+print gs.best_params_, gs.best_score_, gs.grid_scores_
