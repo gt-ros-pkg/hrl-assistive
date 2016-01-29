@@ -1,4 +1,6 @@
 <launch>
+	<arg name="task_name" default="pushing" />
+  
 	<arg name="marker_size" default="4.2" />
 	<arg name="max_new_marker_error" default="0.05" />
 	<arg name="max_track_error" default="0.2" />
@@ -12,7 +14,9 @@
         <!-- Vision sensor -->
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
         <!--node name="change_detector" pkg="hrl_manipulation_task" type="change_detector" respawn="false" output="screen" /-->
-        <node name="findObject" pkg="hrl_manipulation_task" type="findObjects.py" respawn="false" output="screen" />
+        <node name="findObject" pkg="hrl_manipulation_task"
+              type="findObjects.py" respawn="false" output="screen"
+              args="--t $(arg task_name)" />
 
         <!-- F/T sensor -->
         <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />

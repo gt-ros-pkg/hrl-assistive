@@ -18,10 +18,11 @@ from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 class arTagDetector:
 
-    def __init__(self):
+    def __init__(self, task_name):
 
         print "Start object observation"
-
+        self.task = task_name
+        
         self.initParams()
         self.initComms()
        
@@ -29,8 +30,8 @@ class arTagDetector:
 
     def initParams(self):
 
-        self.nTags      = rospy.get_param('hrl_manipulation_task/artag_total_tags')
-        self.tag_id     = rospy.get_param('hrl_manipulation_task/artag_id')
+        self.nTags      = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_total_tags')
+        self.tag_id     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_id')
         ## self.tag_length = rospy.get_param('hrl_manipulation_task/artag_length')
         ## self.tag_max_id = rospy.get_param('hrl_manipulation_task/artag_max_id')
         ## self.tag_buf_size = rospy.get_param('hrl_manipulation_task/artag_buf_size')
@@ -154,12 +155,14 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     ## ## p.add_option('--renew', action='store_true', dest='bRenew',
     ## ##              default=False, help='Renew frame pickle files.')
+    p.add_option('--task', '--t', action='store_string', dest='task_name',
+                 default='pushing', help='Set the name of current task.')
     p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
                  default=False, help='Send a vitual frame.')
     opt, args = p.parse_args()
 
 
-    atd = arTagDetector()
+    atd = arTagDetector(opt.task_name)
 
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():

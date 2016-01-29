@@ -588,7 +588,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'progress_time_cluster':
                     ## thresholds = -np.linspace(1., 50, nPoints)+2.0
-                    thresholds = -np.linspace(1., 10, nPoints)+2.0
+                    thresholds = -np.linspace(1., 4, nPoints)+2.0
                     dtc.set_params( ths_mult = thresholds[j] )
 
                 ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
