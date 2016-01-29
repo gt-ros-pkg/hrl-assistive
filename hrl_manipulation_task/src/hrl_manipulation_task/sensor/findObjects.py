@@ -155,7 +155,7 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     ## ## p.add_option('--renew', action='store_true', dest='bRenew',
     ## ##              default=False, help='Renew frame pickle files.')
-    p.add_option('--task', '--t', action='store_string', dest='task_name',
+    p.add_option('--task', '--t', action='store', type='string', dest='task_name',
                  default='pushing', help='Set the name of current task.')
     p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
                  default=False, help='Send a vitual frame.')
