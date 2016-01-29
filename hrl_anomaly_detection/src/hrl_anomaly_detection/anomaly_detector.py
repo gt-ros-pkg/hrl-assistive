@@ -205,20 +205,20 @@ class anomaly_detector:
 
 
         # Crossmodal feature - relative dist --------------------------
-        if 'crossmodal_targetRelativeDist' in feature_list:
+        if 'crossmodal_targetEEDist' in feature_list:
 
-            crossmodal_targetRelativeDist = np.linalg.norm(np.array(self.kinematics_target_pos) - \
+            crossmodal_targetEEDist = np.linalg.norm(np.array(self.kinematics_target_pos) - \
                                                            np.array(self.kinematics_ee_pos))
 
-            dataSample.append( crossmodal_targetRelativeDist )
+            dataSample.append( crossmodal_targetEEDist )
 
         # Crossmodal feature - relative angle --------------------------
-        if 'crossmodal_targetRelativeAng' in feature_list:                
+        if 'crossmodal_targetEEAng' in feature_list:                
             
             diff_ang = qt.quat_angle(self.kinematics_ee_quat, self.kinematics_target_quat)
-            crossmodal_targetRelativeAng = abs(diff_ang)
+            crossmodal_targetEEAng = abs(diff_ang)
 
-            dataSample.append( crossmodal_targetRelativeAng )
+            dataSample.append( crossmodal_targetEEAng )
 
         # Scaling ------------------------------------------------------------
         scaled_features = (np.array(dataSample) - np.array(self.param_dict['feature_min']) )\
@@ -294,9 +294,9 @@ if __name__ == '__main__':
         
 
     task_name    = 'scooping'
-    feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist']
-    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
-    ##                 'crossmodal_targetRelativeAng']
+    feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist']
+    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
+    ##                 'crossmodal_targetEEAng']
     save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
     training_data_pkl = task_name+'_dataSet_0'
 
