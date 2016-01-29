@@ -68,9 +68,7 @@ hrl_manipulation_task:
   artag_id: 
      - 10
      - 11
-  artag_length: 
-     - 0.042
-     - 0.042
+  artag_length: 0.042
   artag_max_id: 18
   artag_total_tags: 2
   artag_buf_size: 10

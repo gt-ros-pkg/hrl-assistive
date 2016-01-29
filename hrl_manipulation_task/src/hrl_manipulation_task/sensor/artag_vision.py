@@ -53,18 +53,11 @@ class artag_vision(threading.Thread):
         self.verbose = verbose
         self.viz     = viz
         self.task    = task
-
-        self.init_time = 0.0        
-        self.counter = 0
-        self.counter_prev = 0
-        
+       
         # instant data
         self.time       = None
-        self.artag_pos  = None
-        self.artag_quat = None
         
         # Declare containers        
-        self.time_data    = []
         self.vision_tag_pos  = None
         self.vision_tag_quat = None
 
@@ -79,23 +72,29 @@ class artag_vision(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "artag_vision>> Initialize pusblishers and subscribers"
-        self.artag_pub = rospy.Publisher("ar_track_alvar/artag_vision_pose", PoseStamped, latch=True)
+        for i in xrange(self.nTags):
+            self.artag_pub = rospy.Publisher("ar_track_alvar/artag_vision_pose_"+str(i), PoseStamped, latch=True)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
     def initParams(self):
         '''
         Get parameters
         '''
+        self.nTags          = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_total_tags')        
         self.tag_id         = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_id')
-        self.tag_length     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_length')
-        self.tag_max_id     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_max_id')
-        self.tag_total_tags = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_total_tags')
+        ## self.tag_length     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_length')
+        ## self.tag_max_id     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_max_id')
         self.tag_buf_size   = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_buf_size')
 
-        self.pos_buf  = cb.CircularBuffer(self.tag_buf_size, (3,))
-        self.quat_buf = cb.CircularBuffer(self.tag_buf_size, (4,))               
+        self.artag_pos  = np.zeros((3*self.nTags,1))
+        self.artag_quat = np.zeros((4*self.nTags,1))
+        self.pos_buf    = []
+        self.quat_buf   = []
+        for i in xrange(self.nTags):
+            self.pos_buf.append( cb.CircularBuffer(self.tag_buf_size, (3,)) )
+            self.quat_buf.append( cb.CircularBuffer(self.tag_buf_size, (4,)) )
         
-    def pubARtag(self, p, q):
+    def pubARtag(self, idx, p, q):
 
         ps = PoseStamped()
         ps.header.frame_id = 'torso_lift_link'
@@ -109,69 +108,65 @@ class artag_vision(threading.Thread):
         ps.pose.orientation.z = q[2]
         ps.pose.orientation.w = q[3]
 
-        self.artag_pub.publish(ps)
+        self.artag_pub[idx].publish(ps)
         
     def arTagCallback(self, msg):
 
         time_stamp = msg.header.stamp
         markers    = msg.markers
-        tag_flag   = False
 
         with self.lock:
             for i in xrange(len(markers)):
+                for j in xrange(len(self.tag_id)):
 
-                if markers[i].id == self.tag_id:
-                    tag_flag = True
+                    if markers[i].id == self.tag_id[j]:
 
-                    cur_p = np.array([markers[i].pose.pose.position.x, 
-                                      markers[i].pose.pose.position.y, 
-                                      markers[i].pose.pose.position.z])
-                    cur_q = np.array([markers[i].pose.pose.orientation.x, 
-                                      markers[i].pose.pose.orientation.y, 
-                                      markers[i].pose.pose.orientation.z,
-                                      markers[i].pose.pose.orientation.w])
+                        cur_p = np.array([markers[i].pose.pose.position.x, 
+                                          markers[i].pose.pose.position.y, 
+                                          markers[i].pose.pose.position.z])
+                        cur_q = np.array([markers[i].pose.pose.orientation.x, 
+                                          markers[i].pose.pose.orientation.y, 
+                                          markers[i].pose.pose.orientation.z,
+                                          markers[i].pose.pose.orientation.w])
 
-                    if np.linalg.norm(cur_p) > 2.0: 
-                        if self.verbose: print "Detected tag is located at too far location."
-                        tag_flag = False
-                        continue
-                    
-                    if len(self.quat_buf) < 1:
-                        self.pos_buf.append( cur_p )
-                        self.quat_buf.append( cur_q )
-                    else:
-                        first_p = self.pos_buf[-1]
-                        first_q = self.quat_buf[-1]
+                        if np.linalg.norm(cur_p) > 2.0: 
+                            if self.verbose: print "Detected tag is located at too far location."
+                            continue
 
-                        # check close quaternion and inverse
-                        if np.dot(cur_q, first_q) < 0.0:
-                            cur_q *= -1.0
+                        if len(self.quat_buf) < 1:
+                            self.pos_buf.append( cur_p )
+                            self.quat_buf.append( cur_q )
+                        else:
+                            first_p = self.pos_buf[-1]
+                            first_q = self.quat_buf[-1]
 
-                        self.pos_buf.append( cur_p )
-                        self.quat_buf.append( cur_q )
-                            
-                        
-                    positions  = self.pos_buf.get_array()
-                    quaternions  = self.quat_buf.get_array() 
+                            # check close quaternion and inverse
+                            if np.dot(cur_q, first_q) < 0.0:
+                                cur_q *= -1.0
 
-                    p = None
-                    q = None
-                    if False:
-                        # Moving average
-                        p = np.mean(positions, axis=0)                                        
-                        q = qt.quat_avg(quaternions)
-                    else:
-                        # median
-                        p = np.median(positions, axis=0)
-                        q = np.median(quaternions, axis=0)
-                        q = qt.quat_normal(q)
-                        
-                    self.time       = time_stamp.to_sec() #- self.init_time
-                    self.artag_pos  = p.reshape(3,1)
-                    self.artag_quat = q.reshape(4,1)
-                    self.counter += 1
+                            self.pos_buf.append( cur_p )
+                            self.quat_buf.append( cur_q )
 
-                    if self.viz: self.pubARtag(p,q)
+                        positions  = self.pos_buf[j].get_array()
+                        quaternions  = self.quat_buf[j].get_array() 
+
+                        p = None
+                        q = None
+                        if False:
+                            # Moving average
+                            p = np.mean(positions, axis=0)                                        
+                            q = qt.quat_avg(quaternions)
+                        else:
+                            # median
+                            p = np.median(positions, axis=0)
+                            q = np.median(quaternions, axis=0)
+                            q = qt.quat_normal(q)
+
+                        self.time       = time_stamp.to_sec() #- self.init_time
+                        self.artag_pos[3*j:3*j+3]    = p.reshape(3,1)
+                        self.artag_quat[4*j+0:4*j+4] = q.reshape(4,1)
+
+                        if self.viz: self.pubARtag(j, p,q)
                         
         
     ## def run(self):
@@ -202,24 +197,22 @@ class artag_vision(threading.Thread):
     ##     self.cancelled = True
     ##     self.isReset = False
 
-    def reset(self, init_time):
-        self.init_time = init_time
-        self.isReset = True
+    ## def reset(self):
+    ##     self.isReset = True
 
-        # Reset containers
-        self.time_data    = []
-        self.vision_tag_pos  = None
-        self.vision_tag_quat = None
+    ##     # Reset containers
+    ##     self.vision_tag_pos  = None
+    ##     self.vision_tag_quat = None
 
-        self.counter = 0
-        self.counter_prev = 0
-        
-
+       
     def isReady(self):
-        if self.artag_pos is not None and self.artag_quat is not None:
-          return True
-        else:
-          return False
+        flag = True
+
+        for i in xrange(self.nTags):            
+            if self.artag_pos[i] is None or self.artag_quat[i] is None:
+                flag = False
+
+        return flag
         
         
 
