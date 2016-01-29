@@ -50,7 +50,8 @@ hrl_manipulation_task:
 
   # For visual perception
   feeding:
-    artag_id: 10
+    artag_id: 
+       - 10
     artag_length: 0.068
     artag_max_id: 18
     artag_total_tags: 1
@@ -58,20 +59,23 @@ hrl_manipulation_task:
 
   # For visual perception
   scooping:
-    artag_id: 11
+    artag_id: 
+       - 11
     artag_length: 0.068
     artag_max_id: 18
     artag_total_tags: 1
     artag_buf_size: 10
   
   # For visual perception
-  artag_id: 
-     - 10
-     - 11
-  artag_length: 0.042
-  artag_max_id: 18
-  artag_total_tags: 2
-  artag_buf_size: 10
-  artag_pos_thres: 0.2
+  pushing:
+    artag_id: 
+       - 10
+       - 11
+    artag_length: 0.042
+       - 0.042
+    artag_max_id: 18
+    artag_total_tags: 2
+    artag_buf_size: 10
+    artag_pos_thres: 0.2
   
     

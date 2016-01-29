@@ -141,9 +141,9 @@ def scaling(X, min_c=None, max_c=None, scale=10.0, bMinMax=False, verbose=False)
         max_c = np.max(X)
 
     X_scaled = np.array(X)
-    X_scaled = (x-min_c) / (max_c-min_c) * scale
+    X_scaled = (X_scaled-min_c) / (max_c-min_c) * scale
 
-    if verbose is True: print min_c, max_c, " : ", np.min(x), np.max(x)
+    if verbose: print min_c, max_c, " : ", np.min(X_scaled), np.max(X_scaled)
     if bMinMax:
         return X_scaled.tolist(), min_c, max_c
     else:
