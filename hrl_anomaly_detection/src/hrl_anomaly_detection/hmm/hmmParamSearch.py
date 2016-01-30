@@ -34,9 +34,11 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.minThresholds = None
 
     def set_params(self, **parameters):
+        params = ''
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
-            print parameter, value
+            params += '%s: %s, ' % (parameter, str(value))
+        print params
         return self
 
     def fit(self, X=None, y=None):
@@ -81,9 +83,9 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         for j in xrange(len(thresTestData)):
             for k in xrange(len(thresTestData[j])):
                 thresTestData[j][k] = thresTestData[j][k][start_idx:end_idx]
-
+                
         # hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
-        self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, anomaly_offset=self.anomaly_offset, verbose=self.verbose)
+        self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, check_method='progress', anomaly_offset=self.anomaly_offset, verbose=self.verbose)
         ret = self.hmm.fit(xData=trainData, cov_mult=[self.cov_mult]*16)
 
         if ret == 'Failure':
@@ -133,7 +135,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
                 # This is a successful nonanomalous attempt
                 if anomaly:
                     falsePos += 1
-                    print 'Success Test', i,',',j, ' in ',len(self.normalTestData[0][i]), ' |', anomaly, error
+                    if self.verbose: print 'Success Test', i,',',j, ' in ',len(self.normalTestData[0][i]), ' |', anomaly, error
                     break
                 elif not anomaly and j == len(self.normalTestData[0][i]) - 1:
                     trueNeg += 1
@@ -156,7 +158,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
                         break
                     elif not anomaly and j == len(self.abnormalTestData[0][i]) - 1:
                         falseNeg += 1
-                        print 'Failure Test', i,',',j, ' in ',len(self.abnormalTestData[0][i]), ' |', anomaly, error
+                        if self.verbose: print 'Failure Test', i,',',j, ' in ',len(self.abnormalTestData[0][i]), ' |', anomaly, error
                         break
 
         truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
@@ -233,11 +235,12 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'cov_mult': [1.0, 3.0, 5.0, 10.0]}
 
 # Run grid search
-gs = GridSearchCV(HmmClassifier(), tuned_params, cv=1)
+gs = GridSearchCV(HmmClassifier(), tuned_params, cv=2)
 gs.fit(X=[1,2,3,4], y=[1,1,1,1])
 
 print 'Grid Search:'
 print gs.best_params_, gs.best_score_, gs.grid_scores_
+print '-'*50, '\n', '-'*50
 
 
 # specify parameters and distributions to sample from
@@ -247,7 +250,7 @@ param_dist = {'downSampleSize': sp_randint(100, 300),
               'cov_mult': sp_randint(1, 10)}
 
 # Run randomized search
-random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=5)
+random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, cv=2, n_iter=50)
 random_search.fit(X=[1,2,3,4], y=[1,1,1,1])
 
 print 'Randomized Search:'

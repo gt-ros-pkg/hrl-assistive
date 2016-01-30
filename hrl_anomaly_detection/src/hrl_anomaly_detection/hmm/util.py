@@ -184,7 +184,7 @@ def getSubjectFileList(root_path, subject_names, task_name, verbose=False):
                     if len(failure_list)==0: failure_list = [pkl_file]
                     else: failure_list.append(pkl_file)
                 else:
-                    print "It's not success/failure file: ", f
+                    if verbose: print "It's not success/failure file: ", f
 
     if verbose:
         print "--------------------------------------------"
@@ -380,8 +380,9 @@ def tuneSensitivityGain(hmm, dataSample, method='progress', verbose=False):
         m = len(dataSample[0][i])
 
         for j in range(2, m):
-            ths, index = hmm.get_sensitivity_gain([x[i][:j] for x in dataSample])
-            if not ths: continue
+            y = hmm.get_sensitivity_gain([x[i][:j] for x in dataSample])
+            if not y: continue
+            ths, index = y
 
             if method == 'progress':               
                 if minThresholds[index] > ths:
