@@ -57,14 +57,16 @@ from sensor.fabric_skin import fabric_skin
 
 class logger:
     def __init__(self, ft=False, audio=False, audio_wrist=False, kinematics=False, vision_artag=False, \
-                 vision_change=False, \
-                 pps=False, skin=False, \
-                 subject=None, task=None, data_pub= False, verbose=False):
+                 vision_change=False, pps=False, skin=False, \
+                 subject=None, task=None, \
+                 record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016',
+                 data_pub= False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject  = subject
         self.task     = task
         self.data_pub = data_pub
+        self.record_root_path = record_root_path
         self.verbose  = verbose
         
         self.initParams()
@@ -91,7 +93,6 @@ class logger:
         # load parameters
         '''        
         # File saving
-        self.record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
         
     def initComms(self):
@@ -316,6 +317,7 @@ class logger:
                 msg.ft_torque = np.squeeze(self.ft.torque_raw.T).tolist()
 
             if self.vision_artag is not None:
+                # TODO: need to check
                 if self.vision_artag.artag_pos is not None:
                     msg.vision_pos  = np.squeeze(self.vision_artag.artag_pos.T).tolist()
                     msg.vision_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
@@ -413,7 +415,7 @@ class logger:
                     self.data['ft_force']  = np.hstack([self.data['ft_force'], self.ft.force_raw])
                     self.data['ft_torque'] = np.hstack([self.data['ft_torque'], self.ft.torque_raw])
                     
-            if self.vision_artag is not None:
+            if self.vision_artag is not None:                
                 if 'vision_artag_time' not in self.data.keys():
                     self.data['vision_artag_time'] = [self.vision_artag.time]
                     self.data['vision_artag_pos']  = self.vision_artag.artag_pos
@@ -483,11 +485,11 @@ class logger:
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task    = 'test'
+    task    = 'pushing'
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
                  pps=True, skin=False, subject=subject, task=task, verbose=verbose)
 

@@ -133,19 +133,19 @@ class artag_vision(threading.Thread):
                             if self.verbose: print "Detected tag is located at too far location."
                             continue
 
-                        if len(self.quat_buf) < 1:
-                            self.pos_buf.append( cur_p )
-                            self.quat_buf.append( cur_q )
+                        if len(self.quat_buf[j]) < 1:
+                            self.pos_buf[j].append( cur_p )
+                            self.quat_buf[j].append( cur_q )
                         else:
-                            first_p = self.pos_buf[-1]
-                            first_q = self.quat_buf[-1]
+                            first_p = self.pos_buf[j][-1]
+                            first_q = self.quat_buf[j][-1]
 
                             # check close quaternion and inverse
                             if np.dot(cur_q, first_q) < 0.0:
                                 cur_q *= -1.0
 
-                            self.pos_buf.append( cur_p )
-                            self.quat_buf.append( cur_q )
+                            self.pos_buf[j].append( cur_p )
+                            self.quat_buf[j].append( cur_q )
 
                         positions  = self.pos_buf[j].get_array()
                         quaternions  = self.quat_buf[j].get_array() 

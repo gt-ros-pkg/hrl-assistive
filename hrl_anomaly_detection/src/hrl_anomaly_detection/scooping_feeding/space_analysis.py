@@ -35,7 +35,7 @@ from astropy.convolution import convolve, convolve_fft
 def time_correlation(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
                      nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
                      save_pdf=False, \
-                     feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
+                     feature_list=['crossmodal_targetEEDist'], data_renew=False):
 
     if success_viz or failure_viz: bPlot = True
     else: bPlot = False

@@ -71,7 +71,7 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
    
 def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
                           nSet=1, downSampleSize=200, \
-                          feature_list=['crossmodal_targetRelativeDist'], \
+                          feature_list=['crossmodal_targetEEDist'], \
                           nState=10, threshold=-1.0, smooth=False, cluster_type='time', \
                           useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
@@ -215,7 +215,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
                         local_range, \
                         nSet=1, downSampleSize=200, \
-                        feature_list=['crossmodal_targetRelativeDist'], \
+                        feature_list=['crossmodal_targetEEDist'], \
                         nState=10, threshold=-1.0, smooth=False, cluster_type='time', \
                         classifier_type='time', \
                         useTrain=True, useNormalTest=True, useAbnormalTest=False,\
@@ -318,7 +318,7 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
                    local_range, \
                    nSet=1, downSampleSize=200, nNormalFold=3, nAbnormalFold=2, \
-                   feature_list=['crossmodal_targetRelativeDist'], \
+                   feature_list=['crossmodal_targetEEDist'], \
                    nState=10, cluster_type='time', \
                    hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True, verbose=False):
 
@@ -708,7 +708,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
                local_range, \
                nSet=1, downSampleSize=200, \
-               feature_list=['crossmodal_targetRelativeDist'], \
+               feature_list=['crossmodal_targetEEDist'], \
                nState=10, threshold=-1.0, smooth=False, cluster_type='time', \
                classifier_type='time', \
                hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True, verbose=False):
@@ -1050,7 +1050,7 @@ def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_
 def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
                        local_range, \
                        nSet=1, downSampleSize=200, \
-                       feature_list=['crossmodal_targetRelativeDist'], \
+                       feature_list=['crossmodal_targetEEDist'], \
                        nState=10, threshold=-1.0, smooth=False, cluster_type='time', \
                        classifier_type='time', \
                        hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
@@ -1226,7 +1226,7 @@ def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_p
 def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
                     local_range, \
                     nSet=1, downSampleSize=200, \
-                    feature_list=['crossmodal_targetRelativeDist'], \
+                    feature_list=['crossmodal_targetEEDist'], \
                     nState=10, threshold=-1.0, smooth=False, cluster_type='time', \
                     classifier_type='time', \
                     useTrain=True, useNormalTest=True, useAbnormalTest=False,\
@@ -1673,7 +1673,7 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
              nSet=1, downSampleSize=200, success_viz=True, failure_viz=False, \
              save_pdf=False, \
-             feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
+             feature_list=['crossmodal_targetEEDist'], data_renew=False):
 
 
     allData, trainingData, abnormalTestData, abnormalTestNameList\
@@ -1861,16 +1861,16 @@ if __name__ == '__main__':
     
     subject = 'gatsbii'
     task    = 'scooping'    
-    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetRelativeDist', \
-    ##                 'crossmodal_targetRelativeAng']
+    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
+    ##                 'crossmodal_targetEEAng']
     feature_list = ['unimodal_audioPower',\
                     'unimodal_kinVel',\
                     'unimodal_ftForce',\
                     ##'unimodal_visionChange',\
                     'unimodal_ppsForce',\
                     'unimodal_fabricForce',\
-                    'crossmodal_targetRelativeDist', \
-                    'crossmodal_targetRelativeAng']
+                    'crossmodal_targetEEDist', \
+                    'crossmodal_targetEEAng']
     rf_center     = 'kinEEPos'
     modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
 
@@ -1880,8 +1880,8 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     ## subject = 'gatsbii'
     ## task    = 'feeding' 
-    ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagRelativeDist', \
-    ##                 'crossmodal_artagRelativeAng']
+    ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
+    ##                 'crossmodal_artagEEAng']
 
     #---------------------------------------------------------------------------           
     ## task    = 'touching'
@@ -1971,8 +1971,8 @@ if __name__ == '__main__':
         ##                 'unimodal_visionChange',\
         ##                 'unimodal_ppsForce',\
         ##                 'unimodal_fabricForce',\
-        ##                 'crossmodal_targetRelativeDist', \
-        ##                 'crossmodal_targetRelativeAng']
+        ##                 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
         task         = 'touching'    
         rf_center    = 'kinForearmPos'
         feature_list = ['unimodal_audioPower',\
@@ -2085,8 +2085,8 @@ if __name__ == '__main__':
                         #'unimodal_visionChange',\
                         'unimodal_ppsForce',\
                         'unimodal_fabricForce',\
-                        'crossmodal_targetRelativeDist', \
-                        'crossmodal_targetRelativeAng'
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng'
                         ]
         local_range = 0.15
 

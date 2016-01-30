@@ -48,7 +48,7 @@ import hrl_lib.util as ut
 def feature_extraction(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
              nSet=1, downSampleSize=200, success_viz=False, failure_viz=False, \
              save_pdf=False, solid_color=True, \
-             feature_list=['crossmodal_targetRelativeDist'], data_renew=False):
+             feature_list=['crossmodal_targetEEDist'], data_renew=False):
 
     save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
     if os.path.isfile(save_pkl) and data_renew is not True :

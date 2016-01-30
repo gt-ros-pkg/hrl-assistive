@@ -328,7 +328,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # vision artag -------------------------------------------------------------
         if 'vision_artag_time' in d.keys():
             vision_time = (np.array(d['vision_artag_time']) - init_time).tolist()
-            vision_pos  = d['vision_artag_pos']
+            vision_pos  = d['vision_artag_pos'] # timeLength x 3*tags
             vision_quat = d['vision_artag_quat']
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
@@ -1180,25 +1180,25 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
             if 'fabricForce' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('fabricForce')
 
-                
+            
         # Crossmodal feature - relative dist --------------------------
-        if 'crossmodal_targetRelativeDist' in feature_list:
+        if 'crossmodal_targetEEDist' in feature_list:
             kinEEPos     = d['kinEEPosList'][idx]
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            crossmodal_targetRelativeDist = []
+            crossmodal_targetEEDist = []
             for time_idx in xrange(len(timeList)):
-                crossmodal_targetRelativeDist.append( dist[time_idx])
+                crossmodal_targetEEDist.append( dist[time_idx])
 
-            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeDist])
-            if 'targetRelativeDist' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('targetRelativeDist')
+            if dataSample is None: dataSample = np.array(crossmodal_targetEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetEEDist])
+            if 'targetEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetEEDist')
 
 
         # Crossmodal feature - relative angle --------------------------
-        if 'crossmodal_targetRelativeAng' in feature_list:                
+        if 'crossmodal_targetEEAng' in feature_list:                
             kinEEQuat    = d['kinEEQuatList'][idx]
             kinTargetQuat = d['kinTargetQuatList'][idx]
 
@@ -1206,17 +1206,17 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
             ## kinTargetPos = d['kinTargetPosList'][idx]
             ## dist         = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
             
-            crossmodal_targetRelativeAng = []
+            crossmodal_targetEEAng = []
             for time_idx in xrange(len(timeList)):
 
                 startQuat = kinEEQuat[:,time_idx]
                 endQuat   = kinTargetQuat[:,time_idx]
 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
-                crossmodal_targetRelativeAng.append( abs(diff_ang) )
+                crossmodal_targetEEAng.append( abs(diff_ang) )
 
             ## fig = plt.figure()
-            ## ## plt.plot(crossmodal_targetRelativeAng)
+            ## ## plt.plot(crossmodal_targetEEAng)
             ## plt.plot( kinEEQuat[0] )
             ## plt.plot( kinEEQuat[1] )
             ## plt.plot( kinEEQuat[2] )
@@ -1226,49 +1226,48 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
             ## os.system('cp test.p* ~/Dropbox/HRL/')        
             ## sys.exit()
             
+            if dataSample is None: dataSample = np.array(crossmodal_targetEEAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetEEAng])
+            if 'targetEEAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetEEAng')
 
-            if dataSample is None: dataSample = np.array(crossmodal_targetRelativeAng)
-            else: dataSample = np.vstack([dataSample, crossmodal_targetRelativeAng])
-            if 'targetRelativeAng' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('targetRelativeAng')
-
-        # Crossmodal feature - vision relative dist --------------------------
-        if 'crossmodal_artagRelativeDist' in feature_list:
+        # Crossmodal feature - vision relative dist with main(first) vision target----
+        if 'crossmodal_artagEEDist' in feature_list:
             kinEEPos  = d['kinEEPosList'][idx]
-            visionArtagPos = d['visionArtagPosList'][idx]
+            visionArtagPos = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
 
             dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
-            crossmodal_artagRelativeDist = []
+            crossmodal_artagEEDist = []
             for time_idx in xrange(len(timeList)):
-                crossmodal_artagRelativeDist.append(dist[time_idx])
+                crossmodal_artagEEDist.append(dist[time_idx])
 
-            if dataSample is None: dataSample = np.array(crossmodal_artagRelativeDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeDist])
-            if 'artagRelativeDist' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('artagRelativeDist')
+            if dataSample is None: dataSample = np.array(crossmodal_artagEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagEEDist])
+            if 'artagEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('artagEEDist')
 
         # Crossmodal feature - vision relative angle --------------------------
-        if 'crossmodal_artagRelativeAng' in feature_list:                
+        if 'crossmodal_artagEEAng' in feature_list:                
             kinEEQuat    = d['kinEEQuatList'][idx]
-            visionArtagQuat = d['visionArtagQuatList'][idx]
+            visionArtagQuat = d['visionArtagQuatList'][idx][:4]
 
             kinEEPos  = d['kinEEPosList'][idx]
-            visionArtagPos = d['visionArtagPosList'][idx]
+            visionArtagPos = d['visionArtagPosList'][idx][:3]
             dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
             
-            crossmodal_artagRelativeAng = []
+            crossmodal_artagEEAng = []
             for time_idx in xrange(len(timeList)):
 
                 startQuat = kinEEQuat[:,time_idx]
                 endQuat   = visionArtagQuat[:,time_idx]
 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
-                crossmodal_artagRelativeAng.append( abs(diff_ang) )
+                crossmodal_artagEEAng.append( abs(diff_ang) )
 
-            if dataSample is None: dataSample = np.array(crossmodal_artagRelativeAng)
-            else: dataSample = np.vstack([dataSample, crossmodal_artagRelativeAng])
-            if 'artagRelativeAng' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('artagRelativeAng')
+            if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])
+            if 'artagEEAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('artagEEAng')
 
         # ----------------------------------------------------------------
         dataList.append(dataSample)
