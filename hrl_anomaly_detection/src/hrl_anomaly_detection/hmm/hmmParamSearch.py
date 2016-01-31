@@ -9,6 +9,8 @@ from util import *
 import learning_util as util
 
 # catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
+# nohup rosrun hrl_anomaly_detection hmmParamSearch.py > optimization.log &
+# sed '/GHMM ghmm.py/d' optimization.log > optimizationClean.log
 
 class HmmClassifier(BaseEstimator, ClassifierMixin):
 
@@ -49,7 +51,8 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         use try/except blog with exceptions. This is just for short syntax.
         """
 
-        subject_names = ['s2', 's3', 's4']
+        # subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
+        subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
         task_name = 'feeding'
 
         # Loading success and failure data
@@ -163,7 +166,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
         truePositiveRate = float(truePos) / float(truePos + falseNeg) * 100.0
         trueNegativeRate = float(trueNeg) / float(trueNeg + falsePos) * 100.0
-        print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate
+        print 'True Negative Rate:', trueNegativeRate, 'True Positive Rate:', truePositiveRate, '\n'
 
         return truePositiveRate + trueNegativeRate
         # return truePos + trueNeg
@@ -231,6 +234,8 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         return dataList_scaled
 
 
+print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
+
 # Specify parameters and possible parameter values
 tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'cov_mult': [1.0, 3.0, 5.0, 10.0]}
 
@@ -239,9 +244,11 @@ gs = GridSearchCV(HmmClassifier(), tuned_params, cv=2)
 gs.fit(X=[1,2,3,4], y=[1,1,1,1])
 
 print 'Grid Search:'
-print gs.best_params_, gs.best_score_, gs.grid_scores_
-print '-'*50, '\n', '-'*50
+print 'Best params:', gs.best_params_
+print 'Best Score:', gs.best_score_
+# print 'Grid scores:', gs.grid_scores_
 
+print '\n', '-'*50, '\nBeginning Randomized Search\n', '-'*50, '\n'
 
 # specify parameters and distributions to sample from
 param_dist = {'downSampleSize': sp_randint(100, 300),
@@ -254,4 +261,6 @@ random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_di
 random_search.fit(X=[1,2,3,4], y=[1,1,1,1])
 
 print 'Randomized Search:'
-print gs.best_params_, gs.best_score_, gs.grid_scores_
+print 'Best params:', random_search.best_params_
+print 'Best Score:', random_search.best_score_
+# print 'Grid scores:', random_search.grid_scores_
