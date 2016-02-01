@@ -98,8 +98,12 @@ class learning_hmm_multi_n(learning_base):
         self.km = None
         self.l_ths_mult = [-1.0]*self.nState
 
+        self.ll_idx = None
+        self.ll_logp = None
+        self.ll_post = None
+
         # emission domain of this model        
-        self.F = ghmm.Float()  
+        self.F = ghmm.Float()
 
         # print 'HMM initialized for', self.check_method
 
@@ -252,6 +256,7 @@ class learning_hmm_multi_n(learning_base):
                                                                    bPosterior=True, converted_X=True)
                                                                    for i in xrange(n))
                 _, ll_idx, ll_logp, ll_post = zip(*r)
+                self.ll_idx, self.ll_logp, self.ll_post = ll_idx, ll_logp, ll_post
 
                 l_idx = []
                 l_logp = []
