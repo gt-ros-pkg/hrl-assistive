@@ -34,7 +34,6 @@ import numpy as np
 
 # ROS
 import rospy, roslib
-roslib.load_manifest('hrl_manipulation_task')
 import tf
 import PyKDL
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
@@ -50,17 +49,13 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm, verbose=False):
-        mpcBaseAction.__init__(self, d_robot, controller, arm)
+    def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
+        mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
 
         #Variables...! #
-        if arm == 'l':  self.arm = 'left'
-        else:  self.arm = 'right'
         self.stop_motion = False
         self.verbose = verbose
 
-        self.bowl_frame_kinect  = None
-        self.mouth_frame_kinect = None
         self.default_frame      = PyKDL.Frame()
 
         self.initCommsForArmReach()                            
@@ -71,12 +66,12 @@ class armReachAction(mpcBaseAction):
             if self.getJointAngles() != []:
                 if verbose:
                     print "--------------------------------"
-                    print "Current "+self.arm+" arm joint angles"
+                    print "Current "+self.arm_name+" arm joint angles"
                     print self.getJointAngles()
-                    print "Current "+self.arm+" arm pose"
-                    print self.getEndeffectorPose(tool=0)
-                    print "Current "+self.arm+" arm orientation (w/ euler rpy)"
-                    print self.getEndeffectorRPY(tool=0) #*180.0/np.pi
+                    print "Current "+self.arm_name+" arm pose"
+                    print self.getEndeffectorPose(tool=tool_id)
+                    print "Current "+self.arm_name+" arm orientation (w/ euler rpy)"
+                    print self.getEndeffectorRPY(tool=tool_id) #*180.0/np.pi
                     print "--------------------------------"
                 break
             rate.sleep()
@@ -90,7 +85,7 @@ class armReachAction(mpcBaseAction):
         
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
-        ## self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
+        ## rospy.Subscriber('/ar_track_alvar/artag_vision_pose_0', PoseStamped, self.tagPoseCallback)
 
         if self.verbose: rospy.loginfo("ROS-based communications are set up .")
                                     
@@ -117,6 +112,19 @@ class armReachAction(mpcBaseAction):
         
         self.motions = {}
 
+        ## Pushing white microwave motoins --------------------------------------------------------
+        # It uses the l_gripper_push_frame
+        self.motions['initMicroWhite'] = {}
+        self.motions['initMicroWhite']['left'] = \
+          [['MOVEJ', '[-1.19, 0.667, -0.36, -1.63, 4.32, -1.02, -2.007]', 5.0]] 
+        self.motions['initMicroWhite']['right'] = []
+
+        self.motions['runMicroWhite'] = {}
+        self.motions['runMicroWhite']['left'] = \
+          [['MOVEJ', '[-1.19, 0.667, -0.36, -1.63, 4.32, -1.02, -2.007]', 5.0]] 
+        self.motions['runMicroWhite']['right'] = []
+
+
         ## Pushing cabinet motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initCabinet'] = {}
@@ -142,7 +150,7 @@ class armReachAction(mpcBaseAction):
         req = req.data
         self.stop_motion = False
 
-        self.parsingMovements(self.motions[req][self.arm])
+        self.parsingMovements(self.motions[req][self.arm_name])
         return "Completed to execute "+req 
 
     
@@ -156,19 +164,9 @@ class armReachAction(mpcBaseAction):
         try:
             self.setStopRight() #Sends message to service node
         except:
-            rospy.loginfo("Couldn't stop "+self.arm+" arm! ")
+            rospy.loginfo("Couldn't stop "+self.arm_name+" arm! ")
 
-        ## posStopL = Point()
-        ## quatStopL = Quaternion()
 
-        ## # TODO: location should be replaced into the last scooping or feeding starts.
-        ## print "Moving left arm to safe position "
-        ## if data.data == 'InterruptHead':
-        ##     self.feeding([0])
-        ##     self.setPostureGoal(self.lInitAngFeeding, 10)
-        ## else:
-        ##     self.scooping([0])
-        ##     self.setPostureGoal(self.lInitAngScooping, 10)
 
 
 
@@ -184,11 +182,12 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
+    tool_id    = 2
     if opt.arm == 'l': verbose = False
     else: verbose = True
         
     rospy.init_node('arm_reacher_pushing')
-    ara = armReachAction(d_robot, controller, arm, verbose)
+    ara = armReachAction(d_robot, controller, arm, tool_id, verbose)
     rospy.spin()
 
 

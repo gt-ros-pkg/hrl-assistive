@@ -1076,27 +1076,30 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
 
             # magnitude
             if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce = np.linalg.norm(ftForce, axis=0)
-            else:                
-                unimodal_ftForce = ftForce
+                unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+                # individual force
+                unimodal_ftForce_ind = ftForce[2:3,:]                
+                
+                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-            if dataSample is None: dataSample = np.array(unimodal_ftForce)
-            else: dataSample = np.vstack([dataSample, unimodal_ftForce])
-
-            if 'ftForce_mag' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('ftForce_mag')
-
-            # individual force
-            if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce = ftForce                
-                if dataSample is None: dataSample = np.array(unimodal_ftForce)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce])
+                if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
+                else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
 
                 if 'ftForce_z' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_x')
-                    param_dict['feature_names'].append('ftForce_y')
+                    param_dict['feature_names'].append('ftForce_mag')
+                    ## param_dict['feature_names'].append('ftForce_x')
+                    ## param_dict['feature_names'].append('ftForce_y')
                     param_dict['feature_names'].append('ftForce_z')
-                            
+            else:                
+                unimodal_ftForce_mag = ftForce
+            
+                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+                if 'ftForce_mag' not in param_dict['feature_names']:
+                    param_dict['feature_names'].append('ftForce_mag')
+
             ## ftPos   = d['kinEEPosList'][idx]
             ## ftForce_pca = param_dict['unimodal_ftForce_pca']
 

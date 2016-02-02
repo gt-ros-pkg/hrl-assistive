@@ -31,7 +31,6 @@
 # system
 import rospy
 import roslib
-roslib.load_manifest('hrl_anomaly_detection')
 import os, sys, copy
 import threading
 
@@ -39,6 +38,7 @@ import threading
 import numpy as np
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection import data_manager as dm
 from sound_play.libsoundplay import SoundClient
 
 # learning
@@ -59,13 +59,15 @@ import matplotlib.pyplot as plt
 
 class anomaly_detector:
 
-    def __init__(self, task_name, feature_list, save_data_path, training_data_pkl, verbose=False, \
+    def __init__(self, subject_names, task_name, check_method, save_data_path, training_data_pkl, \
+                 verbose=False, \
                  online_raw_viz=False):
         rospy.init_node(task_name)
         rospy.loginfo('Initializing anomaly detector')
 
+        self.subject_names     = subject_names
         self.task_name         = task_name
-        self.feature_list      = feature_list
+        self.check_method      = check_method
         self.save_data_path    = save_data_path
         self.training_data_pkl = os.path.join(save_data_path, training_data_pkl)
         self.online_raw_viz    = online_raw_viz
@@ -91,9 +93,17 @@ class anomaly_detector:
         '''
         Load feature list
         '''
-        self.rf_radius = rospy.get_param('hrl_manipulation_task/receptive_field_radius')
-        self.nState    = 15
-        self.cov_mult  = 1.0
+        self.rf_radius = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/rf_radius')
+        self.rf_center = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/rf_center')
+        self.downSampleSize = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/downSampleSize')
+        self.feature_list = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/feature_list')
+
+        # Generative modeling
+        self.nState    = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/states')
+        self.cov_mult  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
+
+        # Discriminative classifier
+        self.cov_mult  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
         self.threshold = -200.0
     
     def initComms(self):
@@ -112,28 +122,95 @@ class anomaly_detector:
 
     def initDetector(self):
 
-        if os.path.isfile(self.training_data_pkl) is not True: 
-            print "There is no saved data"
-            sys.exit()
-        
-        data_dict = ut.load_pickle(self.training_data_pkl)
-        self.trainingData, self.param_dict = extractLocalFeature(data_dict['trainData'], self.feature_list, \
-                                                            self.rf_radius)
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_exp.pkl')
+        if os.path.isfile(modeling_pkl) is False:
 
-        # training hmm
-        self.nEmissionDim = len(self.trainingData)
-        detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')        
-        self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, check_method='progress', verbose=False)
-        
-        ret = self.ml.fit(self.trainingData, cov_mult=[self.cov_mult]*self.nEmissionDim**2, ml_pkl=detection_param_pkl, use_pkl=True)
+            _, success_data, failure_data, _ = dm.feature_extraction(self.subject_names, self.task_name, \
+                                                                     self.save_data_path, \
+                                                                     self.save_data_path, self.rf_center, \
+                                                                     self.rf_radius, \
+                                                                     downSampleSize=self.downSampleSize, \
+                                                                     feature_list=self.feature_list)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
+            # index selection
+            success_idx  = range(len(successData[0]))
+            failure_idx  = range(len(failureData[0]))
 
-    
+            nTrain       = int( 0.7*len(success_idx) )    
+            train_idx    = random.sample(success_idx, nTrain)
+            success_test_idx = [x for x in success_idx if not x in train_idx]
+            failure_test_idx = failure_idx
+
+            # data structure: dim x sample x sequence
+            trainingData     = successData[:, train_idx, :]
+            normalTestData   = successData[:, success_test_idx, :]
+            abnormalTestData = failureData[:, failure_test_idx, :]
+
+            print "======================================"
+            print "Training data: ", np.shape(trainingData)
+            print "Normal test data: ", np.shape(normalTestData)
+            print "Abnormal test data: ", np.shape(abnormalTestData)
+            print "======================================"
+
+            # training hmm
+            self.nEmissionDim = len(trainingData)
+            detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')        
+            self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, verbose=False)        
+            ret = self.ml.fit(self.success_data, cov_mult=[self.cov_mult]*self.nEmissionDim**2, \
+                              ml_pkl=detection_param_pkl, use_pkl=True)
+
+            if ret == 'Failure': 
+                print "-------------------------"
+                print "HMM returned failure!!   "
+                print "-------------------------"
+                sys.exit()
+
+            #-----------------------------------------------------------------------------------------
+            # Classifier training data
+            #-----------------------------------------------------------------------------------------
+            testDataX = []
+            testDataY = []
+            for i in xrange(nEmissionDim):
+                temp = np.vstack([normalClassifierData[i], abnormalClassifierData[i]])
+                testDataX.append( temp )
+
+            testDataY = np.hstack([ -np.ones(len(normalClassifierData[0])), \
+                                    np.ones(len(abnormalClassifierData[0])) ])
+
+            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                    [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                                                                    ml.nEmissionDim, ml.scale, ml.nState,\
+                                                                    startIdx=startIdx, \
+                                                                    bPosterior=True)
+                                                                    for i in xrange(len(testDataX[0])))
+            _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+            ll_classifier_train_X = []
+            ll_classifier_train_Y = []
+            for i in xrange(len(ll_logp)):
+                l_X = []
+                l_Y = []
+                for j in xrange(len(ll_logp[i])):        
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+                    if testDataY[i] > 0.0: l_Y.append(1)
+                    else: l_Y.append(-1)
+
+                ll_classifier_train_X.append(l_X)
+                ll_classifier_train_Y.append(l_Y)
+                
+
+        else:
+            
+
+                
+
+        # training classifier
+        dtc = cb.classifier( ml, method=method, nPosteriors=nState, nLength=len(trainingData[0,0]) )        
+
+
+
+            
     def enablerCallback(self, msg):
 
         if msg.data is True: 
@@ -154,6 +231,9 @@ class anomaly_detector:
         self.audio_head_joints = msg.audio_head_joints
         self.audio_cmd         = msg.audio_cmd
 
+        self.audio_wrist_rms   = msg.audio_wrist_rms
+        self.audio_wrist_mfcc  = msg.audio_wrist_mfcc
+
         self.kinematics_ee_pos      = msg.kinematics_ee_pos
         self.kinematics_ee_quat     = msg.kinematics_ee_quat
         self.kinematics_jnt_pos     = msg.kinematics_jnt_pos
@@ -171,6 +251,16 @@ class anomaly_detector:
         self.pps_skin_left  = msg.pps_skin_left
         self.pps_skin_right = msg.pps_skin_right
         
+        self.fabric_skin_centers_x = msg.fabric_skin_centers_x
+        self.fabric_skin_centers_y = msg.fabric_skin_centers_y
+        self.fabric_skin_centers_z = msg.fabric_skin_centers_z
+        self.fabric_skin_normals_x = msg.fabric_skin_normals_x
+        self.fabric_skin_normals_y = msg.fabric_skin_normals_y
+        self.fabric_skin_normals_z = msg.fabric_skin_normals_z
+        self.fabric_skin_values_x  = msg.fabric_skin_values_x
+        self.fabric_skin_values_y  = msg.fabric_skin_values_y
+        self.fabric_skin_values_z  = msg.fabric_skin_values_z
+
 
     def extractLocalFeature(self):
 
@@ -269,7 +359,7 @@ class anomaly_detector:
                 if self.count > 280: 
                     for i, feature_name in enumerate(feature_list):
                         ax = self.fig.add_subplot( len(self.plot_data.keys())*100+10+(i+1) )
-                        ax.plot(np.array(self.trainingData[i]).T, 'b')                        
+                        ax.plot(np.array(self.success_data[i]).T, 'b')                        
                     plt.show()
             
             # Run anomaly checker
@@ -292,14 +382,14 @@ class anomaly_detector:
 
 if __name__ == '__main__':
         
+    subject_names     = ['gatsbii']
+    task_name         = 'scooping'
+    ## feature_list      = ['unimodal_ftForce', 'crossmodal_targetEEDist']
+    save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data'    
+    training_data_pkl = task_name+'_dataSet'
+    check_method      = 'progress_time_cluster' # cssvm
 
-    task_name    = 'scooping'
-    feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist']
-    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016'
-    training_data_pkl = task_name+'_dataSet_0'
-
-    ad = anomaly_detector(task_name, feature_list, save_data_path, training_data_pkl, online_raw_viz=False)
+    ad = anomaly_detector(subject_names, task_name, check_method, save_data_path, training_data_pkl, \
+                          online_raw_viz=False)
     ad.run()
     

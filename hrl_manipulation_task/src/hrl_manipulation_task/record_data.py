@@ -301,7 +301,7 @@ class logger:
             if self.audio_wrist is not None: 
                 audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()                
                 msg.audio_wrist_rms       = audio_wrist_rms
-                msg.audio_wrist_mfcc       = audio_wrist_mfcc
+                msg.audio_wrist_mfcc      = audio_wrist_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()

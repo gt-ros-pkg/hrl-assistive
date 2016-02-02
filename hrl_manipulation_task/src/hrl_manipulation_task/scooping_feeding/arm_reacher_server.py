@@ -51,12 +51,10 @@ from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm, verbose=False):
-        mpcBaseAction.__init__(self, d_robot, controller, arm)
+    def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
+        mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
 
         #Variables...! #
-        if arm == 'l':  self.arm = 'left'
-        else:  self.arm = 'right'
         self.stop_motion = False
         self.verbose = verbose
 
@@ -74,11 +72,11 @@ class armReachAction(mpcBaseAction):
             if self.getJointAngles() != []:
                 if verbose:
                     print "--------------------------------"
-                    print "Current "+self.arm+" arm joint angles"
+                    print "Current "+self.arm_name+" arm joint angles"
                     print self.getJointAngles()
-                    print "Current "+self.arm+" arm pose"
+                    print "Current "+self.arm_name+" arm pose"
                     print self.getEndeffectorPose(tool=1)
-                    print "Current "+self.arm+" arm orientation (w/ euler rpy)"
+                    print "Current "+self.arm_name+" arm orientation (w/ euler rpy)"
                     print self.getEndeffectorRPY(tool=1) #*180.0/np.pi
                     print "--------------------------------"
                 break
@@ -241,7 +239,7 @@ class armReachAction(mpcBaseAction):
             self.lookAt(self.mouth_frame, tag_base='head')                            
             return "Completed to move head"
         else:
-            self.parsingMovements(self.motions[task][self.arm])
+            self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task 
         
                 
@@ -297,14 +295,14 @@ class armReachAction(mpcBaseAction):
         try:
             self.setStopRight() #Sends message to service node
         except:
-            rospy.loginfo("Couldn't stop "+self.arm+" arm! ")
+            rospy.loginfo("Couldn't stop "+self.arm_name+" arm! ")
 
         ## posStopL = Point()
         ## quatStopL = Quaternion()
 
         # TODO: location should be replaced into the last scooping or feeding starts.
         print "Moving left arm to safe position "
-        self.parsingMovements(self.motions['initScooping1'][self.arm])
+        self.parsingMovements(self.motions['initScooping1'][self.arm_name])
         
         ## if data.data == 'InterruptHead':
         ##     self.feeding([0])
@@ -426,12 +424,13 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
+    tool_id    = 1
     if opt.arm == 'l': verbose = False
     else: verbose = True
         
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
-    ara = armReachAction(d_robot, controller, arm, verbose)
+    ara = armReachAction(d_robot, controller, arm, tool_id, verbose)
     rospy.spin()
 
 

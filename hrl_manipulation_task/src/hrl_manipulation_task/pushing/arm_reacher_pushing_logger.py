@@ -34,7 +34,6 @@ import datetime
 
 # ROS library
 import rospy, roslib
-roslib.load_manifest('hrl_manipulation_task')
 
 # HRL library
 from hrl_srvs.srv import String_String
@@ -42,46 +41,72 @@ import hrl_lib.util as ut
 
 from hrl_manipulation_task.record_data import logger
 
-if __name__ == '__main__':
 
-    rospy.init_node('push_client')
+def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                            train=False, abnormal=False):
+
+    log.task = 'pushing'
+    log.initParams()
+    
+    ## Scooping -----------------------------------    
+    print "Initializing left arm for scooping"
+    print armReachActionLeft("initMicroWhite")
+    
+    print "Start to log!"    
+    log.log_start()
+    if detection_flag: log.enableDetector(True)
+    
+    print "Running scooping!"
+    print armReachActionLeft("runMicroWhite")
+
+    if detection_flag: log.enableDetector(False)
+    print "Finish to log!"    
+    log.close_log_file()
+
+    
+if __name__ == '__main__':
+    
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
+                 default=False, help='Continuously publish data.')
+    opt, args = p.parse_args()
+
+    rospy.init_node('arm_reach_client')
 
     rospy.wait_for_service("/arm_reach_enable")
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
-    ## rospy.wait_for_service("/right/arm_reach_enable")
-    ## armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
-    
-    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
-                 vision_change=False, pps=False, skin=False, subject="gatsbii", task='pushing', \
-                 verbose=False)
-
-    ## Pushing Microwave White------------------------
-    print "Initializing left arm for pushing"
-    print armReachActionLeft("initMicroWhite")
-
-    ut.get_keystroke('Hit a key to proceed next')        
-    
-    print "Running pushing!"    
-    print armReachActionLeft("runMicroWhite")
+    armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     
-    ## TEST -----------------------------------    
-    # TODO: this code should be run in parallel.
+    log = logger(ft=True, audio=True, wrist_audio=True, kinematics=True, vision_artag=True, \
+                 vision_change=False, \
+                 pps=False, skin=False, \
+                 subject="gatsbii", task='pushing', data_pub=opt.bDataPub, verbose=False)
+
+    last_trial  = '1'
+    last_detect = '2'
+                 
+    while not rospy.is_shutdown():
+
+        detection_flag = False
+        
+        trial  = raw_input('Enter trial\'s status (e.g. 1:MicroWhite, else: exit): ')
+        if trial=='': trial=last_trial
+            
+        if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
+            detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
+            if detect == '': detect=last_detect
+            if detect == '1': detection_flag = True
+            
+            if trial == '1':
+                pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag)
+        else:
+            break
+
+        last_trial  = trial
+        last_detect = detect
     
-    ## Pushing -----------------------------------
-    ## print "Initializing right arm for pushing"
-    ## print armReachActionRight("initCabinet")
-
-    ## ut.get_keystroke('Hit a key to proceed next')        
-    ## print "Start to log!"    
-    ## log.log_start()
-    
-    print "Running pushing!"    
-    print armReachActionRight("runCabinet")
-
-    ## print "Finish to log!"    
-    ## log.close_log_file()
-
     ## t1 = datetime.datetime.now()
     ## t2 = datetime.datetime.now()
     ## t  = t2-t1

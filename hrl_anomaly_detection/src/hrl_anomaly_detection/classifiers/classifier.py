@@ -78,7 +78,10 @@ class classifier(learning_base):
             self.ths_mult = ths_mult
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors) 
-            return
+        elif self.method == 'fixed':
+            self.mu  = 0.0
+            self.std = 0.0
+            self.mult = 0.0
             
 
     def fit(self, X, y, ll_idx=None):
@@ -117,7 +120,11 @@ class classifier(learning_base):
             ##     learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i], g_sig, self.nPosteriors)
 
             return self.l_statePosterior, self.ll_mu, self.ll_std
-        
+
+        elif self.method == 'fixed':
+            self.mu  = np.mean(ll_logp)
+            self.std = np.std(ll_losp)
+                
 
     def predict(self, X, y=None):
         '''
@@ -148,8 +155,12 @@ class classifier(learning_base):
                 err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp
             else:
                 err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp
-
             return err 
+        elif self.method == 'fixed':
+            logp = X[0]
+            err = self.mu + self.ths_mult * self.std - logp
+            return err
+
             
 
     def decision_function(self, X):

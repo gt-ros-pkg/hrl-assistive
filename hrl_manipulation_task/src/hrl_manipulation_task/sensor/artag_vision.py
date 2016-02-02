@@ -72,8 +72,8 @@ class artag_vision(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "artag_vision>> Initialize pusblishers and subscribers"
-        for i in xrange(self.nTags):
-            self.artag_pub = rospy.Publisher("ar_track_alvar/artag_vision_pose_"+str(i), PoseStamped, latch=True)
+        ## for i in xrange(self.nTags):
+        ##     self.artag_pub = rospy.Publisher("ar_track_alvar/artag_vision_pose_"+str(i), PoseStamped, latch=True)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
     def initParams(self):

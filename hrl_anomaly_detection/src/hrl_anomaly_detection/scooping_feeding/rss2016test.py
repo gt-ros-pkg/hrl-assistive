@@ -47,8 +47,8 @@ import scipy
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
-from hrl_anomaly_detection.data_manager import *
-from hrl_anomaly_detection.scooping_feeding import util as sutil
+from hrl_anomaly_detection import data_manager as dm
+## from hrl_anomaly_detection.scooping_feeding import util as sutil
 ## import PyKDL
 ## import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 ## import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
@@ -77,12 +77,12 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, trainingData, abnormalTestData,_ = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                   processed_data_path, rf_center, local_range,\
-                                                                   nSet=nSet, \
-                                                                   downSampleSize=downSampleSize, \
-                                                                   feature_list=feature_list, \
-                                                                   data_renew=data_renew)
+    _, trainingData, abnormalTestData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                                                                processed_data_path, rf_center, local_range,\
+                                                                nSet=nSet, \
+                                                                downSampleSize=downSampleSize, \
+                                                                feature_list=feature_list, \
+                                                                data_renew=data_renew)
 
     normalTestData = None                                    
     print "======================================"
@@ -124,9 +124,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
                 X = [x[i,:j] for x in trainingData]
 
-                exp_logp, logp = ml.expLoglikelihood(X, ths, smooth=smooth, bLoglikelihood=True)
+                ## exp_logp, logp = ml.expLoglikelihood(X, ths, smooth=smooth, bLoglikelihood=True)
+                logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
-                exp_log_ll[i].append(exp_logp)
+                ## exp_log_ll[i].append(exp_logp)
 
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
@@ -146,7 +147,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             plt.legend(loc=3,prop={'size':16})
             
         plt.plot(log_ll[i], 'b-', lw=3.0)
-        plt.plot(exp_log_ll[i], 'm-')            
+        ## plt.plot(exp_log_ll[i], 'm-')            
                                              
     # normal test data
     if useNormalTest and False:
@@ -222,12 +223,12 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
                         useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                         hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, successData, failureData,_ = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                             processed_data_path, rf_center, local_range,\
-                                                             nSet=nSet, \
-                                                             downSampleSize=downSampleSize, \
-                                                             feature_list=feature_list, \
-                                                             data_renew=data_renew)
+    _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                                                          processed_data_path, rf_center, local_range,\
+                                                          nSet=nSet, \
+                                                          downSampleSize=downSampleSize, \
+                                                          feature_list=feature_list, \
+                                                          data_renew=data_renew)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -335,14 +336,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     else:
 
-        _, successData, failureData,_ = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                 processed_data_path, rf_center, local_range,\
-                                                                 nSet=nSet, \
-                                                                 downSampleSize=downSampleSize, \
-                                                                 feature_list=feature_list, \
-                                                                 data_renew=data_renew)
+        _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                                                              processed_data_path, rf_center, local_range,\
+                                                              nSet=nSet, \
+                                                              downSampleSize=downSampleSize, \
+                                                              feature_list=feature_list, \
+                                                              data_renew=data_renew)
                            
-        kFold_list = kFold_data_index(len(failureData[0]), len(successData[0]), nAbnormalFold, nNormalFold )
+        kFold_list = dm.kFold_data_index(len(failureData[0]), len(successData[0]), nAbnormalFold, nNormalFold )
 
         d = {}
         d['successData'] = successData
@@ -356,7 +357,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # parameters
     startIdx    = 4
     scale       = 10.0
-    method_list = ['svm', 'cssvm', 'progress_time_cluster']
+    method_list = ['svm', 'cssvm', 'progress_time_cluster', 'fixed']
     nPoints     = 10
 
     #-----------------------------------------------------------------------------------------
@@ -490,7 +491,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys() or method=='progress_time_cluster':
+        if method not in ROC_data.keys():# or method=='progress_time_cluster':
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -566,13 +567,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             if ROC_data[method]['complete'] == True: continue
 
             # data preparation
-            if method == 'svm':
+            if method == 'svm' or method == 'cssvm':
                 scaler = preprocessing.StandardScaler()
                 ## scaler = preprocessing.scale()
                 X_scaled = scaler.fit_transform(X_train_org)
-            elif method == 'cssvm':
-                scaler = preprocessing.StandardScaler()
-                X_scaled = scaler.fit_transform(X_train_org)                    
             else:
                 X_scaled = X_train_org
             print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
@@ -589,6 +587,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 elif method == 'progress_time_cluster':
                     ## thresholds = -np.linspace(1., 50, nPoints)+2.0
                     thresholds = -np.linspace(1., 4, nPoints)+2.0
+                    dtc.set_params( ths_mult = thresholds[j] )
+                elif method == 'fixed':
+                    thresholds = np.linspace(-1., 5, nPoints)
                     dtc.set_params( ths_mult = thresholds[j] )
 
                 ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
@@ -617,7 +618,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     for jj in xrange(len(ll_classifier_test_X[ii])):
                         if method == 'svm' or method == 'cssvm':
                             X = scaler.transform([ll_classifier_test_X[ii][jj]])
-                        elif method == 'progress_time_cluster':
+                        elif method == 'progress_time_cluster' or method == 'fixed':
                             X = ll_classifier_test_X[ii][jj]
 
                         est_y    = dtc.predict(X, y=ll_classifier_test_Y[ii][jj:jj+1])
@@ -741,12 +742,12 @@ def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_
         
     else:
 
-        _, successData, failureData,_ = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                 processed_data_path, rf_center, local_range,\
-                                                                 nSet=nSet, \
-                                                                 downSampleSize=downSampleSize, \
-                                                                 feature_list=feature_list, \
-                                                                 data_renew=data_renew)
+        _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                                                              processed_data_path, rf_center, local_range,\
+                                                              nSet=nSet, \
+                                                              downSampleSize=downSampleSize, \
+                                                              feature_list=feature_list, \
+                                                              data_renew=data_renew)
 
         # index selection
         success_idx  = range(len(successData[0]))
@@ -868,7 +869,7 @@ def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_
             Y_org.append(ll_Y[i][j])
 
     # train svm
-    method_list = ['svm', 'cssvm', 'progress_time_cluster']
+    method_list = ['svm', 'cssvm', 'progress_time_cluster', 'fixed']
     method_list = ['cssvm']
     ROC_data = {}
     from hrl_anomaly_detection.classifiers import classifier as cb
@@ -1063,12 +1064,12 @@ def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_p
         abnormalTestData = d['abnormalTestData']
     else:
 
-        _, successData, failureData,_ = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                 processed_data_path, rf_center, local_range,\
-                                                                 nSet=nSet, \
-                                                                 downSampleSize=downSampleSize, \
-                                                                 feature_list=feature_list, \
-                                                                 data_renew=data_renew)
+        _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                                                              processed_data_path, rf_center, local_range,\
+                                                              nSet=nSet, \
+                                                              downSampleSize=downSampleSize, \
+                                                              feature_list=feature_list, \
+                                                              data_renew=data_renew)
 
         # index selection
         success_idx  = range(len(successData[0]))
@@ -1233,12 +1234,12 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
                     useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                     hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, successData, failureData,_ = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                             processed_data_path, rf_center, local_range,\
-                                                             nSet=nSet, \
-                                                             downSampleSize=downSampleSize, \
-                                                             feature_list=feature_list, \
-                                                             data_renew=data_renew)
+    _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                                                          processed_data_path, rf_center, local_range,\
+                                                          nSet=nSet, \
+                                                          downSampleSize=downSampleSize, \
+                                                          feature_list=feature_list, \
+                                                          data_renew=data_renew)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -1466,7 +1467,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     # distance
                     new_data_list = []
                     for d in data_list:                    
-                        new_data_list.append( np.linalg.norm(d, axis=0) )
+                        new_data_list.append( np.linalg.norm(d[:3], axis=0) )
                     data_list = new_data_list
 
                 elif 'vision_change' in modality:
@@ -1677,12 +1678,12 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
 
 
     allData, trainingData, abnormalTestData, abnormalTestNameList\
-      = sutil.feature_extraction(subject_names, task_name, raw_data_path, \
-                                 processed_data_path, rf_center, local_range,\
-                                 nSet=nSet, \
-                                 downSampleSize=downSampleSize, \
-                                 feature_list=feature_list, \
-                                 data_renew=data_renew)
+      = dm.feature_extraction(subject_names, task_name, raw_data_path, \
+                              processed_data_path, rf_center, local_range,\
+                              nSet=nSet, \
+                              downSampleSize=downSampleSize, \
+                              feature_list=feature_list, \
+                              data_renew=data_renew)
 
     print "---------------------------------------------------"
     print np.shape(trainingData), np.shape(abnormalTestData)
@@ -1868,7 +1869,7 @@ if __name__ == '__main__':
                     'unimodal_ftForce',\
                     ##'unimodal_visionChange',\
                     'unimodal_ppsForce',\
-                    'unimodal_fabricForce',\
+                    ##'unimodal_fabricForce',\
                     'crossmodal_targetEEDist', \
                     'crossmodal_targetEEAng']
     rf_center     = 'kinEEPos'
@@ -1937,7 +1938,7 @@ if __name__ == '__main__':
         target_data_set = 0
         rf_center       = 'kinEEPos'
         modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-        local_range     = 0.15
+        local_range     = 0.2
 
         data_selection([subject], task, raw_data_path, save_data_path,\
                        nSet=target_data_set, downSampleSize=downSampleSize, \
@@ -1953,11 +1954,11 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
 
-        sutil.feature_extraction([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
-                                 nSet=target_data_set, downSampleSize=downSampleSize, \
-                                 success_viz=success_viz, failure_viz=failure_viz,\
-                                 save_pdf=opt.bSavePdf, solid_color=True,\
-                                 feature_list=feature_list, data_renew=opt.bDataRenew)
+        dm.feature_extraction([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+                              nSet=target_data_set, downSampleSize=downSampleSize, \
+                              success_viz=success_viz, failure_viz=failure_viz,\
+                              save_pdf=opt.bSavePdf, solid_color=True,\
+                              feature_list=feature_list, data_renew=opt.bDataRenew)
 
     elif opt.bPCAPlot:
         '''
@@ -2059,13 +2060,12 @@ if __name__ == '__main__':
         ## rf_center    = 'kinForearmPos'
         local_range  = 0.15
 
-        nState    = 10
-        threshold = 0.0
-        smooth          = False #only related with expLoglikelihood
+        nState       = 10
+        threshold    = 0.0
+        smooth       = False #only related with expLoglikelihood
         ## cluster_type    = 'time'
         ## cluster_type = 'state'
-        cluster_type    = 'none'
-        classifier_type = 'cssvm'
+        cluster_type = 'none'
         
         evaluation_all([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
                        nSet=target_data_set, downSampleSize=downSampleSize, \
