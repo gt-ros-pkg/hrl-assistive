@@ -47,7 +47,8 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         """
 
         # subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
-        subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
+        # subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
+        subject_names = ['s2']
         task_name = 'feeding'
 
         # Loading success and failure data
@@ -62,7 +63,9 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         trainData, _ = loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose)
 
         # Possible pass in trainData through X (thus utilizing the cross-validation in sklearn)
-        print 'Lengths of data:', len(trainData), len(trainData[0])
+        # print 'Number of modalities (dimensions):', len(trainData)
+        # print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
+        # print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
         # TODO: Notice above!!
 
         # minimum and maximum vales for scaling from Daehyung
@@ -87,8 +90,6 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, check_method='progress', anomaly_offset=self.anomaly_offset, verbose=self.verbose)
         ret = self.hmm.fit(xData=self.trainData, cov_mult=[self.cov_mult]*16)
 
-        print 'll_idx, ll_logp, ll_post', self.hmm.ll_idx, self.hmm.ll_logp, self.hmm.ll_post
-
         if ret == 'Failure':
             print 'HMM return was a failure!'
             return self
@@ -101,17 +102,34 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         if not self.isFitted:
             return 0
 
-        print 'loglikelihood()', self.hmm.loglikelihood(self.trainData)
-        print '-'*50
-        likelihood, posterior = self.hmm.loglikelihoods(self.trainData, bPosterior=True)
-        print 'loglikelihoods(), likelihood:', likelihood
-        print 'loglikelihoods(), posterior:', posterior
-        print '-'*50
-        exp_logp, logp = self.hmm.expLoglikelihood(self.trainData, self.hmm.l_ths_mult, bLoglikelihood=True)
-        print 'expLoglikelihood() exp_logp:', exp_logp
-        print 'expLoglikelihood() logp:', logp
+        log_ll = []
+        # exp_log_ll = []        
+        for i in xrange(len(self.trainData[0])):
+            log_ll.append([])
+            # exp_log_ll.append([])
+            for j in range(2, len(self.trainData[0][i])):
+                X = [x[i,:j] for x in np.array(self.trainData)]                
+                exp_logp, logp = self.hmm.expLoglikelihood(X, self.hmm.l_ths_mult, bLoglikelihood=True)
+                log_ll[i].append(logp)
+                # exp_log_ll[i].append(exp_logp)
 
-        return 0
+        logs = [x[-1] for x in log_ll]
+        print 'expLoglikelihood() log_ll:', np.shape(log_ll), sum(logs) / float(len(logs))
+        return sum(logs) / float(len(logs))
+
+        # print 'expLoglikelihood() exp_log_ll:', np.shape(exp_log_ll), [x[-1] for x in exp_log_ll]
+
+        # print 'loglikelihood()', self.hmm.loglikelihood(self.trainData)
+        # print '-'*50
+        # likelihood, posterior = self.hmm.loglikelihoods(self.trainData, bPosterior=True)
+        # print 'loglikelihoods(), likelihood:', likelihood
+        # print 'loglikelihoods(), posterior:', posterior
+        # print '-'*50
+        # exp_logp, logp = self.hmm.expLoglikelihood(self.trainData, self.hmm.l_ths_mult, bLoglikelihood=True)
+        # print 'expLoglikelihood() exp_logp:', exp_logp
+        # print 'expLoglikelihood() logp:', logp
+
+        # return 0
 
     def scaleData(self, dataList, minVals=None, maxVals=None):
         nDimension = len(dataList)
