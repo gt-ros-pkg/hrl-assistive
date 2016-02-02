@@ -46,26 +46,12 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         use try/except blog with exceptions. This is just for short syntax.
         """
 
-        # subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
-        # subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
-        subject_names = ['s2']
-        task_name = 'feeding'
-
-        # Loading success and failure data
-        root_path = '/home/mycroft/feeding'
-        success_list, _ = getSubjectFileList(root_path, subject_names, task_name)
-
-        if self.verbose:
-            print "--------------------------------------------"
-            print "# of Success files: ", len(success_list)
-            print "--------------------------------------------"
-
-        trainData, _ = loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose)
+        trainData, _ = loadData(None, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose, features=X)
 
         # Possible pass in trainData through X (thus utilizing the cross-validation in sklearn)
-        # print 'Number of modalities (dimensions):', len(trainData)
-        # print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
-        # print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
+        print 'Number of modalities (dimensions):', len(trainData)
+        print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
+        print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
         # TODO: Notice above!!
 
         # minimum and maximum vales for scaling from Daehyung
@@ -145,6 +131,21 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         return dataList_scaled
 
 
+# subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
+# subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
+subject_names = ['s2']
+task_name = 'feeding'
+
+# Loading success and failure data
+root_path = '/home/mycroft/feeding'
+success_list, _ = getSubjectFileList(root_path, subject_names, task_name)
+
+print "--------------------------------------------"
+print "# of Success files: ", len(success_list)
+print "--------------------------------------------"
+
+features = loadFeatures(success_list)
+
 print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
 
 # Specify parameters and possible parameter values
@@ -152,7 +153,7 @@ tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState'
 
 # Run grid search
 gs = GridSearchCV(HmmClassifier(), tuned_params, cv=2)
-gs.fit(X=[1,2,3,4], y=[1,1,1,1])
+gs.fit(X=features, y=[1]*len(features))
 
 print 'Grid Search:'
 print 'Best params:', gs.best_params_
