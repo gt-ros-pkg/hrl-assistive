@@ -99,7 +99,7 @@ class learning_hmm_multi_n(learning_base):
         self.l_ths_mult = [-1.0]*self.nState
 
         # emission domain of this model        
-        self.F = ghmm.Float()  
+        self.F = ghmm.Float()
 
         # print 'HMM initialized for', self.check_method
 
