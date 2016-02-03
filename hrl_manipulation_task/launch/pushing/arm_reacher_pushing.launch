@@ -1,8 +1,6 @@
 <launch>
   
   <arg name="arm1" default="l"/>
-  <!--remap from="/ar_track_alvar/bowl_cen_pose" to="hrl_feeding_task/bowl_location"/-->  
-  <!--remap from="/ar_track_alvar/mouth_pose" to="hrl_feeding_task/head_location"/-->  
 
   <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection_pushing.yaml" />    
   <rosparam command="load" file="$(arg ad_param)" />

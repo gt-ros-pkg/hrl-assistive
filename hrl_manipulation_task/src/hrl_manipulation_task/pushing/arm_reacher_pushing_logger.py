@@ -43,13 +43,14 @@ from hrl_manipulation_task.record_data import logger
 
 
 def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
-                            train=False, abnormal=False):
+                            train=False, abnormal=False, bCont=False, status='skip'):
 
     log.task = 'pushing'
     log.initParams()
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
+    print armReachActionLeft("getMainTagPos")
     print armReachActionLeft("initMicroWhite")
     
     print "Start to log!"    
@@ -61,7 +62,7 @@ def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detect
 
     if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
-    log.close_log_file()
+    log.close_log_file(bCont, status)
 
     
 if __name__ == '__main__':
@@ -70,6 +71,10 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
                  default=False, help='Continuously publish data.')
+    p.add_option('--continue', '--c', action='store_true', dest='bCont',
+                 default=False, help='Continuously run program.')
+    p.add_option('--status', '--s', action='store', dest='bStatus',
+                 default=False, help='continous data collection status [sucesss, failure, skip(default)]')
     opt, args = p.parse_args()
 
     rospy.init_node('arm_reach_client')
@@ -78,29 +83,36 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
+
+    task_name = 'pushing_microwhite'
     
-    log = logger(ft=True, audio=True, wrist_audio=True, kinematics=True, vision_artag=True, \
+    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
                  pps=False, skin=False, \
-                 subject="gatsbii", task='pushing', data_pub=opt.bDataPub, verbose=False)
+                 subject="gatsbii", task=task_name, data_pub=opt.bDataPub, verbose=False)
 
+    # need to be removed somehow
     last_trial  = '1'
     last_detect = '2'
-                 
+    
     while not rospy.is_shutdown():
 
-        detection_flag = False
+        if opt.bCont: trial = last_trial
+        else:
+            trial  = raw_input('Enter trial\'s status (e.g. 1:MicroWhite, else: exit): ')
+            if trial=='': trial=last_trial
         
-        trial  = raw_input('Enter trial\'s status (e.g. 1:MicroWhite, else: exit): ')
-        if trial=='': trial=last_trial
-            
         if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
-            detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
+
+            if opt.bCont: detect = last_detect
+            else: detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
             if detect == '': detect=last_detect
             if detect == '1': detection_flag = True
+            else: detection_flag = False
             
             if trial == '1':
-                pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag)
+                pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                                        bCont=opt.bCont, status=opt.bStatus)
         else:
             break
 

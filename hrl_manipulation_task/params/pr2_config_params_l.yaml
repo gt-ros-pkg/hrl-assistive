@@ -36,7 +36,7 @@ haptic_mpc:
       rpy: [0, 0, -1.570796006]
     tool_frame_2:
       name: 'l_gripper_push_frame'
-      pos: [0.00635, 0.031, 0.2032]
+      pos: [0.08, 0.0, 0.0]
       rpy: [0, 0, 0]
 
   groups:

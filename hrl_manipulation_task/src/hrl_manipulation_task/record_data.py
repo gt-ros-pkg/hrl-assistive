@@ -128,7 +128,7 @@ class logger:
         self.logger.setDaemon(True)
         self.logger.start()
                     
-    def close_log_file(self):
+    def close_log_file(self, bCont=False, last_status='skip'):
 
         ## # logging by callback
         ## # disable logging
@@ -154,11 +154,14 @@ class logger:
         # logging by thread 
         self.enable_log_thread = False
 
-        flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
-        if flag == '1':   status = 'success'
-        elif flag == '2': status = 'failure'
-        elif flag == '3': status = 'skip'
-        else: status = flag
+        if bCont:
+            status = last_status
+        else:
+            flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
+            if flag == '1':   status = 'success'
+            elif flag == '2': status = 'failure'
+            elif flag == '3': status = 'skip'
+            else: status = flag
 
         if status == 'success' or status == 'failure':
             if status == 'failure':

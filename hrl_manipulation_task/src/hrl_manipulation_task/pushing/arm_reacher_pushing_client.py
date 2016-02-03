@@ -51,15 +51,11 @@ if __name__ == '__main__':
     ## rospy.wait_for_service("/right/arm_reach_enable")
     ## armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
     
-    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
-                 vision_change=False, pps=False, skin=False, subject="gatsbii", task='pushing', \
-                 verbose=False)
-
     ## Pushing Microwave White------------------------
-    print "Initializing left arm for pushing"
+    print armReachActionLeft("getMainTagPos")
     print armReachActionLeft("initMicroWhite")
 
-    ut.get_keystroke('Hit a key to proceed next')        
+    ## ut.get_keystroke('Hit a key to proceed next')        
     
     print "Running pushing!"    
     print armReachActionLeft("runMicroWhite")
@@ -76,8 +72,8 @@ if __name__ == '__main__':
     ## print "Start to log!"    
     ## log.log_start()
     
-    print "Running pushing!"    
-    print armReachActionRight("runCabinet")
+    ## print "Running pushing!"    
+    ## print armReachActionRight("runCabinet")
 
     ## print "Finish to log!"    
     ## log.close_log_file()

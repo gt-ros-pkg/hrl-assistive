@@ -6,13 +6,30 @@ var RYDS = function (ros) {
     ryds.USER_INPUT_TOPIC = "user_input";
     ryds.EMERGENCY_TOPIC = "emergency";
 
-    //Feedback Topics
-    ryds.FEEDBACK_TOPIC = "feedback";
-
     //Bowl Topics
     ryds.REG_CONFIRM_CAMERA = 'Head Registration'
+    ryds.BOWL_REGISTRATION_TOPIC = "RYDS_Action";
+    ryds.BOWL_LOCATION_TOPIC = "RYDS_CupLocation";
+    ryds.BOWL_CONFIRMATION_TOPIC = "RYDS_BowlConfirmation";
     ryds.CONFIRM_TOPIC="RYDS_Confirm";
 
+    //Bowl Registration Service     
+    ryds.bowlRegServiceClient = new ryds.ros.Service({
+        name:'/finding_bowl_service',
+        serviceType:'cup_finder/CupFinder'///Pixel23d'
+    });
+
+    ryds.RegisterBowl = function (u, v) {
+        assistive_teleop.log("Made it this far");
+        ryds.bowlRegServiceClient.callService({u:u,v:v}, function (resp) {
+            console.log('Initialize Bowl Registration Service Returned Success: '+resp.success);
+            console.log(resp);
+            $('#img_act_select').val('looking');
+            if (resp.success){
+                $("#confirm_reg").button({disabled: false });
+            }
+        });       
+    };
 
     //RYDS Publishers
     ryds.userInputPub = new ryds.ros.Topic({
@@ -54,31 +71,63 @@ var RYDS = function (ros) {
         console.log('Publishing Continue msg to RYDS system.');
     };
 
-
-    //Feedback publisher and functions.
-    ryds.feedbackPub = new ryds.ros.Topic({
-        name: ryds.FEEDBACK_TOPIC,
-        messageType: 'std_msgs/String'
+    //Bowl Registration Publishers and Subscribers
+    //Add subscriber for Continue button
+    ryds.bowlRegistrationPub = new ryds.ros.Topic({
+        name: ryds.BOWL_REGISTRATION_TOPIC,
+        messageType : 'std_msgs/String'
     });
-    ryds.feedbackPub.advertise();
+    ryds.bowlRegistrationPub.advertise();
 
-    ryds.success = function () {
-        var msg = new ryds.ros.Message({
-          data: 'Success'
-        });
-        ryds.feedbackPub.publish(msg);
-        assistive_teleop.log('Reporting result:Success');
-        console.log('Publishing Success msg to RYDS system.');
-    };
+    ryds.bowlConfirmPub = new ryds.ros.Topic({
+        name: ryds.CONFIRM_TOPIC,
+        messageType : 'std_msgs/String'
+    });
+    ryds.bowlConfirmPub.advertise();
 
-    ryds.fail = function () {
+    ryds.BowlLocationSub = new ryds.ros.Topic({
+        name: ryds.BOWL_LOCATION_TOPIC,
+        messageType : 'geometry_msgs/PoseStamped'
+    });   
+    
+    //Callback for Bowl System
+    ryds.BowlLocationSub.subscribe(function(msg) {
+       ryds.finalPose = msg
+       $("#confirm_bowl_reg").button({ disabled: false });
+       assistive_teleop.log("Press 'Confirm Registration' to complete registration process");
+       //ryds.BowlLocationSub.unsubscribe();
+    });
+
+    ryds.BowlConfirmationPub = new ryds.ros.Topic({
+        name: ryds.BOWL_CONFIRMATION_TOPIC,
+        messageType : 'geometry_msgs/PoseStamped'
+    });
+    ryds.BowlConfirmationPub.advertise() 
+
+    ryds.bowlRegInit = function () {
         var msg = new ryds.ros.Message({
-          data: 'Fail'
+            data : "RYDS_FindingCup"
         });
-        ryds.feedbackPub.publish(msg);
-        assistive_teleop.log('Reporting result:Fail');
-        console.log('Publishing Fail msg to RYDS system.');
-    };
+        $('#img_act_select').val('BowlReg');
+        ryds.bowlRegistrationPub.publish(msg);
+        assistive_teleop.log("Click on the bowl to begin bowl registration");
+        console.log('Publishing start message to Bowl registration system');
+    }
+    
+    ryds.confirmBowlRegistration = function () {
+        var msg = new ryds.ros.Message({
+            data : "RYDS_BowlRegConfirm"
+        });
+        $('#img_act_select').val('looking');
+        ryds.bowlRegistrationPub.publish(msg);
+        ryds.bowlConfirmPub.publish(msg);
+        assistive_teleop.log("Bowl registration confirmed");
+        var i = 0;
+        while (i<10) {
+            ryds.BowlConfirmationPub.publish(ryds.finalPose);
+            i=i+1;
+        }
+    }
 
 }
 
@@ -135,17 +184,17 @@ var initRYDSTab = function (tabDivId) {
 
 
     //Bowl Registration Button
-    $(divRef+'_R0C0').append('<button class="centered" id="feedback_Success"> Success </button>');
-    $("#feedback_Success").button();
-    $("#feedback_Success").attr("title", "Click to reprot successful trial.");
-    $(divRef+'_R0C0').click(assistive_teleop.ryds.success);
+    $(divRef+'_R0C0').append('<button class="centered" id="reg_bowl"> Register Bowl </button>');
+    $("#reg_bowl").button();
+    $("#reg_bowl").attr("title", "Click to begin bowl registration.");
+    $(divRef+'_R0C0').click(assistive_teleop.ryds.bowlRegInit);
 
     //Confirm Bowl Registration Button
     //Bowl Confirmation Button
-    $(divRef+'_R0C1').append('<button class="centered" id="feedback_fail"> Fail </button>');
-    $("#feedback_fail").button({disabled: true }); //true });
-    $("#feedback_fail").attr("title", "Click to reprot unsuccessful trial.");
-    $(divRef+'_R0C1').click(assistive_teleop.ryds.fail);
+    $(divRef+'_R0C1').append('<button class="centered" id="confirm_bowl_reg"> Confirm Registration</button>');
+    $("#confirm_bowl_reg").button({disabled: true }); //true });
+    $("#confirm_bowl_reg").attr("title", "Click to confirm that bowl registration is correct.");
+    $(divRef+'_R0C1').click(assistive_teleop.ryds.confirmBowlRegistration);
     
     //Start Button
     $(divRef+'_R1C0').append('<button class="centered" id="RYDS_Start"> Start </button>')

@@ -77,11 +77,13 @@ class armReachAction(mpcBaseAction):
             rate.sleep()
             
         rospy.loginfo("Arm Reach Action is initialized.")
+        print self.getJointAngles()
                             
     def initCommsForArmReach(self):
 
         # publishers and subscribers
         rospy.Subscriber('InterruptAction', String, self.stopCallback)
+        rospy.Subscriber('/ar_track_alvar/pose_0', PoseStamped, self.mainTagPoseCallback)
         
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
@@ -97,8 +99,9 @@ class armReachAction(mpcBaseAction):
 
         In this code, we allow to use following movement types,
 
-        MOVEP: straight motion without orientation control (ex. MOVEP pos-euler timeout relative_frame)
-        MOVES: straight motion with orientation control (ex. MOVES pos-euler timeout relative_frame)
+        MOVEP: point-to-point motion without orientation control (ex. MOVEP pos-euler timeout relative_frame)
+        MOVES: point-to-point motion with orientation control (ex. MOVES pos-euler timeout relative_frame)
+        MOVEL: straight (linear) motion with orientation control (ex. MOVEL pos-euler timeout relative_frame)
         MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
         MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
@@ -116,14 +119,17 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_push_frame
         self.motions['initMicroWhite'] = {}
         self.motions['initMicroWhite']['left'] = \
-          [['MOVEJ', '[-1.19, 0.667, -0.36, -1.63, 4.32, -1.02, -2.007]', 5.0]] 
+          [['MOVEJ', '[1.2, 0.8, 1.16, -2.07, 2.87, -0.7, 2.56]', 5.0],
+           ['MOVES', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 10.0, 'self.main_tag_frame'],
+           ['PAUSE', 2.0]
+            ] 
         self.motions['initMicroWhite']['right'] = []
 
         self.motions['runMicroWhite'] = {}
         self.motions['runMicroWhite']['left'] = \
-          [['MOVEJ', '[-1.19, 0.667, -0.36, -1.63, 4.32, -1.02, -2.007]', 5.0]] 
+          [['MOVEL', '[ 0.03, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 2.5, 'self.main_tag_frame'],
+           ['MOVEL', '[-0.2, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0]', 5.0, 'self.main_tag_frame']] 
         self.motions['runMicroWhite']['right'] = []
-
 
         ## Pushing cabinet motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -147,11 +153,15 @@ class armReachAction(mpcBaseAction):
                 
         
     def serverCallback(self, req):
-        req = req.data
+        task = req.data
         self.stop_motion = False
 
-        self.parsingMovements(self.motions[req][self.arm_name])
-        return "Completed to execute "+req 
+        if task == 'getMainTagPos':
+            self.main_tag_frame = copy.deepcopy(self.main_tag_frame)
+            return "Get a main tag position"
+        else:        
+            self.parsingMovements(self.motions[task][self.arm_name])
+            return "Completed to execute "+task
 
     
     def stopCallback(self, msg):
@@ -167,6 +177,11 @@ class armReachAction(mpcBaseAction):
             rospy.loginfo("Couldn't stop "+self.arm_name+" arm! ")
 
 
+    def mainTagPoseCallback(self, data):
+        p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
+        M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
+                                      data.pose.orientation.z, data.pose.orientation.w)
+        self.main_tag_frame = PyKDL.Frame(M,p)
 
 
 
