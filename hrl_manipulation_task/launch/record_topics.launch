@@ -1,0 +1,36 @@
+<launch>
+
+  <arg name="fname" default="feeding_hrl"/>
+
+  
+  <node pkg="rosbag" type="record" name="rosbag" args="record -o $(find hrl_manipulation_task)/data/$(arg fname) 
+                                                       /tf
+                                                       /joint_states
+                                                       /l_arm_controller/command
+                                                       /l_arm_controller/follow_joint_trajectory/cancel
+                                                       /l_arm_controller/follow_joint_trajectory/feedback
+                                                       /l_arm_controller/follow_joint_trajectory/goal
+                                                       /l_arm_controller/follow_joint_trajectory/result
+                                                       /l_arm_controller/follow_joint_trajectory/status
+                                                       /l_arm_controller/joint_trajectory_action/cancel
+                                                       /l_arm_controller/joint_trajectory_action/feedback
+                                                       /l_arm_controller/joint_trajectory_action/goal
+                                                       /l_arm_controller/joint_trajectory_action/result
+                                                       /l_arm_controller/joint_trajectory_action/status
+                                                       /l_arm_controller/state
+                                                       /haptic_mpc/goal_pose
+                                                       /haptic_mpc/weights
+                                                       /haptic_mpc/goal_posture
+                                                       /right/haptic_mpc/goal_pose
+                                                       /right/haptic_mpc/weights
+                                                       /right/haptic_mpc/goal_posture
+                                                       /ar_pose_marker
+                                                       /haptic_mpc/robot_state
+                                                       HarkSrcFFT/all
+                                                       julius_recog_cmd
+                                                       /head_traj_controller/state
+                                                       /hrl_manipulation_task/changes
+                                                       /pressure/r_gripper_motor
+                                                       /netft_data
+                                                       " output="screen"/>
+</launch>
