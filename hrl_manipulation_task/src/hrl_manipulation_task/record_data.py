@@ -488,13 +488,13 @@ class logger:
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task    = 'pushing'
+    task    = 'test'
     verbose = True
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
+    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
-                 pps=True, skin=False, subject=subject, task=task, verbose=verbose)
+                 pps=False, skin=False, subject=subject, task=task, verbose=verbose)
 
     rospy.sleep(1.0)
     log.run()

@@ -68,6 +68,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
     key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
+                'audioWristTimesList', 'audioWristRMSList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'ftTimesList', 'ftForceList', \
@@ -126,16 +127,20 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                                          base_link='torso_lift_link')
                 if rf_traj is None: rf_traj = (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0
                 else: rf_traj = np.hstack([ rf_traj, (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0 ])
-                    
         ## elif rf_center == 'l_upper_arm_link':            
         else:
             print "No specified rf center"
             sys.exit()
 
+        # check length of trajectory.
+        if len(rf_time) != len(rf_traj[0]):
+            rf_time = rf_time[:min(len(rf_time), len(rf_traj[0]))]
+            rf_traj = rf_traj[:, :min(len(rf_time), len(rf_traj[0]))]
+
         if verbose: print "rf_traj: ", np.shape(rf_traj) 
 
 
-        # sound ----------------------------------------------------------------
+        # kinect sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
             audio_time    = (np.array(d['audio_time']) - init_time).tolist()
             audio_azimuth = d['audio_azimuth']
@@ -189,6 +194,19 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             ## sys.exit()
             ## ut.get_keystroke('Hit a key to proceed next')
 
+        # wrist sound ----------------------------------------------------------------
+        if 'audio_wrist_time' in d.keys():
+            audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
+            audio_rms  = np.abs(d['audio_wrist_rms'])
+            audio_mfcc = np.abs(d['audio_wrist_mfcc'])
+
+            # Save local raw and interpolated data
+            raw_data_dict['audioWristTimesList'].append(audio_time)
+            raw_data_dict['audioWristRMSList'].append(audio_rms)
+
+            data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
+
+            
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
@@ -333,7 +351,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
                 vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
-            
+
             # extract local feature
             data_set = [vision_time, vision_pos, vision_quat]
             [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
@@ -882,7 +900,7 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
     time_data = data_set[0]
     pos_data  = data_set[1]
     nData = len(data_set)-1
-
+                
     # length adjustment
     if len(time_data) != len(pos_data[0]):
         if len(time_data) > len(pos_data[0]):
@@ -896,7 +914,7 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
         for time_idx in xrange(len(time_data)):
             rf_time_idx = np.abs(rf_time - time_data[time_idx]).argmin()
 
-            if (np.linalg.norm(pos_data[:,time_idx] - rf_traj[:,rf_time_idx]) <= local_range) or global_data:
+            if (np.linalg.norm(pos_data[0:3,time_idx] - rf_traj[:,rf_time_idx]) <= local_range) or global_data:
                 for i in xrange(nData):
                     if new_data_set[i] is None:
                         if len(np.shape(data_set[i+1])) > 1:
@@ -1057,6 +1075,16 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
             if 'audioPower' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioPower')
+
+        # Unimoda feature - AudioWrist ---------------------------------------
+        if 'unimodal_audioWristRMS' in feature_list:
+            audioWristRMS = d['audioWristRMSList'][idx]            
+            unimodal_audioWristRMS = audioWristRMS
+            
+            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
+            if 'audioWristRMS' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioWristRMS')
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in feature_list:

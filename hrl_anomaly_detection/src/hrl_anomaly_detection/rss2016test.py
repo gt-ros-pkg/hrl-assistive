@@ -1390,9 +1390,14 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               ## trainingData=True, normalTestData=False, abnormalTestData=False,\
               modality_list=['audio'], data_renew=False, verbose=False):    
 
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
     success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
 
     fig = plt.figure('all')
+    time_lim    = [0, 0] 
+    nPlot       = len(modality_list)
 
     for idx, file_list in enumerate([success_list, failure_list]):
         if idx == 0 and successData is not True: continue
@@ -1422,20 +1427,30 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
             
         ## plt.show()
         ## sys.exit()
-                                                       
-        nPlot       = len(modality_list)
-        time_lim    = [0, 16] #?????????????????????????????
-   
         if raw_viz: target_dict = raw_data_dict
         else: target_dict = interp_data_dict
 
+        # check only training data to get time limit
+        if idx == 0:
+            for key in target_dict.keys():
+                if 'Time' in key:
+                    time_list = target_dict[key]
+                    if len(time_list)==0: continue
+                    for tl in time_list:
+                        time_lim[-1] = max(time_lim[-1], tl[-1])
+
+        # for each file in success or failure set
         for fidx in xrange(len(file_list)):
                         
             count = 0
             for modality in modality_list:
                 count +=1
 
-                if 'audio' in modality:
+                if 'audioWrist' in modality:
+                    time_list = target_dict['audioWristTimesList']
+                    data_list = target_dict['audioWristRMSList']
+                    
+                elif 'audio' in modality:
                     time_list = target_dict['audioTimesList']
                     data_list = target_dict['audioPowerList']
 
@@ -1568,8 +1583,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
                     for i in xrange(len(data_list)):
                         ax.plot(interp_time, data_list[i], c=color)                
-
-                ## ax.set_xlim(time_lim)
+                
+                ax.set_xlim(time_lim)
                 ax.set_title(modality)
 
             #------------------------------------------------------------------------------    
@@ -1889,23 +1904,32 @@ if __name__ == '__main__':
     
     #---------------------------------------------------------------------------           
     
-    ## subject = 'gatsbii'
-    ## task    = 'pushing_microwave_black'    
-    ## task    = 'pushing_microwave_white'    
-    ## task    = 'pushing_lab_cabinet'    
-    ## feature_list    = ['unimodal_ftForce', 'unimodal_audioPower']
-    ## rf_center       = 'kinEEPos'
+    subject = 'gatsbii'
+    #task    = 'pushing_microwave_black'    
+    task    = 'pushing_microwave_white'    
+    #task    = 'pushing_lab_cabinet'    
+    ## feature_list = ['unimodal_audioPower',\
+    ##                 'unimodal_kinVel',\
+    ##                 'unimodal_ftForce',\
+    ##                 ##'unimodal_visionChange',\
+    ##                 'unimodal_ppsForce',\
+    ##                 ##'unimodal_fabricForce',\
+    ##                 'crossmodal_targetEEDist', \
+    ##                 'crossmodal_targetEEAng']
+    feature_list    = ['unimodal_ftForce', 'unimodal_audioPower']
+    rf_center       = 'kinEEPos'
+    modality_list = ['audio', 'ft', 'audioWrist']
     ## modality_list   = ['kinematics', 'audio', 'ft']
 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
-    ## raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
+    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
 
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     
     # Dectection TEST 
     nSet           = 1
-    local_range    = 0.25    
+    local_range    = 1.25    
     viz            = False
     renew          = False
     downSampleSize = 200
@@ -1921,8 +1945,8 @@ if __name__ == '__main__':
         ## rf_center       = 'kinForearmPos'
         ## modality_list   = ['kinematics', 'audio', 'fabric', 'vision_change']
         successData     = True #True
-        failureData     = True
-        local_range     = 0.15
+        failureData     = False
+        ## local_range     = 1.15
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
