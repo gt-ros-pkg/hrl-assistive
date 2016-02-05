@@ -1396,7 +1396,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
     success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
 
     fig = plt.figure('all')
-    time_lim    = [0, 0] 
+    time_lim    = [0.01, 0] 
     nPlot       = len(modality_list)
 
     for idx, file_list in enumerate([success_list, failure_list]):
@@ -1423,21 +1423,22 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        local_range=local_range, rf_center=rf_center,\
                                                        global_data=global_data,\
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
-
             
         ## plt.show()
         ## sys.exit()
         if raw_viz: target_dict = raw_data_dict
         else: target_dict = interp_data_dict
 
-        # check only training data to get time limit
+        # check only training data to get time limit (TEMP)
         if idx == 0:
-            for key in target_dict.keys():
-                if 'Time' in key:
-                    time_list = target_dict[key]
+            for key in interp_data_dict.keys():
+                if 'timesList' in key:
+                    time_list = interp_data_dict[key]
                     if len(time_list)==0: continue
                     for tl in time_list:
+                        print tl[-1]
                         time_lim[-1] = max(time_lim[-1], tl[-1])
+            print "--------------"
 
         # for each file in success or failure set
         for fidx in xrange(len(file_list)):
@@ -1905,8 +1906,9 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     
     subject = 'gatsbii'
+    task    = 'pushing'    
     #task    = 'pushing_microwave_black'    
-    task    = 'pushing_microwave_white'    
+    ## task    = 'pushing_microwave_white'    
     #task    = 'pushing_lab_cabinet'    
     ## feature_list = ['unimodal_audioPower',\
     ##                 'unimodal_kinVel',\
@@ -1921,15 +1923,17 @@ if __name__ == '__main__':
     modality_list = ['audio', 'ft', 'audioWrist']
     ## modality_list   = ['kinematics', 'audio', 'ft']
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
+    ## raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     
     # Dectection TEST 
     nSet           = 1
-    local_range    = 1.25    
+    local_range    = 0.25    
     viz            = False
     renew          = False
     downSampleSize = 200
@@ -1940,13 +1944,8 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         target_data_set = 0
-        ## rf_center       = 'kinEEPos'
-        ## modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-        ## rf_center       = 'kinForearmPos'
-        ## modality_list   = ['kinematics', 'audio', 'fabric', 'vision_change']
         successData     = True #True
         failureData     = False
-        ## local_range     = 1.15
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \

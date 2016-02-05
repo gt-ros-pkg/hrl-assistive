@@ -32,6 +32,9 @@
 import rospy, roslib
 import os, copy, sys
 
+from hrl_msgs.msg import FloatArray
+from std_msgs.msg import Float32
+
 # util
 import numpy as np
 import math
@@ -41,11 +44,13 @@ import array
 from features import mfcc
 
 class wrist_audio_collector:
-    FRAME_SIZE = 8192 #4096 #1024 # frame per buffer
-    RATE       = 48000 # sampling rate
+    ## FRAME_SIZE = 4096 #8192 # frame per buffer
+    FRAME_SIZE = 512 #4096 # frame per buffer
+    RATE       = 44100 # sampling rate
     CHANNEL    = 2 # number of channels
     FORMAT     = pyaudio.paInt16
     MAX_INT    = 32768.0
+    WINLEN     = float(RATE)/float(FRAME_SIZE)
 
     def __init__(self, verbose=False):
         self.verbose = verbose
@@ -77,8 +82,8 @@ class wrist_audio_collector:
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.FRAME_SIZE, input_device_index=deviceIndex)
         ## self.stream.start_stream()
 
-        self.audio_rms_pub  = rospy.Publisher("hrl_manipulation_task/wrist_audio_rms", Float32, latch=True)
-        self.audio_mfcc_pub = rospy.Publisher("hrl_manipulation_task/wrist_audio_mfcc", FloatArray, latch=True)
+        ## self.audio_rms_pub  = rospy.Publisher("hrl_manipulation_task/wrist_audio_rms", Float32, latch=True)
+        self.audio_data_pub = rospy.Publisher("hrl_manipulation_task/wrist_audio_data", FloatArray, latch=True)
     
     def find_input_device(self):
         device_index = None
@@ -128,7 +133,16 @@ class wrist_audio_collector:
         
         return audio_time, audio_rms, audio_mfcc
 
-
+    def get_data2(self):
+        try:
+            data       = self.stream.read(self.FRAME_SIZE)
+        except:
+            print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
+            data       = self.stream.read(self.FRAME_SIZE)
+        
+        decoded = np.fromstring(data, 'Int16')
+        return decoded
+        
     def get_rms(self, block):
         # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
 
@@ -169,15 +183,14 @@ class wrist_audio_collector:
         ## rate = rospy.Rate(25) # 25Hz, nominally.    
         while not rospy.is_shutdown():
             ## print "running test: ", len(self.centers)
-            audio_time, rms, mfcc = self.get_data()
-            print audio_time, sys.getsizeof(rms), sys.getsizeof(mfcc), np.shape(mfcc)
+            ## audio_time, rms, mfcc = self.get_data()
 
-            self.audio_rms_pub.publish(rms)
-
+            data = self.get_data2()
+            
+            ## self.audio_rms_pub.publish(rms)
             msg.header.stamp = rospy.Time.now()
-            msg.data = mfcc.tolist()
-            self.audio_mfcc_pub.publish(msg)
-            ## rate.sleep()
+            msg.data = data
+            self.audio_data_pub.publish(msg)
 
 
 

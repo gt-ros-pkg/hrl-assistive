@@ -65,6 +65,8 @@ var assistive_teleop = {
         initCartControl();
         initTaskInterface('tabTasks');
         initRYDSTab('tabRYDS');
+        initManTaskTab('tabManTasks');
+        //Testing
         if (window.location.hash.search('ft') !== -1) {
           initFTDisplay('FTDisplay', {});
         }

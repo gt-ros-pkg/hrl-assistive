@@ -29,6 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system library
+import sys
 import time
 import datetime
 
@@ -50,6 +51,11 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     ## rospy.wait_for_service("/right/arm_reach_enable")
     ## armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
+
+    ## TEST -----------------------------------    
+    # TODO: this code should be run in parallel.
+    print armReachActionLeft("initTest")
+    sys.exit()
     
     ## Pushing Microwave White------------------------
     print armReachActionLeft("getMainTagPos")
@@ -59,11 +65,7 @@ if __name__ == '__main__':
     
     print "Running pushing!"    
     print armReachActionLeft("runMicroWhite")
-
-    
-    ## TEST -----------------------------------    
-    # TODO: this code should be run in parallel.
-    
+        
     ## Pushing -----------------------------------
     ## print "Initializing right arm for pushing"
     ## print armReachActionRight("initCabinet")

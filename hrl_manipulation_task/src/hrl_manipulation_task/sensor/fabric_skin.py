@@ -39,12 +39,9 @@ import numpy as np
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 from std_msgs.msg import Empty
 
-class fabric_skin(threading.Thread):
+class fabric_skin():
 
     def __init__(self, verbose=False, viz=False):
-        super(fabric_skin, self).__init__()        
-        self.daemon = True
-        self.cancelled = False
         self.isReset = False
         self.verbose = verbose
         self.viz     = viz

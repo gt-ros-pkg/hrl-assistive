@@ -39,20 +39,19 @@ import pyaudio
 import struct
 from features import mfcc
 
+FRAME_SIZE = 4096 # frame per buffer
+RATE       = 44100 # sampling rate
+CHANNEL    = 2 # number of channels
+FORMAT     = pyaudio.paInt16
+MAX_INT    = 32768.0
+WINLEN     = float(RATE)/float(FRAME_SIZE)
 
-class wrist_audio():
-    ## FRAME_SIZE = 4096 #8192 # frame per buffer
-    FRAME_SIZE = 8192 # frame per buffer
-    RATE       = 48000 # sampling rate
-    CHANNEL    = 2 # number of channels
-    FORMAT     = pyaudio.paInt16
-    MAX_INT    = 32768.0
-    WINLEN     = float(RATE)/float(FRAME_SIZE)
+class wrist_audio(threading.Thread):
 
     def __init__(self, verbose=False):
-        ## super(wrist_audio, self).__init__()        
-        ## self.daemon = True
-        ## self.cancelled = False
+        super(wrist_audio, self).__init__()        
+        self.daemon = True
+        self.cancelled = False
         self.isReset = False
         self.verbose = verbose
         
@@ -63,7 +62,8 @@ class wrist_audio():
         self.time  = None
         
         # Declare containers
-        ## self.time_data = []
+        self.time_data = []
+        self.audio_data = []
         
         self.lock = threading.RLock()
 
@@ -87,10 +87,9 @@ class wrist_audio():
             print 'Max input channels:',  devInfo['maxInputChannels']
 
         
-        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.FRAME_SIZE, input_device_index=deviceIndex)
+        self.stream = self.p.open(format=FORMAT, channels=CHANNEL, rate=RATE, input=True, frames_per_buffer=FRAME_SIZE, input_device_index=deviceIndex)
         self.stream.start_stream()
         
-
     def initParams(self):
         '''
         Get parameters
@@ -102,15 +101,17 @@ class wrist_audio():
         self.init_time = init_time
 
         # Reset containers
-        ## self.time_data = []
+        self.time_data = []
+        self.audio_data = []
         
         self.isReset = True
+        self.cancelled = False
 
         
     def isReady(self):
 
         try:
-            data = self.stream.read(self.FRAME_SIZE)
+            data = self.stream.read(FRAME_SIZE)
             return True
         except:
             return False
@@ -138,67 +139,26 @@ class wrist_audio():
         return device_index
 
 
-    def get_data(self):
-        audio_rms = audio_mfcc = 0
+    def log_start(self):
+        self.logger = threading.Thread(target=self.run)
+        self.logger.setDaemon(True)
+        self.logger.start()
         
-        try:
-            data       = self.stream.read(self.FRAME_SIZE)
-            audio_rms  = self.get_rms(data)
-            audio_data = np.fromstring(data, np.int16)
-            audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
-        except:
-            print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
-            print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
-            data       = self.stream.read(self.FRAME_SIZE)
-            audio_rms  = self.get_rms(data)
-            audio_data = np.fromstring(data, np.int16)
-            audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
-            ## self.stream.stop_stream()
-            ## self.stream.close()
-            ## sys.exit()
-            
-        audio_time = rospy.get_rostime().to_sec()
+    def run(self):
 
-        return audio_time, audio_rms, audio_mfcc
+        while not rospy.is_shutdown():
+            try:
+                data       = self.stream.read(FRAME_SIZE)
+            except:
+                print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
+                ## data       = self.stream.read(self.FRAME_SIZE)
+                continue
 
-        
-    def get_stream_data(self):
-        try:
-            data       = self.stream.read(self.FRAME_SIZE)
-        except:
-            ## print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
-            data       = self.stream.read(self.FRAME_SIZE)
-        
-        decoded = np.fromstring(data, 'Int16')
-        return decoded
-        
-        
-        
-    def get_rms(self, block):
-        # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
+            self.time_data.append(rospy.get_time())
+            self.audio_data.append(data)
 
-        # RMS amplitude is defined as the square root of the 
-        # mean over time of the square of the amplitude.
-        # so we need to convert this string of bytes into 
-        # a string of 16-bit samples...
-
-        # we will get one short out for each 
-        # two chars in the string.
-        count = len(block)/2
-        format = "%dh"%(count)
-        shorts = struct.unpack( format, block )
-
-        # iterate over the block.
-        sum_squares = 0.0
-        for sample in shorts:
-        # sample is a signed short in +/- 32768. 
-        # normalize it to 1.0
-            n = sample / self.MAX_INT
-            sum_squares += n*n
-
-        return math.sqrt( sum_squares / count )        
-
-
+            if self.cancelled: break            
+                
     def test(self):
         
         import hrl_lib.circular_buffer as cb
@@ -238,6 +198,54 @@ class wrist_audio():
                 
             ## rate.sleep()
 
+            
+    def get_feature(self, data):
+
+        audio_rms = self.get_rms(data)
+        num_data = np.fromstring(data, np.int16)
+        audio_mfcc = mfcc(num_data, samplerate=RATE, nfft=FRAME_SIZE, winlen=WINLEN).tolist()[0]        
+        return audio_rms, audio_mfcc
+    
+
+    def get_features(self, audio_data):
+        audio_rms = []
+        audio_mfcc = []
+        for data in audio_data:
+            audio_rms.append( self.get_rms(data) )
+            num_data = np.fromstring(data, np.int16)
+            audio_mfcc.append(mfcc(num_data, samplerate=RATE, nfft=FRAME_SIZE, \
+                                   winlen=WINLEN).tolist()[0])
+        ## num_data = np.fromstring(audio_data, np.int16)
+        ## audio_mfcc = mfcc(num_data, samplerate=RATE, nfft=FRAME_SIZE, winlen=WINLEN)
+        ## print np.shape(audio_mfcc)
+
+        return audio_rms, audio_mfcc
+
+            
+    def get_rms(self, block):
+        # Copy from http://stackoverflow.com/questions/4160175/detect-tap-with-pyaudio-from-live-mic
+
+        # RMS amplitude is defined as the square root of the 
+        # mean over time of the square of the amplitude.
+        # so we need to convert this string of bytes into 
+        # a string of 16-bit samples...
+
+        # we will get one short out for each 
+        # two chars in the string.
+        count = len(block)/2
+        format = "%dh"%(count)
+        shorts = struct.unpack( format, block )
+
+        # iterate over the block.
+        sum_squares = 0.0
+        for sample in shorts:
+        # sample is a signed short in +/- 32768. 
+        # normalize it to 1.0
+            n = sample / MAX_INT
+            sum_squares += n*n
+
+        return math.sqrt( sum_squares / count )       
+            
 
 
 if __name__ == '__main__':
@@ -249,3 +257,40 @@ if __name__ == '__main__':
 
 
         
+
+
+    ## def get_data(self):
+    ##     audio_rms = audio_mfcc = 0
+        
+    ##     try:
+    ##         data       = self.stream.read(self.FRAME_SIZE)
+    ##         audio_rms  = self.get_rms(data)
+    ##         audio_data = np.fromstring(data, np.int16)
+    ##         audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
+    ##     except:
+    ##         print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
+    ##         print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
+    ##         data       = self.stream.read(self.FRAME_SIZE)
+    ##         audio_rms  = self.get_rms(data)
+    ##         audio_data = np.fromstring(data, np.int16)
+    ##         audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
+    ##         ## self.stream.stop_stream()
+    ##         ## self.stream.close()
+    ##         ## sys.exit()
+            
+    ##     audio_time = rospy.get_rostime().to_sec()
+
+    ##     return audio_time, audio_rms, audio_mfcc
+
+        
+    ## def get_stream_data(self):
+    ##     try:
+    ##         data       = self.stream.read(self.FRAME_SIZE)
+    ##     except:
+    ##         ## print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
+    ##         data       = self.stream.read(self.FRAME_SIZE)
+        
+    ##     decoded = np.fromstring(data, 'Int16')
+    ##     return decoded
+        
+

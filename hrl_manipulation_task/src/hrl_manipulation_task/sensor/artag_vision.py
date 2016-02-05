@@ -43,12 +43,9 @@ from ar_track_alvar.msg import AlvarMarkers
 ## from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
-class artag_vision(threading.Thread):
+class artag_vision():
 
     def __init__(self, task='feeding', verbose=False, viz=False):
-        super(artag_vision, self).__init__()        
-        self.daemon = True
-        self.cancelled = False
         self.isReset = False
         self.verbose = verbose
         self.viz     = viz

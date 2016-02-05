@@ -46,7 +46,9 @@ from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneR
 
 # Sensors
 from sensor.kinect_audio import kinect_audio
-from sensor.wrist_audio import wrist_audio
+## from sensor.wrist_audio import wrist_audio
+from sensor.wrist_audio_stream import wrist_audio
+from sensor import wrist_audio_stream as was
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
 from sensor.artag_vision import artag_vision
@@ -127,6 +129,9 @@ class logger:
         self.logger = threading.Thread(target=self.runDataLogger)
         self.logger.setDaemon(True)
         self.logger.start()
+
+        # special treament for audio
+        self.audio_wrist.log_start()
                     
     def close_log_file(self, bCont=False, last_status='skip'):
 
@@ -134,6 +139,7 @@ class logger:
         ## # disable logging
         ## if self.audio_kinect is not None: self.audio_kinect.enable_log = False
         ## if self.kinematics is not None: self.kinematics.enable_log = False
+        if self.audio_wrist is not None: self.audio_wrist.cancelled = True
         
         ## # log into data
         ## if self.audio_kinect is not None: 
@@ -154,6 +160,15 @@ class logger:
         # logging by thread 
         self.enable_log_thread = False
 
+        # log thread data
+        if self.audio_wrist is not None: 
+            audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.audio_wrist.audio_data)
+            self.data['audio_wrist_time']  = self.audio_wrist.time_data
+            self.data['audio_wrist_data']  = self.audio_wrist.audio_data
+            self.data['audio_wrist_rms']   = audio_wrist_rms
+            self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
+
+        
         if bCont:
             status = last_status
         else:
@@ -278,7 +293,7 @@ class logger:
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             count += 1
-            if count > 200: break
+            if count > 800: break
             rate.sleep()
 
         self.close_log_file()
@@ -302,7 +317,8 @@ class logger:
                 msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
             if self.audio_wrist is not None: 
-                audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()                
+                if len(self.audio_wrist.audio_data) <2: continue
+                audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
                 msg.audio_wrist_rms       = audio_wrist_rms
                 msg.audio_wrist_mfcc      = audio_wrist_mfcc
                 
@@ -322,8 +338,8 @@ class logger:
             if self.vision_artag is not None:
                 # TODO: need to check
                 if self.vision_artag.artag_pos is not None:
-                    msg.vision_pos  = np.squeeze(self.vision_artag.artag_pos.T).tolist()
-                    msg.vision_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
+                    msg.vision_artag_pos  = np.squeeze(self.vision_artag.artag_pos.T).tolist()
+                    msg.vision_artag_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
 
             if self.vision_change is not None:
                 if self.vision_change.centers is not None:
@@ -370,16 +386,16 @@ class logger:
                     self.data['audio_azimuth'].append(self.audio_kinect.azimuth)
                     self.data['audio_power'].append(self.audio_kinect.power)
                     
-            if self.audio_wrist is not None: 
-                audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()
-                if 'audio_wrist_time' not in self.data.keys():
-                    self.data['audio_wrist_time']  = [audio_wrist_time]
-                    self.data['audio_wrist_rms']   = [audio_wrist_rms]
-                    self.data['audio_wrist_mfcc']  = [audio_wrist_mfcc]
-                else:
-                    self.data['audio_wrist_time'].append(audio_wrist_time)
-                    self.data['audio_wrist_rms'].append(audio_wrist_rms)
-                    self.data['audio_wrist_mfcc'].append(audio_wrist_mfcc)
+            ## if self.audio_wrist is not None: 
+            ##     audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()
+            ##     if 'audio_wrist_time' not in self.data.keys():
+            ##         self.data['audio_wrist_time']  = [audio_wrist_time]
+            ##         self.data['audio_wrist_rms']   = [audio_wrist_rms]
+            ##         self.data['audio_wrist_mfcc']  = [audio_wrist_mfcc]
+            ##     else:
+            ##         self.data['audio_wrist_time'].append(audio_wrist_time)
+            ##         self.data['audio_wrist_rms'].append(audio_wrist_rms)
+            ##         self.data['audio_wrist_mfcc'].append(audio_wrist_mfcc)
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
@@ -407,7 +423,7 @@ class logger:
                                                                self.kinematics.target_pos])
                     self.data['kinematics_target_quat'] = np.hstack([self.data['kinematics_target_quat'], \
                                                                self.kinematics.target_quat])
-                
+                                                                               
             if self.ft is not None:
                 if 'ft_time' not in self.data.keys():
                     self.data['ft_time']   = [self.ft.time]
@@ -431,7 +447,6 @@ class logger:
                                                                 self.vision_artag.artag_quat])
 
             if self.vision_change is not None:
-
                 if 'vision_change_time' not in self.data.keys():
                     self.data['vision_change_time'] = [self.vision_change.time]
                     self.data['vision_change_centers_x']  = [self.vision_change.centers[:,0].tolist()]
@@ -481,20 +496,20 @@ class logger:
                     
             if self.enable_log_thread == False: break
             rate.sleep()
-        
                 
-
             
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task    = 'test'
+    task    = 'pushing'
     verbose = True
+    data_pub= True
 
     rospy.init_node('record_data')
     log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
-                 pps=False, skin=False, subject=subject, task=task, verbose=verbose)
+                 pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
+                 data_pub=data_pub)
 
     rospy.sleep(1.0)
     log.run()

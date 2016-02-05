@@ -85,6 +85,20 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if 'time' not in key:
             data_dict[key]  = []
 
+    # check data to get maximum time limit
+    max_time = 0
+    for idx, fileName in enumerate(fileNames):
+        if os.path.isdir(fileName):
+            continue
+        d = ut.load_pickle(fileName)        
+        init_time = d['init_time']
+        for key in d.keys():
+            if 'time' in key and 'init' not in key:
+                feature_time = d[key]
+                if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
+    new_times = np.linspace(0.01, max_time, downSampleSize)
+     
+            
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
@@ -97,16 +111,17 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         raw_data_dict['fileNameList'].append(fileName)
         data_dict['fileNameList'].append(fileName)        
 
+        # Load raw data
         if verbose: print fileName
         d = ut.load_pickle(fileName)        
         init_time = d['init_time']
 
-        max_time = 0
-        for key in d.keys():
-            if 'time' in key and 'init' not in key:
-                feature_time = d[key]
-                if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
-        new_times = np.linspace(0.01, max_time, downSampleSize)
+        ## max_time = 0
+        ## for key in d.keys():
+        ##     if 'time' in key and 'init' not in key:
+        ##         feature_time = d[key]
+        ##         if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
+        ## new_times = np.linspace(0.01, max_time, downSampleSize)
 
         data_dict['timesList'].append(new_times)
 
@@ -139,6 +154,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
         if verbose: print "rf_traj: ", np.shape(rf_traj) 
 
+        print d.keys()
 
         # kinect sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():

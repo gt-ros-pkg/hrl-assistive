@@ -45,18 +45,14 @@ from pr2_controllers_msgs.msg import JointTrajectoryControllerState
 def RMS(z, nFFT):
     return np.sqrt(np.sum(np.dot(z,z))) / np.sqrt(2.0*nFFT)
 
-class kinect_audio(threading.Thread):
+class kinect_audio():
     FRAME_SIZE = 512 # frame per buffer
     RATE       = 16000 # sampling rate
     CHANNEL    = 4 # number of channels
     
     def __init__(self, verbose=False):
-        super(kinect_audio, self).__init__()        
-        self.daemon = True
-        self.cancelled = False
         self.isReset = False
         self.verbose = verbose
-
         
         self.enable_log = False
         self.init_time = 0.0

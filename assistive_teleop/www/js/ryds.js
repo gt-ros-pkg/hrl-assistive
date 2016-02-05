@@ -132,7 +132,7 @@ var RYDS = function (ros) {
 }
 
 
-var initRYDSTab = function (tabDivId) {
+function initRYDSTab(tabDivId) {
     'use strict';
     assistive_teleop.ryds = new RYDS(assistive_teleop.ros);
     var divRef = '#'+tabDivId;

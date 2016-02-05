@@ -77,7 +77,10 @@ class armReachAction(mpcBaseAction):
             rate.sleep()
             
         rospy.loginfo("Arm Reach Action is initialized.")
+        print "Current "+self.arm_name+" arm joint angles"
         print self.getJointAngles()
+        print "Current "+self.arm_name+" arm pose"
+        print self.getEndeffectorPose(tool=tool_id)
                             
     def initCommsForArmReach(self):
 
@@ -115,20 +118,30 @@ class armReachAction(mpcBaseAction):
         
         self.motions = {}
 
+        ## test motoins --------------------------------------------------------
+        # It uses the l_gripper_push_frame
+        self.motions['initTest'] = {}
+        self.motions['initTest']['left'] = \
+          [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
+           ['MOVES', '[0.76, 0.19, -0.04, -0.032, 0.03, -0.1, 1.0]', 5.0],
+           ['MOVES', '[0.76, 0.19, 0.1, -0.032, 0.03, -0.1, 1.0]', 5.0],
+           ] 
+        self.motions['initTest']['right'] = []
+        
         ## Pushing white microwave motoins --------------------------------------------------------
         # It uses the l_gripper_push_frame
         self.motions['initMicroWhite'] = {}
         self.motions['initMicroWhite']['left'] = \
-          [['MOVEJ', '[1.2, 0.8, 1.16, -2.07, 2.87, -0.7, 2.56]', 5.0],
-           ['MOVES', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 10.0, 'self.main_tag_frame'],
-           ['PAUSE', 2.0]
+          [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
+           ['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 5.0, 'self.main_tag_frame'],
+           ['PAUSE', 1.0]
             ] 
         self.motions['initMicroWhite']['right'] = []
 
         self.motions['runMicroWhite'] = {}
         self.motions['runMicroWhite']['left'] = \
-          [['MOVEL', '[ 0.03, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 2.5, 'self.main_tag_frame'],
-           ['MOVEL', '[-0.2, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0]', 5.0, 'self.main_tag_frame']] 
+          [['MOVEL', '[ 0.06, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 2.5, 'self.main_tag_frame'],
+           ['MOVEL', '[-0.2, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0]', 3.0, 'self.main_tag_frame']] 
         self.motions['runMicroWhite']['right'] = []
 
         ## Pushing cabinet motoins --------------------------------------------------------
@@ -195,7 +208,7 @@ if __name__ == '__main__':
     # Initial variables
     d_robot    = 'pr2'
     controller = 'static'
-    #controller = 'actionlib'
+    controller = 'actionlib'
     arm        = opt.arm
     tool_id    = 2
     if opt.arm == 'l': verbose = False

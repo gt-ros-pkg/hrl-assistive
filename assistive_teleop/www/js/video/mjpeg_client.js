@@ -38,7 +38,7 @@ var MjpegClient = function (options) {
                                          rotated: true,
                                          width:640,
                                          height:480},
-                              'Head Registration': {topic: '/head_registration/confirmation',
+                              'Feedback': {topic: '/head_registration/confirmation',
                                                     optgroup:'Special',
                                                     cameraInfo: 'head_mount_kinect/rgb_lowres/camera_info',
                                                     clickable: true,
