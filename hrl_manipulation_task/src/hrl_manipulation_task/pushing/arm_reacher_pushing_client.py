@@ -54,8 +54,8 @@ if __name__ == '__main__':
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
-    print armReachActionLeft("initTest")
-    sys.exit()
+    ## print armReachActionLeft("initTest")
+    ## sys.exit()
     
     ## Pushing Microwave White------------------------
     print armReachActionLeft("getMainTagPos")
