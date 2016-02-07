@@ -123,10 +123,12 @@ class armReachAction(mpcBaseAction):
         self.motions['initTest'] = {}
         self.motions['initTest']['left'] = \
           [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
-           ['MOVES', '[0.76, 0.19, -0.04, -0.032, 0.03, -0.1, 1.0]', 5.0],
-           ['PAUSE', 2.0],
-           ['MOVES', '[0.76, 0.19, 0.1, -0.032, 0.03, -0.1, 1.0]', 5.0],
+           ['MOVET', '[0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 3.0],
+           ['PAUSE', 1.0],
+           ['MOVET', '[-0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 3.0],
            ] 
+        ## 
+           
         self.motions['initTest']['right'] = []
         
         ## Pushing white microwave motoins --------------------------------------------------------

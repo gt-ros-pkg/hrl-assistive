@@ -54,17 +54,17 @@ if __name__ == '__main__':
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
-    ## print armReachActionLeft("initTest")
+    print armReachActionLeft("initTest")
     ## sys.exit()
     
     ## Pushing Microwave White------------------------
-    print armReachActionLeft("getMainTagPos")
-    print armReachActionLeft("initMicroWhite")
+    ## print armReachActionLeft("getMainTagPos")
+    ## print armReachActionLeft("initMicroWhite")
 
     ## ut.get_keystroke('Hit a key to proceed next')        
     
-    print "Running pushing!"    
-    print armReachActionLeft("runMicroWhite")
+    ## print "Running pushing!"    
+    ## print armReachActionLeft("runMicroWhite")
         
     ## Pushing -----------------------------------
     ## print "Initializing right arm for pushing"
