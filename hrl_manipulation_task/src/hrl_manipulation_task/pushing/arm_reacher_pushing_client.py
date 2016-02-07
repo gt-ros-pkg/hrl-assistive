@@ -34,8 +34,7 @@ import time
 import datetime
 
 # ROS library
-import rospy, roslib
-roslib.load_manifest('hrl_manipulation_task')
+import rospy
 
 # HRL library
 from hrl_srvs.srv import String_String
