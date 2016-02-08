@@ -123,9 +123,15 @@ class armReachAction(mpcBaseAction):
         self.motions['initTest'] = {}
         self.motions['initTest']['left'] = \
           [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
-           ['MOVES', '[0.76, 0.19, -0.04, -0.032, 0.03, -0.1, 1.0]', 5.0],
-           ['MOVES', '[0.76, 0.19, 0.1, -0.032, 0.03, -0.1, 1.0]', 5.0],
-           ] 
+           ['MOVEL', '[0.7, 0.190, 0.14, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
+           ['PAUSE', 1.0],
+           ['MOVEL', '[0.7, 0.190, 0.04, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
+          ## ['MOVET', '[0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
+          ## ['PAUSE', 1.0],
+          ## ['MOVET', '[-0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
+          ] 
+        ## 
+           
         self.motions['initTest']['right'] = []
         
         ## Pushing white microwave motoins --------------------------------------------------------
@@ -133,15 +139,15 @@ class armReachAction(mpcBaseAction):
         self.motions['initMicroWhite'] = {}
         self.motions['initMicroWhite']['left'] = \
           [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
-           ['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 5.0, 'self.main_tag_frame'],
+           ['MOVES', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 5.0, 'self.main_tag_frame'],
            ['PAUSE', 1.0]
             ] 
         self.motions['initMicroWhite']['right'] = []
 
         self.motions['runMicroWhite'] = {}
         self.motions['runMicroWhite']['left'] = \
-          [['MOVEL', '[ 0.06, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 2.5, 'self.main_tag_frame'],
-           ['MOVEL', '[-0.2, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0]', 3.0, 'self.main_tag_frame']] 
+          [['MOVES', '[ 0.03, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 2.5, 'self.main_tag_frame'],
+           ['MOVES', '[-0.2, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0]', 3.0, 'self.main_tag_frame']] 
         self.motions['runMicroWhite']['right'] = []
 
         ## Pushing cabinet motoins --------------------------------------------------------

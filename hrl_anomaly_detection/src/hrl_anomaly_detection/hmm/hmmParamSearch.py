@@ -12,6 +12,8 @@ import learning_util as util
 # nohup rosrun hrl_anomaly_detection hmmParamSearch.py > optimization.log &
 # sed '/GHMM ghmm.py/d' optimization.log > optimizationClean.log
 
+paramSet = ''
+
 class HmmClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, downSampleSize=200, scale=10, nState=20, cov_mult=1.0, isScooping=True):
@@ -31,10 +33,14 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.trainData = None
 
     def set_params(self, **parameters):
+        global paramSet
         params = ''
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
             params += '%s: %s, ' % (parameter, str(value))
+        if params != paramSet:
+            paramSet = params
+            print ''
         print params
         return self
 
@@ -49,10 +55,9 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         trainData, _ = loadData(None, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose, features=X)
 
         # Possible pass in trainData through X (thus utilizing the cross-validation in sklearn)
-        print 'Number of modalities (dimensions):', len(trainData)
-        print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
-        print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
-        # TODO: Notice above!!
+        #print 'Number of modalities (dimensions):', len(trainData)
+        #print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
+        #print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
 
         # minimum and maximum vales for scaling from Daehyung
         minVals = []
@@ -132,8 +137,8 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
 
 # subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
-# subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
-subject_names = ['s2']
+subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
+# subject_names = ['s2']
 task_name = 'feeding'
 
 # Loading success and failure data
@@ -152,7 +157,7 @@ print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
 tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'cov_mult': [1.0, 3.0, 5.0, 10.0]}
 
 # Run grid search
-gs = GridSearchCV(HmmClassifier(), tuned_params, cv=2)
+gs = GridSearchCV(HmmClassifier(), tuned_params)
 gs.fit(X=features, y=[1]*len(features))
 
 print 'Grid Search:'
@@ -169,8 +174,8 @@ param_dist = {'downSampleSize': sp_randint(100, 300),
               'cov_mult': sp_randint(1, 10)}
 
 # Run randomized search
-random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, cv=2, n_iter=50)
-random_search.fit(X=[1,2,3,4], y=[1,1,1,1])
+random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=50)
+random_search.fit(X=features, y=[1]*len(features))
 
 print 'Randomized Search:'
 print 'Best params:', random_search.best_params_

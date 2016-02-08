@@ -1,5 +1,5 @@
 <launch>
-	<arg name="task_name" default="pushing" />
+	<arg name="task_name" default="pushing_microwhite" />
   
 	<arg name="marker_size" default="4.2" />
 	<arg name="max_new_marker_error" default="0.05" />
