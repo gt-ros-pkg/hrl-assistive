@@ -46,7 +46,7 @@ from hrl_srvs.srv import None_Bool, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-
+from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
 
 class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
@@ -122,10 +122,15 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_push_frame
         self.motions['initTest'] = {}
         self.motions['initTest']['left'] = \
-          [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
-           ['MOVEL', '[0.7, 0.190, 0.14, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
+          [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
+           ## ['MOVEL', '[0.7, 0.190, 0.14, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
            ['PAUSE', 1.0],
-           ['MOVEL', '[0.7, 0.190, 0.04, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
+           ['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
+           ['MOVEL', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.microwave_white_frame'],           
+           ['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.microwave_white_frame'],           
+           ## ['PAUSE', 1.0],
+           ## ['MOVEL', '[-0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
+           ## ['MOVEL', '[0.7, 0.190, 0.04, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
           ## ['MOVET', '[0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
           ## ['PAUSE', 1.0],
           ## ['MOVET', '[-0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
@@ -138,16 +143,16 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_push_frame
         self.motions['initMicroWhite'] = {}
         self.motions['initMicroWhite']['left'] = \
-          [['MOVEJ', '[0.55, 0.8, 0.78, -2.08, 2.96, -1.12, 2.62]', 5.0],
-           ['MOVES', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 5.0, 'self.main_tag_frame'],
+          [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
            ['PAUSE', 1.0]
             ] 
         self.motions['initMicroWhite']['right'] = []
 
         self.motions['runMicroWhite'] = {}
         self.motions['runMicroWhite']['left'] = \
-          [['MOVES', '[ 0.03, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0]', 2.5, 'self.main_tag_frame'],
-           ['MOVES', '[-0.2, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0]', 3.0, 'self.main_tag_frame']] 
+          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.microwave_white_frame'],           
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.microwave_white_frame']] 
         self.motions['runMicroWhite']['right'] = []
 
         ## Pushing cabinet motoins --------------------------------------------------------
@@ -197,11 +202,13 @@ class armReachAction(mpcBaseAction):
 
 
     def mainTagPoseCallback(self, data):
-        p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
-        M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
-                                      data.pose.orientation.z, data.pose.orientation.w)
-        self.main_tag_frame = PyKDL.Frame(M,p)
 
+        self.main_tag_frame = dh.pose2KDLframe(data.pose)
+
+        M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        self.microwave_white_frame = PyKDL.Frame(M, self.main_tag_frame.p)
+
+        
 
 
 if __name__ == '__main__':

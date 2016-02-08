@@ -46,9 +46,8 @@ from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneR
 
 # Sensors
 from sensor.kinect_audio import kinect_audio
-## from sensor.wrist_audio import wrist_audio
-from sensor.wrist_audio_stream import wrist_audio
-from sensor import wrist_audio_stream as was
+from sensor.wrist_audio import wrist_audio
+## from sensor.wrist_audio_stream import wrist_audio
 from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
 from sensor.artag_vision import artag_vision
@@ -139,7 +138,7 @@ class logger:
         ## # disable logging
         ## if self.audio_kinect is not None: self.audio_kinect.enable_log = False
         ## if self.kinematics is not None: self.kinematics.enable_log = False
-        if self.audio_wrist is not None: self.audio_wrist.cancelled = True
+        ## if self.audio_wrist is not None: self.audio_wrist.cancelled = True
         
         ## # log into data
         ## if self.audio_kinect is not None: 
@@ -160,13 +159,13 @@ class logger:
         # logging by thread 
         self.enable_log_thread = False
 
-        # log thread data
-        if self.audio_wrist is not None: 
-            audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.data['audio_wrist_data'])
-            ## self.data['audio_wrist_time']  = self.audio_wrist.time_data
-            ## self.data['audio_wrist_data']  = self.audio_wrist.audio_data
-            self.data['audio_wrist_rms']   = audio_wrist_rms
-            self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
+        ## # log thread data
+        ## if self.audio_wrist is not None: 
+        ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.data['audio_wrist_data'])
+        ##     ## self.data['audio_wrist_time']  = self.audio_wrist.time_data
+        ##     ## self.data['audio_wrist_data']  = self.audio_wrist.audio_data
+        ##     self.data['audio_wrist_rms']   = audio_wrist_rms
+        ##     self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
 
         
         if bCont:
@@ -316,11 +315,12 @@ class logger:
                 msg.audio_head_joints     = [self.audio_kinect.head_joints[0], self.audio_kinect.head_joints[1]]
                 msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
-            if self.audio_wrist is not None: 
-                if len(self.audio_wrist.audio_data) <2: continue
-                audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
-                msg.audio_wrist_rms       = audio_wrist_rms
-                msg.audio_wrist_mfcc      = audio_wrist_mfcc
+            # TODO
+            ## if self.audio_wrist is not None: 
+            ##     if len(self.audio_wrist.audio_data) <2: continue
+            ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
+            ##     msg.audio_wrist_rms       = audio_wrist_rms
+            ##     msg.audio_wrist_mfcc      = audio_wrist_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
@@ -387,17 +387,16 @@ class logger:
                     self.data['audio_power'].append(self.audio_kinect.power)
                     
             if self.audio_wrist is not None: 
-                audio_wrist_time, audio_wrist_data = self.audio_wrist.get_data()
                 if 'audio_wrist_time' not in self.data.keys():
-                    self.data['audio_wrist_time']  = [audio_wrist_time]
-                    self.data['audio_wrist_data']  = [audio_wrist_data]
-                    ## self.data['audio_wrist_rms']   = [audio_wrist_rms]
-                    ## self.data['audio_wrist_mfcc']  = [audio_wrist_mfcc]
+                    self.data['audio_wrist_time']  = [self.audio_wrist.time]
+                    self.data['audio_wrist_rms']   = [self.audio_wrist.audio_rms]
+                    self.data['audio_wrist_mfcc']  = [self.audio_wrist.audio_mfcc]
+                    self.data['audio_wrist_data']  = [self.audio_wrist.audio_data]
                 else:
-                    self.data['audio_wrist_time'].append(audio_wrist_time)
-                    self.data['audio_wrist_data'].append(audio_wrist_data)
-                    ## self.data['audio_wrist_rms'].append(audio_wrist_rms)
-                    ## self.data['audio_wrist_mfcc'].append(audio_wrist_mfcc)
+                    self.data['audio_wrist_time'].append(self.audio_wrist.time)
+                    self.data['audio_wrist_rms'].append(self.audio_wrist.audio_rms)
+                    self.data['audio_wrist_mfcc'].append(self.audio_wrist.audio_mfcc)
+                    self.data['audio_wrist_data'].append(self.audio_wrist.audio_data)
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
@@ -503,7 +502,7 @@ class logger:
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task    = 'pushing'
+    task    = 'pushing_microwhite'
     verbose = True
     data_pub= True
 

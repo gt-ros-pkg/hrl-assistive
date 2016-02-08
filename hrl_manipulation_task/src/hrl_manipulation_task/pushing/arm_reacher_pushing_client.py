@@ -53,6 +53,7 @@ if __name__ == '__main__':
 
     ## TEST -----------------------------------    
     # TODO: this code should be run in parallel.
+    print armReachActionLeft("getMainTagPos")
     print armReachActionLeft("initTest")
     ## sys.exit()
     

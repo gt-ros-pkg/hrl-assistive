@@ -201,11 +201,12 @@ class wrist_audio(threading.Thread):
     def get_data(self):
         
         try:
-            audio_data = self.stream.read(self.FRAME_SIZE)
+            audio_data = self.stream.read(FRAME_SIZE)
         except:
             print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
             print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
-            audio_data = self.stream.read(self.FRAME_SIZE)
+            audio_data = []
+            ## audio_data = self.stream.read(FRAME_SIZE)
             ## audio_data = np.fromstring(data, np.int16)
             
         audio_time = rospy.get_rostime().to_sec()

@@ -32,8 +32,9 @@
 import rospy, roslib
 import os, copy, sys
 
-from hrl_msgs.msg import FloatArray
-from std_msgs.msg import Float32
+## from hrl_msgs.msg import FloatArray
+## from std_msgs.msg import Float64
+from hrl_anomaly_detection.msg import audio
 
 # util
 import numpy as np
@@ -44,8 +45,7 @@ import array
 from features import mfcc
 
 class wrist_audio_collector:
-    ## FRAME_SIZE = 4096 #8192 # frame per buffer
-    FRAME_SIZE = 512 #4096 # frame per buffer
+    FRAME_SIZE = 4096 # frame per buffer
     RATE       = 44100 # sampling rate
     CHANNEL    = 2 # number of channels
     FORMAT     = pyaudio.paInt16
@@ -55,10 +55,6 @@ class wrist_audio_collector:
     def __init__(self, verbose=False):
         self.verbose = verbose
         
-        # instant data
-        self.time  = None
-        self.power = None
-
         ## self.initParams()
         self.initComms()
 
@@ -70,8 +66,7 @@ class wrist_audio_collector:
     def initComms(self):
         '''
         Initialize pusblishers and subscribers
-        '''
-            
+        '''            
         self.p = pyaudio.PyAudio()
         deviceIndex = self.find_input_device()
         devInfo = self.p.get_device_info_by_index(deviceIndex)
@@ -82,8 +77,7 @@ class wrist_audio_collector:
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.FRAME_SIZE, input_device_index=deviceIndex)
         ## self.stream.start_stream()
 
-        ## self.audio_rms_pub  = rospy.Publisher("hrl_manipulation_task/wrist_audio_rms", Float32, latch=True)
-        self.audio_data_pub = rospy.Publisher("hrl_manipulation_task/wrist_audio_data", FloatArray, latch=True)
+        self.audio_pub  = rospy.Publisher("hrl_manipulation_task/wrist_audio", audio, latch=True)
     
     def find_input_device(self):
         device_index = None
@@ -102,14 +96,7 @@ class wrist_audio_collector:
 
         return device_index
 
-    ## # callback function to stream audio, another thread.
-    ## def callback(self, in_data,frame_count, time_info, status):
-    ##     self.str_data = in_data
-    ##     self.int_data = np.fromstring(in_data,dtype=np.int16)
-    ##     return
-    ##     ## return (self.audio, pyaudio.paContinue)
-
-
+        
     def get_data(self):
         audio_rms = audio_mfcc = 0
         
@@ -129,9 +116,8 @@ class wrist_audio_collector:
             ## self.stream.close()
             ## sys.exit()
             
-        audio_time = rospy.get_rostime().to_sec()
-        
-        return audio_time, audio_rms, audio_mfcc
+        audio_time = rospy.Time.now() #rospy.get_rostime().to_sec()        
+        return audio_time, audio_data, audio_rms, audio_mfcc
 
     def get_data2(self):
         try:
@@ -170,27 +156,28 @@ class wrist_audio_collector:
 
     def run(self):
         
-        import hrl_lib.circular_buffer as cb
-        self.rms_buf  = cb.CircularBuffer(100, (1,))
-        import matplotlib.pyplot as plt
+        ## import hrl_lib.circular_buffer as cb
+        ## self.rms_buf  = cb.CircularBuffer(100, (1,))
+        ## import matplotlib.pyplot as plt
         
         ## fig = plt.figure()
         ## ax = fig.add_subplot(111)
         ## plt.ion()
         ## plt.show()
-        msg = FloatArray()
+        
+        msg = audio()
         
         ## rate = rospy.Rate(25) # 25Hz, nominally.    
         while not rospy.is_shutdown():
             ## print "running test: ", len(self.centers)
-            ## audio_time, rms, mfcc = self.get_data()
+            audio_time, audio_data, audio_rms, audio_mfcc = self.get_data()
+            ## data = self.get_data2()
 
-            data = self.get_data2()
-            
-            ## self.audio_rms_pub.publish(rms)
-            msg.header.stamp = rospy.Time.now()
-            msg.data = data
-            self.audio_data_pub.publish(msg)
+            msg.header.stamp = audio_time #rospy.Time.now()
+            msg.audio_rms  = audio_rms
+            msg.audio_mfcc = audio_mfcc
+            msg.audio_data = audio_data            
+            self.audio_pub.publish(msg)
 
 
 

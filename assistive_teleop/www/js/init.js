@@ -35,7 +35,7 @@ var assistive_teleop = {
                                          .addClass('ui-corner-bottom centered');
     $('#scale_slider').slider({value:0.5, min:0, max:1.0,
                                step:0.01, orientation:'vertical'}); 
-    $('.bpd, #cart_controller, .ar_servo_button, .traj_play_cont,'+
+    $('.bpd, #cart_controller, .ar_servo_button, .man_task_cont, .traj_play_cont,'+
       '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
       '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power').button();
 
@@ -60,13 +60,12 @@ var assistive_teleop = {
         initARServoTab('tabServoing');
         initRunStop('runStopDiv');
         initTrajPlay();
-        initBodyRegistration('tabBodyReg');
+        //initBodyRegistration('tabBodyReg');
         initEllControl();
         initCartControl();
         initTaskInterface('tabTasks');
         initRYDSTab('tabRYDS');
-        initManTaskTab('tabManTasks');
-        //Testing
+        initManTaskTab();
         if (window.location.hash.search('ft') !== -1) {
           initFTDisplay('FTDisplay', {});
         }

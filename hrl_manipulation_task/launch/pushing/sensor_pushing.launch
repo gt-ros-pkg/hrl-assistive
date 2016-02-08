@@ -17,11 +17,12 @@
             type="change_detector" respawn="false" output="screen"
             /-->
 
-        <!-- only for visualization -->
-        <node name="findObject" pkg="hrl_manipulation_task" type="findObjects.py" respawn="false" output="screen" args="--t $(arg task_name)" />
-
         <!-- F/T sensor -->
         <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />
+        <!-- Audio (wrist) -->
+        <node name="pubWristAudio" pkg="hrl_manipulation_task" type="pubWristAudio.py" respawn="true" output="screen" args="--t $(arg task_name)" />
+        <!-- only for visualization -->
+        <node name="findObject" pkg="hrl_manipulation_task" type="findObjects.py" respawn="true" output="screen" args="--t $(arg task_name)" />
 
 
 </launch>
