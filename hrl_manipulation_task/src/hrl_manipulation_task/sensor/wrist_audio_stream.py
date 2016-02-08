@@ -198,9 +198,22 @@ class wrist_audio(threading.Thread):
                 
             ## rate.sleep()
 
+    def get_data(self):
+        
+        try:
+            audio_data = self.stream.read(self.FRAME_SIZE)
+        except:
+            print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
+            print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
+            audio_data = self.stream.read(self.FRAME_SIZE)
+            ## audio_data = np.fromstring(data, np.int16)
+            
+        audio_time = rospy.get_rostime().to_sec()
+
+        return audio_time, audio_data
+
             
     def get_feature(self, data):
-
         audio_rms = self.get_rms(data)
         num_data = np.fromstring(data, np.int16)
         audio_mfcc = mfcc(num_data, samplerate=RATE, nfft=FRAME_SIZE, winlen=WINLEN).tolist()[0]        
@@ -259,28 +272,6 @@ if __name__ == '__main__':
         
 
 
-    ## def get_data(self):
-    ##     audio_rms = audio_mfcc = 0
-        
-    ##     try:
-    ##         data       = self.stream.read(self.FRAME_SIZE)
-    ##         audio_rms  = self.get_rms(data)
-    ##         audio_data = np.fromstring(data, np.int16)
-    ##         audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
-    ##     except:
-    ##         print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
-    ##         print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
-    ##         data       = self.stream.read(self.FRAME_SIZE)
-    ##         audio_rms  = self.get_rms(data)
-    ##         audio_data = np.fromstring(data, np.int16)
-    ##         audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
-    ##         ## self.stream.stop_stream()
-    ##         ## self.stream.close()
-    ##         ## sys.exit()
-            
-    ##     audio_time = rospy.get_rostime().to_sec()
-
-    ##     return audio_time, audio_rms, audio_mfcc
 
         
     ## def get_stream_data(self):

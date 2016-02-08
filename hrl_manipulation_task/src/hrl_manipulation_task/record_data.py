@@ -131,7 +131,7 @@ class logger:
         self.logger.start()
 
         # special treament for audio
-        self.audio_wrist.log_start()
+        ## self.audio_wrist.log_start()
                     
     def close_log_file(self, bCont=False, last_status='skip'):
 
@@ -162,9 +162,9 @@ class logger:
 
         # log thread data
         if self.audio_wrist is not None: 
-            audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.audio_wrist.audio_data)
-            self.data['audio_wrist_time']  = self.audio_wrist.time_data
-            self.data['audio_wrist_data']  = self.audio_wrist.audio_data
+            audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.data['audio_wrist_data'])
+            ## self.data['audio_wrist_time']  = self.audio_wrist.time_data
+            ## self.data['audio_wrist_data']  = self.audio_wrist.audio_data
             self.data['audio_wrist_rms']   = audio_wrist_rms
             self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
 
@@ -386,16 +386,18 @@ class logger:
                     self.data['audio_azimuth'].append(self.audio_kinect.azimuth)
                     self.data['audio_power'].append(self.audio_kinect.power)
                     
-            ## if self.audio_wrist is not None: 
-            ##     audio_wrist_time, audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_data()
-            ##     if 'audio_wrist_time' not in self.data.keys():
-            ##         self.data['audio_wrist_time']  = [audio_wrist_time]
-            ##         self.data['audio_wrist_rms']   = [audio_wrist_rms]
-            ##         self.data['audio_wrist_mfcc']  = [audio_wrist_mfcc]
-            ##     else:
-            ##         self.data['audio_wrist_time'].append(audio_wrist_time)
-            ##         self.data['audio_wrist_rms'].append(audio_wrist_rms)
-            ##         self.data['audio_wrist_mfcc'].append(audio_wrist_mfcc)
+            if self.audio_wrist is not None: 
+                audio_wrist_time, audio_wrist_data = self.audio_wrist.get_data()
+                if 'audio_wrist_time' not in self.data.keys():
+                    self.data['audio_wrist_time']  = [audio_wrist_time]
+                    self.data['audio_wrist_data']  = [audio_wrist_data]
+                    ## self.data['audio_wrist_rms']   = [audio_wrist_rms]
+                    ## self.data['audio_wrist_mfcc']  = [audio_wrist_mfcc]
+                else:
+                    self.data['audio_wrist_time'].append(audio_wrist_time)
+                    self.data['audio_wrist_data'].append(audio_wrist_data)
+                    ## self.data['audio_wrist_rms'].append(audio_wrist_rms)
+                    ## self.data['audio_wrist_mfcc'].append(audio_wrist_mfcc)
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
