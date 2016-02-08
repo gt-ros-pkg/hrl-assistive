@@ -8,6 +8,8 @@ Panels:
         - /Status1
         - /MarkerArray1/Status1
         - /MarkerArray1/Namespaces1
+        - /TF1
+        - /TF1/Frames1
         - /Pose1
       Splitter Ratio: 0.5
     Tree Height: 775
@@ -665,6 +667,10 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        ar_marker_10:
+          Value: true
+        ar_marker_11:
+          Value: true
         base_bellow_link:
           Value: true
         base_camera_frame:
@@ -955,22 +961,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.60952
+      Distance: 1.09684
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.433851
-        Y: 0.167934
-        Z: 0.759327
+        X: 0.690415
+        Y: 0.27373
+        Z: 0.752621
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.234796
+      Pitch: 1.0848
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.70034
+      Yaw: 1.3353
     Saved: ~
 Window Geometry:
   Displays:
@@ -988,5 +994,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 1735
-  Y: -14
+  X: 1745
+  Y: 24

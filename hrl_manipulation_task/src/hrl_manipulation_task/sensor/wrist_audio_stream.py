@@ -154,7 +154,7 @@ class wrist_audio(threading.Thread):
                 ## data       = self.stream.read(self.FRAME_SIZE)
                 continue
 
-            self.time_data.append(rospy.get_time())
+            self.time_data.append(rospy.get_rostime().to_sec())
             self.audio_data.append(data)
 
             if self.cancelled: break            

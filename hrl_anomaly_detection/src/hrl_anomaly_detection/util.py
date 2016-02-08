@@ -154,8 +154,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
         if verbose: print "rf_traj: ", np.shape(rf_traj) 
 
-        print d.keys()
-
         # kinect sound ----------------------------------------------------------------
         if 'audio_time' in d.keys():
             audio_time    = (np.array(d['audio_time']) - init_time).tolist()
@@ -212,6 +210,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
         # wrist sound ----------------------------------------------------------------
         if 'audio_wrist_time' in d.keys():
+            print d['audio_wrist_time'][0], init_time, len(d['audio_wrist_rms'])
+            
+
             audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
             audio_rms  = np.abs(d['audio_wrist_rms'])
             audio_mfcc = np.abs(d['audio_wrist_mfcc'])

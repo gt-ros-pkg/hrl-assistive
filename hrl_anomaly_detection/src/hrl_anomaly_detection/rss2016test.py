@@ -1436,9 +1436,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     time_list = interp_data_dict[key]
                     if len(time_list)==0: continue
                     for tl in time_list:
-                        print tl[-1]
+                        ## print tl[-1]
                         time_lim[-1] = max(time_lim[-1], tl[-1])
-            print "--------------"
 
         # for each file in success or failure set
         for fidx in xrange(len(file_list)):
