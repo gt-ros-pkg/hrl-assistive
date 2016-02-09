@@ -88,6 +88,9 @@ def loadFeatures(fileNames, verbose=False):
     for idx, fileName in enumerate(fileNames):
         if os.path.isdir(fileName):
             continue
+        if verbose:
+            with open(fileName, 'rb') as f:
+                print 'Keys:', pickle.load(f).keys()
         audio, audioTimes = audioFeatures(fileName)
         forces, distances, angles, kinematicsTimes, forceTimes = forceKinematics(fileName)
         features.append([audio, audioTimes, forces, distances, angles, kinematicsTimes, forceTimes])
@@ -176,6 +179,11 @@ def suppress_output():
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
+def getSubjectFiles(dirPath):
+    fileList = os.listdir(dirPath)
+    successList = [os.path.join(dirPath, f) for f in fileList if os.path.isfile(os.path.join(dirPath, f)) and 'success' in f]
+    failureList = [os.path.join(dirPath, f) for f in fileList if os.path.isfile(os.path.join(dirPath, f)) and 'failure' in f]
+    return successList, failureList
 
 def getSubjectFileList(root_path, subject_names, task_name, verbose=False):
     # List up recorded files

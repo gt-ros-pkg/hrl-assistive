@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import random
 from scipy.stats import randint as sp_randint
 from sklearn.grid_search import RandomizedSearchCV, GridSearchCV
@@ -13,6 +14,7 @@ import learning_util as util
 # sed '/GHMM ghmm.py/d' optimization.log > optimizationClean.log
 
 paramSet = ''
+scores = []
 
 class HmmClassifier(BaseEstimator, ClassifierMixin):
 
@@ -33,14 +35,16 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.trainData = None
 
     def set_params(self, **parameters):
-        global paramSet
+        global paramSet, scores
         params = ''
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
             params += '%s: %s, ' % (parameter, str(value))
         if params != paramSet:
             paramSet = params
-            print ''
+            if scores:
+                print 'Average score: %f\n' % (sum(scores) / float(len(scores)))
+                scores = []
         print params
         return self
 
@@ -52,7 +56,10 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         use try/except blog with exceptions. This is just for short syntax.
         """
 
+        t = time.time()
         trainData, _ = loadData(None, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose, features=X)
+        print 'time 1:', time.time() - t
+        t = time.time()
 
         # Possible pass in trainData through X (thus utilizing the cross-validation in sklearn)
         #print 'Number of modalities (dimensions):', len(trainData)
@@ -79,7 +86,11 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
         # hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
         self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, check_method='progress', anomaly_offset=self.anomaly_offset, verbose=self.verbose)
+        print 'time 2:', time.time() - t
+        t = time.time()
         ret = self.hmm.fit(xData=self.trainData, cov_mult=[self.cov_mult]*16)
+        print 'time 3:', time.time() - t
+        t = time.time()
 
         if ret == 'Failure':
             print 'HMM return was a failure!'
@@ -90,23 +101,32 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         return self
 
     def score(self, X, y, sample_weight=None):
+        global scores
         if not self.isFitted:
             return 0
 
         log_ll = []
+        t = time.time()
         # exp_log_ll = []        
         for i in xrange(len(self.trainData[0])):
             log_ll.append([])
             # exp_log_ll.append([])
+            # Compute likelihood values for data
             for j in range(2, len(self.trainData[0][i])):
-                X = [x[i,:j] for x in np.array(self.trainData)]                
+                X = [x[i,:j] for x in np.array(self.trainData)]
+                # t1 = time.time()
                 exp_logp, logp = self.hmm.expLoglikelihood(X, self.hmm.l_ths_mult, bLoglikelihood=True)
+                # print 'time exp:', time.time() - t1
                 log_ll[i].append(logp)
                 # exp_log_ll[i].append(exp_logp)
 
+        print 'time 4:', time.time() - t
+        # Return average log-likelihood
         logs = [x[-1] for x in log_ll]
-        print 'expLoglikelihood() log_ll:', np.shape(log_ll), sum(logs) / float(len(logs))
-        return sum(logs) / float(len(logs))
+        score = sum(logs) / float(len(logs))
+        scores.append(score)
+        print 'expLoglikelihood() log_ll:', np.shape(log_ll), score
+        return score
 
         # print 'expLoglikelihood() exp_log_ll:', np.shape(exp_log_ll), [x[-1] for x in exp_log_ll]
 
@@ -142,19 +162,26 @@ subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
 task_name = 'feeding'
 
 # Loading success and failure data
-root_path = '/home/mycroft/feeding'
-success_list, _ = getSubjectFileList(root_path, subject_names, task_name)
+if True:
+    root_path = '/home/mycroft/feeding'
+    success_list, _ = getSubjectFileList(root_path, subject_names, task_name)
+else:
+    root_path = '/home/mycroft/gatsbii_scooping'
+    success_list, _ = getSubjectFiles(root_path)
 
 print "--------------------------------------------"
 print "# of Success files: ", len(success_list)
 print "--------------------------------------------"
 
-features = loadFeatures(success_list)
+features = loadFeatures(success_list, verbose=False)
+random.shuffle(features)
 
 print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
 
 # Specify parameters and possible parameter values
-tuned_params = {'downSampleSize': [100, 200, 300], 'scale': [1, 5, 10], 'nState': [20, 30], 'cov_mult': [1.0, 3.0, 5.0, 10.0]}
+# Try cov_mult between 8.0 and 12.0
+#tuned_params = {'downSampleSize': [400, 500, 600, 700], 'scale': [1], 'nState': [20, 30], 'cov_mult': [10.0]}
+tuned_params = {'downSampleSize': [100], 'scale': [1], 'nState': [20, 30], 'cov_mult': [10.0]}
 
 # Run grid search
 gs = GridSearchCV(HmmClassifier(), tuned_params)
@@ -165,19 +192,19 @@ print 'Best params:', gs.best_params_
 print 'Best Score:', gs.best_score_
 # print 'Grid scores:', gs.grid_scores_
 
-print '\n', '-'*50, '\nBeginning Randomized Search\n', '-'*50, '\n'
+#print '\n', '-'*50, '\nBeginning Randomized Search\n', '-'*50, '\n'
 
 # specify parameters and distributions to sample from
-param_dist = {'downSampleSize': sp_randint(100, 300),
-              'scale': sp_randint(1, 10),
-              'nState': sp_randint(20, 30),
-              'cov_mult': sp_randint(1, 10)}
+#param_dist = {'downSampleSize': sp_randint(300, 400),
+#              'scale': sp_randint(1, 3),
+#              'nState': sp_randint(20, 30),
+#              'cov_mult': sp_randint(10, 15)}
 
 # Run randomized search
-random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=50)
-random_search.fit(X=features, y=[1]*len(features))
+#random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=50)
+#random_search.fit(X=features, y=[1]*len(features))
 
-print 'Randomized Search:'
-print 'Best params:', random_search.best_params_
-print 'Best Score:', random_search.best_score_
+#print 'Randomized Search:'
+#print 'Best params:', random_search.best_params_
+#print 'Best Score:', random_search.best_score_
 # print 'Grid scores:', random_search.grid_scores_
