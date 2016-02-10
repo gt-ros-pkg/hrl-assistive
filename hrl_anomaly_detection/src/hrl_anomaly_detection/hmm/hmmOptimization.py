@@ -28,19 +28,21 @@
 
 import time
 import random
+import numpy as np
 from scipy.stats import randint as sp_randint
 from sklearn.grid_search import RandomizedSearchCV, GridSearchCV
 from sklearn.base import BaseEstimator, ClassifierMixin
 from learning_hmm_multi_n import learning_hmm_multi_n
-from util import *
+from util import getSubjectFiles
+from .. import util as dataUtil
 import learning_util as util
 
 # catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
-# nohup rosrun hrl_anomaly_detection hmmParamSearch.py > optimization.log &
+# nohup rosrun hrl_anomaly_detection hmmOptimization.py > optimization.log &
 # sed '/GHMM ghmm.py/d' optimization.log > optimizationClean.log
 
 '''
-This HMM optimizer is meant to be used in conjunction with the scooping and feeding data used within the ICRA 2016 paper.
+This HMM optimizer is meant to be used in conjunction with the scooping data most recently recorded by Daehyung.
 '''
 
 paramSet = ''
@@ -87,7 +89,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         """
 
         t = time.time()
-        trainData, _ = loadData(None, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose, features=X)
+        trainingData = self.loadData()
         print 'time 1:', time.time() - t
         t = time.time()
 
@@ -96,18 +98,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         #print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
         #print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
 
-        # minimum and maximum vales for scaling from Daehyung
-        minVals = []
-        maxVals = []
-        for modality in trainData:
-            minVals.append(np.min(modality))
-            maxVals.append(np.max(modality))
-
-        # Scale data
-        self.trainData = self.scaleData(trainData, minVals=minVals, maxVals=maxVals)
-
-        # hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
-        self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, check_method='progress', anomaly_offset=self.anomaly_offset, verbose=self.verbose)
+        self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=len(trainingData), scale=self.scale, check_method='progress', cluster_type='time', anomaly_offset=self.anomaly_offset, verbose=self.verbose)
         print 'time 2:', time.time() - t
         t = time.time()
         ret = self.hmm.fit(xData=self.trainData, cov_mult=[self.cov_mult]*16)
@@ -163,35 +154,53 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
         # return 0
 
-    def scaleData(self, dataList, minVals=None, maxVals=None):
-        nDimension = len(dataList)
-        dataList_scaled = []
-        for i in xrange(nDimension):
-            dataList_scaled.append([])
+    # Load training data similar to the approach taken in data_manager.py
+    def loadData(self):
+        # Loading success and failure data
+        root_path = '/home/mycroft/gatsbii_scooping'
+        success_list, _ = getSubjectFiles(root_path)
 
-        # Scale features
-        for i in xrange(nDimension):
-            for j in xrange(len(dataList[i])):
-                dataList_scaled[i].append(util.scaling(dataList[i][j], minVals[i], maxVals[i], self.scale))
+        feature_list = ['unimodal_audioPower',
+                        'unimodal_audioWristRMS',
+                        'unimodal_kinVel',
+                        'unimodal_ftForce',
+                        'unimodal_ppsForce',
+                        'unimodal_visionChange',
+                        'unimodal_fabricForce',
+                        'crossmodal_targetEEDist',
+                        'crossmodal_targetEEAng',
+                        'crossmodal_artagEEDist',
+                        'crossmodal_artagEEAng']
 
-        return dataList_scaled
+        rawDataDict, dataDict = dataUtil.loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, local_range=0.15, verbose=self.verbose)
+        trainingData, _ = dataUtil.extractLocalFeature(dataDict, feature_list)
+        trainingData = np.array(trainingData)
 
+        if True:
+            # exclude stationary data
+            thres = 0.025
+            n,m,k = np.shape(trainingData)
+            diff_all_data = trainingData[:,:,1:] - trainingData[:,:,:-1]
+            add_idx = []
+            for i in xrange(n):
+                std = np.max(np.max(diff_all_data[i], axis=1))
+                if std >= thres:
+                    add_idx.append(i)
+            trainingData  = trainingData[add_idx]
 
-# subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
-subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
-# subject_names = ['s2']
-task_name = 'feeding'
+        return trainingData
+
 
 # Loading success and failure data
-root_path = '/home/mycroft/feeding'
-success_list, _ = getSubjectFileList(root_path, subject_names, task_name)
+root_path = '/home/mycroft/gatsbii_scooping'
+success_list, _ = getSubjectFiles(root_path)
 
 print "--------------------------------------------"
 print "# of Success files: ", len(success_list)
 print "--------------------------------------------"
 
-features = loadFeatures(success_list, verbose=False)
-random.shuffle(features)
+featureIndices = xrange(len(success_list))
+random.shuffle(featureIndices)
 
 print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
 
@@ -202,7 +211,7 @@ tuned_params = {'downSampleSize': [100], 'scale': [1], 'nState': [20, 30], 'cov_
 
 # Run grid search
 gs = GridSearchCV(HmmClassifier(), tuned_params)
-gs.fit(X=features, y=[1]*len(features))
+gs.fit(X=featureIndices, y=[1]*len(featureIndices))
 
 print 'Grid Search:'
 print 'Best params:', gs.best_params_
@@ -219,7 +228,7 @@ print 'Best Score:', gs.best_score_
 
 # Run randomized search
 #random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=50)
-#random_search.fit(X=features, y=[1]*len(features))
+#random_search.fit(X=featureIndices, y=[1]*len(featureIndices))
 
 #print 'Randomized Search:'
 #print 'Best params:', random_search.best_params_
