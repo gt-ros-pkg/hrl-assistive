@@ -5,7 +5,7 @@ import sys
 import rospy
 
 import hrl_task_planning.pddl_utils as pddl
-from hrl_task_planning.srv import PDDLPlanner
+from hrl_task_planning.srv import PDDLPlanner, PDDLPlannerResponse
 from hrl_task_planning.msg import PDDLState
 
 
@@ -32,13 +32,17 @@ class TaskPlannerNode(object):
         problem = pddl.Problem.from_msg(req.problem)
         # Define the planning situation (domain and problem)
         situation = pddl.Situation(domain, problem)
+        result = PDDLPlannerResponse()
         try:
             situation.solution = self.planner.solve(domain, problem)
-        except pddl.PlanningException:
-            return (False, [], [])
-        states = situation.get_plan_intermediary_states()
-        states = [PDDLState(problem.name, req.problem.domain, map(str, state)) for state in states]
-        return (True, map(str, situation.solution), states)
+            result.solved = True
+            result.steps = map(str, situation.solution)
+            result.states = [PDDLState(problem.name, map(str, state)) for state in situation.get_plan_intermediary_states()]
+        except pddl.PlanningError:
+            result.solved = False
+        except Exception as e:
+            raise rospy.ServiceException(e.message)
+        return result
 
 
 def main():

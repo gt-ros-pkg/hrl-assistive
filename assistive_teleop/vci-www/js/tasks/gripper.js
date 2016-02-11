@@ -6,7 +6,8 @@ RFH.GripperDisplay = function (options) {
     var $div = $('#'+options.divId);
     var $gripperSlider = $div.find('.gripper-slider');
     var $grabButton = $div.find('.grab').button();
-    var $releaseButton = $div.find('.release').button();
+    var $releaseButton = $div.find('.release').button().hide();
+    var $releaseLabel = $('label[for='+$releaseButton.prop('id')+']').hide();
     var handleWidthPct = 7; // Width of the slider handles relative to the slider;
     $gripperSlider.slider({
         range: true,
@@ -29,11 +30,14 @@ RFH.GripperDisplay = function (options) {
         }
     };
     $releaseButton.on('click', releaseOnContactCB );
-    $('label[for='+$releaseButton.prop('id')+']').prop('title', 'Wait until contact, then let go'); 
+       $releaseLabel.prop('title', 'Wait until contact, then let go'); 
 
     var updateReleaseOnContact = function (msg) {
+       $releaseButton.prop('checked', false).button('refresh'); 
         if (!msg.data) {
-           $releaseButton.prop('checked', false).button('refresh'); 
+           $releaseLabel.hide();
+        } else {
+           $releaseLabel.show();
         }
     };
     gripper.graspingCBList.push(updateReleaseOnContact);

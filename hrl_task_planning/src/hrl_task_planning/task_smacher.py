@@ -13,10 +13,18 @@ from hrl_task_planning.pddl_utils import PlanStep
 
 SPA = ["succeeded", "preempted", "aborted"]
 
+DOMAINS = ["pick_and_place"]
+
 
 class TaskSmacher(object):
     def __init__(self):
         self.modules = {}
+        for domain in DOMAINS:
+            try:
+                self.modules[domain] = importlib.import_module("hrl_task_planning.%s_states" % domain)
+                rospy.loginfo("[%s] Loaded domain: %s", rospy.get_name(), domain)
+            except ImportError:
+                rospy.logerr("[%s] Failed to load domain: %s", rospy.get_name(), domain)
         self.preprocess_services = {}
         self.running_sm_threads = {}
         self.state_pub = rospy.Publisher('task_state', PDDLState, latch=True)
@@ -29,57 +37,59 @@ class TaskSmacher(object):
         print "Received Request:",  req
 #        req.name = req.name.split('+')[0] # Throw out anything after the + sign
         # Make sure we have state machine definitions for this domain
-        try:
-            self.modules[req.domain] = importlib.import_module("hrl_task_planning.%s_states" % req.domain)
-        except ImportError:
-            rospy.logerr("[%s] Cannot load State Machine data for task: %s", rospy.get_name(), req.domain)
+        if req.domain not in self.modules:
+            rospy.logerr("[%s] Unknown domain: %s", rospy.get_name(), req.domain)
             return
+        state_machine = self.problem_msg_to_state_machine(req)
+        self.run_sm(state_machine, req.domain)
 
-        # If we don't have a preprocessor service set up for this domain, do so now
-        if req.domain not in self.preprocess_services:
-            self.preprocess_services[req.domain] = rospy.ServiceProxy("/preprocess_problem/%s" % req.domain, PreprocessProblem)
-
-        # Try to preprocess the given problem (fills out current state, known objects, defaults goals as applicable)
+    def problem_msg_to_state_machine(self, problem_msg):
+        """ Return a state machine implementing a solution to the given problem. """
+        # Preprocess problem request
         try:
-            full_problem = self.preprocess_services[req.domain].call(req).problem
+            full_problem = self.preprocess(problem_msg)
         except rospy.ServiceException as e:
             rospy.logerr("[%s] Service error when preprocesssing problem %s in domain %s: %s",
-                         rospy.get_name(), req.name, req.domain, e.message)
-            return
+                         rospy.get_name(), problem_msg.name, problem_msg.domain, e.message)
 
-        # Get a planned solution based on the full problem
+        # Get solution from planner
         try:
             solution = self.planner_service.call(full_problem)
+            if not solution.solved:
+                rospy.logwarn("[%s] Planner could not find a solution to problem %s in domain %s: %s",
+                              rospy.get_name(), full_problem.name, full_problem.domain, e.message)
+                return
         except rospy.ServiceException as e:
             rospy.logerr("[%s] Error when planning solution to problem %s in domain %s: %s",
-                         rospy.get_name(), req.name, req.domain, e.message)
+                         rospy.get_name(), full_problem.name, full_problem.domain, e.message)
             return
 
-        # Verify solution
-        if not solution.solved:
-            rospy.logwarn("[%s] Planner could not find a solution to problem %s in domain %s: %s",
-                          rospy.get_name(), req.name, req.domain, e.message)
-            return
-
-        if 'UNDO' in req.name.upper() and self.running_sm_threads[req.domain].is_alive():
-            next_state_req = self.running_sm_threads[req.domain].request
+        if 'UNDO' in problem_msg.name.upper() and self.running_sm_threads[problem_msg.domain].is_alive():
+            next_state_req = self.running_sm_threads[problem_msg.domain].request
         else:
             next_state_req = None
 
-        state_machine = self.build_sm(solution, self.modules[req.domain].get_action_state, next_state_req)
+        return self.build_sm(solution, self.modules[problem_msg.domain].get_action_state, next_state_req)
 
+    def preprocess(self, req):
+        """ Try to preprocess the given problem (fills out current state, known objects, defaults goals as applicable)."""
+        # If we don't have a preprocessor service set up for this domain, do so now
+        if req.domain not in self.preprocess_services:
+            self.preprocess_services[req.domain] = rospy.ServiceProxy("/preprocess_problem/%s" % req.domain, PreprocessProblem)
+        return self.preprocess_services[req.domain].call(req).problem
+
+    def run_sm(self, state_machine, sm_name):
         try:
-            if self.running_sm_threads[req.domain].is_alive():
-                self.running_sm_threads[req.domain].preempt()
+            if self.running_sm_threads[sm_name].is_alive():
+                self.running_sm_thread.preempt()
                 rospy.loginfo("[%s] Preempt requested. Waiting for State Machine for %s to finish.",
-                              rospy.get_name(), self.running_sm_threads[req.domain].problem_name)
-                self.running_sm_threads[req.domain].join()
+                              rospy.get_name(), self.running_sm_thread.problem_name)
+                self.running_sm_thread.join()
         except KeyError:
             pass
 
-        self.solution_pub.publish(PDDLSolution(req.name, req.domain, solution.solved, solution.steps, solution.states))
-        self.running_sm_threads[req.domain] = StateMachineThread(state_machine, req)
-        self.running_sm_threads[req.domain].start()
+        self.running_sm_threads[sm_name] = StateMachineThread(state_machine, sm_name)
+        self.running_sm_threads[sm_name].start()
 
     def build_sm(self, solution, get_state_fn, next_task_request=None):
         plan = map(PlanStep.from_string, solution.steps)
@@ -91,7 +101,11 @@ class TaskSmacher(object):
         sm_states = []
         for i, step in enumerate(plan):
             sm_states.append(("_PDDL_STATE_PUB+%d" % i, PDDLStatePublisherState(pddl_states[i], self.state_pub, outcomes=SPA)))
-            sm_states.append((step.name + "+%d" % i, get_state_fn(step, domain, problem)))
+            step_state = get_state_fn(step)
+            if isinstance(step_state, PDDLProblem):
+                sm_states.append((step.name + "+%d" % i, self.problem_msg_to_state_machine(step_state)))
+            else:
+                sm_states.append((step.name + "+%d" % i, get_state_fn(step)))
         sm_states.append(("_PDDL_STATE_PUB+FINAL", PDDLStatePublisherState(pddl_states[-1], self.state_pub, outcomes=SPA)))
         if next_task_request is None:
             sm_states.append(("_CLEANUP", CleanupState(problem=problem, outcomes=SPA, input_keys=["problem_name"])))
