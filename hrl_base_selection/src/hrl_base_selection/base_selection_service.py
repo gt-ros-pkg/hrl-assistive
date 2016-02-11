@@ -59,6 +59,7 @@ class BaseSelector(object):
         self.robot_z = 0
         self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
         self.pr2_B_ar = None
+        self.pr2_B_model = None
         # Publisher to let me test things with arm_reacher
         #self.wc_position = rospy.Publisher("~pr2_B_wc", PoseStamped, latch=True)
 
@@ -255,8 +256,8 @@ class BaseSelector(object):
         elif self.mode == 'normal':
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
+                self.listener.waitForTransform('/base_link', '/head_link', now, rospy.Duration(15))
+                (trans, rot) = self.listener.lookupTransform('/base_link', '/head_link', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
@@ -265,28 +266,28 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
-                    self.pr2_B_ar = createBMatrix(trans, rot)
+                    self.listener.waitForTransform('/base_link', '/autobed_base_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/autobed_base_link', now)
+                    self.pr2_B_model = createBMatrix(trans, rot)
 
                     # Here I do some manual conversion to covert between the coordinate frame of the bed, which should
                     # be located in the center of the headboard of the bed on the floor, to the AR tag's coordinate
                     # frame. To make the manual transformation calculation easier, I split it into 3 homogeneous
                     # transforms, one translation, one rotation about Z, one rotation about x. This should be adjusted
                     # depending on the actual location of the AR tag.
-                    ar_trans_B = np.eye(4)
+                    # ar_trans_B = np.eye(4)
                     # -.445 if right side of body. .445 if left side.
                     # This is the translational transform from bed origin to the ar tag tf.
                     # ar_trans_B[0:3,3] = np.array([0.625, -.445, .275+(self.bed_state_z-9)/100])
-                    ar_trans_B[0:3,3] = np.array([-.04, 0., .74])
-                    ar_rotz_B = np.eye(4)
+                    # ar_trans_B[0:3,3] = np.array([-.04, 0., .74])
+                    # ar_rotz_B = np.eye(4)
                     # If left side of body should be np.array([[-1,0],[0,-1]])
                     # If right side of body should be np.array([[1,0],[0,1]])
                     # ar_rotz_B [0:2,0:2] = np.array([[-1, 0],[0, -1]])
                     # ar_rotz_B
-                    ar_rotx_B = np.eye(4)
+                    # ar_rotx_B = np.eye(4)
                     # ar_rotx_B[1:3,1:3] = np.array([[0,1],[-1,0]])
-                    self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
+                    # self.model_B_ar = np.matrix(ar_trans_B)*np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
                     # now = rospy.Time.now()
                     # self.listener.waitForTransform('/ar_marker', '/bed_frame', now, rospy.Duration(3))
                     # (trans, rot) = self.listener.lookupTransform('/ar_marker', '/bed_frame', now)
@@ -395,7 +396,8 @@ class BaseSelector(object):
 
         # Slightly more complicated for autobed because the person can move around on the bed.
         elif model == 'autobed':
-            self.model_B_pr2 = self.model_B_ar * self.pr2_B_ar.I
+            self.model_B_pr2 = self.pr2_B_model.I
+            # self.model_B_pr2 = self.model_B_ar * self.pr2_B_ar.I
             self.origin_B_pr2 = copy.copy(self.model_B_pr2)
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
@@ -556,8 +558,9 @@ class BaseSelector(object):
                                        [0.,                      0.,                           1.,           0.],
                                        [0.,                      0.,                           0.,           1.]])
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
-            goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
-            pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
+            # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
+            # pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
+            pos_goal, ori_goal = Bmat_to_pos_quat(pr2_B_goal)
             pr2_base_output.append([pos_goal[0], pos_goal[1], m.acos(pr2_B_goal[0, 0])])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
         print 'Base selection service is done and has completed preparing its result.'

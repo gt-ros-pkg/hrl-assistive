@@ -40,7 +40,7 @@ class PoseRecorder(object):
         self.camera_rgb_info = None
         self.rgb_img = []
         self.file_number = file_number
-        self.head_pose_sub = rospy.Subscriber('/haptic_mpc/head_pose', PoseStamped, self.head_pose_cb)
+        self.head_pose_sub = rospy.Subscriber('/right_arm/haptic_mpc/reference_pose', PoseStamped, self.head_pose_cb)
         self.listener = tf.TransformListener()
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
@@ -261,8 +261,8 @@ if __name__ == "__main__":
     rospy.init_node('pose_recorder')
     model = 'autobed'
     file_number = 0
-    task = 'scratching_knee_right'  # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee_left/right
-    reference = 'right_knee'  # options are: head, left/right_arm, left/right_thigh, left/right_forearm, chest
+    task = 'scratching_knee_left'  # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee_left/right
+    reference = 'left_knee'  # options are: head, left/right_arm, left/right_thigh, left/right_forearm, chest
     recorder = PoseRecorder(file_number, task, reference, model=model)
     rospy.spin()
 
