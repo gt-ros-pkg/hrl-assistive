@@ -36,7 +36,7 @@ import socket
 
 # visualization
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -352,12 +352,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         ut.save_pickle(d, crossVal_pkl)
 
-
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    scale       = 10.0
-    method_list = ['svm', 'cssvm', 'progress_time_cluster', 'fixed']
+    method_list = ['progress_time_cluster', 'cssvm', 'cssvm_standard', 'fixed', 'svm'] 
     nPoints     = 10
 
     #-----------------------------------------------------------------------------------------
@@ -378,7 +376,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
             # training hmm
             nEmissionDim = len(trainingData)
-            cov_mult     = [scale]*(nEmissionDim**2)
+            cov_mult     = [10.0]*(nEmissionDim**2)
+            scale        = 10.0
 
             ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, scale=scale, cluster_type=cluster_type, \
                                            verbose=False)
@@ -491,7 +490,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys():# or method=='progress_time_cluster':
+        if method not in ROC_data.keys() or method=='cssvm':# or method=='cssvm_standard' or method=='svm':
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -564,10 +563,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         for i, method in enumerate(method_list):
 
             # pass method if there is existing result
-            if ROC_data[method]['complete'] == True: continue
+            if ROC_data[method]['complete'] == True:
+                continue
 
             # data preparation
-            if method == 'svm' or method == 'cssvm':
+            if 'svm' in method:
                 scaler = preprocessing.StandardScaler()
                 ## scaler = preprocessing.scale()
                 X_scaled = scaler.fit_transform(X_train_org)
@@ -579,17 +579,22 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             dtc = cb.classifier( ml, method=method, nPosteriors=nState, nLength=len(trainingData[0,0]) )        
             for j in xrange(nPoints):
                 if method == 'svm':
-                    weights = np.linspace(0.5, 60.0, nPoints)
-                    dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
-                elif method == 'cssvm':
                     weights = np.logspace(-2, 0.1, nPoints)
+                    dtc.set_params( class_weight=weights[j] )
+                    ## weights = np.linspace(0.5, 60.0, nPoints)
+                    ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
+                elif method == 'cssvm_standard':
+                    weights = np.logspace(-2, 0.1, nPoints)
+                    dtc.set_params( class_weight=weights[j] )
+                elif method == 'cssvm':
+                    weights = np.logspace(-1.5, 0.7, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'progress_time_cluster':
                     ## thresholds = -np.linspace(1., 50, nPoints)+2.0
                     thresholds = -np.linspace(1., 4, nPoints)+2.0
                     dtc.set_params( ths_mult = thresholds[j] )
                 elif method == 'fixed':
-                    thresholds = np.linspace(-1., 5, nPoints)
+                    thresholds = np.linspace(1., -3, nPoints)
                     dtc.set_params( ths_mult = thresholds[j] )
 
                 ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
@@ -616,7 +621,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                 for ii in xrange(len(ll_classifier_test_X)):
                     for jj in xrange(len(ll_classifier_test_X[ii])):
-                        if method == 'svm' or method == 'cssvm':
+                        if 'svm' in method:
                             X = scaler.transform([ll_classifier_test_X[ii][jj]])
                         elif method == 'progress_time_cluster' or method == 'fixed':
                             X = ll_classifier_test_X[ii][jj]
@@ -778,7 +783,7 @@ def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_
         nEmissionDim = len(trainingData)
         scale        = 10.0
         detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
-        cov_mult = [scale]*(nEmissionDim**2)
+        cov_mult = [10.0]*(nEmissionDim**2)
 
         ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, scale=scale, cluster_type=cluster_type, verbose=False)
         ret = ml.fit(trainingData, cov_mult=cov_mult, ml_pkl=detection_param_pkl, use_pkl=True) # not(renew))
@@ -1889,6 +1894,7 @@ if __name__ == '__main__':
                     'crossmodal_targetEEAng']
     rf_center     = 'kinEEPos'
     modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
+    nState       = 10
 
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
@@ -1917,10 +1923,12 @@ if __name__ == '__main__':
     ##                 ##'unimodal_fabricForce',\
     ##                 'crossmodal_targetEEDist', \
     ##                 'crossmodal_targetEEAng']
-    feature_list    = ['unimodal_ftForce', 'unimodal_audioPower']
+    feature_list    = ['unimodal_ftForce', 'unimodal_audioWristRMS'] #'unimodal_audioPower', , 
     rf_center       = 'kinEEPos'
-    modality_list = ['audio', 'ft', 'audioWrist']
+    modality_list = ['ft', 'audioWrist'] #'audio', 
     ## modality_list   = ['kinematics', 'audio', 'ft']
+    nState       = 10
+    cutting_flag = True
 
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
     ## raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
@@ -1944,7 +1952,7 @@ if __name__ == '__main__':
         '''
         target_data_set = 0
         successData     = True #True
-        failureData     = False
+        failureData     = True
         
         data_plot([subject], task, raw_data_path, save_data_path,\
                   nSet=target_data_set, downSampleSize=downSampleSize, \
@@ -1970,14 +1978,11 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         target_data_set = 0
-        rf_center    = 'kinEEPos'
-        ## rf_center    = 'kinForearmPos'
-        local_range = 0.15
         success_viz = True
         failure_viz = False
 
         dm.feature_extraction([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
-                              nSet=target_data_set, downSampleSize=downSampleSize, \
+                              nSet=target_data_set, downSampleSize=downSampleSize, cutting=cutting_flag, \
                               success_viz=success_viz, failure_viz=failure_viz,\
                               save_pdf=opt.bSavePdf, solid_color=True,\
                               feature_list=feature_list, data_renew=opt.bDataRenew)
@@ -2060,7 +2065,6 @@ if __name__ == '__main__':
         ## rf_center    = 'kinForearmPos'
         local_range = 0.15
 
-        nState    = 10
         threshold = 0.0
         smooth          = False #only related with expLoglikelihood
         ## cluster_type = 'time'
@@ -2078,11 +2082,7 @@ if __name__ == '__main__':
         
     elif opt.bEvaluationAll:
         target_data_set = 0
-        rf_center    = 'kinEEPos'
-        ## rf_center    = 'kinForearmPos'
-        local_range  = 0.15
 
-        nState       = 10
         threshold    = 0.0
         smooth       = False #only related with expLoglikelihood
         ## cluster_type    = 'time'

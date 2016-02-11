@@ -299,6 +299,12 @@ for t = 1,params.maxiter,params.batchsize do
    for i = t,t+params.batchsize-1 do
       -- load new sample
       local sample = dataset[i]
+
+      if i>dataset:size() then
+         print(i,t,dataset:size())
+      end
+
+
       local input = sample[1]:clone()
       local target = sample[2]:clone()
       table.insert(inputs, input)

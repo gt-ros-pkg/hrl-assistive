@@ -237,6 +237,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 last_time    = 0.0
                 local_kin_vel= None
                 for i in xrange(len(kin_ee_pos[0])):
+                    if len(kin_time)-1 < i: break
                     if abs(kin_time[i]-last_time) < 0.00000001:
                         if local_kin_vel is None: local_kin_vel = np.zeros((3,1))
                     else:                    
@@ -996,7 +997,7 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
     
 
 
-def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
+def extractLocalFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
@@ -1318,10 +1319,12 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         dataList.append(dataSample)
 
 
-    # Converting data structure
+    # Converting data structure & cutting unnecessary part
     nSample      = len(dataList)
     nEmissionDim = len(dataList[0])
     features     = []
+    startIdx     = 50
+    endIdx       = 150
     for i in xrange(nEmissionDim):
         feature  = []
 
@@ -1330,6 +1333,7 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
                 ## feature.append(dataList[j][i])
                 feature.append(dataList[j][i,:])
             except:
+                ## print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
                 print np.shape(dataList), np.shape(dataList[j]), j, i
                 sys.exit()
 
@@ -1350,7 +1354,7 @@ def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
             scaled_features.append( np.array(feature) )
         else:
-            scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
+            scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
                                     /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
     ## import matplotlib.pyplot as plt

@@ -1,56 +1,9 @@
 
-require 'unsup'
-require 'optim'
-
-params = cmd:parse(arg)
-
-rundir = cmd:string('psd', params, {dir=true})
-params.rundir = params.dir .. '/' .. rundir
-
-if paths.dirp(params.rundir) then
-   os.execute('rm -r ' .. params.rundir)
-end
-
-torch.manualSeed(params.seed)
-torch.setnumthreads(params.threads)
+local test  = require 'test'
 
 
 
-nfiltersout = 5
-
-----------------------------------------------------------------------
--- load data
-
-
-
-
-
-
-----------------------------------------------------------------------
--- create model
---
-if params.model == 'linear' then
-
-   -- params
-   inputSize = params.inputsize --*params.inputsize
-   outputSize = params.nfiltersout
-
-   -- encoder
-   encoder = nn.Sequential()
-   encoder:add(nn.Linear(inputSize,outputSize))
-   encoder:add(nn.Tanh())
-   encoder:add(nn.Diag(outputSize))
-
-   -- decoder
-   decoder = nn.Sequential()
-   decoder:add(nn.Linear(outputSize,inputSize))
-
-   -- complete model
-   module = unsup.AutoEncoder(encoder, decoder, params.beta)
-
-   -- verbose
-   print('==> constructed linear auto-encoder')
-end
+--os.exit()
 
 ----------------------------------------------------------------------
 -- trainable parameters
@@ -60,7 +13,28 @@ end
 x,dl_dx,ddl_ddx = module:getParameters()
 
 ----------------------------------------------------------------------
--- train model
+-- Save light network tools:
+function nilling(module)
+   module.gradBias   = nil
+   if module.finput then module.finput = torch.Tensor() end
+   module.gradWeight = nil
+   module.output     = torch.Tensor()
+   if module.fgradInput then module.fgradInput = torch.Tensor() end
+   module.gradInput  = nil
+end
+
+function netLighter(network)
+   nilling(network)
+   if network.modules then
+      for _,a in ipairs(network.modules) do
+         netLighter(a)
+      end
+   end
+end
+
+
+----------------------------------------------------------------------
+-- time-delay train model
 --
 
 print('==> training model')
@@ -68,6 +42,9 @@ print('==> training model')
 local avTrainingError = torch.FloatTensor(math.ceil(params.maxiter/params.statinterval)):zero()
 local err = 0
 local iter = 0
+
+
+--print(params.maxiter,params.batchsize)
 
 for t = 1,params.maxiter,params.batchsize do
 
@@ -80,17 +57,24 @@ for t = 1,params.maxiter,params.batchsize do
    --------------------------------------------------------------------
    -- create mini-batch
    --
-   local example = dataset[t]
-   local inputs = {}
-   local targets = {}
+   local inputs = torch.Tensor()
+   local targets = torch.Tensor()
+   local dataRange = torch.range(1, #rawData)
    for i = t,t+params.batchsize-1 do
       -- load new sample
-      local sample = dataset[i]
-      local input = sample[1]:clone()
-      local target = sample[2]:clone()
-      table.insert(inputs, input)
-      table.insert(targets, target)
+      --print(i, t, rawData[i]:size() )
+      --if rawData[i]==nil then
+      --   print("jump")
+      --   break
+      --end
+
+      local new_index = (i-1)%(#rawData)+1
+      inputs = rawData[new_index]:clone()
+      targets = rawData[new_index]:clone()
+      --table.insert(inputs, input)
+      --table.insert(targets, target)
    end
+
 
    --------------------------------------------------------------------
    -- define eval closure
@@ -101,7 +85,8 @@ for t = 1,params.maxiter,params.batchsize do
       dl_dx:zero()
 
       -- estimate f and gradients, for minibatch
-      for i = 1,#inputs do
+      for i = 1,inputs:size()[1] do
+
          -- f
          f = f + module:updateOutput(inputs[i], targets[i])
 
@@ -111,15 +96,21 @@ for t = 1,params.maxiter,params.batchsize do
       end
 
       -- normalize
-      dl_dx:div(#inputs)
-      f = f/#inputs
+      dl_dx:div(inputs:size()[1])
+      f = f/inputs:size()[1]
+
+      if f~=f then
+         --print(f, #inputs)
+         os.exit()
+      end
 
       -- return f and df/dx
       return f,dl_dx
    end
 
+   
    --------------------------------------------------------------------
-   -- one SGD step
+   -- one SGD step with time delay
    --
    sgdconf = sgdconf or {learningRate = params.eta,
                          learningRateDecay = params.etadecay,
@@ -127,11 +118,6 @@ for t = 1,params.maxiter,params.batchsize do
                          momentum = params.momentum}
    _,fs = optim.sgd(feval, x, sgdconf)
    err = err + fs[1]
-
-   -- normalize
-   if params.model:find('psd') then
-      module:normalize()
-   end
 
    --------------------------------------------------------------------
    -- compute statistics / report error
@@ -141,40 +127,22 @@ for t = 1,params.maxiter,params.batchsize do
       -- report
       print('==> iteration = ' .. t .. ', average loss = ' .. err/params.statinterval)
 
-      -- get weights
-      eweight = module.encoder.modules[1].weight
-      if module.decoder.D then
-         dweight = module.decoder.D.weight
-      else
-         dweight = module.decoder.modules[1].weight
-      end
+      -- get training and test loss?
+      local t = require 'temp'
+      t = 5
+      
+      test()
 
-      -- reshape weights if linear matrix is used
-      if params.model:find('linear') then
-         dweight = dweight:transpose(1,2):unfold(2,params.inputsize,params.inputsize)
-         eweight = eweight:unfold(2,params.inputsize,params.inputsize)
-      end
 
-      -- render filters
-      dd = image.toDisplayTensor{input=dweight,
-                                 padding=2,
-                                 nrow=math.floor(math.sqrt(params.nfiltersout)),
-                                 symmetric=true}
-      de = image.toDisplayTensor{input=eweight,
-                                 padding=2,
-                                 nrow=math.floor(math.sqrt(params.nfiltersout)),
-                                 symmetric=true}
+      -- save/log current net
+      local filename = paths.concat(params.dir, 'module.net')
+      os.execute('mkdir -p ' .. sys.dirname(filename))
+      print('==> saving model to '..filename)
+      module1 = module:clone()
+      netLighter(module1)
+      torch.save(filename, module1)
 
-      -- live display
-      if params.display then
-         _win1_ = image.display{image=dd, win=_win1_, legend='Decoder filters', zoom=2}
-         _win2_ = image.display{image=de, win=_win2_, legend='Encoder filters', zoom=2}
-      end
 
-      -- save stuff
-      image.save(params.rundir .. '/filters_dec_' .. t .. '.jpg', dd)
-      image.save(params.rundir .. '/filters_enc_' .. t .. '.jpg', de)
-      torch.save(params.rundir .. '/model_' .. t .. '.bin', module)
 
       -- reset counters
       err = 0; iter = 0

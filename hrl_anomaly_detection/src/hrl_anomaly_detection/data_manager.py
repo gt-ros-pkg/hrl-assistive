@@ -35,12 +35,15 @@ import os, sys, copy
 import numpy as np
 import scipy
 import hrl_lib.util as ut
+from hrl_anomaly_detection import util
 
 from mvpa2.datasets.base import Dataset
 from mvpa2.generators.partition import NFoldPartitioner
 from mvpa2.generators import splitters
 
 from sklearn import cross_validation
+
+import matplotlib.pyplot as plt
 
 def create_mvpa_dataset(aXData, chunks, labels):
     data = Dataset(samples=aXData)
@@ -81,7 +84,7 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
     return kFold_list
     
 def feature_extraction(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-             nSet=1, downSampleSize=200, success_viz=False, failure_viz=False, \
+             nSet=1, downSampleSize=200, scale=10.0, cutting=False, success_viz=False, failure_viz=False, \
              save_pdf=False, solid_color=True, \
              feature_list=['crossmodal_targetEEDist'], data_renew=False):
 
@@ -98,12 +101,12 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
         param_dict       = data_dict['param_dict']
     else:
         ## data_renew = False #temp        
-        success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
+        success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
 
         # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
                                         '_'+str(local_range))
-        _, all_data_dict = loadData(success_list+failure_list, isTrainingData=False,
+        _, all_data_dict = util.loadData(success_list+failure_list, isTrainingData=False,
                                     downSampleSize=downSampleSize,\
                                     local_range=local_range, rf_center=rf_center,\
                                     ##global_data=True,\
@@ -111,22 +114,24 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
 
         success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
                                             '_'+str(local_range))
-        _, success_data_dict = loadData(success_list, isTrainingData=True,
+        _, success_data_dict = util.loadData(success_list, isTrainingData=True,
                                         downSampleSize=downSampleSize,\
                                         local_range=local_range, rf_center=rf_center,\
                                         renew=data_renew, save_pkl=success_data_pkl)
 
         failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
                                             '_'+str(local_range))
-        _, failure_data_dict = loadData(failure_list, isTrainingData=False,
+        _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
                                         downSampleSize=downSampleSize,\
                                         local_range=local_range, rf_center=rf_center,\
                                         renew=data_renew, save_pkl=failure_data_pkl)
 
         # data set        
-        allData, param_dict = extractLocalFeature(all_data_dict, feature_list)
-        trainingData, _     = extractLocalFeature(success_data_dict, feature_list, param_dict=param_dict)
-        abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, param_dict=param_dict)
+        allData, param_dict = util.extractLocalFeature(all_data_dict, feature_list, scale=scale)
+        trainingData, _     = util.extractLocalFeature(success_data_dict, feature_list, scale=scale, \
+                                                       param_dict=param_dict)
+        abnormalTestData, _ = util.extractLocalFeature(failure_data_dict, feature_list, scale=scale, \
+                                                       param_dict=param_dict)
 
         allData          = np.array(allData)
         trainingData     = np.array(trainingData)
@@ -143,10 +148,10 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
 
     ## # test
     ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
-    ## _, success_data_dict = loadData(success_list, isTrainingData=True,
+    ## _, success_data_dict = util.loadData(success_list, isTrainingData=True,
     ##                                 downSampleSize=downSampleSize,\
     ##                                 local_range=local_range, rf_center=rf_center)
-    ## trainingData, _      = extractLocalFeature(success_data_dict, feature_list, \
+    ## trainingData, _      = util.extractLocalFeature(success_data_dict, feature_list, \
     ##                                            param_dict=data_dict['param_dict'])
     ## sys.exit()
     
