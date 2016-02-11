@@ -43,6 +43,8 @@
 
   <node name="smach_status_clean_relay" pkg="assistive_teleop" type="smach_status_relay" output="screen" />
 
+  <node name="moveit_relay" pkg="assistive_teleop" type="moveit_relay" output="screen" />
+
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 
   <!-- State Throttling -->
@@ -58,9 +60,11 @@
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
 
-  <!-- Head following the hand -->
-  <node name="point_head_follow_action_node" pkg="assistive_teleop" type="point_head_follow_action" output="screen" machine="c1" />
- 
+  <!-- Gripper Grasping State Monitors -->
+  <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" args="right" output="screen"/>
+  <node name="l_grasp_state_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" args="left" output="screen"/>
+
+
   <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
     <arg name="arm" value="l"/>

@@ -372,5 +372,5 @@ def main():
     manager.register_action(undo_move_cart_mpc_left)
     manager.register_action(undo_move_gripper_left)
     manager.register_action(undo_move_gripper_right)
-    manager.register_skill_undoer(undo_planned_task_skills)
+    #manager.register_skill_undoer(undo_planned_task_skills)
     rospy.spin()

@@ -1,0 +1,8 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: hrl_base_selection
+    relative_path: collada/bed_and_body_v3_rounded.dae
+  SRDF:
+    relative_path: config/bed_and_body_v3.srdf
+  CONFIG:
+    generated_timestamp: 1452271030

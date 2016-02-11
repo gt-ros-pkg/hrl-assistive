@@ -2,7 +2,7 @@ import math
 import rospy
 from std_msgs.msg import Bool
 from geometry_msgs.msg import PoseStamped, Quaternion
-from tf import TransformListener
+import tf
 import smach
 
 # pylint: disable=W0102
@@ -13,17 +13,17 @@ SPA = ["succeeded", "preempted", "aborted"]
 def _pose_stamped_to_dict(ps_msg):
     return {'header':
             {'seq': ps_msg.header.seq,
-                'stamp': {'secs': ps_msg.header.stamp.secs,
-                          'nsecs': ps_msg.header.stamp.nsecs},
-                'frame_id': ps_msg.header.frame_id},
+             'stamp': {'secs': ps_msg.header.stamp.secs,
+                       'nsecs': ps_msg.header.stamp.nsecs},
+             'frame_id': ps_msg.header.frame_id},
             'pose':
             {'position': {'x': ps_msg.pose.position.x,
                           'y': ps_msg.pose.position.y,
                           'z': ps_msg.pose.position.z},
-                'orientation': {'x': ps_msg.pose.orientation.x,
-                                'y': ps_msg.pose.orientation.y,
-                                'z': ps_msg.pose.orientation.z,
-                                'w': ps_msg.pose.orientation.w}}}
+             'orientation': {'x': ps_msg.pose.orientation.x,
+                             'y': ps_msg.pose.orientation.y,
+                             'z': ps_msg.pose.orientation.z,
+                             'w': ps_msg.pose.orientation.w}}}
 
 
 def _dict_to_pose_stamped(ps_dict):
@@ -69,7 +69,8 @@ class MoveArmState(smach.State):
         self.side = side
         self.problem = problem
         self.current_pose = None
-        self.tfl = TransformListener()
+        self.tfl = tf.TransformListener()
+        self.running = False
         self.mpc_pub = rospy.Publisher("/%s_arm/haptic_mpc/goal_pose" % self.side, PoseStamped)
         self.state_sub = rospy.Subscriber("/%s_arm/haptic_mpc/gripper_pose" % self.side, PoseStamped, self.pose_cb)
 
@@ -99,7 +100,7 @@ class MoveArmState(smach.State):
                 goal_pose.header.stamp = now
                 self.tfl.waitForTransform(self.current_pose.header.frame_id, goal_pose.header.frame_id, now, rospy.Duration(10))
                 goal_pose = self.tfl.transformPose(self.current_pose.header.frame_id, goal_pose)
-            except:
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print "TF ERROR"
                 return 'aborted'
         if not self.is_near(self.current_pose, goal_pose, threshold=0.1):

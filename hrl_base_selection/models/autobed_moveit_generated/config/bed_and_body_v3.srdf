@@ -1,0 +1,413 @@
+<?xml version="1.0" ?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot name="bed_and_body_v3">
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="bed_height">
+        <joint name="tele_legs_joint" />
+    </group>
+    <group name="back_rest">
+        <joint name="head_rest_hinge" />
+        <joint name="head_contact_to_head_center" />
+        <joint name="head_neck_joint1" />
+        <joint name="head_neck_joint2" />
+        <joint name="neck_body_joint" />
+        <joint name="body_arm_left_joint" />
+        <joint name="arm_forearm_left_joint" />
+        <joint name="forearm_hand_left_joint" />
+        <joint name="body_arm_right_joint" />
+        <joint name="arm_forearm_right_joint" />
+        <joint name="forearm_hand_right_joint" />
+        <joint name="upper_mid_body_joint" />
+        <joint name="mid_lower_body_joint" />
+        <joint name="body_quad_left_joint" />
+        <joint name="quad_calf_left_joint" />
+        <joint name="calf_foot_left_joint" />
+        <joint name="body_quad_right_joint" />
+        <joint name="quad_calf_right_joint" />
+        <joint name="calf_foot_right_joint" />
+    </group>
+    <group name="sliding_human">
+        <joint name="head_bed_updown_joint" />
+        <joint name="head_bed_leftright_joint" />
+    </group>
+    <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="0height" group="bed_height">
+        <joint name="tele_legs_joint" value="0" />
+    </group_state>
+    <group_state name="0.1height" group="bed_height">
+        <joint name="tele_legs_joint" value="0.1" />
+    </group_state>
+    <group_state name="0.2height" group="bed_height">
+        <joint name="tele_legs_joint" value="0.2" />
+    </group_state>
+    <group_state name="0_back_angle" group="back_rest">
+        <joint name="arm_forearm_left_joint" value="0.05" />
+        <joint name="arm_forearm_right_joint" value="0.05" />
+        <joint name="body_arm_left_joint" value="-0.12" />
+        <joint name="body_arm_right_joint" value="-0.12" />
+        <joint name="body_quad_left_joint" value="-0.4" />
+        <joint name="body_quad_right_joint" value="-0.4" />
+        <joint name="calf_foot_left_joint" value="0.02" />
+        <joint name="calf_foot_right_joint" value="0.02" />
+        <joint name="forearm_hand_left_joint" value="-0.1" />
+        <joint name="forearm_hand_right_joint" value="-0.1" />
+        <joint name="head_neck_joint1" value="0" />
+        <joint name="head_neck_joint2" value="0" />
+        <joint name="head_rest_hinge" value="0" />
+        <joint name="mid_lower_body_joint" value="-0.726" />
+        <joint name="neck_body_joint" value="-0.1" />
+        <joint name="quad_calf_left_joint" value="0.1" />
+        <joint name="quad_calf_right_joint" value="0.1" />
+        <joint name="upper_mid_body_joint" value="0.4" />
+    </group_state>
+    <group_state name="40deg_back_rest" group="back_rest">
+        <joint name="arm_forearm_left_joint" value="0.58" />
+        <joint name="arm_forearm_right_joint" value="0.58" />
+        <joint name="body_arm_left_joint" value="-0.06" />
+        <joint name="body_arm_right_joint" value="-0.06" />
+        <joint name="body_quad_left_joint" value="-0.4" />
+        <joint name="body_quad_right_joint" value="-0.4" />
+        <joint name="calf_foot_left_joint" value="-0.05" />
+        <joint name="calf_foot_right_joint" value="-0.05" />
+        <joint name="forearm_hand_left_joint" value="-0.1" />
+        <joint name="forearm_hand_right_joint" value="-0.1" />
+        <joint name="head_neck_joint1" value="0" />
+        <joint name="head_neck_joint2" value="0" />
+        <joint name="head_rest_hinge" value="0.698132" />
+        <joint name="mid_lower_body_joint" value="-0.76" />
+        <joint name="neck_body_joint" value="-0.2" />
+        <joint name="quad_calf_left_joint" value="0.1" />
+        <joint name="quad_calf_right_joint" value="0.1" />
+        <joint name="upper_mid_body_joint" value="-0.17" />
+    </group_state>
+    <group_state name="0_shift" group="sliding_human">
+        <joint name="head_bed_leftright_joint" value="0" />
+        <joint name="head_bed_updown_joint" value="0" />
+    </group_state>
+    <group_state name="80deg_back_rest" group="back_rest">
+        <joint name="arm_forearm_left_joint" value="0.88" />
+        <joint name="arm_forearm_right_joint" value="0.88" />
+        <joint name="body_arm_left_joint" value="-0.01" />
+        <joint name="body_arm_right_joint" value="-0.01" />
+        <joint name="body_quad_left_joint" value="-0.385" />
+        <joint name="body_quad_right_joint" value="-0.4" />
+        <joint name="calf_foot_left_joint" value="-0.1" />
+        <joint name="calf_foot_right_joint" value="-0.1" />
+        <joint name="forearm_hand_left_joint" value="-0.1" />
+        <joint name="forearm_hand_right_joint" value="-0.106" />
+        <joint name="head_neck_joint1" value="0" />
+        <joint name="head_neck_joint2" value="0" />
+        <joint name="head_rest_hinge" value="1.39626" />
+        <joint name="mid_lower_body_joint" value="-0.78" />
+        <joint name="neck_body_joint" value="-0.55" />
+        <joint name="quad_calf_left_joint" value="0.1" />
+        <joint name="quad_calf_right_joint" value="0.1" />
+        <joint name="upper_mid_body_joint" value="-0.51" />
+    </group_state>
+    <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="/odom_combined" child_link="base_link" />
+    <!--PASSIVE JOINT: Purpose: this element is used to mark joints that are not actuated-->
+    <passive_joint name="head_bed_updown_joint" />
+    <passive_joint name="head_bed_leftright_joint" />
+    <passive_joint name="head_neck_joint1" />
+    <passive_joint name="head_neck_joint2" />
+    <passive_joint name="neck_body_joint" />
+    <passive_joint name="body_arm_left_joint" />
+    <passive_joint name="arm_forearm_left_joint" />
+    <passive_joint name="forearm_hand_left_joint" />
+    <passive_joint name="body_arm_right_joint" />
+    <passive_joint name="arm_forearm_right_joint" />
+    <passive_joint name="forearm_hand_right_joint" />
+    <passive_joint name="upper_mid_body_joint" />
+    <passive_joint name="mid_lower_body_joint" />
+    <passive_joint name="body_quad_left_joint" />
+    <passive_joint name="quad_calf_left_joint" />
+    <passive_joint name="calf_foot_left_joint" />
+    <passive_joint name="body_quad_right_joint" />
+    <passive_joint name="quad_calf_right_joint" />
+    <passive_joint name="calf_foot_right_joint" />
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="arm_left_link" link2="arm_right_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="base_link" reason="User" />
+    <disable_collisions link1="arm_left_link" link2="bed_frame_link" reason="Default" />
+    <disable_collisions link1="arm_left_link" link2="calf_left_link" reason="User" />
+    <disable_collisions link1="arm_left_link" link2="calf_right_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="foot_left_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="foot_right_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="forearm_left_link" reason="Adjacent" />
+    <disable_collisions link1="arm_left_link" link2="forearm_right_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="hand_left_link" reason="User" />
+    <disable_collisions link1="arm_left_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="head_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="head_rest_link" reason="Default" />
+    <disable_collisions link1="arm_left_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="arm_left_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="arm_left_link" link2="lower_body_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="mid_body_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="arm_left_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="arm_left_link" link2="upper_body_link" reason="Adjacent" />
+    <disable_collisions link1="arm_left_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="base_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="bed_frame_link" reason="Default" />
+    <disable_collisions link1="arm_right_link" link2="calf_left_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="calf_right_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="foot_left_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="foot_right_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="forearm_left_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="forearm_right_link" reason="Adjacent" />
+    <disable_collisions link1="arm_right_link" link2="hand_left_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="hand_right_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="head_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="head_rest_link" reason="Default" />
+    <disable_collisions link1="arm_right_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="lower_body_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="mid_body_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="quad_left_link" reason="Never" />
+    <disable_collisions link1="arm_right_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="arm_right_link" link2="upper_body_link" reason="Adjacent" />
+    <disable_collisions link1="arm_right_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="base_link" link2="bed_frame_link" reason="Adjacent" />
+    <disable_collisions link1="base_link" link2="calf_left_link" reason="User" />
+    <disable_collisions link1="base_link" link2="calf_right_link" reason="User" />
+    <disable_collisions link1="base_link" link2="foot_left_link" reason="User" />
+    <disable_collisions link1="base_link" link2="foot_right_link" reason="User" />
+    <disable_collisions link1="base_link" link2="forearm_left_link" reason="User" />
+    <disable_collisions link1="base_link" link2="forearm_right_link" reason="User" />
+    <disable_collisions link1="base_link" link2="hand_left_link" reason="User" />
+    <disable_collisions link1="base_link" link2="hand_right_link" reason="User" />
+    <disable_collisions link1="base_link" link2="head_link" reason="User" />
+    <disable_collisions link1="base_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="base_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="base_link" link2="leg_rest_upper_link" reason="Never" />
+    <disable_collisions link1="base_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="base_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="base_link" link2="neck_link" reason="User" />
+    <disable_collisions link1="base_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="base_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="base_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="base_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="base_link" link2="wall_link" reason="Adjacent" />
+    <disable_collisions link1="bed_frame_link" link2="calf_left_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="calf_right_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="foot_left_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="foot_right_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="forearm_left_link" reason="Default" />
+    <disable_collisions link1="bed_frame_link" link2="forearm_right_link" reason="Default" />
+    <disable_collisions link1="bed_frame_link" link2="hand_left_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="hand_right_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="head_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="head_rest_link" reason="Adjacent" />
+    <disable_collisions link1="bed_frame_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="leg_rest_upper_link" reason="Adjacent" />
+    <disable_collisions link1="bed_frame_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="mid_body_link" reason="Default" />
+    <disable_collisions link1="bed_frame_link" link2="neck_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="quad_left_link" reason="Default" />
+    <disable_collisions link1="bed_frame_link" link2="quad_right_link" reason="Default" />
+    <disable_collisions link1="bed_frame_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="bed_frame_link" link2="wall_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="calf_right_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="foot_left_link" reason="Adjacent" />
+    <disable_collisions link1="calf_left_link" link2="foot_right_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="forearm_left_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="forearm_right_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="hand_left_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="head_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="neck_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="quad_left_link" reason="Adjacent" />
+    <disable_collisions link1="calf_left_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="calf_left_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="calf_left_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="foot_left_link" reason="Never" />
+    <disable_collisions link1="calf_right_link" link2="foot_right_link" reason="Adjacent" />
+    <disable_collisions link1="calf_right_link" link2="forearm_left_link" reason="Never" />
+    <disable_collisions link1="calf_right_link" link2="forearm_right_link" reason="Never" />
+    <disable_collisions link1="calf_right_link" link2="hand_left_link" reason="Never" />
+    <disable_collisions link1="calf_right_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="calf_right_link" link2="head_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="neck_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="quad_left_link" reason="Never" />
+    <disable_collisions link1="calf_right_link" link2="quad_right_link" reason="Adjacent" />
+    <disable_collisions link1="calf_right_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="calf_right_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="foot_right_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="forearm_left_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="forearm_right_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="hand_left_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="head_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="foot_left_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="foot_left_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="forearm_left_link" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="forearm_right_link" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="hand_left_link" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="head_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="quad_left_link" reason="Never" />
+    <disable_collisions link1="foot_right_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="foot_right_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="forearm_left_link" link2="forearm_right_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="hand_left_link" reason="Adjacent" />
+    <disable_collisions link1="forearm_left_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="head_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="forearm_left_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="forearm_left_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="forearm_left_link" link2="lower_body_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="mid_body_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="quad_left_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="upper_body_link" reason="Never" />
+    <disable_collisions link1="forearm_left_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="forearm_right_link" link2="hand_left_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="hand_right_link" reason="Adjacent" />
+    <disable_collisions link1="forearm_right_link" link2="head_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="forearm_right_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="forearm_right_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="forearm_right_link" link2="lower_body_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="mid_body_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="quad_left_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="upper_body_link" reason="Never" />
+    <disable_collisions link1="forearm_right_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="hand_left_link" link2="hand_right_link" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="head_link" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="hand_left_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="hand_left_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="hand_left_link" link2="lower_body_link" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="mid_body_link" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="hand_left_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="hand_left_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="hand_left_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="hand_right_link" link2="head_link" reason="Never" />
+    <disable_collisions link1="hand_right_link" link2="head_rest_link" reason="User" />
+    <disable_collisions link1="hand_right_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="hand_right_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="hand_right_link" link2="lower_body_link" reason="Never" />
+    <disable_collisions link1="hand_right_link" link2="mid_body_link" reason="Never" />
+    <disable_collisions link1="hand_right_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="hand_right_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="hand_right_link" link2="quad_left_link" reason="Never" />
+    <disable_collisions link1="hand_right_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="hand_right_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="hand_right_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="head_link" link2="head_rest_link" reason="Adjacent" />
+    <disable_collisions link1="head_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="head_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="head_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="head_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="head_link" link2="neck_link" reason="Default" />
+    <disable_collisions link1="head_link" link2="neck_rotation" reason="Adjacent" />
+    <disable_collisions link1="head_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="head_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="head_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="head_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="head_rest_link" link2="leg_rest_lower_link" reason="User" />
+    <disable_collisions link1="head_rest_link" link2="leg_rest_upper_link" reason="User" />
+    <disable_collisions link1="head_rest_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="head_rest_link" link2="mid_body_link" reason="Default" />
+    <disable_collisions link1="head_rest_link" link2="neck_link" reason="Default" />
+    <disable_collisions link1="head_rest_link" link2="neck_rotation" reason="Default" />
+    <disable_collisions link1="head_rest_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="head_rest_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="head_rest_link" link2="upper_body_link" reason="Default" />
+    <disable_collisions link1="head_rest_link" link2="wall_link" reason="Never" />
+    <disable_collisions link1="leg_rest_lower_link" link2="leg_rest_upper_link" reason="Adjacent" />
+    <disable_collisions link1="leg_rest_lower_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="neck_link" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="leg_rest_lower_link" link2="wall_link" reason="Never" />
+    <disable_collisions link1="leg_rest_upper_link" link2="lower_body_link" reason="User" />
+    <disable_collisions link1="leg_rest_upper_link" link2="mid_body_link" reason="User" />
+    <disable_collisions link1="leg_rest_upper_link" link2="neck_link" reason="User" />
+    <disable_collisions link1="leg_rest_upper_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="leg_rest_upper_link" link2="quad_left_link" reason="Default" />
+    <disable_collisions link1="leg_rest_upper_link" link2="quad_right_link" reason="Default" />
+    <disable_collisions link1="leg_rest_upper_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="leg_rest_upper_link" link2="wall_link" reason="Never" />
+    <disable_collisions link1="lower_body_link" link2="mid_body_link" reason="Adjacent" />
+    <disable_collisions link1="lower_body_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="lower_body_link" link2="neck_rotation" reason="User" />
+    <disable_collisions link1="lower_body_link" link2="quad_left_link" reason="Adjacent" />
+    <disable_collisions link1="lower_body_link" link2="quad_right_link" reason="Adjacent" />
+    <disable_collisions link1="lower_body_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="lower_body_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="mid_body_link" link2="neck_link" reason="Never" />
+    <disable_collisions link1="mid_body_link" link2="neck_rotation" reason="Never" />
+    <disable_collisions link1="mid_body_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="mid_body_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="mid_body_link" link2="upper_body_link" reason="Adjacent" />
+    <disable_collisions link1="mid_body_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="neck_link" link2="neck_rotation" reason="Adjacent" />
+    <disable_collisions link1="neck_link" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="neck_link" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="neck_link" link2="upper_body_link" reason="Adjacent" />
+    <disable_collisions link1="neck_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="neck_rotation" link2="quad_left_link" reason="User" />
+    <disable_collisions link1="neck_rotation" link2="quad_right_link" reason="User" />
+    <disable_collisions link1="neck_rotation" link2="upper_body_link" reason="Default" />
+    <disable_collisions link1="neck_rotation" link2="wall_link" reason="User" />
+    <disable_collisions link1="quad_left_link" link2="quad_right_link" reason="Never" />
+    <disable_collisions link1="quad_left_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="quad_left_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="quad_right_link" link2="upper_body_link" reason="User" />
+    <disable_collisions link1="quad_right_link" link2="wall_link" reason="User" />
+    <disable_collisions link1="upper_body_link" link2="wall_link" reason="User" />
+</robot>

@@ -64,7 +64,7 @@ RFH.EERotation = function (options) {
 
         self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
         var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
-        if (objs.length > 0 && objs[0].object.userData.side === self.side) {
+        if (objs.length > 0 && objs[0].object instanceof THREE.Mesh && objs[0].object.userData.side === self.side) {
             return self.rotArrows[objs[0].object.userData.direction];
         } else {
             return null;
