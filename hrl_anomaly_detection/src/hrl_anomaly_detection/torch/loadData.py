@@ -47,8 +47,8 @@ if __name__ == '__main__':
 
     subject_names       = ['gatsbii']
     task                = 'pushing'
-    raw_data_path       = '~/hrl_file_server/dpark_data/anomaly/RSS2016/'    
-    processed_data_path = '~/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
+    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
     rf_center           = 'kinEEPos'
     local_range         = 0.25    
     nSet                = 1
