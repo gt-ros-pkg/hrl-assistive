@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
 
     task    = 'pushing'    
-    processed_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    processed_data_path = '~/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
     rf_center       = 'kinEEPos'
     local_range    = 0.25    
 
