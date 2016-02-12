@@ -7,7 +7,7 @@ print(sys.COLORS.red ..  '==> downloading dataset')
 ----------------------------------------------------------------------
 -- load data
 --trainData = torch.load('./testh5py')
-local myFile = hdf5.open('~/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/torch/test.h5py', 'r')
+local myFile = hdf5.open('./test.h5py', 'r')
 local trainData = myFile:read('trainingData'):all()
 local testData = myFile:read('testData'):all()
 myFile:close()
