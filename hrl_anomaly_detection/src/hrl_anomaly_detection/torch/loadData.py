@@ -45,11 +45,10 @@ import csv
 
 if __name__ == '__main__':
 
-<<<<<<< HEAD
     subject_names       = ['gatsbii']
     task                = 'pushing'
-    raw_data_path       = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'    
-    processed_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    raw_data_path       = '~/hrl_file_server/dpark_data/anomaly/RSS2016/'    
+    processed_data_path = '~/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
     rf_center           = 'kinEEPos'
     local_range         = 0.25    
     nSet                = 1
@@ -85,21 +84,12 @@ if __name__ == '__main__':
     trainingData     = successData[:, train_idx, :]
     normalTestData   = successData[:, success_test_idx, :]
     abnormalTestData = failureData[:, failure_test_idx, :]
-=======
-
-    task    = 'pushing'    
-    processed_data_path = '~/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    rf_center       = 'kinEEPos'
-    local_range    = 0.25    
->>>>>>> 173b3a22fc9f6dc717222ce3b5f9f6faedf57c85
 
     print "======================================"
     print "Training data: ", np.shape(trainingData)
     print "Normal test data: ", np.shape(normalTestData)
     print "Abnormal test data: ", np.shape(abnormalTestData)
     print "======================================"
-
-
 
     new_trainingData = []
     for i in xrange(len(trainingData[0])):
