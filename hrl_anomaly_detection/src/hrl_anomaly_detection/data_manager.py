@@ -107,24 +107,24 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
                                         '_'+str(local_range))
         _, all_data_dict = util.loadData(success_list+failure_list, isTrainingData=False,
-                                    downSampleSize=downSampleSize,\
-                                    local_range=local_range, rf_center=rf_center,\
-                                    ##global_data=True,\
-                                    renew=data_renew, save_pkl=all_data_pkl)
+                                         downSampleSize=downSampleSize,\
+                                         local_range=local_range, rf_center=rf_center,\
+                                         ##global_data=True,\
+                                         renew=data_renew, save_pkl=all_data_pkl)
 
         success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
                                             '_'+str(local_range))
         _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-                                        downSampleSize=downSampleSize,\
-                                        local_range=local_range, rf_center=rf_center,\
-                                        renew=data_renew, save_pkl=success_data_pkl)
+                                             downSampleSize=downSampleSize,\
+                                             local_range=local_range, rf_center=rf_center,\
+                                             renew=data_renew, save_pkl=success_data_pkl)
 
         failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
                                             '_'+str(local_range))
         _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
-                                        downSampleSize=downSampleSize,\
-                                        local_range=local_range, rf_center=rf_center,\
-                                        renew=data_renew, save_pkl=failure_data_pkl)
+                                             downSampleSize=downSampleSize,\
+                                             local_range=local_range, rf_center=rf_center,\
+                                             renew=data_renew, save_pkl=failure_data_pkl)
 
         # data set        
         allData, param_dict = util.extractLocalFeature(all_data_dict, feature_list, scale=scale)

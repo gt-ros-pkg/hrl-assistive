@@ -45,40 +45,83 @@ import csv
 
 if __name__ == '__main__':
 
-
-    task    = 'pushing'    
+    subject_names       = ['gatsbii']
+    task                = 'pushing'
+    raw_data_path       = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'    
     processed_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    rf_center       = 'kinEEPos'
-    local_range    = 0.25    
+    rf_center           = 'kinEEPos'
+    local_range         = 0.25    
+    nSet                = 1
+    downSampleSize      = 200
 
-    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
-
-    if os.path.isfile(save_pkl):
-        data_dict = ut.load_pickle(save_pkl)
-        allData          = data_dict['allData']
-        trainingData     = data_dict['trainingData'] 
-        abnormalTestData = data_dict['abnormalTestData']
-        abnormalTestNameList = data_dict['abnormalTestNameList']
-        param_dict       = data_dict['param_dict']
-    else:
-        print "No such file ", save_pkl
+    feature_list = ['unimodal_audioPower',\
+                    'unimodal_kinVel',\
+                    'unimodal_ftForce',\
+                    ##'unimodal_visionChange',\
+                    ##'unimodal_ppsForce',\
+                    ##'unimodal_fabricForce',\
+                    'crossmodal_targetEEDist', \
+                    'crossmodal_targetEEAng']
 
 
-    print np.shape(allData)
-    new_data = []
-    for i in xrange(len(allData[0])):
+    _, successData, failureData,_ = dm.feature_extraction(subject_names, task, raw_data_path, \
+                                                          processed_data_path, rf_center, local_range,\
+                                                          nSet=nSet, \
+                                                          downSampleSize=downSampleSize, \
+                                                          feature_list=feature_list, \
+                                                          data_renew=True)
+
+    # index selection
+    success_idx  = range(len(successData[0]))
+    failure_idx  = range(len(failureData[0]))
+
+    nTrain       = int( 0.7*len(success_idx) )    
+    train_idx    = random.sample(success_idx, nTrain)
+    success_test_idx = [x for x in success_idx if not x in train_idx]
+    failure_test_idx = failure_idx
+
+    # data structure: dim x sample x sequence
+    trainingData     = successData[:, train_idx, :]
+    normalTestData   = successData[:, success_test_idx, :]
+    abnormalTestData = failureData[:, failure_test_idx, :]
+
+    print "======================================"
+    print "Training data: ", np.shape(trainingData)
+    print "Normal test data: ", np.shape(normalTestData)
+    print "Abnormal test data: ", np.shape(abnormalTestData)
+    print "======================================"
+
+
+
+    new_trainingData = []
+    for i in xrange(len(trainingData[0])):
         singleSample = []
-        for j in xrange(len(allData)):
-            singleSample.append(allData[j][i,:])
+        for j in xrange(len(trainingData)):
+            singleSample.append(trainingData[j][i,:])
             
-        new_data.append(singleSample)
+        new_trainingData.append(singleSample)
 
-    print np.shape(new_data)
-           
-    ## np.savetxt('test.txt', new_data, delimiter=" ", fmt="%s")
-    ## np.savetxt('test.csv', new_data, delimiter=",", fmt="%10.5f")
+    new_testData = []
+    for i in xrange(len(normalTestData[0])):
+        singleSample = []
+        for j in xrange(len(normalTestData)):
+            singleSample.append(normalTestData[j][i,:])
+            
+        new_testData.append(singleSample)
+
+    for i in xrange(len(abnormalTestData[0])):
+        singleSample = []
+        for j in xrange(len(abnormalTestData)):
+            singleSample.append(abnormalTestData[j][i,:])
+            
+        new_testData.append(singleSample)
+
+        
+    ## np.savetxt('test.txt', new_trainingData, delimiter=" ", fmt="%s")
+    ## np.savetxt('test.csv', new_trainingData, delimiter=",", fmt="%10.5f")
 
     import h5py
     f = h5py.File('test.h5py', "w")
-    f['data'] = np.array(new_data)
+    f['trainingData'] = np.array(new_trainingData)
+    f['testData']     = np.array(new_testData)
     f.close()

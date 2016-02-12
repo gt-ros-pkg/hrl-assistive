@@ -68,7 +68,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
     key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
-                'audioWristTimesList', 'audioWristRMSList', \
+                'audioWristTimesList', 'audioWristRMSList', 'audioWristMFCCList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'ftTimesList', 'ftForceList', \
@@ -211,14 +211,20 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # wrist sound ----------------------------------------------------------------
         if 'audio_wrist_time' in d.keys():
             audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
-            audio_rms  = np.abs(d['audio_wrist_rms'])
-            audio_mfcc = np.abs(d['audio_wrist_mfcc'])
+            audio_rms  = np.array(d['audio_wrist_rms'])
+            audio_mfcc = np.array(d['audio_wrist_mfcc'])
 
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
+            raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
 
-            data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
+            if len(audio_time)>len(new_times):
+                data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
+                data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
+            else:
+                data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
+                data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
             
         # kinematics -----------------------------------------------------------
@@ -377,6 +383,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionArtagPosList'].append(vision_pos_array)                                         
+            vision_quat_array  = interpolationData(vision_time, local_vision_quat, new_times)
+            data_dict['visionArtagQuatList'].append(vision_quat_array)                                         
 
             ## fig = plt.figure()
             ## plt.plot(vision_time, vision_pos[2], c='k')
@@ -600,7 +608,6 @@ def downSampleAudio(time_array, data_array, new_time_array):
     n,m = np.shape(data_array)    
     if len(time_array) > m: time_array = time_array[0:m]
     
-
     # remove repeated data
     temp_time_array = [time_array[0]]
     temp_data_array = data_array[:,0:1]

@@ -21,7 +21,7 @@ cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv |
 cmd:option('-outputsize', 2, 'size of hidden unit')
 cmd:option('-lambda', 0.1, 'sparsity coefficient')
 cmd:option('-beta', 1, 'prediction error coefficient')
-cmd:option('-eta', 2e-3, 'learning rate')
+cmd:option('-eta', 1e-3, 'learning rate')
 cmd:option('-batchsize', 1, 'batch size')
 cmd:option('-etadecay', 1e-5, 'learning rate decay')
 cmd:option('-momentum', 0, 'gradient momentum')
@@ -63,7 +63,7 @@ print(sys.COLORS.red .. '==> training!')
 for t = 1,params.maxiter,params.batchsize do
 
    train(t, data.trainData)
-   test(t, data.trainData)
+   --test(t, data.testData)
 
 end
 
