@@ -36,6 +36,7 @@ from learning_hmm_multi_n import learning_hmm_multi_n
 from util import getSubjectFiles
 from .. import util as dataUtil
 import learning_util as util
+from .. import data_manager as dataMng
 
 # catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
 # nohup rosrun hrl_anomaly_detection hmmOptimization.py > optimization.log &
@@ -173,7 +174,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
                         'crossmodal_artagEEAng']
 
         rawDataDict, dataDict = dataUtil.loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, local_range=0.15, verbose=self.verbose)
-        trainingData, _ = dataUtil.extractLocalFeature(dataDict, feature_list)
+        trainingData, _ = dataMng.extractLocalFeature(dataDict, feature_list)
         trainingData = np.array(trainingData)
 
         if True:
