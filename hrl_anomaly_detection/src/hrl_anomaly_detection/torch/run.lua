@@ -14,6 +14,7 @@ cmd:text('Options')
 cmd:option('-dir', 'outputs', 'subdirectory to save experiments in')
 cmd:option('-seed', 1, 'initial random seed')
 cmd:option('-threads', 2, 'threads')
+cmd:option('-cuda', false, 'Enable cuda. Default:false')
 
 -- for all models:
 cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
@@ -22,15 +23,15 @@ cmd:option('-outputsize', 2, 'size of hidden unit')
 cmd:option('-lambda', 0.1, 'sparsity coefficient')
 cmd:option('-beta', 1, 'prediction error coefficient')
 cmd:option('-eta', 2e-3, 'learning rate')
-cmd:option('-batchsize', 1, 'batch size')
+cmd:option('-batchsize', 128, 'batch size')
 cmd:option('-etadecay', 1e-5, 'learning rate decay')
 cmd:option('-momentum', 0, 'gradient momentum')
 cmd:option('-maxiter', 1000000, 'max number of updates')
-cmd:option('-timewindow', 5, 'size of time window')
+cmd:option('-timewindow', 10, 'size of time window')
 
 -- logging:
 cmd:option('-datafile', 'http://torch7.s3-website-us-east-1.amazonaws.com/data/tr-berkeley-N5K-M56x56-lcn.ascii', 'Dataset URL')
-cmd:option('-statinterval', 5000, 'interval for saving stats and models')
+cmd:option('-statinterval', 1, 'interval for saving stats and models')
 cmd:option('-v', false, 'be verbose')
 cmd:option('-display', false, 'display stuff')
 cmd:option('-wcar', '', 'additional flag to differentiate this run')
@@ -46,7 +47,22 @@ if paths.dirp(params.rundir) then
 end
 
 torch.manualSeed(params.seed)
-torch.setnumthreads(params.threads)
+--torch.setnumthreads(params.threads)
+torch.setnumthreads(1024)
+
+
+
+----------------------------------------------------------------------
+print(sys.COLORS.red ..  '==> load cuda pkg')
+if params.cuda == true then
+   require 'cutorch'
+   print(sys.COLORS.red ..  '==> switching to CUDA')
+   require 'cunn'
+   cutorch.setDevice(1)
+   print(sys.COLORS.red ..  '==> using GPU #' .. cutorch.getDevice())
+   print(  cutorch.getDeviceProperties(cutorch.getDevice()) )
+end
+
 
 
 
@@ -60,7 +76,7 @@ local test  = require 'test'
 ----------------------------------------------------------------------
 print(sys.COLORS.red .. '==> training!')
 
-for t = 1,params.maxiter,params.batchsize do
+for t = 1,params.maxiter do
 
    train(t, data.trainData)
    --test(t, data.testData)

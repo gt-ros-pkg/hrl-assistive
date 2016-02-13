@@ -2,8 +2,6 @@ require 'torch'   -- torch
 require 'nn'      -- provides all sorts of trainable modules/layers
 require 'unsup'
 
-
-
 ----------------------------------------------------------------------
 -- create model
 --
@@ -26,6 +24,13 @@ local model = unsup.AutoEncoder(encoder, decoder, params.beta)
 
 -- verbose
 print('==> constructed linear auto-encoder')
+
+
+if params.cuda == true then
+   model.encoder:cuda()
+   model.decoder:cuda()
+   model.loss:cuda()
+end
 
 
 -- return package:

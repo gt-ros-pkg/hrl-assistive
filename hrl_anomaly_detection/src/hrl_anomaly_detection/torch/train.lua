@@ -39,87 +39,91 @@ x,dl_dx,ddl_ddx = model:getParameters()
 
 ----------------------------------------------------------------------
 print(sys.COLORS.red ..  '==> allocating minibatch memory')
-local inputs = torch.Tensor()
-local targets = torch.Tensor()
+local inputs = torch.Tensor( params.batchsize, params.nDim*params.timewindow)
+local targets = torch.Tensor( params.batchsize, params.nDim*params.timewindow)
 
+if params.cuda == true then
+   inputs = inputs:cuda()
+   targets = targets:cuda()
+end
 
 ----------------------------------------------------------------------
 -- time-delay train model
 --
 print(sys.COLORS.red ..  '==> defining training procedure')
-
-local iter = 0
 local err = 0
 
-local function train(t, trainData)
+local function train(iter, trainData)
 
    --------------------------------------------------------------------
    -- progress
    --
-   iter = iter+1
-   xlua.progress(iter, params.statinterval)
+   --print(iter, params.statinterval)
+   for t=1, trainData:size()[1], params.batchsize do
+      xlua.progress(t, trainData:size()[1])
 
-   --------------------------------------------------------------------
-   -- create mini-batch
-   --
-   for i = t,t+params.batchsize-1 do
-      local new_index = (i-1)%(#trainData)+1
-      inputs = trainData[new_index]:clone()
-      targets = trainData[new_index]:clone()
-   end
-
-   --------------------------------------------------------------------
-   -- define eval closure
-   --
-   local feval = function()
-      -- reset gradient/f
-      local f = 0
-      dl_dx:zero()
-
-      -- estimate f and gradients, for minibatch
-      for i = 1,inputs:size()[1] do
-
-         -- f
-         f = f + model:updateOutput(inputs[i], targets[i])
-
-         -- gradients
-         model:updateGradInput(inputs[i], targets[i])
-         model:accGradParameters(inputs[i], targets[i])
+      --------------------------------------------------------------------
+      -- create mini-batch
+      --
+      local idx = 1
+      for i = t,t+params.batchsize-1 do
+         inputs[idx]  = trainData[t]
+         targets[idx] = trainData[t]
+         idx = idx + 1
       end
 
-      -- normalize
-      dl_dx:div(inputs:size()[1])
-      f = f/inputs:size()[1]
+      --------------------------------------------------------------------
+      -- define eval closure
+      --
+      local feval = function()
+         -- reset gradient/f
+         local f = 0
+         dl_dx:zero()
 
-      if f~=f then
-         --print(f, #inputs)
-         os.exit()
+         -- estimate f and gradients, for minibatch
+         for i = 1,inputs:size()[1] do
+
+            -- f
+            f = f + model:updateOutput(inputs[i], targets[i])
+
+            -- gradients
+            model:updateGradInput(inputs[i], targets[i])
+            model:accGradParameters(inputs[i], targets[i])
+         end
+
+         -- normalize
+         dl_dx:div(inputs:size()[1])
+         f = f/inputs:size()[1]
+
+         if f~=f then
+            --print(f, #inputs)
+            os.exit()
+         end
+
+         -- return f and df/dx
+         return f,dl_dx
       end
-
-      -- return f and df/dx
-      return f,dl_dx
-   end
 
    
-   --------------------------------------------------------------------
-   -- one SGD step with time delay
-   --
-   sgdconf = sgdconf or {learningRate = params.eta,
-                         learningRateDecay = params.etadecay,
-                         learningRates = etas,
-                         momentum = params.momentum}
-   _,fs = optim.sgd(feval, x, sgdconf)
-   err = err + fs[1]
-
+      --------------------------------------------------------------------
+      -- one SGD step with time delay
+      --
+      sgdconf = sgdconf or {learningRate = params.eta,
+                            learningRateDecay = params.etadecay,
+                            learningRates = etas,
+                            momentum = params.momentum}
+      _,fs = optim.sgd(feval, x, sgdconf)
+      err = err + fs[1]
+   end
 
 
    --------------------------------------------------------------------
    -- compute statistics / report error
    --
-   if math.fmod(t , params.statinterval) == 0 then
+   if math.fmod(iter , params.statinterval) == 0 then
 
       -- report
-      print('==> iteration = ' .. t .. ', train average loss = ' .. err/params.statinterval)
+      print('==> iteration = ' .. iter .. ', train average loss = ' .. err/params.statinterval)
 
       -- save/log current net
       local filename = paths.concat(params.dir, 'model.net')
@@ -131,7 +135,7 @@ local function train(t, trainData)
 
 
       -- reset counters
-      err = 0; iter = 0
+      err = 0; 
    end
 
 end

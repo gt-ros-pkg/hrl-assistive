@@ -12,55 +12,48 @@ local trainData = myFile:read('trainingData'):all()
 local testData = myFile:read('testData'):all()
 myFile:close()
 
+print("Original data size")
 print( trainData:size() )
 print( testData:size() )
 
 
 ----------------------------------------------------------------------
 -- Time-delay extraction
---local time_window = 5
-local nDim = trainData:size(2)
+params.nDim      = trainData:size(2)
+params.nLength   = trainData:size(3)
+params.inputsize = params.nDim*params.timewindow
 
-params.inputsize  = nDim*params.timewindow
---params.batchsize  = trainData:size(3)-params.timewindow+1 
-
-local rawTrainData = {}
-local rawTestData = {} 
+local rawTrainData = torch.Tensor()
+local rawTestData = torch.Tensor()
 
 for i = 1,trainData:size(1) do
-    local singleSamples = torch.Tensor()
-    for t = 1,trainData:size(3),params.timewindow do
-        local singlesample = trainData:sub(i,i,1,nDim,t,t+params.timewindow-1):clone():reshape(1,nDim*params.timewindow)
+    for t = 1,trainData:size(3)-params.timewindow+1 do
+        local singlesample = trainData:sub(i,i,1,params.nDim,t,t+params.timewindow-1):clone():reshape(1,params.nDim*params.timewindow)
         if singlesample==nil then
            print(singlesample)
         end
 
-        if t==1 then
-           singleSamples = singlesample
+        if t==1 and i==1 then
+           rawTrainData = singlesample
         else
-           singleSamples = torch.cat(singleSamples, singlesample, 1)
+           rawTrainData = torch.cat(rawTrainData, singlesample, 1)
         end
     end
-
-    table.insert(rawTrainData, singleSamples)
 end
 
 for i = 1,testData:size(1) do
-    local singleSamples = torch.Tensor()
     for t = 1,testData:size(3),params.timewindow do
-        local singlesample = testData:sub(i,i,1,nDim,t,t+params.timewindow-1):clone():reshape(1,nDim*params.timewindow)
+        local singlesample = testData:sub(i,i,1,params.nDim,t,t+params.timewindow-1):clone():reshape(1,params.nDim*params.timewindow)
         if singlesample==nil then
            print(singlesample)
         end
 
-        if t==1 then
-           singleSamples = singlesample
+        if t==1 and i==1 then
+           rawTestData = singlesample
         else
-           singleSamples = torch.cat(singleSamples, singlesample, 1)
+           rawTestData = torch.cat(rawTestData, singlesample, 1)
         end
     end
-
-    table.insert(rawTestData, singleSamples)
 end
 
 

@@ -34,7 +34,6 @@ function test(t, testData)
       end
 
       for i = 1,inputs:size()[1] do
-
           -- f
           f = f + model:updateOutput(inputs[i], targets[i])
       end
