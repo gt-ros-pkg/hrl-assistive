@@ -62,14 +62,17 @@ if __name__ == '__main__':
                     ##'unimodal_fabricForce',\
                     'crossmodal_targetEEDist', \
                     'crossmodal_targetEEAng']
+    ## feature_list = ['artagEE']
 
 
-    _, successData, failureData,_ = dm.feature_extraction(subject_names, task, raw_data_path, \
-                                                          processed_data_path, rf_center, local_range,\
-                                                          nSet=nSet, \
-                                                          downSampleSize=downSampleSize, \
-                                                          feature_list=feature_list, \
-                                                          data_renew=True)
+
+    _, successData, failureData,_ = dm.getDataSet(subject_names, task, raw_data_path, \
+                                                  processed_data_path, rf_center, local_range,\
+                                                  nSet=nSet, \
+                                                  downSampleSize=downSampleSize, \
+                                                  raw_data=True, \
+                                                  feature_list=feature_list, \
+                                                  data_renew=True)
 
     # index selection
     success_idx  = range(len(successData[0]))

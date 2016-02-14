@@ -77,12 +77,12 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, trainingData, abnormalTestData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                                processed_data_path, rf_center, local_range,\
-                                                                nSet=nSet, \
-                                                                downSampleSize=downSampleSize, \
-                                                                feature_list=feature_list, \
-                                                                data_renew=data_renew)
+    _, trainingData, abnormalTestData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                        processed_data_path, rf_center, local_range,\
+                                                        nSet=nSet, \
+                                                        downSampleSize=downSampleSize, \
+                                                        feature_list=feature_list, \
+                                                        data_renew=data_renew)
 
     normalTestData = None                                    
     print "======================================"
@@ -223,12 +223,12 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
                         useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                         hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                          processed_data_path, rf_center, local_range,\
-                                                          nSet=nSet, \
-                                                          downSampleSize=downSampleSize, \
-                                                          feature_list=feature_list, \
-                                                          data_renew=data_renew)
+    _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                  processed_data_path, rf_center, local_range,\
+                                                  nSet=nSet, \
+                                                  downSampleSize=downSampleSize, \
+                                                  feature_list=feature_list, \
+                                                  data_renew=data_renew)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -336,12 +336,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     else:
 
-        _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                              processed_data_path, rf_center, local_range,\
-                                                              nSet=nSet, \
-                                                              downSampleSize=downSampleSize, \
-                                                              feature_list=feature_list, \
-                                                              data_renew=data_renew)
+        _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                      processed_data_path, rf_center, local_range,\
+                                                      nSet=nSet, \
+                                                      downSampleSize=downSampleSize, \
+                                                      feature_list=feature_list, \
+                                                      data_renew=data_renew)
                            
         kFold_list = dm.kFold_data_index(len(failureData[0]), len(successData[0]), nAbnormalFold, nNormalFold )
 
@@ -747,12 +747,12 @@ def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_
         
     else:
 
-        _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                              processed_data_path, rf_center, local_range,\
-                                                              nSet=nSet, \
-                                                              downSampleSize=downSampleSize, \
-                                                              feature_list=feature_list, \
-                                                              data_renew=data_renew)
+        _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                      processed_data_path, rf_center, local_range,\
+                                                      nSet=nSet, \
+                                                      downSampleSize=downSampleSize, \
+                                                      feature_list=feature_list, \
+                                                      data_renew=data_renew)
 
         # index selection
         success_idx  = range(len(successData[0]))
@@ -1069,12 +1069,12 @@ def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_p
         abnormalTestData = d['abnormalTestData']
     else:
 
-        _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                              processed_data_path, rf_center, local_range,\
-                                                              nSet=nSet, \
-                                                              downSampleSize=downSampleSize, \
-                                                              feature_list=feature_list, \
-                                                              data_renew=data_renew)
+        _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                      processed_data_path, rf_center, local_range,\
+                                                      nSet=nSet, \
+                                                      downSampleSize=downSampleSize, \
+                                                      feature_list=feature_list, \
+                                                      data_renew=data_renew)
 
         # index selection
         success_idx  = range(len(successData[0]))
@@ -1239,12 +1239,12 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
                     useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                     hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, successData, failureData,_ = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                                                          processed_data_path, rf_center, local_range,\
-                                                          nSet=nSet, \
-                                                          downSampleSize=downSampleSize, \
-                                                          feature_list=feature_list, \
-                                                          data_renew=data_renew)
+    _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                  processed_data_path, rf_center, local_range,\
+                                                  nSet=nSet, \
+                                                  downSampleSize=downSampleSize, \
+                                                  feature_list=feature_list, \
+                                                  data_renew=data_renew)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -1625,12 +1625,12 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
 
     ## # training set
-    ## trainingData, param_dict = extractLocalFeature(data_dict['trainData'], feature_list, local_range)
+    ## trainingData, param_dict = extractFeature(data_dict['trainData'], feature_list, local_range)
 
     ## # test set
-    ## normalTestData, _ = extractLocalFeature(data_dict['normalTestData'], feature_list, local_range, \
+    ## normalTestData, _ = extractFeature(data_dict['normalTestData'], feature_list, local_range, \
     ##                                         param_dict=param_dict)        
-    ## abnormalTestData, _ = extractLocalFeature(data_dict['abnormalTestData'], feature_list, local_range, \
+    ## abnormalTestData, _ = extractFeature(data_dict['abnormalTestData'], feature_list, local_range, \
     ##                                         param_dict=param_dict)
 
     ## print "======================================"
@@ -1698,12 +1698,12 @@ def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_ce
 
 
     allData, trainingData, abnormalTestData, abnormalTestNameList\
-      = dm.feature_extraction(subject_names, task_name, raw_data_path, \
-                              processed_data_path, rf_center, local_range,\
-                              nSet=nSet, \
-                              downSampleSize=downSampleSize, \
-                              feature_list=feature_list, \
-                              data_renew=data_renew)
+      = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                      processed_data_path, rf_center, local_range,\
+                      nSet=nSet, \
+                      downSampleSize=downSampleSize, \
+                      feature_list=feature_list, \
+                      data_renew=data_renew)
 
     print "---------------------------------------------------"
     print np.shape(trainingData), np.shape(abnormalTestData)
@@ -1981,11 +1981,11 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
 
-        dm.feature_extraction([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
-                              nSet=target_data_set, downSampleSize=downSampleSize, cutting=cutting_flag, \
-                              success_viz=success_viz, failure_viz=failure_viz,\
-                              save_pdf=opt.bSavePdf, solid_color=True,\
-                              feature_list=feature_list, data_renew=opt.bDataRenew)
+        dm.getDataSet([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+                      nSet=target_data_set, downSampleSize=downSampleSize, cutting=cutting_flag, \
+                      success_viz=success_viz, failure_viz=failure_viz,\
+                      save_pdf=opt.bSavePdf, solid_color=True,\
+                      feature_list=feature_list, data_renew=opt.bDataRenew)
 
     elif opt.bPCAPlot:
         '''
