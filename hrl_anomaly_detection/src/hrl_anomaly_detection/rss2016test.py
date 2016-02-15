@@ -355,7 +355,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    method_list = ['progress_time_cluster', 'cssvm', 'cssvm_standard', 'fixed', 'svm'] 
+    method_list = ['progress_time_cluster', 'cssvm', 'fixed', 'svm'] #'cssvm_standard', 
     nPoints     = 10
 
     #-----------------------------------------------------------------------------------------
@@ -490,7 +490,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys() or method=='cssvm':# or method=='cssvm_standard' or method=='svm':
+        if method not in ROC_data.keys() or method=='svm' or method=='cssvm': # or  #or method=='cssvm_standard':# 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -587,7 +587,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     weights = np.logspace(-2, 0.1, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'cssvm':
-                    weights = np.logspace(-1.5, 0.7, nPoints)
+                    weights = np.logspace(0.0, 2.0, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'progress_time_cluster':
                     ## thresholds = -np.linspace(1., 50, nPoints)+2.0

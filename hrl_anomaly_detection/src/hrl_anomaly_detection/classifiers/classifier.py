@@ -58,6 +58,7 @@ class classifier(learning_base):
         self.verbose = verbose
 
         if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
             ## from sklearn.svm import SVC
@@ -95,26 +96,25 @@ class classifier(learning_base):
         # saved file check.
 
         if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
+            print svm.__file__
             if type(X) is not list: X=X.tolist()
-            self.dt = svm.svm_train(y, X, '-c 1.1 -t 2 -w1 '+str(self.class_weight)+' -w-1 0.2' )
+            self.dt = svm.svm_train(y, X, '-c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 7.0'  )
             ## self.dt.set_params(class_weight=self.class_weight)
             ## return self.dt.fit(X, y)
             return True
         elif self.method == 'cssvm_standard':
+            sys.path.insert(0, '/home/dpark/git/cssvm/python')
             import cssvmutil as cssvm
             if type(X) is not list: X=X.tolist()
-            self.dt = cssvm.svm_train(y, X, '-C 0 -c 1.1 -t 2 -w1 '+str(self.class_weight)+' -w-1 0.2' )
+            self.dt = cssvm.svm_train(y, X, '-C 0 -c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 5.0' )
             return True
         elif self.method == 'cssvm':
+            sys.path.insert(0, '/home/dpark/git/cssvm/python')
             import cssvmutil as cssvm
-            ## self.dt = svm_train(y, X, '-c 4')
             if type(X) is not list: X=X.tolist()
-            ## self.dt = cssvm.svm_train(y, X, '-s 1 -t 0 -c '+str(self.class_weight) )
-            ## self.dt = cssvm.svm_train(y, X, '-c '+str(self.class_weight) )
-            self.dt = cssvm.svm_train(y, X, '-C 1 -c 1.1 -t 2 -w1 '+str(self.class_weight)+' -w-1 0.01' )
-            ## print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            ## self.dt = cssvm.svm_train(y, X, '-C 1 -c 3' )
+            self.dt = cssvm.svm_train(y, X, '-C 1 -c 4 -t 2 -g 0.03 -w1 2.0 -w-1 '+str(self.class_weight) )
             return True
             
         elif self.method == 'progress_time_cluster':
@@ -149,22 +149,20 @@ class classifier(learning_base):
         return predicted values (not necessarily binaries)
         '''
 
-        if self.method == 'svm':
-            import svmutil as svm            
+        if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm':
+            if self.method == 'svm':
+                sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+                import svmutil as svm
+            else:
+                sys.path.insert(0, '/home/dpark/git/cssvm/python')
+                import cssvmutil as svm
+
+            print svm.__file__
             if type(X) is not list: X=X.tolist()
             if y is not None:
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)
             else:
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
-            return p_labels
-            ## return self.dt.predict(X)
-        elif self.method == 'cssvm_standard' or self.method == 'cssvm':
-            import cssvmutil as cssvm            
-            if type(X) is not list: X=X.tolist()
-            if y is not None:
-                p_labels, _, p_vals = cssvm.svm_predict(y, X, self.dt)
-            else:
-                p_labels, _, p_vals = cssvm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         elif self.method == 'progress_time_cluster':
             self.ml.cluster_type = 'time'
@@ -190,13 +188,9 @@ class classifier(learning_base):
 
     def decision_function(self, X):
 
-        if self.method == 'svm':
-            if type(X) is not list:
-                return self.predict(X.tolist())
-            else:
-                return self.predict(X)
-            ## return self.dt.decision_function(X)
-        elif self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'fixed':
+        ## return self.dt.decision_function(X)
+        if self.method == 'cssvm_standard' or self.method == 'cssvm' or \
+          self.method == 'fixed' or self.method == 'svm':
             if type(X) is not list:
                 return self.predict(X.tolist())
             else:
