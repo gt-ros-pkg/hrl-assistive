@@ -19,7 +19,7 @@ cmd:option('-cuda', false, 'Enable cuda. Default:false')
 -- for all models:
 cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
 --cmd:option('-inputsize', 25, 'size of each input patch')
-cmd:option('-outputsize', 2, 'size of hidden unit')
+cmd:option('-outputsize', 5, 'size of hidden unit')
 cmd:option('-lambda', 0.1, 'sparsity coefficient')
 cmd:option('-beta', 1, 'prediction error coefficient')
 cmd:option('-eta', 2e-3, 'learning rate')
@@ -31,7 +31,7 @@ cmd:option('-timewindow', 10, 'size of time window')
 
 -- logging:
 cmd:option('-datafile', 'http://torch7.s3-website-us-east-1.amazonaws.com/data/tr-berkeley-N5K-M56x56-lcn.ascii', 'Dataset URL')
-cmd:option('-statinterval', 1, 'interval for saving stats and models')
+cmd:option('-statinterval', 10, 'interval for saving stats and models')
 cmd:option('-v', false, 'be verbose')
 cmd:option('-display', false, 'display stuff')
 cmd:option('-wcar', '', 'additional flag to differentiate this run')
@@ -79,7 +79,7 @@ print(sys.COLORS.red .. '==> training!')
 for t = 1,params.maxiter do
 
    train(t, data.trainData)
-   --test(t, data.testData)
+   test(t, data.testData)
 
 end
 

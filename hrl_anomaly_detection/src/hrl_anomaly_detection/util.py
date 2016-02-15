@@ -71,7 +71,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristMFCCList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
-                'ftTimesList', 'ftForceList', \
+                'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
                 'visionChangeTimesList', 'visionChangeCentersList', 'visionChangeMagList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
@@ -211,8 +211,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # wrist sound ----------------------------------------------------------------
         if 'audio_wrist_time' in d.keys():
             audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
-            audio_rms  = np.array(d['audio_wrist_rms'])
-            audio_mfcc = np.array(d['audio_wrist_mfcc'])
+            audio_rms  = np.array([d['audio_wrist_rms']])
+            audio_mfcc = np.array(d['audio_wrist_mfcc']).T
 
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
@@ -324,20 +324,12 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
-            ## fig = plt.figure()
-            ## plt.plot(kin_time, kin_target_pos[2], c='k')
-            ## plt.plot(kin_time, local_kin_target_pos[2], c='b')
-            ## plt.plot(new_times, interpolationData(kin_time, local_kin_target_pos, new_times)[2], c='r')
-            ## fig.savefig('test.pdf')
-            ## fig.savefig('test.png')
-            ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## sys.exit()
-
 
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time  = (np.array(d['ft_time']) - init_time).tolist()
-            ft_force = d['ft_force']
+            ft_force  = d['ft_force']
+            ft_torque = d['ft_torque']
 
             kin_time   = (np.array(d['kinematics_time']) - init_time).tolist()
             kin_ee_pos = d['kinematics_ee_pos'] # 3xN
@@ -346,28 +338,24 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # extract local feature
             data_set = [ft_time, ft_pos, ft_force]
             [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            data_set = [ft_time, ft_pos, ft_torque]
+            [ _, local_ft_torque] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
             raw_data_dict['ftTimesList'].append(ft_time)
             raw_data_dict['ftForceList'].append(local_ft_force)
+            raw_data_dict['ftTorqueList'].append(local_ft_torque)
 
-            force_array = interpolationData(ft_time, local_ft_force, new_times)
-            data_dict['ftForceList'].append(force_array)                                         
+            res = interpolationData(ft_time, local_ft_force, new_times)
+            data_dict['ftForceList'].append(res)                                         
 
-            ## fig = plt.figure()
-            ## plt.plot(ft_time, ft_force[2], c='k')
-            ## plt.plot(ft_time, local_ft_force[2], c='b')
-            ## plt.plot(new_times, interpolationData(ft_time, local_ft_force, new_times)[2], c='r')
-            ## ## fig.savefig('test.pdf')
-            ## ## fig.savefig('test.png')
-            ## ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## plt.show()
-            ## sys.exit()
+            res = interpolationData(ft_time, local_ft_torque, new_times)
+            data_dict['ftTorqueList'].append(res)                                         
             
                     
         # vision artag -------------------------------------------------------------
         if 'vision_artag_time' in d.keys():
             vision_time = (np.array(d['vision_artag_time']) - init_time).tolist()
-            vision_pos  = d['vision_artag_pos'] # timeLength x 3*tags
+            vision_pos  = d['vision_artag_pos'] # 3*tags * timeLength
             vision_quat = d['vision_artag_quat']
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
@@ -386,14 +374,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             vision_quat_array  = interpolationData(vision_time, local_vision_quat, new_times)
             data_dict['visionArtagQuatList'].append(vision_quat_array)                                         
 
-            ## fig = plt.figure()
-            ## plt.plot(vision_time, vision_pos[2], c='k')
-            ## plt.plot(vision_time, local_vision_pos[2], c='b')
-            ## plt.plot(new_times, interpolationData(vision_time, local_vision_pos, new_times)[2], c='r')
-            ## fig.savefig('test.pdf')
-            ## fig.savefig('test.png')
-            ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## sys.exit()
 
         # vision change -----------------------------------------------------------
         if 'vision_change_time' in d.keys():

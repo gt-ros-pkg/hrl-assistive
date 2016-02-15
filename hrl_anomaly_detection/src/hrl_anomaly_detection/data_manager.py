@@ -83,15 +83,20 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
 
     return kFold_list
     
-def feature_extraction(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-             nSet=1, downSampleSize=200, scale=10.0, cutting=False, success_viz=False, failure_viz=False, \
-             save_pdf=False, solid_color=True, \
-             feature_list=['crossmodal_targetEEDist'], data_renew=False):
+def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
+               nSet=1, downSampleSize=200, scale=10.0, cutting=False, raw_data=False, data_ext=True, \
+               success_viz=False, failure_viz=False, \
+               save_pdf=False, solid_color=True, \
+               feature_list=['crossmodal_targetEEDist'], data_renew=False):
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
+    if raw_data:
+        save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
+    else:
+        save_pkl = os.path.join(processed_data_path, 'raw_feature_extraction_'+rf_center+'_'+str(local_range) )
+            
     if os.path.isfile(save_pkl) and data_renew is not True :
         data_dict = ut.load_pickle(save_pkl)
         allData          = data_dict['allData']
@@ -126,13 +131,21 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
                                              local_range=local_range, rf_center=rf_center,\
                                              renew=data_renew, save_pkl=failure_data_pkl)
 
-        # data set        
-        allData, param_dict = extractLocalFeature(all_data_dict, feature_list, scale=scale)
-        trainingData, _     = extractLocalFeature(success_data_dict, feature_list, scale=scale, \
-                                                  param_dict=param_dict)
-        abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, scale=scale, \
-                                                       param_dict=param_dict)
+        # data set
+        if raw_data is False:
+            allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale)
+            trainingData, _     = extractFeature(success_data_dict, feature_list, scale=scale, \
+                                                      param_dict=param_dict)
+            abnormalTestData, _ = extractFeature(failure_data_dict, feature_list, scale=scale, \
+                                                      param_dict=param_dict)
+        else:
+            allData, param_dict = extractRawData(all_data_dict, feature_list, scale=scale)
+            trainingData, _     = extractRawData(success_data_dict, feature_list, scale=scale, \
+                                                      param_dict=param_dict)
+            abnormalTestData, _ = extractRawData(failure_data_dict, feature_list, scale=scale, \
+                                                      param_dict=param_dict)
 
+                                                      
         allData          = np.array(allData)
         trainingData     = np.array(trainingData)
         abnormalTestData = np.array(abnormalTestData)
@@ -151,15 +164,15 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
     ## _, success_data_dict = util.loadData(success_list, isTrainingData=True,
     ##                                 downSampleSize=downSampleSize,\
     ##                                 local_range=local_range, rf_center=rf_center)
-    ## trainingData, _      = extractLocalFeature(success_data_dict, feature_list, \
+    ## trainingData, _      = extractFeature(success_data_dict, feature_list, \
     ##                                            param_dict=data_dict['param_dict'])
     ## sys.exit()
     
     ## All data
     nPlot = None
-    feature_names = np.array(param_dict['feature_names'])
 
-    if True:
+    if data_ext:
+        feature_names = np.array(param_dict['feature_names'])
 
         # 1) exclude stationary data
         thres = 0.025
@@ -191,6 +204,8 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
     # -------------------- Display ---------------------
     fig = None
     if success_viz:
+        feature_names = np.array(param_dict['feature_names'])
+
         fig = plt.figure()
         n,m,k = np.shape(trainingData)
         if nPlot is None:
@@ -204,6 +219,7 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
             ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
+        feature_names = np.array(param_dict['feature_names'])
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(abnormalTestData)
         if nPlot is None:
@@ -217,6 +233,7 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
             ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
+        feature_names = np.array(param_dict['feature_names'])
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
 
         if save_pdf:
@@ -233,119 +250,7 @@ def feature_extraction(subject_names, task_name, raw_data_path, processed_data_p
     return allData, trainingData, abnormalTestData, abnormalTestNameList
 
 
-def raw_data_extraction(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-                        nSet=1, downSampleSize=200, scale=10.0, cutting=False, \
-                        success_viz=False, failure_viz=False, \
-                        save_pdf=False, solid_color=True, data_renew=False):
-
-    if os.path.isdir(processed_data_path) is False:
-        os.system('mkdir -p '+processed_data_path)
-
-    save_pkl = os.path.join(processed_data_path, 'raw_extraction_'+rf_center+'_'+str(local_range) )
-    if os.path.isfile(save_pkl) and data_renew is not True :
-        data_dict = ut.load_pickle(save_pkl)
-        allData          = data_dict['allData']
-        trainingData     = data_dict['trainingData'] 
-        abnormalTestData = data_dict['abnormalTestData']
-        abnormalTestNameList = data_dict['abnormalTestNameList']
-        param_dict       = data_dict['param_dict']
-    else:
-        ## data_renew = False #temp        
-        success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
-
-        # loading and time-sync    
-        all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
-                                        '_'+str(local_range))
-        _, all_data_dict = util.loadData(success_list+failure_list, isTrainingData=False,
-                                         downSampleSize=downSampleSize,\
-                                         local_range=local_range, rf_center=rf_center,\
-                                         ##global_data=True,\
-                                         renew=data_renew, save_pkl=all_data_pkl)
-
-        success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
-                                            '_'+str(local_range))
-        _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-                                             downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=success_data_pkl)
-
-        failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
-                                            '_'+str(local_range))
-        _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
-                                             downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=failure_data_pkl)
-
-        # data set        
-        allData, param_dict = extractLocalFeature(all_data_dict, feature_list, scale=scale)
-        trainingData, _     = extractLocalFeature(success_data_dict, feature_list, scale=scale, \
-                                                       param_dict=param_dict)
-        abnormalTestData, _ = extractLocalFeature(failure_data_dict, feature_list, scale=scale, \
-                                                       param_dict=param_dict)
-
-        allData          = np.array(allData)
-        trainingData     = np.array(trainingData)
-        abnormalTestData = np.array(abnormalTestData)
-
-        data_dict = {}
-        data_dict['allData'] = allData
-        data_dict['trainingData'] = trainingData
-        data_dict['abnormalTestData'] = abnormalTestData
-        data_dict['abnormalTestNameList'] = abnormalTestNameList = failure_data_dict['fileNameList']
-        data_dict['param_dict'] = param_dict
-        ut.save_pickle(data_dict, save_pkl)
-
-
-    ## All data
-    nPlot = None
-    feature_names = np.array(param_dict['feature_names'])
-
-    # -------------------- Display ---------------------
-    fig = None
-    if success_viz:
-        fig = plt.figure()
-        n,m,k = np.shape(trainingData)
-        if nPlot is None:
-            if n%2==0: nPlot = n
-            else: nPlot = n+1
-
-        for i in xrange(n):
-            ax = fig.add_subplot((nPlot/2)*100+20+i)
-            if solid_color: ax.plot(trainingData[i].T, c='b')
-            else: ax.plot(trainingData[i].T)
-            ax.set_title( AddFeature_names[i] )
-
-    if failure_viz:
-        if fig is None: fig = plt.figure()
-        n,m,k = np.shape(abnormalTestData)
-        if nPlot is None:
-            if n%2==0: nPlot = n
-            else: nPlot = n+1
-
-        for i in xrange(n):
-            ax = fig.add_subplot((nPlot/2)*100+20+i)
-            if solid_color: ax.plot(abnormalTestData[i].T, c='r')
-            else: ax.plot(abnormalTestData[i].T)
-            ax.set_title( AddFeature_names[i] )
-
-    if success_viz or failure_viz:
-        plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
-
-        if save_pdf:
-            fig.savefig('test.pdf')
-            fig.savefig('test.png')
-            os.system('cp test.p* ~/Dropbox/HRL/')        
-        else:
-            plt.show()
-
-    print "---------------------------------------------------"
-    print np.shape(trainingData), np.shape(abnormalTestData)
-    print "---------------------------------------------------"
-
-    return allData, trainingData, abnormalTestData, abnormalTestNameList
-
-
-def extractLocalFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
+def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
@@ -418,15 +323,6 @@ def extractLocalFeature(d, feature_list, scale=10.0, param_dict=None, verbose=Fa
         timeList     = d['timesList'][idx]
         dataSample = None
 
-        ## # Define receptive field center trajectory ---------------------------
-        ## if rf_center == 'kinEEPos':
-        ##     rf_traj = d['kinEEPosList'][idx]
-        ## elif rf_center == 'kinForearmPos':
-        ##     rf_traj = d['kinForearmPosList'][idx]
-        ## ## elif rf_center == 'l_upper_arm_link':            
-        ## else:
-        ##     sys.exit()
-        
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
@@ -712,4 +608,238 @@ def extractLocalFeature(d, feature_list, scale=10.0, param_dict=None, verbose=Fa
     ## sys.exit()
                                 
     return scaled_features, param_dict
+
+
+def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=False):
+
+    from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
+    from hrl_lib import quaternion as qt
+    
+    if param_dict is None:
+        isTrainingData=True
+        param_dict = {}
+    else:
+        isTrainingData=False
+            
+
+    # -------------------------------------------------------------        
+    # extract modality data
+    dataList = []
+    nSample  = len(d['timesList'])
+    for idx in xrange(nSample): # each sample
+
+        timeList     = d['timesList'][idx]
+        dataSample = None
+
+        # main-artag EE - vision relative dist with main(first) vision target----
+        if 'relativePose_artag_EE' in raw_feature_list:
+            kinEEPos        = d['kinEEPosList'][idx]
+            kinEEQuat       = d['kinEEQuatList'][idx]
+            visionArtagPos  = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
+            visionArtagQuat = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
+
+            # pos and quat?
+            relativePose = []
+            for time_idx in xrange(len(timeList)):
+                startFrame = dh.array2KDLframe( visionArtagPos[:,time_idx].tolist() +\
+                                                visionArtagQuat[:,time_idx].tolist() )
+                endFrame   = dh.array2KDLframe( kinEEPos[:,time_idx].tolist()+\
+                                                kinEEQuat[:,time_idx].tolist() )
+                diffFrame  = endFrame*startFrame.Inverse()                                
+                relativePose.append( dh.KDLframe2List(diffFrame) )
+
+            relativePose = np.array(relativePose).T
+
+            if dataSample is None: dataSample = relativePose
+            else: dataSample = np.vstack([dataSample, relativePose])
+                
+
+        # main-artag sub-artag - vision relative dist with main(first) vision target----
+        if 'relativePose_artag_EE' in raw_feature_list:
+            visionArtagPos1 = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
+            visionArtagQuat1 = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
+            visionArtagPos2 = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
+            visionArtagQuat2 = d['visionArtagQuatList'][idx][4:8] # originally length x 3*tags
+
+            # pos and quat?
+            relativePose = []
+            for time_idx in xrange(len(timeList)):
+
+                startFrame = dh.array2KDLframe( visionArtagPos1[:,time_idx].tolist() +\
+                                                visionArtagQuat1[:,time_idx].tolist() )
+                endFrame = dh.array2KDLframe( visionArtagPos2[:,time_idx].tolist() +\
+                                              visionArtagQuat2[:,time_idx].tolist() )                
+                diffFrame  = endFrame*startFrame.Inverse()                                
+                relativePose.append( dh.KDLframe2List(diffFrame) )
+
+            relativePose = np.array(relativePose).T
+
+            if dataSample is None: dataSample = relativePose
+            else: dataSample = np.vstack([dataSample, relativePose])
+
+
+        # Audio --------------------------------------------
+        if 'kinectAudio' in raw_feature_list:
+            audioPower   = d['audioPowerList'][idx]                        
+            if dataSample is None: dataSample = copy.copy(np.array(audioPower))
+            else: dataSample = np.vstack([dataSample, copy.copy(audioPower)])
+
+        # AudioWrist ---------------------------------------
+        if 'wristAudio' in raw_feature_list:
+            audioWristRMS  = d['audioWristRMSList'][idx]
+            audioWristMFCC = d['audioWristMFCCList'][idx]            
+
+            if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
+
+            dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
+
+        # FT -------------------------------------------
+        if 'ft' in raw_feature_list:
+            ftForce  = d['ftForceList'][idx]
+            ftTorque = d['ftTorqueList'][idx]
+
+            if dataSample is None: dataSample = np.array(ftForce)
+            else: dataSample = np.vstack([dataSample, ftForce])
+
+            if dataSample is None: dataSample = np.array(ftTorque)
+            else: dataSample = np.vstack([dataSample, ftTorque])
+
+        # pps -------------------------------------------
+        if 'pps' in raw_feature_list:
+            ppsLeft  = d['ppsLeftList'][idx]
+            ppsRight = d['ppsRightList'][idx]
+
+            if dataSample is None: dataSample = ppsLeft
+            else: dataSample = np.vstack([dataSample, ppsLeft])
+
+            if dataSample is None: dataSample = ppsRight
+            else: dataSample = np.vstack([dataSample, ppsRight])
+
+
+        # Kinematics --------------------------------------
+        if 'kinematics' in raw_feature_list:
+            kinEEPos   = d['kinEEPosList'][idx]
+            kinEEQuat  = d['kinEEQuatList'][idx]
+            kinJntPos  = d['kinJntPosList'][idx]
+            kinPos     = d['kinPosList'][idx]
+            kinVel     = d['kinVelList'][idx]
+
+            if dataSample is None: dataSample = np.array(kinEEPos)
+            else: dataSample = np.vstack([dataSample, kinEEPos])
+            if 'kinEEPos_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinEEPos_x')
+                param_dict['feature_names'].append('kinEEPos_y')
+                param_dict['feature_names'].append('kinEEPos_z')
+
+            if dataSample is None: dataSample = np.array(kinEEQuat)
+            else: dataSample = np.vstack([dataSample, kinEEQuat])
+            if 'kinEEQuat_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinEEQuat_x')
+                param_dict['feature_names'].append('kinEEQuat_y')
+                param_dict['feature_names'].append('kinEEQuat_z')
+                param_dict['feature_names'].append('kinEEQuat_w')
+
+
+            if dataSample is None: dataSample = np.array(kinJntPos)
+            else: dataSample = np.vstack([dataSample, kinJntPos])
+            if 'kinJntPos_1' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinJntPos_1')
+                param_dict['feature_names'].append('kinJntPos_2')
+                param_dict['feature_names'].append('kinJntPos_3')
+                param_dict['feature_names'].append('kinJntPos_4')
+                param_dict['feature_names'].append('kinJntPos_5')
+                param_dict['feature_names'].append('kinJntPos_6')
+                param_dict['feature_names'].append('kinJntPos_7')
+
+            if dataSample is None: dataSample = np.array(kinPos)
+            else: dataSample = np.vstack([dataSample, kinPos])
+            if 'kinPos_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinPos_x')
+                param_dict['feature_names'].append('kinPos_y')
+                param_dict['feature_names'].append('kinPos_z')
+
+            if dataSample is None: dataSample = np.array(kinVel)
+            else: dataSample = np.vstack([dataSample, kinVel])
+            if 'kinVel_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinVel_x')
+                param_dict['feature_names'].append('kinVel_y')
+                param_dict['feature_names'].append('kinVel_z')
+                
+
+        ## # Unimodal feature - vision change ------------------------------------
+        ## if 'unimodal_visionChange' in raw_feature_list:
+        ##     visionChangeMag = d['visionChangeMagList'][idx]
+
+        ##     unimodal_visionChange = visionChangeMag
+
+        ##     if dataSample is None: dataSample = unimodal_visionChange
+        ##     else: dataSample = np.vstack([dataSample, unimodal_visionChange])
+        ##     if 'visionChange' not in param_dict['feature_names']:
+        ##         param_dict['feature_names'].append('visionChange')
+                
+        ## # Unimodal feature - fabric skin ------------------------------------
+        ## if 'unimodal_fabricForce' in raw_feature_list:
+        ##     fabricMag = d['fabricMagList'][idx]
+
+        ##     unimodal_fabricForce = fabricMag
+
+        ##     if dataSample is None: dataSample = unimodal_fabricForce
+        ##     else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
+        ##     if 'fabricForce' not in param_dict['feature_names']:
+        ##         param_dict['feature_names'].append('fabricForce')
+
+
+        # ----------------------------------------------------------------
+        dataList.append(dataSample)
+
+
+    # Converting data structure & cutting unnecessary part
+    nSample      = len(dataList)
+    nEmissionDim = len(dataList[0])
+    features     = []
+    startIdx     = 50 #temp
+    endIdx       = 150
+    for i in xrange(nEmissionDim):
+        feature  = []
+
+        for j in xrange(nSample):
+            try:
+                ## feature.append(dataList[j][i])
+                feature.append(dataList[j][i,:])
+            except:
+                print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
+                print np.shape(dataList), np.shape(dataList[j]), j, i
+                sys.exit()
+
+        features.append( feature )
+
+
+    # Scaling ------------------------------------------------------------
+    if isTrainingData:
+        param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
+        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
+        print "max: ", param_dict['feature_max']
+        print "min: ", param_dict['feature_min']
+        
+        
+    scaled_features = []
+    for i, feature in enumerate(features):
+
+        if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
+            scaled_features.append( np.array(feature) )
+        else:
+            scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
+                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+
+    ## import matplotlib.pyplot as plt
+    ## plt.figure()
+    ## plt.plot(np.array(scaled_features[0]).T)
+    ## plt.show()
+    ## sys.exit()
+                                
+    return scaled_features, param_dict
+
+
+
 

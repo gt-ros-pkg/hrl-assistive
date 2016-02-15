@@ -50,7 +50,7 @@ if __name__ == '__main__':
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
     rf_center           = 'kinEEPos'
-    local_range         = 0.25    
+    local_range         = 1.25    
     nSet                = 1
     downSampleSize      = 200
 
@@ -62,14 +62,25 @@ if __name__ == '__main__':
                     ##'unimodal_fabricForce',\
                     'crossmodal_targetEEDist', \
                     'crossmodal_targetEEAng']
+    feature_list = ['relativePose_artag_EE', \
+                    'relativePose_artag_artag', \
+                    'kinectAudio',\
+                    'wristAudio', \
+                    'ft', \
+                    ## 'pps', \
+                    ## 'visionChange', \
+                    ## 'fabricSkin', \
+                    ]
 
 
-    _, successData, failureData,_ = dm.feature_extraction(subject_names, task, raw_data_path, \
-                                                          processed_data_path, rf_center, local_range,\
-                                                          nSet=nSet, \
-                                                          downSampleSize=downSampleSize, \
-                                                          feature_list=feature_list, \
-                                                          data_renew=True)
+
+    _, successData, failureData,_ = dm.getDataSet(subject_names, task, raw_data_path, \
+                                                  processed_data_path, rf_center, local_range,\
+                                                  nSet=nSet, \
+                                                  downSampleSize=downSampleSize, \
+                                                  raw_data=True, data_ext=False, \
+                                                  feature_list=feature_list, \
+                                                  data_renew=False)
 
     # index selection
     success_idx  = range(len(successData[0]))

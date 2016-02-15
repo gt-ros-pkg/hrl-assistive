@@ -174,7 +174,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
                         'crossmodal_artagEEAng']
 
         rawDataDict, dataDict = dataUtil.loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, local_range=0.15, verbose=self.verbose)
-        trainingData, _ = dataMng.extractLocalFeature(dataDict, feature_list)
+        trainingData, _ = dataMng.extractFeature(dataDict, feature_list)
         trainingData = np.array(trainingData)
 
         if True:
