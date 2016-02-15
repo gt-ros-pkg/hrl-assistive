@@ -71,7 +71,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristMFCCList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
-                'ftTimesList', 'ftForceList', \
+                'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
                 'visionChangeTimesList', 'visionChangeCentersList', 'visionChangeMagList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
@@ -211,8 +211,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # wrist sound ----------------------------------------------------------------
         if 'audio_wrist_time' in d.keys():
             audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
-            audio_rms  = np.array(d['audio_wrist_rms'])
-            audio_mfcc = np.array(d['audio_wrist_mfcc'])
+            audio_rms  = np.array([d['audio_wrist_rms']])
+            audio_mfcc = np.array(d['audio_wrist_mfcc']).T
 
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
@@ -355,7 +355,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # vision artag -------------------------------------------------------------
         if 'vision_artag_time' in d.keys():
             vision_time = (np.array(d['vision_artag_time']) - init_time).tolist()
-            vision_pos  = d['vision_artag_pos'] # timeLength x 3*tags
+            vision_pos  = d['vision_artag_pos'] # 3*tags * timeLength
             vision_quat = d['vision_artag_quat']
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:

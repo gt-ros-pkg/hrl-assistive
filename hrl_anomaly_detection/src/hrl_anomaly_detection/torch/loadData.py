@@ -50,7 +50,7 @@ if __name__ == '__main__':
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
     rf_center           = 'kinEEPos'
-    local_range         = 0.25    
+    local_range         = 1.25    
     nSet                = 1
     downSampleSize      = 200
 
@@ -62,7 +62,15 @@ if __name__ == '__main__':
                     ##'unimodal_fabricForce',\
                     'crossmodal_targetEEDist', \
                     'crossmodal_targetEEAng']
-    ## feature_list = ['artagEE']
+    feature_list = ['relativePose_artag_EE', \
+                    'relativePose_artag_artag', \
+                    'kinectAudio',\
+                    'wristAudio', \
+                    'ft', \
+                    ## 'pps', \
+                    ## 'visionChange', \
+                    ## 'fabricSkin', \
+                    ]
 
 
 
@@ -70,9 +78,9 @@ if __name__ == '__main__':
                                                   processed_data_path, rf_center, local_range,\
                                                   nSet=nSet, \
                                                   downSampleSize=downSampleSize, \
-                                                  raw_data=True, \
+                                                  raw_data=True, data_ext=False, \
                                                   feature_list=feature_list, \
-                                                  data_renew=True)
+                                                  data_renew=False)
 
     # index selection
     success_idx  = range(len(successData[0]))

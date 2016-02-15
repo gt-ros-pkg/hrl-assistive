@@ -112,7 +112,7 @@ class classifier(learning_base):
             if type(X) is not list: X=X.tolist()
             ## self.dt = cssvm.svm_train(y, X, '-s 1 -t 0 -c '+str(self.class_weight) )
             ## self.dt = cssvm.svm_train(y, X, '-c '+str(self.class_weight) )
-            self.dt = cssvm.svm_train(y, X, '-C 1 -c 1.1 -t 2 -w1 '+str(self.class_weight)+' -w-1 0.01' )
+            self.dt = cssvm.svm_train(y, X, '-C 1 -c 1.1 -t 2 -w1 '+str(self.class_weight)+' -w-1 0.2' )
             ## print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             ## self.dt = cssvm.svm_train(y, X, '-C 1 -c 3' )
             return True
