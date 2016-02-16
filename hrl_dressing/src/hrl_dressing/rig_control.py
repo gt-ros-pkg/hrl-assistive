@@ -837,16 +837,17 @@ if __name__ == "__main__":
                  help='pkl saved by test_sine.')
 
     opt, args = p.parse_args()
-    # mode = 'autorun'
-    mode = None
+    mode = 'autorun'
+    # mode = None
     plot = True
     # plot = False
-    num = 5
+    num = 20
     vel = 0.1
-    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12', 'tapo_test_data','wenhao_test_data', 'test_subj']
-    subject = subject_options[12]
+    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12',
+                       'with_sleeve_no_arm', 'no_sleeve_no_arm', 'moved_rig_onto_drawers', 'moved_rig_back', 'testing_level', 'tapo_test_data','wenhao_test_data', 'test_subj']
+    subject = subject_options[17]
     height_options = ['height0', 'height1', 'height2', 'height3', 'height4', 'height5']
-    height = height_options[3]
+    height = height_options[0]
     rc = RigControl(mode=mode, plot=plot, num=num, vel=vel, subj=subject, height=height)
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_dressing')
@@ -859,7 +860,7 @@ if __name__ == "__main__":
     # input_classification = ['missed', 'high', 'caught_forearm', 'caught']
     # output_classification = ['missed', 'caught', 'missed', 'high', 'good']
 
-    # '''
+    '''
     # output_classification = ['missed', 'good', 'caught_fist', 'caught_other']
     output_classification = ['missed', 'good', 'caught']
     # rc.plot_all_data(subject_options[0:6]+subject_options[7:13], output_classification)
@@ -867,7 +868,7 @@ if __name__ == "__main__":
     rc.histogram_of_stop_point_elbow(subject_options[0:6]+subject_options[7:13], output_classification)
     # rc.plot_mean_and_std(subject_options[0:6]+subject_options[7:13], output_classification)
     plt.show()
-    # '''
+    '''
 
 
     '''
