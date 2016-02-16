@@ -1,0 +1,160 @@
+<launch>
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+  <arg name="use_kinect" default="true" />
+  <arg name="kinect_ns" default="head_mount_kinect" />
+  <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
+  <!-- kinect_camera may need to be set to .../image_raw for simulated kinect -->
+  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_color" />
+  <arg name="run_ft_sensor" default="false" />
+  <arg name="use_cart_ctrl" default="true" />
+
+  <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
+  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
+      <param name="port" type="int" value="9091" />
+  </node>
+  <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
+  <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port 8000 --webpath vci-www"/>
+  <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
+
+  <!-- Throttling nodes for robot state -->
+  <node name="torso_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
+
+  <node name="head_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
+
+  <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
+        args="messages /r_gripper_controller/state 1 /r_gripper_controller/state_throttled" />
+
+  <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
+        args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
+
+  <node if="$(arg run_ft_sensor)" name="throttle_wt_force_out" pkg="topic_tools" type="throttle"
+        args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
+
+  <!-- Image Rotation Nodes for right + left arm cameras and ar_confirm image -->
+  <node name="image_rotater_right" pkg="image_rotate" type="image_rotate" machine = "c1"> 
+    <remap from="image" to="/r_forearm_cam/image_color"/>
+    <remap from="rotated/image" to="/r_forearm_cam/image_color_rotated"/>
+  </node>
+
+  <node name="image_rotater_left" pkg="image_rotate" type="image_rotate" machine="c1"> 
+    <remap from="image" to="/l_forearm_cam/image_color"/>
+    <remap from="rotated/image" to="/l_forearm_cam/image_color_rotated"/>
+  </node>
+
+  <!-- Text-to-speech backend -->
+  <!--<node pkg="assistive_teleop" type="speech_intermediary" name="wt_speech_intermediary">-->
+    <!--<param name="voice" value="voice_nitech_us_rms_arctic_hts"/>-->
+    <!--<param name="voice" value="kal_diphone"/>-->
+  <!--</node>-->
+
+  <!-- Launch Kinect (needed for pixel_2_3d -->
+  <include if="$(arg use_kinect)" file="$(find openni_launch)/launch/openni.launch" >
+    <arg name="camera" value="$(arg kinect_ns)" />
+    <arg name="publish_tf" value="false" />
+  </include>
+
+  <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
+  <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
+      <remap from="image" to="$(arg kinect_camera)" />
+      <remap from="point_cloud" to="$(arg kinect_points)" />
+      <param name="normal_radius" type="double" value="0.035" />
+      <param name="use_closest_pixel"  value="True"/>
+  </node>
+
+  <!-- Arms: Haptic MPC -->
+  <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
+    <arg name="arm" value="l"/>
+    <arg name="skin" value="fabric"/>
+    <arg name="namespace" value="left_arm"/>
+    <arg name="rviz_teleop" value="true"/>
+    <arg name="verbose" value="true"/>
+  </include>
+
+  <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
+    <arg name="arm" value="r"/>
+    <arg name="skin" value="none"/>
+    <arg name="namespace" value="right_arm"/>
+    <arg name="rviz_teleop" value="true"/>
+    <arg name="verbose" value="true"/>
+  </include>
+
+<!--
+  <node name="l_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay" 
+        args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >
+      <remap from="pose_in" to="/wt_l_click_pose" />
+      <remap from="pose_out" to="/haptic_mpc/goal_pose" />
+  </node>
+
+  <node name="r_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay" 
+        args="-t 0.1 0.0 0.0 -r 1.570796 3.14159 0." output="screen" >
+      <remap from="pose_in" to="/wt_r_click_pose" />
+      <remap from="pose_out" to="/r_cart/command_pose" />
+  </node>
+
+  <node name="mpc_reset" pkg="hrl_haptic_mpc" type="mpc_reset.py" output="screen">
+      <remap from="fdbk_out" to="wt_log_out" />
+      <remap from="reset" to="/l_cart/reset_command" />
+      <param name="controller" value="l_arm_controller" />
+  </node>
+  -->
+
+
+  <!--Setup Cartesian Controller for arm movements 
+  <group if="$(arg use_cart_ctrl)">
+    <arg name="l_cart_step_pose_goal" default="haptic_mpc/goal_pose" />
+    <arg name="r_cart_step_pose_goal" default="r_cart/command_pose" />
+
+    <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose" output="screen">
+      <remap from="twist_in" to="r_cart/web_commands" />
+      <remap from="pose_out" to="$(arg r_cart_step_pose_goal)"/>
+      <param name="ee_frame" value="/r_gripper_tool_frame"/>
+    </node>
+    
+
+    <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
+      <remap from="twist_in" to="l_cart/web_commands" />
+      <remap from="pose_out" to="$(arg l_cart_step_pose_goal)" />
+      <param name="ee_frame" value="/l_gripper_tool_frame"/>
+    </node>
+
+  </group>
+  -->
+
+  <!-- Setup IK-based joint-space controller arm movements
+  <group unless="$(arg use_cart_ctrl)">
+    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
+      <param name="tip_name" value="l_wrist_roll_link" />
+      <param name="root_name" value="torso_lift_link" />
+    </node>
+
+    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
+      <param name="tip_name" value="r_wrist_roll_link" />
+      <param name="root_name" value="torso_lift_link" />
+    </node>
+
+    <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
+      <remap from="twist_in" to="l_cart/web_commands" />
+      <remap from="pose_out" to="l_step_pose_goal" />
+      <param name="ee_frame" value="/l_wrist_roll_link" />
+    </node>
+
+    <node pkg="assistive_teleop" name="r_twist_to_pose" type="twist_to_pose" output="screen">
+      <remap from="twist_in" to="r_cart/web_commands" />
+      <remap from="pose_out" to="r_step_pose_goal"/>
+      <param name="ee_frame" value="/r_wrist_roll_link" />
+    </node>
+
+    <node pkg="assistive_teleop" type="ik_move" name="left_arm_pose_to_ik" output="screen" args="--arm left">
+      <remap from="pose_in" to="l_step_pose_goal" />
+      <remap from="log_out" to="wt_log_out" />
+    </node>
+        
+    <node pkg="assistive_teleop" type="ik_move" name="right_arm_pose_to_ik" output="screen" args="--arm right">
+      <remap from="pose_in" to="r_step_pose_goal" />
+      <remap from="log_out" to="wt_log_out" />
+    </node>
+  </group>
+  -->
+</launch>
