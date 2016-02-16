@@ -146,12 +146,12 @@
       <param name="ee_frame" value="/r_wrist_roll_link" />
     </node>
 
-    <node pkg="assistive_teleop" type="ik_move" name="left_arm_pose_to_ik" output="screen" args="--arm left">
+    <node pkg="assistive_teleop" type="ik_move" name="left_arm_pose_to_ik" output="screen" args="arm left">
       <remap from="pose_in" to="l_step_pose_goal" />
       <remap from="log_out" to="wt_log_out" />
     </node>
         
-    <node pkg="assistive_teleop" type="ik_move" name="right_arm_pose_to_ik" output="screen" args="--arm right">
+    <node pkg="assistive_teleop" type="ik_move" name="right_arm_pose_to_ik" output="screen" args="arm right">
       <remap from="pose_in" to="r_step_pose_goal" />
       <remap from="log_out" to="wt_log_out" />
     </node>
