@@ -15,6 +15,7 @@ cmd:option('-dir', 'outputs', 'subdirectory to save experiments in')
 cmd:option('-seed', 1, 'initial random seed')
 cmd:option('-threads', 4, 'threads')
 cmd:option('-cuda', false, 'Enable cuda. Default:false')
+cmd:option('-plot', false, 'Enable plot')
 
 -- for all models:
 cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')

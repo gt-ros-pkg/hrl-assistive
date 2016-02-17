@@ -2,6 +2,7 @@ require 'torch'   -- torch
 require 'xlua'    -- xlua provides useful tools, like progress bars
 require 'optim'
 require 'math'
+require 'gnuplot'
 
 ----------------------------------------------------------------------
 -- Model + Loss:
@@ -52,6 +53,7 @@ end
 --
 print(sys.COLORS.red ..  '==> defining training procedure')
 local err = 0
+train_losses = {}
 
 local function train(iter, trainData)
 
@@ -59,7 +61,9 @@ local function train(iter, trainData)
    -- progress
    --
    --print(iter, params.statinterval)
+   local iter_t=0
    for t=1, trainData:size()[1], params.batchsize do
+      iter_t = iter_t + 1
       xlua.progress(t, trainData:size()[1])
 
       --------------------------------------------------------------------
@@ -77,8 +81,8 @@ local function train(iter, trainData)
       --
       local feval = function()
          -- reset gradient/f
-         local f = 0
          dl_dx:zero()
+         local f = 0
 
          -- estimate f and gradients, for minibatch
          for i = 1,inputs:size()[1] do
@@ -123,7 +127,11 @@ local function train(iter, trainData)
    if math.fmod(iter , params.statinterval) == 0 then
 
       -- report
-      print('==> iteration = ' .. iter .. ', train average loss = ' .. err/params.statinterval)
+      print('==> iteration = ' .. iter .. ', train average loss = ' .. err/params.statinterval/iter_t)
+
+      if params.plot == true then
+         table.insert(train_losses, err/params.statinterval/iter_t)
+      end
 
       -- save/log current net
       local filename = paths.concat(params.dir, 'model.net')

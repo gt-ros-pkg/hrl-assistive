@@ -16,6 +16,7 @@ if params.cuda == true then
 end
 
 local err = 0
+test_losses = {}
 
 ----------------------------------------------------------------------
 print(sys.COLORS.red .. '==> defining test procedure')
@@ -25,9 +26,11 @@ function test(iter, testData)
 
    -- test over test data
    --print(sys.COLORS.red .. '==> testing on test set:')
+   local iter_t=0
    for t = 1,testData:size()[1],params.batchsize do
 
       -- disp progress
+      iter_t = iter_t + 1
       xlua.progress(t, testData:size()[1])
 
       -- batch fits?
@@ -58,7 +61,23 @@ function test(iter, testData)
    -- compute statistics / report error
    --
    if math.fmod(iter , params.statinterval) == 0 then
-      print('==> iteration = ' .. iter .. ', test average loss = ' .. err/params.statinterval)
+      print('==> iteration = ' .. iter .. ', test average loss = ' .. err/params.statinterval/iter_t)
+
+      if params.plot == true then
+         table.insert(test_losses, err/params.statinterval/iter_t)
+
+         local Y1 = torch.Tensor(train_losses)
+         local Y2 = torch.Tensor(test_losses)
+
+         if #test_losses > 3 then
+            local iter_range = torch.range(1,#test_losses)                                
+            local figure = gnuplot.figure(1)
+            gnuplot.plot({'train',Y1,'-'},{'test', Y2, '-'})
+            --gnuplot.plotflush()
+         end
+      end
+
+
       err = 0
    end
 

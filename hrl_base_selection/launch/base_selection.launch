@@ -1,12 +1,5 @@
 <launch>
 
-    <!--arg name="arm" default="l"/-->
-    <!--arg name="controller" default="static"/-->
-    <arg name="ee_pos_threshold" default="0.05"/>
-    <arg name="ee_quat_threshold" default="0.7"/>
-
-    <param name="haptic_mpc/pr2/ee_motion_threshold" value="$(arg ee_pos_threshold)"/>
-    <param name="haptic_mpc/pr2/ee_quat_motion_threshold" value="$(arg ee_quat_threshold)"/>
 
     <!--<node name="autobed_robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">-->
         <!--<remap from="robot_description" to="autobed_robot_description" />-->
@@ -24,7 +17,10 @@
     <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen">
     </node>
 
-    <node name="arm_reacher" pkg="hrl_base_selection" type="arm_reacher_server.py" output="screen">
+    <!-- For arm reacher -->
+    <arg name="arm" default="l"/>
+    <rosparam command="load" file="$(find hrl_base_selection)/params/pr2_config_params_l.yaml" />    
+    <node name="arm_reacher" pkg="hrl_base_selection" type="arm_reacher_server.py" args="-a $(arg arm1)" output="screen">
     </node>
 
 

@@ -1,0 +1,62 @@
+haptic_mpc:
+  pr2:
+    # Skin topic lists. Each should be publishing a TaxelArray message
+    skin_list:
+      none: []
+      fabric: ['/pr2_fabric_forearm_sensor/taxels/forces', '/pr2_fabric_upperarm_sensor/taxels/forces']    
+      pps: []
+      bosch: []
+      #, '/pr2_fabric_gripper_left_link_sensor/taxels/forces', '/pr2_fabric_gripper_right_link_sensor/taxels/forces', '/pr2_fabric_gripper_palm_sensor/taxels/forces'
+
+    # Frames used for TF. torso_frame is the one the arm is attached to, inertial frame is to get the torso position in the world
+    torso_frame: 'torso_lift_link'
+    inertial_frame: 'base_link'
+    end_effector_frame: 'l_gripper_tool_frame'
+    tool_frame: 'l_gripper_tool_frame'
+
+    # Inposition parameter for action and log
+    ee_motion_threshold: 0.05
+    ee_orient_motion_threshold: 0.07
+    jts_motion_threshold: 0.0001
+
+    # Joint limits.
+    # Should be equal in number and in the same order as the number of links in the arm (eg 7 for the PR2, starting at the shoulder). 
+    # Should be specified in DEGREES.
+    joint_limits:
+      left:
+        max: [109.0, 68.0, 220.0, 0.01, 179.0, 0.01, 179.0]
+        min: [-26.0, -24.0, -41.0, -132.0, -179.0, -120.0, -179.0]
+      right:
+        max: [26.0, 68.0, 41.0, 0.010, 270.0, 0.01, 180.0]
+        min: [-109.0, -24.0, -220.0, -132.0, -270.0, -120.0, -180.0]
+    # tool frame
+    #tool_frame_1:
+    #  name: 'l_gripper_spoon_frame'
+    #  pos: [0.00635, 0.031, 0.2032]
+    #  rpy: [0, 0, -1.570796006]
+
+  groups:
+    - name: left_arm_joints
+      joints:
+        - l_shoulder_pan_joint
+        - l_shoulder_lift_joint
+        - l_upper_arm_roll_joint
+        - l_elbow_flex_joint
+        - l_forearm_roll_joint
+        - l_wrist_flex_joint
+        - l_wrist_roll_joint
+    - name: left_arm_links
+        - l_upper_arm_link
+        - l_elbow_flex_link
+        - l_forearm_link
+        - l_wrist_flex_link
+        - l_gripper_palm_link
+        - l_gripper_l_finger_link
+        - l_gripper_l_finger_tip_link
+        - l_gripper_r_finger_link
+        - l_gripper_r_finger_tip_link
+    - name: left_arm
+      base_link: torso_lift_link
+      tip_link: l_gripper_tool_frame
+
+
