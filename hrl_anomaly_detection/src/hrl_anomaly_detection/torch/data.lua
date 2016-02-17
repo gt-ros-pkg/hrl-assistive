@@ -12,8 +12,9 @@ local trainData = myFile:read('trainingData'):all()
 local testData = myFile:read('testData'):all()
 myFile:close()
 
-print("Original data size")
+print(sys.COLORS.Green .. "Original training data size")
 print( trainData:size() )
+print(sys.COLORS.Green .. "Original test data size")
 print( testData:size() )
 
 
@@ -39,6 +40,10 @@ for i = 1,trainData:size(1) do
            rawTrainData = torch.cat(rawTrainData, singlesample, 1)
         end
     end
+
+    if i%100==0 then
+       collectgarbage()
+    end
 end
 
 for i = 1,testData:size(1) do
@@ -54,13 +59,25 @@ for i = 1,testData:size(1) do
            rawTestData = torch.cat(rawTestData, singlesample, 1)
         end
     end
+
+    if i%100==0 then
+       collectgarbage()
+    end
 end
 
+
+print(sys.COLORS.Green .. "Processed training data")
+print(#rawTrainData)
+print(sys.COLORS.Green .. "Processed test data")
+print(#rawTestData)
+print(sys.COLORS.Green .. "======================================")
 
 -- Exports
 return {
    trainData = rawTrainData,
+   trainSingleDataLength = trainData:size(3)-params.timewindow+1,
    testData  = rawTestData,
+   testSingleDataLength = torch.floor(testData:size(3)/params.timewindow)
    --mean = mean,
    --std = std,
    --classes = classes
