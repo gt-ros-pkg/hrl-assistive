@@ -18,7 +18,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 import tf
 
 roslib.load_manifest('hrl_base_selection')
-from helper_functions import createBMatrix, Bmat_to_pos_quat
+from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
 
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle

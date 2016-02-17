@@ -3,7 +3,9 @@
 import roslib
 import rospkg
 roslib.load_manifest('zenither')
+# from zenither import Zenither
 import zenither.zenither as zenither
+# from zenither import Zenither
 import sys,time,os,optparse
 from collections import deque
 import rospy
@@ -102,6 +104,14 @@ def test_linear(z):
     #mpu.plot_yx(deck_x,deck_t,scatter_size=0,linewidth=1,axis=None,
     #            ylabel='position (meters)',xlabel='time (s)')
     #mpu.show()
+
+def move_to_place(z, x):
+    pos = x
+    vel = 0.1
+    acc = 0.1
+    #pos = pos
+    t0 = time.time()
+    move_position_fast(z,pos,vel,acc)
 
 # Trying to confirm that the units of acceln and velocity are indeed
 # SI units. Sinusoidal trajectory is the next step
@@ -211,7 +221,7 @@ def test_sinusoid(z,A0,A,freq):
     res_dict['freq'] = freq
     res_dict['t_end'] = t_end
 
-    ut.save_pickle(res_dict,'/home/ari/sinusoid.pkl')
+    ut.save_pickle(res_dict, '/home/ari/sinusoid.pkl')
 
 if __name__ == '__main__':
 
@@ -226,6 +236,8 @@ if __name__ == '__main__':
                  help='acceln and vel according to a sinusoid.')
     p.add_option('--sleeve', action='store_true', dest='sleeve',
                  help='Move actuator to pull sleeve on arm.')
+    p.add_option('--move', action='store_true', dest='move',
+                 help='Move actuator to a fixed location.')
     p.add_option('--sine_expt', action='store_true', dest='sine_expt',
                  help='run the sinusoid experiment.')
     p.add_option('--cmp_sine_pkl', action='store', dest='cmp_sine_pkl',
@@ -241,6 +253,10 @@ if __name__ == '__main__':
 
     if not z.calibrated:
         calibrate(z)
+
+    if opt.move:
+        # move_to_place(z, 0.43)
+        move_to_place(z, 0.3)
 
     if opt.test_lin:
         test_linear(z)

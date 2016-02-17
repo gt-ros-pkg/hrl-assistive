@@ -28,6 +28,7 @@ build
 msg_gen
 srv_gen
 .ropeproject
+.idea
 
 # Files specific to this repo #
 ###############################
