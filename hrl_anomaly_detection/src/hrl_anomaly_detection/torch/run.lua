@@ -18,8 +18,9 @@ cmd:option('-cuda', false, 'Enable cuda. Default:false')
 cmd:option('-plot', false, 'Enable plot')
 
 -- for all models:
-cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
+cmd:option('-model', 'one', 'auto-encoder class: one | two | three | four')
 --cmd:option('-inputsize', 25, 'size of each input patch')
+cmd:option('-midoutputsize', 20, 'size of hidden unit')
 cmd:option('-outputsize', 10, 'size of hidden unit')
 cmd:option('-lambda', 0.1, 'sparsity coefficient')
 cmd:option('-beta', 1, 'prediction error coefficient')

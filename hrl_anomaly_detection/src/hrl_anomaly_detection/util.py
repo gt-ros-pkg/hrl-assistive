@@ -97,11 +97,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 feature_time = d[key]
                 if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
     new_times = np.linspace(0.01, max_time, downSampleSize)
-     
-            
-    for idx, fileName in enumerate(fileNames):
+
+    for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
+
 
         ## cause = os.path.split(fileName)[1].split('_')[3:]
         ## description = ''
@@ -122,8 +122,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         ##         feature_time = d[key]
         ##         if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
         ## new_times = np.linspace(0.01, max_time, downSampleSize)
-
         data_dict['timesList'].append(new_times)
+           
 
         # Define receptive field center trajectory ---------------------------
         rf_time = np.array(d['kinematics_time']) - init_time

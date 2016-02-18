@@ -5,25 +5,47 @@ require 'unsup'
 ----------------------------------------------------------------------
 -- create model
 --
--- params
-local inputSize = params.inputsize 
-local outputSize = params.outputsize
 
--- encoder
 local encoder = nn.Sequential()
-encoder:add(nn.Linear(inputSize,outputSize))
-encoder:add(nn.Tanh())
-encoder:add(nn.Diag(outputSize))
-
--- decoder
 local decoder = nn.Sequential()
-decoder:add(nn.Linear(outputSize,inputSize))
+
+if params.model == 'one' then
+   -- params
+   local inputSize = params.inputsize 
+   local outputSize = params.outputsize
+
+   -- encoder
+   encoder:add(nn.Linear(inputSize,outputSize))
+   encoder:add(nn.Tanh())
+   encoder:add(nn.Diag(outputSize))
+
+   -- decoder
+   decoder:add(nn.Linear(outputSize,inputSize))
+
+elseif params.model == 'two' then
+
+   -- params
+   local inputSize    = params.inputsize 
+   local midInputSize = params.midoutputsize
+   local outputSize   = params.outputsize
+
+   -- encoder
+   encoder:add(nn.Linear(inputSize,midInputSize))
+   encoder:add(nn.Linear(midInputSize,outputSize))
+   encoder:add(nn.Tanh())
+   encoder:add(nn.Diag(outputSize))
+
+   -- decoder
+   decoder:add(nn.Linear(outputSize,midInputSize))
+   decoder:add(nn.Linear(midInputSize,inputSize))
+
+end
 
 -- complete model
 local model = unsup.AutoEncoder(encoder, decoder, params.beta)
 
 -- verbose
-print('==> constructed linear auto-encoder')
+print('==> constructed single-layer auto-encoder')
 
 
 if params.cuda == true then

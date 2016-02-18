@@ -567,7 +567,7 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
     nSample      = len(dataList)
     nEmissionDim = len(dataList[0])
     features     = []
-    startIdx     = 50
+    startIdx     = 50 #temp
     endIdx       = 150
     for i in xrange(nEmissionDim):
         feature  = []

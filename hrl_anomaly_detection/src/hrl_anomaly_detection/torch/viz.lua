@@ -21,17 +21,9 @@ cmd:option('-plot', true, 'Enable plot')
 cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
 --cmd:option('-inputsize', 25, 'size of each input patch')
 cmd:option('-outputsize', 35, 'size of hidden unit')
-cmd:option('-lambda', 0.1, 'sparsity coefficient')
-cmd:option('-beta', 1, 'prediction error coefficient')
-cmd:option('-eta', 2e-3, 'learning rate')
-cmd:option('-batchsize', 128, 'batch size')
-cmd:option('-etadecay', 1e-5, 'learning rate decay')
-cmd:option('-momentum', 0, 'gradient momentum')
-cmd:option('-maxiter', 1000000, 'max number of updates')
-cmd:option('-timewindow', 1, 'size of time window')
+cmd:option('-timewindow', 4, 'size of time window')
 
 -- logging:
-cmd:option('-datafile', 'http://torch7.s3-website-us-east-1.amazonaws.com/data/tr-berkeley-N5K-M56x56-lcn.ascii', 'Dataset URL')
 cmd:option('-statinterval', 10, 'interval for saving stats and models')
 cmd:option('-v', false, 'be verbose')
 cmd:option('-display', false, 'display stuff')
@@ -81,6 +73,7 @@ for t = 1,testData:size(1),singleLength do
         preds[i]    = model.decoder.output
         features[i] = model.encoder.output
 
+
         for j=1, nDim do
             viz_inputs[i][j] = inputs[i][j*params.timewindow]
             viz_preds[i][j]  = preds[i][j*params.timewindow]
@@ -88,22 +81,28 @@ for t = 1,testData:size(1),singleLength do
         times[i]  = i
 
     end
+    os.exit()
 
     -- visualize original inputs & predictions
     local figure1 = gnuplot.figure(1)
-    gnuplot.plot(
-        {'inputs', times, viz_inputs:t()[1], '-'},
-        {'preds', times, viz_preds:t()[1], '-'})
+    gnuplot.plot( {'inputs', times, viz_inputs:t()[1], '-'},
+                  {'preds', times, viz_preds:t()[1], '-'})
+
+    print(times:size(), features:size())
 
     -- visualize reduced features
     local figure2 = gnuplot.figure(2)
     gnuplot.plot(
-        {'1', times, features:t()[1], '-'},
-        {'2', times, features:t()[2], '-'},
-        {'3', times, features:t()[3], '-'},
-        {'4', times, features:t()[4], '-'},
-        {'5', times, features:t()[5], '-'})
+        {'1', features:t()[1], '-'},
+        {'2', features:t()[2], '-'},
+        {'3', features:t()[3], '-'},
+        {'4', features:t()[4], '-'},
+        {'5', features:t()[5], '-'},
+        {'6', features:t()[6], '-'},
+        {'7', features:t()[7], '-'},
+        {'8', features:t()[8], '-'},
+        {'9', features:t()[9], '-'},
+        {'10', features:t()[10], '-'})
 
     collectgarbage()
-    
 end

@@ -37,7 +37,6 @@ end
 -- get all parameters
 x,dl_dx,ddl_ddx = model:getParameters()
 
-
 ----------------------------------------------------------------------
 print(sys.COLORS.red ..  '==> allocating minibatch memory')
 local inputs = torch.Tensor( params.batchsize, params.nDim*params.timewindow)
