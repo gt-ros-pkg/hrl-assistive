@@ -14,8 +14,7 @@
     <include file="$(find hrl_base_selection)/config/move_base.xml"/>
     <include file="$(find hrl_base_selection)/config/amcl_node.xml"/>
     <include file="$(find hrl_base_selection)/find_ar_tag.launch"/>
-    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen">
-    </node>
+    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen"/>
 
     <!-- For arm reacher -->
     <arg name="arm" default="l"/>

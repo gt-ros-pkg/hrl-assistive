@@ -10,10 +10,13 @@
 	<!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
 	<arg name="output_frame" default="/torso_lift_link" />        
 
-        <!-- Vision sensor -->
+	<!-- Vision sensor -->
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
-        <!-- Find AR Tag on Autobed -->  
-        <node name="findBed" pkg="hrl_base_selection" type="find_autobed.py" respawn="false" output="screen" />
+	<!-- Find AR Tag on Autobed -->
+	<node name="find_autobed" pkg="hrl_base_selection" type="find_autobed.py" respawn="false" output="screen" />
+
+	<!-- Find AR Tag on Autobed -->
+	<node name="find_head" pkg="hrl_base_selection" type="find_head.py" respawn="false" output="screen" />
 
 </launch>
