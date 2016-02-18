@@ -20,14 +20,13 @@ cmd:option('-plot', true, 'Enable plot')
 -- for all models:
 cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
 --cmd:option('-inputsize', 25, 'size of each input patch')
-cmd:option('-outputsize', 35, 'size of hidden unit')
+cmd:option('-outputsize', 10, 'size of hidden unit')
 cmd:option('-timewindow', 4, 'size of time window')
 
 -- logging:
 cmd:option('-statinterval', 10, 'interval for saving stats and models')
 cmd:option('-v', false, 'be verbose')
 cmd:option('-display', false, 'display stuff')
-cmd:option('-wcar', '', 'additional flag to differentiate this run')
 cmd:text()
 
 params = cmd:parse(arg)
@@ -81,7 +80,6 @@ for t = 1,testData:size(1),singleLength do
         times[i]  = i
 
     end
-    os.exit()
 
     -- visualize original inputs & predictions
     local figure1 = gnuplot.figure(1)
