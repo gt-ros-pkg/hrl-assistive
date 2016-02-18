@@ -39,6 +39,26 @@ elseif params.model == 'two' then
    decoder:add(nn.Linear(outputSize,midInputSize))
    decoder:add(nn.Linear(midInputSize,inputSize))
 
+elseif params.model == 'three' then
+
+   -- params
+   local inputSize    = params.inputsize 
+   local midInputSize = params.midoutputsize
+   local midInput2Size = params.midoutput2size
+   local outputSize   = params.outputsize
+
+   -- encoder
+   encoder:add(nn.Linear(inputSize,midInputSize))
+   encoder:add(nn.Linear(midInputSize,midInput2Size))
+   encoder:add(nn.Linear(midInput2Size,outputSize))
+   encoder:add(nn.Tanh())
+   encoder:add(nn.Diag(outputSize))
+
+   -- decoder
+   decoder:add(nn.Linear(outputSize,midInput2Size))
+   decoder:add(nn.Linear(midInput2Size,midInputSize))
+   decoder:add(nn.Linear(midInputSize,inputSize))
+
 end
 
 -- complete model
