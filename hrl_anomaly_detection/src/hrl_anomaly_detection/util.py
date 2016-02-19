@@ -102,7 +102,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if os.path.isdir(fileName):
             continue
 
-
         ## cause = os.path.split(fileName)[1].split('_')[3:]
         ## description = ''
         ## if cause is list:

@@ -18,10 +18,11 @@ cmd:option('-cuda', false, 'Enable cuda. Default:false')
 cmd:option('-plot', true, 'Enable plot')
 
 -- for all models:
-cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
---cmd:option('-inputsize', 25, 'size of each input patch')
-cmd:option('-outputsize', 10, 'size of hidden unit')
-cmd:option('-timewindow', 4, 'size of time window')
+cmd:option('-model', 'one', 'auto-encoder class: one | two | three | four')
+cmd:option('-midoutputsize', 20, 'size of the first hidden unit')
+cmd:option('-midoutput2size', 10, 'size of the second hidden unit')
+cmd:option('-outputsize', 5, 'size of hidden unit')
+cmd:option('-timewindow', 2, 'size of time window')
 
 -- logging:
 cmd:option('-statinterval', 10, 'interval for saving stats and models')
@@ -69,6 +70,7 @@ for t = 1,testData:size(1),singleLength do
     for i=1, singleLength do 
         model.encoder:updateOutput(inputs[i])
         model.decoder:updateOutput(model.encoder.output)
+        print(#model.encoder.output)
         preds[i]    = model.decoder.output
         features[i] = model.encoder.output
 
@@ -95,12 +97,7 @@ for t = 1,testData:size(1),singleLength do
         {'2', features:t()[2], '-'},
         {'3', features:t()[3], '-'},
         {'4', features:t()[4], '-'},
-        {'5', features:t()[5], '-'},
-        {'6', features:t()[6], '-'},
-        {'7', features:t()[7], '-'},
-        {'8', features:t()[8], '-'},
-        {'9', features:t()[9], '-'},
-        {'10', features:t()[10], '-'})
+        {'5', features:t()[5], '-'})
 
     collectgarbage()
 end
