@@ -18,8 +18,8 @@ do
 
                 FILENAME=./log/E_${i}_ED_${j}_L_${k}_TW_${l}.log
 
-                timeout -k 360s th run.lua -model three -midoutputsize 20 -midoutput2size 10 -outputsize 5 -lambda ${k} -eta ${i} -etadecay ${j} -batchsize 16 -timewindow ${l} >> $FILENAME
-                sleep 2
+                timeout 360s th run.lua -model three -midoutputsize 20 -midoutput2size 10 -outputsize 5 -lambda ${k} -eta ${i} -etadecay ${j} -batchsize 16 -timewindow ${l} >> $FILENAME
+
             done
         done
     done
