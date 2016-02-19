@@ -247,7 +247,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     print np.shape(trainingData), np.shape(abnormalTestData)
     print "---------------------------------------------------"
 
-    return allData, trainingData, abnormalTestData, abnormalTestNameList
+    return allData, trainingData, abnormalTestData, abnormalTestNameList, param_dict
 
 
 def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
@@ -625,7 +625,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
     # -------------------------------------------------------------        
     # extract modality data
     dataList = []
-    dataDim  = {}
+    dataDim  = []
     nSample  = len(d['timesList'])
     for idx in xrange(nSample): # each sample
 
@@ -653,7 +653,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim['relativePose_artag_EE'] = len(relativePose)
+            if idx == 0: dataDim.append(['relativePose_artag_EE', len(relativePose)])
                 
 
         # main-artag sub-artag - vision relative dist with main(first) vision target----
@@ -678,7 +678,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim['relativePose_artag_artag'] = len(relativePose)
+            if idx == 0: dataDim.append(['relativePose_artag_artag', len(relativePose)])
 
 
         # Audio --------------------------------------------
@@ -686,7 +686,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
             audioPower   = d['audioPowerList'][idx]                        
             if dataSample is None: dataSample = copy.copy(np.array(audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(audioPower)])
-            if idx == 0: dataDim['kinectAudio'] = len(audioPower)
+            if idx == 0: dataDim.append(['kinectAudio', len(audioPower)])
 
         # AudioWrist ---------------------------------------
         if 'wristAudio' in raw_feature_list:
@@ -697,7 +697,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
             else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
 
             dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
-            if idx == 0: dataDim['wristAudio'] = len(audioWristRMS)+len(audioWristMFCC)                
+            if idx == 0: dataDim.append(['wristAudio', len(audioWristRMS)+len(audioWristMFCC)])                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:
@@ -709,7 +709,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = np.array(ftTorque)
             else: dataSample = np.vstack([dataSample, ftTorque])
-            if idx == 0: dataDim['ft'] = len(ftForce)+len(ftTorque)
+            if idx == 0: dataDim.append(['ft', len(ftForce)+len(ftTorque)])
 
         # pps -------------------------------------------
         if 'pps' in raw_feature_list:
@@ -721,7 +721,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = ppsRight
             else: dataSample = np.vstack([dataSample, ppsRight])
-            if idx == 0: dataDim['pps'] = len(ppsLeft)+len(ppsRight)
+            if idx == 0: dataDim.append(['pps', len(ppsLeft)+len(ppsRight)])
 
         # Kinematics --------------------------------------
         if 'kinematics' in raw_feature_list:
@@ -819,7 +819,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
         features.append( feature )
 
-
+        
     # Scaling ------------------------------------------------------------
     if isTrainingData:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
@@ -836,7 +836,6 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
         else:
             scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
                                     /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
-
 
     param_dict['dataDim'] = dataDim
     
