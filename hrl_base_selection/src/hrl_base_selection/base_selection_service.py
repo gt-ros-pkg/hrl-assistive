@@ -23,7 +23,7 @@ from std_msgs.msg import String
 import hrl_lib.transforms as tr
 from hrl_base_selection.srv import BaseMove_multi
 from visualization_msgs.msg import Marker
-from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
+from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from itertools import combinations as comb
 import tf.transformations as tft

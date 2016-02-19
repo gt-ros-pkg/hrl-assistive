@@ -14,9 +14,13 @@
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
 	<!-- Find AR Tag on Autobed -->
-	<node name="find_autobed" pkg="hrl_base_selection" type="find_autobed.py" respawn="false" output="screen" />
+	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen">
+		<arg name="mode" value="autobed"/>
+	</node>
 
 	<!-- Find AR Tag on Autobed -->
-	<node name="find_head" pkg="hrl_base_selection" type="find_head.py" respawn="false" output="screen" />
+	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen">
+			<arg name="mode" value="head"/>
+	</node>
 
 </launch>
