@@ -93,9 +93,9 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         os.system('mkdir -p '+processed_data_path)
 
     if raw_data:
-        save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
-    else:
         save_pkl = os.path.join(processed_data_path, 'raw_feature_extraction_'+rf_center+'_'+str(local_range) )
+    else:
+        save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is not True :
         data_dict = ut.load_pickle(save_pkl)
@@ -625,6 +625,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
     # -------------------------------------------------------------        
     # extract modality data
     dataList = []
+    dataDim  = {}
     nSample  = len(d['timesList'])
     for idx in xrange(nSample): # each sample
 
@@ -652,10 +653,11 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
+            if idx == 0: dataDim['relativePose_artag_EE'] = len(relativePose)
                 
 
         # main-artag sub-artag - vision relative dist with main(first) vision target----
-        if 'relativePose_artag_EE' in raw_feature_list:
+        if 'relativePose_artag_artag' in raw_feature_list:
             visionArtagPos1 = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
             visionArtagQuat1 = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
             visionArtagPos2 = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
@@ -676,6 +678,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
+            if idx == 0: dataDim['relativePose_artag_artag'] = len(relativePose)
 
 
         # Audio --------------------------------------------
@@ -683,6 +686,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
             audioPower   = d['audioPowerList'][idx]                        
             if dataSample is None: dataSample = copy.copy(np.array(audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(audioPower)])
+            if idx == 0: dataDim['kinectAudio'] = len(audioPower)
 
         # AudioWrist ---------------------------------------
         if 'wristAudio' in raw_feature_list:
@@ -693,6 +697,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
             else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
 
             dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
+            if idx == 0: dataDim['wristAudio'] = len(audioWristRMS)+len(audioWristMFCC)                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:
@@ -704,6 +709,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = np.array(ftTorque)
             else: dataSample = np.vstack([dataSample, ftTorque])
+            if idx == 0: dataDim['ft'] = len(ftForce)+len(ftTorque)
 
         # pps -------------------------------------------
         if 'pps' in raw_feature_list:
@@ -715,7 +721,7 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
 
             if dataSample is None: dataSample = ppsRight
             else: dataSample = np.vstack([dataSample, ppsRight])
-
+            if idx == 0: dataDim['pps'] = len(ppsLeft)+len(ppsRight)
 
         # Kinematics --------------------------------------
         if 'kinematics' in raw_feature_list:
@@ -739,7 +745,6 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
                 param_dict['feature_names'].append('kinEEQuat_y')
                 param_dict['feature_names'].append('kinEEQuat_z')
                 param_dict['feature_names'].append('kinEEQuat_w')
-
 
             if dataSample is None: dataSample = np.array(kinJntPos)
             else: dataSample = np.vstack([dataSample, kinJntPos])
@@ -832,6 +837,9 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
             scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
                                     /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
+
+    param_dict['dataDim'] = dataDim
+    
     ## import matplotlib.pyplot as plt
     ## plt.figure()
     ## plt.plot(np.array(scaled_features[0]).T)

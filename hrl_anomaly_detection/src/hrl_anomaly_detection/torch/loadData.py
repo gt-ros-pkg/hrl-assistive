@@ -49,6 +49,7 @@ if __name__ == '__main__':
     task                = 'pushing'
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    h5py_file           = os.path.join(processed_data_path, 'test.h5py')
     rf_center           = 'kinEEPos'
     local_range         = 1.25    
     nSet                = 1
@@ -80,7 +81,7 @@ if __name__ == '__main__':
                                                   downSampleSize=downSampleSize, \
                                                   raw_data=True, data_ext=False, \
                                                   feature_list=feature_list, \
-                                                  data_renew=False)
+                                                  data_renew=True)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -130,7 +131,7 @@ if __name__ == '__main__':
     ## np.savetxt('test.csv', new_trainingData, delimiter=",", fmt="%10.5f")
 
     import h5py
-    f = h5py.File('test.h5py', "w")
+    f = h5py.File(h5py_file, "w")
     f['trainingData'] = np.array(new_trainingData)
     f['testData']     = np.array(new_testData)
     f.close()
