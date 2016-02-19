@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 
-eta_list=(1e-2 1e-3 1e-4 1e-5 1e-6)
+eta_list=(1e-3 1e-4 1e-5 1e-6)
 etadecay_list=(1e-5 1e-6 1e-7)
 lambda_list=(0.5 1.0 1.5 2.0)
 timewindow_list=(2 4 6)
