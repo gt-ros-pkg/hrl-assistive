@@ -23,7 +23,7 @@ do
 
                 FILENAME=${FOLDER_NAME}/E_${i}_ED_${j}_L_${k}_TW_${l}.log
 
-                timeout 600s th run.lua -model three -midoutputsize 25 -midoutput2size 17 -outputsize 10 -lambda ${k} -eta ${i} -etadecay ${j} -batchsize 16 -timewindow ${l} >> $FILENAME
+                timeout 600s th run.lua -model three -midoutputsize ${midoutputsize} -midoutput2size ${midoutput2size} -outputsize ${outputsize} -lambda ${k} -eta ${i} -etadecay ${j} -batchsize 16 -timewindow ${l} >> $FILENAME
 
             done
         done
