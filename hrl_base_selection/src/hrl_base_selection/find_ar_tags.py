@@ -174,6 +174,5 @@ if __name__ == '__main__':
     p.add_option('--mode', action='store', dest='mode', default='head', type='string',
                  help='Select what AR tag to look for (e.g. head, autobed)')
     opt, args = p.parse_args()
-
     atd = arTagDetector(opt.mode)
     rospy.spin()

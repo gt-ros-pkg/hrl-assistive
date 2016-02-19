@@ -117,6 +117,8 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'feeding'] = self.load_task('feeding', model, 0)
                 self.scores_dict['autobed', 'bathing'] = self.load_task('bathing', model, 0)
                 self.scores_dict['autobed', 'scratching_chest'] = self.load_task('scratching_chest', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_right'] = self.load_task('scratching_knee_right', model, 0)
                 self.scores_dict['autobed', 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model, 0)
                 self.scores_dict['autobed', 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model, 0)
                 self.scores_dict['autobed', 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model, 0)

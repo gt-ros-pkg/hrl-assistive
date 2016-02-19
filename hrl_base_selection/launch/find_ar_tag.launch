@@ -1,6 +1,6 @@
 <launch>
-	<!--arg name="marker_size" default="3.3" /-->
-	<arg name="marker_size" default="13.3" />
+	<arg name="marker_size" default="5.3" />
+	<!--<arg name="marker_size" default="13.3" />-->
 	<arg name="max_new_marker_error" default="0.05" />
 	<arg name="max_track_error" default="0.2" />
 
@@ -8,19 +8,21 @@
 	<arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" /> 
 	<!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> --> 
 	<!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
-	<arg name="output_frame" default="/torso_lift_link" />        
+	<arg name="output_frame" default="/torso_lift_link" />
+
 
 	<!-- Vision sensor -->
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
 	<!-- Find AR Tag on Autobed -->
-	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen">
-		<arg name="mode" value="autobed"/>
+	<arg name="mode" value="autobed"/>
+	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode autobed">
+		<!--<arg name="mode" value="autobed"/>-->
 	</node>
 
-	<!-- Find AR Tag on Autobed -->
-	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen">
-			<arg name="mode" value="head"/>
+	<!-- Find AR Tag on Head -->
+	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode head">
+			<!--<arg name="mode" value="head"/>-->
 	</node>
 
 </launch>
