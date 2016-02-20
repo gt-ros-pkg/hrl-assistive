@@ -54,7 +54,6 @@ torch.setnumthreads(params.threads)
 --torch.setnumthreads(1024)
 
 
-
 ----------------------------------------------------------------------
 print(sys.COLORS.red ..  '==> load cuda pkg')
 if params.cuda == true then
@@ -65,8 +64,6 @@ if params.cuda == true then
    print(sys.COLORS.red ..  '==> using GPU #' .. cutorch.getDevice())
    print(  cutorch.getDeviceProperties(cutorch.getDevice()) )
 end
-
-
 
 
 ----------------------------------------------------------------------

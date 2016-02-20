@@ -18,11 +18,11 @@ cmd:option('-cuda', false, 'Enable cuda. Default:false')
 cmd:option('-plot', true, 'Enable plot')
 
 -- for all models:
-cmd:option('-model', 'one', 'auto-encoder class: one | two | three | four')
-cmd:option('-midoutputsize', 20, 'size of the first hidden unit')
-cmd:option('-midoutput2size', 10, 'size of the second hidden unit')
+cmd:option('-model', 'three', 'auto-encoder class: one | two | three | four')
+--cmd:option('-midoutputsize', 20, 'size of the first hidden unit')
+--cmd:option('-midoutput2size', 10, 'size of the second hidden unit')
 cmd:option('-outputsize', 5, 'size of hidden unit')
-cmd:option('-timewindow', 2, 'size of time window')
+cmd:option('-timewindow', 4, 'size of time window')
 
 -- logging:
 cmd:option('-statinterval', 10, 'interval for saving stats and models')
@@ -37,14 +37,15 @@ params = cmd:parse(arg)
 print(sys.COLORS.red ..  '==> load data')
 local data  = require 'data'
 
-local testData = data.testData
-local singleLength = data.testSingleDataLength
+local testData = data.testDenseData
+local singleLength = data.testDenseSingleLength
 
 local nDim     = testData[1]:size()[1]/params.timewindow
 local times    = torch.Tensor(singleLength)
 local inputs   = torch.Tensor(singleLength,testData[1]:size()[1])
 local preds    = torch.Tensor(singleLength,testData[1]:size()[1])
 local features = torch.Tensor(singleLength,params.outputsize)
+local feature_list = torch.Tensor(singleLength,params.outputsize)
 
 local viz_inputs = torch.Tensor(singleLength, nDim)
 local viz_preds  = torch.Tensor(singleLength, nDim)
@@ -70,7 +71,6 @@ for t = 1,testData:size(1),singleLength do
     for i=1, singleLength do 
         model.encoder:updateOutput(inputs[i])
         model.decoder:updateOutput(model.encoder.output)
-        print(#model.encoder.output)
         preds[i]    = model.decoder.output
         features[i] = model.encoder.output
 
@@ -87,8 +87,6 @@ for t = 1,testData:size(1),singleLength do
     local figure1 = gnuplot.figure(1)
     gnuplot.plot( {'inputs', times, viz_inputs:t()[1], '-'},
                   {'preds', times, viz_preds:t()[1], '-'})
-
-    print(times:size(), features:size())
 
     -- visualize reduced features
     local figure2 = gnuplot.figure(2)

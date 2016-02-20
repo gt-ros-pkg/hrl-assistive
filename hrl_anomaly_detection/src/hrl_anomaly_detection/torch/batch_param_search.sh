@@ -1,10 +1,10 @@
 #!/bin/bash -x
 
 
-eta_list=(1e-4 1e-5)
+eta_list=(5e-4 1e-4 5e-5)
 etadecay_list=(1e-5)
 lambda_list=(0.5 1.0 1.5 2.0)
-timewindow_list=(2 4)
+timewindow_list=(4)
 
 midoutputsize=25
 midoutput2size=15
@@ -23,7 +23,7 @@ do
 
                 FILENAME=${FOLDER_NAME}/E_${i}_ED_${j}_L_${k}_TW_${l}.log
 
-                timeout 600s th run.lua -model three -midoutputsize ${midoutputsize} -midoutput2size ${midoutput2size} -outputsize ${outputsize} -lambda ${k} -eta ${i} -etadecay ${j} -batchsize 16 -timewindow ${l} >> $FILENAME
+                timeout 1200s th run.lua -model three -midoutputsize ${midoutputsize} -midoutput2size ${midoutput2size} -outputsize ${outputsize} -lambda ${k} -eta ${i} -etadecay ${j} -batchsize 16 -timewindow ${l} >> $FILENAME
 
             done
         done
