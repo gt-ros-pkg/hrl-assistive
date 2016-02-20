@@ -7,8 +7,8 @@ lambda_list=(0.5 1.0 1.5 2.0)
 timewindow_list=(4)
 
 midoutputsize=25
-midoutput2size=15
-outputsize=5
+midoutput2size=10
+outputsize=4
 FOLDER_NAME=/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/pushing_data/${midoutputsize}_${midoutput2size}_${outputsize}
 mkdir -p $FOLDER_NAME
 
