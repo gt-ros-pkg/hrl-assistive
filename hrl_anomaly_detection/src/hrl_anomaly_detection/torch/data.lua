@@ -7,7 +7,7 @@ print(sys.COLORS.red ..  '==> downloading dataset')
 ----------------------------------------------------------------------
 -- load data
 --trainData = torch.load('./testh5py')
-local myFile = hdf5.open('./test.h5py', 'r')
+local myFile = hdf5.open('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/pushing_data/test.h5py', 'r')
 local trainData = myFile:read('trainingData'):all()
 local testData = myFile:read('testData'):all()
 myFile:close()
@@ -65,6 +65,26 @@ for i = 1,testData:size(1) do
     end
 end
 
+for i = 1,testData:size(1) do
+    for t = 1,testData:size(3)-params.timewindow+1 do
+        local singlesample = testData:sub(i,i,1,params.nDim,t,t+params.timewindow-1):clone():reshape(1,params.nDim*params.timewindow)
+        if singlesample==nil then
+           print(singlesample)
+        end
+
+        if t==1 and i==1 then
+           rawTestDenseData = singlesample
+        else
+           rawTestDenseData = torch.cat(rawTestDenseData, singlesample, 1)
+        end
+    end
+
+    if i%100==0 then
+       collectgarbage()
+    end
+end
+
+
 
 print(sys.COLORS.Green .. "Processed training data")
 print(#rawTrainData)
@@ -76,8 +96,9 @@ print(sys.COLORS.Green .. "======================================")
 return {
    trainData = rawTrainData,
    trainSingleDataLength = trainData:size(3)-params.timewindow+1,
-   testData  = rawTestData,
-   testSingleDataLength = torch.floor(testData:size(3)/params.timewindow)
+   testData              = rawTestData,
+   testDenseData         = rawTestDenseData,
+   testDenseSingleLength = testData:size(3)-params.timewindow+1
    --mean = mean,
    --std = std,
    --classes = classes

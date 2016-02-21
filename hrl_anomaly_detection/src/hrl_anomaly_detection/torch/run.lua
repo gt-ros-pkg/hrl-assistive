@@ -21,8 +21,8 @@ cmd:option('-plot', false, 'Enable plot')
 cmd:option('-model', 'one', 'auto-encoder class: one | two | three | four')
 --cmd:option('-inputsize', 25, 'size of each input patch')
 cmd:option('-midoutputsize', 20, 'size of the first hidden unit')
-cmd:option('-midoutput2size', 20, 'size of the second hidden unit')
-cmd:option('-outputsize', 10, 'size of hidden unit')
+cmd:option('-midoutput2size', 10, 'size of the second hidden unit')
+cmd:option('-outputsize', 5, 'size of hidden unit')
 cmd:option('-lambda', 0.1, 'sparsity coefficient')
 cmd:option('-beta', 1, 'prediction error coefficient')
 cmd:option('-eta', 1e-4, 'learning rate')
@@ -54,7 +54,6 @@ torch.setnumthreads(params.threads)
 --torch.setnumthreads(1024)
 
 
-
 ----------------------------------------------------------------------
 print(sys.COLORS.red ..  '==> load cuda pkg')
 if params.cuda == true then
@@ -65,8 +64,6 @@ if params.cuda == true then
    print(sys.COLORS.red ..  '==> using GPU #' .. cutorch.getDevice())
    print(  cutorch.getDeviceProperties(cutorch.getDevice()) )
 end
-
-
 
 
 ----------------------------------------------------------------------

@@ -63,7 +63,7 @@ local function train(iter, trainData)
    local iter_t=0
    for t=1, trainData:size()[1], params.batchsize do
       iter_t = iter_t + 1
-      xlua.progress(t, trainData:size()[1])
+      --xlua.progress(t, trainData:size()[1])
 
       --------------------------------------------------------------------
       -- create mini-batch

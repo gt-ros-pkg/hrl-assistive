@@ -23,7 +23,7 @@ from std_msgs.msg import String
 import hrl_lib.transforms as tr
 from hrl_base_selection.srv import BaseMove_multi
 from visualization_msgs.msg import Marker
-from helper_functions import createBMatrix, is_number, Bmat_to_pos_quat
+from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from itertools import combinations as comb
 import tf.transformations as tft
@@ -117,6 +117,8 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'feeding'] = self.load_task('feeding', model, 0)
                 self.scores_dict['autobed', 'bathing'] = self.load_task('bathing', model, 0)
                 self.scores_dict['autobed', 'scratching_chest'] = self.load_task('scratching_chest', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_right'] = self.load_task('scratching_knee_right', model, 0)
                 self.scores_dict['autobed', 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model, 0)
                 self.scores_dict['autobed', 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model, 0)
                 self.scores_dict['autobed', 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model, 0)

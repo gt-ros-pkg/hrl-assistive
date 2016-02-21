@@ -49,6 +49,7 @@ if __name__ == '__main__':
     task                = 'pushing'
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    h5py_file           = os.path.join(processed_data_path, 'test.h5py')
     rf_center           = 'kinEEPos'
     local_range         = 1.25    
     nSet                = 1
@@ -74,13 +75,13 @@ if __name__ == '__main__':
 
 
 
-    _, successData, failureData,_ = dm.getDataSet(subject_names, task, raw_data_path, \
-                                                  processed_data_path, rf_center, local_range,\
-                                                  nSet=nSet, \
-                                                  downSampleSize=downSampleSize, \
-                                                  raw_data=True, data_ext=False, \
-                                                  feature_list=feature_list, \
-                                                  data_renew=False)
+    _, successData, failureData,_ , param_dict = dm.getDataSet(subject_names, task, raw_data_path, \
+                                                               processed_data_path, rf_center, local_range,\
+                                                               nSet=nSet, \
+                                                               downSampleSize=downSampleSize, \
+                                                               raw_data=True, data_ext=False, \
+                                                               feature_list=feature_list, \
+                                                               data_renew=True)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -90,6 +91,7 @@ if __name__ == '__main__':
     train_idx    = random.sample(success_idx, nTrain)
     success_test_idx = [x for x in success_idx if not x in train_idx]
     failure_test_idx = failure_idx
+    ndim_list        = param_dict
 
     # data structure: dim x sample x sequence
     trainingData     = successData[:, train_idx, :]
@@ -101,6 +103,20 @@ if __name__ == '__main__':
     print "Normal test data: ", np.shape(normalTestData)
     print "Abnormal test data: ", np.shape(abnormalTestData)
     print "======================================"
+
+
+    # scaling by the number of dimensions in each feature
+    dataDim = param_dict['dataDim']
+    index   = 0
+    for feature_name, nDim in dataDim:
+        pre_index = index
+        index    += nDim
+
+        trainingData[pre_index:index] /= np.sqrt(nDim)
+        normalTestData[pre_index:index] /= np.sqrt(nDim)
+        abnormalTestData[pre_index:index] /= np.sqrt(nDim)
+        
+
 
     new_trainingData = []
     for i in xrange(len(trainingData[0])):
@@ -130,7 +146,7 @@ if __name__ == '__main__':
     ## np.savetxt('test.csv', new_trainingData, delimiter=",", fmt="%10.5f")
 
     import h5py
-    f = h5py.File('test.h5py', "w")
+    f = h5py.File(h5py_file, "w")
     f['trainingData'] = np.array(new_trainingData)
     f['testData']     = np.array(new_testData)
     f.close()

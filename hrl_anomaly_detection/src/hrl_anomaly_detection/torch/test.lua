@@ -31,7 +31,7 @@ function test(iter, testData)
 
       -- disp progress
       iter_t = iter_t + 1
-      xlua.progress(t, testData:size()[1])
+      --xlua.progress(t, testData:size()[1])
 
       -- batch fits?
       if (t + params.batchsize - 1) > testData:size()[1] then

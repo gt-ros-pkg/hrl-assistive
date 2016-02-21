@@ -18,9 +18,10 @@ cmd:option('-cuda', false, 'Enable cuda. Default:false')
 cmd:option('-plot', true, 'Enable plot')
 
 -- for all models:
-cmd:option('-model', 'linear', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
---cmd:option('-inputsize', 25, 'size of each input patch')
-cmd:option('-outputsize', 10, 'size of hidden unit')
+cmd:option('-model', 'three', 'auto-encoder class: one | two | three | four')
+--cmd:option('-midoutputsize', 20, 'size of the first hidden unit')
+--cmd:option('-midoutput2size', 10, 'size of the second hidden unit')
+cmd:option('-outputsize', 5, 'size of hidden unit')
 cmd:option('-timewindow', 4, 'size of time window')
 
 -- logging:
@@ -36,14 +37,15 @@ params = cmd:parse(arg)
 print(sys.COLORS.red ..  '==> load data')
 local data  = require 'data'
 
-local testData = data.testData
-local singleLength = data.testSingleDataLength
+local testData = data.testDenseData
+local singleLength = data.testDenseSingleLength
 
 local nDim     = testData[1]:size()[1]/params.timewindow
 local times    = torch.Tensor(singleLength)
 local inputs   = torch.Tensor(singleLength,testData[1]:size()[1])
 local preds    = torch.Tensor(singleLength,testData[1]:size()[1])
 local features = torch.Tensor(singleLength,params.outputsize)
+local feature_list = torch.Tensor(singleLength,params.outputsize)
 
 local viz_inputs = torch.Tensor(singleLength, nDim)
 local viz_preds  = torch.Tensor(singleLength, nDim)
@@ -86,8 +88,6 @@ for t = 1,testData:size(1),singleLength do
     gnuplot.plot( {'inputs', times, viz_inputs:t()[1], '-'},
                   {'preds', times, viz_preds:t()[1], '-'})
 
-    print(times:size(), features:size())
-
     -- visualize reduced features
     local figure2 = gnuplot.figure(2)
     gnuplot.plot(
@@ -95,12 +95,7 @@ for t = 1,testData:size(1),singleLength do
         {'2', features:t()[2], '-'},
         {'3', features:t()[3], '-'},
         {'4', features:t()[4], '-'},
-        {'5', features:t()[5], '-'},
-        {'6', features:t()[6], '-'},
-        {'7', features:t()[7], '-'},
-        {'8', features:t()[8], '-'},
-        {'9', features:t()[9], '-'},
-        {'10', features:t()[10], '-'})
+        {'5', features:t()[5], '-'})
 
     collectgarbage()
 end
