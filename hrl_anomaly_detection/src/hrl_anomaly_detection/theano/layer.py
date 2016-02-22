@@ -1,4 +1,4 @@
-
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import theano
@@ -106,7 +106,85 @@ class MLP(object):
         '''
         return T.sum((self.output(x) - y)**2)
 
-def gradient_updates_momentum(cost, params, learning_rate, momentum):
+
+class AD(object):
+    def __init__(self, W_init_en, b_init_en, activations_en,
+                 W_init_de, b_init_de, activations_de, nEncoderLayers):
+        '''
+        Multi-layer perceptron class, computes the composition of a sequence of Layers
+
+        :parameters:
+            - W_init : list of np.ndarray, len=N
+                Values to initialize the weight matrix in each layer to.
+                The layer sizes will be inferred from the shape of each matrix in W_init
+            - b_init : list of np.ndarray, len=N
+                Values to initialize the bias vector in each layer to
+            - activations : list of theano.tensor.elemwise.Elemwise, len=N
+                Activation function for layer output for each layer
+        '''
+        # Make sure the input lists are all of the same length
+        assert len(W_init_en) == len(b_init_en) == len(activations_en)
+        assert len(W_init_de) == len(b_init_de) == len(activations_de)
+
+        self.nEncoderLayers = nEncoderLayers
+        self.layers = []
+        for W, b, activation in zip(W_init_en, b_init_en, activations_en):
+            self.layers.append(Layer(W, b, activation))
+        for W, b, activation in zip(W_init_de, b_init_de, activations_de):
+            self.layers.append(Layer(W, b, activation))
+
+        self.params = []
+        for layer in self.layers:
+            self.params += layer.params
+        
+        
+    def output(self, x):
+        '''
+        Compute the MLP's output given an input
+        
+        :parameters:
+            - x : theano.tensor.var.TensorVariable
+                Theano symbolic variable for network input
+
+        :returns:
+            - output : theano.tensor.var.TensorVariable
+                x passed through the MLP
+        '''
+        # Recursively compute output
+        for layer in self.layers:
+            x = layer.output(x)
+        return x
+
+    def get_features(self, x):
+        
+        # Recursively compute output
+        for i, layer in enumerate(self.layers):
+            x = layer.output(x)
+            if i == self.nEncoderLayers-1:
+                break
+        return x
+        
+
+    def squared_error(self, x, y):
+        '''
+        Compute the squared euclidean error of the network output against the "true" output y
+        
+        :parameters:
+            - x : theano.tensor.var.TensorVariable
+                Theano symbolic variable for network input
+            - y : theano.tensor.var.TensorVariable
+                Theano symbolic variable for desired network output
+
+        :returns:
+            - error : theano.tensor.var.TensorVariable
+                The squared Euclidian distance between the network output and y
+        '''
+        print "squared err: ", T.sum((self.output(x) - y)**2)
+        return T.sum((self.output(x) - y)**2)
+
+
+
+def gradient_updates_momentum(cost, params, learning_rate, momentum, lambda_reg):
     '''
     Compute updates for gradient descent with momentum
     
@@ -119,6 +197,8 @@ def gradient_updates_momentum(cost, params, learning_rate, momentum):
             Gradient descent learning rate
         - momentum : float
             Momentum parameter, should be at least 0 (standard gradient descent) and less than 1
+        - lambda_reg : float
+            Regularization weight
    
     :returns:
         updates : list
@@ -130,15 +210,10 @@ def gradient_updates_momentum(cost, params, learning_rate, momentum):
     updates = []
     # Just gradient descent on cost
     for param in params:
-        # For each parameter, we'll create a param_update shared variable.
-        # This variable will keep track of the parameter's update step across iterations.
-        # We initialize it to 0
+        
         param_update = theano.shared(param.get_value()*0., broadcastable=param.broadcastable)
-        # Each parameter is updated by taking a step in the direction of the gradient.
-        # However, we also "mix in" the previous step according to the given momentum value.
-        # Note that when updating param_update, we are using its old value and also the new gradient step.
         updates.append((param, param - learning_rate*param_update))
-        # Note that we don't need to derive backpropagation to compute updates - just use T.grad!
-        updates.append((param_update, momentum*param_update + (1. - momentum)*T.grad(cost, param)))
+        updates.append((param_update, momentum*param_update + (1. - momentum)*T.grad(cost, param) + lambda_reg*param*param))
+        
     return updates
 
