@@ -28,6 +28,7 @@ var PR2GripperSensor = function (options) {
     self.side = options.side;
     var state = 0.0;
     var grasping = null;
+    var grabGoal = null;
 
     // Subscribe to grasping (bool) state messages
     var graspSub = new ROSLIB.Topic({
@@ -86,6 +87,7 @@ var PR2GripperSensor = function (options) {
 
     ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandGoal');
     self.setPosition = function (pos, effort) {
+        if (grabGoal !== null) { grabGoal.cancel(); }
         var msg = ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandGoal');
         msg.command.position = pos;
         msg.command.max_effort = effort || -1;
@@ -132,11 +134,11 @@ var PR2GripperSensor = function (options) {
     var sendGraspMsg = function () {
         var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');
         msg.command.hardness_gain = 0.03; // Default value recommended from msg def file
-        var goal = new ROSLIB.Goal({
+        grabGoal = new ROSLIB.Goal({
             actionClient: graspActionClient,
             goalMessage: msg
         });
-        goal.send();
+        grabGoal.send();
     };
 
     ros.getMsgDetails('pr2_gripper_sensor_msgs/PR2GripperGrabGoal');

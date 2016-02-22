@@ -68,10 +68,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
     key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
-                'audioWristTimesList', 'audioWristRMSList', \
+                'audioWristTimesList', 'audioWristRMSList', 'audioWristMFCCList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
-                'ftTimesList', 'ftForceList', \
+                'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
                 'visionChangeTimesList', 'visionChangeCentersList', 'visionChangeMagList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
@@ -97,9 +97,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 feature_time = d[key]
                 if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
     new_times = np.linspace(0.01, max_time, downSampleSize)
-     
-            
-    for idx, fileName in enumerate(fileNames):
+
+    for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
 
@@ -122,8 +121,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         ##         feature_time = d[key]
         ##         if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
         ## new_times = np.linspace(0.01, max_time, downSampleSize)
-
         data_dict['timesList'].append(new_times)
+           
 
         # Define receptive field center trajectory ---------------------------
         rf_time = np.array(d['kinematics_time']) - init_time
@@ -211,14 +210,20 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # wrist sound ----------------------------------------------------------------
         if 'audio_wrist_time' in d.keys():
             audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
-            audio_rms  = np.abs(d['audio_wrist_rms'])
-            audio_mfcc = np.abs(d['audio_wrist_mfcc'])
+            audio_rms  = np.array([d['audio_wrist_rms']])
+            audio_mfcc = np.array(d['audio_wrist_mfcc']).T
 
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
+            raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
 
-            data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
+            if len(audio_time)>len(new_times):
+                data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
+                data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
+            else:
+                data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
+                data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
             
         # kinematics -----------------------------------------------------------
@@ -237,6 +242,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 last_time    = 0.0
                 local_kin_vel= None
                 for i in xrange(len(kin_ee_pos[0])):
+                    if len(kin_time)-1 < i: break
                     if abs(kin_time[i]-last_time) < 0.00000001:
                         if local_kin_vel is None: local_kin_vel = np.zeros((3,1))
                     else:                    
@@ -317,20 +323,12 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
-            ## fig = plt.figure()
-            ## plt.plot(kin_time, kin_target_pos[2], c='k')
-            ## plt.plot(kin_time, local_kin_target_pos[2], c='b')
-            ## plt.plot(new_times, interpolationData(kin_time, local_kin_target_pos, new_times)[2], c='r')
-            ## fig.savefig('test.pdf')
-            ## fig.savefig('test.png')
-            ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## sys.exit()
-
 
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time  = (np.array(d['ft_time']) - init_time).tolist()
-            ft_force = d['ft_force']
+            ft_force  = d['ft_force']
+            ft_torque = d['ft_torque']
 
             kin_time   = (np.array(d['kinematics_time']) - init_time).tolist()
             kin_ee_pos = d['kinematics_ee_pos'] # 3xN
@@ -339,28 +337,24 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # extract local feature
             data_set = [ft_time, ft_pos, ft_force]
             [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            data_set = [ft_time, ft_pos, ft_torque]
+            [ _, local_ft_torque] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
             raw_data_dict['ftTimesList'].append(ft_time)
             raw_data_dict['ftForceList'].append(local_ft_force)
+            raw_data_dict['ftTorqueList'].append(local_ft_torque)
 
-            force_array = interpolationData(ft_time, local_ft_force, new_times)
-            data_dict['ftForceList'].append(force_array)                                         
+            res = interpolationData(ft_time, local_ft_force, new_times)
+            data_dict['ftForceList'].append(res)                                         
 
-            ## fig = plt.figure()
-            ## plt.plot(ft_time, ft_force[2], c='k')
-            ## plt.plot(ft_time, local_ft_force[2], c='b')
-            ## plt.plot(new_times, interpolationData(ft_time, local_ft_force, new_times)[2], c='r')
-            ## ## fig.savefig('test.pdf')
-            ## ## fig.savefig('test.png')
-            ## ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## plt.show()
-            ## sys.exit()
+            res = interpolationData(ft_time, local_ft_torque, new_times)
+            data_dict['ftTorqueList'].append(res)                                         
             
                     
         # vision artag -------------------------------------------------------------
         if 'vision_artag_time' in d.keys():
             vision_time = (np.array(d['vision_artag_time']) - init_time).tolist()
-            vision_pos  = d['vision_artag_pos'] # timeLength x 3*tags
+            vision_pos  = d['vision_artag_pos'] # 3*tags * timeLength
             vision_quat = d['vision_artag_quat']
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
@@ -376,15 +370,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionArtagPosList'].append(vision_pos_array)                                         
+            vision_quat_array  = interpolationData(vision_time, local_vision_quat, new_times)
+            data_dict['visionArtagQuatList'].append(vision_quat_array)                                         
 
-            ## fig = plt.figure()
-            ## plt.plot(vision_time, vision_pos[2], c='k')
-            ## plt.plot(vision_time, local_vision_pos[2], c='b')
-            ## plt.plot(new_times, interpolationData(vision_time, local_vision_pos, new_times)[2], c='r')
-            ## fig.savefig('test.pdf')
-            ## fig.savefig('test.png')
-            ## os.system('cp test.p* ~/Dropbox/HRL/')
-            ## sys.exit()
 
         # vision change -----------------------------------------------------------
         if 'vision_change_time' in d.keys():
@@ -599,7 +587,6 @@ def downSampleAudio(time_array, data_array, new_time_array):
     n,m = np.shape(data_array)    
     if len(time_array) > m: time_array = time_array[0:m]
     
-
     # remove repeated data
     temp_time_array = [time_array[0]]
     temp_data_array = data_array[:,0:1]
@@ -995,371 +982,6 @@ def extractLocalData(rf_time, rf_traj, local_range, data_set, multi_pos_flag=Fal
     
     
 
-
-def extractLocalFeature(d, feature_list, param_dict=None, verbose=False):
-
-    if param_dict is None:
-        isTrainingData=True
-        param_dict = {}
-
-        if 'unimodal_audioPower' in feature_list:
-            ## power_max = np.amax(d['audioPowerList'])
-            ## power_min = np.amin(d['audioPowerList'])
-            ## power_min = np.mean(np.array(d['audioPowerList'])[:,:10])
-            power_min = 10000
-            power_max = 0
-            for pwr in d['audioPowerList']:
-                p_min = np.amin(pwr)
-                p_max = np.amax(pwr)
-                if power_min > p_min:
-                    power_min = p_min
-                ## if p_max < 50 and power_max < p_max:
-                if power_max < p_max:
-                    power_max = p_max
-
-            param_dict['unimodal_audioPower_power_max'] = power_max
-            param_dict['unimodal_audioPower_power_min'] = power_min
-                                
-        ## if 'unimodal_ftForce' in feature_list:
-        ##     force_array = None
-        ##     start_force_array = None
-        ##     for idx in xrange(len(d['ftForceList'])):
-        ##         if force_array is None:
-        ##             force_array = d['ftForceList'][idx]
-        ##             ## start_force_array = d['ftForceList'][idx][:,:5]
-        ##         else:
-        ##             force_array = np.hstack([force_array, d['ftForceList'][idx] ])
-        ##             ## start_force_array = np.hstack([start_force_array, d['ftForceList'][idx][:,:5]])
-
-        ##     ftPCADim    = 2
-        ##     ftForce_pca = PCA(n_components=ftPCADim)
-        ##     res = ftForce_pca.fit_transform( force_array.T )            
-        ##     param_dict['unimodal_ftForce_pca'] = ftForce_pca
-        ##     param_dict['unimodal_ftForce_pca_dim'] = ftPCADim
-
-        ##     ## res = ftForce_pca.transform(start_force_array.T)
-        ##     ## param_dict['unimodal_ftForce_pca_init_avg'] = np.array([np.mean(res, axis=0)]).T
-        ##     ## param_dict['unimodal_ftForce_init_avg'] = np.mean(start_force_array, axis=1)
-
-        if 'unimodal_ppsForce' in feature_list:
-            ppsLeft  = d['ppsLeftList']
-            ppsRight = d['ppsRightList']
-
-            pps_mag = []
-            for i in xrange(len(ppsLeft)):                
-                pps      = np.vstack([ppsLeft[i], ppsRight[i]])
-                pps_mag.append( np.linalg.norm(pps, axis=0) )
-
-            pps_max = np.max( np.array(pps_mag).flatten() )
-            pps_min = np.min( np.array(pps_mag).flatten() )
-            param_dict['unimodal_ppsForce_max'] = pps_max
-            param_dict['unimodal_ppsForce_min'] = pps_min
-
-        param_dict['feature_names'] = []
-    else:
-        isTrainingData=False
-            
-
-    # -------------------------------------------------------------        
-
-    # extract local features
-    dataList   = []
-    for idx in xrange(len(d['timesList'])): # each sample
-
-        timeList     = d['timesList'][idx]
-        dataSample = None
-
-        ## # Define receptive field center trajectory ---------------------------
-        ## if rf_center == 'kinEEPos':
-        ##     rf_traj = d['kinEEPosList'][idx]
-        ## elif rf_center == 'kinForearmPos':
-        ##     rf_traj = d['kinForearmPosList'][idx]
-        ## ## elif rf_center == 'l_upper_arm_link':            
-        ## else:
-        ##     sys.exit()
-        
-
-        # Unimoda feature - Audio --------------------------------------------
-        if 'unimodal_audioPower' in feature_list:
-            ## audioAzimuth = d['audioAzimuthList'][idx]
-            audioPower   = d['audioPowerList'][idx]            
-            unimodal_audioPower = audioPower
-            
-            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
-            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
-            if 'audioPower' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('audioPower')
-
-        # Unimoda feature - AudioWrist ---------------------------------------
-        if 'unimodal_audioWristRMS' in feature_list:
-            audioWristRMS = d['audioWristRMSList'][idx]            
-            unimodal_audioWristRMS = audioWristRMS
-            
-            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
-            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
-            if 'audioWristRMS' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('audioWristRMS')
-
-        # Unimodal feature - Kinematics --------------------------------------
-        if 'unimodal_kinVel' in feature_list:
-            kinVel  = d['kinVelList'][idx]
-            unimodal_kinVel = kinVel
-
-            if dataSample is None: dataSample = np.array(unimodal_kinVel)
-            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
-            if 'kinVel_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinVel_x')
-                param_dict['feature_names'].append('kinVel_y')
-                param_dict['feature_names'].append('kinVel_z')
-
-        # Unimodal feature - Force -------------------------------------------
-        if 'unimodal_ftForce' in feature_list:
-            ftForce = d['ftForceList'][idx]
-
-            # magnitude
-            if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-                # individual force
-                unimodal_ftForce_ind = ftForce[2:3,:]                
-                
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
-
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
-
-                if 'ftForce_z' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_mag')
-                    ## param_dict['feature_names'].append('ftForce_x')
-                    ## param_dict['feature_names'].append('ftForce_y')
-                    param_dict['feature_names'].append('ftForce_z')
-            else:                
-                unimodal_ftForce_mag = ftForce
-            
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
-
-                if 'ftForce_mag' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_mag')
-
-            ## ftPos   = d['kinEEPosList'][idx]
-            ## ftForce_pca = param_dict['unimodal_ftForce_pca']
-
-            ## unimodal_ftForce = None
-            ## for time_idx in xrange(len(timeList)):
-            ##     if unimodal_ftForce is None:
-            ##         unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-            ##     else:
-            ##         unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-            ##                                        ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
-
-            ## unimodal_ftForce -= np.array([np.mean(unimodal_ftForce[:,:5], axis=1)]).T
-            
-            ## if 'ftForce_1' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce_1')
-            ##     param_dict['feature_names'].append('ftForce_2')
-            ## if 'ftForce_x' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce_x')
-            ##     param_dict['feature_names'].append('ftForce_y')
-            ##     param_dict['feature_names'].append('ftForce_z')
-
-        # Unimodal feature - pps -------------------------------------------
-        if 'unimodal_ppsForce' in feature_list:
-            ppsLeft  = d['ppsLeftList'][idx]
-            ppsRight = d['ppsRightList'][idx]
-            ppsPos   = d['kinTargetPosList'][idx]
-
-            pps = np.vstack([ppsLeft, ppsRight])
-            unimodal_ppsForce = pps
-
-            # 2
-            pps = np.vstack([np.sum(ppsLeft, axis=0), np.sum(ppsRight, axis=0)])
-            unimodal_ppsForce = pps
-            
-            # 1
-            ## unimodal_ppsForce = np.array([np.linalg.norm(pps, axis=0)])
-
-            unimodal_ppsForce -= np.array([np.mean(unimodal_ppsForce[:,:5], axis=1)]).T
-
-            ## unimodal_ppsForce = []
-            ## for time_idx in xrange(len(timeList)):
-            ##     unimodal_ppsForce.append( np.linalg.norm(pps[:,time_idx]) )
-
-            if dataSample is None: dataSample = unimodal_ppsForce
-            else: dataSample = np.vstack([dataSample, unimodal_ppsForce])
-
-            ## if 'ppsForce' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ppsForce')
-            if 'ppsForce_1' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('ppsForce_1')
-                param_dict['feature_names'].append('ppsForce_2')                
-            ## if 'ppsForce_1' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ppsForce_1')
-            ##     param_dict['feature_names'].append('ppsForce_2')
-            ##     param_dict['feature_names'].append('ppsForce_3')
-            ##     param_dict['feature_names'].append('ppsForce_4')
-            ##     param_dict['feature_names'].append('ppsForce_5')
-            ##     param_dict['feature_names'].append('ppsForce_6')
-
-
-        # Unimodal feature - vision change ------------------------------------
-        if 'unimodal_visionChange' in feature_list:
-            visionChangeMag = d['visionChangeMagList'][idx]
-
-            unimodal_visionChange = visionChangeMag
-
-            if dataSample is None: dataSample = unimodal_visionChange
-            else: dataSample = np.vstack([dataSample, unimodal_visionChange])
-            if 'visionChange' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('visionChange')
-
-                
-        # Unimodal feature - fabric skin ------------------------------------
-        if 'unimodal_fabricForce' in feature_list:
-            fabricMag = d['fabricMagList'][idx]
-
-            unimodal_fabricForce = fabricMag
-
-            if dataSample is None: dataSample = unimodal_fabricForce
-            else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
-            if 'fabricForce' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('fabricForce')
-
-            
-        # Crossmodal feature - relative dist --------------------------
-        if 'crossmodal_targetEEDist' in feature_list:
-            kinEEPos     = d['kinEEPosList'][idx]
-            kinTargetPos  = d['kinTargetPosList'][idx]
-
-            dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            crossmodal_targetEEDist = []
-            for time_idx in xrange(len(timeList)):
-                crossmodal_targetEEDist.append( dist[time_idx])
-
-            if dataSample is None: dataSample = np.array(crossmodal_targetEEDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_targetEEDist])
-            if 'targetEEDist' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('targetEEDist')
-
-
-        # Crossmodal feature - relative angle --------------------------
-        if 'crossmodal_targetEEAng' in feature_list:                
-            kinEEQuat    = d['kinEEQuatList'][idx]
-            kinTargetQuat = d['kinTargetQuatList'][idx]
-
-            ## kinEEPos     = d['kinEEPosList'][idx]
-            ## kinTargetPos = d['kinTargetPosList'][idx]
-            ## dist         = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            
-            crossmodal_targetEEAng = []
-            for time_idx in xrange(len(timeList)):
-
-                startQuat = kinEEQuat[:,time_idx]
-                endQuat   = kinTargetQuat[:,time_idx]
-
-                diff_ang = qt.quat_angle(startQuat, endQuat)
-                crossmodal_targetEEAng.append( abs(diff_ang) )
-
-            ## fig = plt.figure()
-            ## ## plt.plot(crossmodal_targetEEAng)
-            ## plt.plot( kinEEQuat[0] )
-            ## plt.plot( kinEEQuat[1] )
-            ## plt.plot( kinEEQuat[2] )
-            ## plt.plot( kinEEQuat[3] )
-            ## fig.savefig('test.pdf')
-            ## fig.savefig('test.png')
-            ## os.system('cp test.p* ~/Dropbox/HRL/')        
-            ## sys.exit()
-            
-            if dataSample is None: dataSample = np.array(crossmodal_targetEEAng)
-            else: dataSample = np.vstack([dataSample, crossmodal_targetEEAng])
-            if 'targetEEAng' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('targetEEAng')
-
-        # Crossmodal feature - vision relative dist with main(first) vision target----
-        if 'crossmodal_artagEEDist' in feature_list:
-            kinEEPos  = d['kinEEPosList'][idx]
-            visionArtagPos = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
-
-            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
-            crossmodal_artagEEDist = []
-            for time_idx in xrange(len(timeList)):
-                crossmodal_artagEEDist.append(dist[time_idx])
-
-            if dataSample is None: dataSample = np.array(crossmodal_artagEEDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_artagEEDist])
-            if 'artagEEDist' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('artagEEDist')
-
-        # Crossmodal feature - vision relative angle --------------------------
-        if 'crossmodal_artagEEAng' in feature_list:                
-            kinEEQuat    = d['kinEEQuatList'][idx]
-            visionArtagQuat = d['visionArtagQuatList'][idx][:4]
-
-            kinEEPos  = d['kinEEPosList'][idx]
-            visionArtagPos = d['visionArtagPosList'][idx][:3]
-            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
-            
-            crossmodal_artagEEAng = []
-            for time_idx in xrange(len(timeList)):
-
-                startQuat = kinEEQuat[:,time_idx]
-                endQuat   = visionArtagQuat[:,time_idx]
-
-                diff_ang = qt.quat_angle(startQuat, endQuat)
-                crossmodal_artagEEAng.append( abs(diff_ang) )
-
-            if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
-            else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])
-            if 'artagEEAng' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('artagEEAng')
-
-        # ----------------------------------------------------------------
-        dataList.append(dataSample)
-
-
-    # Converting data structure
-    nSample      = len(dataList)
-    nEmissionDim = len(dataList[0])
-    features     = []
-    for i in xrange(nEmissionDim):
-        feature  = []
-
-        for j in xrange(nSample):
-            try:
-                ## feature.append(dataList[j][i])
-                feature.append(dataList[j][i,:])
-            except:
-                print np.shape(dataList), np.shape(dataList[j]), j, i
-                sys.exit()
-
-        features.append( feature )
-
-
-    # Scaling ------------------------------------------------------------
-    if isTrainingData:
-        param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
-        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
-        print "max: ", param_dict['feature_max']
-        print "min: ", param_dict['feature_min']
-        
-        
-    scaled_features = []
-    for i, feature in enumerate(features):
-
-        if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
-            scaled_features.append( np.array(feature) )
-        else:
-            scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
-                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
-
-    ## import matplotlib.pyplot as plt
-    ## plt.figure()
-    ## plt.plot(np.array(scaled_features[0]).T)
-    ## plt.show()
-    ## sys.exit()
-                                
-    return scaled_features, param_dict
 
 
 

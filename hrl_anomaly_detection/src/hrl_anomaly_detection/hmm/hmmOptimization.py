@@ -38,6 +38,7 @@ from util import getSubjectFiles
 #from .. import util as dataUtil
 from hrl_anomaly_detection import util as dataUtil
 import learning_util as util
+from .. import data_manager as dataMng
 
 # catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
 # nohup rosrun hrl_anomaly_detection hmmOptimization.py > optimization.log &
@@ -189,7 +190,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
         # t = time.time()
         rawDataDict, dataDict = dataUtil.loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, local_range=0.15, verbose=self.verbose)
-        trainData, _ = dataUtil.extractFeature(dataDict, feature_list)
+        trainData, _ = dataMng.extractFeature(dataDict, feature_list)
         trainData = np.array(trainData)
 
         if True:

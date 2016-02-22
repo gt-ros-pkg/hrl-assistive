@@ -125,12 +125,12 @@ class anomaly_detector:
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_exp.pkl')
         if os.path.isfile(modeling_pkl) is False:
 
-            _, success_data, failure_data, _ = dm.feature_extraction(self.subject_names, self.task_name, \
-                                                                     self.save_data_path, \
-                                                                     self.save_data_path, self.rf_center, \
-                                                                     self.rf_radius, \
-                                                                     downSampleSize=self.downSampleSize, \
-                                                                     feature_list=self.feature_list)
+            _, success_data, failure_data, _ = dm.getDataSet(self.subject_names, self.task_name, \
+                                                             self.save_data_path, \
+                                                             self.save_data_path, self.rf_center, \
+                                                             self.rf_radius, \
+                                                             downSampleSize=self.downSampleSize, \
+                                                             feature_list=self.feature_list)
 
             # index selection
             success_idx  = range(len(successData[0]))

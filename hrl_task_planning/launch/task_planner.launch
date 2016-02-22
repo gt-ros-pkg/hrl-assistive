@@ -11,7 +11,6 @@
 
     <node name="task_planner" pkg="hrl_task_planning" type="pddl_planner" output="screen" args="$(find hrl_task_planning)/src/ff"/>
 
-    <node name="grasp_monitor" pkg="hrl_task_planning" type="grasp_state_monitor" output="screen" />
     <node name="problem_preprocessor" pkg="hrl_task_planning" type="preprocess_problems" output="screen" />
 
     <node name="task_smacher" pkg="hrl_task_planning" type="task_smacher" output="screen" />

@@ -58,18 +58,22 @@ class classifier(learning_base):
         self.verbose = verbose
 
         if self.method == 'svm':
-            from sklearn.svm import SVC
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm
             self.class_weight = class_weight
-            ## self.dt = svm.OneClassSVM(nu=0.1, kernel=custom_kernel)
-            ## self.dt = SVC(nu=0.1, kernel='linear')
-            ## self.dt = SVC(kernel='linear', gamma=0.0001, kernel=symmetric_entropy, verbose=True)
-            self.dt = SVC(kernel='linear', gamma=0.01, verbose=True, \
-                          class_weight=self.class_weight)
-            ## self.dt = SVC(kernel=custom_kernel, gamma=0.01, verbose=True, \
+            ## from sklearn.svm import SVC
+            ## self.class_weight = class_weight
+            ## ## self.dt = svm.OneClassSVM(nu=0.1, kernel=custom_kernel)
+            ## ## self.dt = SVC(nu=0.1, kernel='linear')
+            ## ## self.dt = SVC(kernel='linear', gamma=0.0001, kernel=symmetric_entropy, verbose=True)
+            ## self.dt = SVC(kernel='linear', gamma=0.01, verbose=True, \
             ##               class_weight=self.class_weight)
-            #self.dt = SVC(kernel=custom_kernel2, verbose=True)
-        elif self.method == 'cssvm':
-            import svmutil as cssvm
+            ## ## self.dt = SVC(kernel=custom_kernel, gamma=0.01, verbose=True, \
+            ## ##               class_weight=self.class_weight)
+            ## #self.dt = SVC(kernel=custom_kernel2, verbose=True)
+        elif self.method == 'cssvm_standard' or self.method == 'cssvm':
+            sys.path.insert(0, '/home/dpark/git/cssvm/python')
+            import cssvmutil as cssvm
             self.class_weight = class_weight
         elif self.method == 'progress_time_cluster':
             self.nLength   = nLength
@@ -81,7 +85,7 @@ class classifier(learning_base):
         elif self.method == 'fixed':
             self.mu  = 0.0
             self.std = 0.0
-            self.mult = 0.0
+            self.ths_mult = ths_mult
             
 
     def fit(self, X, y, ll_idx=None):
@@ -92,15 +96,26 @@ class classifier(learning_base):
         # saved file check.
 
         if self.method == 'svm':
-            self.dt.set_params(class_weight=self.class_weight)
-            return self.dt.fit(X, y)
-        elif self.method == 'cssvm':
-            import svmutil as cssvm
-            ## self.dt = svm_train(y, X, '-c 4')
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm
+            print svm.__file__
             if type(X) is not list: X=X.tolist()
-            ## self.dt = cssvm.svm_train(y, X, '-s 1 -t 0 -c '+str(self.class_weight) )
-            ## self.dt = cssvm.svm_train(y, X, '-c '+str(self.class_weight) )
-            self.dt = cssvm.svm_train(y, X, '-c 1 -t 2 -w1 '+str(self.class_weight)+' -w-1 1' )
+            self.dt = svm.svm_train(y, X, '-c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 7.0'  )
+            ## self.dt.set_params(class_weight=self.class_weight)
+            ## return self.dt.fit(X, y)
+            return True
+        elif self.method == 'cssvm_standard':
+            sys.path.insert(0, '/home/dpark/git/cssvm/python')
+            import cssvmutil as cssvm
+            if type(X) is not list: X=X.tolist()
+            self.dt = cssvm.svm_train(y, X, '-C 0 -c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 5.0' )
+            return True
+        elif self.method == 'cssvm':
+            sys.path.insert(0, '/home/dpark/git/cssvm/python')
+            import cssvmutil as cssvm
+            if type(X) is not list: X=X.tolist()
+            self.dt = cssvm.svm_train(y, X, '-C 1 -c 4 -t 2 -g 0.03 -w1 2.0 -w-1 '+str(self.class_weight) )
+            return True
             
         elif self.method == 'progress_time_cluster':
             if type(X) == list: X = np.array(X)
@@ -122,8 +137,11 @@ class classifier(learning_base):
             return self.l_statePosterior, self.ll_mu, self.ll_std
 
         elif self.method == 'fixed':
+            if type(X) == list: X = np.array(X)
+            ll_logp = X[:,0:1]
             self.mu  = np.mean(ll_logp)
-            self.std = np.std(ll_losp)
+            self.std = np.std(ll_logp)
+            return True
                 
 
     def predict(self, X, y=None):
@@ -131,15 +149,20 @@ class classifier(learning_base):
         return predicted values (not necessarily binaries)
         '''
 
-        if self.method == 'svm':
-            return self.dt.predict(X)
-        elif self.method == 'cssvm':
-            import svmutil as cssvm            
+        if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm':
+            if self.method == 'svm':
+                sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+                import svmutil as svm
+            else:
+                sys.path.insert(0, '/home/dpark/git/cssvm/python')
+                import cssvmutil as svm
+
+            print svm.__file__
             if type(X) is not list: X=X.tolist()
             if y is not None:
-                p_labels, _, p_vals = cssvm.svm_predict(y, X, self.dt)
+                p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)
             else:
-                p_labels, _, p_vals = cssvm.svm_predict([0]*len(X), X, self.dt)
+                p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         elif self.method == 'progress_time_cluster':
             self.ml.cluster_type = 'time'
@@ -165,9 +188,9 @@ class classifier(learning_base):
 
     def decision_function(self, X):
 
-        if self.method == 'svm':
-            return self.dt.decision_function(X)
-        elif self.method == 'cssvm':
+        ## return self.dt.decision_function(X)
+        if self.method == 'cssvm_standard' or self.method == 'cssvm' or \
+          self.method == 'fixed' or self.method == 'svm':
             if type(X) is not list:
                 return self.predict(X.tolist())
             else:
