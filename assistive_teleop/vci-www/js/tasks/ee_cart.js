@@ -25,6 +25,13 @@ RFH.CartesianEEControl = function (options) {
     self.dt = 1000; //hold-repeat time in ms
     self.mode = "table"; // "wall", "free"
     self.active = false;
+    self.$viewer = $('#viewer-canvas').css('zIndex',1);
+   var goalMarkerGeom = new THREE.SphereGeometry(0.01,10,10);
+    var goalMarkerMat = new THREE.MeshBasicMaterial({color: 0xff8800});
+    self.goalMarker = new THREE.Mesh(goalMarkerGeom, goalMarkerMat);
+    self.goalMarker.transparent = true;
+    self.goalMarker.opacity=0.45;
+    RFH.viewer.scene.add(self.goalMarker);
 
     self.pixel23d = new RFH.Pixel23DClient({
         ros: ros,
@@ -36,7 +43,21 @@ RFH.CartesianEEControl = function (options) {
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
     $('#speedOptions-buttons, #'+self.side[0]+'-posrot-set, #ee-mode-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
+    $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation(); });
+
+
+    var displayGoalPose = function (ps_msg) {
+        self.goalMarker.position.set(ps_msg.pose.position.x, ps_msg.pose.position.y, ps_msg.pose.position.z);
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+    };
+
+    var handGoalSubscriber = new ROSLIB.Topic({
+        ros: ros,
+        name: self.side + '_arm/haptic_mpc/goal_pose', 
+        messageType: 'geometry_msgs/PoseStamped'
+    });
+    handGoalSubscriber.subscribe(displayGoalPose);
 
     self.getStepSize = function () {
         return $('input[name=speedOption]:checked').attr('id');
@@ -517,13 +538,13 @@ RFH.CartesianEEControl = function (options) {
 
     self.setRotationCtrls = function (e) {
         $('#armCtrlContainer').hide();
-        $('#viewer-canvas').show();
+        // self.$viewer.show();
         self.rotationControl.setActive(true);
         $(window).resize(); // Trigger canvas to update size TODO: unreliable, inconsistent behavior -- Fix
     };
 
     self.setPositionCtrls = function (e) {
-        $('#viewer-canvas').hide();
+        // self.$viewer.hide();
         self.rotationControl.setActive(false);
         $('#armCtrlContainer').show();
         $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh', self.Inactivate);
@@ -558,6 +579,8 @@ RFH.CartesianEEControl = function (options) {
         $('#touchspot-toggle-label').on('click.rfh', self.touchSpotCB).show();
         $('#'+self.side[0]+'-posrot-pos').click();
         self.active = true;
+        self.$viewer.show();
+        self.goalMarker.visible = true;
         self.updateCtrlRingViz();
     };
 
@@ -566,7 +589,7 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer').hide();
         $('#away-button, #toward-button').off('mousedown.rfh').hide();
         $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh');
-        $('#viewer-canvas').hide();
+        self.$viewer.hide();
         $('#speedOptions').hide();
         self.gripperDisplay.hide();
         if ($('#touchspot-toggle').prop('checked')) {
@@ -575,10 +598,12 @@ RFH.CartesianEEControl = function (options) {
         $('#touchspot-toggle-label').off('click.rfh').hide();
         self.trackHand(false);
         self.active = false;
-        for (var dir in self.rotArrows) {
-            self.rotArrows[dir].mesh.visible = false;
-            self.rotArrows[dir].edges.visible = false;
-        }
+        self.rotationControl.hide();
+        self.goalMarker.visible = false;
+//        for (var dir in self.rotArrows) {
+//            self.rotArrows[dir].mesh.visible = false;
+//            self.rotArrows[dir].edges.visible = false;
+//        }
     };
 };
 

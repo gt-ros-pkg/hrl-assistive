@@ -93,14 +93,14 @@ class ProximityMonitor(object):
             for loc in poplist:
                 self.known_locations.pop(loc)
 
-        print "Known Grasping: %s", self.grasping
-        print "Currently Grasping:", current_grasped_items
+        #print "Known Grasping: %s", self.grasping
+        #print "Currently Grasping:", current_grasped_items
         for item in self.grasping:
             if item not in current_grasped_items:
-                print "No longer grasping %s" % item
+                #print "No longer grasping %s" % item
                 self.grasping.remove(item)
                 for loc in self.near_locations:
-                    print "Dropped %s at %s" % (item, loc)
+                    #print "Dropped %s at %s" % (item, loc)
                     update_preds.append(pddl.Predicate('AT', [item, loc]))  # the item was grasped, now isn't (dropped), so must be at the location
 
         for pred in update_preds:
@@ -108,11 +108,11 @@ class ProximityMonitor(object):
             if pred.neg and pos_pred in self.state:
                 self.state.remove(pos_pred)
                 self.state.append(pred)
-                print "Added Neg %s to state" % str(pred)
+                #print "Added Neg %s to state" % str(pred)
                 pub = True
             if not pred.neg and pred not in self.state:
                 self.state.append(pred)
-                print "Added %s to state" % str(pred)
+                #print "Added %s to state" % str(pred)
                 pub = True
 
         if pub:
@@ -131,7 +131,7 @@ class ProximityMonitor(object):
                     (trans, _) = self.tfl.lookupTransform(loc_pose.header.frame_id, self.frame, rospy.Time(0))
                     loc = np.array([loc_pose.pose.position.x, loc_pose.pose.position.y, loc_pose.pose.position.z])
                     dist = np.linalg.norm(loc-trans)
-                    print "[%s] %s to %s --> %s m" % (rospy.get_name(), self.frame, loc_name, dist)
+                    #print "[%s] %s to %s --> %s m" % (rospy.get_name(), self.frame, loc_name, dist)
                     if dist < self.dist_thresh:
                         now_near.append(loc_name)
                 except (LookupException, ConnectivityException, ExtrapolationException):

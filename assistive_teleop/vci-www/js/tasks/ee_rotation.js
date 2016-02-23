@@ -100,6 +100,7 @@ RFH.EERotation = function (options) {
 
     self.canvasMouseMoveCB = function (event) {
         var overMesh = self.getMeshPointedAt(event);
+        if (overMesh === undefined) {return;}
         if (overMesh === null) {
             if (self.hoveredMesh !== null){
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);

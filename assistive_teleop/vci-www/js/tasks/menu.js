@@ -1,10 +1,19 @@
-RFH.TaskMenu = function (divId) {
+RFH.TaskMenu = function (options) {
     "use strict";
     var self = this;
-    self.div = $('#'+divId);
+    self.div = $('#'+ options.divId);
+    var ros = options.ros;
     self.tasks = {};
     self.activeTask = null;
     self.defaultTaskName = null;
+
+    var statePublisher = new ROSLIB.Topic({
+        ros: ros,
+        name: '/web_teleop/current_task',
+        messageType: 'std_msgs/String',
+        latch: true
+    });
+    statePublisher.advertise();
 
     self.addTask = function (taskObject) {
         self.tasks[taskObject.name] = taskObject;
@@ -45,6 +54,7 @@ RFH.TaskMenu = function (divId) {
             $('#'+taskObject.buttonText).prop('checked', true).button('refresh');
         }
         self.activeTask = taskObject;
+        statePublisher.publish({'data':taskObject.name});
     };
     
     self.stopActiveTask = function () {
@@ -69,7 +79,8 @@ RFH.TaskMenu = function (divId) {
 };
 
 RFH.initTaskMenu = function (divId) {
-    RFH.taskMenu = new RFH.TaskMenu( divId );
+    RFH.taskMenu = new RFH.TaskMenu({divId: divId,
+                                     ros: RFH.ros});
     RFH.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
                                        div: 'video-main',
                                        head: RFH.pr2.head,
