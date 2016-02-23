@@ -19,8 +19,10 @@
   <script type="text/javascript" src="js/ros/roslibjs/roslib.js"></script>
   <script type="text/javascript" src="js/ros/extend_ros.js"></script>
   <script type="text/javascript" src="js/ros/actionclient.js"></script>
-  <script type="text/javascript" src="js/ros/threejs/three.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r73/three.js"></script>
   <script type="text/javascript" src="js/ros/threejs/ColladaLoader.js"></script>
+  <!--<script type="text/javascript" src="js/ros/threejs/three.js"></script>
+  <script type="text/javascript" src="js/ros/threejs/CanvasRenderer.js"></script>-->
   <script type="text/javascript" src="js/ros/ros3d.js"></script>
   <script type="text/javascript" src="js/video/viewer.js"></script>
 
@@ -39,7 +41,8 @@
   <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
   <script type="text/javascript" src="js/tasks/move-object.js"></script>
   <script type="text/javascript" src="js/tasks/pick-and-place.js"></script>
-  <script type="text/javascript" src="js/tasks/id-location.js"></script>
+  <script type="text/javascript" src="js/tasks/publish-location.js"></script>
+  <script type="text/javascript" src="js/tasks/param-location.js"></script>
   <script type="text/javascript" src="js/tasks/smach-display.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
 
@@ -94,8 +97,8 @@
             <input class="menu-item" id="ee-mode-free" type="radio" name="ee-mode-radio">
             <label for="ee-mode-free">Free</label>
         </div>-->
-        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
-        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>
+<!--        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
+        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>-->
 <!--        <input type="checkbox" id="select-focus-toggle"/>
         <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
         <button id="wristCW" style="display:none">CW</button>

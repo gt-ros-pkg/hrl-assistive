@@ -1,8 +1,9 @@
-RFH.IdLocation = function(options) {
+RFH.PublishLocation = function(options) {
     'use strict';
     var self = this;
     self.ros = options.ros;
     self.name = options.name || 'idLocationTask';
+    self.topic = options.topic || 'id_location';
     self.container = options.container;
     var offset = {position:{x:0, y:0, z:0},
                    rotation:{x:0, y:0, z:0}};
