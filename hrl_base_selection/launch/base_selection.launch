@@ -1,26 +1,26 @@
 <launch>
 
+    <!--arg name="arm" default="l"/-->
+    <!--arg name="controller" default="static"/-->
+    <arg name="ee_pos_threshold" default="0.05"/>
+    <arg name="ee_quat_threshold" default="0.7"/>
 
+    <param name="haptic_mpc/pr2/ee_motion_threshold" value="$(arg ee_pos_threshold)"/>
+    <param name="haptic_mpc/pr2/ee_quat_motion_threshold" value="$(arg ee_quat_threshold)"/>
 
-    <arg name="gateway_name" default="gateway"/>
-    <!-- Polling period for multimaster advertising/flipping -->
-    <arg name="gateway_watch_loop_period" default="5"/>
-    <!-- semi-colon separated hub names/regex patterns -->
-    <arg name="hub_whitelist" default=""/>
-    <node pkg="rocon_gateway" type="gateway.py" name="gateway">
-        <rosparam command="load" file="$(find rocon_gateway)/param/default.yaml" />
-        <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml" />
-        <rosparam command="load" file="$(find rocon_app_manager)/param/app_manager_advertisements.yaml" />
-        <rosparam command="load" file="$(find rocon_app_manager)/param/app_manager_flips.yaml" />
-        <!-- The paired hub, if available -->
-        <rosparam param="hub_uri">http://localhost:6380</rosparam>
-        <param name="name" value="$(arg gateway_name)"/>
-        <!-- Nothing comes in! -->
-        <rosparam param="firewall">true</rosparam>
-        <param name="watch_loop_period" value="$(arg gateway_watch_loop_period)"/>
-        <param name="hub_whitelist" value="$(arg hub_whitelist)"/>
-    </node>
+    <!--<node name="autobed_robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">-->
+        <!--<remap from="robot_description" to="autobed_robot_description" />-->
+        <!--<remap from="joint_states" to="autobed_joint_states" />-->
+    <!--</node>-->
 
+    <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
+
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find hrl_base_selection)/data/maps/lab_map.yaml" output="screen"/>
+    <!--<include file="$(find pr2_navigation_perception)/lasers_and_filters.xml"/>-->
+    <!--<include file="$(find pr2_navigation_perception)/ground_plane.xml"/>-->
+    <include file="$(find hrl_base_selection)/config/move_base.xml"/>
+    <include file="$(find hrl_base_selection)/config/amcl_node.xml"/>
+    <include file="$(find hrl_base_selection)/find_ar_tag.launch"/>
     <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen">
     </node>
 

@@ -8,11 +8,11 @@ import rospy
 import tf.transformations as tft
 
 def createBMatrix(pos, ori):
-    goalB = np.zeros([4,4])
+    goalB = np.zeros([4, 4])
     goalB[3, 3] = 1
 
     goalB[0:3, 0:3] = np.array(tft.quaternion_matrix(ori))[0:3, 0:3]
-    for i in xrange(0,3):
+    for i in xrange(0, 3):
         goalB[i, 3] = pos[i]
     return np.matrix(goalB)
 

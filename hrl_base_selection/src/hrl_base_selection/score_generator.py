@@ -8,7 +8,7 @@ import copy
 import time
 import roslib
 roslib.load_manifest('hrl_base_selection')
-roslib.load_manifest('hrl_haptic_mpc')
+# roslib.load_manifest('hrl_haptic_mpc')
 import rospy, rospkg
 import tf
 from geometry_msgs.msg import PoseStamped
