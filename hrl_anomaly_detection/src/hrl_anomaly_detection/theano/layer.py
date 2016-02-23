@@ -104,7 +104,7 @@ class MLP(object):
             - error : theano.tensor.var.TensorVariable
                 The squared Euclidian distance between the network output and y
         '''
-        return T.sum((self.output(x) - y)**2)
+        return T.sum((self.output(x) - y)**2) 
 
 
 class AD(object):
@@ -179,7 +179,6 @@ class AD(object):
             - error : theano.tensor.var.TensorVariable
                 The squared Euclidian distance between the network output and y
         '''
-        print "squared err: ", T.sum((self.output(x) - y)**2)
         return T.sum((self.output(x) - y)**2)
 
 

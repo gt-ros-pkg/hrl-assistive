@@ -58,6 +58,8 @@ local filename = paths.concat(params.dir, 'model.net')
 print('==> loading model to '..filename)
 local model = torch.load(filename)
 
+local figure2 = gnuplot.figure(2)
+
 for t = 1,testData:size(1),singleLength do
 
     -- get data
@@ -84,18 +86,21 @@ for t = 1,testData:size(1),singleLength do
     end
 
     -- visualize original inputs & predictions
+    --[[
     local figure1 = gnuplot.figure(1)
     gnuplot.plot( {'inputs', times, viz_inputs:t()[1], '-'},
                   {'preds', times, viz_preds:t()[1], '-'})
+    --]]                                    
 
     -- visualize reduced features
-    local figure2 = gnuplot.figure(2)
     gnuplot.plot(
         {'1', features:t()[1], '-'},
         {'2', features:t()[2], '-'},
         {'3', features:t()[3], '-'},
         {'4', features:t()[4], '-'},
         {'5', features:t()[5], '-'})
+    io.flush()
+    answer=io.read()
 
     collectgarbage()
 end

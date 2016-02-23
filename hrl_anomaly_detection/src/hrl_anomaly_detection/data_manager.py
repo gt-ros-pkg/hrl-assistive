@@ -610,7 +610,7 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
     return scaled_features, param_dict
 
 
-def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=False):
+def extractRawData(d, raw_feature_list, scale=1.0, param_dict=None, verbose=False):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     from hrl_lib import quaternion as qt
@@ -824,6 +824,8 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
     if isTrainingData:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
+        param_dict['feature_mu']  = [ np.mean(np.array(feature).flatten()) for feature in features ]
+        param_dict['feature_std'] = [ np.std(np.array(feature).flatten()) for feature in features ]
         print "max: ", param_dict['feature_max']
         print "min: ", param_dict['feature_min']
         
@@ -834,8 +836,10 @@ def extractRawData(d, raw_feature_list, scale=10.0, param_dict=None, verbose=Fal
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
             scaled_features.append( np.array(feature) )
         else:
-            scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
-                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+            ## scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
+            ##                         /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+            scaled_features.append( ( np.array(feature) - param_dict['feature_mu'][i] )\
+                                    / param_dict['feature_std'][i] )
 
     param_dict['dataDim'] = dataDim
     
