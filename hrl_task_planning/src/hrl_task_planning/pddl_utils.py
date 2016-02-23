@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import copy
-
+import itertools as it
 
 def _separate_string(string):
     """ Space out parentheses and split to separate items in a lisp string."""
@@ -65,6 +65,8 @@ class Type(object):
 class Object(object):
     """ A class describing an Object in PDDL. """
     def __init__(self, name, type_=None):
+        assert isinstance(name, str), "Object name must be a string."
+        assert isinstance(type_, str) or type_ is None, "Object name must be a string."
         self.name = name
         self.type = type_
 
@@ -144,10 +146,31 @@ class Predicate(object):
 
 class State(object):
     def __init__(self, iterable=None):
-        self.predicates = self._remove_duplicates(iterable) if iterable is not None else []
+        self.predicates = []
+        iterable = [] if iterable is None else iterable
+        for pred in iterable:
+            assert isinstance(pred, Predicate), "Argument to pddl.State must be a list of pddl.Predicate objects"
+            self.add(pred)
+
+    def __str__(self):
+        return "[" + ', '.join(map(str, self.predicates)) + "]"
 
     def __len__(self):
         return len(self.predicates)
+
+    def __contains__(self, pred):
+        return pred in self.predicates
+
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__) and
+                self.satisfies_predicates(other.predicates) and
+                other.satisfies_predicates(self.predicates))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def string_list(self):
+        return map(str, self.predicates)
 
     @staticmethod
     def _remove_duplicates(pred_list):
@@ -157,27 +180,82 @@ class State(object):
                 items.append(pred)
         return items
 
-    def satisfies_preds(self, preds):
+    def satisfies_predicates(self, preds):
+        """ Determine if the given state satisfies all of the listed predicates """
         for pred in preds:
             pos_pred = Predicate(pred.name, pred.args)  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
-            if (pred.neg and pos_pred in self) or (not pred.neg and pos_pred not in self):
+            if (pred.neg and pos_pred in self.predicates) or (not pred.neg and pos_pred not in self.predicates):
                 return False
         return True
 
-    def append(self, new_item):
-        if new_item not in self:
-            super(State, self).append(new_item)
+    def add(self, new_pred):
+        """ Add a predicate to the state, or remove a predicate if adding a negative."""
+        if new_pred.neg:
+            try:
+                self.predicates.remove(Predicate(new_pred.name, new_pred.args))  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            except ValueError:
+                pass  # Positive predicate not in list, so don't need to remove
+        else:
+            if new_pred not in self.predicates:
+                self.predicates.append(new_pred)
 
-    def extend(self, new_items):
-        for item in new_items:
-            self.append(item)
+    def difference(self, other):
+        """ Returns the set of predicates which would bring this state to match the argument state."""
+        diff_list = []
+        for pred in self.predicates:
+            if pred not in other:
+                diff_list.append(Predicate(pred.name, pred.args, neg=True))
+        for pred in other.predicates:
+            if pred not in self.predicates:
+                diff_list.append(Predicate(pred.name, pred.args))
+        return diff_list
 
-    def __eq__(self, other):
-        """ Determine if two states are equivalent (same predicates). """
-        pass
+    def apply_update(self, update):
+        assert isinstance(update, StateUpdate), "apply_update only accepts StateUpdate obects."
+        for predicate in update.predicates:
+            if predicate.neg:
+                try:
+                    self.predicates.remove(predicate)
+                except ValueError:
+                    pass
+            else:
+                self.prediates.add(predicate)
 
-    def __ne__(self, other):
-        pass
+    @classmethod
+    def from_msg(cls, msg):
+        return cls(msg.predicates)
+
+
+class StateUpdate(State):
+    """ A class representing a change in PDDL State."""
+    def add(self, new_pred):
+        if new_pred.neg:
+            try:
+                self.predicates.remove(Predicate(new_pred.name, new_pred.args))  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            except ValueError:
+                pass  # Positive predicate not in list, so don't need to remove
+        if new_pred not in self.predicates:
+            self.predicates.append(new_pred)
+
+
+class GoalState(State):
+    """ A Goal PDDL State (can contain negative predicates)"""
+    def add(self, new_pred):
+        """ Add a predicate to the state, or remove a predicate if adding a negative."""
+        if new_pred.neg:
+            try:
+                self.predicates.remove(Predicate(new_pred.name, new_pred.args))  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
+            except ValueError:
+                pass  # Positive predicate not in list, so don't need to remove
+        if new_pred not in self.predicates:
+            self.predicates.append(new_pred)
+
+    def is_satisfied(self, state):
+        for pred in self.predicates:
+            if (pred.neg and pred in state) or (not pred.neg and pred not in state):
+                return False
+        return True
+
 
 class PlanStep(object):
     """ A class specifying a PDDL action and the parameters with which to call apply it. """
@@ -309,6 +387,8 @@ class Action(object):
         elif precond[0] == 'FORALL':
             return ''.join(['(FORALL (', str(precond[1]), ') ', str(precond[2]), ")"])
 
+    def get_parameter_types(self):
+        return [param.type for param in self.parameters]
 
 class Domain(object):
     """ A class describing a domain instance in PDDL."""
@@ -548,19 +628,6 @@ class Situation(object):
         self.solution = None
         self.states = []
 
-    @staticmethod
-    def _state_satisfies_preds(state, preds):
-        for pred in preds:
-            pos_pred = Predicate(pred.name, pred.args)  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
-            if (pred.neg and pos_pred in state) or (not pred.neg and pos_pred not in state):
-                return False
-        return True
-
-    def _states_are_equivalent(self, state1, state2):
-        """ Determine if two states are equivalent (same predicates). """
-        return (self._state_satisfies_preds(state1, state2) and
-                self._state_satisfies_preds(state2, state1))
-
     def _get_object_type(self, obj):
         """ Get the type of an object from the combined object list by name."""
         for known_object in self.objects:
@@ -618,14 +685,15 @@ class Situation(object):
     @staticmethod
     def _apply_changes(state, add_list, del_list):
         """ Add/remove predicates from a state as appropriate (avoids removing states just added by this effect."""
+        new_state = copy.deepcopy(state)
         filtered_add_list = [pred for pred in add_list if pred not in state]  # Actually add it if it doesn't exist
         filtered_del_list = [pred for pred in del_list if pred in state]
         for pred in filtered_add_list:
-            state.append(pred)
+            new_state.add(pred)
         for pred in filtered_del_list:
-            for _ in range(filtered_del_list.count(pred)):
-                state.remove(pred)
-        return state
+            pred.negate()
+            new_state.add(pred)
+        return new_state
 
     def _apply_effects(self, effect, state, arg_map):
         """ Recursively apply the effects of of an action to a state.  Requires argument map."""
@@ -650,7 +718,7 @@ class Situation(object):
         for arg, param in zip(args, action.parameters):
             arg_type = self._get_object_type(arg)
             if not self.domain.types[arg_type].is_type(param.type):
-                raise ActionException("Planed action arguments do not match action parameter types")
+                raise ActionException("Action arguments do not match action parameter types")
             param_arg_map[param.name] = Object(arg, arg_type)
         return param_arg_map
 
@@ -658,21 +726,61 @@ class Situation(object):
         """ Apply an action to the given state. Returns (success, resulting_state)."""
         arg_map = self._resolve_args(action, args)
         all_preconditions = self._expand_conditions(action, arg_map)
-        if not self._state_satisfies_preds(state, all_preconditions):
+        if not state.satisfies_predicates(all_preconditions):
             raise ActionException("Cannot perform %s(%s) in current state (%s).\nPreconditions: %s"
-                                  % (action.name, map(str, args), map(str, state), map(str, all_preconditions)))
+                                  % (action.name, map(str, args), state, map(str, all_preconditions)))
         result_state = self._apply_effects(action.effects, state, arg_map)
         return result_state
 
     def get_plan_intermediary_states(self, plan=None):
         plan = self.solution if plan is None else plan
         if plan is None:
-            raise RuntimeError("Cannot find intermediary plan states.  No plan probivded, and no solution already stored.")
-        states = [self.problem.init]
+            raise RuntimeError("Cannot find intermediary plan states.  No plan provided, and no solution already stored.")
+        states = [State(self.problem.init)]
         for step in plan:
             new_state = self.apply_action(self.domain.actions[step.name], step.args, copy.copy(states[-1]))
             states.append(new_state)
         return states
+
+    def _get_arg_sets(self, types):
+        obj_types = []
+        for type_ in types:
+            obj_types.append([obj.name for obj in self._get_objects_of_type(type_)])
+        arg_sets = list(it.product(*obj_types))
+        return arg_sets
+
+    def test_domain(self, initial_states=None):
+        initial_states = [State()] if initial_states is None else initial_states
+        full_states_list = []
+        for initial_state in initial_states:
+            states_list = [initial_state]
+            added_state = True
+            while added_state:
+                added_state = False
+                for state in states_list:
+#                print "In State: ", str(state)
+                    for action in self.domain.actions.itervalues():
+                        arg_sets = self._get_arg_sets(action.get_parameter_types())
+                        for arg_set in arg_sets:
+                            try:
+#                            print "Try: %s( " % action.name, map(str, arg_set), " )"
+                                new_state = self.apply_action(action, arg_set, state)
+#                            print "New State:", str(new_state)
+                                #print "States list:", map(str, states_list)
+                                if new_state not in states_list:
+                                    states_list.append(new_state)
+                                    added_state = True
+#                                    print "\n%s\n--%s(%s)-->\n%s" % (state, action.name, ', '.join(map(str,arg_set)),  new_state)
+                            #    else:
+#                                print "Result State Already Visited"
+                            except ActionException as ae:
+#                            print ae.message
+                                continue
+            for state in states_list:
+                if state not in full_states_list:
+                    full_states_list.append(state)
+        print "\nComplete states set (%d states):" % len(full_states_list)
+        return full_states_list
 
 
 def find_irreversible_actions(self, solution, states, domain, planner):
@@ -711,8 +819,7 @@ def find_irreversible_actions(self, solution, states, domain, planner):
 #        self.solution = solver.solve()
 #        return self.solution
 
-
-#class Planner(object):
+# class Planner(object):
 #    """ Base class for planners to solve PDDL problems. """
 #    def __init__(self, domain, problem):
 #        self.domain = domain
@@ -772,13 +879,13 @@ class FF(object):
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
                     if "problem proven unsolvable." in soln_txt:
                         # print "FF Could not find a solution to problem: %s" % self.problem.domain_name
-                        raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (self.problem.name, self.domain.name))
+                        raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (problem.name, domain.name))
                 except CalledProcessError as cpe:
                     if "goal can be simplified to TRUE." in cpe.output:
                         return []
                     else:
                         # print "FF Could not find a solution to problem: %s" % self.problem.domain_name
-                        raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (self.problem.name, self.domain.name))
+                        raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (problem.name, domain.name))
                 finally:
                     # clean up the soln file produced by ff (avoids large dumps of files in /tmp)
                     problem.name = original_problem_name
