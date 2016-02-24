@@ -8,7 +8,7 @@ import os, threading, copy
 
 import hrl_lib.circular_buffer as cb
 
-from ar_track_alvar.msg import AlvarMarkers
+from ar_track_alvar_msgs.msg import AlvarMarkers
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from geometry_msgs.msg import PoseStamped  # , PointStamped, PoseArray
 from hrl_msgs.msg import FloatArrayBare
@@ -56,16 +56,13 @@ class arTagDetector:
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
         model_trans_B_ar[0:3, 3] = np.array([0.1, 0.0, 0.13])
-
-        ar_roty_B = np.eye(4)
-        ar_roty_B[0:3, 0:3] = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
-
-        ar_rotx_B = np.eye(4)
-        ar_rotx_B[1:3, 1:3] = np.array([[-1, 0], [0, -1]])
-
         ar_rotz_B = np.eye(4)
-        # ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
-        self.reference_B_ar = np.matrix(model_trans_B_ar)*np.matrix(ar_roty_B)*np.matrix(ar_rotx_B)
+        ar_rotz_B [0:2, 0:2] = np.array([[-1, 0], [0, -1]])
+        # If left side of bed should be np.array([[-1,0],[0,-1]])
+        # If right side of bed should be np.array([[1,0],[0,1]])
+        ar_rotx_B = np.eye(4)
+        ar_rotx_B[1:3, 1:3] = np.array([[0, 1], [-1, 0]])
+        self.reference_B_ar = np.matrix(model_trans_B_ar)*np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
 
     def config_autobed_AR_detector(self):
         self.tag_id = 4  # 9
@@ -106,8 +103,8 @@ class arTagDetector:
                                       markers[i].pose.pose.orientation.z,
                                       markers[i].pose.pose.orientation.w])
 
-                    frame_id = markers[i].header.frame_id
-                    #print 'Frame id is: ', frame_id
+                    frame_id = markers[i].pose.header.frame_id
+                    print frame_id
 
                     if np.linalg.norm(cur_p) > 4.0:
                         print "Detected tag is located too far away."
@@ -152,8 +149,8 @@ class arTagDetector:
                     out_pos, out_quat = Bmat_to_pos_quat(pr2_B_ar*self.reference_B_ar.I)
 
                     ps = PoseStamped()
-                    ps.header.frame_id = 'torso_lift_link'  # markers[i].pose.header.frame_id
-                    ps.header.stamp =  rospy.Time.now()  # markers[i].pose.header.stamp
+                    ps.header.frame_id = markers[i].pose.header.frame_id
+                    ps.header.stamp =  markers[i].pose.header.stamp
                     ps.pose.position.x = out_pos[0]
                     ps.pose.position.y = out_pos[1]
                     ps.pose.position.z = out_pos[2]
