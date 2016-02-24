@@ -1,10 +1,19 @@
-RFH.TaskMenu = function (divId) {
+RFH.TaskMenu = function (options) {
     "use strict";
     var self = this;
-    self.div = $('#'+divId);
+    self.div = $('#'+ options.divId);
+    var ros = options.ros;
     self.tasks = {};
     self.activeTask = null;
     self.defaultTaskName = null;
+
+    var statePublisher = new ROSLIB.Topic({
+        ros: ros,
+        name: '/web_teleop/current_task',
+        messageType: 'std_msgs/String',
+        latch: true
+    });
+    statePublisher.advertise();
 
     self.addTask = function (taskObject) {
         self.tasks[taskObject.name] = taskObject;
@@ -45,6 +54,7 @@ RFH.TaskMenu = function (divId) {
             $('#'+taskObject.buttonText).prop('checked', true).button('refresh');
         }
         self.activeTask = taskObject;
+        statePublisher.publish({'data':taskObject.name});
     };
     
     self.stopActiveTask = function () {
@@ -69,7 +79,8 @@ RFH.TaskMenu = function (divId) {
 };
 
 RFH.initTaskMenu = function (divId) {
-    RFH.taskMenu = new RFH.TaskMenu( divId );
+    RFH.taskMenu = new RFH.TaskMenu({divId: divId,
+                                     ros: RFH.ros});
     RFH.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
                                        div: 'video-main',
                                        head: RFH.pr2.head,
@@ -99,8 +110,16 @@ RFH.initTaskMenu = function (divId) {
                                        head: RFH.pr2.head,
                                        base: RFH.pr2.base}));
 //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
-    RFH.taskMenu.addTask(new RFH.IdLocation({ros:RFH.ros}));
-    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros}));
+    RFH.taskMenu.addTask(new RFH.PublishLocation({ros:RFH.ros}));
+    RFH.taskMenu.addTask(new RFH.ParamLocation({ros:RFH.ros,
+                                                name:'paramLocationTask',
+                                                paramName:'location'}));
+    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
+                                               arm: RFH.pr2.r_arm_cart,
+                                               gripper: RFH.pr2.r_gripper}));
+    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
+                                               arm: RFH.pr2.l_arm_cart,
+                                               gripper: RFH.pr2.l_gripper}));
                                     
     // Start looking task by default
     $('#'+RFH.taskMenu.tasks.lookingTask.buttonText).click();
