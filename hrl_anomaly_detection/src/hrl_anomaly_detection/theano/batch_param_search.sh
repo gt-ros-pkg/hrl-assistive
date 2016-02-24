@@ -8,7 +8,7 @@ lambda_list=(1e-6 1e-5 1e-4 1e-3)
 timewindow_list=(2 4)
 batch_list=(1)
 
-layersize='[20,10,5]'
+layersize='[50,25,10]'
 FOLDER_NAME=/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/pushing_data/${layersize}
 mkdir -p $FOLDER_NAME
 
@@ -25,7 +25,7 @@ do
 
                     FILENAME=${FOLDER_NAME}/E_${i}_M_${j}_L_${k}_TW_${l}_b_${m}.log
 
-                    python test.py --train --ls ${layersize} --lr ${i} --m ${j} --lambda ${k} --tw ${l} --batch_size ${m} --mi 1500 >> $FILENAME
+                    python test.py --train --ls ${layersize} --lr ${i} --m ${j} --lambda ${k} --tw ${l} --batch_size ${m} --mi 300 >> $FILENAME
 
                 done
             done

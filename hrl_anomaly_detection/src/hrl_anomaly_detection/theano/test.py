@@ -107,15 +107,14 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
             print "Train loss is NaN with iter ", iteration
             sys.exit()
         
-        # testing
-        test_loss = mlp_cost(X_test, X_test)/float(len(X_test[0]))
-        test_loss /= float(time_window)
-        if np.isnan(test_loss) or np.isinf(test_loss):
-            print "Test loss is NaN with iter ", iteration
-            sys.exit()
-
-
         if iteration%20 == 0:
+            # testing
+            test_loss = mlp_cost(X_test, X_test)/float(len(X_test[0]))
+            test_loss /= float(time_window)
+            if np.isnan(test_loss) or np.isinf(test_loss):
+                print "Test loss is NaN with iter ", iteration
+                sys.exit()
+            
             print iteration, ' Train loss: ', train_loss, ' test loss: ', test_loss
             
         if viz and iteration%20 == 0:
