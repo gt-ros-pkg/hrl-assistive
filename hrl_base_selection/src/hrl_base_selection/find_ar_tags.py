@@ -75,17 +75,20 @@ class arTagDetector:
         self.tag_id = 4  # 9
 
         self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-        self.tag_side_length = 0.133  # 0.033
+        self.tag_side_length = 0.053  # 0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
-        model_trans_B_ar[0:3, 3] = np.array([0.625, .445, .275+(self.bed_state_z-9)/100])
+        model_trans_B_ar[0:3, 3] = np.array([-0.02, .01, 1.60])
         ar_rotz_B = np.eye(4)
+
+        ar_roty_B = np.eye(4)
+        ar_roty_B[0:3, 0:3] = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
         # If left side of bed should be np.array([[-1,0],[0,-1]])
         # If right side of bed should be np.array([[1,0],[0,1]])
         ar_rotx_B = np.eye(4)
-        ar_rotx_B[1:3, 1:3] = np.array([[0,1],[-1,0]])
+        # ar_rotx_B[1:3, 1:3] = np.array([[0,1],[-1,0]])
         self.reference_B_ar = np.matrix(model_trans_B_ar)*np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
 
     # When we are using the autobed, we probably need to know the state of the autobed. This records the current
@@ -178,7 +181,7 @@ if __name__ == '__main__':
                  default=False, help='Renew frame pickle files.')
     p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
                  default=False, help='Send a virtual frame.')
-    p.add_option('--mode', action='store', dest='mode', default='head', type='string',
+    p.add_option('--mode', action='store', dest='mode', default='autobed', type='string',
                  help='Select what AR tag to look for (e.g. head, autobed)')
     opt, args = p.parse_args()
     atd = arTagDetector(opt.mode)
