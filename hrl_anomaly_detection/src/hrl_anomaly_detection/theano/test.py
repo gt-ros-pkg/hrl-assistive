@@ -89,8 +89,8 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
         ax = fig.add_subplot(111)
         plt.ion()
         fig.show()
-        line1, =ax.plot(X_train[0,0:nSingleData], 'b-')
-        line2, =ax.plot(X_train[0,0:nSingleData], 'r-')
+        ## line1, =ax.plot(X_train[0,0:nSingleData], 'b-')
+        ## line2, =ax.plot(X_train[0,0:nSingleData], 'r-')
     
     
     while iteration < max_iteration:
@@ -107,15 +107,14 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
             print "Train loss is NaN with iter ", iteration
             sys.exit()
         
-        # testing
-        test_loss = mlp_cost(X_test, X_test)/float(len(X_test[0]))
-        test_loss /= float(time_window)
-        if np.isnan(test_loss) or np.isinf(test_loss):
-            print "Test loss is NaN with iter ", iteration
-            sys.exit()
-
-
         if iteration%20 == 0:
+            # testing
+            test_loss = mlp_cost(X_test, X_test)/float(len(X_test[0]))
+            test_loss /= float(time_window)
+            if np.isnan(test_loss) or np.isinf(test_loss):
+                print "Test loss is NaN with iter ", iteration
+                sys.exit()
+            
             print iteration, ' Train loss: ', train_loss, ' test loss: ', test_loss
             
         if viz and iteration%20 == 0:
@@ -213,7 +212,7 @@ if __name__ == '__main__':
                  type="int", default=1, help='Size of batches ....')
 
     p.add_option('--layer_size', '--ls', action='store', dest='lLayerSize',
-                 default="[20, 10, 5]", help='Size of layers ....')
+                 default="[25, 15, 5]", help='Size of layers ....')
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
                  type="int", default=100000, help='Max iteration ....')
     
@@ -233,7 +232,7 @@ if __name__ == '__main__':
     ## X, y = getData2()
     ## X = X.get_value(True).T
     ## X, y = getData()    
-    X_train, _, X_test, _, nSingleData = dd.getData3(time_window, renew=opt.bRenew)
+    X_train, X_test, nSingleData = dd.getData3(time_window, renew=opt.bRenew)
     layer_sizes = [X_train.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
     print layer_sizes
     print "Max iteration : ", opt.nMaxIter
