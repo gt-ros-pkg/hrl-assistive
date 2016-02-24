@@ -84,26 +84,31 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
     return kFold_list
     
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-               nSet=1, downSampleSize=200, scale=10.0, cutting=False, raw_data=False, data_ext=True, \
+               nSet=1, downSampleSize=200, scale=10.0, cutting=False, ae_data=False, data_ext=True, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                feature_list=['crossmodal_targetEEDist'], data_renew=False):
+    '''
+    ae_data: Auto-encoder data
+    '''
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    if raw_data:
-        save_pkl = os.path.join(processed_data_path, 'raw_feature_extraction_'+rf_center+'_'+str(local_range) )
+    if ae_data:
+        save_pkl = os.path.join(processed_data_path, 'ae_feature_extraction_'+rf_center+'_'+str(local_range) )
     else:
         save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is not True :
         data_dict = ut.load_pickle(save_pkl)
-        allData          = data_dict['allData']
-        trainingData     = data_dict['trainingData'] 
-        abnormalTestData = data_dict['abnormalTestData']
-        abnormalTestNameList = data_dict['abnormalTestNameList']
-        param_dict       = data_dict['param_dict']
+        allData         = data_dict['allData']
+        successData     = data_dict['trainingData'] 
+        failureData     = data_dict['abnormalTestData']
+        aug_successData = data_dict['successData_augmented']
+        aug_failureData = data_dict['failureData_augmented']        
+        failureNameList = data_dict['abnormalTestNameList']
+        param_dict      = data_dict['param_dict']
     else:
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -117,44 +122,42 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                          ##global_data=True,\
                                          renew=data_renew, save_pkl=all_data_pkl)
 
-        success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
-                                            '_'+str(local_range))
-        _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-                                             downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=success_data_pkl)
-
-        failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
-                                            '_'+str(local_range))
-        _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
-                                             downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=failure_data_pkl)
-
         # data set
-        if raw_data is False:
+        if ae_data is False:
+
+            success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
+                                                '_'+str(local_range))
+            _, success_data_dict = util.loadData(success_list, isTrainingData=True,
+                                                 downSampleSize=downSampleSize,\
+                                                 local_range=local_range, rf_center=rf_center,\
+                                                 renew=data_renew, save_pkl=success_data_pkl)
+
+            failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
+                                                '_'+str(local_range))
+            _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
+                                                 downSampleSize=downSampleSize,\
+                                                 local_range=local_range, rf_center=rf_center,\
+                                                 renew=data_renew, save_pkl=failure_data_pkl)
+            
             allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale)
-            trainingData, _     = extractFeature(success_data_dict, feature_list, scale=scale, \
-                                                      param_dict=param_dict)
-            abnormalTestData, _ = extractFeature(failure_data_dict, feature_list, scale=scale, \
-                                                      param_dict=param_dict)
+            successData, _      = extractFeature(success_data_dict, feature_list, scale=scale, \
+                                                 param_dict=param_dict)
+            failureData, _      = extractFeature(failure_data_dict, feature_list, scale=scale, \
+                                                 param_dict=param_dict)
+            aug_successData = []
+            aug_failureData = []
         else:
-            allData, param_dict = extractRawData(all_data_dict, feature_list, scale=scale)
-            trainingData, _     = extractRawData(success_data_dict, feature_list, scale=scale, \
-                                                      param_dict=param_dict)
-            abnormalTestData, _ = extractRawData(failure_data_dict, feature_list, scale=scale, \
-                                                      param_dict=param_dict)
-
-                                                      
-        allData          = np.array(allData)
-        trainingData     = np.array(trainingData)
-        abnormalTestData = np.array(abnormalTestData)
-
+            successData, failureData, aug_successData, aug_failureData, param_dict = \
+              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list))
+            allData = None #successData+failureData
+                                                                    
         data_dict = {}
-        data_dict['allData'] = allData
-        data_dict['trainingData'] = trainingData
-        data_dict['abnormalTestData'] = abnormalTestData
-        data_dict['abnormalTestNameList'] = abnormalTestNameList = failure_data_dict['fileNameList']
+        data_dict['allData']              = np.array(allData)
+        data_dict['trainingData']         = np.array(successData)
+        data_dict['abnormalTestData']     = np.array(failureData)
+        data_dict['abnormalTestNameList'] = failureNameList = None #failure_data_dict['fileNameList']
+        data_dict['successData_augmented'] = np.array(aug_successData)
+        data_dict['failureData_augmented'] = np.array(aug_failureData)
         data_dict['param_dict'] = param_dict
         ut.save_pickle(data_dict, save_pkl)
 
@@ -176,8 +179,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
         # 1) exclude stationary data
         thres = 0.025
-        n,m,k = np.shape(trainingData)
-        diff_all_data = trainingData[:,:,1:] - trainingData[:,:,:-1]
+        n,m,k = np.shape(successData)
+        diff_all_data = successData[:,:,1:] - successData[:,:,:-1]
         add_idx    = []
         remove_idx = []
         std_list = []
@@ -188,8 +191,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             else: add_idx.append(i)
 
         allData          = allData[add_idx]
-        trainingData     = trainingData[add_idx]
-        abnormalTestData = abnormalTestData[add_idx]
+        successData     = successData[add_idx]
+        failureData = failureData[add_idx]
         AddFeature_names    = feature_names[add_idx]
         RemoveFeature_names = feature_names[remove_idx]
 
@@ -207,29 +210,29 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         feature_names = np.array(param_dict['feature_names'])
 
         fig = plt.figure()
-        n,m,k = np.shape(trainingData)
+        n,m,k = np.shape(successData)
         if nPlot is None:
             if n%2==0: nPlot = n
             else: nPlot = n+1
 
         for i in xrange(n):
             ax = fig.add_subplot((nPlot/2)*100+20+i)
-            if solid_color: ax.plot(trainingData[i].T, c='b')
-            else: ax.plot(trainingData[i].T)
+            if solid_color: ax.plot(successData[i].T, c='b')
+            else: ax.plot(successData[i].T)
             ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
         feature_names = np.array(param_dict['feature_names'])
         if fig is None: fig = plt.figure()
-        n,m,k = np.shape(abnormalTestData)
+        n,m,k = np.shape(failureData)
         if nPlot is None:
             if n%2==0: nPlot = n
             else: nPlot = n+1
 
         for i in xrange(n):
             ax = fig.add_subplot((nPlot/2)*100+20+i)
-            if solid_color: ax.plot(abnormalTestData[i].T, c='r')
-            else: ax.plot(abnormalTestData[i].T)
+            if solid_color: ax.plot(failureData[i].T, c='r')
+            else: ax.plot(failureData[i].T)
             ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
@@ -244,10 +247,14 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             plt.show()
 
     print "---------------------------------------------------"
-    print np.shape(trainingData), np.shape(abnormalTestData)
+    print np.shape(successData), np.shape(failureData)
+    print np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
 
-    return allData, trainingData, abnormalTestData, abnormalTestNameList, param_dict
+    if ae_data:
+        return successData, failureData, aug_successData, aug_failureData, param_dict
+    else:
+        return allData, successData, failureData, failureNameList, param_dict
 
 
 def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
@@ -564,17 +571,16 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
 
 
     # Converting data structure & cutting unnecessary part
+    # From nSample x dim x length
+    # To dim x nSample x length
     nSample      = len(dataList)
     nEmissionDim = len(dataList[0])
     features     = []
-    startIdx     = 50 #temp
-    endIdx       = 150
     for i in xrange(nEmissionDim):
         feature  = []
 
         for j in xrange(nSample):
             try:
-                ## feature.append(dataList[j][i])
                 feature.append(dataList[j][i,:])
             except:
                 ## print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
@@ -610,7 +616,7 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
     return scaled_features, param_dict
 
 
-def extractRawData(d, raw_feature_list, scale=1.0, param_dict=None, verbose=False):
+def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, verbose=False):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     from hrl_lib import quaternion as qt
@@ -799,27 +805,22 @@ def extractRawData(d, raw_feature_list, scale=1.0, param_dict=None, verbose=Fals
         dataList.append(dataSample)
 
 
-    # Converting data structure & cutting unnecessary part
-    nSample      = len(dataList)
-    nEmissionDim = len(dataList[0])
-    features     = []
-    startIdx     = 50 #temp
-    endIdx       = 150
-    for i in xrange(nEmissionDim):
-        feature  = []
+    # Augmentation -------------------------------------------------------
+    # assuming there is no currupted file    
+    assert len(dataList) == nSuccess+nFailure
+    successDataList = dataList[0:nSuccess]
+    failureDataList = dataList[nSuccess:]
+    
+    successDataAugList, failureDataAugList = data_augmentation(successDataList, failureDataList)
+    allDataList = successDataAugList + failureDataAugList
 
-        for j in xrange(nSample):
-            try:
-                ## feature.append(dataList[j][i])
-                feature.append(dataList[j][i,:])
-            except:
-                print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
-                print np.shape(dataList), np.shape(dataList[j]), j, i
-                sys.exit()
-
-        features.append( feature )
-
-        
+    # Converting data structure & cutting unnecessary part ---------------
+    features = np.swapaxes(allDataList, 0, 1)
+    success_features = np.swapaxes(successDataList, 0, 1)
+    failure_features = np.swapaxes(failureDataList, 0, 1)
+    success_aug_features = np.swapaxes(successDataAugList, 0, 1)
+    failure_aug_features = np.swapaxes(failureDataAugList, 0, 1)
+               
     # Scaling ------------------------------------------------------------
     if isTrainingData:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
@@ -829,28 +830,139 @@ def extractRawData(d, raw_feature_list, scale=1.0, param_dict=None, verbose=Fals
         print "max: ", param_dict['feature_max']
         print "min: ", param_dict['feature_min']
         
-        
-    scaled_features = []
-    for i, feature in enumerate(features):
-
-        if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
-            scaled_features.append( np.array(feature) )
-        else:
-            ## scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
-            ##                         /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
-            scaled_features.append( ( np.array(feature) - param_dict['feature_mu'][i] )\
-                                    / param_dict['feature_std'][i] )
-
+    success_features = normalization( success_features, param_dict['feature_mu'], param_dict['feature_std'] )
+    failure_features = normalization( failure_features, param_dict['feature_mu'], param_dict['feature_std'] )
+    success_aug_features = normalization( success_aug_features, param_dict['feature_mu'], \
+                                          param_dict['feature_std'] )
+    failure_aug_features = normalization( failure_aug_features, param_dict['feature_mu'], \
+                                          param_dict['feature_std'] )
     param_dict['dataDim'] = dataDim
     
-    ## import matplotlib.pyplot as plt
-    ## plt.figure()
-    ## plt.plot(np.array(scaled_features[0]).T)
-    ## plt.show()
-    ## sys.exit()
-                                
-    return scaled_features, param_dict
+    ## scaled_features = []
+    ## for i, feature in enumerate(features):
+
+    ##     if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
+    ##         scaled_features.append( np.array(feature) )
+    ##     else:
+    ##         ## scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
+    ##         ##                         /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+    ##         scaled_features.append( ( np.array(feature) - param_dict['feature_mu'][i] )\
+    ##                                 / param_dict['feature_std'][i] )
+    
+    return success_features, failure_features, success_aug_features, failure_aug_features, param_dict
 
 
+def normalization(x, mu, std):
+    new_x = copy.copy(x)
+    for i in xrange(len(x)):
+        new_x[i] = (x[i]-mu[i])/std[i]
+    return new_x
+  
+def changeDataStructure(dataList):
+    '''
+    From nSample x dim x length to dim x nSample x length
+    or
+    From dim x nSample x length to nSample x dim x length 
+    '''
+    
+    n = len(dataList)
+    m = len(dataList[0])
+    features     = []
+    for i in xrange(m):
+        feature  = []
+
+        for j in xrange(n):
+            try:
+                feature.append(dataList[j][i,:])
+            except:
+                print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
+                print np.shape(dataList), np.shape(dataList[j]), j, i
+                sys.exit()
+
+        features.append( feature )
+
+def data_augmentation(successes, failures):
+
+    '''
+    nSamples x Dim x nLength
+    '''
+    c_scale = [0.8, 1.2]
+    c_shift = [-10, 10]
+    c_noise = 5.0 # constant computing noise sgd, sample_std/constant
+    c_filter = []
+
+    nAugmnet = 1
+    nDim     = len(successes[0])
+    np.random.seed(1342)
+
+    # for each sample
+    for k in xrange(2):
+        
+        aug_data_list = []
+        
+        for x in [successes, failures][k]:
+            
+            # x is numpy 2D array
+            for n in xrange(nAugmnet):
+
+                # scaling (selective dim)
+                idx_list = np.random.randint(0, 2, size=nDim)
+                new_x = None
+                for i, flag in zip( range(nDim), idx_list ):
+                    if flag == 0: temp = x[i:i+1]
+                    else: temp = x[i:i+1] * np.random.uniform(c_scale[0], c_scale[1])
+
+                    if len(np.shape(temp)) == 1: temp = np.array([temp])
+
+                    if new_x is None: new_x = temp
+                    else: new_x = np.vstack([new_x, temp])
+
+                aug_data_list.append(new_x)
+
+
+                ## # shifting (selective dim)
+                ## idx_list = np.random.randint(0, 2, size=nDim)
+                ## new_x = None
+                ## for i, flag in zip( range(nDim), idx_list ):
+                ##     if flag == 0:
+                ##         temp = x[i:i+1]
+                ##     else:
+                ##         shift = np.random.random_integers(c_shift[0], c_shift[1])
+                ##         if shift >= 0:
+                ##             temp = np.hstack([x[i][shift:], [x[i][-1]]*shift])
+                ##         else:
+                ##             temp = np.hstack([[x[i][0]]*abs(shift), x[i][:-abs(shift)]])
+
+                ##     if len(np.shape(temp)) == 1: temp = np.array([temp])
+
+                ##     if new_x is None: new_x = temp
+                ##     else: new_x = np.vstack([new_x, temp])
+
+                ## aug_data_list.append(new_x)
+
+                # noise (all or selectively)
+                idx_list = np.random.randint(0, 2, size=nDim)
+                new_x = None
+                for i, flag in zip( range(nDim), idx_list ):
+                    if flag == 0: temp = x[i:i+1]
+                    else: temp = x[i:i+1] + np.random.normal(0.0, np.std(x[i])/c_noise, len(x[i]))
+
+                    if len(np.shape(temp)) == 1: temp = np.array([temp])
+
+                    if new_x is None: new_x = temp
+                    else: new_x = np.vstack([new_x, temp])
+
+                aug_data_list.append(new_x)
+                
+
+                # filtering
+
+        if k==0: success_aug_list = successes + aug_data_list
+        else: failure_aug_list = failures + aug_data_list
+
+    print "data auuuuuuuuuuuugmentation"
+    print np.shape(success_aug_list), np.shape(failure_aug_list)
+    
+    return success_aug_list, failure_aug_list
 
 
