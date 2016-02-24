@@ -1,0 +1,10 @@
+(define (problem test-pick-and-place)
+     (:domain pick_and_place_left)
+     (:objects bloc - item)
+     (:init
+            (grasping hand bloc)
+            (at target pick_loc)
+     )
+     (:goal (and (at target place_loc))
+     )
+)

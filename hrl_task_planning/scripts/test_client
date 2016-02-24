@@ -11,9 +11,9 @@ if __name__ == '__main__':
     # msg.domain = "shaving"
     # msg.init = ["(at pr2 user-right)", "(at ROUND-MIRROR TOOLBOX)", "(at SHAVER TOOLBOX)"]
     msg.name = "test_problem"
-    msg.domain = "move_object"
+    msg.domain = "pick_and_place_right"
     msg.objects = []
-    msg.init = []
-    msg.goal = []
+    msg.init = ["(KNOWN PICK_LOC)"]
+    msg.goal = ["(NOT ( KNOWN PICK_LOC))"]
     test_pub.publish(msg)
     rospy.spin()

@@ -362,15 +362,21 @@ var PR2Torso = function (ros) {
     });
     goalPub.advertise();
 
+    self.getState = function () {
+        return state;
+    };
+
     var stateSub = new ROSLIB.Topic({
         ros: ros,
         name: 'torso_controller/state_throttled',
         messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
     });
-    var setState = function (msg) {
+
+    self.setState = function (msg) {
         state = msg.actual.positions[0];
     };
-    self.stateCBList = [setState];
+
+    self.stateCBList = [self.setState];
     var stateCB = function (msg) {
         for (var i=0; i < self.stateCBList.length; i += 1){
             self.stateCBList[i](msg);
@@ -403,6 +409,10 @@ var PR2ArmMPC = function (options) {
     self.state = null;
     self.ros.getMsgDetails('geometry_msgs/PoseStamped');
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
+
+    self.getState = function () {
+        return self.state;
+    };
 
     self.setState = function (msg) {
         self.state = msg;

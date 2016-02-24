@@ -1,17 +1,9 @@
 <launch>
-
-    <param name="pick_and_place/domain_file" value="$(find hrl_task_planning)/params/pick_and_place.domain"/>
-    <rosparam command="load" file="$(find hrl_task_planning)/params/pick_and_place.yaml" ns="pick_and_place"/>
-
-    <param name="move_object/domain_file" value="$(find hrl_task_planning)/params/move_object.domain"/>
-    <rosparam command="load" file="$(find hrl_task_planning)/params/move_object.yaml" ns="move_object"/>
-
-    <param name="shaving/domain_file" value="$(find hrl_task_planning)/params/shaving.domain"/>
-    <rosparam command="load" file="$(find hrl_task_planning)/params/shaving.yaml" ns="shaving"/>
-
+    <include file="$(find hrl_task_planning)/launch/pick_and_place.launch" />
     <node name="task_planner" pkg="hrl_task_planning" type="pddl_planner" output="screen" args="$(find hrl_task_planning)/src/ff"/>
 
-    <node name="problem_preprocessor" pkg="hrl_task_planning" type="preprocess_problems" output="screen" />
+    <node name="domain_state_aggregator" pkg="hrl_task_planning" type="domain_state_aggregator" output="screen" args="-d pick_and_place_right pick_and_place_left"/>
 
     <node name="task_smacher" pkg="hrl_task_planning" type="task_smacher" output="screen" />
+
 </launch>

@@ -32,6 +32,7 @@ RFH.MjpegClient = function (options) {
             self.setParam('height', height);
             self.setParam('width', contWidth);
         }
+        $(window).trigger('resize.rfh');
         return true;
     };
     $(window).on('resize', self.refreshSize);
@@ -69,7 +70,7 @@ RFH.MjpegClient = function (options) {
 RFH.ROSCameraModel = function (options) {
     "use strict";
     var self = this;
-    var options = options || {};
+    options = options || {};
     self.ros = options.ros;
     self.infoTopic = options.infoTopic;
     self.rotated = options.rotated || false;
