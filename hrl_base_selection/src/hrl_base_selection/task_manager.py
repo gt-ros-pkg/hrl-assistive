@@ -43,13 +43,15 @@ class BaseSelectionManager(object):
         self.goal_pose = None
         self.marker_topic = None
 
+        self.tfl = TransformListener()
+
         if self.model == 'autobed':
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
-            self.autobed_joint_pub = rospy.Publisher('autobed_joint_states', JointState, queue_size=1)
+            self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=100)
 
             self.world_B_head = None
             self.world_B_ref_model = None
@@ -57,19 +59,15 @@ class BaseSelectionManager(object):
 
             rospack = rospkg.RosPack()
             self.pkg_path = rospack.get_path('hrl_base_selection')
-            self.autobed_empty_model_file = ''.join([self.pkg_path,'/urdf/empty_autobed.urdf'])
-            self.autobed_occupied_model_file = ''.join([self.pkg_path,'/urdf/occupied_autobed.urdf'])
+            self.autobed_empty_model_file = ''.join([self.pkg_path, '/urdf/empty_autobed.URDF'])
+            self.autobed_occupied_model_file = ''.join([self.pkg_path, '/urdf/occupied_autobed.URDF'])
             self.autobed_occupied_status = autobed_occupied_status_client().state
 
-
         if self.mode == 'ar_tag':
-            self.ar_tag_autobed_sub = rospy.Subscriber('/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
-            self.ar_tag_head_sub = rospy.Subscriber('/head_pose', PoseStamped, self.ar_tag_head_cb)
+            self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
+            self.ar_tag_head_sub = rospy.Subscriber('/ar_tag_tracking/head_pose', PoseStamped, self.ar_tag_head_cb)
 
-            self.nav_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
-
-
-        self.tfl = TransformListener()
+            self.nav_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
 
         if self.mode == 'manual':
             self.base_pose = None
@@ -157,15 +155,16 @@ class BaseSelectionManager(object):
         if self.model == 'autobed':
             self.autobed_occupied_status = autobed_occupied_status_client().state
             if self.autobed_occupied_status:
-                autobed_description_file = self.autobed_occupied_model_file
-                paramlist = rosparam.load_file(autobed_description_file)
-                for params, ns in paramlist:
-                    rosparam.upload_params(ns, params)
+                continue
+                # autobed_description_file = self.autobed_occupied_model_file
+                # paramlist = rosparam.load_file(autobed_description_file)
+                # for params, ns in paramlist:
+                #     rosparam.upload_params(ns, params)
             else:
-                autobed_description_file = self.autobed_empty_model_file
-                paramlist = rosparam.load_file(autobed_description_file)
-                for params, ns in paramlist:
-                    rosparam.upload_params(ns, params)
+                # autobed_description_file = self.autobed_empty_model_file
+                # paramlist = rosparam.load_file(autobed_description_file)
+                # for params, ns in paramlist:
+                #     rosparam.upload_params(ns, params)
                 log_msg = "A user is not on the bed. A user must be on the bed to perform the task for that user."
                 self.feedback_pub.publish(String(log_msg))
                 rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
@@ -175,8 +174,8 @@ class BaseSelectionManager(object):
             head_x = 0
 
             now = rospy.Time.now()
-            self.listener.waitForTransform('/autobed_base_link', '/head_link', now, rospy.Duration(15))
-            (trans, rot) = self.listener.lookupTransform('/autobed_base_link', '/head_link', now)
+            self.listener.waitForTransform('/autobed/base_link', '/user_head_link', now, rospy.Duration(15))
+            (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', now)
             head_y = trans[1]
 
             self.set_autobed_user_configuration(headrest_theta, head_x, head_y)
@@ -262,8 +261,8 @@ class BaseSelectionManager(object):
             pr2_goal_pose.header.stamp = rospy.Time.now()
             pr2_goal_pose.header.frame_id = 'map'
 
-            pr2_B_goal = np.matrix([[m.cos(base_goals[2][i]), -m.sin(base_goals[2][i]), 0., base_goals[0][i]],
-                                    [m.sin(base_goals[2][i]),  m.cos(base_goals[2][i]), 0., base_goals[1][i]],
+            pr2_B_goal = np.matrix([[m.cos(base_goals[2]), -m.sin(base_goals[2]), 0., base_goals[0]],
+                                    [m.sin(base_goals[2]),  m.cos(base_goals[2]), 0., base_goals[1]],
                                     [0.,                                            0., 1.,               0.],
                                     [0.,                                            0., 0.,               1.]])
             now = rospy.Time.now()
@@ -594,73 +593,83 @@ class BaseSelectionManager(object):
                 return None
 
     def set_autobed_user_configuration(self, headrest_th, head_x, head_y):
-
         autobed_joint_state = JointState()
         autobed_joint_state.header.stamp = rospy.Time.now()
 
-        autobed_joint_state.name = [None]*(18)
-        autobed_joint_state.position = [None]*(18)
-        autobed_joint_state.name[0] = "head_bed_updown_joint"
-        autobed_joint_state.name[1] = "head_bed_leftright_joint"
-        autobed_joint_state.name[2] = "head_rest_hinge"
-        autobed_joint_state.name[3] = "neck_body_joint"
-        autobed_joint_state.name[4] = "upper_mid_body_joint"
-        autobed_joint_state.name[5] = "mid_lower_body_joint"
-        autobed_joint_state.name[6] = "body_quad_left_joint"
-        autobed_joint_state.name[7] = "body_quad_right_joint"
-        autobed_joint_state.name[8] = "quad_calf_left_joint"
-        autobed_joint_state.name[9] = "quad_calf_right_joint"
-        autobed_joint_state.name[10] = "calf_foot_left_joint"
-        autobed_joint_state.name[11] = "calf_foot_right_joint"
-        autobed_joint_state.name[12] = "body_arm_left_joint"
-        autobed_joint_state.name[13] = "body_arm_right_joint"
-        autobed_joint_state.name[14] = "arm_forearm_left_joint"
-        autobed_joint_state.name[15] = "arm_forearm_right_joint"
-        autobed_joint_state.name[16] = "forearm_hand_left_joint"
-        autobed_joint_state.name[17] = "forearm_hand_right_joint"
-        autobed_joint_state.position[0] = head_x
-        autobed_joint_state.position[1] = head_y
+        autobed_joint_state.name = [None]*(0)
+        autobed_joint_state.position = [None]*(0)
 
-        bth = m.degrees(headrest_th)
-
-        # 0 degrees, 0 height
-        if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
-            autobed_joint_state.position[2] = (bth/40)*(0.6981317 - 0)+0
-            autobed_joint_state.position[3] = (bth/40)*(-.2-(-.1))+(-.1)
-            autobed_joint_state.position[4] = (bth/40)*(-.17-.4)+.4
-            autobed_joint_state.position[5] = (bth/40)*(-.76-(-.72))+(-.72)
-            autobed_joint_state.position[6] = -0.4
-            autobed_joint_state.position[7] = -0.4
-            autobed_joint_state.position[8] = 0.1
-            autobed_joint_state.position[9] = 0.1
-            autobed_joint_state.position[10] = (bth/40)*(-.05-.02)+.02
-            autobed_joint_state.position[11] = (bth/40)*(-.05-.02)+.02
-            autobed_joint_state.position[12] = (bth/40)*(-.06-(-.12))+(-.12)
-            autobed_joint_state.position[13] = (bth/40)*(-.06-(-.12))+(-.12)
-            autobed_joint_state.position[14] = (bth/40)*(.58-0.05)+.05
-            autobed_joint_state.position[15] = (bth/40)*(.58-0.05)+.05
-            autobed_joint_state.position[16] = -0.1
-            autobed_joint_state.position[17] = -0.1
-        elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
-            autobed_joint_state.position[2] = ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
-            autobed_joint_state.position[3] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
-            autobed_joint_state.position[4] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
-            autobed_joint_state.position[5] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
-            autobed_joint_state.position[6] = -0.4
-            autobed_joint_state.position[7] = -0.4
-            autobed_joint_state.position[8] = 0.1
-            autobed_joint_state.position[9] = 0.1
-            autobed_joint_state.position[10] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            autobed_joint_state.position[11] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            autobed_joint_state.position[12] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            autobed_joint_state.position[13] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            autobed_joint_state.position[14] = ((bth-40)/40)*(.88-0.58)+.58
-            autobed_joint_state.position[15] = ((bth-40)/40)*(.88-0.58)+.58
-            autobed_joint_state.position[16] = -0.1
-            autobed_joint_state.position[17] = -0.1
-        else:
-            print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
+        autobed_joint_state.name[0] = "head_bed_leftright_joint"
+        autobed_joint_state.position[0] = head_y
         self.joint_pub.publish(autobed_joint_state)
+
+
+        # autobed_joint_state = JointState()
+        # autobed_joint_state.header.stamp = rospy.Time.now()
+        #
+        # autobed_joint_state.name = [None]*(18)
+        # autobed_joint_state.position = [None]*(18)
+        # autobed_joint_state.name[0] = "head_bed_updown_joint"
+        # autobed_joint_state.name[1] = "head_bed_leftright_joint"
+        # autobed_joint_state.name[2] = "head_rest_hinge"
+        # autobed_joint_state.name[3] = "neck_body_joint"
+        # autobed_joint_state.name[4] = "upper_mid_body_joint"
+        # autobed_joint_state.name[5] = "mid_lower_body_joint"
+        # autobed_joint_state.name[6] = "body_quad_left_joint"
+        # autobed_joint_state.name[7] = "body_quad_right_joint"
+        # autobed_joint_state.name[8] = "quad_calf_left_joint"
+        # autobed_joint_state.name[9] = "quad_calf_right_joint"
+        # autobed_joint_state.name[10] = "calf_foot_left_joint"
+        # autobed_joint_state.name[11] = "calf_foot_right_joint"
+        # autobed_joint_state.name[12] = "body_arm_left_joint"
+        # autobed_joint_state.name[13] = "body_arm_right_joint"
+        # autobed_joint_state.name[14] = "arm_forearm_left_joint"
+        # autobed_joint_state.name[15] = "arm_forearm_right_joint"
+        # autobed_joint_state.name[16] = "forearm_hand_left_joint"
+        # autobed_joint_state.name[17] = "forearm_hand_right_joint"
+        # autobed_joint_state.position[0] = head_x
+        # autobed_joint_state.position[1] = head_y
+        #
+        # bth = m.degrees(headrest_th)
+        #
+        # # 0 degrees, 0 height
+        # if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
+        #     autobed_joint_state.position[2] = (bth/40)*(0.6981317 - 0)+0
+        #     autobed_joint_state.position[3] = (bth/40)*(-.2-(-.1))+(-.1)
+        #     autobed_joint_state.position[4] = (bth/40)*(-.17-.4)+.4
+        #     autobed_joint_state.position[5] = (bth/40)*(-.76-(-.72))+(-.72)
+        #     autobed_joint_state.position[6] = -0.4
+        #     autobed_joint_state.position[7] = -0.4
+        #     autobed_joint_state.position[8] = 0.1
+        #     autobed_joint_state.position[9] = 0.1
+        #     autobed_joint_state.position[10] = (bth/40)*(-.05-.02)+.02
+        #     autobed_joint_state.position[11] = (bth/40)*(-.05-.02)+.02
+        #     autobed_joint_state.position[12] = (bth/40)*(-.06-(-.12))+(-.12)
+        #     autobed_joint_state.position[13] = (bth/40)*(-.06-(-.12))+(-.12)
+        #     autobed_joint_state.position[14] = (bth/40)*(.58-0.05)+.05
+        #     autobed_joint_state.position[15] = (bth/40)*(.58-0.05)+.05
+        #     autobed_joint_state.position[16] = -0.1
+        #     autobed_joint_state.position[17] = -0.1
+        # elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
+        #     autobed_joint_state.position[2] = ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
+        #     autobed_joint_state.position[3] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
+        #     autobed_joint_state.position[4] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
+        #     autobed_joint_state.position[5] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
+        #     autobed_joint_state.position[6] = -0.4
+        #     autobed_joint_state.position[7] = -0.4
+        #     autobed_joint_state.position[8] = 0.1
+        #     autobed_joint_state.position[9] = 0.1
+        #     autobed_joint_state.position[10] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
+        #     autobed_joint_state.position[11] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
+        #     autobed_joint_state.position[12] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
+        #     autobed_joint_state.position[13] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
+        #     autobed_joint_state.position[14] = ((bth-40)/40)*(.88-0.58)+.58
+        #     autobed_joint_state.position[15] = ((bth-40)/40)*(.88-0.58)+.58
+        #     autobed_joint_state.position[16] = -0.1
+        #     autobed_joint_state.position[17] = -0.1
+        # else:
+        #     print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
+        # self.joint_pub.publish(autobed_joint_state)
 
 
 if __name__ == '__main__':
