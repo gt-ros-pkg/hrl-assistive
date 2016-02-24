@@ -125,11 +125,19 @@ class armReachAction(mpcBaseAction):
            ['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0],           
            ['MOVET', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5],           
            ['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0],           
-          ]            
+          ]
+        self.motions['initTest']['right'] = []
+
+
+        self.motions['right_knee'] = {}
+        self.motions['right_knee']['left'] = \
+          [['MOVES', '[1.406576, -0.041661, 0.714539, 1.4465015328401096, 1.2775181543905938, -1.70597295530571]', 2., 'autobed/calf_right_link']]
         self.motions['initTest']['right'] = []
                                                             
         rospy.loginfo("Parameters are loaded.")
-                
+
+
+
         
     def serverCallback(self, req):
         task = req.data

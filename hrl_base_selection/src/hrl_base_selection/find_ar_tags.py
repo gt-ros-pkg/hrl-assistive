@@ -113,8 +113,8 @@ class arTagDetector:
                                       markers[i].pose.pose.orientation.z,
                                       markers[i].pose.pose.orientation.w])
 
-                    frame_id = markers[i].pose.header.frame_id
-                    print 'Frame ID is: ', frame_id
+                    # frame_id = markers[i].pose.header.frame_id
+                    # print 'Frame ID is: ', frame_id
 
                     if np.linalg.norm(cur_p) > 4.0:
                         print "Detected tag is located too far away."

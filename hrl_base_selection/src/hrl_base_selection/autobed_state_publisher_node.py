@@ -6,6 +6,7 @@ import tf
 from hrl_msgs.msg import FloatArrayBare
 from sensor_msgs.msg import JointState
 from math import *
+import math as m
 import operator
 from scipy.signal import remez
 from scipy.signal import lfilter
@@ -30,18 +31,18 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class AutobedStatePublisherNode(object):
     def __init__(self):
-        self.joint_pub = rospy.Publisher('joint_states', JointState, queue_size=100)
+        self.joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=100)
 
         # self.autobed_occupied_state_client = autobed_occupied_status_client()
         # self.pressure_grid_pub = rospy.Publisher('pressure_grid', Marker)
         self.sendToRviz=tf.TransformBroadcaster()
         self.listener = tf.TransformListener()
-
+        rospy.sleep(2)
         init_centered = JointState()
         init_centered.header.stamp = rospy.Time.now()
         init_centered.name = [None]*(1)
         init_centered.position = [None]*(1)
-        init_centered.name[0] = "head_bed_leftright_joint"
+        init_centered.name[0] = "autobed/head_bed_leftright_joint"
         init_centered.position[0] = 0
         self.joint_pub.publish(init_centered)
 
@@ -71,13 +72,14 @@ class AutobedStatePublisherNode(object):
         #Publisher for Markers (can send them all as one marker message instead of an array because they're all spheres of the same size
         # self.marker_pub=rospy.Publisher('visualization_marker', Marker)
 
-        print 'Autobed robot state publisher is ready!'
+        print 'Autobed robot state publisher is ready and running!'
 
 
 
     #callback for the pose messages from the autobed
     def bed_pose_cb(self, data): 
         poses=np.asarray(data.data);
+        # print poses
         
         self.bed_height = ((poses[1]/100) - 0.09) if (((poses[1]/100) - 0.09) 
                 > 0) else 0
@@ -118,6 +120,7 @@ class AutobedStatePublisherNode(object):
                           '/leg_rest_upper_link':1.04266,
                           '/leg_rest_lower_link':1.41236})
         list_of_links = dict_of_links.keys()
+        rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
             joint_state.header.stamp = rospy.Time.now()
             #Resize the pressure map data
@@ -126,20 +129,23 @@ class AutobedStatePublisherNode(object):
             #Clear pressure map grid
             #Filter data
             self.filter_data()
-            joint_state.name = [None]*(9)
-            joint_state.position = [None]*(9)
-            joint_state.name[0] = "tele_leg_joint"
-            joint_state.name[1] = "head_rest_hinge"
-            joint_state.name[2] = "leg_rest_upper_joint"
-            joint_state.name[3] = "leg_rest_upper_lower_joint"
+
+            joint_state.name = [None]*(4)
+            joint_state.position = [None]*(4)
+            joint_state.name[0] = "autobed/tele_legs_joint"
+            joint_state.name[1] = "autobed/head_rest_hinge"
+            joint_state.name[2] = "autobed/leg_rest_upper_joint"
+            joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
+            # print self.bed_height
             joint_state.position[0] = self.bed_height
             joint_state.position[1] = self.head_filt_data
-            joint_state.position[2] = self.leg_filt_data
-            joint_state.position[3] = -(1+(4.0/9.0))*self.leg_filt_data
+            joint_state.position[2] = 0  # self.leg_filt_data
+            joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
             self.joint_pub.publish(joint_state)
 
-            self.set_autobed_user_configuration(self.head_filt_data, autobed_occupied_status_client().state)
-
+            # self.set_autobed_user_configuration(self.head_filt_data, autobed_occupied_status_client().state)
+            self.set_autobed_user_configuration(self.head_filt_data, True)
+            rate.sleep()
         return
 
     def set_autobed_user_configuration(self, headrest_th, occupied_state):
@@ -149,27 +155,28 @@ class AutobedStatePublisherNode(object):
 
         human_joint_state.name = [None]*(17)
         human_joint_state.position = [None]*(17)
-        human_joint_state.name[0] = "neck_body_joint"
-        human_joint_state.name[1] = "upper_mid_body_joint"
-        human_joint_state.name[2] = "mid_lower_body_joint"
-        human_joint_state.name[3] = "body_quad_left_joint"
-        human_joint_state.name[4] = "body_quad_right_joint"
-        human_joint_state.name[5] = "quad_calf_left_joint"
-        human_joint_state.name[6] = "quad_calf_right_joint"
-        human_joint_state.name[7] = "calf_foot_left_joint"
-        human_joint_state.name[8] = "calf_foot_right_joint"
-        human_joint_state.name[9] = "body_arm_left_joint"
-        human_joint_state.name[10] = "body_arm_right_joint"
-        human_joint_state.name[11] = "arm_forearm_left_joint"
-        human_joint_state.name[12] = "arm_forearm_right_joint"
-        human_joint_state.name[13] = "forearm_hand_left_joint"
-        human_joint_state.name[14] = "forearm_hand_right_joint"
-        human_joint_state.name[15] = "head_neck_joint1"
-        human_joint_state.name[16] = "head_neck_joint2"
+        human_joint_state.name[0] = "autobed/neck_body_joint"
+        human_joint_state.name[1] = "autobed/upper_mid_body_joint"
+        human_joint_state.name[2] = "autobed/mid_lower_body_joint"
+        human_joint_state.name[3] = "autobed/body_quad_left_joint"
+        human_joint_state.name[4] = "autobed/body_quad_right_joint"
+        human_joint_state.name[5] = "autobed/quad_calf_left_joint"
+        human_joint_state.name[6] = "autobed/quad_calf_right_joint"
+        human_joint_state.name[7] = "autobed/calf_foot_left_joint"
+        human_joint_state.name[8] = "autobed/calf_foot_right_joint"
+        human_joint_state.name[9] = "autobed/body_arm_left_joint"
+        human_joint_state.name[10] = "autobed/body_arm_right_joint"
+        human_joint_state.name[11] = "autobed/arm_forearm_left_joint"
+        human_joint_state.name[12] = "autobed/arm_forearm_right_joint"
+        human_joint_state.name[13] = "autobed/forearm_hand_left_joint"
+        human_joint_state.name[14] = "autobed/forearm_hand_right_joint"
+        human_joint_state.name[15] = "autobed/head_neck_joint1"
+        human_joint_state.name[16] = "autobed/head_neck_joint2"
 
-        print bth
-        # bth = m.degrees(headrest_th)
-        bth = headrest_th
+
+        bth = m.degrees(headrest_th)
+        # bth = headrest_th
+        # print bth
         # 0 degrees, 0 height
         if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
             human_joint_state.position[0] = (bth/40)*(-.2-(-.1))+(-.1)
@@ -210,14 +217,17 @@ class AutobedStatePublisherNode(object):
         self.joint_pub.publish(human_joint_state)
         unoccupied_shift = JointState()
         unoccupied_shift.header.stamp = rospy.Time.now()
-        unoccupied_shift.name = [None]*(1)
-        unoccupied_shift.position = [None]*(1)
-        unoccupied_shift.name[0] = "head_bed_updown_joint"
+        unoccupied_shift.name = [None]*(2)
+        unoccupied_shift.position = [None]*(2)
+        unoccupied_shift.name[0] = "autobed/head_bed_updown_joint"
+        unoccupied_shift.name[1] = "autobed/head_bed_leftright_joint"
         if not occupied_state:
             unoccupied_shift.position[0] = 15
         else:
             unoccupied_shift.position[0] = 0.
-        self.joint_pub.publish((unoccupied_shift))
+        unoccupied_shift.position[1] = 0.
+        self.joint_pub.publish(unoccupied_shift)
+        # print 'done with human joints!'
 
 
 if __name__ == "__main__":
