@@ -1,116 +1,176 @@
-#!/usr/bin/env python  
+#!/usr/bin/env python
+#
+# Copyright (c) 2014, Georgia Tech Research Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Georgia Tech Research Corporation nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
-import roslib; roslib.load_manifest('sandbox_dpark_darpa_m3')
-roslib.load_manifest('hrl_base_selection')
-import rospy
-import numpy as np, math
-import time
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
-from hrl_srvs.srv import None_Bool, None_BoolResponse
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+# System
+import sys, time, copy
+import numpy as np
+
+# ROS
+import rospy, roslib
+import tf
+import PyKDL
+from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
+from std_msgs.msg import String
+
+# HRL library
+import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
+import hrl_lib.quaternion as quatMath 
+from hrl_srvs.srv import None_Bool, String_String
+
+# Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
-
+from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm='l'):
+    def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
+        mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
 
-        mpcBaseAction.__init__(self, d_robot, controller, arm)
+        #Variables...! #
+        self.stop_motion = False
+        self.verbose = verbose
+
+        self.default_frame      = PyKDL.Frame()
+
+        self.initCommsForArmReach()                            
+        self.initParamsForArmReach()
+
+        rate = rospy.Rate(100) # 25Hz, nominally.
+        while not rospy.is_shutdown():
+            if self.getJointAngles() != []:
+                if verbose:
+                    print "--------------------------------"
+                    print "Current "+self.arm_name+" arm joint angles"
+                    print self.getJointAngles()
+                    print "Current "+self.arm_name+" arm pose"
+                    print self.getEndeffectorPose(tool=tool_id)
+                    print "Current "+self.arm_name+" arm orientation (w/ euler rpy)"
+                    print self.getEndeffectorRPY(tool=tool_id) #*180.0/np.pi
+                    print "--------------------------------"
+                break
+            rate.sleep()
+            
+        rospy.loginfo("Arm Reach Action is initialized.")
+        print "Current "+self.arm_name+" arm joint angles"
+        print self.getJointAngles()
+        print "Current "+self.arm_name+" arm pose"
+        print self.getEndeffectorPose(tool=tool_id)
+                            
+    def initCommsForArmReach(self):
+
+        # publishers and subscribers
+        rospy.Subscriber('InterruptAction', String, self.stopCallback)        
+        # service
+        self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
         
-        # service for ari's request
-        self.reach_service = rospy.Service('/base_selection/arm_reach_enable', None_Bool, self.start_cb)
-
+        if self.verbose: rospy.loginfo("ROS-based communications are set up .")
+                                    
+    def initParamsForArmReach(self):
+        '''
+        Industrial movment commands generally follows following format, 
         
-    def start_cb(self, req):
+               Movement type, joint or pose(pos+euler or pos+quat), timeout, relative_frame(not implemented)
 
-        # Run manipulation tasks
-        if self.run():
-            return None_BoolResponse(True)
-        else:
-            return None_BoolResponse(False)
+        In this code, we allow to use following movement types,
 
-    def run(self):
+        MOVEP: point-to-point motion without orientation control (ex. MOVEP pos-euler timeout relative_frame)
+        MOVES: point-to-point motion with orientation control (ex. MOVES pos-euler timeout relative_frame)
+        MOVEL: straight (linear) motion with orientation control (ex. MOVEL pos-quat timeout relative_frame)
+        MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
+        MOVEJ: joint motion (ex. MOVEJ joint timeout)
+        PAUSE: Add pause time between motions (ex. PAUSE duration)
 
-        self.setOrientationControl()
+        #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
 
-        pos  = Point()
-        quat = Quaternion()
-
-        #going to home with arm curled high near left shoulder:
-        (pos.x, pos.y, pos.z) = (0.301033944729, 0.461276517595, 0.196885866571)
-        (quat.x, quat.y, quat.z, quat.w) = (0.553557277528, 0.336724229346, -0.075691681684, 0.757932650828)
-        timeout = 20.0
-        self.setOrientGoal(pos, quat, timeout)
-
-        #moving to high in front of chest, pointing down:
-        (pos.x, pos.y, pos.z) = (0.377839595079, 0.11569018662, 0.0419789999723)
-        (quat.x, quat.y, quat.z, quat.w) = (0.66106069088, 0.337429642677, -0.519856214523, 0.422953367233)
-        timeout = 20.0
-        self.setOrientGoal(pos, quat, timeout)
-
-        # #going to home location in front of camera:
-        # (pos.x, pos.y, pos.z) = (0.5309877259429142, 0.4976163448816489, 0.16719537682372823)
-        # (quat.x, quat.y, quat.z, quat.w) = (0.7765742993649133, -0.37100605554316285, -0.27784851903166524, 0.42671660945891)
-        # timeout = 35.0
-        # self.setOrientGoal(pos, quat, timeout)
-        #
-        # #moving vertically to over bowl:
-        # (pos.x, pos.y, pos.z) = (0.516341299985487, 0.8915608293219441, 0.1950343868326016)
-        # (quat.x, quat.y, quat.z, quat.w) = (0.6567058177198967, 0.16434420640210323, 0.0942917725129517, 0.7299571990406495)
-        # timeout = 35.0
-        # self.setOrientGoal(pos, quat, timeout)
-
-        # These are the goals for autobed's data
-        frame_id = '/head_frame'
-
-         # #going to subjects mouth:
-        (pos.x, pos.y, pos.z) = (1.226054, -0.00, 1.120987)
-        (quat.x, quat.y, quat.z, quat.w) = (0.005207, 0.032937, 0.999380, -0.011313)
-        timeout = 35.0
-        self.setOrientGoal(pos, quat, timeout, frame_id)
-
-        # #going to mouth:
-        (pos.x, pos.y, pos.z) = (1.154571, -0.000, 1.175490)
-        (quat.x, quat.y, quat.z, quat.w) = ( -0.018872, 0.033197, 0.999248, 0.006737)
-        timeout = 35.0
-        self.setOrientGoal(pos, quat, timeout, frame_id)
-
-        # #going to in front of subjects face:
-        (pos.x, pos.y, pos.z) = (1.070794, -0.000, 1.183998)
-        (quat.x, quat.y, quat.z, quat.w) = (-0.018872, 0.033197, 0.999248, 0.006737)
-        timeout = 10.0
-        self.setOrientGoal(pos, quat, timeout, frame_id)
-
-
-
-
-
-        # These are the goals for wheelchair's new data (10/13/14)
-        # frame_id = '/head_frame'
-        # #going to in front of subjects face:        
-        # (pos.x, pos.y, pos.z) = (0.2741387011303321, 0.005522571699560719, -0.011919598309888757)
-        # (quat.x, quat.y, quat.z, quat.w) = (-0.023580897114171894, 0.7483633417869068, 0.662774596931439, 0.011228696415565394)
-        # timeout = 10.0
-        # self.setOrientGoal(pos, quat, timeout, frame_id)
-
-        # #going to subjects mouth:
-        # (pos.x, pos.y, pos.z) = (0.13608632401364894, 0.003540318703608347, 0.00607600258150498)
-        # (quat.x, quat.y, quat.z, quat.w) = (-0.015224467044577382, 0.7345761465214938, 0.6783020152473445, -0.008513323454022942)
-        # timeout = 35.0
-        # self.setOrientGoal(pos, quat, timeout, frame_id)
+        joint or pose: we use radian and meter unit. The order of euler angle follows original z-y-x order (RPY).
+        timeout or duration: we use second
+        relative_frame: You can put your custome PyKDL frame variable or you can use 'self.default_frame'
+        '''
         
-        return True
+        self.motions = {}
+
+        ## test motoins --------------------------------------------------------
+        # It uses the l_gripper_push_frame
+        self.motions['initTest'] = {}
+        self.motions['initTest']['left'] = \
+          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0],
+           ['PAUSE', 1.0],
+           ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           ['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0],           
+           ['MOVET', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5],           
+           ['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0],           
+          ]            
+        self.motions['initTest']['right'] = []
+                                                            
+        rospy.loginfo("Parameters are loaded.")
+                
         
+    def serverCallback(self, req):
+        task = req.data
+        self.stop_motion = False
+
+        self.parsingMovements(self.motions[task][self.arm_name])
+        return "Completed to execute "+task
+
+    
+    def stopCallback(self, msg):
+        print '\n\nAction Interrupted! Event Stop\n\n'
+        print 'Interrupt Data:', msg.data
+        self.stop_motion = True
+
+        print "Stopping Motion..."
+        self.setStop() #Stops Current Motion
+        try:
+            self.setStopRight() #Sends message to service node
+        except:
+            rospy.loginfo("Couldn't stop "+self.arm_name+" arm! ")
+
+
+
 if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-    opt, args = p.parse_args()
+    haptic_mpc_util.initialiseOptParser(p)
+    opt = haptic_mpc_util.getValidInput(p)
 
     # Initial variables
     d_robot    = 'pr2'
     controller = 'static'
-    arm        = 'l'
-
-    rospy.init_node('arm_reacher')    
-    ara = armReachAction(d_robot, controller, arm)
+    ## controller = 'actionlib'
+    arm        = opt.arm
+    tool_id    = 0
+    if opt.arm == 'l': verbose = False
+    else: verbose = True
+        
+    rospy.init_node('arm_reacher_pushing')
+    ara = armReachAction(d_robot, controller, arm, tool_id, verbose)
     rospy.spin()
+
+
